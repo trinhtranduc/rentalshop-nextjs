@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   User, 
   CreditCard, 
@@ -81,9 +82,14 @@ export const SettingsComponent: React.FC = () => {
   const { user, logout, loading } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const { currency, setCurrency } = useCurrency();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get tab from URL or default to 'profile'
+  const tabFromUrl = searchParams.get('tab') || 'profile';
   
   // Navigation state
-  const [activeSection, setActiveSection] = useState('profile');
+  const [activeSection, setActiveSection] = useState(tabFromUrl);
   
   // Profile editing state
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
@@ -133,6 +139,20 @@ export const SettingsComponent: React.FC = () => {
   // Subscription state
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+
+  // Sync URL with active section
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'profile';
+    if (tabFromUrl !== activeSection) {
+      setActiveSection(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  // Function to change section and update URL
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+    router.push(`/settings?tab=${section}`);
+  };
 
   // Update personalFormData when user data loads
   useEffect(() => {
@@ -598,7 +618,7 @@ export const SettingsComponent: React.FC = () => {
         loading={loading}
         menuItems={filteredMenuItems}
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
+        onSectionChange={handleSectionChange}
       >
         {renderActiveSection()}
       </SettingsLayout>

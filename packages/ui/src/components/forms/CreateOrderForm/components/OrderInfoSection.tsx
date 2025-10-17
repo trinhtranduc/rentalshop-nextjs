@@ -20,6 +20,7 @@ import {
   Skeleton,
   Button
 } from '@rentalshop/ui';
+import { useOrderTranslations } from '@rentalshop/hooks';
 import { 
   User, 
   Search, 
@@ -147,23 +148,24 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   onShowAddCustomerDialog,
   onUpdateRentalDates
 }) => {
+  const t = useOrderTranslations();
   const [showManualCustomerInput, setShowManualCustomerInput] = useState(false);
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          Order Information
+          {t('detail.orderInformation')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* 1. Order Type Toggle */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
-            Order Type
+            {t('messages.orderType')}
             {isEditMode && (
               <span className="ml-2 text-xs text-gray-500 font-normal">
-                (Cannot be changed when editing)
+                ({t('messages.cannotChangeWhenEditing')})
               </span>
             )}
           </label>
@@ -179,7 +181,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               }}
               className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              Rent
+              {t('orderType.RENT')}
             </Button>
             <Button
               type="button"
@@ -195,7 +197,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               }}
               className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              Sale
+              {t('orderType.SALE')}
             </Button>
           </div>
         </div>
@@ -215,7 +217,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               <RentalPeriodSelector
                 product={{
                   id: 0, // Placeholder - will be updated when product is selected
-                  name: 'Rental Period',
+                  name: t('messages.rentalPeriod'),
                   rentPrice: 0, // Will be calculated based on merchant pricing
                   deposit: 0
                 }}
@@ -240,7 +242,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               // Fallback to basic DateRangePicker if no merchant data
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-primary">
-                  Rental Period <span className="text-red-500">*</span>
+                  {t('messages.rentalPeriod')} <span className="text-red-500">*</span>
                 </label>
                 <DateRangePicker
                   value={{
@@ -258,7 +260,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                       onUpdateRentalDates(startDate, endDate);
                     }
                   }}
-                  placeholder="Select rental period"
+                  placeholder={t('messages.selectRentalPeriod')}
                   minDate={new Date()}
                   showPresets={false}
                   format="long"
@@ -271,7 +273,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         {/* 3. Outlet Selection */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
-            Outlet <span className="text-red-500">*</span>
+            {t('messages.outlet')} <span className="text-red-500">*</span>
           </label>
           <Select
             value={formData.outletId ? String(formData.outletId) : undefined}
@@ -303,13 +305,13 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         {/* 4. Customer Selection */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
-            Customer <span className="text-red-500">*</span>
+            {t('messages.customer')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search customers by name or phone..."
+                placeholder={t('messages.searchCustomers')}
                 value={selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName} - ${selectedCustomer.phone}` : searchQuery}
                 onFocus={() => {
                   // Show search results when focused if there's a query
@@ -344,7 +346,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                   type="button"
                   onClick={onCustomerClear}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors duration-150 h-6 w-6 p-0"
-                  title="Clear selected customer"
+                  title={t('messages.clearSelectedCustomer')}
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -376,7 +378,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                   >
                     <div className="flex items-center gap-2">
                       <Plus className="w-4 h-4" />
-                      <span>Add New Customer</span>
+                      <span>{t('messages.addNewCustomer')}</span>
                     </div>
                     {searchQuery.trim() && (
                       <div className="text-xs text-blue-600 mt-1">
@@ -413,7 +415,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                         No customers found for "{searchQuery}"
                       </div>
                       <div className="text-xs text-gray-400 mt-1">
-                        Use the "Add New Customer" button above to create one
+                        {t('messages.useAddNewCustomerButton')}
                       </div>
                     </div>
                   )}
@@ -432,7 +434,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         {/* 5. Deposit Amount - Only for RENT orders */}
         {formData.orderType === 'RENT' && (
           <div className="space-y-2 w-full">
-            <label className="text-sm font-medium text-text-primary">Deposit</label>
+            <label className="text-sm font-medium text-text-primary">{t('messages.deposit')}</label>
             <NumberInput
               value={formData.depositAmount || 0}
               onChange={(value) => onFormDataChange('depositAmount', value)}
@@ -446,7 +448,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
         {/* 6. Discount Section */}
         <div className="space-y-2 w-full">
-          <label className="text-sm font-medium text-text-primary">Discount</label>
+          <label className="text-sm font-medium text-text-primary">{t('messages.discount')}</label>
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
               <NumberInput
@@ -454,7 +456,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 onChange={(value) => onFormDataChange('discountValue', value)}
                 min={0}
                 decimals={0}
-                placeholder="Discount amount..."
+                placeholder={t('messages.discountAmount')}
                 className="w-full"
               />
             </div>
@@ -468,8 +470,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="amount">$</SelectItem>
-                <SelectItem value="percentage">%</SelectItem>
+                <SelectItem value="amount">{t('messages.amount')}</SelectItem>
+                <SelectItem value="percentage">{t('messages.percentage')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -477,9 +479,9 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
         {/* 7. Order Notes */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Order Notes</label>
+          <label className="text-sm font-medium text-text-primary">{t('messages.orderNotes')}</label>
           <Textarea
-            placeholder="Enter order notes..."
+            placeholder={t('messages.enterOrderNotes')}
             value={formData.notes}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
               onFormDataChange('notes', e.target.value)

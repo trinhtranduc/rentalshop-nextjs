@@ -29,7 +29,8 @@ import {
   Minus
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { analyticsApi, ordersApi } from '@rentalshop/utils';
+import { analyticsApi, ordersApi, useFormattedFullDate, useFormattedMonthOnly } from '@rentalshop/utils';
+import { useLocale as useNextIntlLocale } from 'next-intl';
 
 // ============================================================================
 // TYPES
@@ -82,7 +83,7 @@ interface RecentOrder {
 // ============================================================================
 // COMPONENTS
 // ============================================================================
-const StatCard = ({ title, value, change, description, tooltip, color, trend, activeTooltip, setActiveTooltip }: {
+const StatCard = ({ title, value, change, description, tooltip, color, trend, activeTooltip, setActiveTooltip, position }: {
   title: string;
   value: string | number;
   change: string;
@@ -92,9 +93,31 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
   trend: 'up' | 'down' | 'neutral';
   activeTooltip: string | null;
   setActiveTooltip: (title: string | null) => void;
+  position?: 'left' | 'center' | 'right';
 }) => {
   const shouldShowDollar = title.toLowerCase().includes('revenue') || title.toLowerCase().includes('income');
   const isTooltipActive = activeTooltip === title;
+  
+  // Smart tooltip positioning
+  const getTooltipClasses = () => {
+    if (position === 'left') {
+      return "absolute bottom-full right-0 mb-2 px-4 py-3 bg-gray-800 text-white text-xs rounded-lg z-50 w-80 whitespace-normal break-words leading-relaxed";
+    } else if (position === 'right') {
+      return "absolute bottom-full left-0 mb-2 px-4 py-3 bg-gray-800 text-white text-xs rounded-lg z-50 w-80 whitespace-normal break-words leading-relaxed";
+    } else {
+      return "absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-3 bg-gray-800 text-white text-xs rounded-lg z-50 w-80 whitespace-normal break-words leading-relaxed";
+    }
+  };
+  
+  const getArrowClasses = () => {
+    if (position === 'left') {
+      return "absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800";
+    } else if (position === 'right') {
+      return "absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800";
+    } else {
+      return "absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800";
+    }
+  };
   
   const handleTooltipClick = () => {
     if (isTooltipActive) {
@@ -115,9 +138,9 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
               onClick={handleTooltipClick}
             />
             {isTooltipActive && (
-              <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap z-10 max-w-xs">
+              <div className={getTooltipClasses()}>
                 {tooltip}
-                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                <div className={getArrowClasses()}></div>
               </div>
             )}
           </div>
@@ -162,6 +185,7 @@ export default function DashboardPage() {
   const tc = useCommonTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const locale = useNextIntlLocale() as 'en' | 'vi';
   
   // Get timePeriod from URL params or default to 'today'
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(
@@ -252,10 +276,10 @@ export default function DashboardPage() {
           groupBy = 'day';
           break;
         case 'year':
-          const yearStart = new Date(today.getFullYear(), 0, 1);
-          const yearEnd = new Date(today.getFullYear(), 11, 31);
-          startDate = yearStart.toISOString().split('T')[0];
-          endDate = yearEnd.toISOString().split('T')[0];
+          // Use current year for both start and end
+          const currentYear = today.getFullYear();
+          startDate = `${currentYear}-01-01`;
+          endDate = `${currentYear}-12-31`;
           groupBy = 'month';
           break;
         default:
@@ -411,6 +435,9 @@ export default function DashboardPage() {
       }
 
       if (incomeResponse.success && incomeResponse.data) {
+        console.log('💰 Income Data from API:', incomeResponse.data);
+        console.log('📅 First 3 items:', incomeResponse.data.slice(0, 3));
+        console.log('📅 Last 3 items:', incomeResponse.data.slice(-3));
         setIncomeData(incomeResponse.data);
       }
 
@@ -500,11 +527,18 @@ export default function DashboardPage() {
 
   const getRevenueData = () => {
     // Transform income data to match chart component expectations
-    return incomeData.map((item: any) => ({
-      period: `${item.month} ${item.year}`,
-      actual: item.realIncome || 0,
-      projected: item.futureIncome || 0
-    }));
+    return incomeData.map((item: any) => {
+      // Create a proper date object from month name and year
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthIndex = monthNames.indexOf(item.month);
+      const date = new Date(item.year, monthIndex, 1);
+      
+      return {
+        period: date.toISOString(),  // Return ISO string for consistent date formatting
+        actual: item.realIncome || 0,
+        projected: item.futureIncome || 0
+      };
+    });
   };
 
   const getOrderData = () => {
@@ -589,7 +623,7 @@ export default function DashboardPage() {
                   {timePeriod === 'today' 
                     ? t('overview')
                     : timePeriod === 'month'
-                    ? `${t('overview')} - ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                    ? `${t('overview')} - ${new Date().toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { month: 'long', year: 'numeric' })}`
                     : `${t('overview')} - ${new Date().getFullYear()}`
                   }
                 </p>
@@ -642,47 +676,51 @@ export default function DashboardPage() {
                 <StatCard
                   title={t('stats.todayRevenue')}
                   value={currentStats.todayRevenue}
-                  change={tc('labels.loading')}
-                  description={tc('time.today')}
-                  tooltip={t('stats.todayRevenue')}
+                  change=""
+                  description=""
+                  tooltip={t('tooltips.todayRevenue')}
                   color="text-green-600"
                   trend="neutral"
                   activeTooltip={activeTooltip}
                   setActiveTooltip={setActiveTooltip}
+                  position="left"
                 />
               )}
               <StatCard
-                title={t('stats.activeRentals')}
+                title={t('stats.todayRentals')}
                 value={currentStats.todayRentals}
-                change={tc('labels.loading')}
-                description={tc('time.today')}
-                tooltip={t('stats.activeRentals')}
+                change=""
+                description=""
+                tooltip={t('tooltips.todayRentals')}
                 color="text-blue-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
+                position="center"
               />
               <StatCard
                 title={t('stats.activeRentals')}
                 value={currentStats.activeRentals}
-                change={tc('labels.loading')}
-                description={tc('time.today')}
-                tooltip={t('stats.activeRentals')}
+                change=""
+                description=""
+                tooltip={t('tooltips.activeRentals')}
                 color="text-purple-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
+                position="center"
               />
               <StatCard
                 title={t('stats.overdueReturns')}
                 value={currentStats.overdueItems}
-                change={tc('labels.loading')}
-                description={tc('time.today')}
-                tooltip={t('stats.overdueReturns')}
+                change=""
+                description=""
+                tooltip={t('tooltips.overdueReturns')}
                 color="text-red-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
+                position="right"
               />
             </div>
 
@@ -721,8 +759,8 @@ export default function DashboardPage() {
                             <div>
                               <div className="font-medium text-sm">{order.orderNumber}</div>
                               <div className="text-xs text-gray-600">
-                                {order.pickupPlanAt ? new Date(order.pickupPlanAt).toLocaleDateString() : 'N/A'} • 
-                                {order.returnPlanAt ? new Date(order.returnPlanAt).toLocaleDateString() : 'N/A'}
+                                {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'} • 
+                                {order.returnPlanAt ? useFormattedFullDate(order.returnPlanAt) : 'N/A'}
                               </div>
                               <div className="text-xs text-gray-500">{order.productNames || 'N/A'}</div>
                             </div>
@@ -788,9 +826,9 @@ export default function DashboardPage() {
                 <StatCard
                   title={t('stats.totalRevenue')}
                   value={currentStats.totalRevenue}
-                  change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}%` : tc('labels.noData')}
-                  description={timePeriod === 'month' ? tc('time.thisMonth') : tc('time.custom')}
-                  tooltip={t('stats.totalRevenue')}
+                  change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}%` : ''}
+                  description=""
+                  tooltip={t('tooltips.totalRevenue')}
                   color="text-green-600"
                   trend={currentStats.revenueGrowth > 0 ? "up" : "neutral"}
                   activeTooltip={activeTooltip}
@@ -800,9 +838,9 @@ export default function DashboardPage() {
               <StatCard
                 title={t('stats.totalOrders')}
                 value={currentStats.totalRentals}
-                change={tc('labels.loading')}
-                description={tc('time.today')}
-                tooltip={t('stats.totalOrders')}
+                change=""
+                description=""
+                tooltip={t('tooltips.totalOrders')}
                 color="text-blue-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
@@ -811,9 +849,9 @@ export default function DashboardPage() {
               <StatCard
                 title={t('stats.completedOrders')}
                 value={currentStats.completedRentals}
-                change={tc('labels.loading')}
-                description={tc('time.today')}
-                tooltip={t('stats.completedOrders')}
+                change=""
+                description=""
+                tooltip={t('tooltips.completedOrders')}
                 color="text-purple-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
@@ -824,9 +862,9 @@ export default function DashboardPage() {
                 <StatCard
                   title={t('stats.futureRevenue')}
                   value={currentStats.futureRevenue}
-                  change={t('stats.realTimeData')}
-                  description={t('stats.bookedRevenue')}
-                  tooltip={t('stats.expectedRevenue')}
+                  change=""
+                  description=""
+                  tooltip={t('tooltips.futureRevenue')}
                   color="text-orange-600"
                   trend="neutral"
                   activeTooltip={activeTooltip}
@@ -842,13 +880,21 @@ export default function DashboardPage() {
                   <CardHeaderClean>
                     <CardTitleClean size="md">
                       {timePeriod === 'month' 
-                        ? `${new Date(currentDateRange.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} ${t('chartTitles.monthlyRevenue')}`
-                        : `${new Date(currentDateRange.startDate).getFullYear()} ${t('chartTitles.yearlyRevenue')}`
+                        ? `${useFormattedMonthOnly(new Date())} ${t('chartTitles.monthlyRevenue')}`
+                        : `${new Date().getFullYear()} ${t('chartTitles.yearlyRevenue')}`
                       }
                     </CardTitleClean>
                   </CardHeaderClean>
                   <CardContentClean>
-                    <IncomeChart data={currentRevenueData} loading={loadingCharts} />
+                    <IncomeChart 
+                      data={currentRevenueData} 
+                      loading={loadingCharts}
+                      actualLabel={t('charts.actualRevenue')}
+                      projectedLabel={t('charts.projectedRevenue')}
+                      noDataText={t('charts.noData')}
+                      loadingText={tc('labels.loading')}
+                      timePeriod={timePeriod}
+                    />
                   </CardContentClean>
                 </CardClean>
               
@@ -856,15 +902,18 @@ export default function DashboardPage() {
                 <CardHeaderClean>
                   <CardTitleClean size="md">
                     {timePeriod === 'month' 
-                      ? `${new Date(currentDateRange.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} ${t('chartTitles.monthlyRentals')}`
-                      : `${new Date(currentDateRange.startDate).getFullYear()} ${t('chartTitles.yearlyRentals')}`
+                      ? `${useFormattedMonthOnly(new Date())} ${t('chartTitles.monthlyRentals')}`
+                      : `${new Date().getFullYear()} ${t('chartTitles.yearlyRentals')}`
                     }
                   </CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
                   <OrderChart 
                     data={currentOrderData} 
-                    loading={loadingCharts} 
+                    loading={loadingCharts}
+                    legendLabel={t('charts.rentalOrders')}
+                    tooltipLabel={t('charts.ordersCount')}
+                    timePeriod={timePeriod}
                   />
                 </CardContentClean>
               </CardClean>

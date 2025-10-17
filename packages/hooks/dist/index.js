@@ -61,6 +61,7 @@ __export(src_exports, {
   useDedupedApi: () => useDedupedApi,
   useErrorHandler: () => useErrorHandler,
   useErrorTranslations: () => useErrorTranslations,
+  useLocale: () => useLocale,
   useMerchantsData: () => useMerchantsData,
   useOptimisticNavigation: () => useOptimisticNavigation,
   useOrderTranslations: () => useOrderTranslations,
@@ -5170,6 +5171,9 @@ function p(e3) {
     return d3 || E2 || !h2 || (E2 = true, g3(new a(s.ENVIRONMENT_FALLBACK, void 0))), (0, import_react13.useMemo)(() => E({ cache: n3, formatters: s2, getMessageFallback: c2, messages: w2, namespace: p2, onError: g3, formats: a2, locale: u2, timeZone: d3 }), [n3, s2, c2, w2, p2, g3, a2, u2, d3]);
   }({ "!": v().messages }, e3 ? `!.${e3}` : "!", "!");
 }
+function Z() {
+  return v().locale;
+}
 function I2() {
   const { formats: e3, formatters: r3, locale: t3, now: n3, onError: a2, timeZone: s2 } = v();
   return (0, import_react13.useMemo)(() => d({ formats: e3, locale: t3, now: n3, onError: a2, timeZone: s2, _formatters: r3 }), [e3, r3, n3, t3, a2, s2]);
@@ -5233,6 +5237,27 @@ function useSubscriptionTranslations() {
 }
 function useErrorTranslations() {
   return e2("errors");
+}
+
+// src/hooks/useLocale.ts
+var import_navigation = require("next/navigation");
+var import_react15 = require("react");
+function useLocale() {
+  const locale = Z();
+  const router = (0, import_navigation.useRouter)();
+  const pathname = (0, import_navigation.usePathname)();
+  const [isPending, startTransition] = (0, import_react15.useTransition)();
+  const setLocale = (newLocale) => {
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
+    startTransition(() => {
+      router.refresh();
+    });
+  };
+  return {
+    locale,
+    setLocale,
+    isPending
+  };
 }
 
 // src/hooks/useUserRole.ts
@@ -5347,14 +5372,14 @@ function useUsersData(options) {
 }
 
 // src/hooks/useOptimisticNavigation.ts
-var import_navigation = require("next/navigation");
-var import_react15 = require("react");
+var import_navigation2 = require("next/navigation");
+var import_react16 = require("react");
 function useOptimisticNavigation(options = {}) {
-  const router = (0, import_navigation.useRouter)();
-  const [navigatingTo, setNavigatingTo] = (0, import_react15.useState)(null);
-  const rafRef = (0, import_react15.useRef)(null);
-  const timeoutRef = (0, import_react15.useRef)(null);
-  (0, import_react15.useEffect)(() => {
+  const router = (0, import_navigation2.useRouter)();
+  const [navigatingTo, setNavigatingTo] = (0, import_react16.useState)(null);
+  const rafRef = (0, import_react16.useRef)(null);
+  const timeoutRef = (0, import_react16.useRef)(null);
+  (0, import_react16.useEffect)(() => {
     return () => {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
@@ -5364,7 +5389,7 @@ function useOptimisticNavigation(options = {}) {
       }
     };
   }, []);
-  const navigate = (0, import_react15.useCallback)((path) => {
+  const navigate = (0, import_react16.useCallback)((path) => {
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
     }
@@ -5652,6 +5677,7 @@ function useCategoriesWithFilters(options) {
   useDedupedApi,
   useErrorHandler,
   useErrorTranslations,
+  useLocale,
   useMerchantsData,
   useOptimisticNavigation,
   useOrderTranslations,

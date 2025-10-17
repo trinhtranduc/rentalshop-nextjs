@@ -1,4 +1,5 @@
 import { format, addDays, differenceInDays, isAfter, isBefore, isValid, parseISO } from 'date-fns';
+import { useLocale as useNextIntlLocale } from 'next-intl';
 
 /**
  * Safely convert any date input to a valid Date object
@@ -167,4 +168,255 @@ export const formatDateWithLocale = (
   } catch {
     return 'Invalid Date';
   }
-}; 
+};
+
+// ============================================================================
+// CHART DATE FORMATTING UTILITIES
+// ============================================================================
+
+export type DateFormatOptions = {
+  month?: 'short' | 'long' | 'numeric';
+  year?: 'numeric' | '2-digit';
+  day?: 'numeric' | '2-digit';
+  weekday?: 'short' | 'long' | 'narrow';
+  hour?: 'numeric' | '2-digit';
+  minute?: 'numeric' | '2-digit';
+  second?: 'numeric' | '2-digit';
+};
+
+/**
+ * Get the appropriate locale for date formatting based on current language
+ */
+export function getDateLocale(locale: string): string {
+  return locale === 'vi' ? 'vi-VN' : 'en-US';
+}
+
+/**
+ * Format a date string or Date object according to the current locale
+ * 
+ * @param date - Date string or Date object to format
+ * @param locale - Current locale ('en' or 'vi')
+ * @param options - Intl.DateTimeFormat options
+ * @returns Formatted date string
+ */
+export function formatDateByLocale(
+  date: string | Date, 
+  locale: string, 
+  options: DateFormatOptions = { month: 'short', year: 'numeric' }
+): string {
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    if (isNaN(dateObj.getTime())) {
+      return date.toString(); // Return original if invalid date
+    }
+    
+    const dateLocale = getDateLocale(locale);
+    return dateObj.toLocaleDateString(dateLocale, options);
+  } catch (error) {
+    console.warn('Date formatting error:', error);
+    return date.toString(); // Fallback to original
+  }
+}
+
+/**
+ * Format date for chart periods (month + year)
+ * 
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted period string (e.g., "Th12 2024" or "Dec 2024")
+ */
+export function formatChartPeriod(date: string | Date, locale: string): string {
+  if (locale === 'vi') {
+    // Vietnamese format: mm/yy
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return date.toString();
+    
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const year = dateObj.getFullYear().toString().slice(-2);
+    
+    return `${month}/${year}`;
+  }
+  
+  // English format: Dec 2024
+  return formatDateByLocale(date, locale, { month: 'short', year: 'numeric' });
+}
+
+/**
+ * Format date for full display (day + month + year)
+ * 
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted date string (e.g., "20/01/05" or "Jan 20, 2025")
+ */
+export function formatFullDateByLocale(date: string | Date, locale: string): string {
+  if (locale === 'vi') {
+    // Vietnamese format: dd/mm/yy
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return date.toString();
+    
+    const day = dateObj.getDate().toString().padStart(2, '0');
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const year = dateObj.getFullYear().toString().slice(-2);
+    
+    return `${day}/${month}/${year}`;
+  }
+  
+  return formatDateByLocale(date, locale, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/**
+ * Format date for month only display (month + year)
+ * 
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted date string (e.g., "01/05" or "Jan 2025")
+ */
+export function formatMonthOnlyByLocale(date: string | Date, locale: string): string {
+  if (locale === 'vi') {
+    // Vietnamese format: mm/yy
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return date.toString();
+    
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const year = dateObj.getFullYear().toString().slice(-2);
+    
+    return `${month}/${year}`;
+  }
+  
+  return formatDateByLocale(date, locale, { month: 'short', year: 'numeric' });
+}
+
+/**
+ * Format date for daily display (day + month)
+ * 
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted date string (e.g., "01/10" or "Oct 1")
+ */
+export function formatDailyByLocale(date: string | Date, locale: string): string {
+  if (locale === 'vi') {
+    // Vietnamese format: dd/mm
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return date.toString();
+    
+    const day = dateObj.getDate().toString().padStart(2, '0');
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    
+    return `${day}/${month}`;
+  }
+  
+  return formatDateByLocale(date, locale, { day: 'numeric', month: 'short' });
+}
+
+/**
+ * Format date for time display (hour + minute)
+ * 
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted time string (e.g., "14:30")
+ */
+export function formatTimeByLocale(date: string | Date, locale: string): string {
+  return formatDateByLocale(date, locale, { hour: '2-digit', minute: '2-digit' });
+}
+
+/**
+ * Format date for datetime display (date + time)
+ * 
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted datetime string (e.g., "10:12 20/01/05" or "10:12 AM Jan 20, 2025")
+ */
+export function formatDateTimeByLocale(date: string | Date, locale: string): string {
+  if (locale === 'vi') {
+    // Vietnamese format: hh:mm dd/mm/yy
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return date.toString();
+    
+    const hours = dateObj.getHours().toString().padStart(2, '0');
+    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+    const day = dateObj.getDate().toString().padStart(2, '0');
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const year = dateObj.getFullYear().toString().slice(-2);
+    
+    return `${hours}:${minutes} ${day}/${month}/${year}`;
+  }
+  
+  return formatDateByLocale(date, locale, { 
+    day: 'numeric', 
+    month: 'short', 
+    year: 'numeric',
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+}
+
+/**
+ * Hook to get formatted date using current locale
+ * 
+ * @param date - Date string or Date object
+ * @param options - Intl.DateTimeFormat options
+ * @returns Formatted date string
+ */
+export function useFormattedDate(
+  date: string | Date, 
+  options: DateFormatOptions = { month: 'short', year: 'numeric' }
+): string {
+  const locale = useNextIntlLocale() as 'en' | 'vi';
+  return formatDateByLocale(date, locale, options);
+}
+
+/**
+ * Hook to get formatted chart period using current locale
+ * 
+ * @param date - Date string or Date object
+ * @returns Formatted period string for charts
+ */
+export function useFormattedChartPeriod(date: string | Date): string {
+  const locale = useNextIntlLocale() as 'en' | 'vi';
+  return formatChartPeriod(date, locale);
+}
+
+/**
+ * Hook to get formatted full date using current locale
+ * 
+ * @param date - Date string or Date object
+ * @returns Formatted date string (dd/mm/yy for Vietnamese, standard for English)
+ */
+export function useFormattedFullDate(date: string | Date): string {
+  const locale = useNextIntlLocale() as 'en' | 'vi';
+  return formatFullDateByLocale(date, locale);
+}
+
+/**
+ * Hook to get formatted datetime using current locale
+ * 
+ * @param date - Date string or Date object
+ * @returns Formatted datetime string (hh:mm dd/mm/yy for Vietnamese, standard for English)
+ */
+export function useFormattedDateTime(date: string | Date): string {
+  const locale = useNextIntlLocale() as 'en' | 'vi';
+  return formatDateTimeByLocale(date, locale);
+}
+
+/**
+ * Hook to get formatted month only using current locale
+ * 
+ * @param date - Date string or Date object
+ * @returns Formatted month string (mm/yy for Vietnamese, standard for English)
+ */
+export function useFormattedMonthOnly(date: string | Date): string {
+  const locale = useNextIntlLocale() as 'en' | 'vi';
+  return formatMonthOnlyByLocale(date, locale);
+}
+
+/**
+ * Hook to get formatted daily using current locale
+ * 
+ * @param date - Date string or Date object
+ * @returns Formatted daily string (dd/mm for Vietnamese, standard for English)
+ */
+export function useFormattedDaily(date: string | Date): string {
+  const locale = useNextIntlLocale() as 'en' | 'vi';
+  return formatDailyByLocale(date, locale);
+} 

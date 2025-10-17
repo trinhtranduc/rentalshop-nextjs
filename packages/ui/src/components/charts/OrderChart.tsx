@@ -1,5 +1,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
+import { useCommonTranslations } from '@rentalshop/hooks';
+import { useFormattedDaily, useFormattedMonthOnly } from '@rentalshop/utils';
 import { 
   LineChart, 
   Line, 
@@ -22,14 +24,17 @@ interface OrderChartProps {
   loading?: boolean;
   legendLabel?: string;
   tooltipLabel?: string;
+  timePeriod?: 'month' | 'year';
 }
 
 export const OrderChart: React.FC<OrderChartProps> = ({ 
   data, 
   loading = false, 
   legendLabel = "Rental Orders",
-  tooltipLabel = "orders"
+  tooltipLabel = "orders",
+  timePeriod = 'month'
 }) => {
+  const tc = useCommonTranslations();
   if (loading) {
     return (
       <div className="h-64 flex items-center justify-center">
@@ -46,11 +51,18 @@ export const OrderChart: React.FC<OrderChartProps> = ({
     );
   }
 
-  // Transform data for Recharts - use actual count
-  const chartData = data.map(item => ({
-    period: item.period,
-    [legendLabel]: item.actual,
-  }));
+  // Transform data for Recharts with localized formatting based on time period
+  const chartData = data.map(item => {
+    // Use different formatting based on time period
+    const formattedPeriod = timePeriod === 'year' 
+      ? useFormattedMonthOnly(item.period)  // For yearly: 01/25, 02/25, etc.
+      : useFormattedDaily(item.period);     // For monthly: 01/10, 02/10, etc.
+    
+    return {
+      period: formattedPeriod,
+      [legendLabel]: item.actual,
+    };
+  });
 
   // Custom tooltip formatter
   const formatTooltip = (value: number, name: string) => {

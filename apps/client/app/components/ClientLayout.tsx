@@ -137,10 +137,8 @@ export default function ClientLayout({
         )}
 
         {/* Page Content */}
-        <main className="flex-1 bg-bg-primary h-screen overflow-hidden">
-          <div className="h-full">
-            {children}
-          </div>
+        <main className="flex-1 bg-bg-primary overflow-y-auto">
+          {children}
         </main>
       </div>
       </div>

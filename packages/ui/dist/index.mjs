@@ -498,7 +498,7 @@ var require_react_is_development = __commonJS({
         var ContextProvider = REACT_PROVIDER_TYPE;
         var Element2 = REACT_ELEMENT_TYPE2;
         var ForwardRef = REACT_FORWARD_REF_TYPE;
-        var Fragment51 = REACT_FRAGMENT_TYPE;
+        var Fragment52 = REACT_FRAGMENT_TYPE;
         var Lazy = REACT_LAZY_TYPE;
         var Memo = REACT_MEMO_TYPE;
         var Portal3 = REACT_PORTAL_TYPE;
@@ -557,7 +557,7 @@ var require_react_is_development = __commonJS({
         exports2.ContextProvider = ContextProvider;
         exports2.Element = Element2;
         exports2.ForwardRef = ForwardRef;
-        exports2.Fragment = Fragment51;
+        exports2.Fragment = Fragment52;
         exports2.Lazy = Lazy;
         exports2.Memo = Memo;
         exports2.Portal = Portal3;
@@ -5156,7 +5156,7 @@ var OrderForm = ({
 import { useState as useState19, useEffect as useEffect12, useCallback as useCallback6 } from "react";
 import { useToast as useToast4 } from "@rentalshop/ui";
 import { customersApi as customersApi2, formatCurrency as formatCurrency5 } from "@rentalshop/utils";
-import { useProductAvailability } from "@rentalshop/hooks";
+import { useProductAvailability, useOrderTranslations as useOrderTranslations5 } from "@rentalshop/hooks";
 import { VALIDATION as VALIDATION3, BUSINESS as BUSINESS3 } from "@rentalshop/constants";
 
 // src/components/forms/CreateOrderForm/hooks/useCreateOrderForm.ts
@@ -5776,6 +5776,7 @@ import {
   Button as Button4,
   useFormatCurrency as useFormatCurrency2
 } from "@rentalshop/ui";
+import { useOrderTranslations, useProductTranslations as useProductTranslations2 } from "@rentalshop/hooks";
 import {
   Package as Package3,
   Trash2 as Trash22
@@ -5851,12 +5852,14 @@ var ProductsSection = ({
   getProductAvailabilityStatus,
   currency = "USD"
 }) => {
+  const t2 = useOrderTranslations();
+  const tp = useProductTranslations2();
   return /* @__PURE__ */ jsx41(Card3, { children: /* @__PURE__ */ jsxs27(CardContent3, { className: "space-y-4 pt-6", children: [
     /* @__PURE__ */ jsx41("div", { className: "space-y-3", children: /* @__PURE__ */ jsxs27("div", { className: "relative", children: [
       /* @__PURE__ */ jsx41(
         SearchableSelect3,
         {
-          placeholder: "Search products by name, barcode or description...",
+          placeholder: t2("messages.searchProducts"),
           value: void 0,
           onChange: (productId) => {
             console.log("\u{1F50D} SearchableSelect onChange called with productId:", productId);
@@ -5881,7 +5884,8 @@ var ProductsSection = ({
     /* @__PURE__ */ jsx41("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs27(Card3, { className: "border border-gray-200", children: [
       /* @__PURE__ */ jsx41(CardHeader3, { className: "pb-3", children: /* @__PURE__ */ jsxs27(CardTitle3, { className: "text-base flex items-center gap-2", children: [
         /* @__PURE__ */ jsx41(Package3, { className: "w-5 h-5" }),
-        "Selected Products ",
+        tp("selectedProducts"),
+        " ",
         /* @__PURE__ */ jsx41("span", { className: "text-red-500", children: "*" }),
         /* @__PURE__ */ jsxs27("span", { className: "text-sm font-normal text-gray-500", children: [
           "(",
@@ -5893,8 +5897,8 @@ var ProductsSection = ({
         /* Empty State Placeholder */
         /* @__PURE__ */ jsxs27("div", { className: "p-8 text-center", children: [
           /* @__PURE__ */ jsx41("div", { className: "w-16 h-16 mx-auto mb-4 text-gray-400", children: /* @__PURE__ */ jsx41(Package3, { className: "w-16 h-16" }) }),
-          /* @__PURE__ */ jsx41("h3", { className: "text-lg font-medium text-gray-600 mb-2", children: "No Products Selected" }),
-          /* @__PURE__ */ jsx41("p", { className: "text-sm text-gray-500 mb-4 max-w-sm mx-auto", children: "Search for products above to add them to your order. You can search by name, barcode, or description." })
+          /* @__PURE__ */ jsx41("h3", { className: "text-lg font-medium text-gray-600 mb-2", children: tp("noProductsSelected") }),
+          /* @__PURE__ */ jsx41("p", { className: "text-sm text-gray-500 mb-4 max-w-sm mx-auto", children: t2("messages.searchProductsAbove") })
         ] })
       ) : (
         /* Product List */
@@ -5927,6 +5931,8 @@ var OrderItemCard = ({
   getProductAvailabilityStatus
 }) => {
   const formatMoney = useFormatCurrency2();
+  const t2 = useOrderTranslations();
+  const tp = useProductTranslations2();
   const displayProduct = item.product || product;
   if (!displayProduct) {
     return /* @__PURE__ */ jsxs27("div", { className: "p-4 bg-gray-50 rounded-lg border border-gray-100", children: [
@@ -5935,10 +5941,11 @@ var OrderItemCard = ({
         /* @__PURE__ */ jsx41("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ jsxs27("div", { className: "flex items-start justify-between", children: [
           /* @__PURE__ */ jsxs27("div", { children: [
             /* @__PURE__ */ jsxs27("h4", { className: "text-sm font-medium text-gray-900", children: [
-              "Product ID: ",
+              tp("productId"),
+              ": ",
               item.productId
             ] }),
-            /* @__PURE__ */ jsx41("p", { className: "text-xs text-gray-500 mt-1", children: "Product information not available" })
+            /* @__PURE__ */ jsx41("p", { className: "text-xs text-gray-500 mt-1", children: tp("productInformationNotAvailable") })
           ] }),
           /* @__PURE__ */ jsx41(
             Button4,
@@ -5947,7 +5954,7 @@ var OrderItemCard = ({
               size: "icon",
               onClick: () => onRemove(item.productId),
               className: "text-red-500 hover:text-red-700 p-1 h-auto w-auto",
-              title: "Remove product",
+              title: t2("messages.removeProduct"),
               children: /* @__PURE__ */ jsx41(Trash22, { className: "w-4 h-4" })
             }
           )
@@ -6006,7 +6013,8 @@ var OrderItemCard = ({
           " \u20AB"
         ] }),
         orderType === "RENT" && /* @__PURE__ */ jsxs27("span", { className: "text-gray-600", children: [
-          "Deposit: ",
+          t2("messages.deposit"),
+          ": ",
           item.deposit || 0,
           " \u20AB"
         ] })
@@ -6021,7 +6029,7 @@ var OrderItemCard = ({
           "img",
           {
             src: imageUrl,
-            alt: displayProduct.name || "Product",
+            alt: displayProduct.name || t2("messages.product"),
             className: "w-full h-full object-cover",
             onError: (e2) => {
               e2.currentTarget.style.display = "none";
@@ -6033,8 +6041,8 @@ var OrderItemCard = ({
       ] }) : /* @__PURE__ */ jsx41("div", { className: "w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200", children: /* @__PURE__ */ jsx41(Package3, { className: "w-8 h-8 text-gray-400" }) }) }),
       /* @__PURE__ */ jsx41("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ jsxs27("div", { className: "flex items-start justify-between", children: [
         /* @__PURE__ */ jsxs27("div", { className: "flex-1", children: [
-          /* @__PURE__ */ jsx41("div", { className: "font-medium text-gray-900", children: displayProduct.name || "Unknown Product" }),
-          /* @__PURE__ */ jsx41("div", { className: "text-sm text-gray-500", children: displayProduct.barcode || "No Barcode" }),
+          /* @__PURE__ */ jsx41("div", { className: "font-medium text-gray-900", children: displayProduct.name || t2("messages.unknownProduct") }),
+          /* @__PURE__ */ jsx41("div", { className: "text-sm text-gray-500", children: displayProduct.barcode || t2("messages.noBarcode") }),
           orderType === "RENT" && /* @__PURE__ */ jsxs27("div", { className: "mt-2", children: [
             product && /* @__PURE__ */ jsx41(
               ProductAvailabilityAsyncDisplay2,
@@ -6128,7 +6136,8 @@ var OrderItemCard = ({
         formatMoney(item.quantity * item.unitPrice)
       ] }),
       /* @__PURE__ */ jsxs27("div", { className: "text-sm text-gray-600", children: [
-        "Deposit: ",
+        t2("messages.deposit"),
+        ": ",
         formatMoney(item.deposit)
       ] })
     ] })
@@ -6154,6 +6163,7 @@ import {
   Skeleton as Skeleton3,
   Button as Button5
 } from "@rentalshop/ui";
+import { useOrderTranslations as useOrderTranslations2 } from "@rentalshop/hooks";
 import {
   Search as Search2,
   X as X4,
@@ -6232,14 +6242,19 @@ var OrderInfoSection = ({
   onShowAddCustomerDialog,
   onUpdateRentalDates
 }) => {
+  const t2 = useOrderTranslations2();
   const [showManualCustomerInput, setShowManualCustomerInput] = useState16(false);
   return /* @__PURE__ */ jsxs28(Card4, { children: [
-    /* @__PURE__ */ jsx42(CardHeader4, { className: "pb-3", children: /* @__PURE__ */ jsx42(CardTitle4, { className: "text-base flex items-center gap-2", children: "Order Information" }) }),
+    /* @__PURE__ */ jsx42(CardHeader4, { className: "pb-3", children: /* @__PURE__ */ jsx42(CardTitle4, { className: "text-base flex items-center gap-2", children: t2("detail.orderInformation") }) }),
     /* @__PURE__ */ jsxs28(CardContent4, { className: "space-y-4", children: [
       /* @__PURE__ */ jsxs28("div", { className: "space-y-2 w-full", children: [
         /* @__PURE__ */ jsxs28("label", { className: "text-sm font-medium text-text-primary", children: [
-          "Order Type",
-          isEditMode && /* @__PURE__ */ jsx42("span", { className: "ml-2 text-xs text-gray-500 font-normal", children: "(Cannot be changed when editing)" })
+          t2("messages.orderType"),
+          isEditMode && /* @__PURE__ */ jsxs28("span", { className: "ml-2 text-xs text-gray-500 font-normal", children: [
+            "(",
+            t2("messages.cannotChangeWhenEditing"),
+            ")"
+          ] })
         ] }),
         /* @__PURE__ */ jsxs28("div", { className: "grid grid-cols-2 gap-2", children: [
           /* @__PURE__ */ jsx42(
@@ -6254,7 +6269,7 @@ var OrderInfoSection = ({
                 }
               },
               className: `h-10 px-4 py-2 ${isEditMode ? "opacity-50 cursor-not-allowed" : ""}`,
-              children: "Rent"
+              children: t2("orderType.RENT")
             }
           ),
           /* @__PURE__ */ jsx42(
@@ -6272,7 +6287,7 @@ var OrderInfoSection = ({
                 }
               },
               className: `h-10 px-4 py-2 ${isEditMode ? "opacity-50 cursor-not-allowed" : ""}`,
-              children: "Sale"
+              children: t2("orderType.SALE")
             }
           )
         ] })
@@ -6290,7 +6305,7 @@ var OrderInfoSection = ({
             product: {
               id: 0,
               // Placeholder - will be updated when product is selected
-              name: "Rental Period",
+              name: t2("messages.rentalPeriod"),
               rentPrice: 0,
               // Will be calculated based on merchant pricing
               deposit: 0
@@ -6313,7 +6328,8 @@ var OrderInfoSection = ({
           // Fallback to basic DateRangePicker if no merchant data
           /* @__PURE__ */ jsxs28("div", { className: "space-y-2", children: [
             /* @__PURE__ */ jsxs28("label", { className: "text-sm font-medium text-text-primary", children: [
-              "Rental Period ",
+              t2("messages.rentalPeriod"),
+              " ",
               /* @__PURE__ */ jsx42("span", { className: "text-red-500", children: "*" })
             ] }),
             /* @__PURE__ */ jsx42(
@@ -6332,7 +6348,7 @@ var OrderInfoSection = ({
                     onUpdateRentalDates(startDate, endDate);
                   }
                 },
-                placeholder: "Select rental period",
+                placeholder: t2("messages.selectRentalPeriod"),
                 minDate: /* @__PURE__ */ new Date(),
                 showPresets: false,
                 format: "long"
@@ -6343,7 +6359,8 @@ var OrderInfoSection = ({
       ] }),
       /* @__PURE__ */ jsxs28("div", { className: "space-y-2 w-full", children: [
         /* @__PURE__ */ jsxs28("label", { className: "text-sm font-medium text-text-primary", children: [
-          "Outlet ",
+          t2("messages.outlet"),
+          " ",
           /* @__PURE__ */ jsx42("span", { className: "text-red-500", children: "*" })
         ] }),
         /* @__PURE__ */ jsxs28(
@@ -6369,7 +6386,8 @@ var OrderInfoSection = ({
       ] }),
       /* @__PURE__ */ jsxs28("div", { className: "space-y-2 w-full", children: [
         /* @__PURE__ */ jsxs28("label", { className: "text-sm font-medium text-text-primary", children: [
-          "Customer ",
+          t2("messages.customer"),
+          " ",
           /* @__PURE__ */ jsx42("span", { className: "text-red-500", children: "*" })
         ] }),
         /* @__PURE__ */ jsxs28("div", { className: "relative", children: [
@@ -6378,7 +6396,7 @@ var OrderInfoSection = ({
               "input",
               {
                 type: "text",
-                placeholder: "Search customers by name or phone...",
+                placeholder: t2("messages.searchCustomers"),
                 value: selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName} - ${selectedCustomer.phone}` : searchQuery,
                 onFocus: () => {
                   if (searchQuery.trim()) {
@@ -6406,7 +6424,7 @@ var OrderInfoSection = ({
                 type: "button",
                 onClick: onCustomerClear,
                 className: "absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors duration-150 h-6 w-6 p-0",
-                title: "Clear selected customer",
+                title: t2("messages.clearSelectedCustomer"),
                 children: /* @__PURE__ */ jsx42(X4, { className: "w-4 h-4" })
               }
             ) : /* @__PURE__ */ jsx42(
@@ -6435,7 +6453,7 @@ var OrderInfoSection = ({
                   children: [
                     /* @__PURE__ */ jsxs28("div", { className: "flex items-center gap-2", children: [
                       /* @__PURE__ */ jsx42(Plus2, { className: "w-4 h-4" }),
-                      /* @__PURE__ */ jsx42("span", { children: "Add New Customer" })
+                      /* @__PURE__ */ jsx42("span", { children: t2("messages.addNewCustomer") })
                     ] }),
                     searchQuery.trim() && /* @__PURE__ */ jsxs28("div", { className: "text-xs text-blue-600 mt-1", children: [
                       'Create customer: "',
@@ -6473,7 +6491,7 @@ var OrderInfoSection = ({
                     searchQuery,
                     '"'
                   ] }),
-                  /* @__PURE__ */ jsx42("div", { className: "text-xs text-gray-400 mt-1", children: 'Use the "Add New Customer" button above to create one' })
+                  /* @__PURE__ */ jsx42("div", { className: "text-xs text-gray-400 mt-1", children: t2("messages.useAddNewCustomerButton") })
                 ] })
               )
             ] })
@@ -6482,7 +6500,7 @@ var OrderInfoSection = ({
         ] })
       ] }),
       formData.orderType === "RENT" && /* @__PURE__ */ jsxs28("div", { className: "space-y-2 w-full", children: [
-        /* @__PURE__ */ jsx42("label", { className: "text-sm font-medium text-text-primary", children: "Deposit" }),
+        /* @__PURE__ */ jsx42("label", { className: "text-sm font-medium text-text-primary", children: t2("messages.deposit") }),
         /* @__PURE__ */ jsx42(
           NumberInput2,
           {
@@ -6496,7 +6514,7 @@ var OrderInfoSection = ({
         )
       ] }),
       /* @__PURE__ */ jsxs28("div", { className: "space-y-2 w-full", children: [
-        /* @__PURE__ */ jsx42("label", { className: "text-sm font-medium text-text-primary", children: "Discount" }),
+        /* @__PURE__ */ jsx42("label", { className: "text-sm font-medium text-text-primary", children: t2("messages.discount") }),
         /* @__PURE__ */ jsxs28("div", { className: "grid grid-cols-3 gap-2", children: [
           /* @__PURE__ */ jsx42("div", { className: "col-span-2", children: /* @__PURE__ */ jsx42(
             NumberInput2,
@@ -6505,7 +6523,7 @@ var OrderInfoSection = ({
               onChange: (value) => onFormDataChange("discountValue", value),
               min: 0,
               decimals: 0,
-              placeholder: "Discount amount...",
+              placeholder: t2("messages.discountAmount"),
               className: "w-full"
             }
           ) }),
@@ -6519,8 +6537,8 @@ var OrderInfoSection = ({
               children: [
                 /* @__PURE__ */ jsx42(SelectTrigger3, { variant: "filled", className: "w-full", children: /* @__PURE__ */ jsx42(SelectValue3, {}) }),
                 /* @__PURE__ */ jsxs28(SelectContent3, { children: [
-                  /* @__PURE__ */ jsx42(SelectItem3, { value: "amount", children: "$" }),
-                  /* @__PURE__ */ jsx42(SelectItem3, { value: "percentage", children: "%" })
+                  /* @__PURE__ */ jsx42(SelectItem3, { value: "amount", children: t2("messages.amount") }),
+                  /* @__PURE__ */ jsx42(SelectItem3, { value: "percentage", children: t2("messages.percentage") })
                 ] })
               ]
             }
@@ -6528,11 +6546,11 @@ var OrderInfoSection = ({
         ] })
       ] }),
       /* @__PURE__ */ jsxs28("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ jsx42("label", { className: "text-sm font-medium text-text-primary", children: "Order Notes" }),
+        /* @__PURE__ */ jsx42("label", { className: "text-sm font-medium text-text-primary", children: t2("messages.orderNotes") }),
         /* @__PURE__ */ jsx42(
           Textarea3,
           {
-            placeholder: "Enter order notes...",
+            placeholder: t2("messages.enterOrderNotes"),
             value: formData.notes,
             onChange: (e2) => onFormDataChange("notes", e2.target.value),
             rows: 3
@@ -6552,6 +6570,7 @@ import {
   Button as Button6,
   useFormatCurrency as useFormatCurrency3
 } from "@rentalshop/ui";
+import { useOrderTranslations as useOrderTranslations3 } from "@rentalshop/hooks";
 import {
   CheckCircle as CheckCircle7,
   XCircle as XCircle5
@@ -6567,14 +6586,22 @@ var OrderSummarySection = ({
   onCancel
 }) => {
   const formatMoney = useFormatCurrency3();
+  const t2 = useOrderTranslations3();
   return /* @__PURE__ */ jsxs29(Card5, { children: [
-    /* @__PURE__ */ jsx43(CardHeader5, { className: "pb-3", children: /* @__PURE__ */ jsx43(CardTitle5, { className: "text-base flex items-center gap-2", children: "Order Summary & Actions" }) }),
+    /* @__PURE__ */ jsx43(CardHeader5, { className: "pb-3", children: /* @__PURE__ */ jsxs29(CardTitle5, { className: "text-base flex items-center gap-2", children: [
+      t2("detail.orderSummary"),
+      " & ",
+      t2("detail.orderActions")
+    ] }) }),
     /* @__PURE__ */ jsxs29(CardContent5, { className: "space-y-4", children: [
       /* @__PURE__ */ jsxs29("div", { className: "space-y-3 p-4 border border-border rounded-lg bg-bg-primary", children: [
-        /* @__PURE__ */ jsx43("h4", { className: "text-sm font-semibold text-text-primary", children: "Order Summary" }),
+        /* @__PURE__ */ jsx43("h4", { className: "text-sm font-semibold text-text-primary", children: t2("detail.orderSummary") }),
         formData.orderType === "RENT" && formData.pickupPlanAt && formData.returnPlanAt && /* @__PURE__ */ jsxs29("div", { className: "pb-2 mb-2 border-b border-border", children: [
           /* @__PURE__ */ jsxs29("div", { className: "flex justify-between text-sm mb-1", children: [
-            /* @__PURE__ */ jsx43("span", { className: "text-text-secondary", children: "Rental Duration:" }),
+            /* @__PURE__ */ jsxs29("span", { className: "text-text-secondary", children: [
+              t2("summary.rentalDuration"),
+              ":"
+            ] }),
             /* @__PURE__ */ jsx43("span", { className: "font-medium", children: (() => {
               const start = new Date(formData.pickupPlanAt);
               const end = new Date(formData.returnPlanAt);
@@ -6584,65 +6611,86 @@ var OrderSummarySection = ({
           ] }),
           /* @__PURE__ */ jsxs29("div", { className: "flex justify-between text-xs text-text-tertiary", children: [
             /* @__PURE__ */ jsxs29("span", { children: [
-              "From: ",
+              t2("summary.from"),
+              ": ",
               new Date(formData.pickupPlanAt).toLocaleDateString("en-GB")
             ] }),
             /* @__PURE__ */ jsxs29("span", { children: [
-              "To: ",
+              t2("summary.to"),
+              ": ",
               new Date(formData.returnPlanAt).toLocaleDateString("en-GB")
             ] })
           ] })
         ] }),
         /* @__PURE__ */ jsxs29("div", { className: "flex justify-between text-sm", children: [
-          /* @__PURE__ */ jsx43("span", { className: "text-text-secondary", children: "Subtotal:" }),
+          /* @__PURE__ */ jsxs29("span", { className: "text-text-secondary", children: [
+            t2("summary.subtotal"),
+            ":"
+          ] }),
           /* @__PURE__ */ jsx43("span", { className: "font-medium", children: formatMoney(formData.subtotal) })
         ] }),
         formData.discountAmount > 0 && /* @__PURE__ */ jsxs29("div", { className: "flex justify-between text-sm text-action-success", children: [
-          /* @__PURE__ */ jsx43("span", { children: "Discount:" }),
+          /* @__PURE__ */ jsxs29("span", { children: [
+            t2("summary.discount"),
+            ":"
+          ] }),
           /* @__PURE__ */ jsxs29("span", { className: "font-medium", children: [
             "-",
             formatMoney(formData.discountAmount)
           ] })
         ] }),
         formData.orderType === "RENT" && formData.depositAmount > 0 && /* @__PURE__ */ jsxs29("div", { className: "flex justify-between text-sm", children: [
-          /* @__PURE__ */ jsx43("span", { className: "text-text-secondary", children: "Deposit:" }),
+          /* @__PURE__ */ jsxs29("span", { className: "text-text-secondary", children: [
+            t2("summary.deposit"),
+            ":"
+          ] }),
           /* @__PURE__ */ jsx43("span", { className: "font-medium", children: formatMoney(formData.depositAmount) })
         ] }),
         /* @__PURE__ */ jsxs29("div", { className: "flex justify-between text-base font-bold text-action-primary pt-2 border-t border-border", children: [
-          /* @__PURE__ */ jsx43("span", { children: "Grand Total:" }),
+          /* @__PURE__ */ jsxs29("span", { children: [
+            t2("summary.grandTotal"),
+            ":"
+          ] }),
           /* @__PURE__ */ jsx43("span", { children: formatMoney(formData.totalAmount) })
         ] })
       ] }),
       /* @__PURE__ */ jsxs29("div", { className: "p-3 bg-gray-50 border border-gray-200 rounded-lg", children: [
-        /* @__PURE__ */ jsx43("h4", { className: "text-sm font-semibold text-gray-700 mb-2", children: "Order Requirements:" }),
+        /* @__PURE__ */ jsxs29("h4", { className: "text-sm font-semibold text-gray-700 mb-2", children: [
+          t2("summary.orderRequirements"),
+          ":"
+        ] }),
         /* @__PURE__ */ jsxs29("div", { className: "space-y-2 text-sm", children: [
           /* @__PURE__ */ jsxs29("div", { className: "flex items-center gap-2", children: [
             orderItems.length > 0 ? /* @__PURE__ */ jsx43(CheckCircle7, { className: "w-4 h-4 text-green-600" }) : /* @__PURE__ */ jsx43(XCircle5, { className: "w-4 h-4 text-red-500" }),
             /* @__PURE__ */ jsxs29("span", { className: orderItems.length > 0 ? "text-green-700" : "text-red-600", children: [
               orderItems.length > 0 ? "\u2713" : "\u2717",
-              " Select at least one product",
-              orderItems.length > 0 && ` (${orderItems.length} selected)`
+              " ",
+              t2("requirements.selectAtLeastOneProduct"),
+              orderItems.length > 0 && ` (${orderItems.length} ${t2("requirements.selected")})`
             ] })
           ] }),
           /* @__PURE__ */ jsxs29("div", { className: "flex items-center gap-2", children: [
             formData.customerId && formData.customerId > 0 ? /* @__PURE__ */ jsx43(CheckCircle7, { className: "w-4 h-4 text-green-600" }) : /* @__PURE__ */ jsx43(XCircle5, { className: "w-4 h-4 text-red-500" }),
             /* @__PURE__ */ jsxs29("span", { className: formData.customerId && formData.customerId > 0 ? "text-green-700" : "text-red-600", children: [
               formData.customerId && formData.customerId > 0 ? "\u2713" : "\u2717",
-              " Customer information required"
+              " ",
+              t2("requirements.customerInformationRequired")
             ] })
           ] }),
           formData.orderType === "RENT" && /* @__PURE__ */ jsxs29("div", { className: "flex items-center gap-2", children: [
             formData.pickupPlanAt && formData.returnPlanAt ? /* @__PURE__ */ jsx43(CheckCircle7, { className: "w-4 h-4 text-green-600" }) : /* @__PURE__ */ jsx43(XCircle5, { className: "w-4 h-4 text-red-500" }),
             /* @__PURE__ */ jsxs29("span", { className: formData.pickupPlanAt && formData.returnPlanAt ? "text-green-700" : "text-red-600", children: [
               formData.pickupPlanAt && formData.returnPlanAt ? "\u2713" : "\u2717",
-              " Rental period required (pickup & return dates)"
+              " ",
+              t2("requirements.rentalPeriodRequired")
             ] })
           ] }),
           /* @__PURE__ */ jsxs29("div", { className: "flex items-center gap-2", children: [
             formData.outletId && formData.outletId > 0 ? /* @__PURE__ */ jsx43(CheckCircle7, { className: "w-4 h-4 text-green-600" }) : /* @__PURE__ */ jsx43(XCircle5, { className: "w-4 h-4 text-red-500" }),
             /* @__PURE__ */ jsxs29("span", { className: formData.outletId && formData.outletId > 0 ? "text-green-700" : "text-red-600", children: [
               formData.outletId && formData.outletId > 0 ? "\u2713" : "\u2717",
-              " Outlet selection required"
+              " ",
+              t2("requirements.outletSelectionRequired")
             ] })
           ] })
         ] })
@@ -6655,7 +6703,7 @@ var OrderSummarySection = ({
             disabled: loading || !isFormValid,
             onClick: onPreviewClick,
             className: "flex-1",
-            children: loading ? "Processing..." : isEditMode ? "Update Order" : "Preview"
+            children: loading ? t2("messages.processing") : isEditMode ? t2("messages.updateOrder") : t2("messages.preview")
           }
         ),
         onCancel && /* @__PURE__ */ jsx43(
@@ -6665,7 +6713,7 @@ var OrderSummarySection = ({
             variant: "outline",
             onClick: onCancel,
             className: "flex-1",
-            children: isEditMode ? "Cancel" : "Reset Selection"
+            children: isEditMode ? t2("messages.cancel") : t2("messages.resetSelection")
           }
         )
       ] }) })
@@ -7013,6 +7061,7 @@ import {
   Button as Button7
 } from "@rentalshop/ui";
 import { formatCurrency as formatCurrency4 } from "@rentalshop/utils";
+import { useOrderTranslations as useOrderTranslations4 } from "@rentalshop/hooks";
 import {
   ShoppingCart,
   Info as Info5,
@@ -7044,6 +7093,7 @@ var OrderPreviewForm = ({
   subtitle = "Review your order details before confirming",
   className = ""
 }) => {
+  const t2 = useOrderTranslations4();
   const getRentalDuration = () => {
     if (orderData.orderType === "RENT" && orderData.pickupPlanAt && orderData.returnPlanAt) {
       const start = new Date(orderData.pickupPlanAt);
@@ -7058,16 +7108,16 @@ var OrderPreviewForm = ({
       return [];
     const warnings2 = [];
     if (!orderData.customerId && !orderData.customerName) {
-      warnings2.push("Customer information is missing");
+      warnings2.push(t2("messages.customerInformationMissing"));
     }
     if (orderData.orderItems.length === 0) {
-      warnings2.push("No order items added");
+      warnings2.push(t2("messages.noOrderItemsAdded"));
     }
     if (orderData.orderType === "RENT" && (!orderData.pickupPlanAt || !orderData.returnPlanAt)) {
-      warnings2.push("Rental dates are not set");
+      warnings2.push(t2("messages.rentalDatesNotSet"));
     }
     if (orderData.totalAmount <= 0) {
-      warnings2.push("Order total amount is invalid");
+      warnings2.push(t2("messages.orderTotalAmountInvalid"));
     }
     return warnings2;
   };
@@ -7101,12 +7151,12 @@ var OrderPreviewForm = ({
             /* @__PURE__ */ jsxs32("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx46(Calendar2, { className: "w-4 h-4 text-gray-500" }),
               /* @__PURE__ */ jsx46("span", { className: "text-sm font-medium", children: "Pickup:" }),
-              /* @__PURE__ */ jsx46("span", { className: "text-sm text-gray-600", children: orderData.pickupPlanAt ? new Date(orderData.pickupPlanAt).toLocaleDateString() : "Not set" })
+              /* @__PURE__ */ jsx46("span", { className: "text-sm text-gray-600", children: orderData.pickupPlanAt ? new Date(orderData.pickupPlanAt).toLocaleDateString() : t2("messages.notSet") })
             ] }),
             /* @__PURE__ */ jsxs32("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx46(Calendar2, { className: "w-4 h-4 text-gray-500" }),
               /* @__PURE__ */ jsx46("span", { className: "text-sm font-medium", children: "Return:" }),
-              /* @__PURE__ */ jsx46("span", { className: "text-sm text-gray-600", children: orderData.returnPlanAt ? new Date(orderData.returnPlanAt).toLocaleDateString() : "Not set" })
+              /* @__PURE__ */ jsx46("span", { className: "text-sm text-gray-600", children: orderData.returnPlanAt ? new Date(orderData.returnPlanAt).toLocaleDateString() : t2("messages.notSet") })
             ] }),
             rentalDuration > 0 && /* @__PURE__ */ jsxs32("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx46(Clock, { className: "w-4 h-4 text-gray-500" }),
@@ -7122,7 +7172,7 @@ var OrderPreviewForm = ({
           /* @__PURE__ */ jsxs32("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx46(User2, { className: "w-4 h-4 text-gray-500" }),
             /* @__PURE__ */ jsx46("span", { className: "text-sm font-medium", children: "Customer:" }),
-            /* @__PURE__ */ jsx46("span", { className: "text-sm text-gray-600", children: orderData.customerName || "Not selected" })
+            /* @__PURE__ */ jsx46("span", { className: "text-sm text-gray-600", children: orderData.customerName || t2("messages.notSelected") })
           ] }),
           orderData.customerPhone && /* @__PURE__ */ jsxs32("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx46(Smartphone, { className: "w-4 h-4 text-gray-500" }),
@@ -7161,7 +7211,7 @@ var OrderPreviewForm = ({
               /* @__PURE__ */ jsx46(TableHead2, { children: "Product" }),
               /* @__PURE__ */ jsx46(TableHead2, { children: "Quantity" }),
               /* @__PURE__ */ jsx46(TableHead2, { children: "Unit Price" }),
-              /* @__PURE__ */ jsx46(TableHead2, { children: "Total Price" }),
+              /* @__PURE__ */ jsx46(TableHead2, { children: t2("messages.totalPrice") }),
               orderData.orderType === "RENT" && /* @__PURE__ */ jsx46(TableHead2, { children: "Deposit" })
             ] }) }),
             /* @__PURE__ */ jsx46(TableBody2, { children: orderData.orderItems.map((item, index) => {
@@ -7239,7 +7289,7 @@ var OrderPreviewForm = ({
     (orderData.notes || orderData.orderType === "RENT") && /* @__PURE__ */ jsxs32(Card6, { children: [
       /* @__PURE__ */ jsx46(CardHeader6, { children: /* @__PURE__ */ jsxs32(CardTitle6, { className: "text-lg font-semibold flex items-center gap-2", children: [
         /* @__PURE__ */ jsx46(MessageSquare, { className: "w-5 h-5 text-purple-600" }),
-        "Additional Information"
+        t2("messages.additionalInformation")
       ] }) }),
       /* @__PURE__ */ jsx46(CardContent6, { children: /* @__PURE__ */ jsxs32("div", { className: "space-y-3", children: [
         orderData.notes && /* @__PURE__ */ jsxs32("div", { children: [
@@ -7371,6 +7421,7 @@ var CreateOrderForm = (props) => {
     orderNumber,
     onFormReady
   } = props;
+  const t2 = useOrderTranslations5();
   const {
     formData,
     setFormData,
@@ -7450,13 +7501,13 @@ var CreateOrderForm = (props) => {
         value: String(product.id),
         label: product.name,
         image: product.images?.[0],
-        subtitle: product.barcode ? `Barcode: ${product.barcode}` : "No Barcode",
+        subtitle: product.barcode ? `Barcode: ${product.barcode}` : t2("messages.noBarcode"),
         details: [
           formatCurrency5(product.rentPrice || 0, currency),
           `Deposit: ${formatCurrency5(product.deposit || 0, currency)}`,
           `Available: ${product.outletStock?.[0]?.available || 0}`,
           `Total Stock: ${product.outletStock?.[0]?.stock || 0}`,
-          product.category?.name || "No Category"
+          product.category?.name || t2("messages.noCategory")
         ].filter(Boolean),
         type: "product"
       }));
@@ -7476,7 +7527,7 @@ var CreateOrderForm = (props) => {
         if (available === 0) {
           return {
             status: "out-of-stock",
-            text: "Out of Stock",
+            text: t2("messages.outOfStock"),
             color: "bg-red-100 text-red-600"
           };
         } else if (available <= VALIDATION3.LOW_STOCK_THRESHOLD) {
@@ -7525,11 +7576,11 @@ var CreateOrderForm = (props) => {
       const outletStock = product.outletStock?.[0];
       const available = outletStock?.available ?? 0;
       if (available === 0) {
-        return { status: "unknown", text: "Out of Stock", color: "bg-red-100 text-red-600" };
+        return { status: "unknown", text: t2("messages.outOfStock"), color: "bg-red-100 text-red-600" };
       } else if (available <= VALIDATION3.LOW_STOCK_THRESHOLD) {
-        return { status: "unknown", text: "Low Stock", color: "bg-orange-100 text-orange-600" };
+        return { status: "unknown", text: t2("messages.lowStock"), color: "bg-orange-100 text-orange-600" };
       } else {
-        return { status: "unknown", text: "In Stock", color: "bg-green-100 text-green-600" };
+        return { status: "unknown", text: t2("messages.inStock"), color: "bg-green-100 text-green-600" };
       }
     }
   }, [calculateAvailability]);
@@ -7539,7 +7590,7 @@ var CreateOrderForm = (props) => {
       const currentMerchantId = merchantId || outlets[0]?.merchantId;
       if (!currentMerchantId) {
         const errorMsg = "Merchant ID is required to create a customer. Please ensure the form has access to merchant information.";
-        toastError("Error", errorMsg);
+        toastError(t2("messages.error"), errorMsg);
         throw new Error(errorMsg);
       }
       console.log("\u{1F50D} handleAddNewCustomer: Merchant ID found:", currentMerchantId);
@@ -7553,7 +7604,7 @@ var CreateOrderForm = (props) => {
       });
       if (localDuplicate) {
         const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName}). Please use a different phone number or search for the existing customer.`;
-        toastError("Duplicate Customer", errorMsg);
+        toastError(t2("messages.duplicateCustomer"), errorMsg);
         throw new Error(errorMsg);
       }
       console.log("\u{1F50D} handleAddNewCustomer: No local duplicates found, checking API...");
@@ -7566,7 +7617,7 @@ var CreateOrderForm = (props) => {
             const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, "");
             if (normalizedPhone === existingNormalizedPhone) {
               const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName}). Please use a different phone number or search for the existing customer.`;
-              toastError("Duplicate Customer", errorMsg);
+              toastError(t2("messages.duplicateCustomer"), errorMsg);
               throw new Error(errorMsg);
             }
           }
@@ -7592,13 +7643,13 @@ var CreateOrderForm = (props) => {
         }));
         setSelectedCustomer(newCustomer);
         setSearchQuery(`${newCustomer.firstName} ${newCustomer.lastName} - ${newCustomer.phone}`);
-        toastSuccess("Customer Created", `Customer "${newCustomer.firstName} ${newCustomer.lastName}" has been created and selected.`);
+        toastSuccess(t2("messages.customerCreated"), `Customer "${newCustomer.firstName} ${newCustomer.lastName}" ${t2("messages.customerCreatedMessage")}`);
         console.log("\u{1F50D} handleAddNewCustomer: Function completed successfully");
       } else {
-        const errorMessage = result.message || result.error || "Failed to create customer";
+        const errorMessage = result.message || result.error || t2("messages.failedToCreateCustomer");
         console.error("\u274C handleAddNewCustomer: API error:", errorMessage);
         console.error("\u274C handleAddNewCustomer: Full result:", result);
-        toastError("Error", errorMessage);
+        toastError(t2("messages.error"), errorMessage);
         throw new Error(errorMessage);
       }
     } catch (error2) {
@@ -7764,10 +7815,10 @@ var CreateOrderForm = (props) => {
         onConfirm: handleOrderConfirm,
         onEdit: () => setShowOrderPreview(false),
         loading: loading || isSubmitting,
-        confirmText: isEditMode ? "Update Order" : "Confirm & Create Order",
-        editText: "Back to Edit",
-        title: "Order Preview",
-        subtitle: "Review your order details before confirming"
+        confirmText: isEditMode ? t2("actions.updateOrder") : t2("actions.confirmCreate"),
+        editText: t2("actions.backToEdit"),
+        title: t2("actions.orderPreview"),
+        subtitle: t2("actions.reviewBeforeConfirm")
       }
     ),
     "    "
@@ -14713,6 +14764,8 @@ function DashboardStats({ stats }) {
 }
 
 // src/components/charts/IncomeChart.tsx
+import { useCommonTranslations as useCommonTranslations4 } from "@rentalshop/hooks";
+import { useFormattedDaily, useFormattedMonthOnly } from "@rentalshop/utils";
 import {
   BarChart,
   Bar,
@@ -14724,18 +14777,30 @@ import {
   ResponsiveContainer
 } from "recharts";
 import { jsx as jsx58, jsxs as jsxs44 } from "react/jsx-runtime";
-var IncomeChart = ({ data, loading = false }) => {
+var IncomeChart = ({
+  data,
+  loading = false,
+  actualLabel = "Actual Revenue",
+  projectedLabel = "Projected Revenue",
+  noDataText = "No data available",
+  loadingText = "Loading chart data...",
+  timePeriod = "month"
+}) => {
+  const tc = useCommonTranslations4();
   if (loading) {
-    return /* @__PURE__ */ jsx58("div", { className: "h-64 flex items-center justify-center", children: /* @__PURE__ */ jsx58("div", { className: "text-gray-500", children: "Loading chart data..." }) });
+    return /* @__PURE__ */ jsx58("div", { className: "h-64 flex items-center justify-center", children: /* @__PURE__ */ jsx58("div", { className: "text-gray-500", children: loadingText }) });
   }
   if (!data || data.length === 0) {
-    return /* @__PURE__ */ jsx58("div", { className: "h-64 flex items-center justify-center", children: /* @__PURE__ */ jsx58("div", { className: "text-gray-500", children: "No data available" }) });
+    return /* @__PURE__ */ jsx58("div", { className: "h-64 flex items-center justify-center", children: /* @__PURE__ */ jsx58("div", { className: "text-gray-500", children: noDataText }) });
   }
-  const chartData = data.map((item) => ({
-    period: item.period,
-    "Actual Revenue": item.actual,
-    "Projected Revenue": item.projected
-  }));
+  const chartData = data.map((item) => {
+    const formattedPeriod = timePeriod === "year" ? useFormattedMonthOnly(item.period) : useFormattedDaily(item.period);
+    return {
+      period: formattedPeriod,
+      [actualLabel]: item.actual,
+      [projectedLabel]: item.projected
+    };
+  });
   const formatTooltip = (value, name) => [
     `$${value.toLocaleString()}`,
     name
@@ -14770,25 +14835,27 @@ var IncomeChart = ({ data, loading = false }) => {
     /* @__PURE__ */ jsx58(
       Bar,
       {
-        dataKey: "Actual Revenue",
+        dataKey: actualLabel,
         fill: "#3B82F6",
         radius: [4, 4, 0, 0],
-        name: "Actual Revenue"
+        name: actualLabel
       }
     ),
     /* @__PURE__ */ jsx58(
       Bar,
       {
-        dataKey: "Projected Revenue",
+        dataKey: projectedLabel,
         fill: "#10B981",
         radius: [4, 4, 0, 0],
-        name: "Projected Revenue"
+        name: projectedLabel
       }
     )
   ] }) });
 };
 
 // src/components/charts/OrderChart.tsx
+import { useCommonTranslations as useCommonTranslations5 } from "@rentalshop/hooks";
+import { useFormattedDaily as useFormattedDaily2, useFormattedMonthOnly as useFormattedMonthOnly2 } from "@rentalshop/utils";
 import {
   LineChart,
   Line,
@@ -14804,18 +14871,23 @@ var OrderChart = ({
   data,
   loading = false,
   legendLabel = "Rental Orders",
-  tooltipLabel = "orders"
+  tooltipLabel = "orders",
+  timePeriod = "month"
 }) => {
+  const tc = useCommonTranslations5();
   if (loading) {
     return /* @__PURE__ */ jsx59("div", { className: "h-64 flex items-center justify-center", children: /* @__PURE__ */ jsx59("div", { className: "text-gray-500", children: "Loading chart data..." }) });
   }
   if (!data || data.length === 0) {
     return /* @__PURE__ */ jsx59("div", { className: "h-64 flex items-center justify-center", children: /* @__PURE__ */ jsx59("div", { className: "text-gray-500", children: "No data available" }) });
   }
-  const chartData = data.map((item) => ({
-    period: item.period,
-    [legendLabel]: item.actual
-  }));
+  const chartData = data.map((item) => {
+    const formattedPeriod = timePeriod === "year" ? useFormattedMonthOnly2(item.period) : useFormattedDaily2(item.period);
+    return {
+      period: formattedPeriod,
+      [legendLabel]: item.actual
+    };
+  });
   const formatTooltip = (value, name) => {
     return [`${value.toLocaleString()} ${tooltipLabel}`, legendLabel];
   };
@@ -15815,11 +15887,11 @@ var ProductPageHeader = ({
 import { useCallback as useCallback8 } from "react";
 import { Input as Input8 } from "@rentalshop/ui";
 import { Select as Select5, SelectContent as SelectContent5, SelectItem as SelectItem5, SelectTrigger as SelectTrigger5, SelectValue as SelectValue5 } from "@rentalshop/ui";
-import { useOutletsData, useCategoriesData, useProductTranslations as useProductTranslations2, useCommonTranslations as useCommonTranslations4 } from "@rentalshop/hooks";
+import { useOutletsData, useCategoriesData, useProductTranslations as useProductTranslations3, useCommonTranslations as useCommonTranslations6 } from "@rentalshop/hooks";
 import { Fragment as Fragment11, jsx as jsx76, jsxs as jsxs62 } from "react/jsx-runtime";
 function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }) {
-  const t2 = useProductTranslations2();
-  const tc = useCommonTranslations4();
+  const t2 = useProductTranslations3();
+  const tc = useCommonTranslations6();
   const { outlets, loading: loadingOutlets } = useOutletsData();
   const { categories, loading: loadingCategories } = useCategoriesData();
   console.log("\u{1F50D} ProductFilters: Categories data:", {
@@ -16220,7 +16292,7 @@ function ProductGrid({
 // src/components/features/Products/components/ProductTable.tsx
 import React44 from "react";
 import { useFormatCurrency as useFormatCurrency4 } from "@rentalshop/ui";
-import { useProductTranslations as useProductTranslations3, useCommonTranslations as useCommonTranslations5 } from "@rentalshop/hooks";
+import { useProductTranslations as useProductTranslations4, useCommonTranslations as useCommonTranslations7 } from "@rentalshop/hooks";
 import { Eye as Eye3, Edit as Edit2, ShoppingCart as ShoppingCart4, Trash2 as Trash24, MoreVertical, Package as Package7 } from "lucide-react";
 import { jsx as jsx79, jsxs as jsxs65 } from "react/jsx-runtime";
 function ProductTable({
@@ -16232,8 +16304,8 @@ function ProductTable({
 }) {
   const [openDropdownId, setOpenDropdownId] = React44.useState(null);
   const formatMoney = useFormatCurrency4();
-  const t2 = useProductTranslations3();
-  const tc = useCommonTranslations5();
+  const t2 = useProductTranslations4();
+  const tc = useCommonTranslations7();
   console.log("\u{1F50D} ProductTable: Received products:", {
     isArray: Array.isArray(products),
     length: products?.length,
@@ -16741,7 +16813,7 @@ function ProductDetailLoading() {
 // src/components/features/Products/components/ProductDetailList.tsx
 import { useState as useState32 } from "react";
 import { useRouter as useRouter3 } from "next/navigation";
-import { useProductTranslations as useProductTranslations4, useCommonTranslations as useCommonTranslations6 } from "@rentalshop/hooks";
+import { useProductTranslations as useProductTranslations5, useCommonTranslations as useCommonTranslations8 } from "@rentalshop/hooks";
 
 // src/lib/index.ts
 import { formatCurrency as formatCurrency6 } from "@rentalshop/utils";
@@ -16757,8 +16829,8 @@ var ProductDetailList = ({
   className = ""
 }) => {
   const router = useRouter3();
-  const t2 = useProductTranslations4();
-  const tc = useCommonTranslations6();
+  const t2 = useProductTranslations5();
+  const tc = useCommonTranslations8();
   const [selectedImage, setSelectedImage] = useState32(
     product.images && product.images.length > 0 ? product.images[0] : null
   );
@@ -16943,7 +17015,7 @@ import {
   Button as Button14
 } from "@rentalshop/ui";
 import { useToast as useToast7 } from "@rentalshop/ui";
-import { useProductTranslations as useProductTranslations5, useCommonTranslations as useCommonTranslations7 } from "@rentalshop/hooks";
+import { useProductTranslations as useProductTranslations6, useCommonTranslations as useCommonTranslations9 } from "@rentalshop/hooks";
 import { Save as Save2, Loader2 as Loader26 } from "lucide-react";
 import { Fragment as Fragment16, jsx as jsx86, jsxs as jsxs71 } from "react/jsx-runtime";
 var ProductEdit = ({
@@ -16957,8 +17029,8 @@ var ProductEdit = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState33(false);
   const { toastSuccess, toastError } = useToast7();
-  const t2 = useProductTranslations5();
-  const tc = useCommonTranslations7();
+  const t2 = useProductTranslations6();
+  const tc = useCommonTranslations9();
   useEffect16(() => {
     console.log("\u{1F50D} ProductEdit - product data:", product);
     console.log("\u{1F50D} ProductEdit - product.category:", product.category);
@@ -17079,15 +17151,15 @@ import {
   BarChart3,
   ArrowLeft as ArrowLeft5
 } from "lucide-react";
-import { useOrderTranslations as useOrderTranslations4, useCommonTranslations as useCommonTranslations9 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations9, useCommonTranslations as useCommonTranslations11 } from "@rentalshop/hooks";
 
 // src/components/features/Orders/components/OrderHeader.tsx
 import React50 from "react";
 import { Card as Card14, CardContent as CardContent13, CardHeader as CardHeader13, CardTitle as CardTitle13 } from "@rentalshop/ui";
-import { useOrderTranslations } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations6 } from "@rentalshop/hooks";
 import { jsx as jsx87, jsxs as jsxs72 } from "react/jsx-runtime";
 var OrderHeader = React50.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
-  const t2 = useOrderTranslations();
+  const t2 = useOrderTranslations6();
   console.log("OrderHeader received stats:", stats);
   console.log("OrderHeader received totalOrders:", totalOrders);
   const formatCurrency22 = (amount) => {
@@ -17153,7 +17225,7 @@ import { Input as Input9, Button as Button15 } from "@rentalshop/ui";
 import { Select as Select6, SelectContent as SelectContent6, SelectItem as SelectItem6, SelectTrigger as SelectTrigger6, SelectValue as SelectValue6 } from "@rentalshop/ui";
 import { outletsApi } from "@rentalshop/utils";
 import { ORDER_STATUS, ORDER_TYPE } from "@rentalshop/constants";
-import { useOrderTranslations as useOrderTranslations2, useCommonTranslations as useCommonTranslations8 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations7, useCommonTranslations as useCommonTranslations10 } from "@rentalshop/hooks";
 import { Fragment as Fragment17, jsx as jsx88, jsxs as jsxs73 } from "react/jsx-runtime";
 var OrderFilters = React51.memo(function OrderFilters2({
   filters,
@@ -17161,8 +17233,8 @@ var OrderFilters = React51.memo(function OrderFilters2({
   onSearchChange,
   onClearFilters
 }) {
-  const t2 = useOrderTranslations2();
-  const tc = useCommonTranslations8();
+  const t2 = useOrderTranslations7();
+  const tc = useCommonTranslations10();
   const [localSearch, setLocalSearch] = useState34(filters.search || "");
   const [outlets, setOutlets] = useState34([]);
   const [loadingOutlets, setLoadingOutlets] = useState34(false);
@@ -17627,7 +17699,9 @@ function OrderDateRangeFilter({
 // src/components/features/Orders/components/OrderTable.tsx
 import React53 from "react";
 import { useFormatCurrency as useFormatCurrency5 } from "@rentalshop/ui";
-import { useOrderTranslations as useOrderTranslations3 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations8 } from "@rentalshop/hooks";
+import { useFormattedFullDate } from "@rentalshop/utils";
+import { ORDER_STATUS_COLORS as ORDER_STATUS_COLORS2, ORDER_TYPE_COLORS } from "@rentalshop/constants";
 import { Eye as Eye4, Edit as Edit3 } from "lucide-react";
 import { jsx as jsx91, jsxs as jsxs76 } from "react/jsx-runtime";
 var OrderTable = React53.memo(function OrderTable2({
@@ -17638,7 +17712,7 @@ var OrderTable = React53.memo(function OrderTable2({
   onSort
 }) {
   const formatMoney = useFormatCurrency5();
-  const t2 = useOrderTranslations3();
+  const t2 = useOrderTranslations8();
   React53.useEffect(() => {
     if (orders.length > 0) {
       console.log("\u{1F4CB} OrderTable - Order statuses:", orders.map((o2) => ({
@@ -17656,32 +17730,15 @@ var OrderTable = React53.memo(function OrderTable2({
     ] }) }) });
   }
   const getStatusBadge = (status) => {
-    const variants = {
-      RESERVED: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      PICKUPED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      RETURNED: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-      COMPLETED: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-      CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-    };
-    return /* @__PURE__ */ jsx91(Badge, { variant: "outline", className: variants[status], children: status });
+    return /* @__PURE__ */ jsx91(Badge, { variant: "outline", className: ORDER_STATUS_COLORS2[status], children: t2(`status.${status}`) });
   };
   const getOrderTypeBadge = (type) => {
-    const variants = {
-      RENT: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      SALE: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      RENT_TO_OWN: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-    };
-    return /* @__PURE__ */ jsx91(Badge, { variant: "outline", className: variants[type], children: type.replace("_", " ") });
+    return /* @__PURE__ */ jsx91(Badge, { variant: "outline", className: ORDER_TYPE_COLORS[type], children: t2(`orderType.${type}`) });
   };
   const formatDate11 = (dateString) => {
     if (!dateString)
       return "N/A";
-    const date2 = typeof dateString === "string" ? new Date(dateString) : dateString;
-    return date2.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
-    });
+    return useFormattedFullDate(dateString);
   };
   const getOrderIcon = () => {
     return /* @__PURE__ */ jsx91("div", { className: "w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx91("svg", { className: "w-8 h-8 text-blue-600 dark:text-blue-400", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx91("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }) }) });
@@ -18090,8 +18147,8 @@ var ProductOrdersView = ({
   showHeader = true,
   inventoryData
 }) => {
-  const t2 = useOrderTranslations4();
-  const tc = useCommonTranslations9();
+  const t2 = useOrderTranslations9();
+  const tc = useCommonTranslations11();
   const [orders, setOrders] = useState36([]);
   const [loading, setLoading] = useState36(false);
   const [error2, setError] = useState36(null);
@@ -18928,7 +18985,7 @@ function CustomerTable({
 // src/components/features/Customers/components/CustomerDetailDialog.tsx
 import { useState as useState38, useEffect as useEffect20 } from "react";
 import { Trash2 as Trash26 } from "lucide-react";
-import { useCustomerTranslations as useCustomerTranslations3, useCommonTranslations as useCommonTranslations10 } from "@rentalshop/hooks";
+import { useCustomerTranslations as useCustomerTranslations3, useCommonTranslations as useCommonTranslations12 } from "@rentalshop/hooks";
 import { Fragment as Fragment21, jsx as jsx100, jsxs as jsxs84 } from "react/jsx-runtime";
 var CustomerDetailDialog = ({
   open,
@@ -18937,7 +18994,7 @@ var CustomerDetailDialog = ({
   onDelete
 }) => {
   const t2 = useCustomerTranslations3();
-  const tc = useCommonTranslations10();
+  const tc = useCommonTranslations12();
   const [isDeleting, setIsDeleting] = useState38(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState38(false);
   const [merchant, setMerchant] = useState38(null);
@@ -19419,7 +19476,7 @@ import { Label as Label3 } from "@rentalshop/ui";
 import { Card as Card22, CardContent as CardContent21 } from "@rentalshop/ui";
 import {
   useCustomerTranslations as useCustomerTranslations6,
-  useCommonTranslations as useCommonTranslations11
+  useCommonTranslations as useCommonTranslations13
 } from "@rentalshop/hooks";
 import { jsx as jsx105, jsxs as jsxs89 } from "react/jsx-runtime";
 var EditCustomerForm = forwardRef13(
@@ -19431,7 +19488,7 @@ var EditCustomerForm = forwardRef13(
     showActions = true
   }, ref) => {
     const t2 = useCustomerTranslations6();
-    const tc = useCommonTranslations11();
+    const tc = useCommonTranslations13();
     const [formData, setFormData] = useState40({
       firstName: customer.firstName,
       lastName: customer.lastName,
@@ -20225,11 +20282,11 @@ function CustomerHeader({ totalCustomers, stats }) {
 
 // src/components/features/Customers/components/CustomerSearch.tsx
 import { Input as Input13, Button as Button24 } from "@rentalshop/ui";
-import { useCustomerTranslations as useCustomerTranslations7, useCommonTranslations as useCommonTranslations12 } from "@rentalshop/hooks";
+import { useCustomerTranslations as useCustomerTranslations7, useCommonTranslations as useCommonTranslations14 } from "@rentalshop/hooks";
 import { Fragment as Fragment22, jsx as jsx109, jsxs as jsxs93 } from "react/jsx-runtime";
 function CustomerSearch({ filters, onFiltersChange, onSearchChange, onClearFilters }) {
   const t2 = useCustomerTranslations7();
-  const tc = useCommonTranslations12();
+  const tc = useCommonTranslations14();
   const handleInputChange = (e2) => {
     onSearchChange(e2.target.value);
   };
@@ -20406,7 +20463,7 @@ import { Dialog as Dialog5, DialogContent as DialogContent5, DialogHeader as Dia
 import { Card as Card26, CardContent as CardContent25, CardHeader as CardHeader21, CardTitle as CardTitle21 } from "@rentalshop/ui";
 import { Badge as Badge9 } from "@rentalshop/ui";
 import { Package as Package10, Calendar as Calendar8, DollarSign as DollarSign7, User as User8, MapPin as MapPin5, Clock as Clock4 } from "lucide-react";
-import { ORDER_STATUS_COLORS as ORDER_STATUS_COLORS2 } from "@rentalshop/constants";
+import { ORDER_STATUS_COLORS as ORDER_STATUS_COLORS3 } from "@rentalshop/constants";
 import { jsx as jsx111, jsxs as jsxs95 } from "react/jsx-runtime";
 var CustomerOrdersDialog = ({
   open,
@@ -20478,7 +20535,7 @@ var CustomerOrdersDialog = ({
     }
   };
   const getStatusBadge = (status) => {
-    const colors = ORDER_STATUS_COLORS2[status] || "bg-gray-100 text-gray-800";
+    const colors = ORDER_STATUS_COLORS3[status] || "bg-gray-100 text-gray-800";
     return /* @__PURE__ */ jsx111(Badge9, { variant: "outline", className: colors, children: status });
   };
   const getOrderTypeBadge = (orderType) => {
@@ -20806,7 +20863,7 @@ var Customers_default = Customers;
 import React65 from "react";
 import { Pagination as Pagination6, Card as Card28, CardContent as CardContent27 } from "@rentalshop/ui";
 import { AlertCircle as AlertCircle8 } from "lucide-react";
-import { useOrderTranslations as useOrderTranslations5 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations10 } from "@rentalshop/hooks";
 import { jsx as jsx114, jsxs as jsxs98 } from "react/jsx-runtime";
 var Orders = React65.memo(function Orders2({
   data,
@@ -20825,7 +20882,7 @@ var Orders = React65.memo(function Orders2({
   filterStyle = "dropdown"
   // ⭐ Default to dropdown (modern pattern)
 }) {
-  const t2 = useOrderTranslations5();
+  const t2 = useOrderTranslations10();
   React65.useEffect(() => {
     console.log("\u{1F4CA} Orders Component: received new data", {
       ordersCount: data.orders.length,
@@ -20918,6 +20975,7 @@ var Orders_default = Orders;
 import { useState as useState44, useEffect as useEffect25 } from "react";
 import { Button as Button26, Label as Label5, DateRangePicker as DateRangePicker3 } from "@rentalshop/ui";
 import { PricingResolver, PricingValidator } from "@rentalshop/utils";
+import { useOrderTranslations as useOrderTranslations11 } from "@rentalshop/hooks";
 import { jsx as jsx115, jsxs as jsxs99 } from "react/jsx-runtime";
 var RentalPeriodSelector2 = ({
   product,
@@ -20927,6 +20985,7 @@ var RentalPeriodSelector2 = ({
   initialStartDate,
   initialEndDate
 }) => {
+  const t2 = useOrderTranslations11();
   const [rentalStartAt, setRentalStartAt] = useState44(
     () => initialStartDate ? new Date(initialStartDate) : null
   );
@@ -21180,21 +21239,14 @@ var RentalPeriodSelector2 = ({
     ] });
   };
   const renderDailyPricing = () => renderCalendarUI(
-    "Rental Period (Daily)",
-    [
-      { value: 1, unit: "day", label: "1 Day" },
-      { value: 3, unit: "day", label: "3 Days" },
-      { value: 7, unit: "day", label: "1 Week" },
-      { value: 14, unit: "day", label: "2 Weeks" }
-    ]
+    t2("messages.rentalPeriodDaily"),
+    []
+    // Bỏ suggest dates theo yêu cầu
   );
   const renderWeeklyPricing = () => renderCalendarUI(
-    "Rental Period (Weekly)",
-    [
-      { value: 1, unit: "week", label: "1 Week" },
-      { value: 2, unit: "week", label: "2 Weeks" },
-      { value: 4, unit: "week", label: "1 Month" }
-    ]
+    t2("messages.rentalPeriodWeekly"),
+    []
+    // Bỏ suggest dates theo yêu cầu
   );
   return renderPricingUI();
 };
@@ -28180,7 +28232,7 @@ var UserDisplayInfo = ({
 
 // src/components/features/Users/components/UserDetailDialog.tsx
 import { usersApi } from "@rentalshop/utils";
-import { useUsersTranslations as useUsersTranslations3, useCommonTranslations as useCommonTranslations13 } from "@rentalshop/hooks";
+import { useUsersTranslations as useUsersTranslations3, useCommonTranslations as useCommonTranslations15 } from "@rentalshop/hooks";
 import { Fragment as Fragment32, jsx as jsx156, jsxs as jsxs139 } from "react/jsx-runtime";
 var UserDetailDialog = ({
   open,
@@ -28190,7 +28242,7 @@ var UserDetailDialog = ({
   onError
 }) => {
   const t2 = useUsersTranslations3();
-  const tc = useCommonTranslations13();
+  const tc = useCommonTranslations15();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState62(false);
   const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = useState62(false);
   const [isActivateConfirmOpen, setIsActivateConfirmOpen] = useState62(false);
@@ -28774,7 +28826,7 @@ var validateUserUpdateInput = (data) => {
 
 // src/components/features/Users/components/UserForm.tsx
 import { merchantsApi, outletsApi as outletsApi2 } from "@rentalshop/utils";
-import { useUsersTranslations as useUsersTranslations4, useCommonTranslations as useCommonTranslations14 } from "@rentalshop/hooks";
+import { useUsersTranslations as useUsersTranslations4, useCommonTranslations as useCommonTranslations16 } from "@rentalshop/hooks";
 import { Fragment as Fragment35, jsx as jsx159, jsxs as jsxs142 } from "react/jsx-runtime";
 var UserForm = ({
   mode,
@@ -28785,7 +28837,7 @@ var UserForm = ({
   currentUser
 }) => {
   const t2 = useUsersTranslations4();
-  const tc = useCommonTranslations14();
+  const tc = useCommonTranslations16();
   const isEditMode = mode === "edit";
   const [formData, setFormData] = useState65(() => {
     console.log("\u{1F50D} UserForm: Initial state setup - isEditMode:", isEditMode, "user:", user);
@@ -29978,7 +30030,7 @@ function OutletGrid({
 // src/components/features/Outlets/components/OutletTable.tsx
 import React94 from "react";
 import { Eye as Eye16, Edit as Edit12, XCircle as XCircle13, CheckCircle as CheckCircle19, MoreVertical as MoreVertical6, Building2 as Building212 } from "lucide-react";
-import { useOutletsTranslations as useOutletsTranslations2, useCommonTranslations as useCommonTranslations15 } from "@rentalshop/hooks";
+import { useOutletsTranslations as useOutletsTranslations2, useCommonTranslations as useCommonTranslations17 } from "@rentalshop/hooks";
 import { jsx as jsx168, jsxs as jsxs151 } from "react/jsx-runtime";
 function OutletTable({
   outlets,
@@ -29988,7 +30040,7 @@ function OutletTable({
   onSort
 }) {
   const t2 = useOutletsTranslations2();
-  const tc = useCommonTranslations15();
+  const tc = useCommonTranslations17();
   const [openDropdownId, setOpenDropdownId] = React94.useState(null);
   if (outlets.length === 0) {
     return /* @__PURE__ */ jsx168(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx168(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ jsxs151("div", { className: "text-gray-500 dark:text-gray-400", children: [
@@ -30115,11 +30167,11 @@ function OutletTable({
 
 // src/components/features/Outlets/components/OutletSearch.tsx
 import { Input as Input21, Button as Button46 } from "@rentalshop/ui";
-import { useOutletsTranslations as useOutletsTranslations3, useCommonTranslations as useCommonTranslations16 } from "@rentalshop/hooks";
+import { useOutletsTranslations as useOutletsTranslations3, useCommonTranslations as useCommonTranslations18 } from "@rentalshop/hooks";
 import { Fragment as Fragment37, jsx as jsx169, jsxs as jsxs152 } from "react/jsx-runtime";
 function OutletSearch({ value, onChange, onClear }) {
   const t2 = useOutletsTranslations3();
-  const tc = useCommonTranslations16();
+  const tc = useCommonTranslations18();
   return /* @__PURE__ */ jsxs152(Fragment37, { children: [
     /* @__PURE__ */ jsx169("div", { className: "flex-1 min-w-[280px]", children: /* @__PURE__ */ jsxs152("div", { className: "relative", children: [
       /* @__PURE__ */ jsx169(
@@ -30193,7 +30245,7 @@ import { useState as useState68 } from "react";
 import { useState as useState67 } from "react";
 import { Save as Save6, X as X14 } from "lucide-react";
 import { Button as Button47, Input as Input22, Label as Label10, Textarea as Textarea5, Card as Card46, CardContent as CardContent45 } from "@rentalshop/ui";
-import { useOutletsTranslations as useOutletsTranslations4, useCommonTranslations as useCommonTranslations17 } from "@rentalshop/hooks";
+import { useOutletsTranslations as useOutletsTranslations4, useCommonTranslations as useCommonTranslations19 } from "@rentalshop/hooks";
 import { jsx as jsx171, jsxs as jsxs153 } from "react/jsx-runtime";
 var AddOutletForm = ({
   onSave,
@@ -30202,7 +30254,7 @@ var AddOutletForm = ({
   merchantId
 }) => {
   const t2 = useOutletsTranslations4();
-  const tc = useCommonTranslations17();
+  const tc = useCommonTranslations19();
   const [formData, setFormData] = useState67({
     name: "",
     address: "",
@@ -30527,7 +30579,7 @@ import { useCategoriesTranslations as useCategoriesTranslations2 } from "@rental
 
 // src/components/features/Categories/components/CategoryFormContent.tsx
 import { useState as useState69, useEffect as useEffect38 } from "react";
-import { useCategoriesTranslations, useCommonTranslations as useCommonTranslations18 } from "@rentalshop/hooks";
+import { useCategoriesTranslations, useCommonTranslations as useCommonTranslations20 } from "@rentalshop/hooks";
 import { Save as Save7, Loader2 as Loader27 } from "lucide-react";
 import { Fragment as Fragment38, jsx as jsx175, jsxs as jsxs157 } from "react/jsx-runtime";
 var CategoryFormContent = ({
@@ -30538,7 +30590,7 @@ var CategoryFormContent = ({
   isSubmitting: externalIsSubmitting
 }) => {
   const t2 = useCategoriesTranslations();
-  const tc = useCommonTranslations18();
+  const tc = useCommonTranslations20();
   const [formData, setFormData] = useState69({
     name: "",
     description: ""
@@ -30930,7 +30982,7 @@ var CategoryGrid = ({
 
 // src/components/features/Categories/components/CategoryTable.tsx
 import React101 from "react";
-import { useCategoriesTranslations as useCategoriesTranslations3, useCommonTranslations as useCommonTranslations19 } from "@rentalshop/hooks";
+import { useCategoriesTranslations as useCategoriesTranslations3, useCommonTranslations as useCommonTranslations21 } from "@rentalshop/hooks";
 import { Eye as Eye18, Edit as Edit14, Trash2 as Trash211, MoreVertical as MoreVertical7, FolderOpen } from "lucide-react";
 import { jsx as jsx180, jsxs as jsxs162 } from "react/jsx-runtime";
 function CategoryTable({
@@ -30942,7 +30994,7 @@ function CategoryTable({
 }) {
   const [openDropdownId, setOpenDropdownId] = React101.useState(null);
   const t2 = useCategoriesTranslations3();
-  const tc = useCommonTranslations19();
+  const tc = useCommonTranslations21();
   if (categories.length === 0) {
     return /* @__PURE__ */ jsx180(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx180(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ jsxs162("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx180(FolderOpen, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
@@ -31116,7 +31168,7 @@ var CategoryForm = ({
 
 // src/components/features/Categories/components/CategoryView.tsx
 import { useState as useState72 } from "react";
-import { useCategoriesTranslations as useCategoriesTranslations5, useCommonTranslations as useCommonTranslations20 } from "@rentalshop/hooks";
+import { useCategoriesTranslations as useCategoriesTranslations5, useCommonTranslations as useCommonTranslations22 } from "@rentalshop/hooks";
 import { formatDateWithLocale } from "@rentalshop/utils";
 import { Fragment as Fragment40, jsx as jsx182, jsxs as jsxs164 } from "react/jsx-runtime";
 var CategoryView = ({
@@ -31126,7 +31178,7 @@ var CategoryView = ({
   onDelete
 }) => {
   const t2 = useCategoriesTranslations5();
-  const tc = useCommonTranslations20();
+  const tc = useCommonTranslations22();
   const locale2 = Z();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState72(false);
   if (!category)
@@ -34308,9 +34360,23 @@ function PageWrapper4({
   container = true,
   maxWidth = "7xl",
   padding = "sm",
-  spacing = "sm"
+  spacing = "sm",
+  scrollMode = "page"
 }) {
-  const hasHeightClass = className?.includes("h-full") || className?.includes("h-screen");
+  if (scrollMode === "content") {
+    return /* @__PURE__ */ jsx207("div", { className: "h-screen overflow-y-auto", children: /* @__PURE__ */ jsx207("div", { className: cn2(
+      // Base container
+      container && "mx-auto",
+      // Max width
+      maxWidth !== "full" && maxWidthClasses[maxWidth],
+      // Padding
+      padding !== "none" && paddingClasses[padding],
+      // Spacing between children
+      spacing !== "none" && spacingClasses[spacing],
+      // Custom classes
+      className
+    ), children }) });
+  }
   return /* @__PURE__ */ jsx207("div", { className: cn2(
     // Base container
     container && "mx-auto",
@@ -37755,37 +37821,16 @@ function AuditLogViewerSimple({ className = "" }) {
 // src/components/features/OrderDetail/OrderDetail.tsx
 import { useState as useState82, useEffect as useEffect43 } from "react";
 import {
-  Card as Card58,
-  CardHeader as CardHeader40,
-  CardTitle as CardTitle40,
-  CardContent as CardContent57,
-  Button as Button63,
+  Card as Card59,
+  CardHeader as CardHeader41,
+  CardContent as CardContent58,
   Badge as Badge30,
-  Input as Input29,
-  Label as Label15,
-  Textarea as Textarea8,
   Skeleton as Skeleton5,
-  Select as Select18,
-  SelectContent as SelectContent18,
-  SelectItem as SelectItem18,
-  SelectTrigger as SelectTrigger18,
-  SelectValue as SelectValue18,
   ConfirmationDialog as ConfirmationDialog4
 } from "@rentalshop/ui";
-import {
-  Info as Info14,
-  Package as Package21,
-  DollarSign as DollarSign20,
-  Settings as Settings9,
-  Save as Save9,
-  X as X17,
-  RotateCcw as RotateCcw4,
-  Printer,
-  Edit as Edit21
-} from "lucide-react";
-import { useFormatCurrency as useFormatCurrency6 } from "@rentalshop/ui";
-import { ORDER_STATUS_COLORS as ORDER_STATUS_COLORS4 } from "@rentalshop/constants";
-import { useToast as useToast9 } from "@rentalshop/ui";
+import { useFormatCurrency as useFormatCurrency9, useToast as useToast9 } from "@rentalshop/ui";
+import { ORDER_STATUS_COLORS as ORDER_STATUS_COLORS5, ORDER_TYPE_COLORS as ORDER_TYPE_COLORS2 } from "@rentalshop/constants";
+import { useOrderTranslations as useOrderTranslations17 } from "@rentalshop/hooks";
 
 // src/components/features/OrderDetail/components/CollectionReturnModal.tsx
 import {
@@ -38041,97 +38086,610 @@ var CollectionReturnModal = ({
   ] }) });
 };
 
+// src/components/features/OrderDetail/components/OrderInformation.tsx
+import { Info as Info14 } from "lucide-react";
+import { useOrderTranslations as useOrderTranslations12 } from "@rentalshop/hooks";
+import { useFormattedFullDate as useFormattedFullDate2 } from "@rentalshop/utils";
+import { Fragment as Fragment48, jsx as jsx243, jsxs as jsxs218 } from "react/jsx-runtime";
+var OrderInformation = ({ order }) => {
+  const t2 = useOrderTranslations12();
+  return /* @__PURE__ */ jsxs218(Card, { className: "flex flex-col", children: [
+    /* @__PURE__ */ jsx243(CardHeader, { children: /* @__PURE__ */ jsxs218(CardTitle, { className: "text-lg flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx243(Info14, { className: "w-5 h-5" }),
+      t2("detail.orderInformation")
+    ] }) }),
+    /* @__PURE__ */ jsxs218(CardContent, { className: "space-y-4 flex-1", children: [
+      /* @__PURE__ */ jsxs218("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+        /* @__PURE__ */ jsxs218("div", { className: "space-y-3", children: [
+          /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
+            /* @__PURE__ */ jsxs218("span", { className: "text-sm text-gray-600", children: [
+              t2("customer.name"),
+              ":"
+            ] }),
+            /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : t2("customer.noCustomer") })
+          ] }),
+          /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
+            /* @__PURE__ */ jsxs218("span", { className: "text-sm text-gray-600", children: [
+              t2("customer.phone"),
+              ":"
+            ] }),
+            /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.customer?.phone || "N/A" })
+          ] }),
+          /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
+            /* @__PURE__ */ jsxs218("span", { className: "text-sm text-gray-600", children: [
+              t2("detail.seller"),
+              ":"
+            ] }),
+            /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.outlet?.name || "N/A" })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs218("div", { className: "space-y-3", children: [
+          order.orderType === "RENT" && /* @__PURE__ */ jsxs218(Fragment48, { children: [
+            /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
+              /* @__PURE__ */ jsxs218("span", { className: "text-sm text-gray-600", children: [
+                t2("dates.pickupDate"),
+                ":"
+              ] }),
+              /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.pickupPlanAt ? useFormattedFullDate2(order.pickupPlanAt) : "N/A" })
+            ] }),
+            /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
+              /* @__PURE__ */ jsxs218("span", { className: "text-sm text-gray-600", children: [
+                t2("dates.returnDate"),
+                ":"
+              ] }),
+              /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.returnPlanAt ? useFormattedFullDate2(order.returnPlanAt) : "N/A" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
+            /* @__PURE__ */ jsxs218("span", { className: "text-sm text-gray-600", children: [
+              t2("detail.orderDate"),
+              ":"
+            ] }),
+            /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.createdAt ? useFormattedFullDate2(order.createdAt) : "N/A" })
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsx243("div", { className: "flex-1" })
+    ] })
+  ] });
+};
+
+// src/components/features/OrderDetail/components/OrderProductsList.tsx
+import { Package as Package21 } from "lucide-react";
+import { useOrderTranslations as useOrderTranslations13 } from "@rentalshop/hooks";
+import { useFormatCurrency as useFormatCurrency6 } from "@rentalshop/ui";
+import { jsx as jsx244, jsxs as jsxs219 } from "react/jsx-runtime";
+var OrderProductsList = ({ order }) => {
+  const t2 = useOrderTranslations13();
+  const formatMoney = useFormatCurrency6();
+  return /* @__PURE__ */ jsxs219(Card, { children: [
+    /* @__PURE__ */ jsx244(CardHeader, { children: /* @__PURE__ */ jsxs219(CardTitle, { className: "text-lg flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx244(Package21, { className: "w-5 h-5" }),
+      t2("detail.products")
+    ] }) }),
+    /* @__PURE__ */ jsx244(CardContent, { children: order.orderItems.length === 0 ? /* @__PURE__ */ jsxs219("div", { className: "text-center py-4 text-gray-500", children: [
+      /* @__PURE__ */ jsx244(Package21, { className: "w-8 h-8 mx-auto mb-2 text-gray-300" }),
+      /* @__PURE__ */ jsx244("p", { className: "text-sm", children: t2("items.noItems") })
+    ] }) : /* @__PURE__ */ jsx244("div", { className: "space-y-3", children: order.orderItems.map((item, index) => /* @__PURE__ */ jsx244("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ jsxs219("div", { className: "flex items-start gap-3", children: [
+      /* @__PURE__ */ jsx244("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx244("div", { className: "w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200", children: /* @__PURE__ */ jsx244(Package21, { className: "w-6 h-6 text-gray-400" }) }) }),
+      /* @__PURE__ */ jsxs219("div", { className: "flex-1 min-w-0", children: [
+        /* @__PURE__ */ jsx244("div", { className: "font-medium text-gray-900 text-sm", children: item.product?.name || "Unknown Product" }),
+        /* @__PURE__ */ jsx244("div", { className: "text-xs text-gray-500", children: item.product?.name ? `${t2("items.product")}: ${item.product.name}` : "Unknown Product" }),
+        /* @__PURE__ */ jsxs219("div", { className: "text-xs text-gray-600", children: [
+          formatMoney(item.unitPrice),
+          " x ",
+          item.quantity
+        ] }),
+        item.notes && /* @__PURE__ */ jsxs219("div", { className: "text-xs text-gray-500 mt-1", children: [
+          t2("detail.notes"),
+          ": ",
+          item.notes || t2("detail.noNotes")
+        ] })
+      ] })
+    ] }) }, index)) }) })
+  ] });
+};
+
+// src/components/features/OrderDetail/components/OrderSummaryCard.tsx
+import { DollarSign as DollarSign20 } from "lucide-react";
+import { useOrderTranslations as useOrderTranslations14 } from "@rentalshop/hooks";
+import { useFormatCurrency as useFormatCurrency7 } from "@rentalshop/ui";
+import { jsx as jsx245, jsxs as jsxs220 } from "react/jsx-runtime";
+var OrderSummaryCard = ({
+  order,
+  tempSettings,
+  calculateCollectionTotal: calculateCollectionTotal2
+}) => {
+  const t2 = useOrderTranslations14();
+  const formatMoney = useFormatCurrency7();
+  return /* @__PURE__ */ jsxs220(Card, { children: [
+    /* @__PURE__ */ jsx245(CardHeader, { children: /* @__PURE__ */ jsxs220(CardTitle, { className: "text-lg flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx245(DollarSign20, { className: "w-5 h-5" }),
+      t2("detail.orderSummary")
+    ] }) }),
+    /* @__PURE__ */ jsxs220(CardContent, { className: "space-y-3", children: [
+      /* @__PURE__ */ jsxs220("div", { className: "flex justify-between text-sm", children: [
+        /* @__PURE__ */ jsxs220("span", { className: "text-gray-600", children: [
+          t2("amount.subtotal"),
+          ":"
+        ] }),
+        /* @__PURE__ */ jsx245("span", { className: "font-medium", children: formatMoney(order.totalAmount || 0) })
+      ] }),
+      order.discountAmount > 0 && /* @__PURE__ */ jsxs220("div", { className: "flex justify-between text-sm text-green-600", children: [
+        /* @__PURE__ */ jsxs220("span", { children: [
+          t2("payment.discount"),
+          " ",
+          order.discountType === "percentage" && order.discountValue ? `(${order.discountValue}%)` : "(amount)",
+          ":"
+        ] }),
+        /* @__PURE__ */ jsxs220("span", { className: "font-medium", children: [
+          "-",
+          formatMoney(order.discountAmount)
+        ] })
+      ] }),
+      order.orderType === "RENT" && order.depositAmount > 0 && /* @__PURE__ */ jsxs220("div", { className: "flex justify-between text-sm", children: [
+        /* @__PURE__ */ jsxs220("span", { className: "text-gray-600", children: [
+          t2("amount.deposit"),
+          ":"
+        ] }),
+        /* @__PURE__ */ jsx245("span", { className: "font-medium", children: formatMoney(order.depositAmount) })
+      ] }),
+      /* @__PURE__ */ jsxs220("div", { className: "flex justify-between text-lg font-bold text-green-700 pt-2 border-t border-gray-200", children: [
+        /* @__PURE__ */ jsxs220("span", { children: [
+          t2("amount.grandTotal"),
+          ":"
+        ] }),
+        /* @__PURE__ */ jsx245("span", { children: formatMoney(order.totalAmount || 0) })
+      ] }),
+      order.orderType === "RENT" && /* @__PURE__ */ jsxs220("div", { className: "flex justify-between text-sm pt-2 border-t border-gray-200", children: [
+        /* @__PURE__ */ jsxs220("span", { className: "text-gray-600", children: [
+          t2("detail.collectionAmount"),
+          ":"
+        ] }),
+        /* @__PURE__ */ jsx245("span", { className: `font-medium ${order.status === "RESERVED" ? "text-yellow-700" : order.status === "PICKUPED" ? "text-blue-700" : "text-gray-500"}`, children: order.status === "RESERVED" ? /* @__PURE__ */ jsxs220("span", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx245("span", { children: formatMoney(calculateCollectionTotal2(order, tempSettings)) }),
+          tempSettings.collateralType && tempSettings.collateralType !== "Other" && /* @__PURE__ */ jsxs220("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: [
+            "+ ",
+            tempSettings.collateralType
+          ] }),
+          tempSettings.collateralType === "Other" && tempSettings.collateralDetails && /* @__PURE__ */ jsxs220("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: [
+            "+ ",
+            tempSettings.collateralDetails
+          ] }),
+          tempSettings.collateralType === "Other" && !tempSettings.collateralDetails && /* @__PURE__ */ jsxs220("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: [
+            "+ ",
+            t2("detail.collateral")
+          ] })
+        ] }) : order.status === "PICKUPED" ? t2("detail.alreadyCollected") : t2("detail.noCollectionNeeded") })
+      ] })
+    ] })
+  ] });
+};
+
+// src/components/features/OrderDetail/components/OrderSettingsCard.tsx
+import {
+  Card as Card58,
+  CardHeader as CardHeader40,
+  CardTitle as CardTitle40,
+  CardContent as CardContent57,
+  Button as Button63,
+  Input as Input29,
+  Label as Label15,
+  Textarea as Textarea8,
+  Select as Select18,
+  SelectContent as SelectContent18,
+  SelectItem as SelectItem18,
+  SelectTrigger as SelectTrigger18,
+  SelectValue as SelectValue18
+} from "@rentalshop/ui";
+import { Settings as Settings9, Save as Save9, Edit as Edit21 } from "lucide-react";
+import { useOrderTranslations as useOrderTranslations15 } from "@rentalshop/hooks";
+import { useFormatCurrency as useFormatCurrency8 } from "@rentalshop/ui";
+import { Fragment as Fragment49, jsx as jsx246, jsxs as jsxs221 } from "react/jsx-runtime";
+var OrderSettingsCard = ({
+  order,
+  settingsForm,
+  tempSettings,
+  isEditingSettings,
+  isSavingSettings,
+  loading,
+  isDamageFeeEnabled,
+  isSecurityDepositEnabled,
+  isCollateralTypeEnabled,
+  isCollateralDetailsEnabled,
+  onSettingsChange,
+  onSaveSettings,
+  onCancelEdit,
+  onStartEdit,
+  collateralTypes
+}) => {
+  const t2 = useOrderTranslations15();
+  const formatMoney = useFormatCurrency8();
+  return /* @__PURE__ */ jsxs221(Card58, { children: [
+    /* @__PURE__ */ jsx246(CardHeader40, { children: /* @__PURE__ */ jsxs221(CardTitle40, { className: "text-lg flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx246(Settings9, { className: "w-5 h-5" }),
+      t2("detail.orderSettings")
+    ] }) }),
+    /* @__PURE__ */ jsx246(CardContent57, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ jsxs221(Fragment49, { children: [
+      /* @__PURE__ */ jsxs221("div", { children: [
+        /* @__PURE__ */ jsxs221(Label15, { htmlFor: "damageFee", className: "text-sm font-medium text-gray-700", children: [
+          t2("amount.damageFee"),
+          !isDamageFeeEnabled() && /* @__PURE__ */ jsx246("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
+        ] }),
+        /* @__PURE__ */ jsx246(
+          Input29,
+          {
+            id: "damageFee",
+            type: "number",
+            min: "0",
+            step: "0.01",
+            value: tempSettings.damageFee || 0,
+            onChange: (e2) => onSettingsChange({ damageFee: parseFloat(e2.target.value) || 0 }),
+            className: "mt-1",
+            placeholder: "0",
+            disabled: !isDamageFeeEnabled()
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxs221("div", { children: [
+        /* @__PURE__ */ jsxs221(Label15, { htmlFor: "securityDeposit", className: "text-sm font-medium text-gray-700", children: [
+          t2("amount.securityDeposit"),
+          !isSecurityDepositEnabled() && /* @__PURE__ */ jsx246("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
+        ] }),
+        /* @__PURE__ */ jsx246(
+          Input29,
+          {
+            id: "securityDeposit",
+            type: "number",
+            min: "0",
+            step: "0.01",
+            value: tempSettings.securityDeposit || 0,
+            onChange: (e2) => onSettingsChange({ securityDeposit: parseFloat(e2.target.value) || 0 }),
+            className: "mt-1",
+            placeholder: "0",
+            disabled: !isSecurityDepositEnabled()
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxs221("div", { children: [
+        /* @__PURE__ */ jsxs221(Label15, { htmlFor: "collateralType", className: "text-sm font-medium text-gray-700", children: [
+          t2("amount.collateralType"),
+          !isCollateralTypeEnabled() && /* @__PURE__ */ jsx246("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
+        ] }),
+        /* @__PURE__ */ jsxs221(
+          Select18,
+          {
+            onValueChange: (value) => onSettingsChange({ collateralType: value }),
+            value: tempSettings.collateralType || "",
+            onOpenChange: onStartEdit,
+            children: [
+              /* @__PURE__ */ jsx246(SelectTrigger18, { className: "mt-1", children: /* @__PURE__ */ jsx246(SelectValue18, { placeholder: "Select collateral type" }) }),
+              /* @__PURE__ */ jsx246(SelectContent18, { children: collateralTypes.map((type) => /* @__PURE__ */ jsx246(SelectItem18, { value: type, children: type }, type)) })
+            ]
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxs221("div", { children: [
+        /* @__PURE__ */ jsxs221(Label15, { htmlFor: "collateralDetails", className: "text-sm font-medium text-gray-700", children: [
+          t2("amount.collateralDetails"),
+          !isCollateralDetailsEnabled() && /* @__PURE__ */ jsx246("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
+        ] }),
+        /* @__PURE__ */ jsx246(
+          Input29,
+          {
+            id: "collateralDetails",
+            type: "text",
+            value: tempSettings.collateralDetails || "",
+            onChange: (e2) => onSettingsChange({ collateralDetails: e2.target.value }),
+            className: "mt-1",
+            placeholder: "Enter collateral details",
+            disabled: !isCollateralDetailsEnabled()
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxs221("div", { children: [
+        /* @__PURE__ */ jsx246(Label15, { htmlFor: "notes", className: "text-sm font-medium text-gray-700", children: t2("detail.notes") }),
+        /* @__PURE__ */ jsx246(
+          Textarea8,
+          {
+            id: "notes",
+            value: tempSettings.notes || "",
+            onChange: (e2) => onSettingsChange({ notes: e2.target.value }),
+            rows: 3,
+            className: "mt-1",
+            placeholder: "Enter order notes"
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxs221("div", { className: "flex gap-2 pt-2", children: [
+        /* @__PURE__ */ jsxs221(
+          Button63,
+          {
+            onClick: onSaveSettings,
+            disabled: loading || isSavingSettings,
+            className: "flex-1 flex items-center gap-2",
+            children: [
+              /* @__PURE__ */ jsx246(Save9, { className: "w-4 h-4" }),
+              isSavingSettings ? t2("detail.saving") : t2("detail.saveChanges")
+            ]
+          }
+        ),
+        /* @__PURE__ */ jsx246(
+          Button63,
+          {
+            variant: "outline",
+            onClick: onCancelEdit,
+            className: "flex-1",
+            children: t2("detail.cancel")
+          }
+        )
+      ] })
+    ] }) : /* @__PURE__ */ jsxs221(Fragment49, { children: [
+      /* @__PURE__ */ jsxs221("div", { className: "space-y-3", children: [
+        /* @__PURE__ */ jsxs221("div", { className: "flex justify-between", children: [
+          /* @__PURE__ */ jsxs221("span", { className: "text-sm text-gray-600", children: [
+            t2("amount.damageFee"),
+            ":"
+          ] }),
+          /* @__PURE__ */ jsx246("span", { className: "text-sm font-medium", children: isDamageFeeEnabled() ? formatMoney(settingsForm.damageFee || 0) : /* @__PURE__ */ jsx246("span", { className: "text-gray-400 italic", children: "Disabled" }) })
+        ] }),
+        /* @__PURE__ */ jsxs221("div", { className: "flex justify-between", children: [
+          /* @__PURE__ */ jsxs221("span", { className: "text-sm text-gray-600", children: [
+            t2("amount.securityDeposit"),
+            ":"
+          ] }),
+          /* @__PURE__ */ jsx246("span", { className: "text-sm font-medium", children: isSecurityDepositEnabled() ? formatMoney(settingsForm.securityDeposit || 0) : /* @__PURE__ */ jsx246("span", { className: "text-gray-400 italic", children: "Disabled" }) })
+        ] }),
+        /* @__PURE__ */ jsxs221("div", { className: "flex justify-between", children: [
+          /* @__PURE__ */ jsxs221("span", { className: "text-sm text-gray-600", children: [
+            t2("amount.collateralType"),
+            ":"
+          ] }),
+          /* @__PURE__ */ jsx246("span", { className: "text-sm font-medium", children: isCollateralTypeEnabled() ? settingsForm.collateralType || "Not specified" : /* @__PURE__ */ jsx246("span", { className: "text-gray-400 italic", children: "Disabled" }) })
+        ] }),
+        /* @__PURE__ */ jsxs221("div", { className: "flex justify-between", children: [
+          /* @__PURE__ */ jsxs221("span", { className: "text-sm text-gray-600", children: [
+            t2("amount.collateralDetails"),
+            ":"
+          ] }),
+          /* @__PURE__ */ jsx246("span", { className: "text-sm font-medium", children: isCollateralDetailsEnabled() ? settingsForm.collateralDetails || t2("detail.noDetails") : /* @__PURE__ */ jsx246("span", { className: "text-gray-400 italic", children: "Disabled" }) })
+        ] }),
+        /* @__PURE__ */ jsxs221("div", { className: "flex justify-between", children: [
+          /* @__PURE__ */ jsxs221("span", { className: "text-sm text-gray-600", children: [
+            t2("detail.notes"),
+            ":"
+          ] }),
+          /* @__PURE__ */ jsx246("span", { className: "text-sm font-medium", children: settingsForm.notes || t2("detail.noNotes") })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs221(
+        Button63,
+        {
+          variant: "outline",
+          onClick: onStartEdit,
+          className: "w-full flex items-center gap-2 mt-4",
+          children: [
+            /* @__PURE__ */ jsx246(Edit21, { className: "w-4 h-4" }),
+            t2("detail.editSettings")
+          ]
+        }
+      )
+    ] }) })
+  ] });
+};
+
+// src/components/features/OrderDetail/components/OrderActionsSection.tsx
+import { Edit as Edit22, X as X17, Package as Package22, RotateCcw as RotateCcw4, Printer, Info as Info15 } from "lucide-react";
+import { useOrderTranslations as useOrderTranslations16 } from "@rentalshop/hooks";
+import { ORDER_STATUSES } from "@rentalshop/constants";
+import { jsx as jsx247, jsxs as jsxs222 } from "react/jsx-runtime";
+var OrderActionsSection = ({
+  order,
+  canEdit,
+  canCancel,
+  canPickup,
+  canReturn,
+  canPrint,
+  isRentOrder,
+  isSaleOrder,
+  isPickupLoading,
+  isReturnLoading,
+  isCancelLoading,
+  onEdit,
+  onCancel,
+  onPickup,
+  onReturn,
+  onPrint
+}) => {
+  const t2 = useOrderTranslations16();
+  return /* @__PURE__ */ jsx247("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ jsxs222("div", { className: "space-y-4", children: [
+    /* @__PURE__ */ jsx247("h3", { className: "text-lg font-medium text-gray-900", children: t2("detail.orderActions") }),
+    /* @__PURE__ */ jsxs222("div", { className: "flex justify-between items-center", children: [
+      /* @__PURE__ */ jsx247("div", { children: canCancel && /* @__PURE__ */ jsxs222(
+        Button2,
+        {
+          variant: "destructive",
+          onClick: onCancel,
+          className: "px-6",
+          disabled: isCancelLoading,
+          children: [
+            /* @__PURE__ */ jsx247(X17, { className: "w-4 h-4 mr-2" }),
+            isCancelLoading ? t2("detail.cancelling") : t2("actions.cancelOrder")
+          ]
+        }
+      ) }),
+      /* @__PURE__ */ jsxs222("div", { className: "flex gap-3", children: [
+        /* @__PURE__ */ jsxs222(
+          Button2,
+          {
+            variant: "outline",
+            onClick: onEdit,
+            className: "px-4",
+            disabled: !canEdit,
+            title: !canEdit ? isRentOrder ? "RENT orders can only be edited when status is RESERVED" : "SALE orders can only be edited when status is COMPLETED" : t2("detail.editOrder"),
+            children: [
+              /* @__PURE__ */ jsx247(Edit22, { className: "w-4 h-4 mr-2" }),
+              t2("detail.editOrder")
+            ]
+          }
+        ),
+        canPickup && /* @__PURE__ */ jsxs222(
+          Button2,
+          {
+            variant: "default",
+            onClick: onPickup,
+            className: "px-6",
+            disabled: isPickupLoading,
+            children: [
+              /* @__PURE__ */ jsx247(Package22, { className: "w-4 h-4 mr-2" }),
+              isPickupLoading ? t2("actions.pickingUp") : t2("actions.markAsPickedUp")
+            ]
+          }
+        ),
+        canReturn && /* @__PURE__ */ jsxs222(
+          Button2,
+          {
+            variant: "default",
+            onClick: onReturn,
+            className: "px-4",
+            disabled: isReturnLoading,
+            children: [
+              /* @__PURE__ */ jsx247(RotateCcw4, { className: "w-4 h-4 mr-2" }),
+              isReturnLoading ? t2("actions.returning") : t2("actions.markAsReturned")
+            ]
+          }
+        ),
+        canPrint && /* @__PURE__ */ jsxs222(
+          Button2,
+          {
+            variant: "outline",
+            onClick: onPrint,
+            className: "px-4",
+            children: [
+              /* @__PURE__ */ jsx247(Printer, { className: "w-4 h-4 mr-2" }),
+              t2("actions.printReceipt")
+            ]
+          }
+        )
+      ] })
+    ] }),
+    /* @__PURE__ */ jsx247("div", { className: "mt-3 text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-200", children: /* @__PURE__ */ jsxs222("div", { className: "flex items-start gap-2", children: [
+      /* @__PURE__ */ jsx247(Info15, { className: "w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" }),
+      /* @__PURE__ */ jsxs222("div", { children: [
+        /* @__PURE__ */ jsxs222("p", { className: "font-medium text-gray-700 mb-1", children: [
+          t2("detail.editingRules"),
+          ":"
+        ] }),
+        /* @__PURE__ */ jsxs222("ul", { className: "space-y-1 text-gray-600", children: [
+          /* @__PURE__ */ jsxs222("li", { children: [
+            "\u2022 ",
+            t2("detail.rentOrderRule"),
+            " ",
+            /* @__PURE__ */ jsx247("span", { className: "font-mono bg-blue-100 px-1 rounded", children: ORDER_STATUSES.RESERVED })
+          ] }),
+          /* @__PURE__ */ jsxs222("li", { children: [
+            "\u2022 ",
+            t2("detail.saleOrderRule"),
+            " ",
+            /* @__PURE__ */ jsx247("span", { className: "font-mono bg-green-100 px-1 rounded", children: ORDER_STATUSES.COMPLETED })
+          ] })
+        ] })
+      ] })
+    ] }) })
+  ] }) });
+};
+
 // src/components/features/OrderDetail/OrderDetail.tsx
 import { ordersApi as ordersApi3 } from "@rentalshop/utils";
-import { Fragment as Fragment48, jsx as jsx243, jsxs as jsxs218 } from "react/jsx-runtime";
+import { jsx as jsx248, jsxs as jsxs223 } from "react/jsx-runtime";
 var OrderDetailSkeleton = () => {
-  return /* @__PURE__ */ jsxs218("div", { className: "space-y-4", children: [
-    /* @__PURE__ */ jsx243("div", { className: "bg-white border border-gray-200 rounded-lg p-4", children: /* @__PURE__ */ jsxs218("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsxs218("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ jsx243(Skeleton5, { className: "h-8 w-64" }),
-        /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-48" })
+  return /* @__PURE__ */ jsxs223("div", { className: "space-y-4", children: [
+    /* @__PURE__ */ jsx248("div", { className: "bg-white border border-gray-200 rounded-lg p-4", children: /* @__PURE__ */ jsxs223("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsxs223("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ jsx248(Skeleton5, { className: "h-8 w-64" }),
+        /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-48" })
       ] }),
-      /* @__PURE__ */ jsxs218("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ jsxs218("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-20" }),
-          /* @__PURE__ */ jsx243(Skeleton5, { className: "h-6 w-16" })
+      /* @__PURE__ */ jsxs223("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ jsxs223("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-20" }),
+          /* @__PURE__ */ jsx248(Skeleton5, { className: "h-6 w-16" })
         ] }),
-        /* @__PURE__ */ jsx243(Skeleton5, { className: "h-6 w-24" })
+        /* @__PURE__ */ jsx248(Skeleton5, { className: "h-6 w-24" })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsxs218("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4", children: [
-      /* @__PURE__ */ jsxs218("div", { className: "lg:col-span-2 space-y-4", children: [
-        /* @__PURE__ */ jsx243("div", { className: "lg:sticky lg:top-4 lg:z-10 lg:self-start", children: /* @__PURE__ */ jsxs218(Card58, { className: "flex flex-col", children: [
-          /* @__PURE__ */ jsx243(CardHeader40, { children: /* @__PURE__ */ jsxs218("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "h-5 w-5" }),
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "h-6 w-32" })
+    /* @__PURE__ */ jsxs223("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4", children: [
+      /* @__PURE__ */ jsxs223("div", { className: "lg:col-span-2 space-y-4", children: [
+        /* @__PURE__ */ jsx248("div", { children: /* @__PURE__ */ jsxs223(Card59, { className: "flex flex-col", children: [
+          /* @__PURE__ */ jsx248(CardHeader41, { children: /* @__PURE__ */ jsxs223("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "h-5 w-5" }),
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "h-6 w-32" })
           ] }) }),
-          /* @__PURE__ */ jsxs218(CardContent57, { className: "space-y-4 flex-1", children: [
-            /* @__PURE__ */ jsxs218("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-              /* @__PURE__ */ jsx243("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-24" }),
-                /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-32" })
+          /* @__PURE__ */ jsxs223(CardContent58, { className: "space-y-4 flex-1", children: [
+            /* @__PURE__ */ jsxs223("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+              /* @__PURE__ */ jsx248("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsxs223("div", { className: "flex justify-between", children: [
+                /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-24" }),
+                /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-32" })
               ] }, index)) }),
-              /* @__PURE__ */ jsx243("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-24" }),
-                /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-32" })
+              /* @__PURE__ */ jsx248("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs223("div", { className: "flex justify-between", children: [
+                /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-24" }),
+                /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-32" })
               ] }, index)) })
             ] }),
-            /* @__PURE__ */ jsx243("div", { className: "flex-1" })
+            /* @__PURE__ */ jsx248("div", { className: "flex-1" })
           ] })
         ] }) }),
-        /* @__PURE__ */ jsxs218(Card58, { children: [
-          /* @__PURE__ */ jsx243(CardHeader40, { children: /* @__PURE__ */ jsxs218("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "h-5 w-5" }),
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "h-6 w-20" })
+        /* @__PURE__ */ jsxs223(Card59, { children: [
+          /* @__PURE__ */ jsx248(CardHeader41, { children: /* @__PURE__ */ jsxs223("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "h-5 w-5" }),
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "h-6 w-20" })
           ] }) }),
-          /* @__PURE__ */ jsx243(CardContent57, { children: /* @__PURE__ */ jsx243("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsx243("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ jsxs218("div", { className: "flex items-start gap-3", children: [
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "w-12 h-12 rounded-lg" }),
-            /* @__PURE__ */ jsxs218("div", { className: "flex-1 space-y-2", children: [
-              /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-32" }),
-              /* @__PURE__ */ jsx243(Skeleton5, { className: "h-3 w-20" }),
-              /* @__PURE__ */ jsx243(Skeleton5, { className: "h-3 w-24" })
+          /* @__PURE__ */ jsx248(CardContent58, { children: /* @__PURE__ */ jsx248("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsx248("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ jsxs223("div", { className: "flex items-start gap-3", children: [
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "w-12 h-12 rounded-lg" }),
+            /* @__PURE__ */ jsxs223("div", { className: "flex-1 space-y-2", children: [
+              /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-32" }),
+              /* @__PURE__ */ jsx248(Skeleton5, { className: "h-3 w-20" }),
+              /* @__PURE__ */ jsx248(Skeleton5, { className: "h-3 w-24" })
             ] })
           ] }) }, index)) }) })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs218("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ jsxs218(Card58, { children: [
-          /* @__PURE__ */ jsx243(CardHeader40, { children: /* @__PURE__ */ jsxs218("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "h-5 w-5" }),
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "h-6 w-28" })
+      /* @__PURE__ */ jsxs223("div", { className: "space-y-4", children: [
+        /* @__PURE__ */ jsxs223(Card59, { children: [
+          /* @__PURE__ */ jsx248(CardHeader41, { children: /* @__PURE__ */ jsxs223("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "h-5 w-5" }),
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "h-6 w-28" })
           ] }) }),
-          /* @__PURE__ */ jsxs218(CardContent57, { className: "space-y-3", children: [
-            Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs218("div", { className: "flex justify-between text-sm", children: [
-              /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-20" }),
-              /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-16" })
+          /* @__PURE__ */ jsxs223(CardContent58, { className: "space-y-3", children: [
+            Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs223("div", { className: "flex justify-between text-sm", children: [
+              /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-20" }),
+              /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-16" })
             ] }, index)),
-            /* @__PURE__ */ jsx243("div", { className: "pt-2 border-t border-gray-200", children: /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-              /* @__PURE__ */ jsx243(Skeleton5, { className: "h-5 w-24" }),
-              /* @__PURE__ */ jsx243(Skeleton5, { className: "h-5 w-20" })
+            /* @__PURE__ */ jsx248("div", { className: "pt-2 border-t border-gray-200", children: /* @__PURE__ */ jsxs223("div", { className: "flex justify-between", children: [
+              /* @__PURE__ */ jsx248(Skeleton5, { className: "h-5 w-24" }),
+              /* @__PURE__ */ jsx248(Skeleton5, { className: "h-5 w-20" })
             ] }) })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs218(Card58, { children: [
-          /* @__PURE__ */ jsx243(CardHeader40, { children: /* @__PURE__ */ jsxs218("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "h-5 w-5" }),
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "h-6 w-28" })
+        /* @__PURE__ */ jsxs223(Card59, { children: [
+          /* @__PURE__ */ jsx248(CardHeader41, { children: /* @__PURE__ */ jsxs223("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "h-5 w-5" }),
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "h-6 w-28" })
           ] }) }),
-          /* @__PURE__ */ jsxs218(CardContent57, { className: "space-y-4", children: [
-            /* @__PURE__ */ jsx243("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-              /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-24" }),
-              /* @__PURE__ */ jsx243(Skeleton5, { className: "h-4 w-32" })
+          /* @__PURE__ */ jsxs223(CardContent58, { className: "space-y-4", children: [
+            /* @__PURE__ */ jsx248("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs223("div", { className: "flex justify-between", children: [
+              /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-24" }),
+              /* @__PURE__ */ jsx248(Skeleton5, { className: "h-4 w-32" })
             ] }, index)) }),
-            /* @__PURE__ */ jsx243(Skeleton5, { className: "h-10 w-full" })
+            /* @__PURE__ */ jsx248(Skeleton5, { className: "h-10 w-full" })
           ] })
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsx243("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ jsxs218("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsx243(Skeleton5, { className: "h-6 w-32" }),
-      /* @__PURE__ */ jsxs218("div", { className: "flex justify-between items-center", children: [
-        /* @__PURE__ */ jsx243(Skeleton5, { className: "h-10 w-32" }),
-        /* @__PURE__ */ jsx243("div", { className: "flex gap-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsx243(Skeleton5, { className: "h-10 w-24" }, index)) })
+    /* @__PURE__ */ jsx248("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ jsxs223("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsx248(Skeleton5, { className: "h-6 w-32" }),
+      /* @__PURE__ */ jsxs223("div", { className: "flex justify-between items-center", children: [
+        /* @__PURE__ */ jsx248(Skeleton5, { className: "h-10 w-32" }),
+        /* @__PURE__ */ jsx248("div", { className: "flex gap-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsx248(Skeleton5, { className: "h-10 w-24" }, index)) })
       ] })
     ] }) })
   ] });
@@ -38147,8 +38705,9 @@ var OrderDetail = ({
   loading = false,
   showActions = true
 }) => {
-  const formatMoney = useFormatCurrency6();
+  const formatMoney = useFormatCurrency9();
   const { toastSuccess, toastError, toastInfo, removeToast } = useToast9();
+  const t2 = useOrderTranslations17();
   const COLLATERAL_TYPES = [
     "ID Card",
     "Driver License",
@@ -38185,7 +38744,7 @@ var OrderDetail = ({
     }
   }, [order]);
   if (loading) {
-    return /* @__PURE__ */ jsx243(OrderDetailSkeleton, {});
+    return /* @__PURE__ */ jsx248(OrderDetailSkeleton, {});
   }
   const isRentOrder = order.orderType === "RENT";
   const isSaleOrder = order.orderType === "SALE";
@@ -38267,11 +38826,11 @@ var OrderDetail = ({
       toastInfo("Saving...", "Please wait while settings are being saved");
       try {
         await onSaveSettings(tempSettings);
-        toastSuccess("Settings Saved", "Order settings have been updated successfully");
+        toastSuccess(t2("detail.settingsSaved"), t2("detail.settingsSavedMessage"));
         setSettingsForm(tempSettings);
         setIsEditingSettings(false);
       } catch (error2) {
-        toastError("Save Failed", "Failed to save settings. Please try again.");
+        toastError(t2("detail.saveFailed"), t2("detail.saveFailedMessage"));
       } finally {
         setIsSavingSettings(false);
       }
@@ -38374,411 +38933,103 @@ var OrderDetail = ({
       }
     }
   };
-  return /* @__PURE__ */ jsxs218("div", { className: "space-y-4", children: [
-    /* @__PURE__ */ jsx243("div", { className: "bg-white border border-gray-200 rounded-lg p-4", children: /* @__PURE__ */ jsxs218("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsxs218("div", { children: [
-        /* @__PURE__ */ jsxs218("h1", { className: "text-2xl font-bold text-gray-900", children: [
-          "Order Details #",
+  return /* @__PURE__ */ jsxs223("div", { className: "space-y-4", children: [
+    /* @__PURE__ */ jsx248("div", { className: "bg-white border border-gray-200 rounded-lg p-4", children: /* @__PURE__ */ jsxs223("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsxs223("div", { children: [
+        /* @__PURE__ */ jsxs223("h1", { className: "text-2xl font-bold text-gray-900", children: [
+          t2("orderDetails"),
+          " #",
           order.orderNumber
         ] }),
-        /* @__PURE__ */ jsx243("p", { className: "text-sm text-gray-600", children: "View and manage order information" })
+        /* @__PURE__ */ jsx248("p", { className: "text-sm text-gray-600", children: t2("detail.viewAndManage") })
       ] }),
-      /* @__PURE__ */ jsxs218("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ jsxs218("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Order Type:" }),
-          /* @__PURE__ */ jsx243(
+      /* @__PURE__ */ jsxs223("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ jsxs223("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsxs223("span", { className: "text-sm text-gray-600", children: [
+            t2("orderType.label"),
+            ":"
+          ] }),
+          /* @__PURE__ */ jsx248(
             Badge30,
             {
-              className: order.orderType === "RENT" ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-              children: order.orderType
+              className: ORDER_TYPE_COLORS2[order.orderType],
+              children: t2(`orderType.${order.orderType}`)
             }
           )
         ] }),
-        /* @__PURE__ */ jsxs218("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Status:" }),
-          /* @__PURE__ */ jsx243(
+        /* @__PURE__ */ jsxs223("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsxs223("span", { className: "text-sm text-gray-600", children: [
+            t2("status.label"),
+            ":"
+          ] }),
+          /* @__PURE__ */ jsx248(
             Badge30,
             {
-              className: ORDER_STATUS_COLORS4[order.status] || "bg-gray-100 text-gray-800",
-              children: order.status
+              className: ORDER_STATUS_COLORS5[order.status] || "bg-gray-100 text-gray-800",
+              children: t2(`status.${order.status}`)
             }
           )
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsxs218("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-screen", children: [
-      /* @__PURE__ */ jsxs218("div", { className: "lg:col-span-2 space-y-4", children: [
-        /* @__PURE__ */ jsx243("div", { className: "lg:sticky lg:top-4 lg:z-10 lg:self-start", children: /* @__PURE__ */ jsxs218(Card58, { className: "flex flex-col", children: [
-          /* @__PURE__ */ jsx243(CardHeader40, { children: /* @__PURE__ */ jsxs218(CardTitle40, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx243(Info14, { className: "w-5 h-5" }),
-            "Order Information"
-          ] }) }),
-          /* @__PURE__ */ jsxs218(CardContent57, { className: "space-y-4 flex-1", children: [
-            /* @__PURE__ */ jsxs218("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-              /* @__PURE__ */ jsxs218("div", { className: "space-y-3", children: [
-                /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Order ID:" }),
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.orderNumber })
-                ] }),
-                /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Customer Name:" }),
-                  /* @__PURE__ */ jsxs218("span", { className: "text-sm font-medium", children: [
-                    order.customer?.firstName,
-                    " ",
-                    order.customer?.lastName
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Phone:" }),
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.customer?.phone || "N/A" })
-                ] }),
-                order.createdBy && /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Created By:" }),
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.createdBy?.firstName && order.createdBy?.lastName ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : order.createdBy?.email || "Unknown" })
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs218("div", { className: "space-y-3", children: [
-                order.orderType === "RENT" && /* @__PURE__ */ jsxs218(Fragment48, { children: [
-                  /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                    /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Pickup Date:" }),
-                    /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.pickupPlanAt ? new Date(order.pickupPlanAt).toLocaleDateString() : "N/A" })
-                  ] }),
-                  /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                    /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Return Date:" }),
-                    /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.returnPlanAt ? new Date(order.returnPlanAt).toLocaleDateString() : "N/A" })
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Seller:" }),
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.outlet?.name || "N/A" })
-                ] }),
-                /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Order Date:" }),
-                  /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A" })
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsx243("div", { className: "flex-1" })
-          ] })
-        ] }) }),
-        /* @__PURE__ */ jsxs218(Card58, { children: [
-          /* @__PURE__ */ jsx243(CardHeader40, { children: /* @__PURE__ */ jsxs218(CardTitle40, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx243(Package21, { className: "w-5 h-5" }),
-            "Products"
-          ] }) }),
-          /* @__PURE__ */ jsx243(CardContent57, { children: order.orderItems.length === 0 ? /* @__PURE__ */ jsxs218("div", { className: "text-center py-4 text-gray-500", children: [
-            /* @__PURE__ */ jsx243(Package21, { className: "w-8 h-8 mx-auto mb-2 text-gray-300" }),
-            /* @__PURE__ */ jsx243("p", { className: "text-sm", children: "No products in this order" })
-          ] }) : /* @__PURE__ */ jsx243("div", { className: "space-y-3", children: order.orderItems.map((item, index) => /* @__PURE__ */ jsx243("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ jsxs218("div", { className: "flex items-start gap-3", children: [
-            /* @__PURE__ */ jsx243("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx243("div", { className: "w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200", children: /* @__PURE__ */ jsx243(Package21, { className: "w-6 h-6 text-gray-400" }) }) }),
-            /* @__PURE__ */ jsxs218("div", { className: "flex-1 min-w-0", children: [
-              /* @__PURE__ */ jsx243("div", { className: "font-medium text-gray-900 text-sm", children: item.product?.name || "Unknown Product" }),
-              /* @__PURE__ */ jsx243("div", { className: "text-xs text-gray-500", children: item.product?.name ? `Product: ${item.product.name}` : "Unknown Product" }),
-              /* @__PURE__ */ jsxs218("div", { className: "text-xs text-gray-600", children: [
-                formatMoney(item.unitPrice),
-                " x ",
-                item.quantity
-              ] }),
-              item.notes && /* @__PURE__ */ jsxs218("div", { className: "text-xs text-gray-500 mt-1", children: [
-                "Notes: ",
-                item.notes || "No notes"
-              ] })
-            ] })
-          ] }) }, index)) }) })
-        ] })
+    /* @__PURE__ */ jsxs223("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-screen", children: [
+      /* @__PURE__ */ jsxs223("div", { className: "lg:col-span-2 space-y-4", children: [
+        /* @__PURE__ */ jsx248(OrderInformation, { order }),
+        /* @__PURE__ */ jsx248(OrderProductsList, { order })
       ] }),
-      /* @__PURE__ */ jsxs218("div", { className: "space-y-6 lg:sticky lg:top-4 lg:self-start", children: [
-        /* @__PURE__ */ jsxs218(Card58, { children: [
-          /* @__PURE__ */ jsx243(CardHeader40, { children: /* @__PURE__ */ jsxs218(CardTitle40, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx243(DollarSign20, { className: "w-5 h-5" }),
-            "Order Summary"
-          ] }) }),
-          /* @__PURE__ */ jsxs218(CardContent57, { className: "space-y-3", children: [
-            /* @__PURE__ */ jsxs218("div", { className: "flex justify-between text-sm", children: [
-              /* @__PURE__ */ jsx243("span", { className: "text-gray-600", children: "Subtotal:" }),
-              /* @__PURE__ */ jsx243("span", { className: "font-medium", children: formatMoney(order.totalAmount || 0) })
-            ] }),
-            order.discountAmount > 0 && /* @__PURE__ */ jsxs218("div", { className: "flex justify-between text-sm text-green-600", children: [
-              /* @__PURE__ */ jsxs218("span", { children: [
-                "Discount ",
-                order.discountType === "percentage" && order.discountValue ? `(${order.discountValue}%)` : "(amount)",
-                ":"
-              ] }),
-              /* @__PURE__ */ jsxs218("span", { className: "font-medium", children: [
-                "-",
-                formatMoney(order.discountAmount)
-              ] })
-            ] }),
-            order.orderType === "RENT" && order.depositAmount > 0 && /* @__PURE__ */ jsxs218("div", { className: "flex justify-between text-sm", children: [
-              /* @__PURE__ */ jsx243("span", { className: "text-gray-600", children: "Deposit:" }),
-              /* @__PURE__ */ jsx243("span", { className: "font-medium", children: formatMoney(order.depositAmount) })
-            ] }),
-            /* @__PURE__ */ jsxs218("div", { className: "flex justify-between text-lg font-bold text-green-700 pt-2 border-t border-gray-200", children: [
-              /* @__PURE__ */ jsx243("span", { children: "Grand Total:" }),
-              /* @__PURE__ */ jsx243("span", { children: formatMoney(order.totalAmount || 0) })
-            ] }),
-            order.orderType === "RENT" && /* @__PURE__ */ jsxs218("div", { className: "flex justify-between text-sm pt-2 border-t border-gray-200", children: [
-              /* @__PURE__ */ jsx243("span", { className: "text-gray-600", children: "Collection Amount:" }),
-              /* @__PURE__ */ jsx243("span", { className: `font-medium ${order.status === "RESERVED" ? "text-yellow-700" : order.status === "PICKUPED" ? "text-blue-700" : "text-gray-500"}`, children: order.status === "RESERVED" ? /* @__PURE__ */ jsxs218("span", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ jsx243("span", { children: formatMoney(calculateCollectionTotal(order, tempSettings)) }),
-                tempSettings.collateralType && tempSettings.collateralType !== "Other" && /* @__PURE__ */ jsxs218("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: [
-                  "+ ",
-                  tempSettings.collateralType
-                ] }),
-                tempSettings.collateralType === "Other" && tempSettings.collateralDetails && /* @__PURE__ */ jsxs218("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: [
-                  "+ ",
-                  tempSettings.collateralDetails
-                ] }),
-                tempSettings.collateralType === "Other" && !tempSettings.collateralDetails && /* @__PURE__ */ jsx243("span", { className: "text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded", children: "+ Collateral" })
-              ] }) : order.status === "PICKUPED" ? "Already collected" : "No collection needed" })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs218(Card58, { children: [
-          /* @__PURE__ */ jsx243(CardHeader40, { children: /* @__PURE__ */ jsxs218(CardTitle40, { className: "text-lg flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx243(Settings9, { className: "w-5 h-5" }),
-            "Order Settings"
-          ] }) }),
-          /* @__PURE__ */ jsx243(CardContent57, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ jsxs218(Fragment48, { children: [
-            /* @__PURE__ */ jsxs218("div", { children: [
-              /* @__PURE__ */ jsxs218(Label15, { htmlFor: "damageFee", className: "text-sm font-medium text-gray-700", children: [
-                "Damage Fee",
-                !isDamageFeeEnabled() && /* @__PURE__ */ jsx243("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
-              ] }),
-              /* @__PURE__ */ jsx243(
-                Input29,
-                {
-                  id: "damageFee",
-                  type: "number",
-                  min: "0",
-                  step: "0.01",
-                  value: tempSettings.damageFee || 0,
-                  onChange: (e2) => handleSettingsChange({ damageFee: parseFloat(e2.target.value) || 0 }),
-                  className: "mt-1",
-                  placeholder: "0",
-                  disabled: !isDamageFeeEnabled()
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxs218("div", { children: [
-              /* @__PURE__ */ jsxs218(Label15, { htmlFor: "securityDeposit", className: "text-sm font-medium text-gray-700", children: [
-                "Security Deposit",
-                !isSecurityDepositEnabled() && /* @__PURE__ */ jsx243("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
-              ] }),
-              /* @__PURE__ */ jsx243(
-                Input29,
-                {
-                  id: "securityDeposit",
-                  type: "number",
-                  min: "0",
-                  step: "0.01",
-                  value: tempSettings.securityDeposit || 0,
-                  onChange: (e2) => handleSettingsChange({ securityDeposit: parseFloat(e2.target.value) || 0 }),
-                  className: "mt-1",
-                  placeholder: "0",
-                  disabled: !isSecurityDepositEnabled()
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxs218("div", { children: [
-              /* @__PURE__ */ jsxs218(Label15, { htmlFor: "collateralType", className: "text-sm font-medium text-gray-700", children: [
-                "Collateral Type",
-                !isCollateralTypeEnabled() && /* @__PURE__ */ jsx243("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
-              ] }),
-              /* @__PURE__ */ jsxs218(Select18, { onValueChange: (value) => handleSettingsChange({ collateralType: value }), value: tempSettings.collateralType || "", onOpenChange: () => setIsEditingSettings(true), children: [
-                /* @__PURE__ */ jsx243(SelectTrigger18, { className: "mt-1", children: /* @__PURE__ */ jsx243(SelectValue18, { placeholder: "Select collateral type" }) }),
-                /* @__PURE__ */ jsx243(SelectContent18, { children: COLLATERAL_TYPES.map((type) => /* @__PURE__ */ jsx243(SelectItem18, { value: type, children: type }, type)) })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs218("div", { children: [
-              /* @__PURE__ */ jsxs218(Label15, { htmlFor: "collateralDetails", className: "text-sm font-medium text-gray-700", children: [
-                "Collateral Details",
-                !isCollateralDetailsEnabled() && /* @__PURE__ */ jsx243("span", { className: "text-xs text-gray-500 ml-2", children: "(Disabled for this order type/status)" })
-              ] }),
-              /* @__PURE__ */ jsx243(
-                Input29,
-                {
-                  id: "collateralDetails",
-                  type: "text",
-                  value: tempSettings.collateralDetails || "",
-                  onChange: (e2) => handleSettingsChange({ collateralDetails: e2.target.value }),
-                  className: "mt-1",
-                  placeholder: "Enter collateral details",
-                  disabled: !isCollateralDetailsEnabled()
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxs218("div", { children: [
-              /* @__PURE__ */ jsx243(Label15, { htmlFor: "notes", className: "text-sm font-medium text-gray-700", children: "Order Notes" }),
-              /* @__PURE__ */ jsx243(
-                Textarea8,
-                {
-                  id: "notes",
-                  value: tempSettings.notes || "",
-                  onChange: (e2) => handleSettingsChange({ notes: e2.target.value }),
-                  rows: 3,
-                  className: "mt-1",
-                  placeholder: "Enter order notes"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxs218("div", { className: "flex gap-2 pt-2", children: [
-              /* @__PURE__ */ jsxs218(
-                Button63,
-                {
-                  onClick: handleSaveSettings,
-                  disabled: loading || isSavingSettings,
-                  className: "flex-1 flex items-center gap-2",
-                  children: [
-                    /* @__PURE__ */ jsx243(Save9, { className: "w-4 h-4" }),
-                    isSavingSettings ? "Saving..." : "Save Changes"
-                  ]
-                }
-              ),
-              /* @__PURE__ */ jsx243(
-                Button63,
-                {
-                  variant: "outline",
-                  onClick: handleCancelEdit,
-                  className: "flex-1",
-                  children: "Cancel"
-                }
-              )
-            ] })
-          ] }) : /* @__PURE__ */ jsxs218(Fragment48, { children: [
-            /* @__PURE__ */ jsxs218("div", { className: "space-y-3", children: [
-              /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Damage Fee:" }),
-                /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: isDamageFeeEnabled() ? formatMoney(settingsForm.damageFee || 0) : /* @__PURE__ */ jsx243("span", { className: "text-gray-400 italic", children: "Disabled" }) })
-              ] }),
-              /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Security Deposit:" }),
-                /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: isSecurityDepositEnabled() ? formatMoney(settingsForm.securityDeposit || 0) : /* @__PURE__ */ jsx243("span", { className: "text-gray-400 italic", children: "Disabled" }) })
-              ] }),
-              /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Collateral Type:" }),
-                /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: isCollateralTypeEnabled() ? settingsForm.collateralType || "Not specified" : /* @__PURE__ */ jsx243("span", { className: "text-gray-400 italic", children: "Disabled" }) })
-              ] }),
-              /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Collateral Details:" }),
-                /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: isCollateralDetailsEnabled() ? settingsForm.collateralDetails || "No details" : /* @__PURE__ */ jsx243("span", { className: "text-gray-400 italic", children: "Disabled" }) })
-              ] }),
-              /* @__PURE__ */ jsxs218("div", { className: "flex justify-between", children: [
-                /* @__PURE__ */ jsx243("span", { className: "text-sm text-gray-600", children: "Notes:" }),
-                /* @__PURE__ */ jsx243("span", { className: "text-sm font-medium", children: settingsForm.notes || "No notes" })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs218(
-              Button63,
-              {
-                variant: "outline",
-                onClick: () => {
-                  setIsEditingSettings(true);
-                },
-                className: "w-full flex items-center gap-2 mt-4",
-                children: [
-                  /* @__PURE__ */ jsx243(Edit21, { className: "w-4 h-4" }),
-                  "Edit Settings"
-                ]
-              }
-            )
-          ] }) })
-        ] })
+      /* @__PURE__ */ jsxs223("div", { className: "space-y-6", children: [
+        /* @__PURE__ */ jsx248(
+          OrderSummaryCard,
+          {
+            order,
+            tempSettings,
+            calculateCollectionTotal
+          }
+        ),
+        /* @__PURE__ */ jsx248(
+          OrderSettingsCard,
+          {
+            order,
+            settingsForm,
+            tempSettings,
+            isEditingSettings,
+            isSavingSettings,
+            loading,
+            isDamageFeeEnabled,
+            isSecurityDepositEnabled,
+            isCollateralTypeEnabled,
+            isCollateralDetailsEnabled,
+            onSettingsChange: handleSettingsChange,
+            onSaveSettings: handleSaveSettings,
+            onCancelEdit: handleCancelEdit,
+            onStartEdit: () => setIsEditingSettings(true),
+            collateralTypes: COLLATERAL_TYPES
+          }
+        )
       ] })
     ] }),
-    showActions && /* @__PURE__ */ jsx243("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ jsxs218("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsx243("h3", { className: "text-lg font-medium text-gray-900", children: "Order Actions" }),
-      /* @__PURE__ */ jsxs218("div", { className: "flex justify-between items-center", children: [
-        /* @__PURE__ */ jsx243("div", { children: canCancel && /* @__PURE__ */ jsxs218(
-          Button63,
-          {
-            variant: "destructive",
-            onClick: handleCancelOrderClick,
-            className: "px-6",
-            disabled: isCancelLoading,
-            children: [
-              /* @__PURE__ */ jsx243(X17, { className: "w-4 h-4 mr-2" }),
-              isCancelLoading ? "Cancelling..." : "Cancel Order"
-            ]
-          }
-        ) }),
-        /* @__PURE__ */ jsxs218("div", { className: "flex gap-3", children: [
-          onEdit && /* @__PURE__ */ jsxs218(
-            Button63,
-            {
-              variant: "outline",
-              onClick: handleEditOrderWithSettings,
-              className: "px-4",
-              disabled: !canEdit,
-              title: !canEdit ? isRentOrder ? "RENT orders can only be edited when status is RESERVED" : "SALE orders can only be edited when status is COMPLETED" : "Edit Order",
-              children: [
-                /* @__PURE__ */ jsx243(Edit21, { className: "w-4 h-4 mr-2" }),
-                "Edit Order"
-              ]
-            }
-          ),
-          canPickup && /* @__PURE__ */ jsxs218(
-            Button63,
-            {
-              variant: "default",
-              onClick: handlePickupClick,
-              className: "px-6",
-              disabled: isPickupLoading,
-              children: [
-                /* @__PURE__ */ jsx243(Package21, { className: "w-4 h-4 mr-2" }),
-                isPickupLoading ? "Picking up..." : "Pickup Order"
-              ]
-            }
-          ),
-          canReturn && /* @__PURE__ */ jsxs218(
-            Button63,
-            {
-              variant: "default",
-              onClick: handleReturnClick,
-              className: "px-4",
-              disabled: isReturnLoading,
-              children: [
-                /* @__PURE__ */ jsx243(RotateCcw4, { className: "w-4 h-4 mr-2" }),
-                isReturnLoading ? "Returning..." : "Return Order"
-              ]
-            }
-          ),
-          canPrint && /* @__PURE__ */ jsxs218(
-            Button63,
-            {
-              variant: "outline",
-              onClick: handlePrintOrder,
-              className: "px-4",
-              children: [
-                /* @__PURE__ */ jsx243(Printer, { className: "w-4 h-4 mr-2" }),
-                "Print Order"
-              ]
-            }
-          )
-        ] })
-      ] }),
-      /* @__PURE__ */ jsx243("div", { className: "mt-3 text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-200", children: /* @__PURE__ */ jsxs218("div", { className: "flex items-start gap-2", children: [
-        /* @__PURE__ */ jsx243(Info14, { className: "w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" }),
-        /* @__PURE__ */ jsxs218("div", { children: [
-          /* @__PURE__ */ jsx243("p", { className: "font-medium text-gray-700 mb-1", children: "Editing Rules:" }),
-          /* @__PURE__ */ jsxs218("ul", { className: "space-y-1 text-gray-600", children: [
-            /* @__PURE__ */ jsxs218("li", { children: [
-              "\u2022 ",
-              /* @__PURE__ */ jsx243("strong", { children: "RENT orders" }),
-              ": Can only be edited when status is ",
-              /* @__PURE__ */ jsx243("span", { className: "font-mono bg-blue-100 px-1 rounded", children: "RESERVED" })
-            ] }),
-            /* @__PURE__ */ jsxs218("li", { children: [
-              "\u2022 ",
-              /* @__PURE__ */ jsx243("strong", { children: "SALE orders" }),
-              ": Can only be edited when status is ",
-              /* @__PURE__ */ jsx243("span", { className: "font-mono bg-green-100 px-1 rounded", children: "COMPLETED" })
-            ] })
-          ] })
-        ] })
-      ] }) })
-    ] }) }),
-    /* @__PURE__ */ jsx243(
+    showActions && /* @__PURE__ */ jsx248(
+      OrderActionsSection,
+      {
+        order,
+        canEdit,
+        canCancel,
+        canPickup,
+        canReturn,
+        canPrint,
+        isRentOrder,
+        isSaleOrder,
+        isPickupLoading,
+        isReturnLoading,
+        isCancelLoading,
+        onEdit: handleEditOrderWithSettings,
+        onCancel: handleCancelOrderClick,
+        onPickup: handlePickupClick,
+        onReturn: handleReturnClick,
+        onPrint: handlePrintOrder
+      }
+    ),
+    /* @__PURE__ */ jsx248(
       CollectionReturnModal,
       {
         isOpen: isCollectionModalOpen,
@@ -38789,7 +39040,7 @@ var OrderDetail = ({
         onConfirmPickup: handlePickupOrder
       }
     ),
-    /* @__PURE__ */ jsx243(
+    /* @__PURE__ */ jsx248(
       CollectionReturnModal,
       {
         isOpen: isReturnModalOpen,
@@ -38800,16 +39051,16 @@ var OrderDetail = ({
         onConfirmReturn: handleReturnOrder
       }
     ),
-    /* @__PURE__ */ jsx243(
+    /* @__PURE__ */ jsx248(
       ConfirmationDialog4,
       {
         open: showCancelConfirmDialog,
         onOpenChange: setShowCancelConfirmDialog,
         type: "danger",
-        title: "Cancel Order",
-        description: `Are you sure you want to cancel order #${order.orderNumber}? This action cannot be undone.`,
-        confirmText: "Cancel Order",
-        cancelText: "Keep Order",
+        title: t2("detail.cancelOrderTitle"),
+        description: t2("detail.cancelOrderMessage"),
+        confirmText: t2("actions.cancelOrder"),
+        cancelText: t2("detail.keepOrder"),
         onConfirm: handleCancelOrder,
         onCancel: () => setShowCancelConfirmDialog(false),
         isLoading: isCancelLoading
@@ -38821,55 +39072,55 @@ var OrderDetail = ({
 // src/components/features/OrderDetail/components/OrderSummary.tsx
 import { DollarSign as DollarSign21 } from "lucide-react";
 import { formatCurrency as formatCurrency19 } from "@rentalshop/ui";
-import { jsx as jsx244, jsxs as jsxs219 } from "react/jsx-runtime";
+import { jsx as jsx249, jsxs as jsxs224 } from "react/jsx-runtime";
 var OrderSummary = ({ order, settingsForm }) => {
   const collectionAmount = calculateCollectionAmount(order, settingsForm);
   const collectionTitle = getCollectionTitle(order);
-  return /* @__PURE__ */ jsxs219("div", { className: "p-6", children: [
-    /* @__PURE__ */ jsxs219("div", { className: "flex items-center gap-2 mb-4", children: [
-      /* @__PURE__ */ jsx244(DollarSign21, { className: "w-5 h-5 text-gray-600" }),
-      /* @__PURE__ */ jsx244("h3", { className: "text-lg font-semibold text-gray-900", children: "Order Summary" })
+  return /* @__PURE__ */ jsxs224("div", { className: "p-6", children: [
+    /* @__PURE__ */ jsxs224("div", { className: "flex items-center gap-2 mb-4", children: [
+      /* @__PURE__ */ jsx249(DollarSign21, { className: "w-5 h-5 text-gray-600" }),
+      /* @__PURE__ */ jsx249("h3", { className: "text-lg font-semibold text-gray-900", children: "Order Summary" })
     ] }),
-    /* @__PURE__ */ jsxs219("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsxs219("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ jsx244("span", { className: "text-gray-600", children: "Subtotal" }),
-        /* @__PURE__ */ jsx244("span", { className: "font-semibold text-gray-900", children: formatCurrency19(order.subtotal) })
+    /* @__PURE__ */ jsxs224("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs224("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ jsx249("span", { className: "text-gray-600", children: "Subtotal" }),
+        /* @__PURE__ */ jsx249("span", { className: "font-semibold text-gray-900", children: formatCurrency19(order.subtotal) })
       ] }),
-      order.discountAmount && order.discountAmount > 0 && /* @__PURE__ */ jsxs219("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ jsx244("span", { className: "text-gray-600", children: "Discount" }),
-        /* @__PURE__ */ jsxs219("span", { className: "font-medium text-green-600", children: [
+      order.discountAmount && order.discountAmount > 0 && /* @__PURE__ */ jsxs224("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ jsx249("span", { className: "text-gray-600", children: "Discount" }),
+        /* @__PURE__ */ jsxs224("span", { className: "font-medium text-green-600", children: [
           "-",
           formatCurrency19(order.discountAmount)
         ] })
       ] }),
-      order.taxAmount && order.taxAmount > 0 && /* @__PURE__ */ jsxs219("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ jsx244("span", { className: "text-gray-600", children: "Tax" }),
-        /* @__PURE__ */ jsx244("span", { className: "font-medium text-gray-900", children: formatCurrency19(order.taxAmount) })
+      order.taxAmount && order.taxAmount > 0 && /* @__PURE__ */ jsxs224("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ jsx249("span", { className: "text-gray-600", children: "Tax" }),
+        /* @__PURE__ */ jsx249("span", { className: "font-medium text-gray-900", children: formatCurrency19(order.taxAmount) })
       ] }),
-      /* @__PURE__ */ jsxs219("div", { className: "flex justify-between items-center py-3 border-t border-gray-200", children: [
-        /* @__PURE__ */ jsx244("span", { className: "text-lg font-semibold text-gray-900", children: "Total Amount" }),
-        /* @__PURE__ */ jsx244("span", { className: "text-xl font-bold text-green-700", children: formatCurrency19(order.totalAmount) })
+      /* @__PURE__ */ jsxs224("div", { className: "flex justify-between items-center py-3 border-t border-gray-200", children: [
+        /* @__PURE__ */ jsx249("span", { className: "text-lg font-semibold text-gray-900", children: "Total Amount" }),
+        /* @__PURE__ */ jsx249("span", { className: "text-xl font-bold text-green-700", children: formatCurrency19(order.totalAmount) })
       ] }),
-      /* @__PURE__ */ jsxs219("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ jsx244("span", { className: "text-gray-600", children: "Deposit" }),
-        /* @__PURE__ */ jsx244("span", { className: "font-medium text-gray-900", children: formatCurrency19(order.depositAmount) })
+      /* @__PURE__ */ jsxs224("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ jsx249("span", { className: "text-gray-600", children: "Deposit" }),
+        /* @__PURE__ */ jsx249("span", { className: "font-medium text-gray-900", children: formatCurrency19(order.depositAmount) })
       ] }),
-      /* @__PURE__ */ jsxs219("div", { className: "flex justify-between items-center py-2", children: [
-        /* @__PURE__ */ jsx244("span", { className: "text-gray-600", children: "Remaining" }),
-        /* @__PURE__ */ jsx244("span", { className: "font-medium text-gray-900", children: formatCurrency19(order.totalAmount - order.depositAmount) })
+      /* @__PURE__ */ jsxs224("div", { className: "flex justify-between items-center py-2", children: [
+        /* @__PURE__ */ jsx249("span", { className: "text-gray-600", children: "Remaining" }),
+        /* @__PURE__ */ jsx249("span", { className: "font-medium text-gray-900", children: formatCurrency19(order.totalAmount - order.depositAmount) })
       ] }),
-      /* @__PURE__ */ jsxs219("div", { className: "py-3 border-t border-gray-200", children: [
-        /* @__PURE__ */ jsxs219("div", { className: "flex justify-between items-center", children: [
-          /* @__PURE__ */ jsx244("span", { className: "text-lg font-semibold text-gray-900", children: collectionTitle }),
-          /* @__PURE__ */ jsx244("span", { className: `text-xl font-bold ${collectionAmount < 0 ? "text-blue-700" : collectionAmount === 0 ? "text-gray-500" : "text-yellow-700"}`, children: collectionAmount === 0 ? /* @__PURE__ */ jsx244("span", { className: "text-gray-500", children: "0" }) : `${formatCurrency19(Math.abs(collectionAmount))}` })
+      /* @__PURE__ */ jsxs224("div", { className: "py-3 border-t border-gray-200", children: [
+        /* @__PURE__ */ jsxs224("div", { className: "flex justify-between items-center", children: [
+          /* @__PURE__ */ jsx249("span", { className: "text-lg font-semibold text-gray-900", children: collectionTitle }),
+          /* @__PURE__ */ jsx249("span", { className: `text-xl font-bold ${collectionAmount < 0 ? "text-blue-700" : collectionAmount === 0 ? "text-gray-500" : "text-yellow-700"}`, children: collectionAmount === 0 ? /* @__PURE__ */ jsx249("span", { className: "text-gray-500", children: "0" }) : `${formatCurrency19(Math.abs(collectionAmount))}` })
         ] }),
-        order.orderType === "RENT" && order.status === "RESERVED" && settingsForm.material && settingsForm.material.trim() !== "" && /* @__PURE__ */ jsxs219("div", { className: "text-sm font-medium text-gray-600 mt-1", children: [
+        order.orderType === "RENT" && order.status === "RESERVED" && settingsForm.material && settingsForm.material.trim() !== "" && /* @__PURE__ */ jsxs224("div", { className: "text-sm font-medium text-gray-600 mt-1", children: [
           "v\xE0 ",
           settingsForm.material
         ] }),
-        order.orderType === "RENT" && order.status === "RESERVED" && /* @__PURE__ */ jsx244("div", { className: "mt-2 text-xs text-gray-500", children: /* @__PURE__ */ jsxs219("div", { className: "flex items-center gap-1", children: [
-          /* @__PURE__ */ jsx244("span", { children: "\u{1F4A1}" }),
-          /* @__PURE__ */ jsxs219("span", { children: [
+        order.orderType === "RENT" && order.status === "RESERVED" && /* @__PURE__ */ jsx249("div", { className: "mt-2 text-xs text-gray-500", children: /* @__PURE__ */ jsxs224("div", { className: "flex items-center gap-1", children: [
+          /* @__PURE__ */ jsx249("span", { children: "\u{1F4A1}" }),
+          /* @__PURE__ */ jsxs224("span", { children: [
             formatCurrency19(order.totalAmount),
             " Total after discount - ",
             formatCurrency19(order.depositAmount),
@@ -38878,9 +39129,9 @@ var OrderSummary = ({ order, settingsForm }) => {
             " Bail amount"
           ] })
         ] }) }),
-        order.orderType === "RENT" && order.status === "PICKUP" && /* @__PURE__ */ jsx244("div", { className: "mt-2 text-xs text-gray-500", children: /* @__PURE__ */ jsxs219("div", { className: "flex items-center gap-1", children: [
-          /* @__PURE__ */ jsx244("span", { children: "\u{1F4A1}" }),
-          /* @__PURE__ */ jsxs219("span", { children: [
+        order.orderType === "RENT" && order.status === "PICKUP" && /* @__PURE__ */ jsx249("div", { className: "mt-2 text-xs text-gray-500", children: /* @__PURE__ */ jsxs224("div", { className: "flex items-center gap-1", children: [
+          /* @__PURE__ */ jsx249("span", { children: "\u{1F4A1}" }),
+          /* @__PURE__ */ jsxs224("span", { children: [
             formatCurrency19(settingsForm.bailAmount),
             " Bail amount - ",
             formatCurrency19(settingsForm.damageFee),
@@ -38893,70 +39144,71 @@ var OrderSummary = ({ order, settingsForm }) => {
 };
 
 // src/components/features/Shops/components/ShopsLoading.tsx
-import { jsx as jsx245, jsxs as jsxs220 } from "react/jsx-runtime";
+import { jsx as jsx250, jsxs as jsxs225 } from "react/jsx-runtime";
 function ShopsLoading() {
-  return /* @__PURE__ */ jsxs220("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsx245(StatsSkeleton, {}),
-    /* @__PURE__ */ jsx245(SearchSkeleton, {}),
-    /* @__PURE__ */ jsx245(GridSkeleton, { items: 6 }),
-    /* @__PURE__ */ jsx245(PaginationSkeleton, {})
+  return /* @__PURE__ */ jsxs225("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsx250(StatsSkeleton, {}),
+    /* @__PURE__ */ jsx250(SearchSkeleton, {}),
+    /* @__PURE__ */ jsx250(GridSkeleton, { items: 6 }),
+    /* @__PURE__ */ jsx250(PaginationSkeleton, {})
   ] });
 }
 function ShopDetailLoading() {
-  return /* @__PURE__ */ jsxs220("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsxs220("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsxs220("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ jsx245("div", { className: "h-8 w-48 bg-gray-200 rounded animate-pulse" }),
-        /* @__PURE__ */ jsx245("div", { className: "h-4 w-32 bg-gray-200 rounded animate-pulse" })
+  return /* @__PURE__ */ jsxs225("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsxs225("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsxs225("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ jsx250("div", { className: "h-8 w-48 bg-gray-200 rounded animate-pulse" }),
+        /* @__PURE__ */ jsx250("div", { className: "h-4 w-32 bg-gray-200 rounded animate-pulse" })
       ] }),
-      /* @__PURE__ */ jsxs220("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ jsx245("div", { className: "h-10 w-24 bg-gray-200 rounded animate-pulse" }),
-        /* @__PURE__ */ jsx245("div", { className: "h-10 w-24 bg-gray-200 rounded animate-pulse" })
+      /* @__PURE__ */ jsxs225("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ jsx250("div", { className: "h-10 w-24 bg-gray-200 rounded animate-pulse" }),
+        /* @__PURE__ */ jsx250("div", { className: "h-10 w-24 bg-gray-200 rounded animate-pulse" })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs220("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6", children: [
-      /* @__PURE__ */ jsx245("div", { className: "lg:col-span-1", children: /* @__PURE__ */ jsx245("div", { className: "aspect-video w-full bg-gray-200 rounded-lg animate-pulse" }) }),
-      /* @__PURE__ */ jsxs220("div", { className: "lg:col-span-2 space-y-6", children: [
-        /* @__PURE__ */ jsxs220("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ jsx245("div", { className: "h-6 w-24 bg-gray-200 rounded animate-pulse" }),
-          /* @__PURE__ */ jsx245("div", { className: "space-y-2", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ jsx245("div", { className: "h-4 w-full bg-gray-200 rounded animate-pulse" }, i)) })
+    /* @__PURE__ */ jsxs225("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6", children: [
+      /* @__PURE__ */ jsx250("div", { className: "lg:col-span-1", children: /* @__PURE__ */ jsx250("div", { className: "aspect-video w-full bg-gray-200 rounded-lg animate-pulse" }) }),
+      /* @__PURE__ */ jsxs225("div", { className: "lg:col-span-2 space-y-6", children: [
+        /* @__PURE__ */ jsxs225("div", { className: "space-y-4", children: [
+          /* @__PURE__ */ jsx250("div", { className: "h-6 w-24 bg-gray-200 rounded animate-pulse" }),
+          /* @__PURE__ */ jsx250("div", { className: "space-y-2", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ jsx250("div", { className: "h-4 w-full bg-gray-200 rounded animate-pulse" }, i)) })
         ] }),
-        /* @__PURE__ */ jsxs220("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ jsx245("div", { className: "h-6 w-24 bg-gray-200 rounded animate-pulse" }),
-          /* @__PURE__ */ jsx245("div", { className: "grid grid-cols-2 gap-4", children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ jsx245("div", { className: "h-4 w-full bg-gray-200 rounded animate-pulse" }, i)) })
+        /* @__PURE__ */ jsxs225("div", { className: "space-y-4", children: [
+          /* @__PURE__ */ jsx250("div", { className: "h-6 w-24 bg-gray-200 rounded animate-pulse" }),
+          /* @__PURE__ */ jsx250("div", { className: "grid grid-cols-2 gap-4", children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ jsx250("div", { className: "h-4 w-full bg-gray-200 rounded animate-pulse" }, i)) })
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs220("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsx245("div", { className: "h-6 w-32 bg-gray-200 rounded animate-pulse" }),
-      /* @__PURE__ */ jsx245(GridSkeleton, { items: 4 })
+    /* @__PURE__ */ jsxs225("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsx250("div", { className: "h-6 w-32 bg-gray-200 rounded animate-pulse" }),
+      /* @__PURE__ */ jsx250(GridSkeleton, { items: 4 })
     ] })
   ] });
 }
 
 // src/components/features/Shops/components/OutletsLoading.tsx
-import { jsx as jsx246, jsxs as jsxs221 } from "react/jsx-runtime";
+import { jsx as jsx251, jsxs as jsxs226 } from "react/jsx-runtime";
 function OutletsLoading() {
-  return /* @__PURE__ */ jsxs221("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsx246(StatsSkeleton, {}),
-    /* @__PURE__ */ jsx246(SearchSkeleton, {}),
-    /* @__PURE__ */ jsx246(GridSkeleton, { items: 6 }),
-    /* @__PURE__ */ jsx246(PaginationSkeleton, {})
+  return /* @__PURE__ */ jsxs226("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsx251(StatsSkeleton, {}),
+    /* @__PURE__ */ jsx251(SearchSkeleton, {}),
+    /* @__PURE__ */ jsx251(GridSkeleton, { items: 6 }),
+    /* @__PURE__ */ jsx251(PaginationSkeleton, {})
   ] });
 }
 function OutletDetailLoading() {
-  return /* @__PURE__ */ jsx246("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs221("div", { className: "animate-pulse", children: [
-    /* @__PURE__ */ jsx246("div", { className: "h-8 bg-gray-200 rounded w-1/4 mb-4" }),
-    /* @__PURE__ */ jsx246("div", { className: "h-4 bg-gray-200 rounded w-1/2 mb-2" }),
-    /* @__PURE__ */ jsx246("div", { className: "h-4 bg-gray-200 rounded w-3/4 mb-2" }),
-    /* @__PURE__ */ jsx246("div", { className: "h-4 bg-gray-200 rounded w-2/3" })
+  return /* @__PURE__ */ jsx251("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs226("div", { className: "animate-pulse", children: [
+    /* @__PURE__ */ jsx251("div", { className: "h-8 bg-gray-200 rounded w-1/4 mb-4" }),
+    /* @__PURE__ */ jsx251("div", { className: "h-4 bg-gray-200 rounded w-1/2 mb-2" }),
+    /* @__PURE__ */ jsx251("div", { className: "h-4 bg-gray-200 rounded w-3/4 mb-2" }),
+    /* @__PURE__ */ jsx251("div", { className: "h-4 bg-gray-200 rounded w-2/3" })
   ] }) });
 }
 
 // src/components/features/Settings/Settings.tsx
 import { useState as useState87, useEffect as useEffect45 } from "react";
+import { useRouter as useRouter8, useSearchParams } from "next/navigation";
 import {
-  User as User24,
+  User as User23,
   CreditCard as CreditCard22,
   Settings as SettingsIcon,
   Building2 as Building215,
@@ -38970,16 +39222,16 @@ import { useToast as useToast10 } from "@rentalshop/ui";
 // src/components/features/Settings/components/SettingsLayout.tsx
 import { useState as useState83 } from "react";
 import {
-  Card as Card59,
-  CardContent as CardContent58,
+  Card as Card60,
+  CardContent as CardContent59,
   PageWrapper as PageWrapper5,
   PageHeader as PageHeader2,
   PageTitle as PageTitle2,
   PageContent as PageContent5,
-  Button as Button64
+  Button as Button65
 } from "@rentalshop/ui";
 import { ChevronRight as ChevronRight5 } from "lucide-react";
-import { jsx as jsx247, jsxs as jsxs222 } from "react/jsx-runtime";
+import { jsx as jsx252, jsxs as jsxs227 } from "react/jsx-runtime";
 var SettingsLayout2 = ({
   user,
   loading,
@@ -38990,24 +39242,24 @@ var SettingsLayout2 = ({
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState83(false);
   if (loading) {
-    return /* @__PURE__ */ jsxs222(PageWrapper5, { children: [
-      /* @__PURE__ */ jsxs222(PageHeader2, { children: [
-        /* @__PURE__ */ jsx247(PageTitle2, { children: "Settings" }),
-        /* @__PURE__ */ jsx247("p", { children: "Manage your account settings and preferences" })
+    return /* @__PURE__ */ jsxs227(PageWrapper5, { children: [
+      /* @__PURE__ */ jsxs227(PageHeader2, { children: [
+        /* @__PURE__ */ jsx252(PageTitle2, { children: "Settings" }),
+        /* @__PURE__ */ jsx252("p", { children: "Manage your account settings and preferences" })
       ] }),
-      /* @__PURE__ */ jsx247("div", { className: "flex justify-center items-center py-12", children: /* @__PURE__ */ jsxs222("div", { className: "text-center", children: [
-        /* @__PURE__ */ jsx247("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" }),
-        /* @__PURE__ */ jsx247("p", { className: "text-gray-600", children: "Loading settings..." })
+      /* @__PURE__ */ jsx252("div", { className: "flex justify-center items-center py-12", children: /* @__PURE__ */ jsxs227("div", { className: "text-center", children: [
+        /* @__PURE__ */ jsx252("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" }),
+        /* @__PURE__ */ jsx252("p", { className: "text-gray-600", children: "Loading settings..." })
       ] }) })
     ] });
   }
-  return /* @__PURE__ */ jsxs222(PageWrapper5, { children: [
-    /* @__PURE__ */ jsxs222(PageHeader2, { children: [
-      /* @__PURE__ */ jsx247(PageTitle2, { children: "Settings" }),
-      /* @__PURE__ */ jsx247("p", { children: "Manage your account settings and preferences" })
+  return /* @__PURE__ */ jsxs227(PageWrapper5, { children: [
+    /* @__PURE__ */ jsxs227(PageHeader2, { children: [
+      /* @__PURE__ */ jsx252(PageTitle2, { children: "Settings" }),
+      /* @__PURE__ */ jsx252("p", { children: "Manage your account settings and preferences" })
     ] }),
-    /* @__PURE__ */ jsxs222("div", { className: "flex flex-col lg:flex-row gap-6", children: [
-      /* @__PURE__ */ jsx247("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ jsx247(Card59, { children: /* @__PURE__ */ jsx247(CardContent58, { className: "p-0", children: /* @__PURE__ */ jsx247("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
+    /* @__PURE__ */ jsxs227("div", { className: "flex flex-col lg:flex-row gap-6", children: [
+      /* @__PURE__ */ jsx252("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ jsx252(Card60, { children: /* @__PURE__ */ jsx252(CardContent59, { className: "p-0", children: /* @__PURE__ */ jsx252("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
         if (!item.roles)
           return true;
         const userRole = (user?.role || "").trim().toUpperCase();
@@ -39016,40 +39268,40 @@ var SettingsLayout2 = ({
       }).map((item) => {
         const Icon2 = item.icon;
         const isActive = activeSection === item.id;
-        return /* @__PURE__ */ jsxs222(
-          Button64,
+        return /* @__PURE__ */ jsxs227(
+          Button65,
           {
             variant: "ghost",
             onClick: () => onSectionChange(item.id),
             className: `w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${isActive ? "bg-blue-50 text-blue-700 border-r-2 border-blue-600" : "text-gray-700 hover:bg-gray-50"}`,
             children: [
-              /* @__PURE__ */ jsx247(Icon2, { className: "h-5 w-5" }),
-              /* @__PURE__ */ jsxs222("div", { className: "flex-1 min-w-0", children: [
-                /* @__PURE__ */ jsx247("p", { className: "font-medium", children: item.label }),
-                /* @__PURE__ */ jsx247("p", { className: "text-xs text-gray-500 truncate", children: item.description })
+              /* @__PURE__ */ jsx252(Icon2, { className: "h-5 w-5" }),
+              /* @__PURE__ */ jsxs227("div", { className: "flex-1 min-w-0", children: [
+                /* @__PURE__ */ jsx252("p", { className: "font-medium", children: item.label }),
+                /* @__PURE__ */ jsx252("p", { className: "text-xs text-gray-500 truncate", children: item.description })
               ] }),
-              /* @__PURE__ */ jsx247(ChevronRight5, { className: "h-4 w-4" })
+              /* @__PURE__ */ jsx252(ChevronRight5, { className: "h-4 w-4" })
             ]
           },
           item.id
         );
       }) }) }) }) }),
-      /* @__PURE__ */ jsx247("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ jsx247(PageContent5, { children }) })
+      /* @__PURE__ */ jsx252("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ jsx252(PageContent5, { children }) })
     ] })
   ] });
 };
 
 // src/components/features/Settings/components/ProfileSection.tsx
 import {
-  Card as Card60,
-  CardHeader as CardHeader41,
-  CardContent as CardContent59,
-  Button as Button65,
-  Input as Input30,
-  Label as Label16
+  Card as Card61,
+  CardHeader as CardHeader42,
+  CardContent as CardContent60,
+  Button as Button66,
+  Input as Input31,
+  Label as Label17
 } from "@rentalshop/ui";
 import { useSettingsTranslations } from "@rentalshop/hooks";
-import { jsx as jsx248, jsxs as jsxs223 } from "react/jsx-runtime";
+import { jsx as jsx253, jsxs as jsxs228 } from "react/jsx-runtime";
 var ProfileSection = ({
   user,
   isEditing,
@@ -39070,19 +39322,19 @@ var ProfileSection = ({
     "user.phone": user?.phone,
     "user.role": user?.role
   });
-  return /* @__PURE__ */ jsx248("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs223(Card60, { children: [
-    /* @__PURE__ */ jsxs223(CardHeader41, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
-      /* @__PURE__ */ jsx248("h3", { className: "text-base font-semibold text-gray-900", children: t2("profile.personalInformation") }),
-      !isEditing ? /* @__PURE__ */ jsx248(Button65, { onClick: onEdit, size: "sm", children: t2("profile.edit") }) : /* @__PURE__ */ jsxs223("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ jsx248(Button65, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("profile.saving") : t2("profile.save") }),
-        /* @__PURE__ */ jsx248(Button65, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("profile.cancel") })
+  return /* @__PURE__ */ jsx253("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs228(Card61, { children: [
+    /* @__PURE__ */ jsxs228(CardHeader42, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
+      /* @__PURE__ */ jsx253("h3", { className: "text-base font-semibold text-gray-900", children: t2("profile.personalInformation") }),
+      !isEditing ? /* @__PURE__ */ jsx253(Button66, { onClick: onEdit, size: "sm", children: t2("profile.edit") }) : /* @__PURE__ */ jsxs228("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ jsx253(Button66, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("profile.saving") : t2("profile.save") }),
+        /* @__PURE__ */ jsx253(Button66, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("profile.cancel") })
       ] })
     ] }),
-    /* @__PURE__ */ jsx248(CardContent59, { className: "p-6 pt-4", children: /* @__PURE__ */ jsx248("div", { className: "space-y-8", children: /* @__PURE__ */ jsxs223("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ jsxs223("div", { children: [
-        /* @__PURE__ */ jsx248(Label16, { htmlFor: "firstName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.firstName") }),
-        isEditing ? /* @__PURE__ */ jsx248(
-          Input30,
+    /* @__PURE__ */ jsx253(CardContent60, { className: "p-6 pt-4", children: /* @__PURE__ */ jsx253("div", { className: "space-y-8", children: /* @__PURE__ */ jsxs228("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+      /* @__PURE__ */ jsxs228("div", { children: [
+        /* @__PURE__ */ jsx253(Label17, { htmlFor: "firstName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.firstName") }),
+        isEditing ? /* @__PURE__ */ jsx253(
+          Input31,
           {
             id: "firstName",
             name: "firstName",
@@ -39091,12 +39343,12 @@ var ProfileSection = ({
             onChange: onInputChange,
             placeholder: t2("profile.enterFirstName")
           }
-        ) : /* @__PURE__ */ jsx248("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.firstName || t2("profile.notProvided") })
+        ) : /* @__PURE__ */ jsx253("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.firstName || t2("profile.notProvided") })
       ] }),
-      /* @__PURE__ */ jsxs223("div", { children: [
-        /* @__PURE__ */ jsx248(Label16, { htmlFor: "lastName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.lastName") }),
-        isEditing ? /* @__PURE__ */ jsx248(
-          Input30,
+      /* @__PURE__ */ jsxs228("div", { children: [
+        /* @__PURE__ */ jsx253(Label17, { htmlFor: "lastName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.lastName") }),
+        isEditing ? /* @__PURE__ */ jsx253(
+          Input31,
           {
             id: "lastName",
             name: "lastName",
@@ -39105,12 +39357,12 @@ var ProfileSection = ({
             onChange: onInputChange,
             placeholder: t2("profile.enterLastName")
           }
-        ) : /* @__PURE__ */ jsx248("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.lastName || t2("profile.notProvided") })
+        ) : /* @__PURE__ */ jsx253("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.lastName || t2("profile.notProvided") })
       ] }),
-      /* @__PURE__ */ jsxs223("div", { children: [
-        /* @__PURE__ */ jsx248(Label16, { htmlFor: "email", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.email") }),
-        /* @__PURE__ */ jsx248("div", { className: "relative", children: /* @__PURE__ */ jsx248(
-          Input30,
+      /* @__PURE__ */ jsxs228("div", { children: [
+        /* @__PURE__ */ jsx253(Label17, { htmlFor: "email", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.email") }),
+        /* @__PURE__ */ jsx253("div", { className: "relative", children: /* @__PURE__ */ jsx253(
+          Input31,
           {
             id: "email",
             name: "email",
@@ -39122,10 +39374,10 @@ var ProfileSection = ({
           }
         ) })
       ] }),
-      /* @__PURE__ */ jsxs223("div", { children: [
-        /* @__PURE__ */ jsx248(Label16, { htmlFor: "phone", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.phone") }),
-        isEditing ? /* @__PURE__ */ jsx248(
-          Input30,
+      /* @__PURE__ */ jsxs228("div", { children: [
+        /* @__PURE__ */ jsx253(Label17, { htmlFor: "phone", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.phone") }),
+        isEditing ? /* @__PURE__ */ jsx253(
+          Input31,
           {
             id: "phone",
             name: "phone",
@@ -39134,11 +39386,11 @@ var ProfileSection = ({
             onChange: onInputChange,
             placeholder: t2("profile.enterPhone")
           }
-        ) : /* @__PURE__ */ jsx248("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.phone || t2("profile.notProvided") })
+        ) : /* @__PURE__ */ jsx253("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.phone || t2("profile.notProvided") })
       ] }),
-      /* @__PURE__ */ jsxs223("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ jsx248(Label16, { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.role") }),
-        /* @__PURE__ */ jsx248("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User" })
+      /* @__PURE__ */ jsxs228("div", { className: "md:col-span-2", children: [
+        /* @__PURE__ */ jsx253(Label17, { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.role") }),
+        /* @__PURE__ */ jsx253("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User" })
       ] })
     ] }) }) })
   ] }) });
@@ -39147,12 +39399,12 @@ var ProfileSection = ({
 // src/components/features/Settings/components/MerchantSection.tsx
 import { useState as useState84, useEffect as useEffect44, useRef as useRef8 } from "react";
 import {
-  Card as Card61,
-  CardHeader as CardHeader42,
-  CardContent as CardContent60,
-  Button as Button66,
-  Input as Input31,
-  Label as Label17,
+  Card as Card62,
+  CardHeader as CardHeader43,
+  CardContent as CardContent61,
+  Button as Button67,
+  Input as Input32,
+  Label as Label18,
   Badge as Badge31,
   SearchableCountrySelect as SearchableCountrySelect2
 } from "@rentalshop/ui";
@@ -39164,7 +39416,7 @@ import {
   COUNTRIES as COUNTRIES2
 } from "@rentalshop/constants";
 import { useSettingsTranslations as useSettingsTranslations2 } from "@rentalshop/hooks";
-import { Fragment as Fragment49, jsx as jsx249, jsxs as jsxs224 } from "react/jsx-runtime";
+import { Fragment as Fragment50, jsx as jsx254, jsxs as jsxs229 } from "react/jsx-runtime";
 var MerchantSection = ({
   user,
   isEditing,
@@ -39249,18 +39501,18 @@ var MerchantSection = ({
     "merchant.phone": merchant?.phone,
     "merchant.businessType": merchant?.businessType
   });
-  return /* @__PURE__ */ jsxs224("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsxs224(Card61, { children: [
-      /* @__PURE__ */ jsxs224(CardHeader42, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
-        /* @__PURE__ */ jsx249("h3", { className: "text-base font-semibold text-gray-900", children: t2("merchant.businessInformation") }),
-        !isEditing ? /* @__PURE__ */ jsx249(Button66, { onClick: onEdit, size: "sm", children: t2("merchant.edit") }) : /* @__PURE__ */ jsxs224("div", { className: "flex gap-2", children: [
-          /* @__PURE__ */ jsx249(Button66, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("merchant.saving") : t2("merchant.save") }),
-          /* @__PURE__ */ jsx249(Button66, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("merchant.cancel") })
+  return /* @__PURE__ */ jsxs229("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsxs229(Card62, { children: [
+      /* @__PURE__ */ jsxs229(CardHeader43, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
+        /* @__PURE__ */ jsx254("h3", { className: "text-base font-semibold text-gray-900", children: t2("merchant.businessInformation") }),
+        !isEditing ? /* @__PURE__ */ jsx254(Button67, { onClick: onEdit, size: "sm", children: t2("merchant.edit") }) : /* @__PURE__ */ jsxs229("div", { className: "flex gap-2", children: [
+          /* @__PURE__ */ jsx254(Button67, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("merchant.saving") : t2("merchant.save") }),
+          /* @__PURE__ */ jsx254(Button67, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("merchant.cancel") })
         ] })
       ] }),
-      /* @__PURE__ */ jsx249(CardContent60, { className: "p-6 pt-4", children: loadingMerchant ? /* @__PURE__ */ jsx249("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx249("p", { className: "text-gray-500", children: "Loading business information..." }) }) : !merchant && !user?.merchantId ? /* @__PURE__ */ jsxs224("div", { className: "text-center py-8", children: [
-        /* @__PURE__ */ jsx249("p", { className: "text-gray-500", children: "No business information available" }),
-        /* @__PURE__ */ jsxs224("p", { className: "text-gray-400 text-sm mt-2", children: [
+      /* @__PURE__ */ jsx254(CardContent61, { className: "p-6 pt-4", children: loadingMerchant ? /* @__PURE__ */ jsx254("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx254("p", { className: "text-gray-500", children: "Loading business information..." }) }) : !merchant && !user?.merchantId ? /* @__PURE__ */ jsxs229("div", { className: "text-center py-8", children: [
+        /* @__PURE__ */ jsx254("p", { className: "text-gray-500", children: "No business information available" }),
+        /* @__PURE__ */ jsxs229("p", { className: "text-gray-400 text-sm mt-2", children: [
           "User role: ",
           user?.role || "Unknown",
           " | Has merchantId: ",
@@ -39270,11 +39522,11 @@ var MerchantSection = ({
           " | Fetched merchant: ",
           merchantData ? "Yes" : "No"
         ] })
-      ] }) : /* @__PURE__ */ jsxs224("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-        /* @__PURE__ */ jsxs224("div", { children: [
-          /* @__PURE__ */ jsx249(Label17, { htmlFor: "merchantName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.name") }),
-          isEditing ? /* @__PURE__ */ jsx249(
-            Input31,
+      ] }) : /* @__PURE__ */ jsxs229("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+        /* @__PURE__ */ jsxs229("div", { children: [
+          /* @__PURE__ */ jsx254(Label18, { htmlFor: "merchantName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.name") }),
+          isEditing ? /* @__PURE__ */ jsx254(
+            Input32,
             {
               id: "merchantName",
               name: "name",
@@ -39283,12 +39535,12 @@ var MerchantSection = ({
               onChange: onInputChange,
               placeholder: t2("merchant.enterBusinessName")
             }
-          ) : /* @__PURE__ */ jsx249("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.name || t2("merchant.notProvided") })
+          ) : /* @__PURE__ */ jsx254("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.name || t2("merchant.notProvided") })
         ] }),
-        /* @__PURE__ */ jsxs224("div", { children: [
-          /* @__PURE__ */ jsx249(Label17, { htmlFor: "merchantEmail", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.email") }),
-          /* @__PURE__ */ jsx249("div", { className: "relative", children: /* @__PURE__ */ jsx249(
-            Input31,
+        /* @__PURE__ */ jsxs229("div", { children: [
+          /* @__PURE__ */ jsx254(Label18, { htmlFor: "merchantEmail", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.email") }),
+          /* @__PURE__ */ jsx254("div", { className: "relative", children: /* @__PURE__ */ jsx254(
+            Input32,
             {
               id: "merchantEmail",
               name: "email",
@@ -39300,10 +39552,10 @@ var MerchantSection = ({
             }
           ) })
         ] }),
-        /* @__PURE__ */ jsxs224("div", { children: [
-          /* @__PURE__ */ jsx249(Label17, { htmlFor: "taxId", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.taxId") }),
-          isEditing ? /* @__PURE__ */ jsx249(
-            Input31,
+        /* @__PURE__ */ jsxs229("div", { children: [
+          /* @__PURE__ */ jsx254(Label18, { htmlFor: "taxId", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.taxId") }),
+          isEditing ? /* @__PURE__ */ jsx254(
+            Input32,
             {
               id: "taxId",
               name: "taxId",
@@ -39312,12 +39564,12 @@ var MerchantSection = ({
               onChange: onInputChange,
               placeholder: t2("merchant.enterTaxId")
             }
-          ) : /* @__PURE__ */ jsx249("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.taxId || t2("merchant.notProvided") })
+          ) : /* @__PURE__ */ jsx254("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.taxId || t2("merchant.notProvided") })
         ] }),
-        /* @__PURE__ */ jsxs224("div", { children: [
-          /* @__PURE__ */ jsx249(Label17, { htmlFor: "merchantPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.phone") }),
-          isEditing ? /* @__PURE__ */ jsx249(
-            Input31,
+        /* @__PURE__ */ jsxs229("div", { children: [
+          /* @__PURE__ */ jsx254(Label18, { htmlFor: "merchantPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.phone") }),
+          isEditing ? /* @__PURE__ */ jsx254(
+            Input32,
             {
               id: "merchantPhone",
               name: "phone",
@@ -39326,13 +39578,13 @@ var MerchantSection = ({
               onChange: onInputChange,
               placeholder: t2("merchant.enterPhone")
             }
-          ) : /* @__PURE__ */ jsx249("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.phone || t2("merchant.notProvided") })
+          ) : /* @__PURE__ */ jsx254("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.phone || t2("merchant.notProvided") })
         ] }),
-        /* @__PURE__ */ jsx249("div", { className: "md:col-span-2", children: /* @__PURE__ */ jsxs224("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-          /* @__PURE__ */ jsxs224("div", { children: [
-            /* @__PURE__ */ jsx249(Label17, { htmlFor: "businessType", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.businessType") }),
-            /* @__PURE__ */ jsx249("div", { className: "relative", children: /* @__PURE__ */ jsx249(
-              Input31,
+        /* @__PURE__ */ jsx254("div", { className: "md:col-span-2", children: /* @__PURE__ */ jsxs229("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+          /* @__PURE__ */ jsxs229("div", { children: [
+            /* @__PURE__ */ jsx254(Label18, { htmlFor: "businessType", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.businessType") }),
+            /* @__PURE__ */ jsx254("div", { className: "relative", children: /* @__PURE__ */ jsx254(
+              Input32,
               {
                 id: "businessType",
                 name: "businessType",
@@ -39343,12 +39595,12 @@ var MerchantSection = ({
                 className: "bg-gray-100 text-gray-600 cursor-not-allowed"
               }
             ) }),
-            /* @__PURE__ */ jsx249("p", { className: "text-xs text-gray-500 mt-1", children: merchant?.businessType ? getBusinessTypeDescription(merchant.businessType) : t2("merchant.businessType") })
+            /* @__PURE__ */ jsx254("p", { className: "text-xs text-gray-500 mt-1", children: merchant?.businessType ? getBusinessTypeDescription(merchant.businessType) : t2("merchant.businessType") })
           ] }),
-          /* @__PURE__ */ jsxs224("div", { children: [
-            /* @__PURE__ */ jsx249(Label17, { htmlFor: "pricingType", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.pricingType") }),
-            /* @__PURE__ */ jsx249("div", { className: "relative", children: /* @__PURE__ */ jsx249(
-              Input31,
+          /* @__PURE__ */ jsxs229("div", { children: [
+            /* @__PURE__ */ jsx254(Label18, { htmlFor: "pricingType", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.pricingType") }),
+            /* @__PURE__ */ jsx254("div", { className: "relative", children: /* @__PURE__ */ jsx254(
+              Input32,
               {
                 id: "pricingType",
                 name: "pricingType",
@@ -39359,13 +39611,13 @@ var MerchantSection = ({
                 className: "bg-gray-100 text-gray-600 cursor-not-allowed"
               }
             ) }),
-            /* @__PURE__ */ jsx249("p", { className: "text-xs text-gray-500 mt-1", children: merchant?.pricingType ? getPricingTypeDescription(merchant.pricingType) : t2("merchant.pricingType") })
+            /* @__PURE__ */ jsx254("p", { className: "text-xs text-gray-500 mt-1", children: merchant?.pricingType ? getPricingTypeDescription(merchant.pricingType) : t2("merchant.pricingType") })
           ] })
         ] }) }),
-        /* @__PURE__ */ jsxs224("div", { className: "md:col-span-2", children: [
-          /* @__PURE__ */ jsx249(Label17, { htmlFor: "merchantAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.address") }),
-          isEditing ? /* @__PURE__ */ jsx249(
-            Input31,
+        /* @__PURE__ */ jsxs229("div", { className: "md:col-span-2", children: [
+          /* @__PURE__ */ jsx254(Label18, { htmlFor: "merchantAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.address") }),
+          isEditing ? /* @__PURE__ */ jsx254(
+            Input32,
             {
               id: "merchantAddress",
               name: "address",
@@ -39374,12 +39626,12 @@ var MerchantSection = ({
               onChange: onInputChange,
               placeholder: t2("merchant.enterAddress")
             }
-          ) : /* @__PURE__ */ jsx249("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.address || t2("merchant.notProvided") })
+          ) : /* @__PURE__ */ jsx254("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.address || t2("merchant.notProvided") })
         ] }),
-        /* @__PURE__ */ jsxs224("div", { children: [
-          /* @__PURE__ */ jsx249(Label17, { htmlFor: "merchantCity", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.city") }),
-          isEditing ? /* @__PURE__ */ jsx249(
-            Input31,
+        /* @__PURE__ */ jsxs229("div", { children: [
+          /* @__PURE__ */ jsx254(Label18, { htmlFor: "merchantCity", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.city") }),
+          isEditing ? /* @__PURE__ */ jsx254(
+            Input32,
             {
               id: "merchantCity",
               name: "city",
@@ -39388,12 +39640,12 @@ var MerchantSection = ({
               onChange: onInputChange,
               placeholder: t2("merchant.enterCity")
             }
-          ) : /* @__PURE__ */ jsx249("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.city || t2("merchant.notProvided") })
+          ) : /* @__PURE__ */ jsx254("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.city || t2("merchant.notProvided") })
         ] }),
-        /* @__PURE__ */ jsxs224("div", { children: [
-          /* @__PURE__ */ jsx249(Label17, { htmlFor: "merchantState", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.state") }),
-          isEditing ? /* @__PURE__ */ jsx249(
-            Input31,
+        /* @__PURE__ */ jsxs229("div", { children: [
+          /* @__PURE__ */ jsx254(Label18, { htmlFor: "merchantState", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.state") }),
+          isEditing ? /* @__PURE__ */ jsx254(
+            Input32,
             {
               id: "merchantState",
               name: "state",
@@ -39402,12 +39654,12 @@ var MerchantSection = ({
               onChange: onInputChange,
               placeholder: t2("merchant.enterState")
             }
-          ) : /* @__PURE__ */ jsx249("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.state || t2("merchant.notProvided") })
+          ) : /* @__PURE__ */ jsx254("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.state || t2("merchant.notProvided") })
         ] }),
-        /* @__PURE__ */ jsxs224("div", { children: [
-          /* @__PURE__ */ jsx249(Label17, { htmlFor: "merchantZipCode", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.zipCode") }),
-          isEditing ? /* @__PURE__ */ jsx249(
-            Input31,
+        /* @__PURE__ */ jsxs229("div", { children: [
+          /* @__PURE__ */ jsx254(Label18, { htmlFor: "merchantZipCode", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.zipCode") }),
+          isEditing ? /* @__PURE__ */ jsx254(
+            Input32,
             {
               id: "merchantZipCode",
               name: "zipCode",
@@ -39416,11 +39668,11 @@ var MerchantSection = ({
               onChange: onInputChange,
               placeholder: t2("merchant.enterZipCode")
             }
-          ) : /* @__PURE__ */ jsx249("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.zipCode || t2("merchant.notProvided") })
+          ) : /* @__PURE__ */ jsx254("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: merchant?.zipCode || t2("merchant.notProvided") })
         ] }),
-        /* @__PURE__ */ jsxs224("div", { children: [
-          /* @__PURE__ */ jsx249(Label17, { htmlFor: "merchantCountry", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.country") }),
-          isEditing ? /* @__PURE__ */ jsx249(
+        /* @__PURE__ */ jsxs229("div", { children: [
+          /* @__PURE__ */ jsx254(Label18, { htmlFor: "merchantCountry", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("merchant.country") }),
+          isEditing ? /* @__PURE__ */ jsx254(
             SearchableCountrySelect2,
             {
               options: COUNTRIES2,
@@ -39436,24 +39688,24 @@ var MerchantSection = ({
               placeholder: "Type to search countries...",
               emptyMessage: "No countries found"
             }
-          ) : /* @__PURE__ */ jsx249("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex items-center gap-2", children: merchant?.country ? /* @__PURE__ */ jsxs224(Fragment49, { children: [
+          ) : /* @__PURE__ */ jsx254("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex items-center gap-2", children: merchant?.country ? /* @__PURE__ */ jsxs229(Fragment50, { children: [
             COUNTRIES2.find((c) => c.name === merchant.country)?.flag || "",
             merchant.country
           ] }) : t2("merchant.notProvided") })
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsx249(Card61, { children: /* @__PURE__ */ jsxs224(CardContent60, { className: "p-6", children: [
-      /* @__PURE__ */ jsxs224("div", { className: "flex items-center gap-2 mb-4", children: [
-        /* @__PURE__ */ jsx249(DollarSign22, { className: "h-5 w-5 text-blue-600" }),
-        /* @__PURE__ */ jsx249("h3", { className: "text-lg font-semibold text-gray-900", children: t2("merchant.currencySettings") })
+    /* @__PURE__ */ jsx254(Card62, { children: /* @__PURE__ */ jsxs229(CardContent61, { className: "p-6", children: [
+      /* @__PURE__ */ jsxs229("div", { className: "flex items-center gap-2 mb-4", children: [
+        /* @__PURE__ */ jsx254(DollarSign22, { className: "h-5 w-5 text-blue-600" }),
+        /* @__PURE__ */ jsx254("h3", { className: "text-lg font-semibold text-gray-900", children: t2("merchant.currencySettings") })
       ] }),
-      /* @__PURE__ */ jsx249("p", { className: "text-sm text-gray-600 mb-4", children: t2("merchant.currencyDesc") }),
-      /* @__PURE__ */ jsx249("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: CURRENCY_OPTIONS2.map((option) => {
+      /* @__PURE__ */ jsx254("p", { className: "text-sm text-gray-600 mb-4", children: t2("merchant.currencyDesc") }),
+      /* @__PURE__ */ jsx254("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: CURRENCY_OPTIONS2.map((option) => {
         const config = getCurrency(option.value);
         const isSelected = selectedCurrency === option.value;
         const isCurrent = currentCurrency === option.value;
-        return /* @__PURE__ */ jsxs224(
+        return /* @__PURE__ */ jsxs229(
           "button",
           {
             onClick: () => handleCurrencySelect(option.value),
@@ -39464,27 +39716,27 @@ var MerchantSection = ({
                     ${isSavingCurrency ? "opacity-50 cursor-wait" : isCurrent ? "cursor-default" : "cursor-pointer"}
                   `,
             children: [
-              /* @__PURE__ */ jsxs224("div", { className: "flex items-start justify-between", children: [
-                /* @__PURE__ */ jsxs224("div", { className: "flex items-center gap-3", children: [
-                  /* @__PURE__ */ jsx249("div", { className: "text-2xl", children: option.symbol }),
-                  /* @__PURE__ */ jsxs224("div", { children: [
-                    /* @__PURE__ */ jsx249("div", { className: "font-semibold text-gray-900", children: option.label }),
-                    /* @__PURE__ */ jsx249("div", { className: "text-sm text-gray-600", children: option.value })
+              /* @__PURE__ */ jsxs229("div", { className: "flex items-start justify-between", children: [
+                /* @__PURE__ */ jsxs229("div", { className: "flex items-center gap-3", children: [
+                  /* @__PURE__ */ jsx254("div", { className: "text-2xl", children: option.symbol }),
+                  /* @__PURE__ */ jsxs229("div", { children: [
+                    /* @__PURE__ */ jsx254("div", { className: "font-semibold text-gray-900", children: option.label }),
+                    /* @__PURE__ */ jsx254("div", { className: "text-sm text-gray-600", children: option.value })
                   ] })
                 ] }),
-                isCurrent && /* @__PURE__ */ jsxs224(Badge31, { variant: "default", className: "bg-green-100 text-green-800", children: [
-                  /* @__PURE__ */ jsx249(CheckCircle210, { className: "h-3 w-3 mr-1" }),
+                isCurrent && /* @__PURE__ */ jsxs229(Badge31, { variant: "default", className: "bg-green-100 text-green-800", children: [
+                  /* @__PURE__ */ jsx254(CheckCircle210, { className: "h-3 w-3 mr-1" }),
                   t2("merchant.selected")
                 ] })
               ] }),
-              /* @__PURE__ */ jsxs224("div", { className: "mt-3 pt-3 border-t border-gray-200", children: [
-                /* @__PURE__ */ jsxs224("div", { className: "text-xs text-gray-500 mb-1", children: [
+              /* @__PURE__ */ jsxs229("div", { className: "mt-3 pt-3 border-t border-gray-200", children: [
+                /* @__PURE__ */ jsxs229("div", { className: "text-xs text-gray-500 mb-1", children: [
                   t2("merchant.selectCurrency"),
                   ":"
                 ] }),
-                /* @__PURE__ */ jsxs224("div", { className: "flex gap-4 text-sm text-gray-700", children: [
-                  /* @__PURE__ */ jsx249("span", { children: formatCurrency20(100, option.value) }),
-                  /* @__PURE__ */ jsx249("span", { children: formatCurrency20(1e4, option.value) })
+                /* @__PURE__ */ jsxs229("div", { className: "flex gap-4 text-sm text-gray-700", children: [
+                  /* @__PURE__ */ jsx254("span", { children: formatCurrency20(100, option.value) }),
+                  /* @__PURE__ */ jsx254("span", { children: formatCurrency20(1e4, option.value) })
                 ] })
               ] })
             ]
@@ -39492,22 +39744,22 @@ var MerchantSection = ({
           option.value
         );
       }) }),
-      isSavingCurrency && /* @__PURE__ */ jsx249("p", { className: "text-sm text-blue-600 mt-3", children: t2("merchant.savingCurrency") })
+      isSavingCurrency && /* @__PURE__ */ jsx254("p", { className: "text-sm text-blue-600 mt-3", children: t2("merchant.savingCurrency") })
     ] }) })
   ] });
 };
 
 // src/components/features/Settings/components/OutletSection.tsx
 import {
-  Card as Card62,
-  CardHeader as CardHeader43,
-  CardContent as CardContent61,
-  Button as Button67,
-  Input as Input32,
-  Label as Label18
+  Card as Card63,
+  CardHeader as CardHeader44,
+  CardContent as CardContent62,
+  Button as Button68,
+  Input as Input33,
+  Label as Label19
 } from "@rentalshop/ui";
 import { useSettingsTranslations as useSettingsTranslations3 } from "@rentalshop/hooks";
-import { jsx as jsx250, jsxs as jsxs225 } from "react/jsx-runtime";
+import { jsx as jsx255, jsxs as jsxs230 } from "react/jsx-runtime";
 var OutletSection = ({
   user,
   isEditing,
@@ -39519,19 +39771,19 @@ var OutletSection = ({
   onInputChange
 }) => {
   const t2 = useSettingsTranslations3();
-  return /* @__PURE__ */ jsx250("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs225(Card62, { children: [
-    /* @__PURE__ */ jsxs225(CardHeader43, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
-      /* @__PURE__ */ jsx250("h3", { className: "text-base font-semibold text-gray-900", children: t2("outlet.outletInformation") }),
-      !isEditing ? /* @__PURE__ */ jsx250(Button67, { onClick: onEdit, size: "sm", children: t2("outlet.edit") }) : /* @__PURE__ */ jsxs225("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ jsx250(Button67, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("outlet.saving") : t2("outlet.save") }),
-        /* @__PURE__ */ jsx250(Button67, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("outlet.cancel") })
+  return /* @__PURE__ */ jsx255("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs230(Card63, { children: [
+    /* @__PURE__ */ jsxs230(CardHeader44, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
+      /* @__PURE__ */ jsx255("h3", { className: "text-base font-semibold text-gray-900", children: t2("outlet.outletInformation") }),
+      !isEditing ? /* @__PURE__ */ jsx255(Button68, { onClick: onEdit, size: "sm", children: t2("outlet.edit") }) : /* @__PURE__ */ jsxs230("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ jsx255(Button68, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("outlet.saving") : t2("outlet.save") }),
+        /* @__PURE__ */ jsx255(Button68, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("outlet.cancel") })
       ] })
     ] }),
-    /* @__PURE__ */ jsx250(CardContent61, { className: "p-6 pt-4", children: !user?.outlet ? /* @__PURE__ */ jsx250("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx250("p", { className: "text-gray-500", children: t2("outlet.noOutletInfo") }) }) : /* @__PURE__ */ jsxs225("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ jsxs225("div", { children: [
-        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.name") }),
-        isEditing ? /* @__PURE__ */ jsx250(
-          Input32,
+    /* @__PURE__ */ jsx255(CardContent62, { className: "p-6 pt-4", children: !user?.outlet ? /* @__PURE__ */ jsx255("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx255("p", { className: "text-gray-500", children: t2("outlet.noOutletInfo") }) }) : /* @__PURE__ */ jsxs230("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+      /* @__PURE__ */ jsxs230("div", { children: [
+        /* @__PURE__ */ jsx255(Label19, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.name") }),
+        isEditing ? /* @__PURE__ */ jsx255(
+          Input33,
           {
             id: "outletName",
             name: "name",
@@ -39540,12 +39792,12 @@ var OutletSection = ({
             onChange: onInputChange,
             placeholder: t2("outlet.enterOutletName")
           }
-        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.name || t2("outlet.notProvided") })
+        ) : /* @__PURE__ */ jsx255("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.name || t2("outlet.notProvided") })
       ] }),
-      /* @__PURE__ */ jsxs225("div", { children: [
-        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.phone") }),
-        isEditing ? /* @__PURE__ */ jsx250(
-          Input32,
+      /* @__PURE__ */ jsxs230("div", { children: [
+        /* @__PURE__ */ jsx255(Label19, { htmlFor: "outletPhone", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.phone") }),
+        isEditing ? /* @__PURE__ */ jsx255(
+          Input33,
           {
             id: "outletPhone",
             name: "phone",
@@ -39554,12 +39806,12 @@ var OutletSection = ({
             onChange: onInputChange,
             placeholder: t2("outlet.enterOutletPhone")
           }
-        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.phone || t2("outlet.notProvided") })
+        ) : /* @__PURE__ */ jsx255("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.phone || t2("outlet.notProvided") })
       ] }),
-      /* @__PURE__ */ jsxs225("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.address") }),
-        isEditing ? /* @__PURE__ */ jsx250(
-          Input32,
+      /* @__PURE__ */ jsxs230("div", { className: "md:col-span-2", children: [
+        /* @__PURE__ */ jsx255(Label19, { htmlFor: "outletAddress", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.address") }),
+        isEditing ? /* @__PURE__ */ jsx255(
+          Input33,
           {
             id: "outletAddress",
             name: "address",
@@ -39568,12 +39820,12 @@ var OutletSection = ({
             onChange: onInputChange,
             placeholder: t2("outlet.enterOutletAddress")
           }
-        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.address || t2("outlet.notProvided") })
+        ) : /* @__PURE__ */ jsx255("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.address || t2("outlet.notProvided") })
       ] }),
-      /* @__PURE__ */ jsxs225("div", { className: "md:col-span-2", children: [
-        /* @__PURE__ */ jsx250(Label18, { htmlFor: "outletDescription", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.description") }),
-        isEditing ? /* @__PURE__ */ jsx250(
-          Input32,
+      /* @__PURE__ */ jsxs230("div", { className: "md:col-span-2", children: [
+        /* @__PURE__ */ jsx255(Label19, { htmlFor: "outletDescription", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.description") }),
+        isEditing ? /* @__PURE__ */ jsx255(
+          Input33,
           {
             id: "outletDescription",
             name: "description",
@@ -39582,7 +39834,7 @@ var OutletSection = ({
             onChange: onInputChange,
             placeholder: t2("outlet.enterDescription")
           }
-        ) : /* @__PURE__ */ jsx250("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.description || t2("outlet.notProvided") })
+        ) : /* @__PURE__ */ jsx255("p", { className: "text-gray-900 py-2 px-3 bg-gray-50 rounded-md", children: user?.outlet?.description || t2("outlet.notProvided") })
       ] })
     ] }) })
   ] }) });
@@ -39590,20 +39842,20 @@ var OutletSection = ({
 
 // src/components/features/Settings/components/SubscriptionSection.tsx
 import {
-  Card as Card63,
-  CardContent as CardContent62,
-  Button as Button68,
+  Card as Card64,
+  CardContent as CardContent63,
+  Button as Button69,
   Badge as Badge32
 } from "@rentalshop/ui";
 import {
   CreditCard as CreditCard21,
   CheckCircle as CheckCircle33,
   AlertTriangle as AlertTriangle21,
-  Calendar as Calendar32,
+  Calendar as Calendar31,
   DollarSign as DollarSign23
 } from "lucide-react";
 import { useSettingsTranslations as useSettingsTranslations4 } from "@rentalshop/hooks";
-import { jsx as jsx251, jsxs as jsxs226 } from "react/jsx-runtime";
+import { jsx as jsx256, jsxs as jsxs231 } from "react/jsx-runtime";
 var SubscriptionSection = ({
   subscriptionData,
   subscriptionLoading,
@@ -39611,22 +39863,22 @@ var SubscriptionSection = ({
 }) => {
   const t2 = useSettingsTranslations4();
   if (subscriptionLoading) {
-    return /* @__PURE__ */ jsx251("div", { className: "space-y-6", children: /* @__PURE__ */ jsx251(Card63, { children: /* @__PURE__ */ jsx251(CardContent62, { className: "p-6", children: /* @__PURE__ */ jsxs226("div", { className: "flex items-center justify-center py-8", children: [
-      /* @__PURE__ */ jsx251("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
-      /* @__PURE__ */ jsx251("span", { className: "ml-2 text-gray-600", children: t2("subscription.loading") })
+    return /* @__PURE__ */ jsx256("div", { className: "space-y-6", children: /* @__PURE__ */ jsx256(Card64, { children: /* @__PURE__ */ jsx256(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs231("div", { className: "flex items-center justify-center py-8", children: [
+      /* @__PURE__ */ jsx256("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }),
+      /* @__PURE__ */ jsx256("span", { className: "ml-2 text-gray-600", children: t2("subscription.loading") })
     ] }) }) }) });
   }
   if (subscriptionData?.hasSubscription) {
-    return /* @__PURE__ */ jsx251("div", { className: "space-y-6", children: /* @__PURE__ */ jsx251(Card63, { children: /* @__PURE__ */ jsxs226(CardContent62, { className: "p-6", children: [
-      /* @__PURE__ */ jsxs226("div", { className: "flex items-center justify-between mb-4", children: [
-        /* @__PURE__ */ jsxs226("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ jsx251(CreditCard21, { className: "h-6 w-6 text-blue-600" }),
-          /* @__PURE__ */ jsxs226("div", { children: [
-            /* @__PURE__ */ jsx251("h3", { className: "text-base font-semibold text-gray-900", children: t2("subscription.currentPlan") }),
-            /* @__PURE__ */ jsx251("p", { className: "text-sm text-gray-600", children: subscriptionData.subscription.plan?.name || "Professional Plan" })
+    return /* @__PURE__ */ jsx256("div", { className: "space-y-6", children: /* @__PURE__ */ jsx256(Card64, { children: /* @__PURE__ */ jsxs231(CardContent63, { className: "p-6", children: [
+      /* @__PURE__ */ jsxs231("div", { className: "flex items-center justify-between mb-4", children: [
+        /* @__PURE__ */ jsxs231("div", { className: "flex items-center space-x-3", children: [
+          /* @__PURE__ */ jsx256(CreditCard21, { className: "h-6 w-6 text-blue-600" }),
+          /* @__PURE__ */ jsxs231("div", { children: [
+            /* @__PURE__ */ jsx256("h3", { className: "text-base font-semibold text-gray-900", children: t2("subscription.currentPlan") }),
+            /* @__PURE__ */ jsx256("p", { className: "text-sm text-gray-600", children: subscriptionData.subscription.plan?.name || "Professional Plan" })
           ] })
         ] }),
-        /* @__PURE__ */ jsx251(
+        /* @__PURE__ */ jsx256(
           Badge32,
           {
             variant: subscriptionData.isExpired ? "destructive" : "default",
@@ -39635,46 +39887,46 @@ var SubscriptionSection = ({
           }
         )
       ] }),
-      /* @__PURE__ */ jsxs226("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
-        /* @__PURE__ */ jsxs226("div", { className: "bg-gray-50 rounded-lg p-4", children: [
-          /* @__PURE__ */ jsxs226("div", { className: "flex items-center space-x-2 mb-2", children: [
-            /* @__PURE__ */ jsx251(DollarSign23, { className: "h-4 w-4 text-gray-600" }),
-            /* @__PURE__ */ jsx251("span", { className: "text-sm font-medium text-gray-700", children: t2("subscription.amount") })
+      /* @__PURE__ */ jsxs231("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
+        /* @__PURE__ */ jsxs231("div", { className: "bg-gray-50 rounded-lg p-4", children: [
+          /* @__PURE__ */ jsxs231("div", { className: "flex items-center space-x-2 mb-2", children: [
+            /* @__PURE__ */ jsx256(DollarSign23, { className: "h-4 w-4 text-gray-600" }),
+            /* @__PURE__ */ jsx256("span", { className: "text-sm font-medium text-gray-700", children: t2("subscription.amount") })
           ] }),
-          /* @__PURE__ */ jsxs226("p", { className: "text-base font-semibold text-gray-900", children: [
+          /* @__PURE__ */ jsxs231("p", { className: "text-base font-semibold text-gray-900", children: [
             "$",
             subscriptionData.subscription.amount || "0.00"
           ] }),
-          /* @__PURE__ */ jsx251("p", { className: "text-xs text-gray-600", children: subscriptionData.subscription.interval || "monthly" })
+          /* @__PURE__ */ jsx256("p", { className: "text-xs text-gray-600", children: subscriptionData.subscription.interval || "monthly" })
         ] }),
-        /* @__PURE__ */ jsxs226("div", { className: "bg-gray-50 rounded-lg p-4", children: [
-          /* @__PURE__ */ jsxs226("div", { className: "flex items-center space-x-2 mb-2", children: [
-            /* @__PURE__ */ jsx251(Calendar32, { className: "h-4 w-4 text-gray-600" }),
-            /* @__PURE__ */ jsx251("span", { className: "text-sm font-medium text-gray-700", children: t2("subscription.nextBilling") })
+        /* @__PURE__ */ jsxs231("div", { className: "bg-gray-50 rounded-lg p-4", children: [
+          /* @__PURE__ */ jsxs231("div", { className: "flex items-center space-x-2 mb-2", children: [
+            /* @__PURE__ */ jsx256(Calendar31, { className: "h-4 w-4 text-gray-600" }),
+            /* @__PURE__ */ jsx256("span", { className: "text-sm font-medium text-gray-700", children: t2("subscription.nextBilling") })
           ] }),
-          /* @__PURE__ */ jsx251("p", { className: "text-base font-semibold text-gray-900", children: subscriptionData.subscription.currentPeriodEnd ? new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString("en-US", {
+          /* @__PURE__ */ jsx256("p", { className: "text-base font-semibold text-gray-900", children: subscriptionData.subscription.currentPeriodEnd ? new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric"
           }) : "N/A" }),
-          subscriptionData.daysUntilExpiry && /* @__PURE__ */ jsxs226("p", { className: "text-xs text-gray-600", children: [
+          subscriptionData.daysUntilExpiry && /* @__PURE__ */ jsxs231("p", { className: "text-xs text-gray-600", children: [
             subscriptionData.daysUntilExpiry,
             " ",
             t2("subscription.daysRemaining")
           ] })
         ] }),
-        /* @__PURE__ */ jsxs226("div", { className: "bg-gray-50 rounded-lg p-4", children: [
-          /* @__PURE__ */ jsxs226("div", { className: "flex items-center space-x-2 mb-2", children: [
-            /* @__PURE__ */ jsx251(CheckCircle33, { className: "h-4 w-4 text-gray-600" }),
-            /* @__PURE__ */ jsx251("span", { className: "text-sm font-medium text-gray-700", children: t2("subscription.status") })
+        /* @__PURE__ */ jsxs231("div", { className: "bg-gray-50 rounded-lg p-4", children: [
+          /* @__PURE__ */ jsxs231("div", { className: "flex items-center space-x-2 mb-2", children: [
+            /* @__PURE__ */ jsx256(CheckCircle33, { className: "h-4 w-4 text-gray-600" }),
+            /* @__PURE__ */ jsx256("span", { className: "text-sm font-medium text-gray-700", children: t2("subscription.status") })
           ] }),
-          /* @__PURE__ */ jsx251("p", { className: "text-base font-semibold text-gray-900 capitalize", children: subscriptionData.subscription.status || t2("subscription.active") }),
-          /* @__PURE__ */ jsx251("p", { className: "text-xs text-gray-600", children: subscriptionData.subscription.cancelAtPeriodEnd ? t2("subscription.cancelsAtPeriodEnd") : t2("subscription.autoRenewalEnabled") })
+          /* @__PURE__ */ jsx256("p", { className: "text-base font-semibold text-gray-900 capitalize", children: subscriptionData.subscription.status || t2("subscription.active") }),
+          /* @__PURE__ */ jsx256("p", { className: "text-xs text-gray-600", children: subscriptionData.subscription.cancelAtPeriodEnd ? t2("subscription.cancelsAtPeriodEnd") : t2("subscription.autoRenewalEnabled") })
         ] })
       ] }),
-      subscriptionData.isExpiringSoon && /* @__PURE__ */ jsx251("div", { className: "mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg", children: /* @__PURE__ */ jsxs226("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ jsx251(AlertTriangle21, { className: "h-5 w-5 text-yellow-600" }),
-        /* @__PURE__ */ jsxs226("p", { className: "text-sm text-yellow-800", children: [
+      subscriptionData.isExpiringSoon && /* @__PURE__ */ jsx256("div", { className: "mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg", children: /* @__PURE__ */ jsxs231("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ jsx256(AlertTriangle21, { className: "h-5 w-5 text-yellow-600" }),
+        /* @__PURE__ */ jsxs231("p", { className: "text-sm text-yellow-800", children: [
           t2("subscription.expiresIn"),
           " ",
           subscriptionData.daysUntilExpiry,
@@ -39684,28 +39936,28 @@ var SubscriptionSection = ({
           t2("subscription.considerRenewing")
         ] })
       ] }) }),
-      /* @__PURE__ */ jsx251("div", { className: "mt-6 pt-4 border-t border-gray-200", children: /* @__PURE__ */ jsx251("p", { className: "text-sm text-gray-600 text-center", children: currentUserRole === "OUTLET_ADMIN" ? t2("subscription.contactMerchant") : t2("subscription.comingSoon") }) })
+      /* @__PURE__ */ jsx256("div", { className: "mt-6 pt-4 border-t border-gray-200", children: /* @__PURE__ */ jsx256("p", { className: "text-sm text-gray-600 text-center", children: currentUserRole === "OUTLET_ADMIN" ? t2("subscription.contactMerchant") : t2("subscription.comingSoon") }) })
     ] }) }) });
   }
-  return /* @__PURE__ */ jsx251("div", { className: "space-y-6", children: /* @__PURE__ */ jsx251(Card63, { children: /* @__PURE__ */ jsx251(CardContent62, { className: "p-6", children: /* @__PURE__ */ jsxs226("div", { className: "text-center py-8", children: [
-    /* @__PURE__ */ jsx251(CreditCard21, { className: "mx-auto h-12 w-12 text-gray-400 mb-4" }),
-    /* @__PURE__ */ jsx251("h3", { className: "text-base font-semibold text-gray-900 mb-2", children: t2("subscription.noSubscription") }),
-    /* @__PURE__ */ jsx251("p", { className: "text-sm text-gray-600 mb-6", children: t2("subscription.noSubscriptionDesc") }),
-    (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsx251(Button68, { children: t2("subscription.viewInvoices") }),
-    currentUserRole === "OUTLET_ADMIN" && /* @__PURE__ */ jsx251("p", { className: "text-sm text-gray-600", children: t2("subscription.contactAdmin") })
+  return /* @__PURE__ */ jsx256("div", { className: "space-y-6", children: /* @__PURE__ */ jsx256(Card64, { children: /* @__PURE__ */ jsx256(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs231("div", { className: "text-center py-8", children: [
+    /* @__PURE__ */ jsx256(CreditCard21, { className: "mx-auto h-12 w-12 text-gray-400 mb-4" }),
+    /* @__PURE__ */ jsx256("h3", { className: "text-base font-semibold text-gray-900 mb-2", children: t2("subscription.noSubscription") }),
+    /* @__PURE__ */ jsx256("p", { className: "text-sm text-gray-600 mb-6", children: t2("subscription.noSubscriptionDesc") }),
+    (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsx256(Button69, { children: t2("subscription.viewInvoices") }),
+    currentUserRole === "OUTLET_ADMIN" && /* @__PURE__ */ jsx256("p", { className: "text-sm text-gray-600", children: t2("subscription.contactAdmin") })
   ] }) }) }) });
 };
 
 // src/components/features/Settings/components/AccountSection.tsx
 import {
-  Card as Card64,
-  CardContent as CardContent63,
-  Button as Button69,
+  Card as Card65,
+  CardContent as CardContent64,
+  Button as Button70,
   Separator as Separator6
 } from "@rentalshop/ui";
 import { LogOut, Trash2 as Trash218, Key as Key2 } from "lucide-react";
 import { useSettingsTranslations as useSettingsTranslations5 } from "@rentalshop/hooks";
-import { jsx as jsx252, jsxs as jsxs227 } from "react/jsx-runtime";
+import { jsx as jsx257, jsxs as jsxs232 } from "react/jsx-runtime";
 var AccountSection = ({
   onSignOut,
   onDeleteAccount,
@@ -39713,17 +39965,17 @@ var AccountSection = ({
   isDeleting
 }) => {
   const t2 = useSettingsTranslations5();
-  return /* @__PURE__ */ jsx252("div", { className: "space-y-6", children: /* @__PURE__ */ jsx252(Card64, { children: /* @__PURE__ */ jsx252(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs227("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsxs227("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
-      /* @__PURE__ */ jsxs227("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx252(Key2, { className: "h-5 w-5 text-gray-600" }),
-        /* @__PURE__ */ jsxs227("div", { children: [
-          /* @__PURE__ */ jsx252("h3", { className: "text-base font-semibold text-gray-900", children: t2("account.changePasswordTitle") }),
-          /* @__PURE__ */ jsx252("p", { className: "text-sm text-gray-600", children: t2("account.changePasswordDesc") })
+  return /* @__PURE__ */ jsx257("div", { className: "space-y-6", children: /* @__PURE__ */ jsx257(Card65, { children: /* @__PURE__ */ jsx257(CardContent64, { className: "p-6", children: /* @__PURE__ */ jsxs232("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsxs232("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
+      /* @__PURE__ */ jsxs232("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ jsx257(Key2, { className: "h-5 w-5 text-gray-600" }),
+        /* @__PURE__ */ jsxs232("div", { children: [
+          /* @__PURE__ */ jsx257("h3", { className: "text-base font-semibold text-gray-900", children: t2("account.changePasswordTitle") }),
+          /* @__PURE__ */ jsx257("p", { className: "text-sm text-gray-600", children: t2("account.changePasswordDesc") })
         ] })
       ] }),
-      /* @__PURE__ */ jsx252(
-        Button69,
+      /* @__PURE__ */ jsx257(
+        Button70,
         {
           variant: "outline",
           onClick: onChangePassword,
@@ -39731,17 +39983,17 @@ var AccountSection = ({
         }
       )
     ] }),
-    /* @__PURE__ */ jsx252(Separator6, {}),
-    /* @__PURE__ */ jsxs227("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
-      /* @__PURE__ */ jsxs227("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx252(LogOut, { className: "h-5 w-5 text-gray-600" }),
-        /* @__PURE__ */ jsxs227("div", { children: [
-          /* @__PURE__ */ jsx252("h3", { className: "text-base font-semibold text-gray-900", children: t2("account.sessionTitle") }),
-          /* @__PURE__ */ jsx252("p", { className: "text-sm text-gray-600", children: t2("account.sessionDesc") })
+    /* @__PURE__ */ jsx257(Separator6, {}),
+    /* @__PURE__ */ jsxs232("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
+      /* @__PURE__ */ jsxs232("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ jsx257(LogOut, { className: "h-5 w-5 text-gray-600" }),
+        /* @__PURE__ */ jsxs232("div", { children: [
+          /* @__PURE__ */ jsx257("h3", { className: "text-base font-semibold text-gray-900", children: t2("account.sessionTitle") }),
+          /* @__PURE__ */ jsx257("p", { className: "text-sm text-gray-600", children: t2("account.sessionDesc") })
         ] })
       ] }),
-      /* @__PURE__ */ jsx252(
-        Button69,
+      /* @__PURE__ */ jsx257(
+        Button70,
         {
           variant: "outline",
           onClick: onSignOut,
@@ -39750,17 +40002,17 @@ var AccountSection = ({
         }
       )
     ] }),
-    /* @__PURE__ */ jsx252(Separator6, {}),
-    /* @__PURE__ */ jsxs227("div", { className: "flex items-center justify-between p-4 bg-red-50 rounded-lg", children: [
-      /* @__PURE__ */ jsxs227("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx252(Trash218, { className: "h-5 w-5 text-red-600" }),
-        /* @__PURE__ */ jsxs227("div", { children: [
-          /* @__PURE__ */ jsx252("h3", { className: "text-base font-semibold text-red-900", children: t2("account.deleteAccountTitle") }),
-          /* @__PURE__ */ jsx252("p", { className: "text-sm text-red-700", children: t2("account.deleteAccountDesc") })
+    /* @__PURE__ */ jsx257(Separator6, {}),
+    /* @__PURE__ */ jsxs232("div", { className: "flex items-center justify-between p-4 bg-red-50 rounded-lg", children: [
+      /* @__PURE__ */ jsxs232("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ jsx257(Trash218, { className: "h-5 w-5 text-red-600" }),
+        /* @__PURE__ */ jsxs232("div", { children: [
+          /* @__PURE__ */ jsx257("h3", { className: "text-base font-semibold text-red-900", children: t2("account.deleteAccountTitle") }),
+          /* @__PURE__ */ jsx257("p", { className: "text-sm text-red-700", children: t2("account.deleteAccountDesc") })
         ] })
       ] }),
-      /* @__PURE__ */ jsx252(
-        Button69,
+      /* @__PURE__ */ jsx257(
+        Button70,
         {
           variant: "destructive",
           onClick: onDeleteAccount,
@@ -39777,7 +40029,7 @@ import { useState as useState85, useTransition as useTransition2 } from "react";
 import { Languages, Check as Check8 } from "lucide-react";
 import { useRouter as useRouter7 } from "next/navigation";
 import { useSettingsTranslations as useSettingsTranslations6 } from "@rentalshop/hooks";
-import { jsx as jsx253, jsxs as jsxs228 } from "react/jsx-runtime";
+import { jsx as jsx258, jsxs as jsxs233 } from "react/jsx-runtime";
 var languages = [
   { value: "en", label: "English", flag: "\u{1F1FA}\u{1F1F8}" },
   { value: "vi", label: "Ti\u1EBFng Vi\u1EC7t", flag: "\u{1F1FB}\u{1F1F3}" }
@@ -39799,47 +40051,47 @@ function LanguageSection() {
     });
   };
   const currentLanguage = languages.find((lang) => lang.value === currentLocale);
-  return /* @__PURE__ */ jsxs228(Card, { children: [
-    /* @__PURE__ */ jsxs228(CardHeader, { children: [
-      /* @__PURE__ */ jsxs228("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx253(Languages, { className: "h-5 w-5 text-action-primary" }),
-        /* @__PURE__ */ jsx253(CardTitle, { children: t2("language.title") })
+  return /* @__PURE__ */ jsxs233(Card, { children: [
+    /* @__PURE__ */ jsxs233(CardHeader, { children: [
+      /* @__PURE__ */ jsxs233("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsx258(Languages, { className: "h-5 w-5 text-action-primary" }),
+        /* @__PURE__ */ jsx258(CardTitle, { children: t2("language.title") })
       ] }),
-      /* @__PURE__ */ jsx253(CardDescription, { children: t2("language.subtitle") })
+      /* @__PURE__ */ jsx258(CardDescription, { children: t2("language.subtitle") })
     ] }),
-    /* @__PURE__ */ jsxs228(CardContent, { className: "space-y-4", children: [
-      /* @__PURE__ */ jsxs228("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ jsx253("label", { className: "text-sm font-medium text-text-primary", children: t2("language.currentLanguage") }),
-        /* @__PURE__ */ jsxs228("div", { className: "flex items-center gap-2 px-3 py-2 bg-bg-secondary rounded-lg", children: [
-          /* @__PURE__ */ jsx253("span", { className: "text-2xl", children: currentLanguage?.flag }),
-          /* @__PURE__ */ jsx253("span", { className: "text-text-primary font-medium", children: currentLanguage?.label }),
-          /* @__PURE__ */ jsx253(Check8, { className: "h-4 w-4 text-action-success ml-auto" })
+    /* @__PURE__ */ jsxs233(CardContent, { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs233("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ jsx258("label", { className: "text-sm font-medium text-text-primary", children: t2("language.currentLanguage") }),
+        /* @__PURE__ */ jsxs233("div", { className: "flex items-center gap-2 px-3 py-2 bg-bg-secondary rounded-lg", children: [
+          /* @__PURE__ */ jsx258("span", { className: "text-2xl", children: currentLanguage?.flag }),
+          /* @__PURE__ */ jsx258("span", { className: "text-text-primary font-medium", children: currentLanguage?.label }),
+          /* @__PURE__ */ jsx258(Check8, { className: "h-4 w-4 text-action-success ml-auto" })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs228("div", { className: "space-y-2", children: [
-        /* @__PURE__ */ jsx253("label", { className: "text-sm font-medium text-text-primary", children: t2("language.selectLanguage") }),
-        /* @__PURE__ */ jsxs228(
+      /* @__PURE__ */ jsxs233("div", { className: "space-y-2", children: [
+        /* @__PURE__ */ jsx258("label", { className: "text-sm font-medium text-text-primary", children: t2("language.selectLanguage") }),
+        /* @__PURE__ */ jsxs233(
           Select,
           {
             value: selectedLanguage,
             onValueChange: handleLanguageChange,
             disabled: isPending,
             children: [
-              /* @__PURE__ */ jsx253(SelectTrigger, { className: "w-full", children: /* @__PURE__ */ jsx253(SelectValue, { placeholder: t2("language.selectALanguage") }) }),
-              /* @__PURE__ */ jsx253(SelectContent, { children: languages.map((language) => /* @__PURE__ */ jsx253(SelectItem, { value: language.value, children: /* @__PURE__ */ jsxs228("div", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ jsx253("span", { className: "text-xl", children: language.flag }),
-                /* @__PURE__ */ jsx253("span", { children: language.label }),
-                language.value === currentLocale && /* @__PURE__ */ jsx253(Check8, { className: "h-4 w-4 text-action-success ml-2" })
+              /* @__PURE__ */ jsx258(SelectTrigger, { className: "w-full", children: /* @__PURE__ */ jsx258(SelectValue, { placeholder: t2("language.selectALanguage") }) }),
+              /* @__PURE__ */ jsx258(SelectContent, { children: languages.map((language) => /* @__PURE__ */ jsx258(SelectItem, { value: language.value, children: /* @__PURE__ */ jsxs233("div", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ jsx258("span", { className: "text-xl", children: language.flag }),
+                /* @__PURE__ */ jsx258("span", { children: language.label }),
+                language.value === currentLocale && /* @__PURE__ */ jsx258(Check8, { className: "h-4 w-4 text-action-success ml-2" })
               ] }) }, language.value)) })
             ]
           }
         )
       ] }),
-      isPending && /* @__PURE__ */ jsxs228("div", { className: "flex items-center gap-2 text-sm text-text-secondary", children: [
-        /* @__PURE__ */ jsx253("div", { className: "h-4 w-4 border-2 border-action-primary border-t-transparent rounded-full animate-spin" }),
-        /* @__PURE__ */ jsx253("span", { children: t2("language.applyingChanges") })
+      isPending && /* @__PURE__ */ jsxs233("div", { className: "flex items-center gap-2 text-sm text-text-secondary", children: [
+        /* @__PURE__ */ jsx258("div", { className: "h-4 w-4 border-2 border-action-primary border-t-transparent rounded-full animate-spin" }),
+        /* @__PURE__ */ jsx258("span", { children: t2("language.applyingChanges") })
       ] }),
-      /* @__PURE__ */ jsx253("div", { className: "pt-4 border-t border-border", children: /* @__PURE__ */ jsxs228("p", { className: "text-sm text-text-secondary", children: [
+      /* @__PURE__ */ jsx258("div", { className: "pt-4 border-t border-border", children: /* @__PURE__ */ jsxs233("p", { className: "text-sm text-text-secondary", children: [
         "\u2139\uFE0F ",
         t2("language.languagePreferenceSaved")
       ] }) })
@@ -39850,13 +40102,13 @@ function LanguageSection() {
 // src/components/features/Settings/components/ChangePasswordDialog.tsx
 import { useState as useState86 } from "react";
 import {
-  Button as Button70,
-  Input as Input33,
-  Label as Label19
+  Button as Button71,
+  Input as Input34,
+  Label as Label20
 } from "@rentalshop/ui";
 import { Eye as Eye30, EyeOff as EyeOff9 } from "lucide-react";
 import { useSettingsTranslations as useSettingsTranslations7 } from "@rentalshop/hooks";
-import { jsx as jsx254, jsxs as jsxs229 } from "react/jsx-runtime";
+import { jsx as jsx259, jsxs as jsxs234 } from "react/jsx-runtime";
 var ChangePasswordDialog2 = ({
   isOpen,
   isChanging,
@@ -39871,26 +40123,26 @@ var ChangePasswordDialog2 = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState86(false);
   if (!isOpen)
     return null;
-  return /* @__PURE__ */ jsx254("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ jsxs229("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
-    /* @__PURE__ */ jsxs229("div", { className: "flex items-center justify-between mb-4", children: [
-      /* @__PURE__ */ jsx254("h3", { className: "text-lg font-medium text-gray-900", children: t2("changePassword.title") }),
-      /* @__PURE__ */ jsx254(
-        Button70,
+  return /* @__PURE__ */ jsx259("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ jsxs234("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
+    /* @__PURE__ */ jsxs234("div", { className: "flex items-center justify-between mb-4", children: [
+      /* @__PURE__ */ jsx259("h3", { className: "text-lg font-medium text-gray-900", children: t2("changePassword.title") }),
+      /* @__PURE__ */ jsx259(
+        Button71,
         {
           variant: "ghost",
           size: "icon",
           onClick: onClose,
           className: "text-gray-400 hover:text-gray-600 h-8 w-8 p-0",
-          children: /* @__PURE__ */ jsx254("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx254("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }) })
+          children: /* @__PURE__ */ jsx259("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx259("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }) })
         }
       )
     ] }),
-    /* @__PURE__ */ jsxs229("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsxs229("div", { children: [
-        /* @__PURE__ */ jsx254(Label19, { htmlFor: "currentPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("changePassword.currentPassword") }),
-        /* @__PURE__ */ jsxs229("div", { className: "relative", children: [
-          /* @__PURE__ */ jsx254(
-            Input33,
+    /* @__PURE__ */ jsxs234("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs234("div", { children: [
+        /* @__PURE__ */ jsx259(Label20, { htmlFor: "currentPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("changePassword.currentPassword") }),
+        /* @__PURE__ */ jsxs234("div", { className: "relative", children: [
+          /* @__PURE__ */ jsx259(
+            Input34,
             {
               id: "currentPassword",
               name: "currentPassword",
@@ -39901,22 +40153,22 @@ var ChangePasswordDialog2 = ({
               className: "pr-10"
             }
           ),
-          /* @__PURE__ */ jsx254(
+          /* @__PURE__ */ jsx259(
             "button",
             {
               type: "button",
               onClick: () => setShowCurrentPassword(!showCurrentPassword),
               className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors",
-              children: showCurrentPassword ? /* @__PURE__ */ jsx254(EyeOff9, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx254(Eye30, { className: "h-4 w-4" })
+              children: showCurrentPassword ? /* @__PURE__ */ jsx259(EyeOff9, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx259(Eye30, { className: "h-4 w-4" })
             }
           )
         ] })
       ] }),
-      /* @__PURE__ */ jsxs229("div", { children: [
-        /* @__PURE__ */ jsx254(Label19, { htmlFor: "newPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("changePassword.newPassword") }),
-        /* @__PURE__ */ jsxs229("div", { className: "relative", children: [
-          /* @__PURE__ */ jsx254(
-            Input33,
+      /* @__PURE__ */ jsxs234("div", { children: [
+        /* @__PURE__ */ jsx259(Label20, { htmlFor: "newPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("changePassword.newPassword") }),
+        /* @__PURE__ */ jsxs234("div", { className: "relative", children: [
+          /* @__PURE__ */ jsx259(
+            Input34,
             {
               id: "newPassword",
               name: "newPassword",
@@ -39927,22 +40179,22 @@ var ChangePasswordDialog2 = ({
               className: "pr-10"
             }
           ),
-          /* @__PURE__ */ jsx254(
+          /* @__PURE__ */ jsx259(
             "button",
             {
               type: "button",
               onClick: () => setShowNewPassword(!showNewPassword),
               className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors",
-              children: showNewPassword ? /* @__PURE__ */ jsx254(EyeOff9, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx254(Eye30, { className: "h-4 w-4" })
+              children: showNewPassword ? /* @__PURE__ */ jsx259(EyeOff9, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx259(Eye30, { className: "h-4 w-4" })
             }
           )
         ] })
       ] }),
-      /* @__PURE__ */ jsxs229("div", { children: [
-        /* @__PURE__ */ jsx254(Label19, { htmlFor: "confirmPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("changePassword.confirmPassword") }),
-        /* @__PURE__ */ jsxs229("div", { className: "relative", children: [
-          /* @__PURE__ */ jsx254(
-            Input33,
+      /* @__PURE__ */ jsxs234("div", { children: [
+        /* @__PURE__ */ jsx259(Label20, { htmlFor: "confirmPassword", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("changePassword.confirmPassword") }),
+        /* @__PURE__ */ jsxs234("div", { className: "relative", children: [
+          /* @__PURE__ */ jsx259(
+            Input34,
             {
               id: "confirmPassword",
               name: "confirmPassword",
@@ -39953,21 +40205,21 @@ var ChangePasswordDialog2 = ({
               className: "pr-10"
             }
           ),
-          /* @__PURE__ */ jsx254(
+          /* @__PURE__ */ jsx259(
             "button",
             {
               type: "button",
               onClick: () => setShowConfirmPassword(!showConfirmPassword),
               className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors",
-              children: showConfirmPassword ? /* @__PURE__ */ jsx254(EyeOff9, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx254(Eye30, { className: "h-4 w-4" })
+              children: showConfirmPassword ? /* @__PURE__ */ jsx259(EyeOff9, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx259(Eye30, { className: "h-4 w-4" })
             }
           )
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs229("div", { className: "flex justify-end space-x-3 mt-6", children: [
-      /* @__PURE__ */ jsx254(
-        Button70,
+    /* @__PURE__ */ jsxs234("div", { className: "flex justify-end space-x-3 mt-6", children: [
+      /* @__PURE__ */ jsx259(
+        Button71,
         {
           variant: "outline",
           onClick: onClose,
@@ -39975,8 +40227,8 @@ var ChangePasswordDialog2 = ({
           children: t2("changePassword.cancel")
         }
       ),
-      /* @__PURE__ */ jsx254(
-        Button70,
+      /* @__PURE__ */ jsx259(
+        Button71,
         {
           onClick: onSubmit,
           disabled: isChanging,
@@ -39988,9 +40240,9 @@ var ChangePasswordDialog2 = ({
 };
 
 // src/components/features/Settings/components/DeleteAccountDialog.tsx
-import { Button as Button71 } from "@rentalshop/ui";
+import { Button as Button72 } from "@rentalshop/ui";
 import { useSettingsTranslations as useSettingsTranslations8 } from "@rentalshop/hooks";
-import { jsx as jsx255, jsxs as jsxs230 } from "react/jsx-runtime";
+import { jsx as jsx260, jsxs as jsxs235 } from "react/jsx-runtime";
 var DeleteAccountDialog = ({
   isOpen,
   isDeleting,
@@ -40000,24 +40252,24 @@ var DeleteAccountDialog = ({
   const t2 = useSettingsTranslations8();
   if (!isOpen)
     return null;
-  return /* @__PURE__ */ jsx255("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ jsxs230("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
-    /* @__PURE__ */ jsxs230("div", { className: "flex items-center mb-4", children: [
-      /* @__PURE__ */ jsx255("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx255("svg", { className: "h-6 w-6 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx255("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" }) }) }),
-      /* @__PURE__ */ jsx255("div", { className: "ml-3", children: /* @__PURE__ */ jsx255("h3", { className: "text-lg font-medium text-gray-900", children: t2("deleteAccountDialog.title") }) })
+  return /* @__PURE__ */ jsx260("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ jsxs235("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
+    /* @__PURE__ */ jsxs235("div", { className: "flex items-center mb-4", children: [
+      /* @__PURE__ */ jsx260("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx260("svg", { className: "h-6 w-6 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx260("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" }) }) }),
+      /* @__PURE__ */ jsx260("div", { className: "ml-3", children: /* @__PURE__ */ jsx260("h3", { className: "text-lg font-medium text-gray-900", children: t2("deleteAccountDialog.title") }) })
     ] }),
-    /* @__PURE__ */ jsxs230("div", { className: "mb-6", children: [
-      /* @__PURE__ */ jsx255("p", { className: "text-sm text-gray-600", children: t2("deleteAccountDialog.description") }),
-      /* @__PURE__ */ jsxs230("ul", { className: "mt-3 text-sm text-gray-600 list-disc list-inside space-y-1", children: [
-        /* @__PURE__ */ jsx255("li", { children: t2("deleteAccountDialog.profileInfo") }),
-        /* @__PURE__ */ jsx255("li", { children: t2("deleteAccountDialog.orderHistory") }),
-        /* @__PURE__ */ jsx255("li", { children: t2("deleteAccountDialog.productListings") }),
-        /* @__PURE__ */ jsx255("li", { children: t2("deleteAccountDialog.savedPreferences") })
+    /* @__PURE__ */ jsxs235("div", { className: "mb-6", children: [
+      /* @__PURE__ */ jsx260("p", { className: "text-sm text-gray-600", children: t2("deleteAccountDialog.description") }),
+      /* @__PURE__ */ jsxs235("ul", { className: "mt-3 text-sm text-gray-600 list-disc list-inside space-y-1", children: [
+        /* @__PURE__ */ jsx260("li", { children: t2("deleteAccountDialog.profileInfo") }),
+        /* @__PURE__ */ jsx260("li", { children: t2("deleteAccountDialog.orderHistory") }),
+        /* @__PURE__ */ jsx260("li", { children: t2("deleteAccountDialog.productListings") }),
+        /* @__PURE__ */ jsx260("li", { children: t2("deleteAccountDialog.savedPreferences") })
       ] }),
-      /* @__PURE__ */ jsx255("p", { className: "mt-3 text-sm text-gray-600", children: /* @__PURE__ */ jsx255("strong", { children: t2("deleteAccountDialog.irreversibleWarning") }) })
+      /* @__PURE__ */ jsx260("p", { className: "mt-3 text-sm text-gray-600", children: /* @__PURE__ */ jsx260("strong", { children: t2("deleteAccountDialog.irreversibleWarning") }) })
     ] }),
-    /* @__PURE__ */ jsxs230("div", { className: "flex justify-end space-x-3", children: [
-      /* @__PURE__ */ jsx255(
-        Button71,
+    /* @__PURE__ */ jsxs235("div", { className: "flex justify-end space-x-3", children: [
+      /* @__PURE__ */ jsx260(
+        Button72,
         {
           variant: "outline",
           onClick: onClose,
@@ -40025,8 +40277,8 @@ var DeleteAccountDialog = ({
           children: t2("deleteAccountDialog.cancel")
         }
       ),
-      /* @__PURE__ */ jsx255(
-        Button71,
+      /* @__PURE__ */ jsx260(
+        Button72,
         {
           variant: "destructive",
           onClick: onConfirm,
@@ -40039,12 +40291,12 @@ var DeleteAccountDialog = ({
 };
 
 // src/components/features/Settings/Settings.tsx
-import { Fragment as Fragment50, jsx as jsx256, jsxs as jsxs231 } from "react/jsx-runtime";
+import { Fragment as Fragment51, jsx as jsx261, jsxs as jsxs236 } from "react/jsx-runtime";
 var createSettingsMenuItems = (t2) => [
   {
     id: "profile",
     label: t2("menuItems.profile.label"),
-    icon: User24,
+    icon: User23,
     description: t2("menuItems.profile.description")
   },
   {
@@ -40087,7 +40339,10 @@ var SettingsComponent = () => {
   const { user, logout, loading } = useAuth2();
   const { toastSuccess, toastError } = useToast10();
   const { currency, setCurrency } = useCurrency2();
-  const [activeSection, setActiveSection] = useState87("profile");
+  const router = useRouter8();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") || "profile";
+  const [activeSection, setActiveSection] = useState87(tabFromUrl);
   const [isEditingPersonal, setIsEditingPersonal] = useState87(false);
   const [isEditingMerchant, setIsEditingMerchant] = useState87(false);
   const [isEditingOutlet, setIsEditingOutlet] = useState87(false);
@@ -40126,6 +40381,16 @@ var SettingsComponent = () => {
   const [isDeleting, setIsDeleting] = useState87(false);
   const [subscriptionData, setSubscriptionData] = useState87(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState87(true);
+  useEffect45(() => {
+    const tabFromUrl2 = searchParams.get("tab") || "profile";
+    if (tabFromUrl2 !== activeSection) {
+      setActiveSection(tabFromUrl2);
+    }
+  }, [searchParams]);
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    router.push(`/settings?tab=${section}`);
+  };
   useEffect45(() => {
     if (user) {
       setPersonalFormData({
@@ -40432,7 +40697,7 @@ var SettingsComponent = () => {
   const renderActiveSection = () => {
     switch (activeSection) {
       case "profile":
-        return /* @__PURE__ */ jsx256(
+        return /* @__PURE__ */ jsx261(
           ProfileSection,
           {
             user,
@@ -40446,7 +40711,7 @@ var SettingsComponent = () => {
           }
         );
       case "merchant":
-        return /* @__PURE__ */ jsx256(
+        return /* @__PURE__ */ jsx261(
           MerchantSection,
           {
             user,
@@ -40462,7 +40727,7 @@ var SettingsComponent = () => {
           }
         );
       case "outlet":
-        return /* @__PURE__ */ jsx256(
+        return /* @__PURE__ */ jsx261(
           OutletSection,
           {
             user,
@@ -40476,7 +40741,7 @@ var SettingsComponent = () => {
           }
         );
       case "subscription":
-        return /* @__PURE__ */ jsx256(
+        return /* @__PURE__ */ jsx261(
           SubscriptionSection,
           {
             subscriptionData,
@@ -40485,9 +40750,9 @@ var SettingsComponent = () => {
           }
         );
       case "language":
-        return /* @__PURE__ */ jsx256(LanguageSection, {});
+        return /* @__PURE__ */ jsx261(LanguageSection, {});
       case "account":
-        return /* @__PURE__ */ jsx256(
+        return /* @__PURE__ */ jsx261(
           AccountSection,
           {
             onSignOut: handleSignOut,
@@ -40497,7 +40762,7 @@ var SettingsComponent = () => {
           }
         );
       default:
-        return /* @__PURE__ */ jsx256(
+        return /* @__PURE__ */ jsx261(
           ProfileSection,
           {
             user,
@@ -40512,19 +40777,19 @@ var SettingsComponent = () => {
         );
     }
   };
-  return /* @__PURE__ */ jsxs231(Fragment50, { children: [
-    /* @__PURE__ */ jsx256(
+  return /* @__PURE__ */ jsxs236(Fragment51, { children: [
+    /* @__PURE__ */ jsx261(
       SettingsLayout2,
       {
         user,
         loading,
         menuItems: filteredMenuItems,
         activeSection,
-        onSectionChange: setActiveSection,
+        onSectionChange: handleSectionChange,
         children: renderActiveSection()
       }
     ),
-    /* @__PURE__ */ jsx256(
+    /* @__PURE__ */ jsx261(
       ChangePasswordDialog2,
       {
         isOpen: showChangePassword,
@@ -40535,7 +40800,7 @@ var SettingsComponent = () => {
         onSubmit: handleChangePassword
       }
     ),
-    /* @__PURE__ */ jsx256(
+    /* @__PURE__ */ jsx261(
       DeleteAccountDialog,
       {
         isOpen: showDeleteConfirm,
@@ -40550,30 +40815,30 @@ var Settings_default = SettingsComponent;
 
 // src/components/features/Settings/components/SecuritySection.tsx
 import {
-  Card as Card65,
-  CardContent as CardContent64,
-  Button as Button72
+  Card as Card66,
+  CardContent as CardContent65,
+  Button as Button73
 } from "@rentalshop/ui";
 import { Shield as Shield8 } from "lucide-react";
-import { jsx as jsx257, jsxs as jsxs232 } from "react/jsx-runtime";
+import { jsx as jsx262, jsxs as jsxs237 } from "react/jsx-runtime";
 var SecuritySection = ({
   onChangePassword
 }) => {
-  return /* @__PURE__ */ jsxs232("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsxs232("div", { children: [
-      /* @__PURE__ */ jsx257("h2", { className: "text-2xl font-bold text-gray-900", children: "Security" }),
-      /* @__PURE__ */ jsx257("p", { className: "text-gray-600", children: "Manage your password and account security settings" })
+  return /* @__PURE__ */ jsxs237("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsxs237("div", { children: [
+      /* @__PURE__ */ jsx262("h2", { className: "text-2xl font-bold text-gray-900", children: "Security" }),
+      /* @__PURE__ */ jsx262("p", { className: "text-gray-600", children: "Manage your password and account security settings" })
     ] }),
-    /* @__PURE__ */ jsx257(Card65, { children: /* @__PURE__ */ jsx257(CardContent64, { className: "p-6", children: /* @__PURE__ */ jsx257("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs232("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
-      /* @__PURE__ */ jsxs232("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx257(Shield8, { className: "h-5 w-5 text-gray-600" }),
-        /* @__PURE__ */ jsxs232("div", { children: [
-          /* @__PURE__ */ jsx257("h3", { className: "font-medium text-gray-900", children: "Password" }),
-          /* @__PURE__ */ jsx257("p", { className: "text-sm text-gray-600", children: "Change your password to keep your account secure" })
+    /* @__PURE__ */ jsx262(Card66, { children: /* @__PURE__ */ jsx262(CardContent65, { className: "p-6", children: /* @__PURE__ */ jsx262("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs237("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
+      /* @__PURE__ */ jsxs237("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ jsx262(Shield8, { className: "h-5 w-5 text-gray-600" }),
+        /* @__PURE__ */ jsxs237("div", { children: [
+          /* @__PURE__ */ jsx262("h3", { className: "font-medium text-gray-900", children: "Password" }),
+          /* @__PURE__ */ jsx262("p", { className: "text-sm text-gray-600", children: "Change your password to keep your account secure" })
         ] })
       ] }),
-      /* @__PURE__ */ jsx257(
-        Button72,
+      /* @__PURE__ */ jsx262(
+        Button73,
         {
           variant: "outline",
           onClick: onChangePassword,
@@ -40589,15 +40854,15 @@ import { useState as useState88, useEffect as useEffect46 } from "react";
 import { DollarSign as DollarSign24, CheckCircle2 as CheckCircle211, AlertCircle as AlertCircle17 } from "lucide-react";
 import { formatCurrency as formatCurrency21, getCurrency as getCurrency2 } from "@rentalshop/utils";
 import {
-  Card as Card66,
-  CardContent as CardContent65,
+  Card as Card67,
+  CardContent as CardContent66,
   CardDescription as CardDescription6,
-  CardHeader as CardHeader44,
-  CardTitle as CardTitle41,
-  Button as Button73,
+  CardHeader as CardHeader45,
+  CardTitle as CardTitle42,
+  Button as Button74,
   Badge as Badge33
 } from "@rentalshop/ui";
-import { jsx as jsx258, jsxs as jsxs233 } from "react/jsx-runtime";
+import { jsx as jsx263, jsxs as jsxs238 } from "react/jsx-runtime";
 var CURRENCY_OPTIONS = [
   { value: "USD", label: "$ USD - US Dollar", symbol: "$", name: "US Dollar" },
   { value: "VND", label: "\u0111 VND - Vietnamese Dong", symbol: "\u0111", name: "Vietnamese Dong" }
@@ -40628,53 +40893,53 @@ var CurrencySection = ({
     setSelectedCurrency(currentCurrency);
     setHasChanges(false);
   };
-  return /* @__PURE__ */ jsxs233("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsxs233("div", { children: [
-      /* @__PURE__ */ jsxs233("h2", { className: "text-2xl font-bold text-gray-900 flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx258(DollarSign24, { className: "h-6 w-6 text-blue-600" }),
+  return /* @__PURE__ */ jsxs238("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsxs238("div", { children: [
+      /* @__PURE__ */ jsxs238("h2", { className: "text-2xl font-bold text-gray-900 flex items-center gap-2", children: [
+        /* @__PURE__ */ jsx263(DollarSign24, { className: "h-6 w-6 text-blue-600" }),
         "Currency Settings"
       ] }),
-      /* @__PURE__ */ jsx258("p", { className: "text-gray-600 mt-1", children: "Choose your preferred currency for displaying prices across your rental shop." })
+      /* @__PURE__ */ jsx263("p", { className: "text-gray-600 mt-1", children: "Choose your preferred currency for displaying prices across your rental shop." })
     ] }),
-    hasChanges && /* @__PURE__ */ jsxs233("div", { className: "flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg", children: [
-      /* @__PURE__ */ jsx258(AlertCircle17, { className: "h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" }),
-      /* @__PURE__ */ jsxs233("div", { className: "flex-1", children: [
-        /* @__PURE__ */ jsx258("p", { className: "text-sm font-medium text-yellow-900", children: "Unsaved Changes" }),
-        /* @__PURE__ */ jsx258("p", { className: "text-sm text-yellow-700 mt-1", children: 'You have unsaved currency changes. Click "Save Changes" to apply them.' })
+    hasChanges && /* @__PURE__ */ jsxs238("div", { className: "flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg", children: [
+      /* @__PURE__ */ jsx263(AlertCircle17, { className: "h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" }),
+      /* @__PURE__ */ jsxs238("div", { className: "flex-1", children: [
+        /* @__PURE__ */ jsx263("p", { className: "text-sm font-medium text-yellow-900", children: "Unsaved Changes" }),
+        /* @__PURE__ */ jsx263("p", { className: "text-sm text-yellow-700 mt-1", children: 'You have unsaved currency changes. Click "Save Changes" to apply them.' })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs233(Card66, { children: [
-      /* @__PURE__ */ jsxs233(CardHeader44, { children: [
-        /* @__PURE__ */ jsx258(CardTitle41, { className: "text-lg", children: "Current Currency" }),
-        /* @__PURE__ */ jsx258(CardDescription6, { children: "Your currently active currency for all price displays" })
+    /* @__PURE__ */ jsxs238(Card67, { children: [
+      /* @__PURE__ */ jsxs238(CardHeader45, { children: [
+        /* @__PURE__ */ jsx263(CardTitle42, { className: "text-lg", children: "Current Currency" }),
+        /* @__PURE__ */ jsx263(CardDescription6, { children: "Your currently active currency for all price displays" })
       ] }),
-      /* @__PURE__ */ jsx258(CardContent65, { children: /* @__PURE__ */ jsxs233("div", { className: "flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg", children: [
-        /* @__PURE__ */ jsx258("div", { className: "text-3xl", children: getCurrency2(currentCurrency)?.symbol || "$" }),
-        /* @__PURE__ */ jsxs233("div", { className: "flex-1", children: [
-          /* @__PURE__ */ jsx258("div", { className: "text-lg font-semibold text-gray-900", children: getCurrency2(currentCurrency)?.name || "US Dollar" }),
-          /* @__PURE__ */ jsxs233("div", { className: "text-sm text-gray-600", children: [
+      /* @__PURE__ */ jsx263(CardContent66, { children: /* @__PURE__ */ jsxs238("div", { className: "flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg", children: [
+        /* @__PURE__ */ jsx263("div", { className: "text-3xl", children: getCurrency2(currentCurrency)?.symbol || "$" }),
+        /* @__PURE__ */ jsxs238("div", { className: "flex-1", children: [
+          /* @__PURE__ */ jsx263("div", { className: "text-lg font-semibold text-gray-900", children: getCurrency2(currentCurrency)?.name || "US Dollar" }),
+          /* @__PURE__ */ jsxs238("div", { className: "text-sm text-gray-600", children: [
             "Code: ",
             currentCurrency
           ] })
         ] }),
-        selectedCurrency === currentCurrency && !hasChanges && /* @__PURE__ */ jsxs233(Badge33, { variant: "default", className: "bg-green-100 text-green-800", children: [
-          /* @__PURE__ */ jsx258(CheckCircle211, { className: "h-3 w-3 mr-1" }),
+        selectedCurrency === currentCurrency && !hasChanges && /* @__PURE__ */ jsxs238(Badge33, { variant: "default", className: "bg-green-100 text-green-800", children: [
+          /* @__PURE__ */ jsx263(CheckCircle211, { className: "h-3 w-3 mr-1" }),
           "Active"
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsxs233(Card66, { children: [
-      /* @__PURE__ */ jsxs233(CardHeader44, { children: [
-        /* @__PURE__ */ jsx258(CardTitle41, { className: "text-lg", children: "Select Currency" }),
-        /* @__PURE__ */ jsx258(CardDescription6, { children: "Choose from our supported currencies" })
+    /* @__PURE__ */ jsxs238(Card67, { children: [
+      /* @__PURE__ */ jsxs238(CardHeader45, { children: [
+        /* @__PURE__ */ jsx263(CardTitle42, { className: "text-lg", children: "Select Currency" }),
+        /* @__PURE__ */ jsx263(CardDescription6, { children: "Choose from our supported currencies" })
       ] }),
-      /* @__PURE__ */ jsx258(CardContent65, { children: /* @__PURE__ */ jsx258("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: CURRENCY_OPTIONS.map((option) => {
+      /* @__PURE__ */ jsx263(CardContent66, { children: /* @__PURE__ */ jsx263("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: CURRENCY_OPTIONS.map((option) => {
         const config = getCurrency2(option.value);
         if (!config)
           return null;
         const isSelected = selectedCurrency === option.value;
         const isCurrent = currentCurrency === option.value;
-        return /* @__PURE__ */ jsxs233(
+        return /* @__PURE__ */ jsxs238(
           "button",
           {
             onClick: () => handleSelect(option.value),
@@ -40685,74 +40950,74 @@ var CurrencySection = ({
                     ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   `,
             children: [
-              /* @__PURE__ */ jsxs233("div", { className: "flex items-start justify-between", children: [
-                /* @__PURE__ */ jsxs233("div", { className: "flex items-center gap-3", children: [
-                  /* @__PURE__ */ jsx258("div", { className: "text-2xl", children: config.symbol }),
-                  /* @__PURE__ */ jsxs233("div", { children: [
-                    /* @__PURE__ */ jsx258("div", { className: "font-semibold text-gray-900", children: config.name }),
-                    /* @__PURE__ */ jsx258("div", { className: "text-sm text-gray-600", children: option.value })
+              /* @__PURE__ */ jsxs238("div", { className: "flex items-start justify-between", children: [
+                /* @__PURE__ */ jsxs238("div", { className: "flex items-center gap-3", children: [
+                  /* @__PURE__ */ jsx263("div", { className: "text-2xl", children: config.symbol }),
+                  /* @__PURE__ */ jsxs238("div", { children: [
+                    /* @__PURE__ */ jsx263("div", { className: "font-semibold text-gray-900", children: config.name }),
+                    /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-600", children: option.value })
                   ] })
                 ] }),
-                isSelected && /* @__PURE__ */ jsx258(CheckCircle211, { className: "h-5 w-5 text-blue-600" })
+                isSelected && /* @__PURE__ */ jsx263(CheckCircle211, { className: "h-5 w-5 text-blue-600" })
               ] }),
-              /* @__PURE__ */ jsxs233("div", { className: "mt-3 pt-3 border-t border-gray-200", children: [
-                /* @__PURE__ */ jsx258("div", { className: "text-xs text-gray-500 mb-1", children: "Preview:" }),
-                /* @__PURE__ */ jsxs233("div", { className: "space-y-1", children: [
-                  /* @__PURE__ */ jsxs233("div", { className: "text-sm text-gray-700", children: [
-                    /* @__PURE__ */ jsx258("span", { className: "text-gray-500", children: "Small: " }),
-                    /* @__PURE__ */ jsx258("span", { className: "font-medium", children: formatCurrency21(10, option.value) })
+              /* @__PURE__ */ jsxs238("div", { className: "mt-3 pt-3 border-t border-gray-200", children: [
+                /* @__PURE__ */ jsx263("div", { className: "text-xs text-gray-500 mb-1", children: "Preview:" }),
+                /* @__PURE__ */ jsxs238("div", { className: "space-y-1", children: [
+                  /* @__PURE__ */ jsxs238("div", { className: "text-sm text-gray-700", children: [
+                    /* @__PURE__ */ jsx263("span", { className: "text-gray-500", children: "Small: " }),
+                    /* @__PURE__ */ jsx263("span", { className: "font-medium", children: formatCurrency21(10, option.value) })
                   ] }),
-                  /* @__PURE__ */ jsxs233("div", { className: "text-sm text-gray-700", children: [
-                    /* @__PURE__ */ jsx258("span", { className: "text-gray-500", children: "Medium: " }),
-                    /* @__PURE__ */ jsx258("span", { className: "font-medium", children: formatCurrency21(1e3, option.value) })
+                  /* @__PURE__ */ jsxs238("div", { className: "text-sm text-gray-700", children: [
+                    /* @__PURE__ */ jsx263("span", { className: "text-gray-500", children: "Medium: " }),
+                    /* @__PURE__ */ jsx263("span", { className: "font-medium", children: formatCurrency21(1e3, option.value) })
                   ] }),
-                  /* @__PURE__ */ jsxs233("div", { className: "text-sm text-gray-700", children: [
-                    /* @__PURE__ */ jsx258("span", { className: "text-gray-500", children: "Large: " }),
-                    /* @__PURE__ */ jsx258("span", { className: "font-medium", children: formatCurrency21(1e6, option.value) })
+                  /* @__PURE__ */ jsxs238("div", { className: "text-sm text-gray-700", children: [
+                    /* @__PURE__ */ jsx263("span", { className: "text-gray-500", children: "Large: " }),
+                    /* @__PURE__ */ jsx263("span", { className: "font-medium", children: formatCurrency21(1e6, option.value) })
                   ] })
                 ] })
               ] }),
-              isCurrent && !hasChanges && /* @__PURE__ */ jsx258("div", { className: "absolute top-2 right-2", children: /* @__PURE__ */ jsx258(Badge33, { variant: "default", className: "bg-green-100 text-green-800 text-xs", children: "Current" }) })
+              isCurrent && !hasChanges && /* @__PURE__ */ jsx263("div", { className: "absolute top-2 right-2", children: /* @__PURE__ */ jsx263(Badge33, { variant: "default", className: "bg-green-100 text-green-800 text-xs", children: "Current" }) })
             ]
           },
           option.value
         );
       }) }) })
     ] }),
-    /* @__PURE__ */ jsxs233(Card66, { children: [
-      /* @__PURE__ */ jsxs233(CardHeader44, { children: [
-        /* @__PURE__ */ jsx258(CardTitle41, { className: "text-lg", children: "Currency Details" }),
-        /* @__PURE__ */ jsxs233(CardDescription6, { children: [
+    /* @__PURE__ */ jsxs238(Card67, { children: [
+      /* @__PURE__ */ jsxs238(CardHeader45, { children: [
+        /* @__PURE__ */ jsx263(CardTitle42, { className: "text-lg", children: "Currency Details" }),
+        /* @__PURE__ */ jsxs238(CardDescription6, { children: [
           "Technical information about ",
           getCurrency2(selectedCurrency)?.name || "Selected Currency"
         ] })
       ] }),
-      /* @__PURE__ */ jsx258(CardContent65, { children: /* @__PURE__ */ jsxs233("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-        /* @__PURE__ */ jsxs233("div", { children: [
-          /* @__PURE__ */ jsx258("div", { className: "text-sm text-gray-500", children: "Symbol" }),
-          /* @__PURE__ */ jsx258("div", { className: "text-lg font-semibold", children: getCurrency2(selectedCurrency)?.symbol || "$" })
+      /* @__PURE__ */ jsx263(CardContent66, { children: /* @__PURE__ */ jsxs238("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+        /* @__PURE__ */ jsxs238("div", { children: [
+          /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-500", children: "Symbol" }),
+          /* @__PURE__ */ jsx263("div", { className: "text-lg font-semibold", children: getCurrency2(selectedCurrency)?.symbol || "$" })
         ] }),
-        /* @__PURE__ */ jsxs233("div", { children: [
-          /* @__PURE__ */ jsx258("div", { className: "text-sm text-gray-500", children: "Code" }),
-          /* @__PURE__ */ jsx258("div", { className: "text-lg font-semibold", children: selectedCurrency })
+        /* @__PURE__ */ jsxs238("div", { children: [
+          /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-500", children: "Code" }),
+          /* @__PURE__ */ jsx263("div", { className: "text-lg font-semibold", children: selectedCurrency })
         ] }),
-        /* @__PURE__ */ jsxs233("div", { children: [
-          /* @__PURE__ */ jsx258("div", { className: "text-sm text-gray-500", children: "Decimal Places" }),
-          /* @__PURE__ */ jsx258("div", { className: "text-lg font-semibold", children: getCurrency2(selectedCurrency)?.maxFractionDigits || 2 })
+        /* @__PURE__ */ jsxs238("div", { children: [
+          /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-500", children: "Decimal Places" }),
+          /* @__PURE__ */ jsx263("div", { className: "text-lg font-semibold", children: getCurrency2(selectedCurrency)?.maxFractionDigits || 2 })
         ] }),
-        /* @__PURE__ */ jsxs233("div", { children: [
-          /* @__PURE__ */ jsx258("div", { className: "text-sm text-gray-500", children: "Symbol Position" }),
-          /* @__PURE__ */ jsx258("div", { className: "text-lg font-semibold capitalize", children: getCurrency2(selectedCurrency)?.symbolBefore ? "before" : "after" })
+        /* @__PURE__ */ jsxs238("div", { children: [
+          /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-500", children: "Symbol Position" }),
+          /* @__PURE__ */ jsx263("div", { className: "text-lg font-semibold capitalize", children: getCurrency2(selectedCurrency)?.symbolBefore ? "before" : "after" })
         ] }),
-        /* @__PURE__ */ jsxs233("div", { children: [
-          /* @__PURE__ */ jsx258("div", { className: "text-sm text-gray-500", children: "Locale" }),
-          /* @__PURE__ */ jsx258("div", { className: "text-lg font-semibold", children: getCurrency2(selectedCurrency)?.locale || "en-US" })
+        /* @__PURE__ */ jsxs238("div", { children: [
+          /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-500", children: "Locale" }),
+          /* @__PURE__ */ jsx263("div", { className: "text-lg font-semibold", children: getCurrency2(selectedCurrency)?.locale || "en-US" })
         ] })
       ] }) })
     ] }),
-    hasChanges && /* @__PURE__ */ jsxs233("div", { className: "flex items-center justify-end gap-3 pt-4 border-t", children: [
-      /* @__PURE__ */ jsx258(
-        Button73,
+    hasChanges && /* @__PURE__ */ jsxs238("div", { className: "flex items-center justify-end gap-3 pt-4 border-t", children: [
+      /* @__PURE__ */ jsx263(
+        Button74,
         {
           variant: "outline",
           onClick: handleCancel,
@@ -40760,8 +41025,8 @@ var CurrencySection = ({
           children: "Cancel"
         }
       ),
-      /* @__PURE__ */ jsx258(
-        Button73,
+      /* @__PURE__ */ jsx263(
+        Button74,
         {
           onClick: handleSave,
           disabled: isUpdating || !hasChanges,
@@ -40769,12 +41034,12 @@ var CurrencySection = ({
         }
       )
     ] }),
-    /* @__PURE__ */ jsxs233("div", { className: "text-sm text-gray-500 space-y-2", children: [
-      /* @__PURE__ */ jsxs233("p", { children: [
-        /* @__PURE__ */ jsx258("strong", { children: "Note:" }),
+    /* @__PURE__ */ jsxs238("div", { className: "text-sm text-gray-500 space-y-2", children: [
+      /* @__PURE__ */ jsxs238("p", { children: [
+        /* @__PURE__ */ jsx263("strong", { children: "Note:" }),
         " Changing your currency will affect how prices are displayed throughout your rental shop. All existing prices will remain in their original values but will be formatted according to the selected currency."
       ] }),
-      /* @__PURE__ */ jsx258("p", { children: "If you need to convert existing prices to the new currency, please contact support." })
+      /* @__PURE__ */ jsx263("p", { children: "If you need to convert existing prices to the new currency, please contact support." })
     ] })
   ] });
 };
@@ -40783,14 +41048,14 @@ var CurrencySection = ({
 import { useState as useState89 } from "react";
 import {
   Home as Home3,
-  Package as Package22,
+  Package as Package23,
   Users as Users13,
   Settings as Settings10,
   ShoppingCart as ShoppingCart9,
   Store as Store7,
   Building2 as Building216,
   Bell as Bell4,
-  User as User25,
+  User as User24,
   LogOut as LogOut2,
   X as X18,
   Menu,
@@ -40801,7 +41066,7 @@ import {
   FileText as FileText5,
   Database as Database4
 } from "lucide-react";
-import { jsx as jsx259, jsxs as jsxs234 } from "react/jsx-runtime";
+import { jsx as jsx264, jsxs as jsxs239 } from "react/jsx-runtime";
 function TopNavigation({
   variant = "client",
   currentPage,
@@ -40814,7 +41079,7 @@ function TopNavigation({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState89(false);
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home3 },
-    { href: "/products", label: "Products", icon: Package22 },
+    { href: "/products", label: "Products", icon: Package23 },
     { href: "/customers", label: "Customers", icon: Users13 },
     { href: "/orders", label: "Orders", icon: ShoppingCart9 },
     { href: "/settings", label: "Settings", icon: Settings10 }
@@ -40825,7 +41090,7 @@ function TopNavigation({
     {
       href: "/plans",
       label: "Plans",
-      icon: Package22
+      icon: Package23
     },
     { href: "/subscriptions", label: "Subscriptions", icon: Clock30 },
     { href: "/payments", label: "Payments", icon: CreditCard23 },
@@ -40856,43 +41121,43 @@ function TopNavigation({
     return items;
   };
   const navItems = variant === "admin" ? filterNavItemsByRole(adminNavItems, userRole) : clientNavItems;
-  return /* @__PURE__ */ jsxs234("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
-    /* @__PURE__ */ jsx259("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ jsxs234("div", { className: "flex items-center justify-between h-16", children: [
-      /* @__PURE__ */ jsxs234("div", { className: "flex items-center", children: [
-        /* @__PURE__ */ jsx259("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx259("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ jsx259(Store7, { className: "w-6 h-6 text-white" }) }) }),
-        /* @__PURE__ */ jsxs234("div", { className: "ml-3", children: [
-          /* @__PURE__ */ jsx259("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
-          /* @__PURE__ */ jsx259("p", { className: "text-xs text-gray-500 capitalize", children: variant })
+  return /* @__PURE__ */ jsxs239("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
+    /* @__PURE__ */ jsx264("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ jsxs239("div", { className: "flex items-center justify-between h-16", children: [
+      /* @__PURE__ */ jsxs239("div", { className: "flex items-center", children: [
+        /* @__PURE__ */ jsx264("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx264("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ jsx264(Store7, { className: "w-6 h-6 text-white" }) }) }),
+        /* @__PURE__ */ jsxs239("div", { className: "ml-3", children: [
+          /* @__PURE__ */ jsx264("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
+          /* @__PURE__ */ jsx264("p", { className: "text-xs text-gray-500 capitalize", children: variant })
         ] })
       ] }),
-      /* @__PURE__ */ jsx259("nav", { className: "hidden lg:flex items-center space-x-1", children: navItems.map((item) => {
+      /* @__PURE__ */ jsx264("nav", { className: "hidden lg:flex items-center space-x-1", children: navItems.map((item) => {
         const Icon2 = item.icon;
         const isActive = currentPage === item.href || item.subItems && item.subItems.some((subItem) => currentPage === subItem.href);
         const hasSubItems = item.subItems && item.subItems.length > 0;
         if (hasSubItems) {
-          return /* @__PURE__ */ jsxs234("div", { className: "relative group", children: [
-            /* @__PURE__ */ jsxs234(
+          return /* @__PURE__ */ jsxs239("div", { className: "relative group", children: [
+            /* @__PURE__ */ jsxs239(
               "a",
               {
                 href: item.href,
                 className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
                 children: [
-                  /* @__PURE__ */ jsx259(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+                  /* @__PURE__ */ jsx264(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
                   item.label,
-                  /* @__PURE__ */ jsx259(ChevronDown8, { className: "w-3 h-3" })
+                  /* @__PURE__ */ jsx264(ChevronDown8, { className: "w-3 h-3" })
                 ]
               }
             ),
-            /* @__PURE__ */ jsx259("div", { className: "absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50", children: /* @__PURE__ */ jsx259("div", { className: "py-1", children: item.subItems?.map((subItem) => {
+            /* @__PURE__ */ jsx264("div", { className: "absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50", children: /* @__PURE__ */ jsx264("div", { className: "py-1", children: item.subItems?.map((subItem) => {
               const SubIcon = subItem.icon;
               const isSubActive = currentPage === subItem.href;
-              return /* @__PURE__ */ jsxs234(
+              return /* @__PURE__ */ jsxs239(
                 "a",
                 {
                   href: subItem.href,
                   className: `flex items-center gap-2 px-4 py-2 text-sm transition-colors ${isSubActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
                   children: [
-                    /* @__PURE__ */ jsx259(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
+                    /* @__PURE__ */ jsx264(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
                     subItem.label
                   ]
                 },
@@ -40901,45 +41166,45 @@ function TopNavigation({
             }) }) })
           ] }, item.href);
         }
-        return /* @__PURE__ */ jsxs234(
+        return /* @__PURE__ */ jsxs239(
           "a",
           {
             href: item.href,
             className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
             children: [
-              /* @__PURE__ */ jsx259(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+              /* @__PURE__ */ jsx264(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
               item.label
             ]
           },
           item.href
         );
       }) }),
-      /* @__PURE__ */ jsxs234("div", { className: "flex items-center space-x-4", children: [
-        /* @__PURE__ */ jsxs234("div", { className: "flex items-center space-x-2", children: [
-          /* @__PURE__ */ jsx259(
+      /* @__PURE__ */ jsxs239("div", { className: "flex items-center space-x-4", children: [
+        /* @__PURE__ */ jsxs239("div", { className: "flex items-center space-x-2", children: [
+          /* @__PURE__ */ jsx264(
             Button2,
             {
               variant: "ghost",
               size: "sm",
               className: "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-              children: /* @__PURE__ */ jsx259(Bell4, { className: "w-5 h-5" })
+              children: /* @__PURE__ */ jsx264(Bell4, { className: "w-5 h-5" })
             }
           ),
-          variant === "client" && /* @__PURE__ */ jsxs234(
+          variant === "client" && /* @__PURE__ */ jsxs239(
             Button2,
             {
               variant: "ghost",
               size: "sm",
               className: "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
               children: [
-                /* @__PURE__ */ jsx259(ShoppingCart9, { className: "w-5 h-5" }),
-                cartItemsCount > 0 && /* @__PURE__ */ jsx259(Badge, { className: "absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs", children: cartItemsCount > 9 ? "9+" : cartItemsCount })
+                /* @__PURE__ */ jsx264(ShoppingCart9, { className: "w-5 h-5" }),
+                cartItemsCount > 0 && /* @__PURE__ */ jsx264(Badge, { className: "absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs", children: cartItemsCount > 9 ? "9+" : cartItemsCount })
               ]
             }
           )
         ] }),
-        /* @__PURE__ */ jsxs234("div", { className: "flex items-center space-x-2", children: [
-          /* @__PURE__ */ jsxs234(
+        /* @__PURE__ */ jsxs239("div", { className: "flex items-center space-x-2", children: [
+          /* @__PURE__ */ jsxs239(
             Button2,
             {
               variant: "ghost",
@@ -40947,12 +41212,12 @@ function TopNavigation({
               onClick: onProfileClick,
               className: "flex items-center gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50",
               children: [
-                /* @__PURE__ */ jsx259("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx259(User25, { className: "w-4 h-4 text-white" }) }),
-                /* @__PURE__ */ jsx259("span", { className: "hidden sm:block text-sm font-medium", children: "Profile" })
+                /* @__PURE__ */ jsx264("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx264(User24, { className: "w-4 h-4 text-white" }) }),
+                /* @__PURE__ */ jsx264("span", { className: "hidden sm:block text-sm font-medium", children: "Profile" })
               ]
             }
           ),
-          /* @__PURE__ */ jsx259(
+          /* @__PURE__ */ jsx264(
             Button2,
             {
               variant: "ghost",
@@ -40960,50 +41225,50 @@ function TopNavigation({
               onClick: onLogout,
               className: "p-2 text-gray-600 hover:text-red-600 hover:bg-red-50",
               title: "Logout",
-              children: /* @__PURE__ */ jsx259(LogOut2, { className: "w-4 h-4" })
+              children: /* @__PURE__ */ jsx264(LogOut2, { className: "w-4 h-4" })
             }
           )
         ] }),
-        /* @__PURE__ */ jsx259("div", { className: "lg:hidden", children: /* @__PURE__ */ jsx259(
+        /* @__PURE__ */ jsx264("div", { className: "lg:hidden", children: /* @__PURE__ */ jsx264(
           Button2,
           {
             variant: "ghost",
             size: "sm",
             onClick: () => setIsMobileMenuOpen(!isMobileMenuOpen),
             className: "p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-            children: isMobileMenuOpen ? /* @__PURE__ */ jsx259(X18, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx259(Menu, { className: "w-6 h-6" })
+            children: isMobileMenuOpen ? /* @__PURE__ */ jsx264(X18, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx264(Menu, { className: "w-6 h-6" })
           }
         ) })
       ] })
     ] }) }),
-    isMobileMenuOpen && /* @__PURE__ */ jsx259("div", { className: "lg:hidden border-t border-gray-200 bg-white", children: /* @__PURE__ */ jsx259("div", { className: "px-2 pt-2 pb-3 space-y-1", children: navItems.map((item) => {
+    isMobileMenuOpen && /* @__PURE__ */ jsx264("div", { className: "lg:hidden border-t border-gray-200 bg-white", children: /* @__PURE__ */ jsx264("div", { className: "px-2 pt-2 pb-3 space-y-1", children: navItems.map((item) => {
       const Icon2 = item.icon;
       const isActive = currentPage === item.href || item.subItems && item.subItems.some((subItem) => currentPage === subItem.href);
       const hasSubItems = item.subItems && item.subItems.length > 0;
-      return /* @__PURE__ */ jsxs234("div", { children: [
-        /* @__PURE__ */ jsxs234(
+      return /* @__PURE__ */ jsxs239("div", { children: [
+        /* @__PURE__ */ jsxs239(
           "a",
           {
             href: item.href,
             className: `flex px-3 py-2 rounded-lg text-base font-medium items-center gap-3 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
             onClick: () => setIsMobileMenuOpen(false),
             children: [
-              /* @__PURE__ */ jsx259(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+              /* @__PURE__ */ jsx264(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
               item.label
             ]
           }
         ),
-        hasSubItems && /* @__PURE__ */ jsx259("div", { className: "ml-6 space-y-1", children: item.subItems?.map((subItem) => {
+        hasSubItems && /* @__PURE__ */ jsx264("div", { className: "ml-6 space-y-1", children: item.subItems?.map((subItem) => {
           const SubIcon = subItem.icon;
           const isSubActive = currentPage === subItem.href;
-          return /* @__PURE__ */ jsxs234(
+          return /* @__PURE__ */ jsxs239(
             "a",
             {
               href: subItem.href,
               className: `flex px-3 py-2 rounded-lg text-sm font-medium items-center gap-3 ${isSubActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
               onClick: () => setIsMobileMenuOpen(false),
               children: [
-                /* @__PURE__ */ jsx259(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
+                /* @__PURE__ */ jsx264(SubIcon, { className: `w-4 h-4 ${isSubActive ? "text-blue-600" : "text-gray-500"}` }),
                 subItem.label
               ]
             },
@@ -41021,19 +41286,19 @@ import {
   Store as Store8,
   Users as Users14,
   Settings as Settings11,
-  User as User26,
+  User as User25,
   LogOut as LogOut3,
   Menu as Menu2,
   Search as Search7,
   Bell as Bell5,
   ShoppingCart as ShoppingCart10,
-  Package as Package23,
+  Package as Package24,
   CreditCard as CreditCard24,
   BarChart3 as BarChart33,
   Shield as Shield9,
   Clock as Clock31
 } from "lucide-react";
-import { jsx as jsx260, jsxs as jsxs235 } from "react/jsx-runtime";
+import { jsx as jsx265, jsxs as jsxs240 } from "react/jsx-runtime";
 function ServerTopNavigation({
   variant = "client",
   currentPage,
@@ -41045,7 +41310,7 @@ function ServerTopNavigation({
 }) {
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home4 },
-    { href: "/products", label: "Products", icon: Package23 },
+    { href: "/products", label: "Products", icon: Package24 },
     { href: "/customers", label: "Customers", icon: Users14 },
     { href: "/orders", label: "Orders", icon: ShoppingCart10 },
     { href: "/settings", label: "Settings", icon: Settings11 }
@@ -41053,7 +41318,7 @@ function ServerTopNavigation({
   const adminNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home4 },
     { href: "/merchants", label: "Merchants", icon: Store8 },
-    { href: "/plans", label: "Plans", icon: Package23 },
+    { href: "/plans", label: "Plans", icon: Package24 },
     { href: "/subscriptions", label: "Subscriptions", icon: Clock31 },
     { href: "/payments", label: "Payments", icon: CreditCard24 },
     { href: "/settings", label: "Settings", icon: Settings11 },
@@ -41061,36 +41326,36 @@ function ServerTopNavigation({
     { href: "/security", label: "Security", icon: Shield9 }
   ];
   const navItems = variant === "admin" ? adminNavItems : clientNavItems;
-  return /* @__PURE__ */ jsxs235("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
-    /* @__PURE__ */ jsxs235("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: [
-      /* @__PURE__ */ jsxs235("div", { className: "flex items-center justify-between h-16", children: [
-        /* @__PURE__ */ jsxs235("div", { className: "flex items-center", children: [
-          /* @__PURE__ */ jsx260("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx260("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ jsx260(Store8, { className: "w-6 h-6 text-white" }) }) }),
-          /* @__PURE__ */ jsxs235("div", { className: "ml-3", children: [
-            /* @__PURE__ */ jsx260("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
-            /* @__PURE__ */ jsx260("p", { className: "text-xs text-gray-500 capitalize", children: variant })
+  return /* @__PURE__ */ jsxs240("header", { className: "sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm", children: [
+    /* @__PURE__ */ jsxs240("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: [
+      /* @__PURE__ */ jsxs240("div", { className: "flex items-center justify-between h-16", children: [
+        /* @__PURE__ */ jsxs240("div", { className: "flex items-center", children: [
+          /* @__PURE__ */ jsx265("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx265("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg", children: /* @__PURE__ */ jsx265(Store8, { className: "w-6 h-6 text-white" }) }) }),
+          /* @__PURE__ */ jsxs240("div", { className: "ml-3", children: [
+            /* @__PURE__ */ jsx265("h1", { className: "text-xl font-bold text-gray-900", children: "Rental Shop" }),
+            /* @__PURE__ */ jsx265("p", { className: "text-xs text-gray-500 capitalize", children: variant })
           ] })
         ] }),
-        /* @__PURE__ */ jsx260("nav", { className: "hidden lg:flex items-center space-x-1", children: navItems.map((item) => {
+        /* @__PURE__ */ jsx265("nav", { className: "hidden lg:flex items-center space-x-1", children: navItems.map((item) => {
           const Icon2 = item.icon;
           const isActive = currentPage === item.href;
-          return /* @__PURE__ */ jsxs235(
+          return /* @__PURE__ */ jsxs240(
             "a",
             {
               href: item.href,
               className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
               children: [
-                /* @__PURE__ */ jsx260(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+                /* @__PURE__ */ jsx265(Icon2, { className: `w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
                 item.label
               ]
             },
             item.href
           );
         }) }),
-        /* @__PURE__ */ jsxs235("div", { className: "flex items-center space-x-4", children: [
-          /* @__PURE__ */ jsx260("form", { action: searchAction, method: "GET", className: "hidden md:block", children: /* @__PURE__ */ jsxs235("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx260(Search7, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
-            /* @__PURE__ */ jsx260(
+        /* @__PURE__ */ jsxs240("div", { className: "flex items-center space-x-4", children: [
+          /* @__PURE__ */ jsx265("form", { action: searchAction, method: "GET", className: "hidden md:block", children: /* @__PURE__ */ jsxs240("div", { className: "relative", children: [
+            /* @__PURE__ */ jsx265(Search7, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
+            /* @__PURE__ */ jsx265(
               Input,
               {
                 type: "text",
@@ -41100,31 +41365,31 @@ function ServerTopNavigation({
               }
             )
           ] }) }),
-          /* @__PURE__ */ jsxs235("div", { className: "flex items-center space-x-2", children: [
-            /* @__PURE__ */ jsx260(
+          /* @__PURE__ */ jsxs240("div", { className: "flex items-center space-x-2", children: [
+            /* @__PURE__ */ jsx265(
               Button2,
               {
                 variant: "ghost",
                 size: "sm",
                 className: "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-                children: /* @__PURE__ */ jsx260(Bell5, { className: "w-5 h-5" })
+                children: /* @__PURE__ */ jsx265(Bell5, { className: "w-5 h-5" })
               }
             ),
-            variant === "client" && /* @__PURE__ */ jsxs235(
+            variant === "client" && /* @__PURE__ */ jsxs240(
               Button2,
               {
                 variant: "ghost",
                 size: "sm",
                 className: "relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
                 children: [
-                  /* @__PURE__ */ jsx260(ShoppingCart10, { className: "w-5 h-5" }),
-                  cartItemsCount > 0 && /* @__PURE__ */ jsx260(Badge, { className: "absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs", children: cartItemsCount > 9 ? "9+" : cartItemsCount })
+                  /* @__PURE__ */ jsx265(ShoppingCart10, { className: "w-5 h-5" }),
+                  cartItemsCount > 0 && /* @__PURE__ */ jsx265(Badge, { className: "absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs", children: cartItemsCount > 9 ? "9+" : cartItemsCount })
                 ]
               }
             )
           ] }),
-          /* @__PURE__ */ jsxs235("div", { className: "flex items-center space-x-2", children: [
-            /* @__PURE__ */ jsx260("form", { action: profileAction, method: "GET", children: /* @__PURE__ */ jsxs235(
+          /* @__PURE__ */ jsxs240("div", { className: "flex items-center space-x-2", children: [
+            /* @__PURE__ */ jsx265("form", { action: profileAction, method: "GET", children: /* @__PURE__ */ jsxs240(
               Button2,
               {
                 type: "submit",
@@ -41132,12 +41397,12 @@ function ServerTopNavigation({
                 size: "sm",
                 className: "flex items-center gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50",
                 children: [
-                  /* @__PURE__ */ jsx260("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx260(User26, { className: "w-4 h-4 text-white" }) }),
-                  /* @__PURE__ */ jsx260("span", { className: "hidden sm:block text-sm font-medium", children: "Profile" })
+                  /* @__PURE__ */ jsx265("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx265(User25, { className: "w-4 h-4 text-white" }) }),
+                  /* @__PURE__ */ jsx265("span", { className: "hidden sm:block text-sm font-medium", children: "Profile" })
                 ]
               }
             ) }),
-            /* @__PURE__ */ jsx260("form", { action: logoutAction, method: "POST", children: /* @__PURE__ */ jsx260(
+            /* @__PURE__ */ jsx265("form", { action: logoutAction, method: "POST", children: /* @__PURE__ */ jsx265(
               Button2,
               {
                 type: "submit",
@@ -41145,11 +41410,11 @@ function ServerTopNavigation({
                 size: "sm",
                 className: "p-2 text-gray-600 hover:text-red-600 hover:bg-red-50",
                 title: "Logout",
-                children: /* @__PURE__ */ jsx260(LogOut3, { className: "w-4 h-4" })
+                children: /* @__PURE__ */ jsx265(LogOut3, { className: "w-4 h-4" })
               }
             ) })
           ] }),
-          /* @__PURE__ */ jsx260("div", { className: "lg:hidden", children: /* @__PURE__ */ jsx260(
+          /* @__PURE__ */ jsx265("div", { className: "lg:hidden", children: /* @__PURE__ */ jsx265(
             Button2,
             {
               variant: "ghost",
@@ -41157,14 +41422,14 @@ function ServerTopNavigation({
               className: "p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50",
               type: "button",
               "data-mobile-menu-toggle": true,
-              children: /* @__PURE__ */ jsx260(Menu2, { className: "w-6 h-6" })
+              children: /* @__PURE__ */ jsx265(Menu2, { className: "w-6 h-6" })
             }
           ) })
         ] })
       ] }),
-      /* @__PURE__ */ jsx260("div", { className: "md:hidden pb-4", children: /* @__PURE__ */ jsx260("form", { action: searchAction, method: "GET", children: /* @__PURE__ */ jsxs235("div", { className: "relative", children: [
-        /* @__PURE__ */ jsx260(Search7, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
-        /* @__PURE__ */ jsx260(
+      /* @__PURE__ */ jsx265("div", { className: "md:hidden pb-4", children: /* @__PURE__ */ jsx265("form", { action: searchAction, method: "GET", children: /* @__PURE__ */ jsxs240("div", { className: "relative", children: [
+        /* @__PURE__ */ jsx265(Search7, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" }),
+        /* @__PURE__ */ jsx265(
           Input,
           {
             type: "text",
@@ -41175,16 +41440,16 @@ function ServerTopNavigation({
         )
       ] }) }) })
     ] }),
-    /* @__PURE__ */ jsx260("div", { className: "lg:hidden border-t border-gray-200 bg-white hidden", "data-mobile-menu": true, children: /* @__PURE__ */ jsx260("div", { className: "px-2 pt-2 pb-3 space-y-1", children: navItems.map((item) => {
+    /* @__PURE__ */ jsx265("div", { className: "lg:hidden border-t border-gray-200 bg-white hidden", "data-mobile-menu": true, children: /* @__PURE__ */ jsx265("div", { className: "px-2 pt-2 pb-3 space-y-1", children: navItems.map((item) => {
       const Icon2 = item.icon;
       const isActive = currentPage === item.href;
-      return /* @__PURE__ */ jsxs235(
+      return /* @__PURE__ */ jsxs240(
         "a",
         {
           href: item.href,
           className: `block px-3 py-2 rounded-lg text-base font-medium flex items-center gap-3 ${isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`,
           children: [
-            /* @__PURE__ */ jsx260(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
+            /* @__PURE__ */ jsx265(Icon2, { className: `w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}` }),
             item.label
           ]
         },
@@ -41196,7 +41461,7 @@ function ServerTopNavigation({
 
 // src/components/layout/DashboardWrapperClean.tsx
 import { useState as useState90 } from "react";
-import { jsx as jsx261, jsxs as jsxs236 } from "react/jsx-runtime";
+import { jsx as jsx266, jsxs as jsxs241 } from "react/jsx-runtime";
 function DashboardWrapperClean({
   children,
   user,
@@ -41210,8 +41475,8 @@ function DashboardWrapperClean({
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-  return /* @__PURE__ */ jsxs236("div", { className: "flex h-screen bg-bg-secondary", children: [
-    !hideSidebar && /* @__PURE__ */ jsx261(
+  return /* @__PURE__ */ jsxs241("div", { className: "flex h-screen bg-bg-secondary", children: [
+    !hideSidebar && /* @__PURE__ */ jsx266(
       Sidebar,
       {
         user,
@@ -41221,13 +41486,13 @@ function DashboardWrapperClean({
         onCollapseToggle: allowCollapse ? handleCollapseToggle : void 0
       }
     ),
-    /* @__PURE__ */ jsx261("main", { className: `flex-1 overflow-y-auto ${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`, children: /* @__PURE__ */ jsx261("div", { className: "p-6 space-y-6", children: /* @__PURE__ */ jsx261("div", { className: "space-y-6", children }) }) })
+    /* @__PURE__ */ jsx266("main", { className: `flex-1 overflow-y-auto ${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`, children: /* @__PURE__ */ jsx266("div", { className: "p-6 space-y-6", children: /* @__PURE__ */ jsx266("div", { className: "space-y-6", children }) }) })
   ] });
 }
 
 // src/components/layout/DashboardWrapperColorful.tsx
 import { useState as useState91 } from "react";
-import { jsx as jsx262, jsxs as jsxs237 } from "react/jsx-runtime";
+import { jsx as jsx267, jsxs as jsxs242 } from "react/jsx-runtime";
 function DashboardWrapperColorful({
   children,
   user,
@@ -41241,8 +41506,8 @@ function DashboardWrapperColorful({
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-  return /* @__PURE__ */ jsxs237("div", { className: "flex h-screen bg-gradient-to-br from-brand-50 via-bg-primary to-brand-100", children: [
-    !hideSidebar && /* @__PURE__ */ jsx262(
+  return /* @__PURE__ */ jsxs242("div", { className: "flex h-screen bg-gradient-to-br from-brand-50 via-bg-primary to-brand-100", children: [
+    !hideSidebar && /* @__PURE__ */ jsx267(
       Sidebar,
       {
         user,
@@ -41252,94 +41517,94 @@ function DashboardWrapperColorful({
         onCollapseToggle: allowCollapse ? handleCollapseToggle : void 0
       }
     ),
-    /* @__PURE__ */ jsx262("main", { className: `flex-1 overflow-y-auto ${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`, children: /* @__PURE__ */ jsxs237("div", { className: "p-8 space-y-8", children: [
-      /* @__PURE__ */ jsxs237("div", { className: "bg-gradient-to-r from-brand-500 to-action-primary rounded-2xl p-8 shadow-glow animate-fade-in", children: [
-        /* @__PURE__ */ jsx262("h1", { className: "text-4xl font-display font-bold text-white mb-2", children: "Welcome to RentalShop" }),
-        /* @__PURE__ */ jsx262("p", { className: "text-xl text-brand-100 font-medium", children: "Your comprehensive rental management dashboard" })
+    /* @__PURE__ */ jsx267("main", { className: `flex-1 overflow-y-auto ${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`, children: /* @__PURE__ */ jsxs242("div", { className: "p-8 space-y-8", children: [
+      /* @__PURE__ */ jsxs242("div", { className: "bg-gradient-to-r from-brand-500 to-action-primary rounded-2xl p-8 shadow-glow animate-fade-in", children: [
+        /* @__PURE__ */ jsx267("h1", { className: "text-4xl font-display font-bold text-white mb-2", children: "Welcome to RentalShop" }),
+        /* @__PURE__ */ jsx267("p", { className: "text-xl text-brand-100 font-medium", children: "Your comprehensive rental management dashboard" })
       ] }),
-      /* @__PURE__ */ jsx262("div", { className: "space-y-6", children })
+      /* @__PURE__ */ jsx267("div", { className: "space-y-6", children })
     ] }) })
   ] });
 }
 
 // src/components/layout/TodaysFocus.tsx
-import { jsx as jsx263, jsxs as jsxs238 } from "react/jsx-runtime";
+import { jsx as jsx268, jsxs as jsxs243 } from "react/jsx-runtime";
 var TodaysFocus = ({ data }) => {
-  return /* @__PURE__ */ jsxs238("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8", children: [
-    /* @__PURE__ */ jsxs238(Card, { children: [
-      /* @__PURE__ */ jsx263(CardHeader, { children: /* @__PURE__ */ jsx263(CardTitle, { children: "Today's Operations" }) }),
-      /* @__PURE__ */ jsx263(CardContent, { children: /* @__PURE__ */ jsxs238("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ jsxs238("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
-          /* @__PURE__ */ jsxs238("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ jsx263("div", { className: "text-gray-400 text-sm", children: "\u{1F4E6}" }),
-            /* @__PURE__ */ jsxs238("div", { children: [
-              /* @__PURE__ */ jsx263("p", { className: "font-medium text-gray-900 text-sm", children: "Pickups Today" }),
-              /* @__PURE__ */ jsx263("p", { className: "text-xs text-gray-400", children: "Items to be picked up" })
+  return /* @__PURE__ */ jsxs243("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8", children: [
+    /* @__PURE__ */ jsxs243(Card, { children: [
+      /* @__PURE__ */ jsx268(CardHeader, { children: /* @__PURE__ */ jsx268(CardTitle, { children: "Today's Operations" }) }),
+      /* @__PURE__ */ jsx268(CardContent, { children: /* @__PURE__ */ jsxs243("div", { className: "space-y-4", children: [
+        /* @__PURE__ */ jsxs243("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
+          /* @__PURE__ */ jsxs243("div", { className: "flex items-center space-x-3", children: [
+            /* @__PURE__ */ jsx268("div", { className: "text-gray-400 text-sm", children: "\u{1F4E6}" }),
+            /* @__PURE__ */ jsxs243("div", { children: [
+              /* @__PURE__ */ jsx268("p", { className: "font-medium text-gray-900 text-sm", children: "Pickups Today" }),
+              /* @__PURE__ */ jsx268("p", { className: "text-xs text-gray-400", children: "Items to be picked up" })
             ] })
           ] }),
-          /* @__PURE__ */ jsx263(Badge, { variant: "outline", className: "text-xs", children: data.todayPickups })
+          /* @__PURE__ */ jsx268(Badge, { variant: "outline", className: "text-xs", children: data.todayPickups })
         ] }),
-        /* @__PURE__ */ jsxs238("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
-          /* @__PURE__ */ jsxs238("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ jsx263("div", { className: "text-gray-400 text-sm", children: "\u{1F504}" }),
-            /* @__PURE__ */ jsxs238("div", { children: [
-              /* @__PURE__ */ jsx263("p", { className: "font-medium text-gray-900 text-sm", children: "Returns Today" }),
-              /* @__PURE__ */ jsx263("p", { className: "text-xs text-gray-400", children: "Items to be returned" })
+        /* @__PURE__ */ jsxs243("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
+          /* @__PURE__ */ jsxs243("div", { className: "flex items-center space-x-3", children: [
+            /* @__PURE__ */ jsx268("div", { className: "text-gray-400 text-sm", children: "\u{1F504}" }),
+            /* @__PURE__ */ jsxs243("div", { children: [
+              /* @__PURE__ */ jsx268("p", { className: "font-medium text-gray-900 text-sm", children: "Returns Today" }),
+              /* @__PURE__ */ jsx268("p", { className: "text-xs text-gray-400", children: "Items to be returned" })
             ] })
           ] }),
-          /* @__PURE__ */ jsx263(Badge, { variant: "outline", className: "text-xs", children: data.todayReturns })
+          /* @__PURE__ */ jsx268(Badge, { variant: "outline", className: "text-xs", children: data.todayReturns })
         ] }),
-        /* @__PURE__ */ jsxs238("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
-          /* @__PURE__ */ jsxs238("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ jsx263("div", { className: "text-gray-400 text-sm", children: "\u26A0\uFE0F" }),
-            /* @__PURE__ */ jsxs238("div", { children: [
-              /* @__PURE__ */ jsx263("p", { className: "font-medium text-gray-900 text-sm", children: "Overdue Items" }),
-              /* @__PURE__ */ jsx263("p", { className: "text-xs text-gray-400", children: "Past due date" })
+        /* @__PURE__ */ jsxs243("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
+          /* @__PURE__ */ jsxs243("div", { className: "flex items-center space-x-3", children: [
+            /* @__PURE__ */ jsx268("div", { className: "text-gray-400 text-sm", children: "\u26A0\uFE0F" }),
+            /* @__PURE__ */ jsxs243("div", { children: [
+              /* @__PURE__ */ jsx268("p", { className: "font-medium text-gray-900 text-sm", children: "Overdue Items" }),
+              /* @__PURE__ */ jsx268("p", { className: "text-xs text-gray-400", children: "Past due date" })
             ] })
           ] }),
-          /* @__PURE__ */ jsx263(Badge, { variant: "destructive", className: "text-xs", children: data.overdueCount })
+          /* @__PURE__ */ jsx268(Badge, { variant: "destructive", className: "text-xs", children: data.overdueCount })
         ] }),
-        /* @__PURE__ */ jsxs238("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
-          /* @__PURE__ */ jsxs238("div", { className: "flex items-center space-x-3", children: [
-            /* @__PURE__ */ jsx263("div", { className: "text-gray-400 text-sm", children: "\u{1F4CA}" }),
-            /* @__PURE__ */ jsxs238("div", { children: [
-              /* @__PURE__ */ jsx263("p", { className: "font-medium text-gray-900 text-sm", children: "Active Rentals" }),
-              /* @__PURE__ */ jsx263("p", { className: "text-xs text-gray-400", children: "Currently rented out" })
+        /* @__PURE__ */ jsxs243("div", { className: "flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0", children: [
+          /* @__PURE__ */ jsxs243("div", { className: "flex items-center space-x-3", children: [
+            /* @__PURE__ */ jsx268("div", { className: "text-gray-400 text-sm", children: "\u{1F4CA}" }),
+            /* @__PURE__ */ jsxs243("div", { children: [
+              /* @__PURE__ */ jsx268("p", { className: "font-medium text-gray-900 text-sm", children: "Active Rentals" }),
+              /* @__PURE__ */ jsx268("p", { className: "text-xs text-gray-400", children: "Currently rented out" })
             ] })
           ] }),
-          /* @__PURE__ */ jsx263(Badge, { variant: "outline", className: "text-xs", children: data.activeRentals })
+          /* @__PURE__ */ jsx268(Badge, { variant: "outline", className: "text-xs", children: data.activeRentals })
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsxs238(Card, { children: [
-      /* @__PURE__ */ jsx263(CardHeader, { children: /* @__PURE__ */ jsx263(CardTitle, { children: "Quick Actions" }) }),
-      /* @__PURE__ */ jsx263(CardContent, { children: /* @__PURE__ */ jsxs238("div", { className: "space-y-3", children: [
-        /* @__PURE__ */ jsxs238(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
-          /* @__PURE__ */ jsx263("span", { className: "mr-3", children: "\u{1F4E6}" }),
-          /* @__PURE__ */ jsxs238("div", { className: "flex-1 text-left", children: [
-            /* @__PURE__ */ jsx263("div", { className: "font-medium", children: "Process Pickup" }),
-            /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-500", children: "Mark items as picked up" })
+    /* @__PURE__ */ jsxs243(Card, { children: [
+      /* @__PURE__ */ jsx268(CardHeader, { children: /* @__PURE__ */ jsx268(CardTitle, { children: "Quick Actions" }) }),
+      /* @__PURE__ */ jsx268(CardContent, { children: /* @__PURE__ */ jsxs243("div", { className: "space-y-3", children: [
+        /* @__PURE__ */ jsxs243(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+          /* @__PURE__ */ jsx268("span", { className: "mr-3", children: "\u{1F4E6}" }),
+          /* @__PURE__ */ jsxs243("div", { className: "flex-1 text-left", children: [
+            /* @__PURE__ */ jsx268("div", { className: "font-medium", children: "Process Pickup" }),
+            /* @__PURE__ */ jsx268("div", { className: "text-sm text-gray-500", children: "Mark items as picked up" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs238(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
-          /* @__PURE__ */ jsx263("span", { className: "mr-3", children: "\u{1F504}" }),
-          /* @__PURE__ */ jsxs238("div", { className: "flex-1 text-left", children: [
-            /* @__PURE__ */ jsx263("div", { className: "font-medium", children: "Process Return" }),
-            /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-500", children: "Mark items as returned" })
+        /* @__PURE__ */ jsxs243(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+          /* @__PURE__ */ jsx268("span", { className: "mr-3", children: "\u{1F504}" }),
+          /* @__PURE__ */ jsxs243("div", { className: "flex-1 text-left", children: [
+            /* @__PURE__ */ jsx268("div", { className: "font-medium", children: "Process Return" }),
+            /* @__PURE__ */ jsx268("div", { className: "text-sm text-gray-500", children: "Mark items as returned" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs238(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
-          /* @__PURE__ */ jsx263("span", { className: "mr-3", children: "\u26A0\uFE0F" }),
-          /* @__PURE__ */ jsxs238("div", { className: "flex-1 text-left", children: [
-            /* @__PURE__ */ jsx263("div", { className: "font-medium", children: "Handle Overdue" }),
-            /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-500", children: "Contact overdue customers" })
+        /* @__PURE__ */ jsxs243(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+          /* @__PURE__ */ jsx268("span", { className: "mr-3", children: "\u26A0\uFE0F" }),
+          /* @__PURE__ */ jsxs243("div", { className: "flex-1 text-left", children: [
+            /* @__PURE__ */ jsx268("div", { className: "font-medium", children: "Handle Overdue" }),
+            /* @__PURE__ */ jsx268("div", { className: "text-sm text-gray-500", children: "Contact overdue customers" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs238(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
-          /* @__PURE__ */ jsx263("span", { className: "mr-3", children: "\u{1F4DE}" }),
-          /* @__PURE__ */ jsxs238("div", { className: "flex-1 text-left", children: [
-            /* @__PURE__ */ jsx263("div", { className: "font-medium", children: "Send Reminders" }),
-            /* @__PURE__ */ jsx263("div", { className: "text-sm text-gray-500", children: "Notify upcoming returns" })
+        /* @__PURE__ */ jsxs243(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+          /* @__PURE__ */ jsx268("span", { className: "mr-3", children: "\u{1F4DE}" }),
+          /* @__PURE__ */ jsxs243("div", { className: "flex-1 text-left", children: [
+            /* @__PURE__ */ jsx268("div", { className: "font-medium", children: "Send Reminders" }),
+            /* @__PURE__ */ jsx268("div", { className: "text-sm text-gray-500", children: "Notify upcoming returns" })
           ] })
         ] })
       ] }) })
@@ -41348,22 +41613,22 @@ var TodaysFocus = ({ data }) => {
 };
 
 // src/components/layout/ColorfulQuickActions.tsx
-import { jsx as jsx264, jsxs as jsxs239 } from "react/jsx-runtime";
+import { jsx as jsx269, jsxs as jsxs244 } from "react/jsx-runtime";
 var QuickActionCard = ({
   title,
   description,
   icon,
   href,
   color
-}) => /* @__PURE__ */ jsxs239(Card, { className: "group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0", children: [
-  /* @__PURE__ */ jsx264("div", { className: `absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${color}` }),
-  /* @__PURE__ */ jsx264(CardContent, { className: "p-6", children: /* @__PURE__ */ jsx264("a", { href, className: "block", children: /* @__PURE__ */ jsxs239("div", { className: "flex items-center space-x-4", children: [
-    /* @__PURE__ */ jsx264("div", { className: `w-16 h-16 rounded-xl bg-gradient-to-br ${color} text-white text-3xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`, children: icon }),
-    /* @__PURE__ */ jsxs239("div", { className: "flex-1", children: [
-      /* @__PURE__ */ jsx264("h3", { className: "font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors", children: title }),
-      /* @__PURE__ */ jsx264("p", { className: "text-gray-600 font-medium", children: description })
+}) => /* @__PURE__ */ jsxs244(Card, { className: "group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0", children: [
+  /* @__PURE__ */ jsx269("div", { className: `absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${color}` }),
+  /* @__PURE__ */ jsx269(CardContent, { className: "p-6", children: /* @__PURE__ */ jsx269("a", { href, className: "block", children: /* @__PURE__ */ jsxs244("div", { className: "flex items-center space-x-4", children: [
+    /* @__PURE__ */ jsx269("div", { className: `w-16 h-16 rounded-xl bg-gradient-to-br ${color} text-white text-3xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`, children: icon }),
+    /* @__PURE__ */ jsxs244("div", { className: "flex-1", children: [
+      /* @__PURE__ */ jsx269("h3", { className: "font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors", children: title }),
+      /* @__PURE__ */ jsx269("p", { className: "text-gray-600 font-medium", children: description })
     ] }),
-    /* @__PURE__ */ jsx264("div", { className: "text-gray-400 group-hover:text-blue-500 transition-colors", children: /* @__PURE__ */ jsx264("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx264("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
+    /* @__PURE__ */ jsx269("div", { className: "text-gray-400 group-hover:text-blue-500 transition-colors", children: /* @__PURE__ */ jsx269("svg", { className: "w-6 h-6", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx269("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
   ] }) }) })
 ] });
 var ColorfulQuickActions = () => {
@@ -41397,14 +41662,14 @@ var ColorfulQuickActions = () => {
       color: "from-orange-500 to-orange-600"
     }
   ];
-  return /* @__PURE__ */ jsx264("div", { className: "mb-8", children: /* @__PURE__ */ jsxs239(Card, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
-    /* @__PURE__ */ jsx264(CardHeader, { className: "pb-4", children: /* @__PURE__ */ jsx264(CardTitle, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
-    /* @__PURE__ */ jsx264(CardContent, { children: /* @__PURE__ */ jsx264("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: quickActions.map((action, index) => /* @__PURE__ */ jsx264(QuickActionCard, { ...action }, index)) }) })
+  return /* @__PURE__ */ jsx269("div", { className: "mb-8", children: /* @__PURE__ */ jsxs244(Card, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
+    /* @__PURE__ */ jsx269(CardHeader, { className: "pb-4", children: /* @__PURE__ */ jsx269(CardTitle, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
+    /* @__PURE__ */ jsx269(CardContent, { children: /* @__PURE__ */ jsx269("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: quickActions.map((action, index) => /* @__PURE__ */ jsx269(QuickActionCard, { ...action }, index)) }) })
   ] }) });
 };
 
 // src/components/layout/ColorfulTodaysFocus.tsx
-import { jsx as jsx265, jsxs as jsxs240 } from "react/jsx-runtime";
+import { jsx as jsx270, jsxs as jsxs245 } from "react/jsx-runtime";
 var ColorfulTodaysFocus = ({ data }) => {
   const operations = [
     {
@@ -41470,36 +41735,36 @@ var ColorfulTodaysFocus = ({ data }) => {
       color: "from-purple-500 to-purple-600"
     }
   ];
-  return /* @__PURE__ */ jsxs240("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8", children: [
-    /* @__PURE__ */ jsxs240(Card, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
-      /* @__PURE__ */ jsx265(CardHeader, { className: "pb-4", children: /* @__PURE__ */ jsx265(CardTitle, { className: "text-xl font-bold text-gray-800", children: "Today's Operations" }) }),
-      /* @__PURE__ */ jsx265(CardContent, { children: /* @__PURE__ */ jsx265("div", { className: "space-y-4", children: operations.map((operation, index) => /* @__PURE__ */ jsxs240("div", { className: "group relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-100", children: [
-        /* @__PURE__ */ jsx265("div", { className: `absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${operation.color}` }),
-        /* @__PURE__ */ jsx265("div", { className: "p-6", children: /* @__PURE__ */ jsxs240("div", { className: "flex justify-between items-center", children: [
-          /* @__PURE__ */ jsxs240("div", { className: "flex items-center space-x-4", children: [
-            /* @__PURE__ */ jsx265("div", { className: `w-14 h-14 rounded-xl bg-gradient-to-br ${operation.color} text-white text-2xl flex items-center justify-center shadow-lg`, children: operation.icon }),
-            /* @__PURE__ */ jsxs240("div", { children: [
-              /* @__PURE__ */ jsx265("p", { className: "font-bold text-gray-900 text-lg", children: operation.title }),
-              /* @__PURE__ */ jsx265("p", { className: "text-gray-600 font-medium", children: operation.description })
+  return /* @__PURE__ */ jsxs245("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8", children: [
+    /* @__PURE__ */ jsxs245(Card, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
+      /* @__PURE__ */ jsx270(CardHeader, { className: "pb-4", children: /* @__PURE__ */ jsx270(CardTitle, { className: "text-xl font-bold text-gray-800", children: "Today's Operations" }) }),
+      /* @__PURE__ */ jsx270(CardContent, { children: /* @__PURE__ */ jsx270("div", { className: "space-y-4", children: operations.map((operation, index) => /* @__PURE__ */ jsxs245("div", { className: "group relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-100", children: [
+        /* @__PURE__ */ jsx270("div", { className: `absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${operation.color}` }),
+        /* @__PURE__ */ jsx270("div", { className: "p-6", children: /* @__PURE__ */ jsxs245("div", { className: "flex justify-between items-center", children: [
+          /* @__PURE__ */ jsxs245("div", { className: "flex items-center space-x-4", children: [
+            /* @__PURE__ */ jsx270("div", { className: `w-14 h-14 rounded-xl bg-gradient-to-br ${operation.color} text-white text-2xl flex items-center justify-center shadow-lg`, children: operation.icon }),
+            /* @__PURE__ */ jsxs245("div", { children: [
+              /* @__PURE__ */ jsx270("p", { className: "font-bold text-gray-900 text-lg", children: operation.title }),
+              /* @__PURE__ */ jsx270("p", { className: "text-gray-600 font-medium", children: operation.description })
             ] })
           ] }),
-          /* @__PURE__ */ jsx265(Badge, { variant: "outline", className: `text-lg font-bold px-4 py-2 ${operation.textColor} border-2`, children: operation.value })
+          /* @__PURE__ */ jsx270(Badge, { variant: "outline", className: `text-lg font-bold px-4 py-2 ${operation.textColor} border-2`, children: operation.value })
         ] }) })
       ] }, index)) }) })
     ] }),
-    /* @__PURE__ */ jsxs240(Card, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
-      /* @__PURE__ */ jsx265(CardHeader, { className: "pb-4", children: /* @__PURE__ */ jsx265(CardTitle, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
-      /* @__PURE__ */ jsx265(CardContent, { children: /* @__PURE__ */ jsx265("div", { className: "space-y-4", children: quickActions.map((action, index) => /* @__PURE__ */ jsxs240(
+    /* @__PURE__ */ jsxs245(Card, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
+      /* @__PURE__ */ jsx270(CardHeader, { className: "pb-4", children: /* @__PURE__ */ jsx270(CardTitle, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
+      /* @__PURE__ */ jsx270(CardContent, { children: /* @__PURE__ */ jsx270("div", { className: "space-y-4", children: quickActions.map((action, index) => /* @__PURE__ */ jsxs245(
         Button2,
         {
           className: "w-full justify-start h-16 text-left group relative overflow-hidden bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg",
           variant: "outline",
           children: [
-            /* @__PURE__ */ jsx265("div", { className: `absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${action.color}` }),
-            /* @__PURE__ */ jsx265("span", { className: "mr-4 text-2xl", children: action.icon }),
-            /* @__PURE__ */ jsxs240("div", { className: "flex-1 text-left", children: [
-              /* @__PURE__ */ jsx265("div", { className: "font-bold text-gray-900 text-lg", children: action.title }),
-              /* @__PURE__ */ jsx265("div", { className: "text-gray-600 font-medium", children: action.description })
+            /* @__PURE__ */ jsx270("div", { className: `absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${action.color}` }),
+            /* @__PURE__ */ jsx270("span", { className: "mr-4 text-2xl", children: action.icon }),
+            /* @__PURE__ */ jsxs245("div", { className: "flex-1 text-left", children: [
+              /* @__PURE__ */ jsx270("div", { className: "font-bold text-gray-900 text-lg", children: action.title }),
+              /* @__PURE__ */ jsx270("div", { className: "text-gray-600 font-medium", children: action.description })
             ] })
           ]
         },
@@ -41510,20 +41775,20 @@ var ColorfulTodaysFocus = ({ data }) => {
 };
 
 // src/components/layout/QuickActionsGrid.tsx
-import { jsx as jsx266, jsxs as jsxs241 } from "react/jsx-runtime";
+import { jsx as jsx271, jsxs as jsxs246 } from "react/jsx-runtime";
 var QuickActionCard2 = ({
   title,
   description,
   icon,
   href,
   color
-}) => /* @__PURE__ */ jsx266(Card, { className: "border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer", children: /* @__PURE__ */ jsx266(CardContent, { className: "p-3", children: /* @__PURE__ */ jsx266("a", { href, className: "block", children: /* @__PURE__ */ jsxs241("div", { className: "flex items-center space-x-3", children: [
-  /* @__PURE__ */ jsx266("div", { className: "text-gray-500 text-base", children: icon }),
-  /* @__PURE__ */ jsxs241("div", { className: "flex-1", children: [
-    /* @__PURE__ */ jsx266("h3", { className: "font-medium text-gray-900 text-sm", children: title }),
-    /* @__PURE__ */ jsx266("p", { className: "text-xs text-gray-400", children: description })
+}) => /* @__PURE__ */ jsx271(Card, { className: "border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer", children: /* @__PURE__ */ jsx271(CardContent, { className: "p-3", children: /* @__PURE__ */ jsx271("a", { href, className: "block", children: /* @__PURE__ */ jsxs246("div", { className: "flex items-center space-x-3", children: [
+  /* @__PURE__ */ jsx271("div", { className: "text-gray-500 text-base", children: icon }),
+  /* @__PURE__ */ jsxs246("div", { className: "flex-1", children: [
+    /* @__PURE__ */ jsx271("h3", { className: "font-medium text-gray-900 text-sm", children: title }),
+    /* @__PURE__ */ jsx271("p", { className: "text-xs text-gray-400", children: description })
   ] }),
-  /* @__PURE__ */ jsx266("div", { className: "text-gray-300", children: /* @__PURE__ */ jsx266("svg", { className: "w-3 h-3", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx266("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
+  /* @__PURE__ */ jsx271("div", { className: "text-gray-300", children: /* @__PURE__ */ jsx271("svg", { className: "w-3 h-3", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx271("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) }) })
 ] }) }) }) });
 var QuickActionsGrid = () => {
   const quickActions = [
@@ -41556,9 +41821,9 @@ var QuickActionsGrid = () => {
       color: "bg-orange-500"
     }
   ];
-  return /* @__PURE__ */ jsx266("div", { className: "mb-8", children: /* @__PURE__ */ jsxs241(Card, { children: [
-    /* @__PURE__ */ jsx266(CardHeader, { children: /* @__PURE__ */ jsx266(CardTitle, { children: "Quick Actions" }) }),
-    /* @__PURE__ */ jsx266(CardContent, { children: /* @__PURE__ */ jsx266("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: quickActions.map((action, index) => /* @__PURE__ */ jsx266(QuickActionCard2, { ...action }, index)) }) })
+  return /* @__PURE__ */ jsx271("div", { className: "mb-8", children: /* @__PURE__ */ jsxs246(Card, { children: [
+    /* @__PURE__ */ jsx271(CardHeader, { children: /* @__PURE__ */ jsx271(CardTitle, { children: "Quick Actions" }) }),
+    /* @__PURE__ */ jsx271(CardContent, { children: /* @__PURE__ */ jsx271("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: quickActions.map((action, index) => /* @__PURE__ */ jsx271(QuickActionCard2, { ...action }, index)) }) })
   ] }) });
 };
 
@@ -41566,9 +41831,9 @@ var QuickActionsGrid = () => {
 import { useEffect as useEffect47 } from "react";
 import { Search as Search8, X as X20 } from "lucide-react";
 import { cn as cn6 } from "@rentalshop/ui";
-import { Button as Button74 } from "@rentalshop/ui";
+import { Button as Button75 } from "@rentalshop/ui";
 import { useThrottledSearch } from "@rentalshop/hooks";
-import { jsx as jsx267, jsxs as jsxs242 } from "react/jsx-runtime";
+import { jsx as jsx272, jsxs as jsxs247 } from "react/jsx-runtime";
 var SearchInput = ({
   placeholder = "Search...",
   delay = 500,
@@ -41597,10 +41862,10 @@ var SearchInput = ({
   useEffect47(() => {
     return cleanup;
   }, [cleanup]);
-  return /* @__PURE__ */ jsxs242("div", { className: cn6("relative", className), children: [
-    /* @__PURE__ */ jsxs242("div", { className: "relative", children: [
-      /* @__PURE__ */ jsx267(Search8, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
-      /* @__PURE__ */ jsx267(
+  return /* @__PURE__ */ jsxs247("div", { className: cn6("relative", className), children: [
+    /* @__PURE__ */ jsxs247("div", { className: "relative", children: [
+      /* @__PURE__ */ jsx272(Search8, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
+      /* @__PURE__ */ jsx272(
         "input",
         {
           type: "text",
@@ -41616,19 +41881,19 @@ var SearchInput = ({
           )
         }
       ),
-      query && /* @__PURE__ */ jsx267(
-        Button74,
+      query && /* @__PURE__ */ jsx272(
+        Button75,
         {
           variant: "ghost",
           size: "icon",
           onClick: clearSearch,
           type: "button",
           className: "absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0",
-          children: /* @__PURE__ */ jsx267(X20, { className: "h-4 w-4" })
+          children: /* @__PURE__ */ jsx272(X20, { className: "h-4 w-4" })
         }
       )
     ] }),
-    isSearching && /* @__PURE__ */ jsx267("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2", children: /* @__PURE__ */ jsx267("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" }) })
+    isSearching && /* @__PURE__ */ jsx272("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2", children: /* @__PURE__ */ jsx272("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" }) })
   ] });
 };
 
@@ -41639,7 +41904,7 @@ import {
   Store as Store9,
   Users as Users15,
   Settings as Settings12,
-  User as User27,
+  User as User26,
   LogOut as LogOut4,
   Menu as Menu3,
   X as X21,
@@ -41649,8 +41914,8 @@ import {
   ShoppingCart as ShoppingCart11,
   Building2 as Building217
 } from "lucide-react";
-import { Button as Button75 } from "@rentalshop/ui";
-import { jsx as jsx268, jsxs as jsxs243 } from "react/jsx-runtime";
+import { Button as Button76 } from "@rentalshop/ui";
+import { jsx as jsx273, jsxs as jsxs248 } from "react/jsx-runtime";
 function Navigation({
   variant = "client",
   currentPage,
@@ -41692,19 +41957,19 @@ function Navigation({
     return items;
   };
   const navItems = variant === "admin" ? filterNavItemsByRole(adminNavItems, userRole) : clientNavItems;
-  return /* @__PURE__ */ jsxs243("nav", { className: "bg-nav-background text-nav-tint shadow-sm", children: [
-    /* @__PURE__ */ jsx268("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ jsxs243("div", { className: "flex items-center justify-between h-16", children: [
-      /* @__PURE__ */ jsxs243("div", { className: "flex items-center", children: [
-        /* @__PURE__ */ jsx268("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx268("div", { className: "w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx268(Store9, { className: "w-5 h-5 text-white" }) }) }),
-        !hideSidebar && /* @__PURE__ */ jsx268("div", { className: "hidden md:block ml-10", children: /* @__PURE__ */ jsx268("div", { className: "flex items-baseline space-x-4", children: navItems.map((item) => {
+  return /* @__PURE__ */ jsxs248("nav", { className: "bg-nav-background text-nav-tint shadow-sm", children: [
+    /* @__PURE__ */ jsx273("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ jsxs248("div", { className: "flex items-center justify-between h-16", children: [
+      /* @__PURE__ */ jsxs248("div", { className: "flex items-center", children: [
+        /* @__PURE__ */ jsx273("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx273("div", { className: "w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx273(Store9, { className: "w-5 h-5 text-white" }) }) }),
+        !hideSidebar && /* @__PURE__ */ jsx273("div", { className: "hidden md:block ml-10", children: /* @__PURE__ */ jsx273("div", { className: "flex items-baseline space-x-4", children: navItems.map((item) => {
           const Icon2 = item.icon;
-          return /* @__PURE__ */ jsxs243(
+          return /* @__PURE__ */ jsxs248(
             "a",
             {
               href: item.href,
               className: `px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${currentPage === item.href ? "bg-brand-secondary text-white" : "text-nav-tint hover:text-gray-300"}`,
               children: [
-                /* @__PURE__ */ jsx268(Icon2, { className: "w-4 h-4 mr-2" }),
+                /* @__PURE__ */ jsx273(Icon2, { className: "w-4 h-4 mr-2" }),
                 !isCollapsed && item.label
               ]
             },
@@ -41712,47 +41977,47 @@ function Navigation({
           );
         }) }) })
       ] }),
-      /* @__PURE__ */ jsxs243("div", { className: "flex items-center space-x-4", children: [
-        !hideSidebar && allowCollapse && onCollapseToggle && /* @__PURE__ */ jsx268(
-          Button75,
+      /* @__PURE__ */ jsxs248("div", { className: "flex items-center space-x-4", children: [
+        !hideSidebar && allowCollapse && onCollapseToggle && /* @__PURE__ */ jsx273(
+          Button76,
           {
             variant: "ghost",
             size: "sm",
             onClick: onCollapseToggle,
             className: "text-nav-tint hover:text-gray-300",
             title: isCollapsed ? "Expand sidebar" : "Collapse sidebar",
-            children: isCollapsed ? /* @__PURE__ */ jsx268(ChevronRight6, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx268(ChevronLeft4, { className: "w-4 h-4" })
+            children: isCollapsed ? /* @__PURE__ */ jsx273(ChevronRight6, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx273(ChevronLeft4, { className: "w-4 h-4" })
           }
         ),
-        /* @__PURE__ */ jsxs243(Button75, { variant: "ghost", size: "sm", className: "text-nav-tint hover:text-gray-300", children: [
-          /* @__PURE__ */ jsx268(User27, { className: "w-4 h-4 mr-2" }),
+        /* @__PURE__ */ jsxs248(Button76, { variant: "ghost", size: "sm", className: "text-nav-tint hover:text-gray-300", children: [
+          /* @__PURE__ */ jsx273(User26, { className: "w-4 h-4 mr-2" }),
           !isCollapsed && "Profile"
         ] }),
-        /* @__PURE__ */ jsxs243(Button75, { variant: "ghost", size: "sm", className: "text-nav-tint hover:text-gray-300", children: [
-          /* @__PURE__ */ jsx268(LogOut4, { className: "w-4 h-4 mr-2" }),
+        /* @__PURE__ */ jsxs248(Button76, { variant: "ghost", size: "sm", className: "text-nav-tint hover:text-gray-300", children: [
+          /* @__PURE__ */ jsx273(LogOut4, { className: "w-4 h-4 mr-2" }),
           !isCollapsed && "Logout"
         ] }),
-        !hideSidebar && /* @__PURE__ */ jsx268("div", { className: "md:hidden", children: /* @__PURE__ */ jsx268(
-          Button75,
+        !hideSidebar && /* @__PURE__ */ jsx273("div", { className: "md:hidden", children: /* @__PURE__ */ jsx273(
+          Button76,
           {
             variant: "ghost",
             size: "sm",
             onClick: () => setIsOpen(!isOpen),
             className: "text-nav-tint hover:text-gray-300",
-            children: isOpen ? /* @__PURE__ */ jsx268(X21, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx268(Menu3, { className: "w-6 h-6" })
+            children: isOpen ? /* @__PURE__ */ jsx273(X21, { className: "w-6 h-6" }) : /* @__PURE__ */ jsx273(Menu3, { className: "w-6 h-6" })
           }
         ) })
       ] })
     ] }) }),
-    !hideSidebar && isOpen && /* @__PURE__ */ jsx268("div", { className: "md:hidden", children: /* @__PURE__ */ jsx268("div", { className: "px-2 pt-2 pb-3 space-y-1 sm:px-3", children: navItems.map((item) => {
+    !hideSidebar && isOpen && /* @__PURE__ */ jsx273("div", { className: "md:hidden", children: /* @__PURE__ */ jsx273("div", { className: "px-2 pt-2 pb-3 space-y-1 sm:px-3", children: navItems.map((item) => {
       const Icon2 = item.icon;
-      return /* @__PURE__ */ jsxs243(
+      return /* @__PURE__ */ jsxs248(
         "a",
         {
           href: item.href,
           className: `block px-3 py-2 rounded-md text-base font-medium flex items-center ${currentPage === item.href ? "bg-brand-secondary text-white" : "text-nav-tint hover:text-gray-300"}`,
           children: [
-            /* @__PURE__ */ jsx268(Icon2, { className: "w-4 h-4 mr-2" }),
+            /* @__PURE__ */ jsx273(Icon2, { className: "w-4 h-4 mr-2" }),
             item.label
           ]
         },
@@ -41767,13 +42032,13 @@ import { useState as useState93 } from "react";
 import Link3 from "next/link";
 import { usePathname } from "next/navigation";
 import { cn as cn7 } from "@rentalshop/ui";
-import { Button as Button76 } from "@rentalshop/ui";
+import { Button as Button77 } from "@rentalshop/ui";
 import {
   ChevronLeft as ChevronLeft5,
   ChevronRight as ChevronRight7,
   Home as Home6,
   Users as Users16,
-  Package as Package24,
+  Package as Package25,
   Building2 as Building218,
   Settings as Settings13,
   CreditCard as CreditCard25,
@@ -41783,9 +42048,9 @@ import {
   FileText as FileText6,
   Store as Store10,
   LogOut as LogOut5,
-  User as User28
+  User as User27
 } from "lucide-react";
-import { jsx as jsx269, jsxs as jsxs244 } from "react/jsx-runtime";
+import { jsx as jsx274, jsxs as jsxs249 } from "react/jsx-runtime";
 var adminMenuItems = [
   {
     label: "Dashboard",
@@ -41800,7 +42065,7 @@ var adminMenuItems = [
   {
     label: "Plans",
     href: "/plans",
-    icon: Package24
+    icon: Package25
   },
   {
     label: "Subscriptions",
@@ -41868,9 +42133,9 @@ var AdminSidebar = ({
     const isExpanded = expandedItems.includes(item.href);
     const active = isActive(item.href);
     const Icon2 = item.icon;
-    return /* @__PURE__ */ jsxs244("div", { children: [
-      hasSubItems ? /* @__PURE__ */ jsxs244(
-        Button76,
+    return /* @__PURE__ */ jsxs249("div", { children: [
+      hasSubItems ? /* @__PURE__ */ jsxs249(
+        Button77,
         {
           variant: "ghost",
           onClick: () => toggleExpanded(item.href),
@@ -41879,20 +42144,20 @@ var AdminSidebar = ({
             active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary"
           ),
           children: [
-            /* @__PURE__ */ jsxs244("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsx269(Icon2, { className: cn7(
+            /* @__PURE__ */ jsxs249("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx274(Icon2, { className: cn7(
                 "w-4 h-4",
                 active ? "text-blue-600" : "text-text-secondary"
               ) }),
-              !isCollapsed && /* @__PURE__ */ jsx269("span", { children: item.label })
+              !isCollapsed && /* @__PURE__ */ jsx274("span", { children: item.label })
             ] }),
-            !isCollapsed && /* @__PURE__ */ jsx269(ChevronRight7, { className: cn7(
+            !isCollapsed && /* @__PURE__ */ jsx274(ChevronRight7, { className: cn7(
               "w-4 h-4 transition-transform duration-200",
               isExpanded ? "rotate-90" : ""
             ) })
           ]
         }
-      ) : /* @__PURE__ */ jsxs244(
+      ) : /* @__PURE__ */ jsxs249(
         Link3,
         {
           href: item.href,
@@ -41901,21 +42166,21 @@ var AdminSidebar = ({
             active ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary"
           ),
           children: [
-            /* @__PURE__ */ jsxs244("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsx269(Icon2, { className: cn7(
+            /* @__PURE__ */ jsxs249("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx274(Icon2, { className: cn7(
                 "w-4 h-4",
                 active ? "text-blue-600" : "text-text-secondary"
               ) }),
-              !isCollapsed && /* @__PURE__ */ jsx269("span", { children: item.label })
+              !isCollapsed && /* @__PURE__ */ jsx274("span", { children: item.label })
             ] }),
-            !isCollapsed && item.badge && /* @__PURE__ */ jsx269("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge })
+            !isCollapsed && item.badge && /* @__PURE__ */ jsx274("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge })
           ]
         }
       ),
-      hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ jsx269("div", { className: "ml-6 mt-1 space-y-1", children: item.subItems?.map((subItem) => {
+      hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ jsx274("div", { className: "ml-6 mt-1 space-y-1", children: item.subItems?.map((subItem) => {
         const SubIcon = subItem.icon;
         const subActive = isActive(subItem.href);
-        return /* @__PURE__ */ jsxs244(
+        return /* @__PURE__ */ jsxs249(
           Link3,
           {
             href: subItem.href,
@@ -41924,8 +42189,8 @@ var AdminSidebar = ({
               subActive ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600 hover:bg-bg-secondary"
             ),
             children: [
-              /* @__PURE__ */ jsx269(SubIcon, { className: "w-4 h-4" }),
-              /* @__PURE__ */ jsx269("span", { children: subItem.label })
+              /* @__PURE__ */ jsx274(SubIcon, { className: "w-4 h-4" }),
+              /* @__PURE__ */ jsx274("span", { children: subItem.label })
             ]
           },
           subItem.href
@@ -41933,42 +42198,42 @@ var AdminSidebar = ({
       }) })
     ] }, item.href);
   };
-  return /* @__PURE__ */ jsxs244("div", { className: cn7(
+  return /* @__PURE__ */ jsxs249("div", { className: cn7(
     "flex flex-col h-full bg-bg-card border-r border-border shadow-sm transition-all duration-300",
     isCollapsed ? "w-16" : "w-64"
   ), children: [
-    /* @__PURE__ */ jsxs244("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
-      !isCollapsed && /* @__PURE__ */ jsxs244("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx269("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx269(Store10, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ jsxs244("div", { children: [
-          /* @__PURE__ */ jsx269("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }),
-          /* @__PURE__ */ jsx269("p", { className: "text-xs text-text-secondary", children: "Admin" })
+    /* @__PURE__ */ jsxs249("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
+      !isCollapsed && /* @__PURE__ */ jsxs249("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ jsx274("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx274(Store10, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ jsxs249("div", { children: [
+          /* @__PURE__ */ jsx274("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }),
+          /* @__PURE__ */ jsx274("p", { className: "text-xs text-text-secondary", children: "Admin" })
         ] })
       ] }),
-      isCollapsed && /* @__PURE__ */ jsx269("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ jsx269(Store10, { className: "w-5 h-5 text-white" }) }),
-      /* @__PURE__ */ jsx269(
-        Button76,
+      isCollapsed && /* @__PURE__ */ jsx274("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ jsx274(Store10, { className: "w-5 h-5 text-white" }) }),
+      /* @__PURE__ */ jsx274(
+        Button77,
         {
           variant: "ghost",
           size: "icon",
           onClick: onCollapseToggle,
           className: "h-8 w-8 text-text-tertiary hover:text-text-primary",
-          children: isCollapsed ? /* @__PURE__ */ jsx269(ChevronRight7, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx269(ChevronLeft5, { className: "h-4 w-4" })
+          children: isCollapsed ? /* @__PURE__ */ jsx274(ChevronRight7, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx274(ChevronLeft5, { className: "h-4 w-4" })
         }
       )
     ] }),
-    /* @__PURE__ */ jsx269("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: adminMenuItems.map((item) => renderMenuItem(item)) }),
-    /* @__PURE__ */ jsxs244("div", { className: "p-4 border-t border-border", children: [
-      user && !isCollapsed && /* @__PURE__ */ jsxs244("div", { className: "flex items-center space-x-3 mb-4", children: [
-        /* @__PURE__ */ jsx269("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx269(User28, { className: "w-4 h-4 text-white" }) }),
-        /* @__PURE__ */ jsxs244("div", { className: "flex-1 min-w-0", children: [
-          /* @__PURE__ */ jsx269("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
-          /* @__PURE__ */ jsx269("p", { className: "text-xs text-text-tertiary truncate", children: user.role })
+    /* @__PURE__ */ jsx274("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: adminMenuItems.map((item) => renderMenuItem(item)) }),
+    /* @__PURE__ */ jsxs249("div", { className: "p-4 border-t border-border", children: [
+      user && !isCollapsed && /* @__PURE__ */ jsxs249("div", { className: "flex items-center space-x-3 mb-4", children: [
+        /* @__PURE__ */ jsx274("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx274(User27, { className: "w-4 h-4 text-white" }) }),
+        /* @__PURE__ */ jsxs249("div", { className: "flex-1 min-w-0", children: [
+          /* @__PURE__ */ jsx274("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
+          /* @__PURE__ */ jsx274("p", { className: "text-xs text-text-tertiary truncate", children: user.role })
         ] })
       ] }),
-      user && isCollapsed && /* @__PURE__ */ jsx269("div", { className: "flex flex-col items-center space-y-2", children: /* @__PURE__ */ jsx269("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx269(User28, { className: "w-4 h-4 text-white" }) }) }),
-      onLogout && /* @__PURE__ */ jsxs244(
-        Button76,
+      user && isCollapsed && /* @__PURE__ */ jsx274("div", { className: "flex flex-col items-center space-y-2", children: /* @__PURE__ */ jsx274("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx274(User27, { className: "w-4 h-4 text-white" }) }) }),
+      onLogout && /* @__PURE__ */ jsxs249(
+        Button77,
         {
           variant: "ghost",
           onClick: onLogout,
@@ -41977,8 +42242,8 @@ var AdminSidebar = ({
             isCollapsed && "justify-center px-2"
           ),
           children: [
-            /* @__PURE__ */ jsx269(LogOut5, { className: "w-4 h-4" }),
-            !isCollapsed && /* @__PURE__ */ jsx269("span", { className: "ml-2", children: "Logout" })
+            /* @__PURE__ */ jsx274(LogOut5, { className: "w-4 h-4" }),
+            !isCollapsed && /* @__PURE__ */ jsx274("span", { className: "ml-2", children: "Logout" })
           ]
         }
       )
@@ -41991,25 +42256,25 @@ import { useState as useState94, useEffect as useEffect48 } from "react";
 import Link4 from "next/link";
 import { usePathname as usePathname2 } from "next/navigation";
 import { cn as cn8 } from "@rentalshop/ui";
-import { Button as Button77 } from "@rentalshop/ui";
-import { useCommonTranslations as useCommonTranslations21 } from "@rentalshop/hooks";
+import { Button as Button78 } from "@rentalshop/ui";
+import { useCommonTranslations as useCommonTranslations23 } from "@rentalshop/hooks";
 import {
   ChevronLeft as ChevronLeft6,
   ChevronRight as ChevronRight8,
   Home as Home7,
   Users as Users17,
-  Package as Package25,
+  Package as Package26,
   ShoppingCart as ShoppingCart13,
   Building2 as Building219,
   Settings as Settings14,
-  Calendar as Calendar36,
+  Calendar as Calendar35,
   Tag as Tag6,
-  User as User29,
+  User as User28,
   LogOut as LogOut6,
   Bell as Bell7,
   ChevronDown as ChevronDown9
 } from "lucide-react";
-import { jsx as jsx270, jsxs as jsxs245 } from "react/jsx-runtime";
+import { jsx as jsx275, jsxs as jsxs250 } from "react/jsx-runtime";
 var getClientMenuItems = (t2) => [
   {
     label: t2("navigation.dashboard"),
@@ -42024,12 +42289,12 @@ var getClientMenuItems = (t2) => [
   {
     label: t2("navigation.products"),
     href: "/products",
-    icon: Package25,
+    icon: Package26,
     subItems: [
       {
         label: t2("navigation.allProducts"),
         href: "/products",
-        icon: Package25
+        icon: Package26
       },
       {
         label: t2("navigation.categories"),
@@ -42046,7 +42311,7 @@ var getClientMenuItems = (t2) => [
   {
     label: t2("navigation.users"),
     href: "/users",
-    icon: User29
+    icon: User28
   },
   {
     label: t2("navigation.outlets"),
@@ -42056,7 +42321,7 @@ var getClientMenuItems = (t2) => [
   {
     label: t2("navigation.calendar"),
     href: "/calendar",
-    icon: Calendar36
+    icon: Calendar35
   },
   {
     label: t2("navigation.settings"),
@@ -42082,7 +42347,7 @@ var ClientSidebar = ({
   const [clickedTab, setClickedTab] = useState94(null);
   const [localCurrentPage, setLocalCurrentPage] = useState94(currentPath);
   const pathname = usePathname2();
-  const t2 = useCommonTranslations21();
+  const t2 = useCommonTranslations23();
   const filterMenuItemsByRole = (items, userRole) => {
     if (!userRole)
       return items;
@@ -42151,9 +42416,9 @@ var ClientSidebar = ({
     const active = isActive(item.href);
     const isHovered = hoveredTab === item.href;
     const Icon2 = item.icon;
-    return /* @__PURE__ */ jsxs245("div", { className: "relative", children: [
-      hasSubItems ? /* @__PURE__ */ jsxs245(
-        Button77,
+    return /* @__PURE__ */ jsxs250("div", { className: "relative", children: [
+      hasSubItems ? /* @__PURE__ */ jsxs250(
+        Button78,
         {
           variant: "ghost",
           onClick: (e2) => {
@@ -42170,22 +42435,22 @@ var ClientSidebar = ({
             clickedTab === item.href ? "scale-[0.98]" : ""
           ),
           children: [
-            /* @__PURE__ */ jsxs245("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsx270(Icon2, { className: cn8(
+            /* @__PURE__ */ jsxs250("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx275(Icon2, { className: cn8(
                 "w-4 h-4",
                 active ? "text-blue-600" : "text-text-secondary"
               ) }),
-              !isCollapsed && /* @__PURE__ */ jsx270("span", { children: item.label })
+              !isCollapsed && /* @__PURE__ */ jsx275("span", { children: item.label })
             ] }),
-            !isCollapsed && /* @__PURE__ */ jsx270(ChevronDown9, { className: cn8(
+            !isCollapsed && /* @__PURE__ */ jsx275(ChevronDown9, { className: cn8(
               "w-4 h-4 transition-transform duration-200",
               isExpanded ? "rotate-180" : ""
             ) }),
-            isHovered && !active && /* @__PURE__ */ jsx270("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
+            isHovered && !active && /* @__PURE__ */ jsx275("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
           ]
         }
-      ) : /* @__PURE__ */ jsxs245(
-        Button77,
+      ) : /* @__PURE__ */ jsxs250(
+        Button78,
         {
           variant: "ghost",
           onClick: (e2) => {
@@ -42202,23 +42467,23 @@ var ClientSidebar = ({
             clickedTab === item.href ? "scale-[0.98]" : ""
           ),
           children: [
-            /* @__PURE__ */ jsxs245("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsx270(Icon2, { className: cn8(
+            /* @__PURE__ */ jsxs250("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx275(Icon2, { className: cn8(
                 "w-4 h-4",
                 active ? "text-blue-600" : "text-text-secondary"
               ) }),
-              !isCollapsed && /* @__PURE__ */ jsx270("span", { children: item.label })
+              !isCollapsed && /* @__PURE__ */ jsx275("span", { children: item.label })
             ] }),
-            !isCollapsed && item.badge && /* @__PURE__ */ jsx270("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge }),
-            isHovered && !active && /* @__PURE__ */ jsx270("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
+            !isCollapsed && item.badge && /* @__PURE__ */ jsx275("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge }),
+            isHovered && !active && /* @__PURE__ */ jsx275("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
           ]
         }
       ),
-      hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ jsx270("div", { className: "ml-6 mt-1 space-y-1", "data-submenu": "true", children: item.subItems?.map((subItem) => {
+      hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ jsx275("div", { className: "ml-6 mt-1 space-y-1", "data-submenu": "true", children: item.subItems?.map((subItem) => {
         const SubIcon = subItem.icon;
         const subActive = isActive(subItem.href);
-        return /* @__PURE__ */ jsxs245(
-          Button77,
+        return /* @__PURE__ */ jsxs250(
+          Button78,
           {
             variant: "ghost",
             onClick: (e2) => {
@@ -42234,7 +42499,7 @@ var ClientSidebar = ({
               subActive ? "text-blue-600 font-medium" : "text-text-primary hover:text-blue-600"
             ),
             children: [
-              /* @__PURE__ */ jsx270(SubIcon, { className: "w-4 h-4" }),
+              /* @__PURE__ */ jsx275(SubIcon, { className: "w-4 h-4" }),
               subItem.label
             ]
           },
@@ -42243,56 +42508,56 @@ var ClientSidebar = ({
       }) })
     ] }, item.href);
   };
-  return /* @__PURE__ */ jsxs245("div", { className: cn8(
+  return /* @__PURE__ */ jsxs250("div", { className: cn8(
     "flex flex-col h-full bg-bg-card border-r border-border shadow-sm transition-all duration-300",
     isCollapsed ? "w-16" : "w-64"
   ), children: [
-    /* @__PURE__ */ jsx270("div", { className: "hidden", children: menuItems2.map((item) => /* @__PURE__ */ jsx270(Link4, { href: item.href }, item.href)) }),
-    /* @__PURE__ */ jsxs245("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
-      !isCollapsed && /* @__PURE__ */ jsxs245("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx270("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx270(Building219, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ jsx270("div", { children: /* @__PURE__ */ jsx270("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }) })
+    /* @__PURE__ */ jsx275("div", { className: "hidden", children: menuItems2.map((item) => /* @__PURE__ */ jsx275(Link4, { href: item.href }, item.href)) }),
+    /* @__PURE__ */ jsxs250("div", { className: "flex items-center justify-between p-4 border-b border-border", children: [
+      !isCollapsed && /* @__PURE__ */ jsxs250("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ jsx275("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm", children: /* @__PURE__ */ jsx275(Building219, { className: "w-5 h-5 text-white" }) }),
+        /* @__PURE__ */ jsx275("div", { children: /* @__PURE__ */ jsx275("h1", { className: "text-lg font-semibold text-text-primary", children: "RentalShop" }) })
       ] }),
-      isCollapsed && /* @__PURE__ */ jsx270("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ jsx270(Building219, { className: "w-5 h-5 text-white" }) }),
-      /* @__PURE__ */ jsx270(
-        Button77,
+      isCollapsed && /* @__PURE__ */ jsx275("div", { className: "w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm", children: /* @__PURE__ */ jsx275(Building219, { className: "w-5 h-5 text-white" }) }),
+      /* @__PURE__ */ jsx275(
+        Button78,
         {
           variant: "ghost",
           size: "icon",
           onClick: onCollapseToggle,
           className: "h-8 w-8 text-text-tertiary hover:text-text-primary",
-          children: isCollapsed ? /* @__PURE__ */ jsx270(ChevronRight8, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx270(ChevronLeft6, { className: "h-4 w-4" })
+          children: isCollapsed ? /* @__PURE__ */ jsx275(ChevronRight8, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx275(ChevronLeft6, { className: "h-4 w-4" })
         }
       )
     ] }),
-    /* @__PURE__ */ jsx270("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: menuItems2.map((item) => renderMenuItem(item)) }),
-    /* @__PURE__ */ jsxs245("div", { className: "p-4 border-t border-border", children: [
-      user && !isCollapsed && /* @__PURE__ */ jsxs245("div", { className: "flex items-center space-x-3 mb-4", children: [
-        /* @__PURE__ */ jsx270("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx270(User29, { className: "w-4 h-4 text-white" }) }),
-        /* @__PURE__ */ jsxs245("div", { className: "flex-1 min-w-0", children: [
-          /* @__PURE__ */ jsx270("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
-          /* @__PURE__ */ jsx270("p", { className: "text-xs text-text-tertiary truncate", children: user.role })
+    /* @__PURE__ */ jsx275("nav", { className: "flex-1 px-4 py-6 space-y-2 overflow-y-auto", children: menuItems2.map((item) => renderMenuItem(item)) }),
+    /* @__PURE__ */ jsxs250("div", { className: "p-4 border-t border-border", children: [
+      user && !isCollapsed && /* @__PURE__ */ jsxs250("div", { className: "flex items-center space-x-3 mb-4", children: [
+        /* @__PURE__ */ jsx275("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx275(User28, { className: "w-4 h-4 text-white" }) }),
+        /* @__PURE__ */ jsxs250("div", { className: "flex-1 min-w-0", children: [
+          /* @__PURE__ */ jsx275("p", { className: "text-sm font-medium text-text-primary truncate", children: user.name || user.email }),
+          /* @__PURE__ */ jsx275("p", { className: "text-xs text-text-tertiary truncate", children: user.role })
         ] }),
-        /* @__PURE__ */ jsx270("div", { className: "flex items-center space-x-2", children: cartItemsCount > 0 && /* @__PURE__ */ jsxs245("div", { className: "relative", children: [
-          /* @__PURE__ */ jsx270(ShoppingCart13, { className: "w-4 h-4 text-text-tertiary" }),
-          /* @__PURE__ */ jsx270("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
+        /* @__PURE__ */ jsx275("div", { className: "flex items-center space-x-2", children: cartItemsCount > 0 && /* @__PURE__ */ jsxs250("div", { className: "relative", children: [
+          /* @__PURE__ */ jsx275(ShoppingCart13, { className: "w-4 h-4 text-text-tertiary" }),
+          /* @__PURE__ */ jsx275("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
         ] }) })
       ] }),
-      user && isCollapsed && /* @__PURE__ */ jsxs245("div", { className: "flex flex-col items-center space-y-2", children: [
-        /* @__PURE__ */ jsx270("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx270(User29, { className: "w-4 h-4 text-white" }) }),
-        /* @__PURE__ */ jsxs245("div", { className: "flex items-center space-x-1", children: [
-          notificationsCount > 0 && /* @__PURE__ */ jsxs245("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx270(Bell7, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ jsx270("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-danger rounded-full text-xs text-white flex items-center justify-center", children: notificationsCount })
+      user && isCollapsed && /* @__PURE__ */ jsxs250("div", { className: "flex flex-col items-center space-y-2", children: [
+        /* @__PURE__ */ jsx275("div", { className: "w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx275(User28, { className: "w-4 h-4 text-white" }) }),
+        /* @__PURE__ */ jsxs250("div", { className: "flex items-center space-x-1", children: [
+          notificationsCount > 0 && /* @__PURE__ */ jsxs250("div", { className: "relative", children: [
+            /* @__PURE__ */ jsx275(Bell7, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ jsx275("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-danger rounded-full text-xs text-white flex items-center justify-center", children: notificationsCount })
           ] }),
-          cartItemsCount > 0 && /* @__PURE__ */ jsxs245("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx270(ShoppingCart13, { className: "w-4 h-4 text-text-tertiary" }),
-            /* @__PURE__ */ jsx270("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
+          cartItemsCount > 0 && /* @__PURE__ */ jsxs250("div", { className: "relative", children: [
+            /* @__PURE__ */ jsx275(ShoppingCart13, { className: "w-4 h-4 text-text-tertiary" }),
+            /* @__PURE__ */ jsx275("span", { className: "absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center", children: cartItemsCount })
           ] })
         ] })
       ] }),
-      onLogout && /* @__PURE__ */ jsxs245(
-        Button77,
+      onLogout && /* @__PURE__ */ jsxs250(
+        Button78,
         {
           variant: "ghost",
           onClick: onLogout,
@@ -42301,8 +42566,8 @@ var ClientSidebar = ({
             isCollapsed && "justify-center px-2"
           ),
           children: [
-            /* @__PURE__ */ jsx270(LogOut6, { className: "w-4 h-4" }),
-            !isCollapsed && /* @__PURE__ */ jsx270("span", { className: "ml-2", children: t2("navigation.logout") })
+            /* @__PURE__ */ jsx275(LogOut6, { className: "w-4 h-4" }),
+            !isCollapsed && /* @__PURE__ */ jsx275("span", { className: "ml-2", children: t2("navigation.logout") })
           ]
         }
       )
@@ -42313,8 +42578,8 @@ var ClientSidebar = ({
 // src/components/layout/layout.tsx
 import { useState as useState95 } from "react";
 import { Menu as Menu4 } from "lucide-react";
-import { Button as Button78, Sidebar as Sidebar2 } from "@rentalshop/ui";
-import { jsx as jsx271, jsxs as jsxs246 } from "react/jsx-runtime";
+import { Button as Button79, Sidebar as Sidebar2 } from "@rentalshop/ui";
+import { jsx as jsx276, jsxs as jsxs251 } from "react/jsx-runtime";
 function Layout({
   variant = "client",
   currentPage,
@@ -42330,8 +42595,8 @@ function Layout({
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-  return /* @__PURE__ */ jsxs246("div", { className: "min-h-screen bg-bg-primary", children: [
-    !hideSidebar && /* @__PURE__ */ jsx271(
+  return /* @__PURE__ */ jsxs251("div", { className: "min-h-screen bg-bg-primary", children: [
+    !hideSidebar && /* @__PURE__ */ jsx276(
       Sidebar2,
       {
         user,
@@ -42343,29 +42608,29 @@ function Layout({
         onCollapseToggle: allowCollapse ? handleCollapseToggle : void 0
       }
     ),
-    /* @__PURE__ */ jsxs246(
+    /* @__PURE__ */ jsxs251(
       "div",
       {
         className: `${!hideSidebar ? "transition-all duration-300 ease-in-out" : ""}`,
         style: { marginLeft: hideSidebar ? "0" : sidebarCollapsed ? "4rem" : "16rem" },
         children: [
-          /* @__PURE__ */ jsx271("div", { className: "bg-bg-card shadow-sm border-b border-border", children: /* @__PURE__ */ jsxs246("div", { className: "flex items-center justify-between h-16 px-4", children: [
-            /* @__PURE__ */ jsxs246("div", { className: "flex items-center", children: [
-              !hideSidebar && /* @__PURE__ */ jsx271(
-                Button78,
+          /* @__PURE__ */ jsx276("div", { className: "bg-bg-card shadow-sm border-b border-border", children: /* @__PURE__ */ jsxs251("div", { className: "flex items-center justify-between h-16 px-4", children: [
+            /* @__PURE__ */ jsxs251("div", { className: "flex items-center", children: [
+              !hideSidebar && /* @__PURE__ */ jsx276(
+                Button79,
                 {
                   variant: "ghost",
                   size: "sm",
                   onClick: () => setSidebarOpen(true),
                   className: "md:hidden mr-2",
-                  children: /* @__PURE__ */ jsx271(Menu4, { className: "w-5 h-5" })
+                  children: /* @__PURE__ */ jsx276(Menu4, { className: "w-5 h-5" })
                 }
               ),
-              /* @__PURE__ */ jsx271("h2", { className: "text-lg font-semibold text-text-primary", children: variant === "admin" ? "Admin Panel" : "Rental Shop" })
+              /* @__PURE__ */ jsx276("h2", { className: "text-lg font-semibold text-text-primary", children: variant === "admin" ? "Admin Panel" : "Rental Shop" })
             ] }),
-            /* @__PURE__ */ jsx271("div", { className: "flex items-center space-x-4" })
+            /* @__PURE__ */ jsx276("div", { className: "flex items-center space-x-4" })
           ] }) }),
-          /* @__PURE__ */ jsx271("main", { className: "p-6", children })
+          /* @__PURE__ */ jsx276("main", { className: "p-6", children })
         ]
       }
     )
@@ -42382,7 +42647,7 @@ import {
   Zap as Zap3
 } from "lucide-react";
 import { useSubscriptionStatusInfo as useSubscriptionStatusInfo2 } from "@rentalshop/hooks";
-import { jsx as jsx272, jsxs as jsxs247 } from "react/jsx-runtime";
+import { jsx as jsx277, jsxs as jsxs252 } from "react/jsx-runtime";
 function SubscriptionStatus({ showDetails = false, className = "", currentUserRole }) {
   const {
     hasSubscription,
@@ -42400,17 +42665,17 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     // Use statusReason from API
   } = useSubscriptionStatusInfo2();
   if (loading) {
-    return /* @__PURE__ */ jsx272("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ jsx272("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
+    return /* @__PURE__ */ jsx277("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ jsx277("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
   }
   if (error2 || !hasSubscription) {
-    return /* @__PURE__ */ jsx272("div", { className, children: (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsxs247(
+    return /* @__PURE__ */ jsx277("div", { className, children: (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsxs252(
       Button2,
       {
         variant: "outline",
         size: "sm",
         onClick: () => window.location.href = "/plans",
         children: [
-          /* @__PURE__ */ jsx272(CreditCard26, { className: "h-4 w-4 mr-2" }),
+          /* @__PURE__ */ jsx277(CreditCard26, { className: "h-4 w-4 mr-2" }),
           "Get Started"
         ]
       }
@@ -42419,19 +42684,19 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   const getStatusIcon5 = () => {
     switch (status) {
       case "TRIAL":
-        return /* @__PURE__ */ jsx272(Zap3, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx277(Zap3, { className: "h-4 w-4" });
       case "ACTIVE":
-        return /* @__PURE__ */ jsx272(CheckCircle34, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx277(CheckCircle34, { className: "h-4 w-4" });
       case "EXPIRED":
-        return /* @__PURE__ */ jsx272(AlertTriangle23, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx277(AlertTriangle23, { className: "h-4 w-4" });
       case "CANCELED":
-        return /* @__PURE__ */ jsx272(AlertTriangle23, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx277(AlertTriangle23, { className: "h-4 w-4" });
       case "PAST_DUE":
-        return /* @__PURE__ */ jsx272(CreditCard26, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx277(CreditCard26, { className: "h-4 w-4" });
       case "PAUSED":
-        return /* @__PURE__ */ jsx272(Clock33, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx277(Clock33, { className: "h-4 w-4" });
       default:
-        return /* @__PURE__ */ jsx272(Clock33, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx277(Clock33, { className: "h-4 w-4" });
     }
   };
   const getStatusVariant = () => {
@@ -42492,23 +42757,23 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   };
   const shouldShowAction = status === "EXPIRED" || status === "CANCELED" || status === "PAST_DUE" || isExpiringSoon;
   if (showDetails) {
-    return /* @__PURE__ */ jsx272(Card, { className: `border-l-4 ${getBorderColor()} ${className}`, children: /* @__PURE__ */ jsx272(CardContent, { className: "p-4", children: /* @__PURE__ */ jsxs247("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsxs247("div", { className: "flex items-center space-x-3", children: [
+    return /* @__PURE__ */ jsx277(Card, { className: `border-l-4 ${getBorderColor()} ${className}`, children: /* @__PURE__ */ jsx277(CardContent, { className: "p-4", children: /* @__PURE__ */ jsxs252("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsxs252("div", { className: "flex items-center space-x-3", children: [
         getStatusIcon5(),
-        /* @__PURE__ */ jsxs247("div", { children: [
-          /* @__PURE__ */ jsx272("div", { className: "font-medium text-gray-900", children: planName }),
-          /* @__PURE__ */ jsx272("div", { className: "text-sm text-gray-600", children: getStatusText() })
+        /* @__PURE__ */ jsxs252("div", { children: [
+          /* @__PURE__ */ jsx277("div", { className: "font-medium text-gray-900", children: planName }),
+          /* @__PURE__ */ jsx277("div", { className: "text-sm text-gray-600", children: getStatusText() })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs247("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ jsx272(StatusBadge, { status, type: "subscription", variant: "solid" }),
-        (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ jsxs247(
+      /* @__PURE__ */ jsxs252("div", { className: "flex items-center space-x-2", children: [
+        /* @__PURE__ */ jsx277(StatusBadge, { status, type: "subscription", variant: "solid" }),
+        (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ jsxs252(
           Button2,
           {
             size: "sm",
             onClick: () => window.location.href = "/plans",
             children: [
-              /* @__PURE__ */ jsx272(TrendingUp10, { className: "h-4 w-4 mr-2" }),
+              /* @__PURE__ */ jsx277(TrendingUp10, { className: "h-4 w-4 mr-2" }),
               status === "EXPIRED" || status === "CANCELED" ? "Renew" : "Upgrade"
             ]
           }
@@ -42516,22 +42781,22 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
       ] })
     ] }) }) });
   }
-  return /* @__PURE__ */ jsxs247("div", { className: `flex items-center space-x-2 ${className}`, children: [
+  return /* @__PURE__ */ jsxs252("div", { className: `flex items-center space-x-2 ${className}`, children: [
     getStatusIcon5(),
-    /* @__PURE__ */ jsxs247("span", { className: "font-medium", children: [
+    /* @__PURE__ */ jsxs252("span", { className: "font-medium", children: [
       planName,
       " - ",
       getStatusText()
     ] }),
-    /* @__PURE__ */ jsx272(StatusBadge, { status, type: "subscription", variant: "solid", size: "sm" }),
-    (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ jsxs247(
+    /* @__PURE__ */ jsx277(StatusBadge, { status, type: "subscription", variant: "solid", size: "sm" }),
+    (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ jsxs252(
       Button2,
       {
         variant: "outline",
         size: "sm",
         onClick: () => window.location.href = "/plans",
         children: [
-          /* @__PURE__ */ jsx272(TrendingUp10, { className: "h-4 w-4 mr-2" }),
+          /* @__PURE__ */ jsx277(TrendingUp10, { className: "h-4 w-4 mr-2" }),
           status === "EXPIRED" || status === "CANCELED" ? "Renew" : "Upgrade"
         ]
       }

@@ -97,11 +97,11 @@ export default function EditOrderPage() {
             setMerchantId('');
           }
         } else {
-          setError('Failed to fetch order details');
+          setError(t('messages.failedToFetchOrder'));
         }
       } catch (err) {
         console.error('Error fetching order details:', err);
-        setError('An error occurred while fetching order details');
+        setError(t('messages.errorFetchingOrder'));
       } finally {
         setLoading(false);
       }
@@ -273,7 +273,7 @@ export default function EditOrderPage() {
       // Ensure we have the order id for the update
       const orderPublicId = order.id;
       if (!orderPublicId) {
-        throw new Error('Order id not found');
+        throw new Error(t('messages.orderIdNotFound'));
       }
 
       // Add the order ID to the update data
@@ -290,11 +290,11 @@ export default function EditOrderPage() {
         // Navigate back to orders list after successful update
         router.push('/orders');
       } else {
-        throw new Error(result.error || 'Failed to update order');
+        throw new Error(result.error || t('messages.failedToUpdateOrder'));
       }
     } catch (err) {
       console.error('Error updating order:', err);
-      toastError('Failed to update order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError(t('messages.failedToUpdateOrder') + ': ' + (err instanceof Error ? err.message : t('messages.unknownError')));
     } finally {
       setActionLoading(false);
     }
@@ -367,7 +367,7 @@ export default function EditOrderPage() {
               variant="default"
               size="sm"
             >
-              Retry Loading
+              {t('messages.retryLoading')}
             </Button>
           </div>
       </PageWrapper>
@@ -384,7 +384,7 @@ export default function EditOrderPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Order</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('messages.errorLoadingOrder')}</h1>
             <p className="text-gray-600 mb-6">{error}</p>
             <div className="space-y-3">
               <Button 
@@ -392,14 +392,14 @@ export default function EditOrderPage() {
                 variant="default"
                 className="w-full"
               >
-                Go Back
+                {t('messages.goBack')}
               </Button>
               <Button 
                 onClick={() => router.push('/orders')} 
                 variant="outline"
                 className="w-full"
               >
-                View All Orders
+                {t('messages.viewAllOrders')}
               </Button>
             </div>
           </div>
@@ -418,22 +418,22 @@ export default function EditOrderPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
-            <p className="text-gray-600 mb-6">The order you're looking for could not be found.</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('messages.orderNotFound')}</h1>
+            <p className="text-gray-600 mb-6">{t('messages.orderNotFoundMessage')}</p>
             <div className="space-y-3">
               <Button 
                 onClick={() => router.back()} 
                 variant="default"
                 className="w-full"
               >
-                Go Back
+                {t('messages.goBack')}
               </Button>
               <Button 
                 onClick={() => router.push('/orders')} 
                 variant="outline"
                 className="w-full"
               >
-                View All Orders
+                {t('messages.viewAllOrders')}
               </Button>
             </div>
           </div>
@@ -444,9 +444,9 @@ export default function EditOrderPage() {
 
   // Breadcrumb items - inline
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Orders', href: '/orders' },
+    { label: t('messages.orders'), href: '/orders' },
     { label: order.orderNumber, href: `/orders/${numericOrderNumber}` },
-    { label: 'Edit' }
+    { label: t('messages.edit') }
   ];
 
   return (

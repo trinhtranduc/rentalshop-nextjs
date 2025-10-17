@@ -14,6 +14,7 @@ import {
   Button,
   useFormatCurrency
 } from '@rentalshop/ui';
+import { useOrderTranslations, useProductTranslations } from '@rentalshop/hooks';
 import { 
   Search, 
   Package, 
@@ -139,6 +140,8 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   getProductAvailabilityStatus,
   currency = 'USD',
 }) => {
+  const t = useOrderTranslations();
+  const tp = useProductTranslations();
   return (
     <Card>
       <CardContent className="space-y-4 pt-6">
@@ -146,7 +149,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         <div className="space-y-3">
           <div className="relative">
             <SearchableSelect
-              placeholder="Search products by name, barcode or description..."
+              placeholder={t('messages.searchProducts')}
               value={undefined}
               onChange={(productId: number) => {
                 console.log('🔍 SearchableSelect onChange called with productId:', productId);
@@ -180,7 +183,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Package className="w-5 h-5" />
-                Selected Products <span className="text-red-500">*</span>
+                {tp('selectedProducts')} <span className="text-red-500">*</span>
                 <span className="text-sm font-normal text-gray-500">({orderItems.length})</span>
               </CardTitle>
             </CardHeader>
@@ -192,10 +195,10 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
                     <Package className="w-16 h-16" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-600 mb-2">
-                    No Products Selected
+                    {tp('noProductsSelected')}
                   </h3>
                   <p className="text-sm text-gray-500 mb-4 max-w-sm mx-auto">
-                    Search for products above to add them to your order. You can search by name, barcode, or description.
+                    {t('messages.searchProductsAbove')}
                   </p>
                 </div>
               ) : (
@@ -248,6 +251,8 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
 }) => {
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
+  const t = useOrderTranslations();
+  const tp = useProductTranslations();
   
   // Use the product information stored in the item instead of the external product
   // This ensures all order items are displayed even if the external products array is incomplete
@@ -267,10 +272,10 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
             <div className="flex items-start justify-between">
               <div>
                 <h4 className="text-sm font-medium text-gray-900">
-                  Product ID: {item.productId}
+                  {tp('productId')}: {item.productId}
                 </h4>
                 <p className="text-xs text-gray-500 mt-1">
-                  Product information not available
+                  {tp('productInformationNotAvailable')}
                 </p>
               </div>
               <Button
@@ -278,7 +283,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
                 size="icon"
                 onClick={() => onRemove(item.productId)}
                 className="text-red-500 hover:text-red-700 p-1 h-auto w-auto"
-                title="Remove product"
+                title={t('messages.removeProduct')}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -336,7 +341,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           </span>
           {orderType === 'RENT' && (
             <span className="text-gray-600">
-              Deposit: {item.deposit || 0} ₫
+              {t('messages.deposit')}: {item.deposit || 0} ₫
             </span>
           )}
         </div>
@@ -356,7 +361,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
             <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
               <img 
                 src={imageUrl} 
-                alt={displayProduct.name || 'Product'}
+                alt={displayProduct.name || t('messages.product')}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   // Fallback to package icon if image fails to load
@@ -380,10 +385,10 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="font-medium text-gray-900">
-                {displayProduct.name || 'Unknown Product'}
+                {displayProduct.name || t('messages.unknownProduct')}
               </div>
               <div className="text-sm text-gray-500">
-                {displayProduct.barcode || 'No Barcode'}
+                {displayProduct.barcode || t('messages.noBarcode')}
               </div>
               {/* Availability Warning */}
               {orderType === 'RENT' && (
@@ -485,7 +490,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           Total: {item.quantity} × {formatMoney(item.unitPrice)} = {formatMoney(item.quantity * item.unitPrice)}
         </div>
         <div className="text-sm text-gray-600">
-          Deposit: {formatMoney(item.deposit)}
+          {t('messages.deposit')}: {formatMoney(item.deposit)}
         </div>
       </div>
     </div>

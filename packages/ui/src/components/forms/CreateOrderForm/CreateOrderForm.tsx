@@ -37,7 +37,7 @@ import { useToast, ToastContainer } from '@rentalshop/ui';
 import { AddCustomerForm } from '../../features/Customers/components/AddCustomerForm';
 
 import { customersApi, handleApiError, formatCurrency } from '@rentalshop/utils';
-import { useProductAvailability } from '@rentalshop/hooks';
+import { useProductAvailability, useOrderTranslations } from '@rentalshop/hooks';
 import { VALIDATION, BUSINESS } from '@rentalshop/constants';
 
 // Import our custom hooks and components
@@ -76,6 +76,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     orderNumber,
     onFormReady,
   } = props;
+
+  // Translation hook
+  const t = useOrderTranslations();
 
   // Custom hooks for state management
   const {
@@ -178,13 +181,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         value: String(product.id),
         label: product.name,
         image: product.images?.[0],
-        subtitle: product.barcode ? `Barcode: ${product.barcode}` : 'No Barcode',
+        subtitle: product.barcode ? `Barcode: ${product.barcode}` : t('messages.noBarcode'),
         details: [
           formatCurrency(product.rentPrice || 0, currency as any),
           `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
           `Available: ${product.outletStock?.[0]?.available || 0}`,
           `Total Stock: ${product.outletStock?.[0]?.stock || 0}`,
-          product.category?.name || 'No Category'
+          product.category?.name || t('messages.noCategory')
         ].filter(Boolean),
         type: 'product' as const
       }));
@@ -214,7 +217,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         if (available === 0) {
           return { 
             status: 'out-of-stock', 
-            text: 'Out of Stock', 
+            text: t('messages.outOfStock'), 
             color: 'bg-red-100 text-red-600' 
           };
         } else if (available <= VALIDATION.LOW_STOCK_THRESHOLD) {
@@ -270,11 +273,11 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       const outletStock = product.outletStock?.[0];
       const available = outletStock?.available ?? 0;
       if (available === 0) {
-        return { status: 'unknown', text: 'Out of Stock', color: 'bg-red-100 text-red-600' };
+        return { status: 'unknown', text: t('messages.outOfStock'), color: 'bg-red-100 text-red-600' };
       } else if (available <= VALIDATION.LOW_STOCK_THRESHOLD) {
-        return { status: 'unknown', text: 'Low Stock', color: 'bg-orange-100 text-orange-600' };
+        return { status: 'unknown', text: t('messages.lowStock'), color: 'bg-orange-100 text-orange-600' };
       } else {
-        return { status: 'unknown', text: 'In Stock', color: 'bg-green-100 text-green-600' };
+        return { status: 'unknown', text: t('messages.inStock'), color: 'bg-green-100 text-green-600' };
       }
     }
   }, [calculateAvailability]);
@@ -289,7 +292,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       if (!currentMerchantId) {
         const errorMsg = 'Merchant ID is required to create a customer. Please ensure the form has access to merchant information.';
-        toastError("Error", errorMsg);
+        toastError(t('messages.error'), errorMsg);
         throw new Error(errorMsg);
       }
       
@@ -309,7 +312,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       if (localDuplicate) {
         const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName}). Please use a different phone number or search for the existing customer.`;
-        toastError("Duplicate Customer", errorMsg);
+        toastError(t('messages.duplicateCustomer'), errorMsg);
         throw new Error(errorMsg);
       }
       
@@ -327,7 +330,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
             const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
             if (normalizedPhone === existingNormalizedPhone) {
               const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName}). Please use a different phone number or search for the existing customer.`;
-              toastError("Duplicate Customer", errorMsg);
+              toastError(t('messages.duplicateCustomer'), errorMsg);
               throw new Error(errorMsg);
             }
           }
@@ -367,15 +370,15 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         setSearchQuery(`${newCustomer.firstName} ${newCustomer.lastName} - ${newCustomer.phone}`);
         
         // Show success message
-        toastSuccess("Customer Created", `Customer "${newCustomer.firstName} ${newCustomer.lastName}" has been created and selected.`);
+        toastSuccess(t('messages.customerCreated'), `Customer "${newCustomer.firstName} ${newCustomer.lastName}" ${t('messages.customerCreatedMessage')}`);
         
         console.log('🔍 handleAddNewCustomer: Function completed successfully');
       } else {
         // Extract error message from API response
-        const errorMessage = result.message || result.error || 'Failed to create customer';
+        const errorMessage = result.message || result.error || t('messages.failedToCreateCustomer');
         console.error('❌ handleAddNewCustomer: API error:', errorMessage);
         console.error('❌ handleAddNewCustomer: Full result:', result);
-        toastError("Error", errorMessage);
+        toastError(t('messages.error'), errorMessage);
         throw new Error(errorMessage);
       }
     } catch (error) {
@@ -563,10 +566,10 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         onConfirm={handleOrderConfirm}
         onEdit={() => setShowOrderPreview(false)}
         loading={loading || isSubmitting}
-        confirmText={isEditMode ? 'Update Order' : 'Confirm & Create Order'}
-        editText="Back to Edit"
-        title="Order Preview"
-        subtitle="Review your order details before confirming"
+        confirmText={isEditMode ? t('actions.updateOrder') : t('actions.confirmCreate')}
+        editText={t('actions.backToEdit')}
+        title={t('actions.orderPreview')}
+        subtitle={t('actions.reviewBeforeConfirm')}
       />    </div>
   );
 };

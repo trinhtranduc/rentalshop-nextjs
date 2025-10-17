@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Calendars, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
+import { useFormattedFullDate } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 
@@ -321,7 +322,7 @@ export default function CalendarPage() {
                              <td className="px-6 py-4 whitespace-nowrap">
                                <div className="text-sm font-medium text-gray-900">#{order.orderNumber}</div>
                                <div className="text-sm text-gray-500">
-                                 {order.pickupPlanAt ? new Date(order.pickupPlanAt).toLocaleDateString() : 'N/A'}
+                                 {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'}
                                </div>
                              </td>
                              <td className="px-6 py-4 whitespace-nowrap">

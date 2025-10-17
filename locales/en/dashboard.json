@@ -4,6 +4,7 @@
   "overview": "Overview",
   "stats": {
     "totalOrders": "Total Orders",
+    "todayRentals": "Today's Rentals",
     "activeRentals": "Active Rentals",
     "totalRevenue": "Total Revenue",
     "totalCustomers": "Total Customers",
@@ -20,13 +21,44 @@
     "bookedRevenue": "Booked revenue",
     "expectedRevenue": "Expected revenue from upcoming and ongoing rentals"
   },
+  "tooltips": {
+    "todayRevenue": "Total actual revenue from orders created today. Includes both rental and sales orders.",
+    "todayRentals": "Number of new rental orders created today. Only counts orders with RESERVED, PICKUPED, or RETURNED status.",
+    "activeRentals": "Total number of currently active rental orders. Includes all orders with PICKUPED status (currently being rented) and not yet returned.",
+    "overdueReturns": "Number of rental orders that are overdue for return. Orders where the planned return date has passed but items haven't been returned yet.",
+    "totalRevenue": "Total revenue from all orders in the system. Includes both rental and sales orders from the beginning until now.",
+    "totalOrders": "Total number of orders created in the system. Includes all types of orders: rental, sales, and rent-to-own.",
+    "totalCustomers": "Total number of customers registered in the system. Includes both individual and business customers.",
+    "totalProducts": "Total number of products in inventory. Includes all products that have been added to the system.",
+    "availableProducts": "Number of products currently available for rental. Excludes products that are currently being rented or have been sold.",
+    "pendingOrders": "Number of orders waiting to be processed. Orders with RESERVED status that haven't been picked up yet.",
+    "completedOrders": "Number of completed orders. Rental orders that have been returned or sales orders that have been delivered.",
+    "futureRevenue": "Expected revenue from upcoming orders. Includes ongoing rentals and pre-booked orders.",
+    "thisWeekRevenue": "Total revenue for this week. Calculated from Monday to Sunday of the current week.",
+    "thisMonthRevenue": "Total revenue for this month. Calculated from the 1st to the end of the current month.",
+    "thisYearRevenue": "Total revenue for this year. Calculated from January 1st to the present.",
+    "customerGrowth": "Growth rate of new customers. Compared to the previous period.",
+    "revenueGrowth": "Revenue growth rate. Compared to the previous period to assess business performance.",
+    "productUtilization": "Product utilization rate. Percentage of products currently being rented compared to total available products."
+  },
   "charts": {
     "revenueOverTime": "Revenue Over Time",
     "ordersByStatus": "Orders by Status",
     "topProducts": "Top Products",
     "customerActivity": "Customer Activity",
     "rentalTrends": "Rental Trends",
-    "noData": "No data available for this period"
+    "noData": "No data available for this period",
+    "actualRevenue": "Actual Revenue",
+    "projectedRevenue": "Projected Revenue",
+    "rentalOrders": "Rental Orders",
+    "ordersCount": "orders"
+  },
+  "chartTitles": {
+    "dailyRevenue": "Daily Revenue",
+    "monthlyRevenue": "Monthly Revenue",
+    "yearlyRevenue": "Yearly Revenue",
+    "monthlyRentals": "Monthly Rentals",
+    "yearlyRentals": "Yearly Rentals"
   },
   "recentActivity": {
     "title": "Recent Activity",
@@ -61,14 +93,10 @@
     "cancelled": "Cancelled",
     "ordersCount": "orders"
   },
-  "chartTitles": {
-    "monthlyRevenue": "Revenue",
-    "yearlyRevenue": "Revenue",
-    "monthlyRentals": "Rentals",
-    "yearlyRentals": "Rentals"
-  },
+  
   "stats": {
     "totalOrders": "Total Orders",
+    "todayRentals": "Today's Rentals",
     "activeRentals": "Active Rentals",
     "totalRevenue": "Total Revenue",
     "totalCustomers": "Total Customers",

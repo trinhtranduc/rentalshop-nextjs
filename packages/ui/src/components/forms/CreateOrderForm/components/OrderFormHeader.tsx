@@ -5,6 +5,7 @@
 import React from 'react';
 import { Badge, Breadcrumb } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface OrderFormHeaderProps {
   orderNumber?: string;
@@ -19,14 +20,15 @@ export const OrderFormHeader: React.FC<OrderFormHeaderProps> = ({
   showBackButton = true,
   onBack
 }) => {
+  const t = useOrderTranslations();
   // Build breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
     {
-      label: 'Orders',
+      label: t('messages.orders'),
       href: '/orders'
     },
     {
-      label: isEditMode && orderNumber ? `Edit Order #${orderNumber}` : 'Create New Order',
+      label: isEditMode && orderNumber ? `${t('messages.editOrder')} #${orderNumber}` : t('messages.createNewOrder'),
       href: '#'
     }
   ];
