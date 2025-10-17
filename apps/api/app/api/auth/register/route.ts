@@ -28,8 +28,10 @@ export async function POST(request: NextRequest) {
 
     if (isMerchantRegistration) {
       // ============================================================================
-      // MERCHANT REGISTRATION FLOW
+      // MERCHANT REGISTRATION FLOW (WITH TRANSACTION)
       // ============================================================================
+      
+      // PRE-CHECKS: Validate before transaction to avoid partial creation
       
       // 1. Check for duplicate merchant email or phone
       const existingMerchant = await db.merchants.checkDuplicate(
@@ -49,79 +51,7 @@ export async function POST(request: NextRequest) {
         }, { status: 409 });
       }
 
-      // 2. Create merchant with business configuration
-      console.log('Creating merchant with data:', {
-        name: validatedData.businessName,
-        email: validatedData.email,
-        phone: validatedData.phone
-      });
-      
-      const merchant = await db.merchants.create({
-        name: validatedData.businessName!,
-        email: validatedData.email,
-        phone: validatedData.phone,
-        address: validatedData.address,
-        city: validatedData.city,
-        state: validatedData.state,
-        zipCode: validatedData.zipCode,
-        country: validatedData.country,
-        businessType: validatedData.businessType || 'GENERAL',
-        pricingType: validatedData.pricingType || 'FIXED',
-        // Lock pricing configuration after registration using constants
-        pricingConfig: JSON.stringify(
-          validatedData.businessType && validatedData.pricingType
-            ? {
-                businessType: validatedData.businessType,
-                defaultPricingType: validatedData.pricingType,
-                businessRules: {
-                  requireRentalDates: validatedData.pricingType !== 'FIXED',
-                  showPricingOptions: ['VEHICLE'].includes(validatedData.businessType)
-                },
-                durationLimits: {
-                  minDuration: validatedData.pricingType === 'HOURLY' ? 1 : validatedData.pricingType === 'DAILY' ? 1 : validatedData.pricingType === 'WEEKLY' ? 1 : 1,
-                  maxDuration: validatedData.pricingType === 'HOURLY' ? 168 : validatedData.pricingType === 'DAILY' ? 30 : validatedData.pricingType === 'WEEKLY' ? 52 : 1,
-                  defaultDuration: validatedData.pricingType === 'HOURLY' ? 4 : validatedData.pricingType === 'DAILY' ? 3 : validatedData.pricingType === 'WEEKLY' ? 1 : 1
-                }
-              }
-            : getDefaultPricingConfig(validatedData.businessType as BusinessType || 'GENERAL')
-        )
-      });
-
-      console.log('✅ Merchant created:', { id: merchant.id, name: merchant.name });
-
-      // 3. Create default outlet
-      console.log('Creating outlet with merchantId:', merchant.id);
-      
-      const outlet = await db.outlets.create({
-        name: `${merchant.name} - Main Store`,
-        address: merchant.address || validatedData.address || 'Address to be updated',
-        phone: merchant.phone || validatedData.phone,
-        city: merchant.city || validatedData.city,
-        state: merchant.state || validatedData.state,
-        zipCode: merchant.zipCode || validatedData.zipCode,
-        country: merchant.country || validatedData.country,
-        description: 'Default outlet created during registration',
-        merchantId: merchant.id,
-        isDefault: true
-      });
-
-      // 4. Create default category (check if exists first)
-      const existingCategory = await db.categories.findFirst({
-        where: {
-          merchantId: merchant.id,
-          name: 'General'
-        }
-      });
-
-      if (!existingCategory) {
-        await db.categories.create({
-          name: 'General',
-          description: 'Default category for general products',
-          merchantId: merchant.id
-        });
-      }
-
-      // 5. Check if user email already exists
+      // 2. Check if user email already exists
       const existingUser = await db.users.findByEmail(validatedData.email);
       if (existingUser) {
         console.log('❌ User email already exists:', validatedData.email);
@@ -132,20 +62,102 @@ export async function POST(request: NextRequest) {
         }, { status: 409 });
       }
 
-      // 6. Create merchant user
-      const hashedPassword = await hashPassword(validatedData.password);
-      const user = await db.users.create({
-        email: validatedData.email,
-        password: hashedPassword,
-        firstName: firstName,
-        lastName: lastName,
-        phone: validatedData.phone,
-        role: 'MERCHANT',
-        merchantId: merchant.id,
-        outletId: outlet.id
-      });
+      // ALL CHECKS PASSED - Start transaction for atomic creation
+      const result = await db.prisma.$transaction(async (tx) => {
+        // 3. Create merchant with business configuration
+        console.log('Creating merchant with data:', {
+          name: validatedData.businessName,
+          email: validatedData.email,
+          phone: validatedData.phone
+        });
+        
+        const merchant = await tx.merchant.create({
+          data: {
+            name: validatedData.businessName!,
+            email: validatedData.email,
+            phone: validatedData.phone,
+            address: validatedData.address,
+            city: validatedData.city,
+            state: validatedData.state,
+            zipCode: validatedData.zipCode,
+            country: validatedData.country,
+            businessType: validatedData.businessType || 'GENERAL',
+            pricingType: validatedData.pricingType || 'FIXED',
+            // Lock pricing configuration after registration using constants
+            pricingConfig: JSON.stringify(
+              validatedData.businessType && validatedData.pricingType
+                ? {
+                    businessType: validatedData.businessType,
+                    defaultPricingType: validatedData.pricingType,
+                    businessRules: {
+                      requireRentalDates: validatedData.pricingType !== 'FIXED',
+                      showPricingOptions: ['VEHICLE'].includes(validatedData.businessType)
+                    },
+                    durationLimits: {
+                      minDuration: validatedData.pricingType === 'HOURLY' ? 1 : validatedData.pricingType === 'DAILY' ? 1 : validatedData.pricingType === 'WEEKLY' ? 1 : 1,
+                      maxDuration: validatedData.pricingType === 'HOURLY' ? 168 : validatedData.pricingType === 'DAILY' ? 30 : validatedData.pricingType === 'WEEKLY' ? 52 : 1,
+                      defaultDuration: validatedData.pricingType === 'HOURLY' ? 4 : validatedData.pricingType === 'DAILY' ? 3 : validatedData.pricingType === 'WEEKLY' ? 1 : 1
+                    }
+                  }
+                : getDefaultPricingConfig(validatedData.businessType as BusinessType || 'GENERAL')
+            )
+          }
+        });
 
-      // 6. Get or create trial plan
+        console.log('✅ Merchant created:', { id: merchant.id, name: merchant.name });
+
+        // 4. Create default outlet
+        console.log('Creating outlet with merchantId:', merchant.id);
+        
+        const outlet = await tx.outlet.create({
+          data: {
+            name: `${merchant.name} - Main Store`,
+            address: merchant.address || validatedData.address || 'Address to be updated',
+            phone: merchant.phone || validatedData.phone,
+            city: merchant.city || validatedData.city,
+            state: merchant.state || validatedData.state,
+            zipCode: merchant.zipCode || validatedData.zipCode,
+            country: merchant.country || validatedData.country,
+            description: 'Default outlet created during registration',
+            merchantId: merchant.id,
+            isDefault: true
+          }
+        });
+
+        // 5. Create default category
+        const category = await tx.category.create({
+          data: {
+            name: 'General',
+            description: 'Default category for general products',
+            merchantId: merchant.id
+          }
+        });
+
+        // 6. Create merchant user
+        const hashedPassword = await hashPassword(validatedData.password);
+        const user = await tx.user.create({
+          data: {
+            email: validatedData.email,
+            password: hashedPassword,
+            firstName: firstName,
+            lastName: lastName,
+            phone: validatedData.phone,
+            role: 'MERCHANT',
+            merchantId: merchant.id,
+            outletId: outlet.id
+          }
+        });
+
+        console.log('✅ User created:', { id: user.id, email: user.email });
+
+        // Return created entities from transaction
+        return { merchant, outlet, category, user };
+      }); // End transaction
+
+      // Extract results from transaction
+      const { merchant, outlet, category, user } = result;
+
+      // 7. Get or create trial plan (outside transaction - can reuse existing)
       let trialPlan = await db.plans.findById(1); // Default trial plan
       if (!trialPlan) {
         trialPlan = await db.plans.create({
@@ -173,7 +185,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // 7. Create trial subscription
+      // 8. Create trial subscription
       const subscriptionStartDate = new Date();
       const trialEndDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
       
@@ -189,6 +201,8 @@ export async function POST(request: NextRequest) {
         trialEnd: trialEndDate
       });
 
+      console.log('✅ Registration complete for merchant:', merchant.name);
+
       // Generate JWT token
       const token = generateToken({
         userId: user.id,
@@ -198,7 +212,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        code: 'MERCHANT_ACCOUNT_CREATED_SUCCESS', message: 'Merchant account created successfully with default outlet and trial subscription',
+        code: 'MERCHANT_ACCOUNT_CREATED_SUCCESS', 
+        message: 'Merchant account created successfully with default outlet and trial subscription',
         data: {
           user: {
             id: user.id,
