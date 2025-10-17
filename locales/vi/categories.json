@@ -11,6 +11,9 @@
     "active": "Hoạt động",
     "inactive": "Không hoạt động"
   },
+  "labels": {
+    "default": "Mặc định"
+  },
   "status": {
     "active": "Hoạt động",
     "inactive": "Ngừng hoạt động"
