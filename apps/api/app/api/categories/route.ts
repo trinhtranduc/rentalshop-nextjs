@@ -173,11 +173,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     console.log('🔍 Checking for existing category with name:', name.trim(), 'for merchant:', userScope.merchantId);
     
     const existingCategory = await db.categories.findFirst({
-      where: {
-        name: name.trim(),
-        merchantId: userScope.merchantId,
-        isActive: true
-      }
+      name: name.trim(),
+      merchantId: userScope.merchantId,
+      isActive: true
     });
 
     if (existingCategory) {

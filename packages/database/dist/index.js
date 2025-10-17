@@ -2523,6 +2523,7 @@ var findById3 = async (id) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -2536,6 +2537,7 @@ var findFirst = async (where) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -2550,6 +2552,7 @@ var findMany = async (options = {}) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true,
       ...select
@@ -2567,6 +2570,7 @@ var create2 = async (data) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -2581,6 +2585,7 @@ var update2 = async (id, data) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -2595,6 +2600,7 @@ var deleteCategory = async (id) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -2633,6 +2639,7 @@ var search2 = async (filters) => {
         name: true,
         description: true,
         isActive: true,
+        isDefault: true,
         createdAt: true,
         updatedAt: true,
         _count: {

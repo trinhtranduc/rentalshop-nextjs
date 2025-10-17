@@ -55,9 +55,7 @@ export async function GET(
       );
     }
 
-    const category = await db.categories.findFirst({
-      where
-    });
+    const category = await db.categories.findFirst(where);
 
     if (!category) {
       return NextResponse.json(
@@ -131,10 +129,8 @@ export async function PUT(
 
     // Find category by id and verify ownership
     const existingCategory = await db.categories.findFirst({
-      where: {
-        id: categoryId,
-        merchantId: userScope.merchantId
-      }
+      id: categoryId,
+      merchantId: userScope.merchantId
     });
 
     if (!existingCategory) {
@@ -154,11 +150,9 @@ export async function PUT(
 
     // Check if new name conflicts with existing category (excluding current one)
     const nameConflict = await db.categories.findFirst({
-      where: {
-        name: name.trim(),
-        merchantId: userScope.merchantId,
-        id: { not: categoryId }
-      }
+      name: name.trim(),
+      merchantId: userScope.merchantId,
+      id: { not: categoryId }
     });
 
     if (nameConflict) {
@@ -241,10 +235,8 @@ export async function DELETE(
 
     // Find category by id and verify ownership
     const existingCategory = await db.categories.findFirst({
-      where: {
-        id: categoryId,
-        merchantId: userScope.merchantId
-      }
+      id: categoryId,
+      merchantId: userScope.merchantId
     });
 
     if (!existingCategory) {
