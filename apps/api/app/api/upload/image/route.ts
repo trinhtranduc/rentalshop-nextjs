@@ -8,7 +8,7 @@ import { ResponseBuilder } from '@rentalshop/utils';
 // Allowed image types
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const UPLOAD_FOLDER = '/app/public/uploads'; // Railway Volume mount point
+const UPLOAD_FOLDER = '/app/apps/api/public/uploads'; // Railway Volume mount point
 
 /**
  * Validate image file
@@ -146,26 +146,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const buffer = Buffer.from(bytes);
 
     // Upload to Railway Volume (only method)
-    let result;
-    try {
-      result = await uploadToRailwayVolume(file, buffer);
-      console.log('✅ Image uploaded to Railway Volume');
-    } catch (railwayError) {
-      console.error('❌ Railway Volume failed, using temporary fallback:', railwayError);
-      
-      // Temporary fallback for testing
-      const base64Url = `data:${file.type};base64,${buffer.toString('base64')}`;
-      result = {
-        secure_url: base64Url,
-        public_id: `temp-${Date.now()}`,
-        width: 0,
-        height: 0,
-        format: file.type.split('/')[1],
-        bytes: file.size,
-        created_at: new Date().toISOString()
-      };
-      console.log('⚠️ Using temporary base64 fallback');
-    }
+    const result = await uploadToRailwayVolume(file, buffer);
+    console.log('✅ Image uploaded to Railway Volume');
 
     return NextResponse.json({
       success: true,
