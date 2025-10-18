@@ -886,6 +886,45 @@ export const simplifiedOrders = {
   },
 
   /**
+   * Find first order matching criteria (simplified API)
+   */
+  findFirst: async (whereClause: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.order.findFirst({
+      where,
+      include: {
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true
+          }
+        },
+        outlet: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+
+  /**
    * Get order statistics (simplified API)
    */
   getStats: async (whereClause?: any) => {

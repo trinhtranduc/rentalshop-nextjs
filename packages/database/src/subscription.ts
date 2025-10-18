@@ -1210,6 +1210,25 @@ export const simplifiedSubscriptions = {
   },
 
   /**
+   * Find first subscription matching criteria (simplified API)
+   */
+  findFirst: async (whereClause: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.subscription.findFirst({
+      where,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        plan: { select: { id: true, name: true } },
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        }
+      }
+    });
+  },
+
+  /**
    * Get expired subscriptions (simplified API)
    */
   getExpired: async () => {

@@ -1191,6 +1191,43 @@ var simplifiedOrders = {
     };
   },
   /**
+   * Find first order matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.order.findFirst({
+      where,
+      include: {
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true
+          }
+        },
+        outlet: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+  /**
    * Get order statistics (simplified API)
    */
   getStats: async (whereClause) => {
@@ -1283,6 +1320,24 @@ var simplifiedPayments = {
    * Search payments (simplified API)
    */
   search: searchPayments,
+  /**
+   * Find first payment matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.payment.findFirst({
+      where,
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            totalAmount: true
+          }
+        }
+      }
+    });
+  },
   /**
    * Get payment statistics (simplified API)
    */
@@ -1468,6 +1523,27 @@ var simplifiedOutlets = {
 };
 
 // src/plan.ts
+function generatePlanPricing(basePrice) {
+  return {
+    monthly: {
+      price: basePrice,
+      discount: 0,
+      savings: 0
+    },
+    quarterly: {
+      price: basePrice * 3 * 0.95,
+      // 5% discount for quarterly
+      discount: 5,
+      savings: basePrice * 3 * 0.05
+    },
+    yearly: {
+      price: basePrice * 12 * 0.85,
+      // 15% discount for yearly
+      discount: 15,
+      savings: basePrice * 12 * 0.15
+    }
+  };
+}
 var simplifiedPlans = {
   /**
    * Find plan by ID (simplified API)
@@ -1537,6 +1613,42 @@ var simplifiedPlans = {
       page,
       limit,
       hasMore: skip + limit < total
+    };
+  },
+  /**
+   * Find first plan matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    const plan = await prisma.plan.findFirst({
+      where,
+      include: {
+        subscriptions: {
+          select: {
+            id: true,
+            merchantId: true,
+            status: true
+          }
+        }
+      }
+    });
+    if (!plan) return null;
+    return {
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      basePrice: plan.basePrice,
+      currency: plan.currency,
+      trialDays: plan.trialDays,
+      limits: JSON.parse(plan.limits),
+      features: JSON.parse(plan.features || "[]"),
+      isActive: plan.isActive,
+      isPopular: plan.isPopular,
+      sortOrder: plan.sortOrder,
+      pricing: generatePlanPricing(plan.basePrice),
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
+      subscriptions: plan.subscriptions
     };
   },
   /**
@@ -1893,6 +2005,23 @@ var simplifiedSubscriptions = {
       limit,
       hasMore: skip + limit < total
     };
+  },
+  /**
+   * Find first subscription matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.subscription.findFirst({
+      where,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        plan: { select: { id: true, name: true } },
+        payments: {
+          orderBy: { createdAt: "desc" },
+          take: 5
+        }
+      }
+    });
   },
   /**
    * Get expired subscriptions (simplified API)

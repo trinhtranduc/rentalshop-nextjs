@@ -409,6 +409,46 @@ export const simplifiedPlans = {
   },
 
   /**
+   * Find first plan matching criteria (simplified API)
+   */
+  findFirst: async (whereClause: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    const plan = await prisma.plan.findFirst({
+      where,
+      include: {
+        subscriptions: {
+          select: {
+            id: true,
+            merchantId: true,
+            status: true
+          }
+        }
+      }
+    });
+
+    if (!plan) return null;
+
+    return {
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      basePrice: plan.basePrice,
+      currency: plan.currency,
+      trialDays: plan.trialDays,
+      limits: JSON.parse(plan.limits as string),
+      features: JSON.parse(plan.features || '[]'),
+      isActive: plan.isActive,
+      isPopular: plan.isPopular,
+      sortOrder: plan.sortOrder,
+      pricing: generatePlanPricing(plan.basePrice),
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
+      subscriptions: plan.subscriptions
+    };
+  },
+
+  /**
    * Get plan statistics (simplified API)
    */
   getStats: async () => {
