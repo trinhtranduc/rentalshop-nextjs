@@ -11,6 +11,7 @@ import {
 import { ArrowLeft, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
 import { useToast } from '@rentalshop/ui';
+import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { Category, Outlet, ProductCreateInput } from '@rentalshop/types';
 
 interface ProductAddFormProps {
@@ -32,6 +33,8 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, toastError } = useToast();
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
 
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -57,7 +60,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
       // The form will be reset by the parent component
     } catch (err) {
       console.error('❌ ProductAddForm: Error in handleSubmit:', err);
-      error('Creation Failed', err instanceof Error ? err.message : 'Failed to create product');
+      toastError(t('messages.createFailed'), err instanceof Error ? err.message : t('messages.createFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -102,9 +105,9 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
             <div className="flex items-center">
               <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
               <div>
-                <h4 className="text-sm font-medium text-yellow-800">No Outlets Available</h4>
+                <h4 className="text-sm font-medium text-yellow-800">{t('messages.noOutletsAvailable')}</h4>
                 <p className="text-sm text-yellow-700 mt-1">
-                  You need to create at least one outlet before you can add products. Please contact your administrator.
+                  {t('messages.needOutletFirst')}
                 </p>
               </div>
             </div>
@@ -113,24 +116,24 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
         
         <div className="flex justify-end space-x-2">
           <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
-            Cancel
+            {tc('buttons.cancel')}
           </Button>
           <Button 
             type="submit" 
             form="product-form" 
             disabled={isSubmitting || outlets.length === 0}
             className="min-w-[120px]"
-            title={outlets.length === 0 ? 'No outlets available. Please set up outlets first.' : undefined}
+            title={outlets.length === 0 ? t('messages.needOutletFirst') : undefined}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Creating...
+                {t('messages.creating')}
               </>
             ) : (
               <>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Product
+                {t('createProduct')}
               </>
             )}
           </Button>
