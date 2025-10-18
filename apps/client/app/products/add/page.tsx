@@ -17,7 +17,7 @@ import {
   outletsApi
 } from '@rentalshop/utils';
 import type { Category, Outlet, ProductCreateInput } from '@rentalshop/types';
-import { ProductAddForm } from '@rentalshop/ui';
+import { ProductSimpleForm } from '@rentalshop/ui';
 
 export default function ProductAddPage() {
   const router = useRouter();
@@ -235,13 +235,12 @@ export default function ProductAddPage() {
   return (
     <PageWrapper>
       <PageContent>
-        <ProductAddForm
+        <ProductSimpleForm
           categories={categories}
           outlets={outlets}
-          merchantId={String(merchantId)}
-          onSave={handleSave}
+          onSubmit={handleSave}
           onCancel={handleCancel}
-          onBack={handleBack}
+          mode="create"
         />
       </PageContent>
     </PageWrapper>

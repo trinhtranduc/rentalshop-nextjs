@@ -460,24 +460,14 @@ export default function ProductsPage() {
             </DialogTitle>
           </DialogHeader>
           {selectedProduct && (
-            <ProductEdit
-              product={selectedProduct as any}
+            <ProductSimpleForm
+              initialData={selectedProduct}
               categories={categories}
               outlets={outlets}
-              merchantId={user?.merchantId || user?.merchant?.id || 0}
-              onSave={async (productInput) => {
-                // Convert ProductInput to ProductUpdateInput
+              onSubmit={async (productData) => {
                 const updateData: ProductUpdateInput = {
                   id: selectedProduct.id,
-                  name: productInput.name,
-                  description: productInput.description,
-                  barcode: productInput.barcode,
-                  categoryId: productInput.categoryId,
-                  rentPrice: productInput.rentPrice,
-                  salePrice: productInput.salePrice,
-                  deposit: productInput.deposit,
-                  stock: productInput.totalStock,
-                  isActive: selectedProduct.isActive
+                  ...productData
                 };
                 await handleProductUpdate(updateData);
               }}
@@ -485,6 +475,7 @@ export default function ProductsPage() {
                 setShowEditDialog(false);
                 setSelectedProduct(null);
               }}
+              mode="edit"
             />
           )}
         </DialogContent>
