@@ -110,21 +110,12 @@ export const update = async (id: number, data: any) => {
 };
 
 /**
- * Delete category (soft delete) (simplified API)
+ * Delete category (hard delete) (simplified API)
+ * Note: Dependency check should be done before calling this function
  */
 export const deleteCategory = async (id: number) => {
-  return await prisma.category.update({
-    where: { id },
-    data: { isActive: false },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      isActive: true,
-      isDefault: true,
-      createdAt: true,
-      updatedAt: true
-    }
+  return await prisma.category.delete({
+    where: { id }
   });
 };
 
@@ -141,7 +132,12 @@ export const search = async (filters: any) => {
   const where: any = {};
   
   if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
-  if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+  // Default to active categories only unless explicitly requesting all
+  if (whereFilters.isActive !== undefined) {
+    where.isActive = whereFilters.isActive;
+  } else {
+    where.isActive = true; // Default: only show active categories
+  }
   
   // Text search by category name - accept both 'q' and 'search' parameters
   const searchTerm = (whereFilters.q || whereFilters.search)?.trim();

@@ -531,7 +531,12 @@ export const simplifiedCustomers = {
     
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
-    if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+    // Default to active customers only unless explicitly requesting all
+    if (whereFilters.isActive !== undefined) {
+      where.isActive = whereFilters.isActive;
+    } else {
+      where.isActive = true; // Default: only show active customers
+    }
     
     // Text search across multiple fields
     if (whereFilters.search) {
@@ -587,6 +592,28 @@ export const simplifiedCustomers = {
       hasMore: skip + limit < total,
       totalPages: Math.ceil(total / limit)
     };
+  },
+
+  /**
+   * Delete customer (soft delete) (simplified API)
+   */
+  delete: async (id: number) => {
+    return await prisma.customer.update({
+      where: { id },
+      data: { isActive: false },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true
+      }
+    });
   },
 
   /**
