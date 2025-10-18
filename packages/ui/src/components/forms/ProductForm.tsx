@@ -206,6 +206,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   }, [outlets, categories, formData.outletStock.length, formData.categoryId, formData.barcode, mode]);
 
+  // Auto-sync outlet stock with totalStock if only 1 outlet (default outlet)
+  useEffect(() => {
+    if (outlets.length === 1 && formData.outletStock.length === 1) {
+      const currentOutletStock = formData.outletStock[0].stock;
+      
+      // If totalStock changes and differs from outlet stock, sync it
+      if (formData.totalStock !== currentOutletStock) {
+        setFormData(prev => ({
+          ...prev,
+          outletStock: [{
+            outletId: outlets[0].id,
+            stock: formData.totalStock
+          }]
+        }));
+      }
+    }
+  }, [formData.totalStock, outlets.length]);
+
   // Generate unique barcode
   const generateBarcode = (): string => {
     const timestamp = Date.now().toString().slice(-8); // Last 8 digits of timestamp
@@ -684,19 +702,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 rows={3}
               />
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Pricing & Stock */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              {t('pricing.title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Pricing Section - Merged into Product Details */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                {t('pricing.title')}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <NumericInput
                   label={t('fields.rentPrice')}
@@ -755,20 +768,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
               </div>
             </div>
+            </div>
           </CardContent>
         </Card>
 
-
-
-        {/* Outlet Stock Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Warehouse className="w-5 h-5" />
-              {t('inventory.outletStockDistribution')} *
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Outlet Stock Management - Only show if merchant has multiple outlets */}
+        {outlets.length > 1 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Warehouse className="w-5 h-5" />
+                {t('inventory.outletStockDistribution')} *
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
             <div className="mb-4">
               <p className="text-sm text-muted-foreground">
                 {t('inventory.totalOutlets')}: {outlets.length} | {t('inventory.stockEntries')}: {formData.outletStock.length} | <span className="text-red-500">*</span> {t('inventory.stockRequired')}
@@ -837,6 +850,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             )}
           </CardContent>
         </Card>
+        ) : null}
 
         {/* Enhanced Image Management */}
         <Card>

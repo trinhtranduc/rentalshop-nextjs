@@ -4098,6 +4098,20 @@ var ProductForm = ({
       setFormData(updatedFormData);
     }
   }, [outlets, categories, formData.outletStock.length, formData.categoryId, formData.barcode, mode]);
+  useEffect9(() => {
+    if (outlets.length === 1 && formData.outletStock.length === 1) {
+      const currentOutletStock = formData.outletStock[0].stock;
+      if (formData.totalStock !== currentOutletStock) {
+        setFormData((prev) => ({
+          ...prev,
+          outletStock: [{
+            outletId: outlets[0].id,
+            stock: formData.totalStock
+          }]
+        }));
+      }
+    }
+  }, [formData.totalStock, outlets.length]);
   const generateBarcode = () => {
     const timestamp = Date.now().toString().slice(-8);
     const random = Math.floor(Math.random() * 1e3).toString().padStart(3, "0");
@@ -4477,84 +4491,82 @@ var ProductForm = ({
                 rows: 3
               }
             )
+          ] }),
+          /* @__PURE__ */ jsxs25("div", { className: "pt-4 border-t border-gray-200 dark:border-gray-700", children: [
+            /* @__PURE__ */ jsxs25("h3", { className: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx39(DollarSign, { className: "w-4 h-4" }),
+              t2("pricing.title")
+            ] }),
+            /* @__PURE__ */ jsxs25("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
+              /* @__PURE__ */ jsxs25("div", { className: "space-y-2", children: [
+                /* @__PURE__ */ jsx39(
+                  NumericInput,
+                  {
+                    label: t2("fields.rentPrice"),
+                    value: formData.rentPrice,
+                    onChange: (value) => handleInputChange("rentPrice", value),
+                    placeholder: "0.00",
+                    error: !!errors.rentPrice,
+                    required: true,
+                    allowDecimals: true,
+                    maxDecimalPlaces: 2
+                  }
+                ),
+                errors.rentPrice && /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-500", children: errors.rentPrice })
+              ] }),
+              /* @__PURE__ */ jsxs25("div", { className: "space-y-2", children: [
+                /* @__PURE__ */ jsx39(
+                  NumericInput,
+                  {
+                    label: t2("fields.salePrice"),
+                    value: formData.salePrice,
+                    onChange: (value) => handleInputChange("salePrice", value),
+                    placeholder: "0.00",
+                    error: !!errors.salePrice,
+                    required: true,
+                    allowDecimals: true,
+                    maxDecimalPlaces: 2
+                  }
+                ),
+                errors.salePrice && /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-500", children: errors.salePrice })
+              ] }),
+              /* @__PURE__ */ jsxs25("div", { className: "space-y-2", children: [
+                /* @__PURE__ */ jsx39(
+                  NumericInput,
+                  {
+                    label: t2("fields.deposit"),
+                    value: formData.deposit,
+                    onChange: (value) => handleInputChange("deposit", value),
+                    placeholder: "0.00",
+                    error: !!errors.deposit,
+                    required: true,
+                    allowDecimals: true,
+                    maxDecimalPlaces: 2
+                  }
+                ),
+                errors.deposit && /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-500", children: errors.deposit })
+              ] })
+            ] }),
+            /* @__PURE__ */ jsx39("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: /* @__PURE__ */ jsxs25("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ jsx39(
+                NumericInput,
+                {
+                  label: t2("fields.stock"),
+                  value: formData.totalStock,
+                  onChange: (value) => handleInputChange("totalStock", value),
+                  placeholder: "0",
+                  error: !!errors.totalStock,
+                  required: true,
+                  allowDecimals: false,
+                  min: 0
+                }
+              ),
+              errors.totalStock && /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-500", children: errors.totalStock })
+            ] }) })
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs25(Card, { children: [
-        /* @__PURE__ */ jsx39(CardHeader, { children: /* @__PURE__ */ jsxs25(CardTitle, { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx39(DollarSign, { className: "w-5 h-5" }),
-          t2("pricing.title")
-        ] }) }),
-        /* @__PURE__ */ jsxs25(CardContent, { className: "space-y-4", children: [
-          /* @__PURE__ */ jsxs25("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
-            /* @__PURE__ */ jsxs25("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ jsx39(
-                NumericInput,
-                {
-                  label: t2("fields.rentPrice"),
-                  value: formData.rentPrice,
-                  onChange: (value) => handleInputChange("rentPrice", value),
-                  placeholder: "0.00",
-                  error: !!errors.rentPrice,
-                  required: true,
-                  allowDecimals: true,
-                  maxDecimalPlaces: 2
-                }
-              ),
-              errors.rentPrice && /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-500", children: errors.rentPrice })
-            ] }),
-            /* @__PURE__ */ jsxs25("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ jsx39(
-                NumericInput,
-                {
-                  label: t2("fields.salePrice"),
-                  value: formData.salePrice,
-                  onChange: (value) => handleInputChange("salePrice", value),
-                  placeholder: "0.00",
-                  error: !!errors.salePrice,
-                  required: true,
-                  allowDecimals: true,
-                  maxDecimalPlaces: 2
-                }
-              ),
-              errors.salePrice && /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-500", children: errors.salePrice })
-            ] }),
-            /* @__PURE__ */ jsxs25("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ jsx39(
-                NumericInput,
-                {
-                  label: t2("fields.deposit"),
-                  value: formData.deposit,
-                  onChange: (value) => handleInputChange("deposit", value),
-                  placeholder: "0.00",
-                  error: !!errors.deposit,
-                  required: true,
-                  allowDecimals: true,
-                  maxDecimalPlaces: 2
-                }
-              ),
-              errors.deposit && /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-500", children: errors.deposit })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsx39("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: /* @__PURE__ */ jsxs25("div", { className: "space-y-2", children: [
-            /* @__PURE__ */ jsx39(
-              NumericInput,
-              {
-                label: t2("fields.stock"),
-                value: formData.totalStock,
-                onChange: (value) => handleInputChange("totalStock", value),
-                placeholder: "0",
-                error: !!errors.totalStock,
-                required: true,
-                allowDecimals: false,
-                min: 0
-              }
-            ),
-            errors.totalStock && /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-500", children: errors.totalStock })
-          ] }) })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxs25(Card, { children: [
+      outlets.length > 1 ? /* @__PURE__ */ jsxs25(Card, { children: [
         /* @__PURE__ */ jsx39(CardHeader, { children: /* @__PURE__ */ jsxs25(CardTitle, { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx39(Warehouse, { className: "w-5 h-5" }),
           t2("inventory.outletStockDistribution"),
@@ -4609,7 +4621,7 @@ var ProductForm = ({
             errors.outletStock && /* @__PURE__ */ jsx39("div", { className: "mt-4", children: /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-500", children: errors.outletStock }) })
           ] })
         ] })
-      ] }),
+      ] }) : null,
       /* @__PURE__ */ jsxs25(Card, { children: [
         /* @__PURE__ */ jsx39(CardHeader, { children: /* @__PURE__ */ jsxs25(CardTitle, { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx39(ImageIcon, { className: "w-5 h-5" }),
