@@ -22,9 +22,10 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "zod": "^3.22.0",
+    "@rentalshop/constants": "file:../constants",
+    "browser-image-compression": "^2.0.2",
     "date-fns": "^2.30.0",
     "stripe": "^14.0.0",
-    "@rentalshop/constants": "file:../constants"
+    "zod": "^3.22.0"
   }
-} 
+}
