@@ -1,32 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { v2 as cloudinary } from 'cloudinary';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { ResponseBuilder } from '@rentalshop/utils';
 
-// Configure Cloudinary
-const isCloudinaryConfigured = () => {
-  return !!(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET
-  );
-};
-
-if (isCloudinaryConfigured()) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-}
-
 // Allowed image types
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const UPLOAD_FOLDER = process.env.UPLOAD_PATH_LOCAL || './public/uploads';
+const UPLOAD_FOLDER = '/app/public/uploads'; // Railway Volume mount point
 
 /**
  * Validate image file
@@ -60,38 +42,9 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
 }
 
 /**
- * Upload to Cloudinary
+ * Upload to Railway Volume (simplified)
  */
-async function uploadToCloudinary(buffer: Buffer, folder: string = 'rentalshop/products') {
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload_stream(
-      {
-        resource_type: 'auto',
-        folder,
-        transformation: [
-          { width: 1200, height: 900, crop: 'limit' }, // Max dimensions for web
-          { quality: 'auto:good' }, // Auto optimize quality (good balance)
-          { fetch_format: 'auto' } // Auto format (webp, avif, etc.)
-        ],
-        // Generate multiple sizes for responsive images
-        eager: [
-          { width: 400, height: 300, crop: 'fill', gravity: 'auto', quality: 'auto:good' },
-          { width: 800, height: 600, crop: 'limit', quality: 'auto:good' }
-        ],
-        eager_async: true,
-      },
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      }
-    ).end(buffer);
-  });
-}
-
-/**
- * Upload to local filesystem (fallback)
- */
-async function uploadToLocal(file: File, buffer: Buffer): Promise<any> {
+async function uploadToRailwayVolume(file: File, buffer: Buffer): Promise<any> {
   try {
     // Create upload directory if it doesn't exist
     if (!existsSync(UPLOAD_FOLDER)) {
@@ -105,29 +58,29 @@ async function uploadToLocal(file: File, buffer: Buffer): Promise<any> {
     const filename = `${timestamp}-${randomString}.${extension}`;
     const filepath = join(UPLOAD_FOLDER, filename);
 
-    // Write file
+    // Write file to Railway Volume
     await writeFile(filepath, buffer);
 
-    // Return local URL (will be served by Next.js public folder)
+    // Return public URL (served by Next.js static files)
     const publicUrl = `/uploads/${filename}`;
 
     return {
       secure_url: publicUrl,
       public_id: filename,
-      width: 0, // Unknown for local storage
+      width: 0, // Will be determined by client if needed
       height: 0,
       format: extension,
       bytes: file.size,
       created_at: new Date().toISOString()
     };
   } catch (error) {
-    console.error('Local upload error:', error);
-    throw new Error('Failed to save file locally');
+    console.error('Railway Volume upload error:', error);
+    throw new Error('Failed to save file to Railway Volume');
   }
 }
 
 /**
- * Convert file to base64 (ultimate fallback)
+ * Convert file to base64 (emergency fallback)
  */
 function fileToBase64(buffer: Buffer, mimeType: string): string {
   return `data:${mimeType};base64,${buffer.toString('base64')}`;
@@ -135,20 +88,19 @@ function fileToBase64(buffer: Buffer, mimeType: string): string {
 
 /**
  * POST /api/upload/image
- * Upload image to Cloudinary with fallback to local storage
+ * Upload image to Railway Volume with base64 fallback
  * 
- * **Why this approach:**
- * - Cloudinary provides automatic image optimization, CDN delivery, and transformations
- * - Local storage fallback ensures the system works even without Cloudinary
- * - Base64 fallback as ultimate solution for development/testing
- * - Multi-format support for different image types (JPEG, PNG, WebP, etc.)
- * - Validation prevents malicious uploads and ensures quality
+ * **Simple & Reliable Approach:**
+ * - Railway Volume provides persistent storage (100GB free)
+ * - No external API dependencies or credit limits
+ * - Base64 fallback for emergency cases
+ * - Client-side optimization before upload
+ * - Validation prevents malicious uploads
  */
 export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest) => {
   try {
     const formData = await request.formData();
     const file = formData.get('image') as File;
-    const folder = (formData.get('folder') as string) || 'rentalshop/products';
     const useBase64Fallback = formData.get('useBase64') === 'true';
     
     if (!file) {
@@ -172,68 +124,31 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const buffer = Buffer.from(bytes);
 
     let result: any;
-    let uploadMethod: 'cloudinary' | 'local' | 'base64' = 'cloudinary';
+    let uploadMethod: 'railway' | 'base64' = 'railway';
 
-    // Try Cloudinary first (if configured)
-    if (isCloudinaryConfigured()) {
-      try {
-        result = await uploadToCloudinary(buffer, folder);
-        uploadMethod = 'cloudinary';
-        console.log('✅ Image uploaded to Cloudinary');
-      } catch (cloudinaryError) {
-        console.error('Cloudinary upload failed, falling back to local storage:', cloudinaryError);
-        
-        // Fallback to local storage
-        try {
-          result = await uploadToLocal(file, buffer);
-          uploadMethod = 'local';
-          console.log('✅ Image uploaded to local storage');
-        } catch (localError) {
-          console.error('Local upload failed:', localError);
-          
-          // Ultimate fallback to base64 (if allowed)
-          if (useBase64Fallback) {
-            const base64Url = fileToBase64(buffer, file.type);
-            result = {
-              secure_url: base64Url,
-              public_id: `base64-${Date.now()}`,
-              width: 0,
-              height: 0,
-              format: file.type.split('/')[1],
-              bytes: file.size
-            };
-            uploadMethod = 'base64';
-            console.log('⚠️ Using base64 fallback');
-          } else {
-            throw new Error('All upload methods failed');
-          }
-        }
-      }
-    } else {
-      // No Cloudinary configured, use local storage
-      console.log('⚠️ Cloudinary not configured, using local storage');
-      try {
-        result = await uploadToLocal(file, buffer);
-        uploadMethod = 'local';
-      } catch (localError) {
-        console.error('Local upload failed:', localError);
-        
-        // Ultimate fallback to base64 (if allowed)
-        if (useBase64Fallback) {
-          const base64Url = fileToBase64(buffer, file.type);
-          result = {
-            secure_url: base64Url,
-            public_id: `base64-${Date.now()}`,
-            width: 0,
-            height: 0,
-            format: file.type.split('/')[1],
-            bytes: file.size
-          };
-          uploadMethod = 'base64';
-          console.log('⚠️ Using base64 fallback');
-        } else {
-          throw new Error('Upload failed and base64 fallback is disabled');
-        }
+    try {
+      // Upload to Railway Volume (primary method)
+      result = await uploadToRailwayVolume(file, buffer);
+      uploadMethod = 'railway';
+      console.log('✅ Image uploaded to Railway Volume');
+    } catch (railwayError) {
+      console.error('Railway Volume upload failed:', railwayError);
+      
+      // Fallback to base64 (if allowed)
+      if (useBase64Fallback) {
+        const base64Url = fileToBase64(buffer, file.type);
+        result = {
+          secure_url: base64Url,
+          public_id: `base64-${Date.now()}`,
+          width: 0,
+          height: 0,
+          format: file.type.split('/')[1],
+          bytes: file.size
+        };
+        uploadMethod = 'base64';
+        console.log('⚠️ Using base64 fallback');
+      } else {
+        throw new Error('Railway Volume upload failed and base64 fallback is disabled');
       }
     }
 
@@ -248,7 +163,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
         size: result.bytes || file.size,
         uploadMethod // Include upload method in response for debugging
       },
-      code: 'IMAGE_UPLOADED_SUCCESS', message: `Image uploaded successfully via ${uploadMethod}`
+      code: 'IMAGE_UPLOADED_SUCCESS', 
+      message: `Image uploaded successfully via ${uploadMethod}`
     });
 
   } catch (error) {
