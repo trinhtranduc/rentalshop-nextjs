@@ -2016,6 +2016,13 @@ var simplifiedSubscriptions = {
     });
   },
   /**
+   * Get subscription statistics (simplified API)
+   */
+  getStats: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.subscription.count({ where });
+  },
+  /**
    * Get expired subscriptions (simplified API)
    */
   getExpired: async () => {

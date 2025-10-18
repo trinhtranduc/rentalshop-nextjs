@@ -150,6 +150,24 @@ export async function DELETE(
         );
       }
 
+      // Check if plan has active subscriptions
+      const activeSubscriptions = await db.subscriptions.getStats({
+        planId: planId,
+        status: { in: ['ACTIVE', 'TRIAL'] }
+      });
+
+      if (activeSubscriptions > 0) {
+        console.log('❌ Cannot delete plan with active subscriptions:', activeSubscriptions);
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'PLAN_HAS_ACTIVE_SUBSCRIPTIONS',
+            message: `Cannot delete plan with ${activeSubscriptions} active subscription(s). Please wait for subscriptions to expire or cancel them first.`
+          },
+          { status: API.STATUS.CONFLICT }
+        );
+      }
+
       // Soft delete by setting isActive to false
       const deletedPlan = await db.plans.update(planId, { isActive: false });
       console.log('✅ Plan soft deleted successfully:', deletedPlan);
