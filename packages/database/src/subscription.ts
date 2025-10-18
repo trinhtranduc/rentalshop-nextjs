@@ -1229,6 +1229,15 @@ export const simplifiedSubscriptions = {
   },
 
   /**
+   * Get subscription statistics (simplified API)
+   */
+  getStats: async (whereClause?: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.subscription.count({ where });
+  },
+
+  /**
    * Get expired subscriptions (simplified API)
    */
   getExpired: async () => {
