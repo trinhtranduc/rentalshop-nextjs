@@ -79,21 +79,14 @@ async function uploadToRailwayVolume(file: File, buffer: Buffer): Promise<any> {
   }
 }
 
-/**
- * Convert file to base64 (emergency fallback)
- */
-function fileToBase64(buffer: Buffer, mimeType: string): string {
-  return `data:${mimeType};base64,${buffer.toString('base64')}`;
-}
 
 /**
  * POST /api/upload/image
- * Upload image to Railway Volume with base64 fallback
+ * Upload image to Railway Volume
  * 
  * **Simple & Reliable Approach:**
  * - Railway Volume provides persistent storage (100GB free)
  * - No external API dependencies or credit limits
- * - Base64 fallback for emergency cases
  * - Client-side optimization before upload
  * - Validation prevents malicious uploads
  */
@@ -101,7 +94,6 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
   try {
     const formData = await request.formData();
     const file = formData.get('image') as File;
-    const useBase64Fallback = formData.get('useBase64') === 'true';
     
     if (!file) {
       return NextResponse.json(
@@ -123,34 +115,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    let result: any;
-    let uploadMethod: 'railway' | 'base64' = 'railway';
-
-    try {
-      // Upload to Railway Volume (primary method)
-      result = await uploadToRailwayVolume(file, buffer);
-      uploadMethod = 'railway';
-      console.log('✅ Image uploaded to Railway Volume');
-    } catch (railwayError) {
-      console.error('Railway Volume upload failed:', railwayError);
-      
-      // Fallback to base64 (if allowed)
-      if (useBase64Fallback) {
-        const base64Url = fileToBase64(buffer, file.type);
-        result = {
-          secure_url: base64Url,
-          public_id: `base64-${Date.now()}`,
-          width: 0,
-          height: 0,
-          format: file.type.split('/')[1],
-          bytes: file.size
-        };
-        uploadMethod = 'base64';
-        console.log('⚠️ Using base64 fallback');
-      } else {
-        throw new Error('Railway Volume upload failed and base64 fallback is disabled');
-      }
-    }
+    // Upload to Railway Volume (only method)
+    const result = await uploadToRailwayVolume(file, buffer);
+    console.log('✅ Image uploaded to Railway Volume');
 
     return NextResponse.json({
       success: true,
@@ -160,11 +127,10 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
         width: result.width || 0,
         height: result.height || 0,
         format: result.format,
-        size: result.bytes || file.size,
-        uploadMethod // Include upload method in response for debugging
+        size: result.bytes || file.size
       },
       code: 'IMAGE_UPLOADED_SUCCESS', 
-      message: `Image uploaded successfully via ${uploadMethod}`
+      message: 'Image uploaded successfully to Railway Volume'
     });
 
   } catch (error) {

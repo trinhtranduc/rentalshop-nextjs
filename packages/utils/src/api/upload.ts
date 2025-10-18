@@ -32,7 +32,6 @@ export interface UploadOptions {
   maxFileSize?: number; // in bytes
   allowedTypes?: string[];
   folder?: string;
-  useBase64Fallback?: boolean; // Enable base64 fallback if upload fails
   quality?: number; // Image quality (0-1)
   maxWidth?: number; // Max width for client-side resize
   maxHeight?: number; // Max height for client-side resize
@@ -396,7 +395,6 @@ export async function uploadImage(
     maxFileSize = DEFAULT_MAX_FILE_SIZE,
     allowedTypes = DEFAULT_ALLOWED_TYPES,
     folder = 'rentalshop/products',
-    useBase64Fallback = false, // Default to false - prefer Railway Volume
     quality = 0.85,
     maxWidth,
     maxHeight,
@@ -486,7 +484,6 @@ export async function uploadImage(
     const formData = new FormData();
     formData.append('image', fileToUpload);
     formData.append('folder', folder);
-    formData.append('useBase64', useBase64Fallback.toString());
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
     const uploadUrl = `${apiUrl}/api/upload/image`;
@@ -496,37 +493,11 @@ export async function uploadImage(
     return result;
 
   } catch (error) {
-    console.error('Upload error:', error);
-
-    // Stage 4: Fallback to base64 only if explicitly enabled
-    if (useBase64Fallback) {
-      try {
-        console.log('Railway Volume upload failed, attempting base64 fallback...');
-        const base64 = await fileToBase64(file);
-        
-        return {
-          success: true,
-          data: {
-            url: base64,
-            publicId: `base64-${Date.now()}`,
-            width: 0,
-            height: 0,
-            format: file.type.split('/')[1] || 'unknown',
-            size: file.size,
-            uploadMethod: 'base64'
-          },
-          message: 'Image uploaded using base64 fallback (Railway Volume unavailable)'
-        };
-      } catch (base64Error) {
-        console.error('Base64 fallback failed:', base64Error);
-      }
-    } else {
-      console.log('Railway Volume upload failed and base64 fallback is disabled');
-    }
-
+    console.error('Railway Volume upload failed:', error);
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Upload failed'
+      error: error instanceof Error ? error.message : 'Railway Volume upload failed'
     };
   }
 }
