@@ -175,7 +175,25 @@ export async function DELETE(
         );
       }
 
+      // Check if merchant has active subscription
+      const activeSubscription = await db.subscriptions.findFirst({
+        merchantId: merchantId,
+        status: { in: ['ACTIVE', 'TRIAL'] }
+      });
+
+      if (activeSubscription) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'MERCHANT_HAS_ACTIVE_SUBSCRIPTION',
+            message: 'Cannot delete merchant with active subscription. Please cancel the subscription first.'
+          },
+          { status: API.STATUS.CONFLICT }
+        );
+      }
+
       // Soft delete by setting isActive to false
+      // Note: This will cascade to outlets, users, products via Prisma schema
       const deletedMerchant = await db.merchants.update(merchantId, { isActive: false });
       console.log('✅ Merchant soft deleted successfully:', deletedMerchant);
 

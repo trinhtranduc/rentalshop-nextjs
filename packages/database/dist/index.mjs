@@ -285,6 +285,13 @@ var simplifiedUsers = {
   count: async (options) => {
     const where = options?.where || {};
     return await prisma.user.count({ where });
+  },
+  /**
+   * Get user statistics (simplified API)
+   */
+  getStats: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.user.count({ where });
   }
 };
 

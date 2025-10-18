@@ -144,8 +144,44 @@ export async function DELETE(
         );
       }
 
-      // Soft delete by setting isActive to false
-      const deletedUser = await db.users.update(userId, { isActive: false });
+      // Prevent deleting yourself
+      if (userId === user.id) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'CANNOT_DELETE_SELF',
+            message: 'You cannot delete your own account. Please contact another administrator.'
+          },
+          { status: API.STATUS.CONFLICT }
+        );
+      }
+
+      // Check if this is the last admin user for the merchant
+      if (existingUser.role === 'ADMIN' || (existingUser.role === 'MERCHANT' && existingUser.merchantId)) {
+        const merchantId = existingUser.merchantId;
+        const adminCount = await db.users.getStats({
+          merchantId: merchantId || null,
+          role: existingUser.role,
+          isActive: true
+        });
+
+        if (adminCount <= 1) {
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'CANNOT_DELETE_LAST_ADMIN',
+              message: 'Cannot delete the last administrator. Please assign another administrator first.'
+            },
+            { status: API.STATUS.CONFLICT }
+          );
+        }
+      }
+
+      // Soft delete by setting isActive to false and deletedAt
+      const deletedUser = await db.users.update(userId, { 
+        isActive: false,
+        deletedAt: new Date()
+      });
       console.log('✅ User soft deleted successfully:', deletedUser);
 
       return NextResponse.json({
