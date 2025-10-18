@@ -208,13 +208,13 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
       {/* Product Images */}
       {product.images && (
         <div className="bg-white border border-gray-200 rounded-lg">
-          <div className="px-4 py-3 border-b border-gray-200">
+          <div className="px-4 py-2 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">{t('fields.images')}</h2>
           </div>
           
-          <div className="p-4">
+          <div className="p-3">
             {/* Image List - Horizontal */}
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-2 overflow-x-auto">
               {(() => {
                 try {
                   const imageArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
@@ -223,7 +223,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                       <div
                         key={index}
                         onClick={() => setSelectedImage(image)}
-                        className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
+                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
                           selectedImage === image
                             ? 'border-blue-500 ring-2 ring-blue-200'
                             : 'border-gray-200 hover:border-gray-300'
@@ -245,9 +245,16 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
               })()}
             </div>
             
-            {/* Selected Image Preview */}
-            {selectedImage && (
-              <div className="mt-3">
+            {/* Selected Image Preview - Only show if there are multiple images */}
+            {selectedImage && (() => {
+              try {
+                const imageArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
+                return Array.isArray(imageArray) && imageArray.length > 1;
+              } catch {
+                return false;
+              }
+            })() && (
+              <div className="mt-2">
                 <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                   <img
                     src={selectedImage}
