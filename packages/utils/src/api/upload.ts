@@ -174,7 +174,6 @@ export async function compressImage(
       maxSizeMB,
       maxWidthOrHeight,
       useWebWorker,
-      quality,
       onProgress: onProgress ? (progress) => onProgress(progress * 100) : undefined,
       // Auto convert to WebP for better compression
       fileType: 'image/webp',
@@ -567,14 +566,4 @@ export function createUploadController() {
   };
 }
 
-// Export all functions
-export { 
-  uploadImage, 
-  uploadImages, 
-  validateImage, 
-  getImageDimensions, 
-  resizeImage, 
-  compressImage, 
-  fileToBase64, 
-  createUploadController 
-};
+// All functions are already exported individually above
