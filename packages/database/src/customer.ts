@@ -590,6 +590,29 @@ export const simplifiedCustomers = {
   },
 
   /**
+   * Find first customer matching criteria (simplified API)
+   */
+  findFirst: async (whereClause: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.customer.findFirst({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true
+      }
+    });
+  },
+
+  /**
    * Get customer statistics (simplified API)
    */
   getStats: async (whereClause?: any) => {
