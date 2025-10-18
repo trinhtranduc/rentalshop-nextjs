@@ -101,12 +101,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/api/.next ./apps/api/.next
 # Public folder is optional (may not exist for API-only apps)
 RUN mkdir -p ./apps/api/public
 
+# Create uploads directory for Railway Volume mount
+RUN mkdir -p ./apps/api/public/uploads
+
 # Copy Prisma schema (needed for runtime migrations)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Copy start script
 COPY --from=builder --chown=nextjs:nodejs /app/apps/api/start.sh ./apps/api/start.sh
 RUN chmod +x ./apps/api/start.sh
+
+# Add volume mount point for persistent uploads
+VOLUME ["/app/public/uploads"]
 
 # CRITICAL: Copy Prisma binaries to correct location
 RUN mkdir -p ./apps/api/.next/server/.prisma/client

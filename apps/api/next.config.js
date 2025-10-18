@@ -57,6 +57,15 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    // Serve static files from uploads directory
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: '/public/uploads/:path*',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
