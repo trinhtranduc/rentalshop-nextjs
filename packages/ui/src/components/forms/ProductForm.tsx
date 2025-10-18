@@ -475,7 +475,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           folder: 'rentalshop/products',
           maxFileSize: 5 * 1024 * 1024, // 5MB
           allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
-          useBase64Fallback: true, // Enable fallback for development
+          useBase64Fallback: false, // Prefer Railway Volume, disable base64 fallback
           maxWidth: 1200, // Client-side resize before upload
           maxHeight: 900,
           quality: 0.85,

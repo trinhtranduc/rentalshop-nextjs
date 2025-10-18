@@ -396,7 +396,7 @@ export async function uploadImage(
     maxFileSize = DEFAULT_MAX_FILE_SIZE,
     allowedTypes = DEFAULT_ALLOWED_TYPES,
     folder = 'rentalshop/products',
-    useBase64Fallback = true,
+    useBase64Fallback = false, // Default to false - prefer Railway Volume
     quality = 0.85,
     maxWidth,
     maxHeight,
@@ -498,10 +498,10 @@ export async function uploadImage(
   } catch (error) {
     console.error('Upload error:', error);
 
-    // Stage 4: Fallback to base64 if enabled
+    // Stage 4: Fallback to base64 only if explicitly enabled
     if (useBase64Fallback) {
       try {
-        console.log('Upload failed, attempting base64 fallback...');
+        console.log('Railway Volume upload failed, attempting base64 fallback...');
         const base64 = await fileToBase64(file);
         
         return {
@@ -515,11 +515,13 @@ export async function uploadImage(
             size: file.size,
             uploadMethod: 'base64'
           },
-          message: 'Image uploaded using base64 fallback'
+          message: 'Image uploaded using base64 fallback (Railway Volume unavailable)'
         };
       } catch (base64Error) {
         console.error('Base64 fallback failed:', base64Error);
       }
+    } else {
+      console.log('Railway Volume upload failed and base64 fallback is disabled');
     }
 
     return {
