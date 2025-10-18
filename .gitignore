@@ -75,8 +75,10 @@ next-env.d.ts
 .yarn-integrity
 
 # Environment variables
-# Strategy: Commit .env (dev defaults), .env.production (template), env.example
-# Ignore all others for security and personalization
+# Strategy: NEVER commit .env or .env.production (contains sensitive credentials)
+# ONLY commit env.example with placeholder values
+.env
+.env.production
 .env.local
 .env.development.local
 .env.test.local
