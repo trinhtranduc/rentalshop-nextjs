@@ -216,7 +216,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
             {/* Main Image */}
             {selectedImage && (
               <div className="mb-6">
-                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                <div className="aspect-square max-w-md mx-auto bg-gray-100 rounded-lg overflow-hidden">
                   <img
                     src={selectedImage}
                     alt={product.name}
@@ -228,7 +228,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
             )}
             
             {/* Thumbnails */}
-            <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
+            <div className="flex flex-wrap gap-3 justify-center">
               {(() => {
                 try {
                   const imageArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
@@ -238,9 +238,9 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                         variant="outline"
                         key={index}
                         onClick={() => setSelectedImage(image)}
-                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors p-0 h-auto ${
+                        className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors p-0 ${
                           selectedImage === image
-                            ? 'border-blue-500'
+                            ? 'border-blue-500 ring-2 ring-blue-200'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
