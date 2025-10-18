@@ -1,0 +1,205 @@
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+// ============================================================================
+// AWS S3 CONFIGURATION
+// ============================================================================
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  },
+});
+
+const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'rentalshop-images';
+const CLOUDFRONT_DOMAIN = process.env.AWS_CLOUDFRONT_DOMAIN || '';
+
+// ============================================================================
+// TYPES & INTERFACES
+// ============================================================================
+
+export interface S3UploadOptions {
+  folder?: string;
+  fileName?: string;
+  contentType?: string;
+  expiresIn?: number; // seconds
+}
+
+export interface S3UploadResponse {
+  success: boolean;
+  data?: {
+    url: string;
+    key: string;
+    bucket: string;
+    region: string;
+    cdnUrl?: string;
+  };
+  error?: string;
+}
+
+// ============================================================================
+// AWS S3 FUNCTIONS
+// ============================================================================
+
+/**
+ * Upload file to AWS S3
+ */
+export async function uploadToS3(
+  file: Buffer | Uint8Array,
+  options: S3UploadOptions = {}
+): Promise<S3UploadResponse> {
+  try {
+    const {
+      folder = 'uploads',
+      fileName,
+      contentType = 'image/jpeg',
+      expiresIn = 3600
+    } = options;
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const fileExtension = contentType.split('/')[1] || 'jpg';
+    const finalFileName = fileName || `${timestamp}-${randomId}.${fileExtension}`;
+    
+    const key = `${folder}/${finalFileName}`;
+
+    // Upload to S3
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: file,
+      ContentType: contentType,
+      ACL: 'public-read', // Make file publicly accessible
+    });
+
+    await s3Client.send(command);
+
+    // Generate URLs
+    const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+    const cdnUrl = CLOUDFRONT_DOMAIN ? `https://${CLOUDFRONT_DOMAIN}/${key}` : s3Url;
+
+    return {
+      success: true,
+      data: {
+        url: s3Url,
+        key,
+        bucket: BUCKET_NAME,
+        region: process.env.AWS_REGION || 'us-east-1',
+        cdnUrl
+      }
+    };
+
+  } catch (error) {
+    console.error('AWS S3 upload error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Delete file from AWS S3
+ */
+export async function deleteFromS3(key: string): Promise<boolean> {
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+
+    await s3Client.send(command);
+    return true;
+  } catch (error) {
+    console.error('AWS S3 delete error:', error);
+    return false;
+  }
+}
+
+/**
+ * Generate presigned URL for direct upload
+ */
+export async function generatePresignedUrl(
+  key: string,
+  contentType: string,
+  expiresIn: number = 3600
+): Promise<string | null> {
+  try {
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      ContentType: contentType,
+    });
+
+    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    return presignedUrl;
+  } catch (error) {
+    console.error('AWS S3 presigned URL error:', error);
+    return null;
+  }
+}
+
+/**
+ * Generate presigned URL for file access
+ */
+export async function generateAccessUrl(
+  key: string,
+  expiresIn: number = 3600
+): Promise<string | null> {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+
+    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    return presignedUrl;
+  } catch (error) {
+    console.error('AWS S3 access URL error:', error);
+    return null;
+  }
+}
+
+/**
+ * Extract S3 key from URL
+ */
+export function extractS3KeyFromUrl(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    
+    // Remove leading slash and extract key
+    return pathname.startsWith('/') ? pathname.substring(1) : pathname;
+  } catch (error) {
+    console.error('Error extracting S3 key from URL:', error);
+    return null;
+  }
+}
+
+/**
+ * Check if URL is from our S3 bucket
+ */
+export function isS3Url(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const bucketUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com`;
+    const cdnUrl = CLOUDFRONT_DOMAIN ? `https://${CLOUDFRONT_DOMAIN}` : '';
+    
+    return url.startsWith(bucketUrl) || (cdnUrl ? url.startsWith(cdnUrl) : false);
+  } catch (error) {
+    return false;
+  }
+}
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+export {
+  s3Client,
+  BUCKET_NAME,
+  CLOUDFRONT_DOMAIN
+};
