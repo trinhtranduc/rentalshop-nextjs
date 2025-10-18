@@ -252,17 +252,19 @@ model Order {
 }
 
 model OrderItem {
-  id         Int     @id @default(autoincrement())
-  quantity   Int     @default(1)
-  unitPrice  Float
-  totalPrice Float
-  deposit    Float   @default(0)
-  orderId    Int
-  productId  Int
-  notes      String?
-  rentalDays Int?
-  product    Product @relation(fields: [productId], references: [id])
-  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id              Int      @id @default(autoincrement())
+  quantity        Int      @default(1)
+  unitPrice       Float
+  totalPrice      Float
+  deposit         Float    @default(0)
+  orderId         Int
+  productId       Int?     // Nullable - product might be deleted
+  productName     String   // Snapshot: Product name at time of order
+  productBarcode  String?  // Snapshot: Product barcode at time of order
+  notes           String?
+  rentalDays      Int?
+  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, productId])
 }

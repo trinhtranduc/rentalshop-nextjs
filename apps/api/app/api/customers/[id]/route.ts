@@ -172,6 +172,24 @@ export async function DELETE(
         );
       }
 
+      // Check if customer has active orders (RESERVED or PICKUPED)
+      const activeOrders = await db.orders.getStats({
+        customerId: customerId,
+        status: { in: ['RESERVED', 'PICKUPED'] }
+      });
+
+      if (activeOrders > 0) {
+        console.log('❌ Cannot delete customer with active orders:', activeOrders);
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'CUSTOMER_HAS_ACTIVE_ORDERS',
+            message: `Cannot delete customer with ${activeOrders} active order(s). Please complete or cancel these orders first.`
+          },
+          { status: API.STATUS.CONFLICT }
+        );
+      }
+
       // Soft delete by setting isActive to false
       const deletedCustomer = await db.customers.update(customerId, { isActive: false });
       console.log('✅ Customer soft deleted successfully:', deletedCustomer);
