@@ -820,6 +820,26 @@ export const simplifiedProducts = {
   },
 
   /**
+   * Find first product matching criteria (simplified API)
+   */
+  findFirst: async (whereClause: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.product.findFirst({
+      where,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
    * Get product statistics (simplified API)
    */
   getStats: async (whereClause?: any) => {

@@ -398,6 +398,27 @@ var simplifiedCustomers = {
     };
   },
   /**
+   * Find first customer matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.customer.findFirst({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true
+      }
+    });
+  },
+  /**
    * Get customer statistics (simplified API)
    */
   getStats: async (whereClause) => {
@@ -529,6 +550,24 @@ var simplifiedProducts = {
     return await prisma.product.update({
       where: { id },
       data: { isActive: false }
+    });
+  },
+  /**
+   * Find first product matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.product.findFirst({
+      where,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
     });
   },
   /**
