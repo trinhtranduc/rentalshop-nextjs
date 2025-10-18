@@ -860,7 +860,12 @@ export const simplifiedProducts = {
     
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
-    if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+    // Default to active products only unless explicitly requesting all
+    if (whereFilters.isActive !== undefined) {
+      where.isActive = whereFilters.isActive;
+    } else {
+      where.isActive = true; // Default: only show active products
+    }
     
     // Text search
     if (whereFilters.search) {

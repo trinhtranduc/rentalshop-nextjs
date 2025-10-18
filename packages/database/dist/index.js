@@ -386,7 +386,11 @@ var simplifiedCustomers = {
     const where = {};
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
-    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+    if (whereFilters.isActive !== void 0) {
+      where.isActive = whereFilters.isActive;
+    } else {
+      where.isActive = true;
+    }
     if (whereFilters.search) {
       where.OR = [
         { firstName: { contains: whereFilters.search } },
@@ -433,6 +437,27 @@ var simplifiedCustomers = {
       hasMore: skip + limit < total,
       totalPages: Math.ceil(total / limit)
     };
+  },
+  /**
+   * Delete customer (soft delete) (simplified API)
+   */
+  delete: async (id) => {
+    return await prisma.customer.update({
+      where: { id },
+      data: { isActive: false },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true
+      }
+    });
   },
   /**
    * Find first customer matching criteria (simplified API)
@@ -623,7 +648,11 @@ var simplifiedProducts = {
     const where = {};
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
-    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+    if (whereFilters.isActive !== void 0) {
+      where.isActive = whereFilters.isActive;
+    } else {
+      where.isActive = true;
+    }
     if (whereFilters.search) {
       where.OR = [
         { name: { contains: whereFilters.search } },
@@ -2781,18 +2810,8 @@ var update2 = async (id, data) => {
   });
 };
 var deleteCategory = async (id) => {
-  return await prisma.category.update({
-    where: { id },
-    data: { isActive: false },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      isActive: true,
-      isDefault: true,
-      createdAt: true,
-      updatedAt: true
-    }
+  return await prisma.category.delete({
+    where: { id }
   });
 };
 var search2 = async (filters) => {
@@ -2801,7 +2820,11 @@ var search2 = async (filters) => {
   console.log("\u{1F50D} DB category.search - Received filters:", filters);
   const where = {};
   if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
-  if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+  if (whereFilters.isActive !== void 0) {
+    where.isActive = whereFilters.isActive;
+  } else {
+    where.isActive = true;
+  }
   const searchTerm = (whereFilters.q || whereFilters.search)?.trim();
   console.log("\u{1F50D} DB category.search - searchTerm:", searchTerm, "length:", searchTerm?.length);
   if (searchTerm && searchTerm.length > 0) {
