@@ -128,6 +128,7 @@
   "_comment_business_rules": "Quy tắc nghiệp vụ",
   "CANNOT_DELETE_DEFAULT_OUTLET": "Không thể xóa cửa hàng mặc định. Đây là cửa hàng chính được tạo khi đăng ký và phải luôn hoạt động.",
   "CANNOT_DELETE_DEFAULT_CATEGORY": "Không thể xóa danh mục \"General\" mặc định. Danh mục này được tạo khi đăng ký và phải luôn hoạt động.",
+  "CUSTOMER_HAS_ACTIVE_ORDERS": "Không thể xóa khách hàng có đơn hàng đang hoạt động. Vui lòng hoàn thành hoặc hủy các đơn hàng này trước.",
   "PRODUCT_NO_STOCK_ENTRY": "Sản phẩm phải có ít nhất một mục tồn kho",
   "ACCOUNT_ALREADY_DELETED": "Tài khoản đã bị xóa",
   "ORDER_PAYMENT_REQUIRED": "ID đơn hàng, số tiền và phương thức thanh toán là bắt buộc",

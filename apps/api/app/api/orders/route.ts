@@ -266,6 +266,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
 
           return {
             product: { connect: { id: item.productId } },
+            productName: product.name,      // Snapshot: Save product name
+            productBarcode: product.barcode, // Snapshot: Save product barcode
             quantity: item.quantity,
             unitPrice: pricing.unitPrice,
             totalPrice: pricing.totalPrice,

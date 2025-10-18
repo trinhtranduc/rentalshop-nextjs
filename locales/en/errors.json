@@ -128,6 +128,7 @@
   "_comment_business_rules": "Business Rules",
   "CANNOT_DELETE_DEFAULT_OUTLET": "Cannot delete the default outlet. This is the main outlet created during registration and must remain active.",
   "CANNOT_DELETE_DEFAULT_CATEGORY": "Cannot delete the default \"General\" category. This category was created during registration and must remain active.",
+  "CUSTOMER_HAS_ACTIVE_ORDERS": "Cannot delete customer with active orders. Please complete or cancel these orders first.",
   "PRODUCT_NO_STOCK_ENTRY": "Product must have at least one outlet stock entry",
   "ACCOUNT_ALREADY_DELETED": "Account is already deleted",
   "ORDER_PAYMENT_REQUIRED": "Order ID, amount, and method are required",
