@@ -460,11 +460,11 @@ export default function ProductsPage() {
             </DialogTitle>
           </DialogHeader>
           {selectedProduct && (
-            <ProductSimpleForm
-              initialData={selectedProduct}
+            <ProductEdit
+              product={selectedProduct}
               categories={categories}
               outlets={outlets}
-              onSubmit={async (productData) => {
+              onUpdate={async (productData) => {
                 const updateData: ProductUpdateInput = {
                   id: selectedProduct.id,
                   ...productData
@@ -475,7 +475,6 @@ export default function ProductsPage() {
                 setShowEditDialog(false);
                 setSelectedProduct(null);
               }}
-              mode="edit"
             />
           )}
         </DialogContent>
