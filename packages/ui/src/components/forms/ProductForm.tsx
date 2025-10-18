@@ -470,7 +470,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       }));
       
       try {
-        // Upload with progress tracking and automatic optimization
+        // Upload with progress tracking, compression, and optimization
         const uploadResult = await uploadImage(file, token, {
           folder: 'rentalshop/products',
           maxFileSize: 5 * 1024 * 1024, // 5MB
@@ -479,6 +479,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           maxWidth: 1200, // Client-side resize before upload
           maxHeight: 900,
           quality: 0.85,
+          // Enable advanced compression
+          enableCompression: true,
+          compressionQuality: 0.8, // 80% quality
+          maxSizeMB: 1, // Max 1MB after compression
           onProgress: (progress: UploadProgress) => {
             setUploadProgress(prev => ({
               ...prev,

@@ -111,8 +111,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/apps/api/start.sh ./apps/api/start.sh
 RUN chmod +x ./apps/api/start.sh
 
-# Add volume mount point for persistent uploads
-VOLUME ["/app/public/uploads"]
+# Note: Railway Volume will be mounted at /app/public/uploads via Railway Dashboard
+# No VOLUME keyword needed - Railway handles volume mounting automatically
 
 # CRITICAL: Copy Prisma binaries to correct location
 RUN mkdir -p ./apps/api/.next/server/.prisma/client
