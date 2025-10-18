@@ -2153,9 +2153,29 @@ async function checkDuplicate(email, phone, excludeId) {
   }
   return await prisma.merchant.findFirst({ where });
 }
+var findFirst = async (whereClause) => {
+  const where = whereClause?.where || whereClause || {};
+  return await prisma.merchant.findFirst({
+    where,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      address: true,
+      businessType: true,
+      pricingType: true,
+      pricingConfig: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+};
 var simplifiedMerchants = {
   findById: findById2,
   findByEmail,
+  findFirst,
   search,
   create,
   update,
@@ -2532,7 +2552,7 @@ var findById3 = async (id) => {
     }
   });
 };
-var findFirst = async (where) => {
+var findFirst2 = async (where) => {
   return await prisma.category.findFirst({
     where,
     select: {
@@ -2673,7 +2693,7 @@ var getStats2 = async (whereClause) => {
 };
 var simplifiedCategories = {
   findById: findById3,
-  findFirst,
+  findFirst: findFirst2,
   findMany,
   create: create2,
   update: update2,
@@ -2707,7 +2727,7 @@ var getStats3 = async (whereClause) => {
   const where = whereClause?.where || whereClause || {};
   return await prisma.auditLog.count({ where });
 };
-var findFirst2 = async (where) => {
+var findFirst3 = async (where) => {
   return await prisma.auditLog.findFirst({
     where,
     include: {
@@ -2739,7 +2759,7 @@ var create3 = async (data) => {
 };
 var simplifiedAuditLogs = {
   findMany: findMany2,
-  findFirst: findFirst2,
+  findFirst: findFirst3,
   create: create3,
   getStats: getStats3
 };
@@ -2778,7 +2798,7 @@ var getStats4 = async (whereClause) => {
   const where = whereClause?.where || whereClause || {};
   return await prisma.orderItem.count({ where });
 };
-var findFirst3 = async (where) => {
+var findFirst4 = async (where) => {
   return await prisma.orderItem.findFirst({
     where,
     include: {
@@ -2813,7 +2833,7 @@ var deleteOrderItem = async (id) => {
 };
 var simplifiedOrderItems = {
   findMany: findMany3,
-  findFirst: findFirst3,
+  findFirst: findFirst4,
   create: create4,
   update: update3,
   delete: deleteOrderItem,

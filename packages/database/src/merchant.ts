@@ -330,9 +330,34 @@ export async function checkDuplicate(email?: string, phone?: string, excludeId?:
 // EXPORT SIMPLIFIED INTERFACE
 // ============================================================================
 
+/**
+ * Find first merchant matching criteria (simplified API)
+ */
+export const findFirst = async (whereClause: any) => {
+  // Handle both direct where clause and object with where property
+  const where = whereClause?.where || whereClause || {};
+  return await prisma.merchant.findFirst({
+    where,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      address: true,
+      businessType: true,
+      pricingType: true,
+      pricingConfig: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+};
+
 export const simplifiedMerchants = {
   findById,
   findByEmail,
+  findFirst,
   search,
   create,
   update,
