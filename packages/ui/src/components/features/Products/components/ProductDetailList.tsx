@@ -213,32 +213,17 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
           </div>
           
           <div className="p-6">
-            {/* Main Image */}
-            {selectedImage && (
-              <div className="mb-6">
-                <div className="aspect-square max-w-md mx-auto bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={selectedImage}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                    onError={handleImageError}
-                  />
-                </div>
-              </div>
-            )}
-            
-            {/* Thumbnails */}
-            <div className="flex flex-wrap gap-3 justify-center">
+            {/* Image List - Horizontal */}
+            <div className="flex gap-4 overflow-x-auto pb-2">
               {(() => {
                 try {
                   const imageArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
                   if (Array.isArray(imageArray) && imageArray.length > 0) {
                     return imageArray.map((image: string, index: number) => (
-                      <Button
-                        variant="outline"
+                      <div
                         key={index}
                         onClick={() => setSelectedImage(image)}
-                        className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors p-0 ${
+                        className={`flex-shrink-0 w-32 h-32 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
                           selectedImage === image
                             ? 'border-blue-500 ring-2 ring-blue-200'
                             : 'border-gray-200 hover:border-gray-300'
@@ -250,7 +235,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                           className="w-full h-full object-cover"
                           onError={handleImageError}
                         />
-                      </Button>
+                      </div>
                     ));
                   }
                   return null;
@@ -259,6 +244,20 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                 }
               })()}
             </div>
+            
+            {/* Selected Image Preview */}
+            {selectedImage && (
+              <div className="mt-4">
+                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                  <img
+                    src={selectedImage}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    onError={handleImageError}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
