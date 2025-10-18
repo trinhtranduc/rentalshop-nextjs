@@ -9,7 +9,6 @@ export { ProductDetailMultiLayout as ProductDetail } from './ProductDetailMultiL
 export { ProductDetailList } from './ProductDetailList';
 export { ProductEdit} from './ProductEdit';
 export { ProductAddForm } from './ProductAddForm';
-export { ProductSimpleForm } from './ProductSimpleForm';
 export { ProductAddDialog } from './ProductAddDialog';
 export { ProductCard } from './ProductCard';
 export { ProductOrdersView } from './ProductOrdersView';
