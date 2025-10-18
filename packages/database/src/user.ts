@@ -692,5 +692,14 @@ export const simplifiedUsers = {
   count: async (options?: { where?: any }) => {
     const where = options?.where || {};
     return await prisma.user.count({ where });
+  },
+
+  /**
+   * Get user statistics (simplified API)
+   */
+  getStats: async (whereClause?: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.user.count({ where });
   }
 };
