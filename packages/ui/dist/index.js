@@ -4661,6 +4661,12 @@ var ProductForm = ({
           // Client-side resize before upload
           maxHeight: 900,
           quality: 0.85,
+          // Enable advanced compression
+          enableCompression: true,
+          compressionQuality: 0.8,
+          // 80% quality
+          maxSizeMB: 1,
+          // Max 1MB after compression
           onProgress: (progress) => {
             setUploadProgress((prev) => ({
               ...prev,
