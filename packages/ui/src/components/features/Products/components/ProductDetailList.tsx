@@ -208,13 +208,13 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
       {/* Product Images */}
       {product.images && (
         <div className="bg-white border border-gray-200 rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-4 py-3 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">{t('fields.images')}</h2>
           </div>
           
-          <div className="p-6">
+          <div className="p-4">
             {/* Image List - Horizontal */}
-            <div className="flex gap-4 overflow-x-auto pb-2">
+            <div className="flex gap-3 overflow-x-auto pb-2">
               {(() => {
                 try {
                   const imageArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
@@ -223,7 +223,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                       <div
                         key={index}
                         onClick={() => setSelectedImage(image)}
-                        className={`flex-shrink-0 w-32 h-32 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
+                        className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
                           selectedImage === image
                             ? 'border-blue-500 ring-2 ring-blue-200'
                             : 'border-gray-200 hover:border-gray-300'
@@ -247,7 +247,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
             
             {/* Selected Image Preview */}
             {selectedImage && (
-              <div className="mt-4">
+              <div className="mt-3">
                 <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                   <img
                     src={selectedImage}
