@@ -214,7 +214,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
           
           <div className="p-3">
             {/* Image List - Horizontal */}
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="flex gap-3 overflow-x-auto">
               {(() => {
                 try {
                   const imageArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
@@ -223,7 +223,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                       <div
                         key={index}
                         onClick={() => setSelectedImage(image)}
-                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
+                        className={`flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
                           selectedImage === image
                             ? 'border-blue-500 ring-2 ring-blue-200'
                             : 'border-gray-200 hover:border-gray-300'
@@ -254,8 +254,8 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                 return false;
               }
             })() && (
-              <div className="mt-2">
-                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+              <div className="mt-4">
+                <div className="aspect-square max-w-sm mx-auto bg-gray-100 rounded-lg overflow-hidden">
                   <img
                     src={selectedImage}
                     alt={product.name}
