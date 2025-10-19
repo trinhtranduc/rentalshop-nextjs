@@ -50,7 +50,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
         salePrice: data.salePrice,
         deposit: data.deposit,
         totalStock: data.totalStock,
-        images: data.images || '',
+        images: Array.isArray(data.images) ? data.images.join(',') : (data.images || ''),
         outletStock: data.outletStock,
       };
       await onSave(transformedData);
