@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Readable } from 'stream';
 
 // ============================================================================
 // AWS S3 CONFIGURATION
@@ -24,7 +25,13 @@ function createS3Client() {
   const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
   const cleanSecretKey = (AWS_SECRET_ACCESS_KEY || '').trim();
   
-  return new S3Client({
+  // Based on Stack Overflow solution: Always ensure client is properly initialized
+  // Fix for the issue where S3 client wasn't properly instantiated in all cases
+  if (!cleanAccessKey || !cleanSecretKey) {
+    throw new Error('AWS credentials are missing or empty after trimming');
+  }
+  
+  const client = new S3Client({
     region: AWS_REGION,
     forcePathStyle: false,
     credentials: {
@@ -32,9 +39,19 @@ function createS3Client() {
       secretAccessKey: cleanSecretKey,
     },
   });
+  
+  return client;
 }
 
-const s3Client = createS3Client();
+// Create initial client instance - handle cases where credentials might not be available yet
+let s3Client: S3Client;
+try {
+  s3Client = createS3Client();
+} catch (error) {
+  console.warn('⚠️ S3 client not initialized due to missing credentials:', error instanceof Error ? error.message : 'Unknown error');
+  // Create a placeholder that will be replaced when credentials are available
+  s3Client = new S3Client({ region: AWS_REGION });
+}
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'rentalshop-images';
 const CLOUDFRONT_DOMAIN = process.env.AWS_CLOUDFRONT_DOMAIN || '';
@@ -48,6 +65,10 @@ export interface S3UploadOptions {
   fileName?: string;
   contentType?: string;
   expiresIn?: number; // seconds
+}
+
+export interface S3StreamUploadOptions extends S3UploadOptions {
+  stream?: Readable;
 }
 
 export interface S3UploadResponse {
@@ -132,8 +153,18 @@ export async function uploadToS3(
       ACL: 'public-read', // Make file publicly accessible
     });
 
-    // Create fresh client to avoid signature issues with region changes
+    // Based on Stack Overflow solution: Always create fresh client to avoid cached client issues
+    // This fixes the common problem where client doesn't get properly initialized
     const freshClient = createS3Client();
+    
+    console.log('📤 Uploading to S3:', {
+      bucket: BUCKET_NAME,
+      key,
+      region: AWS_REGION,
+      contentType,
+      fileSize: file.byteLength || file.length
+    });
+    
     await freshClient.send(command);
 
     // Generate URLs
@@ -171,6 +202,96 @@ export async function uploadToS3(
 3. Verify region: ${AWS_REGION}
 4. Ensure signature version v4 is used
 5. Check key format (removed leading dots and special chars)`;
+    }
+    
+    return {
+      success: false,
+      error: errorMessage
+    };
+  }
+}
+
+/**
+ * Upload stream to AWS S3 (Based on Stack Overflow example)
+ * This is useful for handling large files or streams directly from multipart form data
+ */
+export async function uploadStreamToS3(
+  stream: Readable,
+  options: S3StreamUploadOptions = {}
+): Promise<S3UploadResponse> {
+  let folder: string = '';
+  let finalFileName: string = '';
+  let key: string = '';
+
+  try {
+    // Validate AWS credentials (same as uploadToS3)
+    const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
+    const cleanSecretKey = (AWS_SECRET_ACCESS_KEY || '').trim();
+    
+    if (!cleanAccessKey || !cleanSecretKey) {
+      return {
+        success: false,
+        error: 'AWS credentials not configured. Please check AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.'
+      };
+    }
+
+    const {
+      folder: optionsFolder = 'uploads',
+      fileName,
+      contentType = 'application/octet-stream',
+    } = options;
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const fileExtension = contentType.split('/')[1] || 'bin';
+    finalFileName = fileName || `${timestamp}-${randomId}.${fileExtension}`;
+    folder = optionsFolder;
+    
+    // Clean key to prevent signature mismatch issues
+    const cleanFileName = finalFileName.replace(/^\./, '');
+    key = `${folder}/${cleanFileName}`.replace(/\/+/g, '/');
+
+    // Based on Stack Overflow solution: Use stream directly in PutObjectCommand
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: stream, // Stream directly - AWS SDK v3 handles this automatically
+      ContentType: contentType,
+      ACL: 'public-read',
+    });
+
+    // Create fresh client to avoid signature issues
+    const freshClient = createS3Client();
+    await freshClient.send(command);
+
+    // Generate URLs
+    const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+    const cdnUrl = CLOUDFRONT_DOMAIN ? `https://${CLOUDFRONT_DOMAIN}/${key}` : s3Url;
+
+    return {
+      success: true,
+      data: {
+        url: s3Url,
+        key,
+        bucket: BUCKET_NAME,
+        region: process.env.AWS_REGION || 'us-east-1',
+        cdnUrl
+      }
+    };
+
+  } catch (error) {
+    console.error('AWS S3 stream upload error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      region: AWS_REGION,
+      bucket: BUCKET_NAME,
+      key: key || 'unknown'
+    });
+    
+    let errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (errorMessage.includes('signature')) {
+      errorMessage = `AWS Signature Mismatch - Stream upload failed. Check credentials and region: ${AWS_REGION}`;
     }
     
     return {
@@ -331,5 +452,6 @@ export function isS3Url(url: string): boolean {
 export {
   s3Client,
   BUCKET_NAME,
-  CLOUDFRONT_DOMAIN
+  CLOUDFRONT_DOMAIN,
+  createS3Client
 };
