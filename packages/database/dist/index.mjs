@@ -244,7 +244,11 @@ var simplifiedUsers = {
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
     if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
-    if (whereFilters.role) where.role = whereFilters.role;
+    if (whereFilters.roles && Array.isArray(whereFilters.roles)) {
+      where.role = { in: whereFilters.roles };
+    } else if (whereFilters.role) {
+      where.role = whereFilters.role;
+    }
     if (whereFilters.search) {
       where.OR = [
         { firstName: { contains: whereFilters.search, mode: "insensitive" } },

@@ -48,7 +48,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     const q = parsed.data as any;
     
     // Use simplified database API
-    const searchFilters = {
+    const searchFilters: any = {
       merchantId: userScope.merchantId,
       outletId: userScope.outletId,
       role: q.role,
@@ -57,6 +57,34 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
       page: q.page || 1,
       limit: q.limit || 20
     };
+
+    // If user is MERCHANT, only return OUTLET_ADMIN and OUTLET_STAFF users
+    // Do not return other MERCHANT users
+    if (user.role === 'MERCHANT') {
+      if (!q.role) {
+        // If no specific role filter is requested, restrict to outlet-level roles only
+        searchFilters.roles = ['OUTLET_ADMIN', 'OUTLET_STAFF'];
+        delete searchFilters.role; // Remove single role filter since we're using roles array
+        console.log('🔒 MERCHANT user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
+      } else if (q.role === 'MERCHANT') {
+        // If merchant specifically requests MERCHANT role, return empty (merchants shouldn't see other merchants)
+        console.log('🚫 MERCHANT user: Blocked request for MERCHANT role users');
+        return NextResponse.json({
+          success: true,
+          data: [],
+          pagination: {
+            page: 1,
+            limit: q.limit || 20,
+            total: 0,
+            hasMore: false,
+            totalPages: 0
+          }
+        });
+      } else if (q.role === 'OUTLET_ADMIN' || q.role === 'OUTLET_STAFF') {
+        // Allow these specific role requests from merchant
+        console.log(`✅ MERCHANT user: Allowed request for ${q.role} users`);
+      }
+    }
 
     console.log('🔄 Using simplified db.users.search() with filters:', searchFilters);
     
