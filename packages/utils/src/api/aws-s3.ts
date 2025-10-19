@@ -486,19 +486,20 @@ export async function generateAccessUrl(
   expiresIn: number = 3600
 ): Promise<string | null> {
   try {
-    const region = AWS_REGION || process.env.AWS_REGION || 'ap-southeast-1';
-    
-    // Prefer CloudFront URL if available (much cleaner)
+    // Prefer CloudFront URL if available (much cleaner and no access issues)
     if (CLOUDFRONT_DOMAIN) {
       return `https://${CLOUDFRONT_DOMAIN}/${key}`;
     }
     
-    // Use direct S3 URL - clean and simple (key already has correct extension)
-    if (BUCKET_NAME) {
-      return `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${key}`;
-    }
-    
-    return null;
+    // Fallback to presigned URL since bucket is not public
+    // This ensures access works but URLs are longer
+    const command = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+
+    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    return presignedUrl;
   } catch (error) {
     console.error('AWS S3 access URL error:', error);
     return null;
