@@ -81,9 +81,6 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
   };
 
   const imageArray = normalizeImages(product.images);
-  const [selectedImage, setSelectedImage] = useState<string | null>(
-    imageArray.length > 0 ? imageArray[0] : null
-  );
 
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -244,12 +241,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                 imageArray.map((image: string, index: number) => (
                   <div
                     key={index}
-                    onClick={() => setSelectedImage(image)}
-                    className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
-                      selectedImage === image
-                        ? 'border-blue-500 ring-2 ring-blue-200'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-all hover:scale-105"
                   >
                     <div className="relative w-full h-full">
                       <img
@@ -275,28 +267,6 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                 </div>
               )}
             </div>
-            
-            {/* Selected Image Preview - Only show if there are multiple images */}
-            {selectedImage && imageArray.length > 1 && (
-              <div className="mt-6">
-                <div className="aspect-square max-w-2xl mx-auto bg-gray-100 rounded-lg overflow-hidden relative">
-                  <img
-                    src={selectedImage}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                  {/* Fallback placeholder for selected image */}
-                  <div className="hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center">
-                    <Package className="w-16 h-16 text-gray-400" />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
