@@ -489,13 +489,23 @@ export async function generateAccessUrl(
   expiresIn: number = 3600
 ): Promise<string | null> {
   try {
-    const command = new GetObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-    });
+    let url: string;
+    
+    // Prefer CloudFront URL if available (much cleaner than presigned URLs)
+    if (CLOUDFRONT_DOMAIN) {
+      url = `https://${CLOUDFRONT_DOMAIN}/${key}`;
+    } else {
+      // Fallback to presigned URL if no CloudFront
+      const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+      });
 
-    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
-    return presignedUrl;
+      url = await getSignedUrl(s3Client, command, { expiresIn });
+    }
+    
+    // Normalize extension to .jpg for consistent display
+    return normalizeImageUrlToJpg(url);
   } catch (error) {
     console.error('AWS S3 access URL error:', error);
     return null;
@@ -521,43 +531,73 @@ export async function processProductImages(
 
   if (imageUrls.length === 0) return [];
 
-  // Process each image URL
+  // Process each image URL - optimize for CloudFront when available
   const processedImages = await Promise.all(
     imageUrls.map(async (url) => {
       if (!url || typeof url !== 'string') return null;
       
       try {
-        // If it's already a presigned URL or external URL, keep it as is
-        if (url.includes('?') || !url.includes('amazonaws.com')) {
-          return url;
+        // If it's already a CloudFront URL, normalize extension and return
+        if (CLOUDFRONT_DOMAIN && url.includes(CLOUDFRONT_DOMAIN)) {
+          return normalizeImageUrlToJpg(url);
         }
         
-        // If it's a direct S3 URL, extract key and generate presigned URL
+        // If it's already a presigned URL or external URL, normalize extension and return
+        if (url.includes('?') || !url.includes('amazonaws.com')) {
+          return normalizeImageUrlToJpg(url);
+        }
+        
+        // If it's a direct S3 URL, extract key and generate clean URL
         if (url.includes('amazonaws.com/')) {
           const urlParts = url.split('amazonaws.com/');
           if (urlParts.length > 1) {
             const key = urlParts[1].split('?')[0]; // Remove any existing query params
-            const presignedUrl = await generateAccessUrl(key, expiresIn);
-            return presignedUrl || url; // Fallback to original if presigned fails
+            const cleanUrl = await generateAccessUrl(key, expiresIn);
+            return cleanUrl || url; // Fallback to original if processing fails
           }
         }
         
-        // If it's just a key (without full URL), generate presigned URL directly
+        // If it's just a key (without full URL), generate clean URL directly
         if (!url.startsWith('http')) {
-          const presignedUrl = await generateAccessUrl(url, expiresIn);
-          return presignedUrl || url;
+          const cleanUrl = await generateAccessUrl(url, expiresIn);
+          return cleanUrl || url;
         }
         
-        return url;
+        return normalizeImageUrlToJpg(url);
       } catch (error) {
         console.warn('Failed to process image URL:', url, error);
-        return url; // Return original on error
+        return normalizeImageUrlToJpg(url); // Return normalized original on error
       }
     })
   );
 
   // Filter out null values and return
   return processedImages.filter(Boolean) as string[];
+}
+
+/**
+ * Normalize image URL to JPG extension for consistent display
+ */
+export function normalizeImageUrlToJpg(url: string): string {
+  try {
+    // Handle URLs with query parameters (presigned URLs)
+    const [baseUrl, queryParams] = url.split('?');
+    
+    // Check if it's an image URL
+    if (baseUrl.match(/\.(webp|png|jpeg|jpg)$/i)) {
+      // Remove existing extension and add .jpg
+      const urlWithoutExt = baseUrl.replace(/\.(webp|png|jpeg|jpg)$/i, '');
+      const normalizedUrl = `${urlWithoutExt}.jpg`;
+      
+      // Add query params back if they exist
+      return queryParams ? `${normalizedUrl}?${queryParams}` : normalizedUrl;
+    }
+    
+    return url;
+  } catch (error) {
+    console.warn('Failed to normalize image URL:', error);
+    return url;
+  }
 }
 
 /**

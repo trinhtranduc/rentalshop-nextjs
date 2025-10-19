@@ -238,14 +238,14 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
           </div>
           
           <div className="p-3">
-            {/* Image List - Horizontal */}
-            <div className="flex gap-4 overflow-x-auto">
+            {/* Image Grid - Responsive grid layout */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
               {imageArray.length > 0 ? (
                 imageArray.map((image: string, index: number) => (
                   <div
                     key={index}
                     onClick={() => setSelectedImage(image)}
-                    className={`flex-shrink-0 w-56 h-56 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
+                    className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
                       selectedImage === image
                         ? 'border-blue-500 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-gray-300'
@@ -264,13 +264,13 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
                       />
                       {/* Fallback placeholder for this image */}
                       <div className="hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center">
-                        <Package className="w-12 h-12 text-gray-400" />
+                        <Package className="w-8 h-8 text-gray-400" />
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="flex items-center justify-center w-full h-32 text-gray-500">
+                <div className="col-span-full flex items-center justify-center h-32 text-gray-500">
                   <span>No images available</span>
                 </div>
               )}

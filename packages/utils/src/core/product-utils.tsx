@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { Product, ProductWithDetails } from '@rentalshop/types';
 import { getProductStatusBadge, getAvailabilityBadge, getPriceTrendBadge } from './badge-utils';
+import { normalizeImageUrlToJpg } from '../api/aws-s3';
 
 /**
  * Get product availability badge configuration and component
@@ -201,7 +202,7 @@ export const getProductImageUrl = (product: Product | ProductWithDetails): strin
 
   // Return first valid image URL or empty string (components will handle placeholder)
   const firstImage = imageUrls.find(url => url && typeof url === 'string' && url.trim());
-  return firstImage || '';
+  return firstImage ? normalizeImageUrlToJpg(firstImage) : '';
 };
 
 /**
