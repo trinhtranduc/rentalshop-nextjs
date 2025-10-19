@@ -85,7 +85,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     console.log('📊 Upload result:', JSON.stringify(result, null, 2));
 
     if (result.success && result.data) {
-      return NextResponse.json({
+      const responseData = {
         success: true,
         data: {
           url: result.data.cdnUrl || result.data.url, // Use CDN URL if available
@@ -97,8 +97,17 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
         },
         code: 'IMAGE_UPLOADED_SUCCESS', 
         message: 'Image uploaded successfully to AWS S3'
+      };
+      
+      console.log('✅ Upload successful, returning:', {
+        url: responseData.data.url,
+        key: responseData.data.publicId,
+        bucket: result.data.bucket
       });
+      
+      return NextResponse.json(responseData);
     } else {
+      console.error('❌ Upload failed:', result);
       throw new Error(result.error || 'Failed to upload to S3');
     }
 
