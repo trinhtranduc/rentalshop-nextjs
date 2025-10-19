@@ -3,9 +3,9 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { uploadToS3, generateAccessUrl } from '@rentalshop/utils';
 
-// Allowed image types - only JPG and PNG (simple validation)
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
+// Allowed image types - JPG, PNG, and WebP (browser often converts to WebP)
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 5MB
 
 /**
@@ -168,6 +168,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       let format = 'jpg'; // default
       if (file.type === 'image/png') {
         format = 'png';
+      } else if (file.type === 'image/webp') {
+        format = 'webp';
       } else if (file.type.startsWith('image/jpeg') || file.type.startsWith('image/jpg')) {
         format = 'jpg';
       }

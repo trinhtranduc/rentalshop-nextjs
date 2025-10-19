@@ -87,11 +87,12 @@ export interface S3UploadResponse {
 // ============================================================================
 
 /**
- * Simple validation - only support JPG and PNG
+ * Simple validation - support JPG, PNG, and WebP
  */
 function validateImageType(contentType: string, buffer: Buffer): { isValid: boolean; actualType: string } {
   const isJpg = contentType === 'image/jpeg' || contentType === 'image/jpg';
   const isPng = contentType === 'image/png';
+  const isWebP = contentType === 'image/webp';
   
   // Quick magic bytes check for additional validation
   if (buffer.length >= 4) {
@@ -106,10 +107,19 @@ function validateImageType(contentType: string, buffer: Buffer): { isValid: bool
     if (header[0] === 0xFF && header[1] === 0xD8) {
       return { isValid: true, actualType: 'image/jpeg' };
     }
+    
+    // WebP: RIFF header check (RIFF + file size + WEBP)
+    if (buffer.length >= 12) {
+      const webpHeader = buffer.subarray(0, 12);
+      if (webpHeader.toString('ascii', 0, 4) === 'RIFF' && 
+          webpHeader.toString('ascii', 8, 12) === 'WEBP') {
+        return { isValid: true, actualType: 'image/webp' };
+      }
+    }
   }
   
   // If magic bytes don't match but content type is valid, trust content type
-  if (isJpg || isPng) {
+  if (isJpg || isPng || isWebP) {
     return { isValid: true, actualType: contentType };
   }
   
@@ -146,14 +156,14 @@ export async function uploadToS3(
       preserveOriginalName = false
     } = options;
 
-    // Simple validation - only support JPG and PNG
+    // Simple validation - support JPG, PNG, and WebP
     const inputBuffer = Buffer.isBuffer(file) ? file : Buffer.from(file);
     const isImage = contentType.startsWith('image/');
     
     if (isImage) {
       const validation = validateImageType(contentType, inputBuffer);
       if (!validation.isValid) {
-        throw new Error(`Invalid image type. Only JPG and PNG are supported, got: ${contentType}`);
+        throw new Error(`Invalid image type. Only JPG, PNG, and WebP are supported, got: ${contentType}`);
       }
     }
     
@@ -165,6 +175,8 @@ export async function uploadToS3(
     if (isImage) {
       if (contentType === 'image/png') {
         fileExtension = 'png';
+      } else if (contentType === 'image/webp') {
+        fileExtension = 'webp';
       } else {
         fileExtension = 'jpg'; // Default to jpg for jpeg/jpg
       }
