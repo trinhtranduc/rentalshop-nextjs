@@ -104,13 +104,16 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
         data: {
           url: accessUrl,
           publicId: result.data.key,
+          stagingKey: result.data.key, // Original staging key for cleanup if needed
+          isStaging: result.data.key.startsWith('staging/'),
           width: 0,
           height: 0,
           format: file.type.split('/')[1] || 'jpg',
-          size: file.size
+          size: file.size,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
         },
         code: 'IMAGE_UPLOADED_SUCCESS',
-        message: 'Image uploaded successfully to AWS S3'
+        message: 'Image uploaded successfully to AWS S3 staging folder'
       });
     } else {
       console.error('❌ Upload failed:', result);

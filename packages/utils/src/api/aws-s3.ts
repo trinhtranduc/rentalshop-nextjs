@@ -281,6 +281,47 @@ export async function deleteFromS3(key: string): Promise<boolean> {
 }
 
 /**
+ * Clean up orphaned staging files
+ * Used when user uploads images but doesn't create product
+ */
+export async function cleanupStagingFiles(
+  stagingKeys: string[]
+): Promise<{ success: boolean; deletedCount: number; errors: string[] }> {
+  let deletedCount = 0;
+  const errors: string[] = [];
+
+  for (const stagingKey of stagingKeys) {
+    try {
+      const cleanStagingKey = stagingKey.trim().replace(/\/+/g, '/');
+      
+      // Ensure it's a staging file for safety
+      if (!cleanStagingKey.startsWith('staging/')) {
+        console.warn(`⚠️ Skipping non-staging file: ${cleanStagingKey}`);
+        continue;
+      }
+
+      const deleted = await deleteFromS3(cleanStagingKey);
+      if (deleted) {
+        deletedCount++;
+        console.log(`🗑️ Cleaned up staging file: ${cleanStagingKey}`);
+      } else {
+        errors.push(`Failed to delete ${cleanStagingKey}`);
+      }
+    } catch (error) {
+      const errorMsg = `Failed to cleanup ${stagingKey}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error('❌', errorMsg);
+      errors.push(errorMsg);
+    }
+  }
+
+  return {
+    success: errors.length === 0,
+    deletedCount,
+    errors
+  };
+}
+
+/**
  * Move file from staging to production folder in S3
  * This implements the Two-Phase Upload Pattern
  */
@@ -292,12 +333,11 @@ export async function commitStagingFiles(
   const errors: string[] = [];
 
   for (const stagingKey of stagingKeys) {
+    const cleanStagingKey = stagingKey.trim().replace(/\/+/g, '/');
+    const filename = cleanStagingKey.replace(/^staging\//, '').replace(/^\./, '');
+    const cleanTargetKey = `${targetFolder}/${filename}`.replace(/\/+/g, '/');
+    
     try {
-      // Clean and validate keys to prevent signature mismatch (Stack Overflow fix)
-      const cleanStagingKey = stagingKey.trim().replace(/\/+/g, '/');
-      const filename = cleanStagingKey.replace(/^staging\//, '').replace(/^\./, '');
-      const cleanTargetKey = `${targetFolder}/${filename}`.replace(/\/+/g, '/');
-
       // Copy from staging to target with clean keys
       const copyCommand = new CopyObjectCommand({
         Bucket: BUCKET_NAME,
@@ -309,16 +349,26 @@ export async function commitStagingFiles(
       // Use fresh client for copy operation
       const freshClient = createS3Client();
       await freshClient.send(copyCommand);
-
-      // Delete staging file
-      await deleteFromS3(cleanStagingKey);
-
+      
+      // Only mark as committed after successful copy
       committedKeys.push(cleanTargetKey);
-      console.log(`✅ Moved ${cleanStagingKey} → ${cleanTargetKey}`);
+      console.log(`✅ Copied ${cleanStagingKey} → ${cleanTargetKey}`);
+      
     } catch (error) {
-      const errorMsg = `Failed to commit ${stagingKey}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      const errorMsg = `Failed to copy ${stagingKey}: ${error instanceof Error ? error.message : 'Unknown error'}`;
       console.error('❌', errorMsg);
       errors.push(errorMsg);
+      continue; // Skip deletion if copy failed
+    }
+    
+    // Delete staging file after successful copy
+    try {
+      await deleteFromS3(cleanStagingKey);
+      console.log(`🗑️ Deleted staging file: ${cleanStagingKey}`);
+    } catch (deleteError) {
+      // Don't fail the whole operation if delete fails, but log the issue
+      console.warn(`⚠️ Failed to delete staging file ${cleanStagingKey}:`, deleteError);
+      // Could implement background cleanup job here
     }
   }
 
