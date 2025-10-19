@@ -16,13 +16,20 @@ if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
   });
 }
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: AWS_SECRET_ACCESS_KEY || '',
-  },
-});
+const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
+
+// Create S3Client function to avoid cached client issues
+function createS3Client() {
+  return new S3Client({
+    region: AWS_REGION,
+    credentials: {
+      accessKeyId: AWS_ACCESS_KEY_ID || '',
+      secretAccessKey: AWS_SECRET_ACCESS_KEY || '',
+    },
+  });
+}
+
+const s3Client = createS3Client();
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'rentalshop-images';
 const CLOUDFRONT_DOMAIN = process.env.AWS_CLOUDFRONT_DOMAIN || '';
@@ -105,7 +112,9 @@ export async function uploadToS3(
       ACL: 'public-read', // Make file publicly accessible
     });
 
-    await s3Client.send(command);
+    // Create fresh client to avoid signature issues with region changes
+    const freshClient = createS3Client();
+    await freshClient.send(command);
 
     // Generate URLs
     const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
@@ -123,10 +132,24 @@ export async function uploadToS3(
     };
 
   } catch (error) {
-    console.error('AWS S3 upload error:', error);
+    console.error('AWS S3 upload error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      region: AWS_REGION,
+      bucket: BUCKET_NAME,
+      key: `${folder}/${finalFileName}`,
+      accessKeyPreview: AWS_ACCESS_KEY_ID ? `${AWS_ACCESS_KEY_ID.substring(0, 8)}...` : 'missing'
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (errorMessage.includes('signature')) {
+      errorMessage = `Signature error - please verify AWS credentials (Access Key ID: ${AWS_ACCESS_KEY_ID?.substring(0, 8)}...) and region (${AWS_REGION})`;
+    }
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage
     };
   }
 }
@@ -141,7 +164,9 @@ export async function deleteFromS3(key: string): Promise<boolean> {
       Key: key,
     });
 
-    await s3Client.send(command);
+    // Use fresh client for delete operation
+    const freshClient = createS3Client();
+    await freshClient.send(command);
     return true;
   } catch (error) {
     console.error('AWS S3 delete error:', error);
@@ -174,7 +199,9 @@ export async function commitStagingFiles(
         ACL: 'public-read',
       });
 
-      await s3Client.send(copyCommand);
+      // Use fresh client for copy operation
+      const freshClient = createS3Client();
+      await freshClient.send(copyCommand);
 
       // Delete staging file
       await deleteFromS3(stagingKey);
