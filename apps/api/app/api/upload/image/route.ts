@@ -76,22 +76,30 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const buffer = Buffer.from(bytes);
 
     // Upload to AWS S3
-    const result = await uploadToS3(buffer, file.name, 'images');
+    const result = await uploadToS3(buffer, {
+      folder: 'images',
+      fileName: file.name,
+      contentType: file.type
+    });
     console.log('✅ Image uploaded to AWS S3');
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        url: result.url,
-        publicId: result.publicId,
-        width: result.width || 0,
-        height: result.height || 0,
-        format: result.format,
-        size: file.size
-      },
-      code: 'IMAGE_UPLOADED_SUCCESS', 
-      message: 'Image uploaded successfully to AWS S3'
-    });
+    if (result.success && result.data) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          url: result.data.cdnUrl || result.data.url, // Use CDN URL if available
+          publicId: result.data.key,
+          width: 0,
+          height: 0,
+          format: file.type.split('/')[1] || 'jpg',
+          size: file.size
+        },
+        code: 'IMAGE_UPLOADED_SUCCESS', 
+        message: 'Image uploaded successfully to AWS S3'
+      });
+    } else {
+      throw new Error(result.error || 'Failed to upload to S3');
+    }
 
   } catch (error) {
     console.error('Error uploading image:', error);
