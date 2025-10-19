@@ -173,13 +173,8 @@ export async function uploadToS3(
     
     let fileExtension = 'bin';
     if (isImage) {
-      if (contentType === 'image/png') {
-        fileExtension = 'png';
-      } else if (contentType === 'image/webp') {
-        fileExtension = 'webp';
-      } else {
-        fileExtension = 'jpg'; // Default to jpg for jpeg/jpg
-      }
+      // Always use JPG extension for all images for consistency
+      fileExtension = 'jpg';
     }
     
     if (fileName) {
@@ -205,11 +200,13 @@ export async function uploadToS3(
     key = `${folder}/${cleanFileName}`.replace(/\/+/g, '/'); // Remove double slashes
 
     // Simple S3 Upload - Use original buffer with proper content type
+    const finalContentType = isImage ? 'image/jpeg' : contentType; // All images as JPEG for consistency
+    
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
       Body: inputBuffer, // Use original buffer - no conversion
-      ContentType: contentType, // Use actual content type (jpg or png)
+      ContentType: finalContentType, // Always JPEG for images for consistency
       ContentDisposition: 'inline',
       // ACL removed - bucket does not allow ACLs
     });
@@ -493,14 +490,12 @@ export async function generateAccessUrl(
     
     // Prefer CloudFront URL if available (much cleaner)
     if (CLOUDFRONT_DOMAIN) {
-      const cleanKey = normalizeImageKeyToJpg(key);
-      return `https://${CLOUDFRONT_DOMAIN}/${cleanKey}`;
+      return `https://${CLOUDFRONT_DOMAIN}/${key}`;
     }
     
-    // Use direct S3 URL - clean and simple
+    // Use direct S3 URL - clean and simple (key already has correct extension)
     if (BUCKET_NAME) {
-      const cleanKey = normalizeImageKeyToJpg(key);
-      return `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${cleanKey}`;
+      return `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${key}`;
     }
     
     return null;
@@ -535,14 +530,14 @@ export async function processProductImages(
       if (!url || typeof url !== 'string') return null;
       
       try {
-        // If it's already a CloudFront URL, normalize extension and return
+        // If it's already a CloudFront URL, return as is (already standardized)
         if (CLOUDFRONT_DOMAIN && url.includes(CLOUDFRONT_DOMAIN)) {
-          return normalizeImageUrlToJpg(url);
+          return url;
         }
         
-        // If it's already a presigned URL or external URL, normalize extension and return
+        // If it's already a presigned URL or external URL, return as is
         if (url.includes('?') || !url.includes('amazonaws.com')) {
-          return normalizeImageUrlToJpg(url);
+          return url;
         }
         
         // If it's a direct S3 URL, extract key and generate clean URL
@@ -561,10 +556,10 @@ export async function processProductImages(
           return cleanUrl || url;
         }
         
-        return normalizeImageUrlToJpg(url);
+        return url;
       } catch (error) {
         console.warn('Failed to process image URL:', url, error);
-        return normalizeImageUrlToJpg(url); // Return normalized original on error
+        return url; // Return original on error
       }
     })
   );
