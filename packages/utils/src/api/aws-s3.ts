@@ -19,37 +19,18 @@ if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
 
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 
-// Create S3Client function to avoid cached client issues
+// Create S3Client function - ĐƠN GIẢN
 function createS3Client() {
-  // Clean credentials to remove invisible characters (common cause of signature mismatch)
-  const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
-  const cleanSecretKey = (AWS_SECRET_ACCESS_KEY || '').trim();
-  
-  // Based on Stack Overflow solution: Always ensure client is properly initialized
-  // Fix for the issue where S3 client wasn't properly instantiated in all cases
-  if (!cleanAccessKey || !cleanSecretKey) {
-    throw new Error('AWS credentials are missing or empty after trimming');
-  }
-  
-  // Ensure region is consistent and properly set
   const region = AWS_REGION || process.env.AWS_REGION || 'us-east-1';
   
-  console.log('🔧 Creating S3 client with:', {
-    region,
-    accessKeyPreview: `${cleanAccessKey.substring(0, 8)}...`,
-    bucket: process.env.AWS_S3_BUCKET_NAME || 'rentalshop-images'
-  });
-  
+  // Sử dụng trực tiếp credentials từ environment
   const client = new S3Client({
-    region: region,
-    forcePathStyle: false,
+    region,
     credentials: {
-      accessKeyId: cleanAccessKey,
-      secretAccessKey: cleanSecretKey,
+      accessKeyId: AWS_ACCESS_KEY_ID || '',
+      secretAccessKey: AWS_SECRET_ACCESS_KEY || '',
     },
   });
-  
-  // Note: AWS SDK v3 automatically uses signature version v4
   
   return client;
 }
@@ -111,48 +92,6 @@ export async function uploadToS3(
   let key: string = '';
 
   try {
-    // Validate AWS credentials before upload (based on Stack Overflow solutions)
-    const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
-    const cleanSecretKey = (AWS_SECRET_ACCESS_KEY || '').trim();
-    const region = AWS_REGION || process.env.AWS_REGION || 'us-east-1';
-    
-    if (!cleanAccessKey || !cleanSecretKey) {
-      console.error('❌ AWS credentials missing or empty after trimming:', {
-        hasAccessKey: !!cleanAccessKey,
-        hasSecretKey: !!cleanSecretKey,
-        accessKeyPreview: cleanAccessKey ? `${cleanAccessKey.substring(0, 8)}...` : 'missing',
-        originalLength: AWS_ACCESS_KEY_ID?.length || 0,
-        region
-      });
-      
-      return {
-        success: false,
-        error: 'AWS credentials not configured or contain only whitespace. Please check AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.'
-      };
-    }
-    
-    // Additional validation for ap-southeast-1 region - check for common issues
-    if (region === 'ap-southeast-1') {
-      console.log('🔍 ap-southeast-1 region detected - applying additional validation');
-      
-      // Check for potential credential issues
-      if (cleanAccessKey.length !== 20) {
-        console.warn('⚠️ Access Key length is not 20 characters:', cleanAccessKey.length);
-      }
-      
-      if (cleanSecretKey.length !== 40) {
-        console.warn('⚠️ Secret Key length is not 40 characters:', cleanSecretKey.length);
-      }
-    }
-    
-    console.log('✅ AWS credentials validated:', {
-      accessKeyPreview: `${cleanAccessKey.substring(0, 8)}...`,
-      accessKeyLength: cleanAccessKey.length,
-      secretKeyLength: cleanSecretKey.length,
-      region: AWS_REGION,
-      bucket: BUCKET_NAME,
-      signatureVersion: 'v4'
-    });
     const {
       folder: optionsFolder = 'uploads',
       fileName,
@@ -180,25 +119,13 @@ export async function uploadToS3(
       ACL: 'public-read', // Make file publicly accessible
     });
 
-    // Based on Stack Overflow solution: Always create fresh client to avoid cached client issues
-    // This fixes the common problem where client doesn't get properly initialized
-    const freshClient = createS3Client();
-    
-    // Get the actual region being used by the client
-    const actualRegion = AWS_REGION || process.env.AWS_REGION || 'us-east-1';
-    
-    console.log('📤 Uploading to S3:', {
-      bucket: BUCKET_NAME,
-      key,
-      region: actualRegion,
-      contentType,
-      fileSize: file.byteLength || file.length
-    });
-    
-    await freshClient.send(command);
+    // Sử dụng client đơn giản
+    const client = createS3Client();
+    await client.send(command);
 
-    // Generate URLs with consistent region
-    const s3Url = `https://${BUCKET_NAME}.s3.${actualRegion}.amazonaws.com/${key}`;
+    // Generate URLs
+    const region = AWS_REGION || process.env.AWS_REGION || 'us-east-1';
+    const s3Url = `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${key}`;
     const cdnUrl = CLOUDFRONT_DOMAIN ? `https://${CLOUDFRONT_DOMAIN}/${key}` : s3Url;
 
     return {
@@ -207,55 +134,15 @@ export async function uploadToS3(
         url: s3Url,
         key,
         bucket: BUCKET_NAME,
-        region: actualRegion,
+        region,
         cdnUrl
       }
     };
 
   } catch (error) {
-    console.error('AWS S3 upload error:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      region: AWS_REGION,
-      bucket: BUCKET_NAME,
-      key: key || 'unknown',
-      accessKeyPreview: AWS_ACCESS_KEY_ID ? `${AWS_ACCESS_KEY_ID.substring(0, 8)}...` : 'missing'
-    });
-    
-    // Provide more specific error messages based on Stack Overflow solutions
-    let errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    if (errorMessage.includes('signature') || errorMessage.includes('Signature')) {
-      const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
-      const cleanSecretKey = (AWS_SECRET_ACCESS_KEY || '').trim();
-      const region = AWS_REGION || process.env.AWS_REGION || 'us-east-1';
-      
-      errorMessage = `AWS Signature Mismatch - Detailed fixes for region ${region}:
-1. Check for invisible characters in credentials (spaces, line breaks, tabs)
-2. Verify Access Key ID: ${cleanAccessKey.substring(0, 8)}... (length: ${cleanAccessKey.length})
-3. Verify Secret Key length: ${cleanSecretKey.length} characters (should be 40)
-4. Verify region: ${region}
-5. Check bucket permissions and region compatibility
-6. Verify AWS credentials have proper S3 permissions
-7. Try regenerating AWS credentials if issue persists
-
-Common ap-southeast-1 issues:
-- Ensure bucket was created in ap-southeast-1 region
-- Check if credentials are for the correct AWS account
-- Verify bucket policy allows uploads`;
-      
-      console.error('🔍 Signature mismatch debug info:', {
-        region,
-        bucket: BUCKET_NAME,
-        key: key || 'unknown',
-        accessKeyLength: cleanAccessKey.length,
-        secretKeyLength: cleanSecretKey.length,
-        originalError: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-    
     return {
       success: false,
-      error: errorMessage
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }
