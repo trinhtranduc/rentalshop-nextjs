@@ -164,15 +164,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       const keyParts = result.data.key.split('/');
       const finalFileName = keyParts[keyParts.length - 1];
       
-      // Determine actual format from content type
-      let format = 'jpg'; // default
-      if (file.type === 'image/png') {
-        format = 'png';
-      } else if (file.type === 'image/webp') {
-        format = 'webp';
-      } else if (file.type.startsWith('image/jpeg') || file.type.startsWith('image/jpg')) {
-        format = 'jpg';
-      }
+      // All images are now stored as JPG for consistency
+      let format = 'jpg';
 
       return NextResponse.json({
         success: true,
