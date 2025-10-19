@@ -68,6 +68,11 @@ export async function uploadToS3(
   file: Buffer | Uint8Array,
   options: S3UploadOptions = {}
 ): Promise<S3UploadResponse> {
+  // Declare variables outside try block for catch block access
+  let folder: string = '';
+  let finalFileName: string = '';
+  let key: string = '';
+
   try {
     // Validate AWS credentials before upload
     if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
@@ -89,7 +94,7 @@ export async function uploadToS3(
       bucket: BUCKET_NAME
     });
     const {
-      folder = 'uploads',
+      folder: optionsFolder = 'uploads',
       fileName,
       contentType = 'image/jpeg',
       expiresIn = 3600
@@ -99,9 +104,10 @@ export async function uploadToS3(
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
     const fileExtension = contentType.split('/')[1] || 'jpg';
-    const finalFileName = fileName || `${timestamp}-${randomId}.${fileExtension}`;
+    finalFileName = fileName || `${timestamp}-${randomId}.${fileExtension}`;
+    folder = optionsFolder;
     
-    const key = `${folder}/${finalFileName}`;
+    key = `${folder}/${finalFileName}`;
 
     // Upload to S3
     const command = new PutObjectCommand({
@@ -136,7 +142,7 @@ export async function uploadToS3(
       error: error instanceof Error ? error.message : 'Unknown error',
       region: AWS_REGION,
       bucket: BUCKET_NAME,
-      key: `${folder}/${finalFileName}`,
+      key: key || 'unknown',
       accessKeyPreview: AWS_ACCESS_KEY_ID ? `${AWS_ACCESS_KEY_ID.substring(0, 8)}...` : 'missing'
     });
     
