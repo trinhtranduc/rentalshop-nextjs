@@ -12,6 +12,7 @@ import {
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
+import { getProductImageUrl } from '@rentalshop/utils';
 import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-react';
 
 interface ProductTableProps {
@@ -125,10 +126,10 @@ export function ProductTable({
                 {tc('labels.price')}
               </th>
               
-              {/* Stock */}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {/* Stock - Hidden as requested */}
+              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t('stock.label')}
-              </th>
+              </th> */}
               
               {/* Status column hidden as requested */}
               {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -162,23 +163,33 @@ export function ProductTable({
                 {/* Product Name with Image */}
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    {/* Product Icon/Image */}
-                    <div className="flex-shrink-0">
-                      {product.images && product.images.length > 0 ? (
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-10 h-10 object-cover rounded border border-gray-200"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                          <Package className="w-5 h-5 text-gray-400" />
-                        </div>
-                      )}
+                    {/* Product Thumbnail with fallback placeholder */}
+                    <div className="flex-shrink-0 relative">
+                      {(() => {
+                        const imageUrl = getProductImageUrl(product);
+                        const hasValidImage = imageUrl && imageUrl.trim() !== '' && product.images && product.images.length > 0;
+                        
+                        return hasValidImage ? (
+                          <img
+                            src={imageUrl}
+                            alt={product.name}
+                            className="w-10 h-10 object-cover rounded border border-gray-200"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null;
+                      })()}
+                      {/* Placeholder - hidden by default if image loads, shown if image fails or no image */}
+                      <div className={`${(() => {
+                        const imageUrl = getProductImageUrl(product);
+                        const hasValidImage = imageUrl && imageUrl.trim() !== '' && product.images && product.images.length > 0;
+                        return hasValidImage ? 'hidden' : '';
+                      })()} w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 flex items-center justify-center`}>
+                        <Package className="w-5 h-5 text-gray-400" />
+                      </div>
                     </div>
                     <div className="text-sm">
                       <div className="font-medium text-gray-900 dark:text-white">
@@ -214,8 +225,8 @@ export function ProductTable({
                   </div>
                 </td>
                 
-                {/* Stock */}
-                <td className="px-6 py-4 whitespace-nowrap">
+                {/* Stock - Hidden as requested */}
+                {/* <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white">
                       {product.available} / {product.stock}
@@ -229,7 +240,7 @@ export function ProductTable({
                       {getAvailabilityBadge(product.available, product.stock)}
                     </div>
                   </div>
-                </td>
+                </td> */}
                 
                 {/* Status cell hidden as requested */}
                 {/* <td className="px-6 py-4 whitespace-nowrap">
