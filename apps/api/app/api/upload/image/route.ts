@@ -5,17 +5,32 @@ import { uploadToS3, generateAccessUrl } from '@rentalshop/utils';
 
 // Allowed image types - only JPG and PNG (simple validation)
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 5MB
 
 /**
  * Validate image file
  */
 function validateImage(file: File): { isValid: boolean; error?: string } {
-  // Check file type
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  // Check file type - handle both MIME type and file extension
+  const fileTypeLower = file.type.toLowerCase().trim();
+  const fileNameLower = file.name.toLowerCase().trim();
+  
+  // Check MIME type (handle empty case)
+  const isValidMimeType = fileTypeLower ? ALLOWED_TYPES.some(type => 
+    fileTypeLower === type.toLowerCase()
+  ) : false;
+  
+  // Check file extension
+  const isValidExtension = ALLOWED_EXTENSIONS.some(ext => 
+    fileNameLower.endsWith(ext)
+  );
+  
+  // Accept if either MIME type OR extension is valid
+  if (!isValidMimeType && !isValidExtension) {
     return {
       isValid: false,
-      error: `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')}`
+      error: `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')} or extensions: ${ALLOWED_EXTENSIONS.join(',')}. File type: "${file.type}", File name: "${file.name}"`
     };
   }
 
@@ -79,9 +94,22 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       );
     }
 
+    // Debug: Log file type to understand what browser is sending
+    console.log('🔍 File validation debug:', {
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      allowedTypes: ALLOWED_TYPES
+    });
+
     // Validate image
     const validation = validateImage(file);
     if (!validation.isValid) {
+      console.log('❌ Validation failed:', {
+        fileType: file.type,
+        allowedTypes: ALLOWED_TYPES,
+        error: validation.error
+      });
       return NextResponse.json(
         ResponseBuilder.error('VALIDATION_ERROR', { details: validation.error }),
         { status: 400 }
