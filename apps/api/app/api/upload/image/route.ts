@@ -3,9 +3,9 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { uploadToS3, generateAccessUrl } from '@rentalshop/utils';
 
-// Allowed image types
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+// Allowed image types - only JPG and PNG (simple validation)
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 5MB
 
 /**
  * Validate image file
@@ -42,18 +42,35 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
 
 /**
  * POST /api/upload/image
- * Upload image to AWS S3
+ * Upload image to AWS S3 with smart filename handling
  * 
- * **AWS S3 Integration:**
- * - Scalable cloud storage
- * - CDN integration with CloudFront
- * - Secure file uploads with validation
- * - Optimized for production use
+ * **Request Body (FormData):**
+ * - `image`: File - The image file to upload
+ * - `originalName` (optional): string - Original filename from frontend for better tracking
+ * - `preserveFilename` (optional): boolean - Whether to preserve original filename structure
+ * 
+ * **Smart Filename Strategy:**
+ * 1. **Best Case**: Use `originalName` if provided (frontend sends true filename)
+ * 2. **Fallback**: Use `file.name` if not "blob" 
+ * 3. **Last Resort**: Generate generic name
+ * 
+ * **Filename Sanitization:**
+ * - Removes special characters (except _ and -)
+ * - Limits length to 50 characters
+ * - Adds timestamp + random ID for uniqueness
+ * - Preserves or standardizes extension based on contentType
+ * 
+ * **Response includes:**
+ * - `originalFileName`: What user sees
+ * - `finalFileName`: Actual S3 filename  
+ * - `stagingKey`: For cleanup operations
  */
 export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest) => {
   try {
     const formData = await request.formData();
     const file = formData.get('image') as File;
+    const originalName = formData.get('originalName') as string | null;
+    const preserveFilename = formData.get('preserveFilename') === 'true';
     
     if (!file) {
       return NextResponse.json(
@@ -75,21 +92,37 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Let uploadToS3 handle filename generation and extension logic
-    const fileName = file.name === 'blob' || !file.name ? undefined : file.name;
+    // Smart filename handling: prioritize originalName, then file.name, with preservation option
+    const effectiveFileName = (() => {
+      // Case 1: Frontend provides originalName (best case)
+      if (originalName && originalName.trim()) {
+        return originalName.trim();
+      }
+      
+      // Case 2: File has proper name (not blob)
+      if (file.name && file.name !== 'blob' && file.name.trim()) {
+        return file.name.trim();
+      }
+      
+      // Case 3: Fallback to generic name
+      return null;
+    })();
 
     console.log('📸 Uploading image:', {
-      originalName: file.name,
-      fileName: fileName,
+      originalFile: file.name,
+      providedOriginalName: originalName,
+      effectiveFileName: effectiveFileName,
+      preserveFilename,
       contentType: file.type,
       size: file.size
     });
 
-    // Upload to AWS S3 staging folder
+    // Upload to AWS S3 staging folder - Simple validation only
     const result = await uploadToS3(buffer, {
       folder: 'staging',
-      fileName: fileName,
-      contentType: file.type
+      fileName: effectiveFileName || undefined,
+      contentType: file.type,
+      preserveOriginalName: preserveFilename
     });
     console.log('✅ Image uploaded to AWS S3');
     console.log('📊 Upload result:', JSON.stringify(result, null, 2));
@@ -99,6 +132,18 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       const presignedUrl = await generateAccessUrl(result.data.key, 86400); // 24 hours
       const accessUrl = presignedUrl || result.data.cdnUrl || result.data.url;
       
+      // Extract filename from key for better tracking
+      const keyParts = result.data.key.split('/');
+      const finalFileName = keyParts[keyParts.length - 1];
+      
+      // Determine actual format from content type
+      let format = 'jpg'; // default
+      if (file.type === 'image/png') {
+        format = 'png';
+      } else if (file.type.startsWith('image/jpeg') || file.type.startsWith('image/jpg')) {
+        format = 'jpg';
+      }
+
       return NextResponse.json({
         success: true,
         data: {
@@ -106,9 +151,11 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
           publicId: result.data.key,
           stagingKey: result.data.key, // Original staging key for cleanup if needed
           isStaging: result.data.key.startsWith('staging/'),
+          originalFileName: effectiveFileName || file.name,
+          finalFileName: finalFileName,
           width: 0,
           height: 0,
-          format: file.type.split('/')[1] || 'jpg',
+          format: format, // Actual format based on content type
           size: file.size,
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
         },

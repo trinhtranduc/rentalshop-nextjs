@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { productUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { productUpdateSchema, handleApiError, ResponseBuilder, processProductImages } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -47,6 +47,9 @@ export async function GET(
 
       console.log('✅ Product found, transforming data...');
 
+      // Process images to generate presigned URLs for thumbnail display
+      const processedImages = await processProductImages(product.images, 86400 * 7); // 7 days expiration
+
       // Transform the data to match the expected format
       const transformedProduct = {
         id: product.id, // Return id directly to frontend
@@ -58,7 +61,7 @@ export async function GET(
         salePrice: product.salePrice,
         deposit: product.deposit,
         totalStock: product.totalStock,
-        images: product.images,
+        images: processedImages,
         isActive: product.isActive,
         category: product.category,
         merchant: product.merchant,

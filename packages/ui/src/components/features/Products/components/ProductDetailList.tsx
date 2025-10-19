@@ -11,6 +11,7 @@ import {
   Badge 
 } from '../../../ui';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { getProductImageUrl } from '@rentalshop/utils';
 import { 
   Package, 
   DollarSign, 
@@ -56,8 +57,32 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
   const router = useRouter();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
+
+  // Helper function to normalize images array
+  const normalizeImages = (images: string | string[] | null | undefined): string[] => {
+    if (!images) return [];
+    
+    try {
+      if (Array.isArray(images)) {
+        return images.filter(Boolean);
+      } else if (typeof images === 'string') {
+        // Try to parse as JSON first, then fallback to comma-separated
+        try {
+          const parsed = JSON.parse(images);
+          return Array.isArray(parsed) ? parsed.filter(Boolean) : images.split(',').filter(Boolean);
+        } catch {
+          return images.split(',').filter(Boolean);
+        }
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  };
+
+  const imageArray = normalizeImages(product.images);
   const [selectedImage, setSelectedImage] = useState<string | null>(
-    product.images && product.images.length > 0 ? product.images[0] : null
+    imageArray.length > 0 ? imageArray[0] : null
   );
 
 
@@ -205,8 +230,8 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
         </div>
       )}
 
-      {/* Product Images */}
-      {product.images && (
+      {/* Product Images - Show all images in detail view */}
+      {imageArray.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg">
           <div className="px-4 py-2 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">{t('fields.images')}</h2>
@@ -215,53 +240,60 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
           <div className="p-3">
             {/* Image List - Horizontal */}
             <div className="flex gap-4 overflow-x-auto">
-              {(() => {
-                try {
-                  const imageArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
-                  if (Array.isArray(imageArray) && imageArray.length > 0) {
-                    return imageArray.map((image: string, index: number) => (
-                      <div
-                        key={index}
-                        onClick={() => setSelectedImage(image)}
-                        className={`flex-shrink-0 w-56 h-56 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
-                          selectedImage === image
-                            ? 'border-blue-500 ring-2 ring-blue-200'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <img
-                          src={image}
-                          alt={`${product.name} ${index + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={handleImageError}
-                        />
+              {imageArray.length > 0 ? (
+                imageArray.map((image: string, index: number) => (
+                  <div
+                    key={index}
+                    onClick={() => setSelectedImage(image)}
+                    className={`flex-shrink-0 w-56 h-56 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${
+                      selectedImage === image
+                        ? 'border-blue-500 ring-2 ring-blue-200'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="relative w-full h-full">
+                      <img
+                        src={image}
+                        alt={`${product.name} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                      {/* Fallback placeholder for this image */}
+                      <div className="hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center">
+                        <Package className="w-12 h-12 text-gray-400" />
                       </div>
-                    ));
-                  }
-                  return null;
-                } catch (error) {
-                  return null;
-                }
-              })()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex items-center justify-center w-full h-32 text-gray-500">
+                  <span>No images available</span>
+                </div>
+              )}
             </div>
             
             {/* Selected Image Preview - Only show if there are multiple images */}
-            {selectedImage && (() => {
-              try {
-                const imageArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
-                return Array.isArray(imageArray) && imageArray.length > 1;
-              } catch {
-                return false;
-              }
-            })() && (
+            {selectedImage && imageArray.length > 1 && (
               <div className="mt-6">
-                <div className="aspect-square max-w-2xl mx-auto bg-gray-100 rounded-lg overflow-hidden">
+                <div className="aspect-square max-w-2xl mx-auto bg-gray-100 rounded-lg overflow-hidden relative">
                   <img
                     src={selectedImage}
                     alt={product.name}
                     className="w-full h-full object-cover"
-                    onError={handleImageError}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
                   />
+                  {/* Fallback placeholder for selected image */}
+                  <div className="hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center">
+                    <Package className="w-16 h-16 text-gray-400" />
+                  </div>
                 </div>
               </div>
             )}

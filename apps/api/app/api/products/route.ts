@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 
@@ -72,10 +72,18 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const result = await db.products.search(searchFilters);
     console.log('✅ Search completed, found:', result.data?.length || 0, 'products');
 
+    // Process product images to generate presigned URLs for thumbnail display
+    const processedProducts = await Promise.all(
+      (result.data || []).map(async (product) => ({
+        ...product,
+        images: await processProductImages(product.images, 86400 * 7) // 7 days expiration
+      }))
+    );
+
     return NextResponse.json({
       success: true,
       data: {
-        products: result.data || [],
+        products: processedProducts,
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
