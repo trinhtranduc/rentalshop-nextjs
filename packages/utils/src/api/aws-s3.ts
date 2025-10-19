@@ -20,11 +20,16 @@ const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 
 // Create S3Client function to avoid cached client issues
 function createS3Client() {
+  // Clean credentials to remove invisible characters (common cause of signature mismatch)
+  const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
+  const cleanSecretKey = (AWS_SECRET_ACCESS_KEY || '').trim();
+  
   return new S3Client({
     region: AWS_REGION,
+    forcePathStyle: false,
     credentials: {
-      accessKeyId: AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: AWS_SECRET_ACCESS_KEY || '',
+      accessKeyId: cleanAccessKey,
+      secretAccessKey: cleanSecretKey,
     },
   });
 }
@@ -74,24 +79,31 @@ export async function uploadToS3(
   let key: string = '';
 
   try {
-    // Validate AWS credentials before upload
-    if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
-      console.error('❌ AWS credentials missing:', {
-        hasAccessKey: !!AWS_ACCESS_KEY_ID,
-        hasSecretKey: !!AWS_SECRET_ACCESS_KEY,
-        accessKeyPreview: AWS_ACCESS_KEY_ID ? `${AWS_ACCESS_KEY_ID.substring(0, 8)}...` : 'missing'
+    // Validate AWS credentials before upload (based on Stack Overflow solutions)
+    const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
+    const cleanSecretKey = (AWS_SECRET_ACCESS_KEY || '').trim();
+    
+    if (!cleanAccessKey || !cleanSecretKey) {
+      console.error('❌ AWS credentials missing or empty after trimming:', {
+        hasAccessKey: !!cleanAccessKey,
+        hasSecretKey: !!cleanSecretKey,
+        accessKeyPreview: cleanAccessKey ? `${cleanAccessKey.substring(0, 8)}...` : 'missing',
+        originalLength: AWS_ACCESS_KEY_ID?.length || 0
       });
       
       return {
         success: false,
-        error: 'AWS credentials not configured. Please check AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.'
+        error: 'AWS credentials not configured or contain only whitespace. Please check AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.'
       };
     }
     
-    console.log('✅ AWS credentials found:', {
-      accessKeyPreview: `${AWS_ACCESS_KEY_ID.substring(0, 8)}...`,
-      region: process.env.AWS_REGION || 'us-east-1',
-      bucket: BUCKET_NAME
+    console.log('✅ AWS credentials validated:', {
+      accessKeyPreview: `${cleanAccessKey.substring(0, 8)}...`,
+      accessKeyLength: cleanAccessKey.length,
+      secretKeyLength: cleanSecretKey.length,
+      region: AWS_REGION,
+      bucket: BUCKET_NAME,
+      signatureVersion: 'v4'
     });
     const {
       folder: optionsFolder = 'uploads',
@@ -107,7 +119,9 @@ export async function uploadToS3(
     finalFileName = fileName || `${timestamp}-${randomId}.${fileExtension}`;
     folder = optionsFolder;
     
-    key = `${folder}/${finalFileName}`;
+    // Clean key to prevent signature mismatch issues (common problem from Stack Overflow)
+    const cleanFileName = finalFileName.replace(/^\./, ''); // Remove leading dots
+    key = `${folder}/${cleanFileName}`.replace(/\/+/g, '/'); // Remove double slashes
 
     // Upload to S3
     const command = new PutObjectCommand({
@@ -146,11 +160,17 @@ export async function uploadToS3(
       accessKeyPreview: AWS_ACCESS_KEY_ID ? `${AWS_ACCESS_KEY_ID.substring(0, 8)}...` : 'missing'
     });
     
-    // Provide more specific error messages
+    // Provide more specific error messages based on Stack Overflow solutions
     let errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     if (errorMessage.includes('signature')) {
-      errorMessage = `Signature error - please verify AWS credentials (Access Key ID: ${AWS_ACCESS_KEY_ID?.substring(0, 8)}...) and region (${AWS_REGION})`;
+      const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
+      errorMessage = `AWS Signature Mismatch - Common fixes:
+1. Check for invisible characters in credentials (spaces, line breaks)
+2. Verify Access Key ID: ${cleanAccessKey.substring(0, 8)}...
+3. Verify region: ${AWS_REGION}
+4. Ensure signature version v4 is used
+5. Check key format (removed leading dots and special chars)`;
     }
     
     return {
@@ -193,15 +213,16 @@ export async function commitStagingFiles(
 
   for (const stagingKey of stagingKeys) {
     try {
-      // Extract filename from staging key (remove staging/ prefix)
-      const filename = stagingKey.replace(/^staging\//, '');
-      const targetKey = `${targetFolder}/${filename}`;
+      // Clean and validate keys to prevent signature mismatch (Stack Overflow fix)
+      const cleanStagingKey = stagingKey.trim().replace(/\/+/g, '/');
+      const filename = cleanStagingKey.replace(/^staging\//, '').replace(/^\./, '');
+      const cleanTargetKey = `${targetFolder}/${filename}`.replace(/\/+/g, '/');
 
-      // Copy from staging to target
+      // Copy from staging to target with clean keys
       const copyCommand = new CopyObjectCommand({
         Bucket: BUCKET_NAME,
-        CopySource: `${BUCKET_NAME}/${stagingKey}`,
-        Key: targetKey,
+        CopySource: `${BUCKET_NAME}/${cleanStagingKey}`,
+        Key: cleanTargetKey,
         ACL: 'public-read',
       });
 
@@ -210,10 +231,10 @@ export async function commitStagingFiles(
       await freshClient.send(copyCommand);
 
       // Delete staging file
-      await deleteFromS3(stagingKey);
+      await deleteFromS3(cleanStagingKey);
 
-      committedKeys.push(targetKey);
-      console.log(`✅ Moved ${stagingKey} → ${targetKey}`);
+      committedKeys.push(cleanTargetKey);
+      console.log(`✅ Moved ${cleanStagingKey} → ${cleanTargetKey}`);
     } catch (error) {
       const errorMsg = `Failed to commit ${stagingKey}: ${error instanceof Error ? error.message : 'Unknown error'}`;
       console.error('❌', errorMsg);
