@@ -5,11 +5,22 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 // AWS S3 CONFIGURATION
 // ============================================================================
 
+// Validate AWS credentials
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+
+if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+  console.error('❌ Missing AWS credentials:', {
+    hasAccessKey: !!AWS_ACCESS_KEY_ID,
+    hasSecretKey: !!AWS_SECRET_ACCESS_KEY
+  });
+}
+
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    accessKeyId: AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: AWS_SECRET_ACCESS_KEY || '',
   },
 });
 
@@ -51,6 +62,25 @@ export async function uploadToS3(
   options: S3UploadOptions = {}
 ): Promise<S3UploadResponse> {
   try {
+    // Validate AWS credentials before upload
+    if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+      console.error('❌ AWS credentials missing:', {
+        hasAccessKey: !!AWS_ACCESS_KEY_ID,
+        hasSecretKey: !!AWS_SECRET_ACCESS_KEY,
+        accessKeyPreview: AWS_ACCESS_KEY_ID ? `${AWS_ACCESS_KEY_ID.substring(0, 8)}...` : 'missing'
+      });
+      
+      return {
+        success: false,
+        error: 'AWS credentials not configured. Please check AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.'
+      };
+    }
+    
+    console.log('✅ AWS credentials found:', {
+      accessKeyPreview: `${AWS_ACCESS_KEY_ID.substring(0, 8)}...`,
+      region: process.env.AWS_REGION || 'us-east-1',
+      bucket: BUCKET_NAME
+    });
     const {
       folder = 'uploads',
       fileName,
