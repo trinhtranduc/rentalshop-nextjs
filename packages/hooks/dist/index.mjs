@@ -531,6 +531,7 @@ function useDedupedApi(options) {
   const [loading, setLoading] = useState4(true);
   const [error, setError] = useState4(null);
   const [isStale, setIsStale] = useState4(false);
+  const [refetchTrigger, setRefetchTrigger] = useState4(0);
   const fetchIdRef = useRef(0);
   const filtersRef = useRef("");
   const fetchFnRef = useRef(fetchFn);
@@ -635,7 +636,7 @@ function useDedupedApi(options) {
     }).finally(() => {
       requestCache.delete(cacheKey);
     });
-  }, [cacheKey, enabled, staleTime, cacheTime]);
+  }, [cacheKey, enabled, staleTime, cacheTime, refetchTrigger]);
   useEffect4(() => {
     if (!refetchOnWindowFocus || !enabled)
       return;
@@ -661,6 +662,7 @@ function useDedupedApi(options) {
     dataCache.delete(cacheKey);
     filtersRef.current = "";
     fetchIdRef.current += 1;
+    setRefetchTrigger((prev) => prev + 1);
   }, [enabled, cacheKey]);
   return {
     data,

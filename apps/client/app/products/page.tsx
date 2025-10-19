@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   ProductDetail,
   ProductEdit,
   ConfirmationDialog,
@@ -123,7 +124,7 @@ export default function ProductsPage() {
     sortOrder
   }), [search, categoryId, outletId, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useProductsData({ filters });
+  const { data, loading, error, refetch } = useProductsData({ filters });
   
   // Debug: Log data state
   console.log('📊 Products Page - Data state:', {
@@ -151,6 +152,7 @@ export default function ProductsPage() {
     const newURL = `${pathname}?${params.toString()}`;
     router.push(newURL, { scroll: false });
   }, [pathname, router, searchParams]);
+
 
   // ============================================================================
   // FILTER HANDLERS - Simple URL Updates
@@ -250,7 +252,7 @@ export default function ProductsPage() {
                 t('messages.updateSuccess'), 
                 t('messages.updateSuccess')
               );
-              router.refresh();
+              refetch();
             } else {
               throw new Error(response.error || t('messages.updateFailed'));
             }
@@ -271,7 +273,7 @@ export default function ProductsPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.products, router, toastSuccess, toastError]);
+  }, [data?.products, router, toastSuccess, toastError, refetch]);
   
   // Handle product update from edit dialog
   const handleProductUpdate = useCallback(async (productData: ProductUpdateInput) => {
@@ -283,7 +285,7 @@ export default function ProductsPage() {
         toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
         setShowEditDialog(false);
         setSelectedProduct(null);
-        router.refresh();
+        refetch();
       } else {
         throw new Error(response.error || t('messages.updateFailed'));
       }
@@ -291,7 +293,7 @@ export default function ProductsPage() {
       toastError(t('messages.updateFailed'), (error as Error).message);
       throw error;
     }
-  }, [selectedProduct, router, toastSuccess, toastError]);
+  }, [selectedProduct, router, toastSuccess, toastError, refetch]);
   
   // Handle delete confirmation
   const handleConfirmDelete = useCallback(async () => {
@@ -303,14 +305,33 @@ export default function ProductsPage() {
         toastSuccess(t('messages.deleteSuccess'), t('messages.deleteSuccess'));
         setShowDeleteConfirm(false);
         setProductToDelete(null);
-        router.refresh();
+        refetch();
       } else {
         throw new Error(response.error || t('messages.deleteFailed'));
       }
     } catch (error) {
         toastError(t('messages.deleteFailed'), (error as Error).message);
     }
-  }, [productToDelete, router, toastSuccess, toastError]);
+  }, [productToDelete, router, toastSuccess, toastError, refetch]);
+
+  // Handle product creation from add dialog
+  const handleProductCreated = useCallback(async (productData: any) => {
+    try {
+      const response = await productsApi.createProduct(productData);
+      
+      if (response.success) {
+        toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
+        setShowAddDialog(false);
+        refetch();
+      } else {
+        throw new Error(response.error || t('messages.createFailed'));
+      }
+    } catch (error) {
+      console.error('Error creating product:', error);
+      toastError(tc('labels.error'), error instanceof Error ? error.message : t('messages.createFailed'));
+      throw error; // Re-throw to let dialog handle it
+    }
+  }, [toastSuccess, toastError, refetch, t, tc]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -430,22 +451,7 @@ export default function ProductsPage() {
         categories={categories}
         outlets={outlets}
         merchantId={String(user?.merchantId || user?.merchant?.id || 0)}
-        onProductCreated={async (productData: any) => {
-          try {
-            const response = await productsApi.createProduct(productData);
-            
-            if (response.success) {
-              toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
-              router.refresh();
-            } else {
-              throw new Error(response.error || t('messages.createFailed'));
-            }
-          } catch (error) {
-            console.error('Error creating product:', error);
-            toastError(tc('labels.error'), error instanceof Error ? error.message : t('messages.createFailed'));
-            throw error; // Re-throw to let dialog handle it
-          }
-        }}
+        onProductCreated={handleProductCreated}
         onError={(error) => {
           toastError(tc('labels.error'), error);
         }}
@@ -458,16 +464,26 @@ export default function ProductsPage() {
             <DialogTitle>
               {t('editProduct')}: {selectedProduct?.name}
             </DialogTitle>
+            <DialogDescription>
+              Update product information and settings.
+            </DialogDescription>
           </DialogHeader>
           {selectedProduct && (
             <ProductEdit
               product={selectedProduct}
               categories={categories}
               outlets={outlets}
-              onUpdate={async (productData) => {
-                const updateData: ProductUpdateInput = {
+              merchantId={user?.merchantId || user?.merchant?.id || 0}
+              onSave={async (productData) => {
+                const updateData: any = {
                   id: selectedProduct.id,
-                  ...productData
+                  ...productData,
+                  // Convert images array to string format for API
+                  images: Array.isArray(productData.images) 
+                    ? productData.images.join(',') 
+                    : productData.images || '',
+                  // Ensure outletStock is included for inventory update
+                  outletStock: productData.outletStock || []
                 };
                 await handleProductUpdate(updateData);
               }}

@@ -311,12 +311,12 @@ var require_react_fast_compare = __commonJS({
     module2.exports = function exportedEqual(a, b) {
       try {
         return equal(a, b);
-      } catch (error2) {
-        if (error2.message && error2.message.match(/stack|recursion/i) || error2.number === -2146828260) {
-          console.warn("Warning: react-fast-compare does not handle circular references.", error2.name, error2.message);
+      } catch (error) {
+        if (error.message && error.message.match(/stack|recursion/i) || error.number === -2146828260) {
+          console.warn("Warning: react-fast-compare does not handle circular references.", error.name, error.message);
           return false;
         }
-        throw error2;
+        throw error;
       }
     };
   }
@@ -2682,7 +2682,7 @@ var NumericInput = ({
   onChange,
   placeholder = "0",
   className,
-  error: error2 = false,
+  error = false,
   disabled = false,
   min = 0,
   max,
@@ -2762,7 +2762,7 @@ var NumericInput = ({
           placeholder,
           className: cn(
             suffix ? "pr-12" : "",
-            error2 && "border-red-500 focus:border-red-500",
+            error && "border-red-500 focus:border-red-500",
             className
           ),
           disabled
@@ -2921,7 +2921,7 @@ var LimitInput = ({
   onChange,
   placeholder = "-1 (unlimited)",
   className,
-  error: error2 = false,
+  error = false,
   disabled = false,
   min = -1,
   max,
@@ -2969,7 +2969,7 @@ var LimitInput = ({
         max,
         disabled,
         className: cn(
-          error2 && "border-red-500 focus:border-red-500",
+          error && "border-red-500 focus:border-red-500",
           className
         )
       }
@@ -3552,7 +3552,7 @@ var ProductAvailabilityAsyncDisplay = ({
 }) => {
   const [availability, setAvailability] = (0, import_react11.useState)(null);
   const [isLoading, setIsLoading] = (0, import_react11.useState)(false);
-  const [error2, setError] = (0, import_react11.useState)(null);
+  const [error, setError] = (0, import_react11.useState)(null);
   (0, import_react11.useEffect)(() => {
     if (!product || !pickupDate || !returnDate) {
       setAvailability(null);
@@ -3587,7 +3587,7 @@ var ProductAvailabilityAsyncDisplay = ({
       "Checking..."
     ] });
   }
-  if (error2) {
+  if (error) {
     return /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("div", { className: "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600", children: "\u26A0\uFE0F Error checking availability" });
   }
   if (!availability) {
@@ -4495,7 +4495,7 @@ var ProductForm = ({
       await new Promise((resolve) => setTimeout(resolve, 1e3));
       setAutoSaveStatus("saved");
       setTimeout(() => setAutoSaveStatus("idle"), 3e3);
-    } catch (error2) {
+    } catch (error) {
       setAutoSaveStatus("error");
       setTimeout(() => setAutoSaveStatus("idle"), 3e3);
     }
@@ -4702,11 +4702,11 @@ var ProductForm = ({
             images: prev.images.filter((img) => img !== `uploading-${fileId}`)
           }));
         }
-      } catch (error2) {
-        console.error("Upload error:", error2);
+      } catch (error) {
+        console.error("Upload error:", error);
         setUploadErrors((prev) => ({
           ...prev,
-          [fileId]: error2 instanceof Error ? error2.message : "Upload failed"
+          [fileId]: error instanceof Error ? error.message : "Upload failed"
         }));
         setFormData((prev) => ({
           ...prev,
@@ -5052,11 +5052,11 @@ var ProductForm = ({
               }
             )
           ] }),
-          Object.keys(uploadErrors).length > 0 && /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("div", { className: "space-y-2", children: Object.entries(uploadErrors).map(([fileId, error2]) => /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)("div", { className: "flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg", children: [
+          Object.keys(uploadErrors).length > 0 && /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("div", { className: "space-y-2", children: Object.entries(uploadErrors).map(([fileId, error]) => /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)("div", { className: "flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg", children: [
             /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(import_lucide_react15.AlertCircle, { className: "w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" }),
             /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)("div", { className: "flex-1", children: [
               /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("p", { className: "text-sm text-red-700 font-medium", children: t2("messages.uploadFailed") }),
-              /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("p", { className: "text-xs text-red-600 mt-1", children: error2 })
+              /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("p", { className: "text-xs text-red-600 mt-1", children: error })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
               Button2,
@@ -5812,8 +5812,8 @@ var useCreateOrderForm = (props) => {
         apiPayload.id = initialOrder.id;
       }
       props.onSubmit?.(apiPayload);
-    } catch (error2) {
-      throw error2;
+    } catch (error) {
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -6035,8 +6035,8 @@ var useProductSearch = (currency = "USD") => {
         });
       }
       return [];
-    } catch (error2) {
-      console.error("Error searching products:", error2);
+    } catch (error) {
+      console.error("Error searching products:", error);
       return [];
     } finally {
       setIsLoadingProducts(false);
@@ -6055,8 +6055,8 @@ var useProductSearch = (currency = "USD") => {
         return result.data.products;
       }
       return [];
-    } catch (error2) {
-      console.error("Error searching products:", error2);
+    } catch (error) {
+      console.error("Error searching products:", error);
       return [];
     } finally {
       setIsLoadingProducts(false);
@@ -6100,8 +6100,8 @@ var useCustomerSearch = () => {
         setCustomerSearchResults([]);
         return [];
       }
-    } catch (error2) {
-      console.error("Error searching customers:", error2);
+    } catch (error) {
+      console.error("Error searching customers:", error);
       setCustomerSearchResults([]);
       return [];
     } finally {
@@ -7119,15 +7119,15 @@ var AddCustomerForm = ({
       setInternalIsSubmitting(true);
       setErrorMessage(null);
       await onSave(formData);
-    } catch (error2) {
+    } catch (error) {
       let errorMsg = "An unexpected error occurred";
-      if (error2 instanceof Error) {
-        if (error2.message.includes("DUPLICATE_PHONE")) {
+      if (error instanceof Error) {
+        if (error.message.includes("DUPLICATE_PHONE")) {
           errorMsg = "A customer with this phone number already exists";
-        } else if (error2.message.includes("DUPLICATE_EMAIL")) {
+        } else if (error.message.includes("DUPLICATE_EMAIL")) {
           errorMsg = "A customer with this email address already exists";
         } else {
-          errorMsg = error2.message;
+          errorMsg = error.message;
         }
       }
       setErrorMessage(errorMsg);
@@ -7330,10 +7330,10 @@ var CustomerCreationDialog = ({
             await onCustomerCreated(customerData);
             console.log("\u{1F50D} CustomerCreationDialog: Customer created successfully, closing dialog...");
             onOpenChange(false);
-          } catch (error2) {
-            console.error("\u274C CustomerCreationDialog: Error occurred:", error2);
+          } catch (error) {
+            console.error("\u274C CustomerCreationDialog: Error occurred:", error);
             setIsCreatingCustomer(false);
-            throw error2;
+            throw error;
           } finally {
             console.log("\u{1F50D} CustomerCreationDialog: Finally block executed");
             setIsCreatingCustomer(false);
@@ -7790,8 +7790,8 @@ var CreateOrderForm = (props) => {
         ].filter(Boolean),
         type: "product"
       }));
-    } catch (error2) {
-      console.error("Error searching products:", error2);
+    } catch (error) {
+      console.error("Error searching products:", error);
       return [];
     }
   }, [searchProducts, currency]);
@@ -7850,8 +7850,8 @@ var CreateOrderForm = (props) => {
           color: "bg-red-100 text-red-600"
         };
       }
-    } catch (error2) {
-      console.error("Error checking availability:", error2);
+    } catch (error) {
+      console.error("Error checking availability:", error);
       const outletStock = product.outletStock?.[0];
       const available = outletStock?.available ?? 0;
       if (available === 0) {
@@ -7931,9 +7931,9 @@ var CreateOrderForm = (props) => {
         toastError(t2("messages.error"), errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error2) {
-      console.error("\u274C handleAddNewCustomer: Error occurred:", error2);
-      throw error2;
+    } catch (error) {
+      console.error("\u274C handleAddNewCustomer: Error occurred:", error);
+      throw error;
     }
   }, [merchantId, outlets, customerSearchResults, setCustomerResults, setFormData, toastSuccess, toastError]);
   const handleCustomerSelect = (0, import_react23.useCallback)((customer) => {
@@ -8200,8 +8200,8 @@ var PlanForm = ({
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
-    } catch (error2) {
-      console.error("Error submitting plan:", error2);
+    } catch (error) {
+      console.error("Error submitting plan:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -8917,9 +8917,9 @@ function createValidation(config) {
         spec: schema.spec,
         disableStackTrace: overrides.disableStackTrace || disableStackTrace
       }, params, overrides.params), resolveOptions);
-      const error2 = new ValidationError(ValidationError.formatError(overrides.message || message, nextParams), value, nextParams.path, overrides.type || name, nextParams.disableStackTrace);
-      error2.params = nextParams;
-      return error2;
+      const error = new ValidationError(ValidationError.formatError(overrides.message || message, nextParams), value, nextParams.path, overrides.type || name, nextParams.disableStackTrace);
+      error.params = nextParams;
+      return error;
     }
     const invalid = abortEarly ? panic : next;
     let ctx = {
@@ -9136,20 +9136,20 @@ function createStandardPath(path) {
   }
   return segments;
 }
-function createStandardIssues(error2, parentPath) {
-  const path = parentPath ? `${parentPath}.${error2.path}` : error2.path;
-  return error2.errors.map((err) => ({
+function createStandardIssues(error, parentPath) {
+  const path = parentPath ? `${parentPath}.${error.path}` : error.path;
+  return error.errors.map((err) => ({
     message: err,
     path: createStandardPath(path)
   }));
 }
-function issuesFromValidationError(error2, parentPath) {
+function issuesFromValidationError(error, parentPath) {
   var _error$inner;
-  if (!((_error$inner = error2.inner) != null && _error$inner.length) && error2.errors.length) {
-    return createStandardIssues(error2, parentPath);
+  if (!((_error$inner = error.inner) != null && _error$inner.length) && error.errors.length) {
+    return createStandardIssues(error, parentPath);
   }
-  const path = parentPath ? `${parentPath}.${error2.path}` : error2.path;
-  return error2.inner.flatMap((err) => issuesFromValidationError(err, path));
+  const path = parentPath ? `${parentPath}.${error.path}` : error.path;
+  return error.inner.flatMap((err) => issuesFromValidationError(err, path));
 }
 var Schema = class {
   constructor(options) {
@@ -9434,10 +9434,10 @@ attempted value: ${formattedValue}
       value
     }));
     let disableStackTrace = (_options$disableStack2 = options == null ? void 0 : options.disableStackTrace) != null ? _options$disableStack2 : schema.spec.disableStackTrace;
-    return new Promise((resolve, reject) => schema._validate(value, options, (error2, parsed) => {
-      if (ValidationError.isError(error2))
-        error2.value = parsed;
-      reject(error2);
+    return new Promise((resolve, reject) => schema._validate(value, options, (error, parsed) => {
+      if (ValidationError.isError(error))
+        error.value = parsed;
+      reject(error);
     }, (errors, validated) => {
       if (errors.length)
         reject(new ValidationError(errors, validated, void 0, void 0, disableStackTrace));
@@ -9454,10 +9454,10 @@ attempted value: ${formattedValue}
     let disableStackTrace = (_options$disableStack3 = options == null ? void 0 : options.disableStackTrace) != null ? _options$disableStack3 : schema.spec.disableStackTrace;
     schema._validate(value, Object.assign({}, options, {
       sync: true
-    }), (error2, parsed) => {
-      if (ValidationError.isError(error2))
-        error2.value = parsed;
-      throw error2;
+    }), (error, parsed) => {
+      if (ValidationError.isError(error))
+        error.value = parsed;
+      throw error;
     }, (errors, validated) => {
       if (errors.length)
         throw new ValidationError(errors, value, void 0, void 0, disableStackTrace);
@@ -12815,12 +12815,12 @@ function useFormik(_ref) {
         });
         return maybePromise.then(function(x) {
           return x;
-        }).then(function(error2) {
+        }).then(function(error) {
           dispatch({
             type: "SET_FIELD_ERROR",
             payload: {
               field: name,
-              value: error2
+              value: error
             }
           });
           dispatch({
@@ -12845,12 +12845,12 @@ function useFormik(_ref) {
       });
       return runValidationSchema(state.values, name).then(function(x) {
         return x;
-      }).then(function(error2) {
+      }).then(function(error) {
         dispatch({
           type: "SET_FIELD_ERROR",
           payload: {
             field: name,
-            value: getIn2(error2, name)
+            value: getIn2(error, name)
           }
         });
         dispatch({
@@ -13025,8 +13025,8 @@ function useFormik(_ref) {
           if (promiseOrUndefined === void 0) {
             return;
           }
-        } catch (error2) {
-          throw error2;
+        } catch (error) {
+          throw error;
         }
         return Promise.resolve(promiseOrUndefined).then(function(result) {
           if (!!isMounted.current) {
@@ -13664,7 +13664,7 @@ var import_jsx_runtime52 = require("react/jsx-runtime");
 var LoginForm = ({
   onLogin,
   onNavigate,
-  error: error2,
+  error,
   loading = false,
   isAdmin = false,
   onInputChange
@@ -13689,8 +13689,8 @@ var LoginForm = ({
         } else {
           console.log("Login data:", values);
         }
-      } catch (error3) {
-        console.error("Login failed:", error3);
+      } catch (error2) {
+        console.error("Login failed:", error2);
       }
     }
   });
@@ -13759,9 +13759,9 @@ var LoginForm = ({
         /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("p", { className: "mt-3 text-base text-gray-600 max-w-sm mx-auto", children: isAdmin ? "Access your admin dashboard" : t2("login.subtitle") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime52.jsx)(import_ui14.Card, { className: "shadow-2xl border-0 bg-white/80 backdrop-blur-sm relative z-10", children: /* @__PURE__ */ (0, import_jsx_runtime52.jsx)(import_ui14.CardContent, { className: "p-8", children: /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
-        error2 && /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)("div", { className: "mb-4 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center", children: [
+        error && /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)("div", { className: "mb-4 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center", children: [
           /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { className: "w-4 h-4 mr-2", children: "\u26A0\uFE0F" }),
-          error2
+          error
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)("div", { className: "space-y-4", children: [
           /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)("div", { children: [
@@ -13999,10 +13999,10 @@ var RegisterForm = ({
         setTimeout(() => {
           window.location.href = "/login";
         }, 2e3);
-      } catch (error2) {
+      } catch (error) {
         toastError(
           t2("register.registrationFailed"),
-          error2.message || t2("register.somethingWentWrong")
+          error.message || t2("register.somethingWentWrong")
         );
       } finally {
         clearTimeout(timeoutId);
@@ -14457,7 +14457,7 @@ var import_jsx_runtime54 = require("react/jsx-runtime");
 var ForgetPasswordForm = ({
   onResetPassword,
   onNavigate,
-  error: error2,
+  error,
   loading = false,
   success = false
 }) => {
@@ -14481,8 +14481,8 @@ var ForgetPasswordForm = ({
           console.log("Reset password data:", values);
           setEmailSent(true);
         }
-      } catch (error3) {
-        console.error("Password reset failed:", error3);
+      } catch (error2) {
+        console.error("Password reset failed:", error2);
       }
     }
   });
@@ -14551,9 +14551,9 @@ var ForgetPasswordForm = ({
         /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui16.CardDescription, { className: "text-sm text-gray-600 mt-1", children: t2("forgotPassword.subtitle") })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui16.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("form", { onSubmit: handleSubmit, children: [
-        error2 && /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "mb-4 p-3 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg flex items-center", children: [
+        error && /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "mb-4 p-3 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg flex items-center", children: [
           /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "w-4 h-4 mr-2", children: "\u26A0\uFE0F" }),
-          error2
+          error
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-4", children: [
           /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { children: [
@@ -15763,7 +15763,7 @@ function Dashboard({ data, onPeriodChange, onActionClick }) {
 var Dashboard_default = Dashboard;
 
 // src/components/features/Products/Products.tsx
-var import_react49 = __toESM(require("react"));
+var import_react48 = __toESM(require("react"));
 
 // src/components/features/Products/components/ProductHeader.tsx
 var import_jsx_runtime74 = require("react/jsx-runtime");
@@ -16022,8 +16022,8 @@ var ProductCard = ({
     onProductUpdated?.(updatedProduct);
     setIsEditDialogOpen(false);
   };
-  const handleError = (error2) => {
-    onError?.(error2);
+  const handleError = (error) => {
+    onError?.(error);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(import_jsx_runtime77.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(Card, { className: cn2("overflow-hidden transition-all hover:shadow-lg", className), children: [
     /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { className: "relative aspect-square overflow-hidden bg-gray-100", children: [
@@ -16207,9 +16207,9 @@ function ProductGrid({
     }
     setIsAddDialogOpen(false);
   };
-  const handleError = (error2) => {
+  const handleError = (error) => {
     if (onError) {
-      onError(error2);
+      onError(error);
     }
   };
   if (products.length === 0) {
@@ -16256,7 +16256,7 @@ function ProductGrid({
 }
 
 // src/components/features/Products/components/ProductTable.tsx
-var import_react37 = __toESM(require("react"));
+var import_react37 = require("react");
 var import_ui21 = require("@rentalshop/ui");
 var import_hooks18 = require("@rentalshop/hooks");
 var import_utils21 = require("@rentalshop/utils");
@@ -16269,7 +16269,7 @@ function ProductTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = import_react37.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = (0, import_react37.useState)(null);
   const formatMoney = (0, import_ui21.useFormatCurrency)();
   const t2 = (0, import_hooks18.useProductTranslations)();
   const tc = (0, import_hooks18.useCommonTranslations)();
@@ -16386,7 +16386,7 @@ function ProductTable({
         day: "numeric"
       }) : "N/A" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ (0, import_jsx_runtime79.jsxs)(DropdownMenu, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime79.jsx)(DropdownMenuTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime79.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime79.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime79.jsx)(
           Button2,
           {
             variant: "ghost",
@@ -16543,7 +16543,7 @@ var ProductAddForm = ({
             title: outlets.length === 0 ? t2("messages.needOutletFirst") : void 0,
             children: isSubmitting ? /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)(import_jsx_runtime80.Fragment, { children: [
               /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(import_lucide_react30.Loader2, { className: "h-4 w-4 mr-2 animate-spin" }),
-              t2("messages.creating")
+              tc("buttons.creating")
             ] }) : /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)(import_jsx_runtime80.Fragment, { children: [
               /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(import_lucide_react30.Plus, { className: "h-4 w-4 mr-2" }),
               t2("createProduct")
@@ -16575,10 +16575,10 @@ var ProductAddDialog = ({
         await onProductCreated(productData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C ProductAddDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C ProductAddDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create product");
+        onError(error instanceof Error ? error.message : "Failed to create product");
       }
     } finally {
       setIsSubmitting(false);
@@ -16590,7 +16590,10 @@ var ProductAddDialog = ({
     onOpenChange(false);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(Dialog, { open, onOpenChange, children: /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(DialogContent, { className: "max-w-4xl max-h-[95vh] overflow-y-auto p-0", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(DialogHeader, { className: "px-6 py-4 border-b border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(DialogTitle, { className: "text-xl font-semibold text-gray-900", children: "Add New Product" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(DialogHeader, { className: "px-6 py-4 border-b border-gray-200", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(DialogTitle, { className: "text-xl font-semibold text-gray-900", children: "Add New Product" }),
+      /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(DialogDescription, { children: "Create a new product for your rental shop inventory." })
+    ] }),
     /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
       ProductAddForm,
       {
@@ -16640,8 +16643,8 @@ function ProductActions({
     }
     setIsAddDialogOpen(false);
   };
-  const handleError = (error2) => {
-    onError?.(error2);
+  const handleError = (error) => {
+    onError?.(error);
   };
   const allActions = [
     {
@@ -16779,7 +16782,6 @@ function ProductDetailLoading() {
 }
 
 // src/components/features/Products/components/ProductDetailList.tsx
-var import_react41 = require("react");
 var import_navigation3 = require("next/navigation");
 var import_hooks21 = require("@rentalshop/hooks");
 var import_lucide_react31 = require("lucide-react");
@@ -16820,9 +16822,6 @@ var ProductDetailList = ({
     }
   };
   const imageArray = normalizeImages(product.images);
-  const [selectedImage, setSelectedImage] = (0, import_react41.useState)(
-    imageArray.length > 0 ? imageArray[0] : null
-  );
   const handleImageError = (e2) => {
     e2.currentTarget.style.display = "none";
   };
@@ -16932,48 +16931,29 @@ var ProductDetailList = ({
     ] }),
     imageArray.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "bg-white border border-gray-200 rounded-lg", children: [
       /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "px-4 py-2 border-b border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("h2", { className: "text-lg font-semibold text-gray-900", children: t2("fields.images") }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "p-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "flex gap-4 overflow-x-auto", children: imageArray.length > 0 ? imageArray.map((image, index) => /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
-          "div",
-          {
-            onClick: () => setSelectedImage(image),
-            className: `flex-shrink-0 w-56 h-56 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${selectedImage === image ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-gray-300"}`,
-            children: /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "relative w-full h-full", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
-                "img",
-                {
-                  src: image,
-                  alt: `${product.name} ${index + 1}`,
-                  className: "w-full h-full object-cover",
-                  onError: (e2) => {
-                    const target = e2.target;
-                    target.style.display = "none";
-                    target.nextElementSibling?.classList.remove("hidden");
-                  }
+      /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "p-3", children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4", children: imageArray.length > 0 ? imageArray.map((image, index) => /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+        "div",
+        {
+          className: "aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-all hover:scale-105",
+          children: /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "relative w-full h-full", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+              "img",
+              {
+                src: image,
+                alt: `${product.name} ${index + 1}`,
+                className: "w-full h-full object-cover",
+                onError: (e2) => {
+                  const target = e2.target;
+                  target.style.display = "none";
+                  target.nextElementSibling?.classList.remove("hidden");
                 }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(import_lucide_react31.Package, { className: "w-12 h-12 text-gray-400" }) })
-            ] })
-          },
-          index
-        )) : /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "flex items-center justify-center w-full h-32 text-gray-500", children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { children: "No images available" }) }) }),
-        selectedImage && imageArray.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "mt-6", children: /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "aspect-square max-w-2xl mx-auto bg-gray-100 rounded-lg overflow-hidden relative", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
-            "img",
-            {
-              src: selectedImage,
-              alt: product.name,
-              className: "w-full h-full object-cover",
-              onError: (e2) => {
-                const target = e2.target;
-                target.style.display = "none";
-                target.nextElementSibling?.classList.remove("hidden");
               }
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(import_lucide_react31.Package, { className: "w-16 h-16 text-gray-400" }) })
-        ] }) })
-      ] })
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(import_lucide_react31.Package, { className: "w-8 h-8 text-gray-400" }) })
+          ] })
+        },
+        index
+      )) : /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "col-span-full flex items-center justify-center h-32 text-gray-500", children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { children: "No images available" }) }) }) })
     ] })
   ] });
 };
@@ -17002,7 +16982,7 @@ var ProductDetailMultiLayout = ({
 };
 
 // src/components/features/Products/components/ProductEdit.tsx
-var import_react42 = require("react");
+var import_react41 = require("react");
 var import_ui25 = require("@rentalshop/ui");
 var import_ui26 = require("@rentalshop/ui");
 var import_hooks22 = require("@rentalshop/hooks");
@@ -17017,16 +16997,20 @@ var ProductEdit = ({
   onCancel,
   onBack
 }) => {
-  const [isSubmitting, setIsSubmitting] = (0, import_react42.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react41.useState)(false);
   const { toastSuccess, toastError } = (0, import_ui26.useToast)();
   const t2 = (0, import_hooks22.useProductTranslations)();
   const tc = (0, import_hooks22.useCommonTranslations)();
-  (0, import_react42.useEffect)(() => {
+  (0, import_react41.useEffect)(() => {
     console.log("\u{1F50D} ProductEdit - product data:", product);
     console.log("\u{1F50D} ProductEdit - product.category:", product.category);
     console.log("\u{1F50D} ProductEdit - product.outletStock:", product.outletStock);
     console.log("\u{1F50D} ProductEdit - outlets:", outlets);
-  }, [product, outlets]);
+    console.log("\u{1F50D} ProductEdit - onSave type:", typeof onSave);
+    console.log("\u{1F50D} ProductEdit - onSave:", onSave);
+    console.log("\u{1F50D} ProductEdit - onCancel type:", typeof onCancel);
+    console.log("\u{1F50D} ProductEdit - merchantId:", merchantId);
+  }, [product, outlets, onSave, onCancel, merchantId]);
   const initialFormData = {
     name: product.name,
     description: product.description || "",
@@ -17078,9 +17062,13 @@ var ProductEdit = ({
   const handleSubmit = async (data) => {
     setIsSubmitting(true);
     try {
+      if (typeof onSave !== "function") {
+        throw new Error("onSave function is not provided or invalid");
+      }
       await onSave(data);
     } catch (err) {
-      error("Error", err instanceof Error ? err.message : "Failed to update product");
+      console.error("\u274C ProductEdit: Error in handleSubmit:", err);
+      toastError(t2("messages.updateFailed"), err instanceof Error ? err.message : "Failed to update product");
     } finally {
       setIsSubmitting(false);
     }
@@ -17130,16 +17118,16 @@ var ProductEdit = ({
 };
 
 // src/components/features/Products/components/ProductOrdersView.tsx
-var import_react47 = require("react");
+var import_react46 = require("react");
 var import_lucide_react36 = require("lucide-react");
 var import_hooks26 = require("@rentalshop/hooks");
 
 // src/components/features/Orders/components/OrderHeader.tsx
-var import_react43 = __toESM(require("react"));
+var import_react42 = __toESM(require("react"));
 var import_ui27 = require("@rentalshop/ui");
 var import_hooks23 = require("@rentalshop/hooks");
 var import_jsx_runtime87 = require("react/jsx-runtime");
-var OrderHeader = import_react43.default.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
+var OrderHeader = import_react42.default.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
   const t2 = (0, import_hooks23.useOrderTranslations)();
   console.log("OrderHeader received stats:", stats);
   console.log("OrderHeader received totalOrders:", totalOrders);
@@ -17201,14 +17189,14 @@ var OrderHeader = import_react43.default.memo(function OrderHeader2({ totalOrder
 });
 
 // src/components/features/Orders/components/OrderFilters.tsx
-var import_react44 = __toESM(require("react"));
+var import_react43 = __toESM(require("react"));
 var import_ui28 = require("@rentalshop/ui");
 var import_ui29 = require("@rentalshop/ui");
 var import_utils24 = require("@rentalshop/utils");
 var import_constants10 = require("@rentalshop/constants");
 var import_hooks24 = require("@rentalshop/hooks");
 var import_jsx_runtime88 = require("react/jsx-runtime");
-var OrderFilters = import_react44.default.memo(function OrderFilters2({
+var OrderFilters = import_react43.default.memo(function OrderFilters2({
   filters,
   onFiltersChange,
   onSearchChange,
@@ -17216,18 +17204,18 @@ var OrderFilters = import_react44.default.memo(function OrderFilters2({
 }) {
   const t2 = (0, import_hooks24.useOrderTranslations)();
   const tc = (0, import_hooks24.useCommonTranslations)();
-  const [localSearch, setLocalSearch] = (0, import_react44.useState)(filters.search || "");
-  const [outlets, setOutlets] = (0, import_react44.useState)([]);
-  const [loadingOutlets, setLoadingOutlets] = (0, import_react44.useState)(false);
-  const [outletError, setOutletError] = (0, import_react44.useState)(null);
-  (0, import_react44.useEffect)(() => {
+  const [localSearch, setLocalSearch] = (0, import_react43.useState)(filters.search || "");
+  const [outlets, setOutlets] = (0, import_react43.useState)([]);
+  const [loadingOutlets, setLoadingOutlets] = (0, import_react43.useState)(false);
+  const [outletError, setOutletError] = (0, import_react43.useState)(null);
+  (0, import_react43.useEffect)(() => {
     const externalSearch = filters.search || "";
     if (externalSearch !== localSearch) {
       console.log("\u{1F504} OrderFilters: Syncing search from external:", externalSearch);
       setLocalSearch(externalSearch);
     }
   }, [filters.search]);
-  (0, import_react44.useEffect)(() => {
+  (0, import_react43.useEffect)(() => {
     const fetchOutlets = async () => {
       try {
         setLoadingOutlets(true);
@@ -17239,8 +17227,8 @@ var OrderFilters = import_react44.default.memo(function OrderFilters2({
           setOutletError("Failed to load outlets");
           setOutlets([]);
         }
-      } catch (error2) {
-        console.error("Error fetching outlets:", error2);
+      } catch (error) {
+        console.error("Error fetching outlets:", error);
         setOutletError("Failed to load outlets");
         setOutlets([]);
       } finally {
@@ -17495,7 +17483,7 @@ function OrderQuickFilters({
 }
 
 // src/components/features/Orders/components/OrderDateRangeFilter.tsx
-var import_react45 = require("react");
+var import_react44 = require("react");
 var import_lucide_react34 = require("lucide-react");
 var import_jsx_runtime90 = require("react/jsx-runtime");
 function OrderDateRangeFilter({
@@ -17505,9 +17493,9 @@ function OrderDateRangeFilter({
   onRangeChange,
   showWarning = false
 }) {
-  const [showCustomDialog, setShowCustomDialog] = (0, import_react45.useState)(false);
-  const [customStart, setCustomStart] = (0, import_react45.useState)("");
-  const [customEnd, setCustomEnd] = (0, import_react45.useState)("");
+  const [showCustomDialog, setShowCustomDialog] = (0, import_react44.useState)(false);
+  const [customStart, setCustomStart] = (0, import_react44.useState)("");
+  const [customEnd, setCustomEnd] = (0, import_react44.useState)("");
   const getLastNDays = (days) => {
     const end = /* @__PURE__ */ new Date();
     end.setHours(23, 59, 59, 999);
@@ -17678,14 +17666,14 @@ function OrderDateRangeFilter({
 }
 
 // src/components/features/Orders/components/OrderTable.tsx
-var import_react46 = __toESM(require("react"));
+var import_react45 = __toESM(require("react"));
 var import_ui32 = require("@rentalshop/ui");
 var import_hooks25 = require("@rentalshop/hooks");
 var import_utils25 = require("@rentalshop/utils");
 var import_constants11 = require("@rentalshop/constants");
 var import_lucide_react35 = require("lucide-react");
 var import_jsx_runtime91 = require("react/jsx-runtime");
-var OrderTable = import_react46.default.memo(function OrderTable2({
+var OrderTable = import_react45.default.memo(function OrderTable2({
   orders,
   onOrderAction,
   sortBy = "createdAt",
@@ -17694,7 +17682,7 @@ var OrderTable = import_react46.default.memo(function OrderTable2({
 }) {
   const formatMoney = (0, import_ui32.useFormatCurrency)();
   const t2 = (0, import_hooks25.useOrderTranslations)();
-  import_react46.default.useEffect(() => {
+  import_react45.default.useEffect(() => {
     if (orders.length > 0) {
       console.log("\u{1F4CB} OrderTable - Order statuses:", orders.map((o2) => ({
         orderNumber: o2.orderNumber,
@@ -18125,12 +18113,12 @@ var ProductOrdersView = ({
 }) => {
   const t2 = (0, import_hooks26.useOrderTranslations)();
   const tc = (0, import_hooks26.useCommonTranslations)();
-  const [orders, setOrders] = (0, import_react47.useState)([]);
-  const [loading, setLoading] = (0, import_react47.useState)(false);
-  const [error2, setError] = (0, import_react47.useState)(null);
-  const [currentPage, setCurrentPage] = (0, import_react47.useState)(1);
-  const [totalPages, setTotalPages] = (0, import_react47.useState)(1);
-  const [filters, setFilters] = (0, import_react47.useState)({
+  const [orders, setOrders] = (0, import_react46.useState)([]);
+  const [loading, setLoading] = (0, import_react46.useState)(false);
+  const [error, setError] = (0, import_react46.useState)(null);
+  const [currentPage, setCurrentPage] = (0, import_react46.useState)(1);
+  const [totalPages, setTotalPages] = (0, import_react46.useState)(1);
+  const [filters, setFilters] = (0, import_react46.useState)({
     search: "",
     status: void 0,
     orderType: void 0,
@@ -18143,7 +18131,7 @@ var ProductOrdersView = ({
     sortBy: "createdAt",
     sortOrder: "desc"
   });
-  (0, import_react47.useEffect)(() => {
+  (0, import_react46.useEffect)(() => {
     const fetchProductOrders = async () => {
       try {
         setLoading(true);
@@ -18289,11 +18277,11 @@ var ProductOrdersView = ({
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("div", { className: `space-y-6 ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(ProductsLoading, {}) });
   }
-  if (error2) {
+  if (error) {
     return /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("div", { className: `space-y-6 ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(Card, { children: /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(CardContent, { className: "p-6 text-center", children: [
       /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("div", { className: "text-red-500 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(import_lucide_react36.BarChart3, { className: "h-12 w-12 mx-auto" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("h3", { className: "text-lg font-semibold mb-2", children: t2("messages.errorLoadingOrders") }),
-      /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("p", { className: "text-gray-600 mb-4", children: error2 }),
+      /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("p", { className: "text-gray-600 mb-4", children: error }),
       /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(Button2, { onClick: () => window.location.reload(), children: [
         /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(import_lucide_react36.RefreshCw, { className: "h-4 w-4 mr-2" }),
         tc("buttons.tryAgain")
@@ -18437,16 +18425,16 @@ var ProductOrdersView = ({
 };
 
 // src/components/features/Products/components/ProductOrdersDialog.tsx
-var import_react48 = require("react");
+var import_react47 = require("react");
 var import_ui41 = require("@rentalshop/ui");
 var import_lucide_react37 = require("lucide-react");
 var import_utils27 = require("@rentalshop/utils");
 var import_jsx_runtime97 = require("react/jsx-runtime");
 function ProductOrdersDialog({ open, onOpenChange, product }) {
-  const [orders, setOrders] = (0, import_react48.useState)([]);
-  const [loading, setLoading] = (0, import_react48.useState)(false);
-  const [error2, setError] = (0, import_react48.useState)(null);
-  (0, import_react48.useEffect)(() => {
+  const [orders, setOrders] = (0, import_react47.useState)([]);
+  const [loading, setLoading] = (0, import_react47.useState)(false);
+  const [error, setError] = (0, import_react47.useState)(null);
+  (0, import_react47.useEffect)(() => {
     if (open && product) {
       fetchProductOrders();
     }
@@ -18466,8 +18454,8 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
       } else {
         setError("Failed to fetch orders");
       }
-    } catch (error3) {
-      console.error("Error fetching product orders:", error3);
+    } catch (error2) {
+      console.error("Error fetching product orders:", error2);
       setError("Failed to fetch orders");
     } finally {
       setLoading(false);
@@ -18535,10 +18523,10 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
     /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "flex-1 overflow-y-auto", children: loading ? /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { className: "flex items-center justify-center py-12", children: [
       /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary" }),
       /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("span", { className: "ml-2 text-text-secondary", children: "Loading orders..." })
-    ] }) : error2 ? /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { className: "text-center py-12", children: [
+    ] }) : error ? /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { className: "text-center py-12", children: [
       /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "text-red-500 mb-4", children: "\u274C" }),
       /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "Error Loading Orders" }),
-      /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-text-secondary mb-4", children: error2 }),
+      /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("p", { className: "text-text-secondary mb-4", children: error }),
       /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(import_ui41.Button, { onClick: fetchProductOrders, variant: "outline", children: "Try Again" })
     ] }) : orders.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
       import_ui41.EmptyState,
@@ -18666,12 +18654,12 @@ function Products({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = import_react49.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react49.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react49.default.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnProductAction = import_react49.default.useCallback(onProductAction, [onProductAction]);
-  const memoizedOnPageChange = import_react49.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react49.default.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = import_react48.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react48.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react48.default.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnProductAction = import_react48.default.useCallback(onProductAction, [onProductAction]);
+  const memoizedOnPageChange = import_react48.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react48.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
@@ -18751,11 +18739,11 @@ function Products({
 var Products_default = Products;
 
 // src/components/features/Customers/Customers.tsx
-var import_react57 = __toESM(require("react"));
+var import_react56 = __toESM(require("react"));
 var import_ui68 = require("@rentalshop/ui");
 
 // src/components/features/Customers/components/CustomerTable.tsx
-var import_react50 = __toESM(require("react"));
+var import_react49 = __toESM(require("react"));
 var import_ui43 = require("@rentalshop/ui");
 var import_ui44 = require("@rentalshop/ui");
 var import_ui45 = require("@rentalshop/ui");
@@ -18770,7 +18758,7 @@ function CustomerTable({
   onSort
 }) {
   const t2 = (0, import_hooks28.useCustomerTranslations)();
-  const [openDropdownId, setOpenDropdownId] = import_react50.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react49.default.useState(null);
   if (customers.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(import_ui44.Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(import_ui44.CardContent, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
@@ -18918,7 +18906,7 @@ function CustomerTable({
 }
 
 // src/components/features/Customers/components/CustomerDetailDialog.tsx
-var import_react51 = require("react");
+var import_react50 = require("react");
 var import_lucide_react40 = require("lucide-react");
 var import_hooks29 = require("@rentalshop/hooks");
 var import_jsx_runtime100 = require("react/jsx-runtime");
@@ -18930,11 +18918,11 @@ var CustomerDetailDialog = ({
 }) => {
   const t2 = (0, import_hooks29.useCustomerTranslations)();
   const tc = (0, import_hooks29.useCommonTranslations)();
-  const [isDeleting, setIsDeleting] = (0, import_react51.useState)(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react51.useState)(false);
-  const [merchant, setMerchant] = (0, import_react51.useState)(null);
-  const [isLoadingMerchant, setIsLoadingMerchant] = (0, import_react51.useState)(false);
-  (0, import_react51.useEffect)(() => {
+  const [isDeleting, setIsDeleting] = (0, import_react50.useState)(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react50.useState)(false);
+  const [merchant, setMerchant] = (0, import_react50.useState)(null);
+  const [isLoadingMerchant, setIsLoadingMerchant] = (0, import_react50.useState)(false);
+  (0, import_react50.useEffect)(() => {
     const fetchMerchant = async () => {
       if (!customer?.merchantId) {
         console.log("\u{1F50D} CustomerDetailDialog: No merchantId found for customer:", customer);
@@ -18954,8 +18942,8 @@ var CustomerDetailDialog = ({
           console.error("\u274C CustomerDetailDialog: Merchant API error:", response.error);
           setMerchant(null);
         }
-      } catch (error2) {
-        console.error("\u274C CustomerDetailDialog: Error fetching merchant:", error2);
+      } catch (error) {
+        console.error("\u274C CustomerDetailDialog: Error fetching merchant:", error);
         setMerchant(null);
       } finally {
         setIsLoadingMerchant(false);
@@ -18993,8 +18981,8 @@ var CustomerDetailDialog = ({
       await onDelete(customer.id);
       setShowDeleteConfirm(false);
       onOpenChange(false);
-    } catch (error2) {
-      console.error("Error deleting customer:", error2);
+    } catch (error) {
+      console.error("Error deleting customer:", error);
     } finally {
       setIsDeleting(false);
     }
@@ -19348,7 +19336,7 @@ var CustomerPageHeader = ({
 };
 
 // src/components/features/Customers/components/AddCustomerDialog.tsx
-var import_react52 = require("react");
+var import_react51 = require("react");
 var import_hooks31 = require("@rentalshop/hooks");
 var import_jsx_runtime104 = require("react/jsx-runtime");
 var AddCustomerDialog = ({
@@ -19358,7 +19346,7 @@ var AddCustomerDialog = ({
   onError
 }) => {
   const t2 = (0, import_hooks31.useCustomerTranslations)();
-  const [isSubmitting, setIsSubmitting] = (0, import_react52.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react51.useState)(false);
   const handleSave = async (customerData) => {
     try {
       setIsSubmitting(true);
@@ -19366,10 +19354,10 @@ var AddCustomerDialog = ({
         await onCustomerCreated(customerData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C AddCustomerDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C AddCustomerDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create customer");
+        onError(error instanceof Error ? error.message : "Failed to create customer");
       }
     } finally {
       setIsSubmitting(false);
@@ -19394,7 +19382,7 @@ var AddCustomerDialog = ({
 };
 
 // src/components/features/Customers/components/EditCustomerForm.tsx
-var import_react53 = require("react");
+var import_react52 = require("react");
 var import_lucide_react42 = require("lucide-react");
 var import_ui51 = require("@rentalshop/ui");
 var import_ui52 = require("@rentalshop/ui");
@@ -19402,7 +19390,7 @@ var import_ui53 = require("@rentalshop/ui");
 var import_ui54 = require("@rentalshop/ui");
 var import_hooks32 = require("@rentalshop/hooks");
 var import_jsx_runtime105 = require("react/jsx-runtime");
-var EditCustomerForm = (0, import_react53.forwardRef)(
+var EditCustomerForm = (0, import_react52.forwardRef)(
   ({
     customer,
     onSave,
@@ -19412,7 +19400,7 @@ var EditCustomerForm = (0, import_react53.forwardRef)(
   }, ref) => {
     const t2 = (0, import_hooks32.useCustomerTranslations)();
     const tc = (0, import_hooks32.useCommonTranslations)();
-    const [formData, setFormData] = (0, import_react53.useState)({
+    const [formData, setFormData] = (0, import_react52.useState)({
       firstName: customer.firstName,
       lastName: customer.lastName,
       email: customer.email,
@@ -19427,11 +19415,11 @@ var EditCustomerForm = (0, import_react53.forwardRef)(
       status: customer.status,
       membershipLevel: customer.membershipLevel
     });
-    const [errors, setErrors] = (0, import_react53.useState)({});
-    const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react53.useState)(false);
-    const [errorMessage, setErrorMessage] = (0, import_react53.useState)(null);
+    const [errors, setErrors] = (0, import_react52.useState)({});
+    const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react52.useState)(false);
+    const [errorMessage, setErrorMessage] = (0, import_react52.useState)(null);
     const isSubmitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : internalIsSubmitting;
-    (0, import_react53.useEffect)(() => {
+    (0, import_react52.useEffect)(() => {
       setFormData({
         firstName: customer.firstName,
         lastName: customer.lastName,
@@ -19514,9 +19502,9 @@ var EditCustomerForm = (0, import_react53.forwardRef)(
         );
         await onSave(changedFields);
         console.log("\u2705 EditCustomerForm: Customer updated successfully");
-      } catch (error2) {
-        console.error("\u274C EditCustomerForm: Error updating customer:", error2);
-        const errorMessage2 = error2 instanceof Error ? error2.message : "An unexpected error occurred";
+      } catch (error) {
+        console.error("\u274C EditCustomerForm: Error updating customer:", error);
+        const errorMessage2 = error instanceof Error ? error.message : "An unexpected error occurred";
         setErrorMessage(errorMessage2);
       } finally {
         setInternalIsSubmitting(false);
@@ -19527,7 +19515,7 @@ var EditCustomerForm = (0, import_react53.forwardRef)(
         onCancel();
       }
     };
-    (0, import_react53.useImperativeHandle)(ref, () => ({
+    (0, import_react52.useImperativeHandle)(ref, () => ({
       submitForm: () => {
         const syntheticEvent = {
           preventDefault: () => {
@@ -19700,7 +19688,7 @@ var EditCustomerForm = (0, import_react53.forwardRef)(
 EditCustomerForm.displayName = "EditCustomerForm";
 
 // src/components/features/Customers/components/CustomerForm.tsx
-var import_react54 = require("react");
+var import_react53 = require("react");
 var import_lucide_react43 = require("lucide-react");
 var import_ui55 = require("@rentalshop/ui");
 var import_ui56 = require("@rentalshop/ui");
@@ -19716,7 +19704,7 @@ var CustomerForm = ({
   isSubmitting: externalIsSubmitting,
   currentUser
 }) => {
-  const [formData, setFormData] = (0, import_react54.useState)({
+  const [formData, setFormData] = (0, import_react53.useState)({
     firstName: "",
     lastName: "",
     email: "",
@@ -19732,9 +19720,9 @@ var CustomerForm = ({
     idType: "other",
     notes: ""
   });
-  const [isSubmitting, setIsSubmitting] = (0, import_react54.useState)(false);
-  const [errors, setErrors] = (0, import_react54.useState)({});
-  (0, import_react54.useEffect)(() => {
+  const [isSubmitting, setIsSubmitting] = (0, import_react53.useState)(false);
+  const [errors, setErrors] = (0, import_react53.useState)({});
+  (0, import_react53.useEffect)(() => {
     if (mode === "edit" && customer) {
       setFormData({
         firstName: customer.firstName || "",
@@ -19807,8 +19795,8 @@ var CustomerForm = ({
         // Only ADMIN users need to send merchantId in request
       };
       await onSave(customerData);
-    } catch (error2) {
-      console.error("Error saving customer:", error2);
+    } catch (error) {
+      console.error("Error saving customer:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -20056,7 +20044,7 @@ var CustomerForm = ({
 };
 
 // src/components/features/Customers/components/CustomerActions.tsx
-var import_react55 = require("react");
+var import_react54 = require("react");
 var import_navigation4 = require("next/navigation");
 var import_lucide_react44 = require("lucide-react");
 var import_jsx_runtime107 = require("react/jsx-runtime");
@@ -20068,9 +20056,9 @@ function CustomerActions({
   onError,
   onViewOrders
 }) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react55.useState)(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react54.useState)(false);
   const router = (0, import_navigation4.useRouter)();
-  (0, import_react55.useEffect)(() => {
+  (0, import_react54.useEffect)(() => {
     const handleCustomerAction = (event) => {
       const { action, customer } = event.detail;
       if (!customer)
@@ -20381,7 +20369,7 @@ function CustomerStats({ stats }) {
 }
 
 // src/components/features/Customers/components/CustomerOrdersDialog.tsx
-var import_react56 = require("react");
+var import_react55 = require("react");
 var import_ui64 = require("@rentalshop/ui");
 var import_ui65 = require("@rentalshop/ui");
 var import_ui66 = require("@rentalshop/ui");
@@ -20393,10 +20381,10 @@ var CustomerOrdersDialog = ({
   onOpenChange,
   customer
 }) => {
-  const [orders, setOrders] = (0, import_react56.useState)([]);
-  const [loading, setLoading] = (0, import_react56.useState)(false);
-  const [error2, setError] = (0, import_react56.useState)(null);
-  (0, import_react56.useEffect)(() => {
+  const [orders, setOrders] = (0, import_react55.useState)([]);
+  const [loading, setLoading] = (0, import_react55.useState)(false);
+  const [error, setError] = (0, import_react55.useState)(null);
+  (0, import_react55.useEffect)(() => {
     if (open && customer) {
       fetchCustomerOrders(customer.id);
     }
@@ -20542,9 +20530,9 @@ var CustomerOrdersDialog = ({
       loading ? /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_ui65.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_ui65.CardContent, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime111.jsxs)("div", { className: "text-gray-500", children: [
         /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_lucide_react45.Package, { className: "w-8 h-8 mx-auto mb-2 animate-spin" }),
         /* @__PURE__ */ (0, import_jsx_runtime111.jsx)("p", { children: "Loading orders..." })
-      ] }) }) }) : error2 ? /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_ui65.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_ui65.CardContent, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime111.jsxs)("div", { className: "text-red-500", children: [
+      ] }) }) }) : error ? /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_ui65.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_ui65.CardContent, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime111.jsxs)("div", { className: "text-red-500", children: [
         /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_lucide_react45.Package, { className: "w-8 h-8 mx-auto mb-2" }),
-        /* @__PURE__ */ (0, import_jsx_runtime111.jsx)("p", { children: error2 })
+        /* @__PURE__ */ (0, import_jsx_runtime111.jsx)("p", { children: error })
       ] }) }) }) : orders.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_ui65.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_ui65.CardContent, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime111.jsxs)("div", { className: "text-gray-500", children: [
         /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(import_lucide_react45.Package, { className: "w-8 h-8 mx-auto mb-2" }),
         /* @__PURE__ */ (0, import_jsx_runtime111.jsx)("p", { children: "No orders found for this customer" })
@@ -20690,12 +20678,12 @@ var Customers = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = import_react57.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react57.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react57.default.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnCustomerAction = import_react57.default.useCallback(onCustomerAction, [onCustomerAction]);
-  const memoizedOnPageChange = import_react57.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react57.default.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = import_react56.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react56.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react56.default.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnCustomerAction = import_react56.default.useCallback(onCustomerAction, [onCustomerAction]);
+  const memoizedOnPageChange = import_react56.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react56.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime113.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime113.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime113.jsxs)(
@@ -20775,12 +20763,12 @@ var Customers = ({
 var Customers_default = Customers;
 
 // src/components/features/Orders/Orders.tsx
-var import_react58 = __toESM(require("react"));
+var import_react57 = __toESM(require("react"));
 var import_ui69 = require("@rentalshop/ui");
 var import_lucide_react47 = require("lucide-react");
 var import_hooks35 = require("@rentalshop/hooks");
 var import_jsx_runtime114 = require("react/jsx-runtime");
-var Orders = import_react58.default.memo(function Orders2({
+var Orders = import_react57.default.memo(function Orders2({
   data,
   filters,
   onFiltersChange,
@@ -20798,7 +20786,7 @@ var Orders = import_react58.default.memo(function Orders2({
   // ⭐ Default to dropdown (modern pattern)
 }) {
   const t2 = (0, import_hooks35.useOrderTranslations)();
-  import_react58.default.useEffect(() => {
+  import_react57.default.useEffect(() => {
     console.log("\u{1F4CA} Orders Component: received new data", {
       ordersCount: data.orders.length,
       searchTerm: filters.search,
@@ -20806,17 +20794,17 @@ var Orders = import_react58.default.memo(function Orders2({
       firstOrder: data.orders[0]?.orderNumber
     });
   }, [data.orders, filters.search, filters.status]);
-  const memoizedOnFiltersChange = import_react58.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react58.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react58.default.useCallback(onClearFilters || (() => {
+  const memoizedOnFiltersChange = import_react57.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react57.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react57.default.useCallback(onClearFilters || (() => {
   }), [onClearFilters]);
-  const memoizedOnOrderAction = import_react58.default.useCallback(onOrderAction, [onOrderAction]);
-  const memoizedOnPageChange = import_react58.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react58.default.useCallback(onSort || (() => {
+  const memoizedOnOrderAction = import_react57.default.useCallback(onOrderAction, [onOrderAction]);
+  const memoizedOnPageChange = import_react57.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react57.default.useCallback(onSort || (() => {
   }), [onSort]);
-  const memoizedOnQuickFilterChange = import_react58.default.useCallback(onQuickFilterChange || (() => {
+  const memoizedOnQuickFilterChange = import_react57.default.useCallback(onQuickFilterChange || (() => {
   }), [onQuickFilterChange]);
-  const memoizedOnDateRangeChange = import_react58.default.useCallback(onDateRangeChange || (() => {
+  const memoizedOnDateRangeChange = import_react57.default.useCallback(onDateRangeChange || (() => {
   }), [onDateRangeChange]);
   const showLargeDatasetWarning = activeQuickFilter === "all" && data.total > 1e4;
   return /* @__PURE__ */ (0, import_jsx_runtime114.jsxs)("div", { className: "flex flex-col h-full", children: [
@@ -20887,7 +20875,7 @@ var Orders = import_react58.default.memo(function Orders2({
 var Orders_default = Orders;
 
 // src/components/features/Orders/RentalPeriodSelector.tsx
-var import_react59 = require("react");
+var import_react58 = require("react");
 var import_ui70 = require("@rentalshop/ui");
 var import_utils28 = require("@rentalshop/utils");
 var import_hooks36 = require("@rentalshop/hooks");
@@ -20901,22 +20889,22 @@ var RentalPeriodSelector2 = ({
   initialEndDate
 }) => {
   const t2 = (0, import_hooks36.useOrderTranslations)();
-  const [rentalStartAt, setRentalStartAt] = (0, import_react59.useState)(
+  const [rentalStartAt, setRentalStartAt] = (0, import_react58.useState)(
     () => initialStartDate ? new Date(initialStartDate) : null
   );
-  const [rentalEndAt, setRentalEndAt] = (0, import_react59.useState)(
+  const [rentalEndAt, setRentalEndAt] = (0, import_react58.useState)(
     () => initialEndDate ? new Date(initialEndDate) : null
   );
-  const [validationResult, setValidationResult] = (0, import_react59.useState)(null);
-  const [lastNotifiedDates, setLastNotifiedDates] = (0, import_react59.useState)("");
+  const [validationResult, setValidationResult] = (0, import_react58.useState)(null);
+  const [lastNotifiedDates, setLastNotifiedDates] = (0, import_react58.useState)("");
   const config = import_utils28.PricingResolver.getEffectivePricingConfig(product, merchant);
-  const [pickupHour, setPickupHour] = (0, import_react59.useState)(() => {
+  const [pickupHour, setPickupHour] = (0, import_react58.useState)(() => {
     if (initialStartDate) {
       return new Date(initialStartDate).getHours();
     }
     return 9;
   });
-  const [returnHour, setReturnHour] = (0, import_react59.useState)(() => {
+  const [returnHour, setReturnHour] = (0, import_react58.useState)(() => {
     if (initialEndDate) {
       return new Date(initialEndDate).getHours();
     }
@@ -20927,7 +20915,7 @@ var RentalPeriodSelector2 = ({
     productName: product.name,
     merchantBusinessType: merchant.businessType
   });
-  (0, import_react59.useEffect)(() => {
+  (0, import_react58.useEffect)(() => {
     if (rentalStartAt && rentalEndAt) {
       const currentDatesKey = `${rentalStartAt.toISOString()}_${rentalEndAt.toISOString()}`;
       if (currentDatesKey !== lastNotifiedDates) {
@@ -20958,8 +20946,8 @@ var RentalPeriodSelector2 = ({
               1
             );
             onPriceChange(pricing);
-          } catch (error2) {
-            console.error("Price calculation error:", error2);
+          } catch (error) {
+            console.error("Price calculation error:", error);
           }
         }
       }
@@ -21012,7 +21000,7 @@ var RentalPeriodSelector2 = ({
         1
       );
       return pricing.totalPrice;
-    } catch (error2) {
+    } catch (error) {
       return 0;
     }
   };
@@ -21167,7 +21155,7 @@ var RentalPeriodSelector2 = ({
 };
 
 // src/components/features/Merchants/Merchants.tsx
-var import_react75 = __toESM(require("react"));
+var import_react74 = __toESM(require("react"));
 
 // src/components/features/Merchants/components/MerchantHeader.tsx
 var import_lucide_react48 = require("lucide-react");
@@ -21316,7 +21304,7 @@ function MerchantFilters({
 var MerchantFilters_default = MerchantFilters;
 
 // src/components/features/Merchants/components/MerchantTable.tsx
-var import_react60 = require("react");
+var import_react59 = require("react");
 var import_lucide_react49 = require("lucide-react");
 var import_jsx_runtime119 = require("react/jsx-runtime");
 function MerchantTable({
@@ -21326,7 +21314,7 @@ function MerchantTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openMenuId, setOpenMenuId] = (0, import_react60.useState)(null);
+  const [openMenuId, setOpenMenuId] = (0, import_react59.useState)(null);
   const getStatusBadge = (merchant) => {
     if (!merchant.isActive) {
       return /* @__PURE__ */ (0, import_jsx_runtime119.jsx)(StatusBadge, { status: "inactive", type: "entity", size: "sm" });
@@ -21445,10 +21433,10 @@ function MerchantTable({
 var MerchantTable_default = MerchantTable;
 
 // src/components/features/Merchants/components/MerchantPlanManagement.tsx
-var import_react74 = require("react");
+var import_react73 = require("react");
 
 // src/components/features/Subscriptions/components/SubscriptionList.tsx
-var import_react65 = require("react");
+var import_react64 = require("react");
 var import_lucide_react55 = require("lucide-react");
 
 // src/components/features/Subscriptions/components/SubscriptionViewDialog.tsx
@@ -21732,7 +21720,7 @@ function SubscriptionViewDialog({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionExtendDialog.tsx
-var import_react61 = require("react");
+var import_react60 = require("react");
 var import_ui77 = require("@rentalshop/ui");
 var import_ui78 = require("@rentalshop/ui");
 var import_lucide_react51 = require("lucide-react");
@@ -21751,10 +21739,10 @@ function SubscriptionExtendDialog({
   onConfirm,
   loading = false
 }) {
-  const [newEndDate, setNewEndDate] = (0, import_react61.useState)("");
-  const [amount, setAmount] = (0, import_react61.useState)("");
-  const [method, setMethod] = (0, import_react61.useState)("MANUAL_EXTENSION");
-  const [description, setDescription] = (0, import_react61.useState)("");
+  const [newEndDate, setNewEndDate] = (0, import_react60.useState)("");
+  const [amount, setAmount] = (0, import_react60.useState)("");
+  const [method, setMethod] = (0, import_react60.useState)("MANUAL_EXTENSION");
+  const [description, setDescription] = (0, import_react60.useState)("");
   const handleSubmit = () => {
     if (!subscription || !newEndDate || !amount)
       return;
@@ -21929,7 +21917,7 @@ function SubscriptionExtendDialog({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionChangePlanDialog.tsx
-var import_react62 = require("react");
+var import_react61 = require("react");
 var import_ui79 = require("@rentalshop/ui");
 var import_ui80 = require("@rentalshop/ui");
 var import_lucide_react52 = require("lucide-react");
@@ -21942,8 +21930,8 @@ function SubscriptionChangePlanDialog({
   onConfirm,
   loading = false
 }) {
-  const [selectedPlanId, setSelectedPlanId] = (0, import_react62.useState)(null);
-  const [selectedPeriod, setSelectedPeriod] = (0, import_react62.useState)(1);
+  const [selectedPlanId, setSelectedPlanId] = (0, import_react61.useState)(null);
+  const [selectedPeriod, setSelectedPeriod] = (0, import_react61.useState)(1);
   const handleSubmit = () => {
     if (!subscription || !selectedPlanId)
       return;
@@ -22118,11 +22106,11 @@ function SubscriptionChangePlanDialog({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionEditDialog.tsx
-var import_react64 = require("react");
+var import_react63 = require("react");
 var import_ui82 = require("@rentalshop/ui");
 
 // src/components/features/Subscriptions/components/SubscriptionFormSimple.tsx
-var import_react63 = require("react");
+var import_react62 = require("react");
 var import_lucide_react53 = require("lucide-react");
 var import_jsx_runtime123 = require("react/jsx-runtime");
 function SubscriptionFormSimple({
@@ -22138,7 +22126,7 @@ function SubscriptionFormSimple({
   showCard = true,
   showActions = true
 }) {
-  const [formData, setFormData] = (0, import_react63.useState)({
+  const [formData, setFormData] = (0, import_react62.useState)({
     merchantId: initialData?.merchantId || 0,
     planId: initialData?.planId || 0,
     status: initialData?.status || "trial",
@@ -22160,10 +22148,10 @@ function SubscriptionFormSimple({
     autoRenew: initialData?.autoRenew ?? true,
     changeReason: initialData?.changeReason || ""
   });
-  const [selectedPlan, setSelectedPlan] = (0, import_react63.useState)(null);
-  const [errors, setErrors] = (0, import_react63.useState)({});
-  const [merchantOptions, setMerchantOptions] = (0, import_react63.useState)([]);
-  (0, import_react63.useEffect)(() => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react62.useState)(null);
+  const [errors, setErrors] = (0, import_react62.useState)({});
+  const [merchantOptions, setMerchantOptions] = (0, import_react62.useState)([]);
+  (0, import_react62.useEffect)(() => {
     const options = merchants.map((merchant) => ({
       value: merchant.id.toString(),
       label: merchant.name,
@@ -22182,7 +22170,7 @@ function SubscriptionFormSimple({
     );
     return filtered;
   };
-  (0, import_react63.useEffect)(() => {
+  (0, import_react62.useEffect)(() => {
     const plan = plans.find((p2) => p2.id === formData.planId);
     setSelectedPlan(plan || null);
   }, [formData.planId, plans]);
@@ -22229,8 +22217,8 @@ function SubscriptionFormSimple({
         changeReason: formData.changeReason
       };
       await onSubmit(submitData);
-    } catch (error2) {
-      console.error("Error submitting subscription:", error2);
+    } catch (error) {
+      console.error("Error submitting subscription:", error);
     }
   };
   const getDiscountPercentage3 = (period) => {
@@ -22523,8 +22511,8 @@ function SubscriptionEditDialog({
   onSave,
   loading = false
 }) {
-  const [formData, setFormData] = (0, import_react64.useState)({});
-  (0, import_react64.useEffect)(() => {
+  const [formData, setFormData] = (0, import_react63.useState)({});
+  (0, import_react63.useEffect)(() => {
     if (subscription) {
       setFormData({
         planId: parseInt(subscription.planId),
@@ -22554,8 +22542,8 @@ function SubscriptionEditDialog({
     try {
       await onSave(data);
       onClose();
-    } catch (error2) {
-      console.error("Failed to update subscription:", error2);
+    } catch (error) {
+      console.error("Failed to update subscription:", error);
     }
   };
   const handleCancel = () => {
@@ -22721,12 +22709,12 @@ function SubscriptionList({
   loading = false,
   pagination
 }) {
-  const [openMenuId, setOpenMenuId] = (0, import_react65.useState)(null);
-  const [showViewDialog, setShowViewDialog] = (0, import_react65.useState)(false);
-  const [showEditDialog, setShowEditDialog] = (0, import_react65.useState)(false);
-  const [showExtendDialog, setShowExtendDialog] = (0, import_react65.useState)(false);
-  const [showChangePlanDialog, setShowChangePlanDialog] = (0, import_react65.useState)(false);
-  const [selectedSubscription, setSelectedSubscription] = (0, import_react65.useState)(null);
+  const [openMenuId, setOpenMenuId] = (0, import_react64.useState)(null);
+  const [showViewDialog, setShowViewDialog] = (0, import_react64.useState)(false);
+  const [showEditDialog, setShowEditDialog] = (0, import_react64.useState)(false);
+  const [showExtendDialog, setShowExtendDialog] = (0, import_react64.useState)(false);
+  const [showChangePlanDialog, setShowChangePlanDialog] = (0, import_react64.useState)(false);
+  const [selectedSubscription, setSelectedSubscription] = (0, import_react64.useState)(null);
   const filteredSubscriptions = subscriptions;
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -22974,7 +22962,7 @@ function SubscriptionList({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionForm.tsx
-var import_react66 = require("react");
+var import_react65 = require("react");
 var import_lucide_react56 = require("lucide-react");
 var import_jsx_runtime126 = require("react/jsx-runtime");
 function SubscriptionForm({
@@ -22988,7 +22976,7 @@ function SubscriptionForm({
   title,
   submitText
 }) {
-  const [formData, setFormData] = (0, import_react66.useState)({
+  const [formData, setFormData] = (0, import_react65.useState)({
     merchantId: initialData?.merchantId || 0,
     planId: initialData?.planId || 0,
     status: initialData?.status || "trial",
@@ -23014,14 +23002,14 @@ function SubscriptionForm({
     endDate: initialData?.currentPeriodEnd || /* @__PURE__ */ new Date(),
     nextBillingDate: initialData?.currentPeriodEnd || /* @__PURE__ */ new Date()
   });
-  const [selectedPlan, setSelectedPlan] = (0, import_react66.useState)(null);
-  const [planVariants, setPlanVariants] = (0, import_react66.useState)([]);
-  const [errors, setErrors] = (0, import_react66.useState)({});
-  const [merchantOptions, setMerchantOptions] = (0, import_react66.useState)([]);
-  const [selectedMerchant, setSelectedMerchant] = (0, import_react66.useState)(null);
+  const [selectedPlan, setSelectedPlan] = (0, import_react65.useState)(null);
+  const [planVariants, setPlanVariants] = (0, import_react65.useState)([]);
+  const [errors, setErrors] = (0, import_react65.useState)({});
+  const [merchantOptions, setMerchantOptions] = (0, import_react65.useState)([]);
+  const [selectedMerchant, setSelectedMerchant] = (0, import_react65.useState)(null);
   console.log("SubscriptionForm - merchants:", merchants);
   console.log("SubscriptionForm - plans:", plans);
-  (0, import_react66.useEffect)(() => {
+  (0, import_react65.useEffect)(() => {
     const options = merchants.map((merchant) => ({
       value: merchant.id.toString(),
       label: merchant.name,
@@ -23052,7 +23040,7 @@ function SubscriptionForm({
     );
     return filtered;
   };
-  (0, import_react66.useEffect)(() => {
+  (0, import_react65.useEffect)(() => {
     const plan = plans.find((p2) => p2.id === formData.planId);
     setSelectedPlan(plan || null);
     if (plan) {
@@ -23064,7 +23052,7 @@ function SubscriptionForm({
       }));
     }
   }, [formData.planId, plans]);
-  (0, import_react66.useEffect)(() => {
+  (0, import_react65.useEffect)(() => {
     if (selectedPlan && formData.status === "trial" && selectedPlan.trialDays > 0) {
       const endDate = new Date(formData.startDate || formData.currentPeriodStart);
       endDate.setDate(endDate.getDate() + selectedPlan.trialDays);
@@ -23077,7 +23065,7 @@ function SubscriptionForm({
       }));
     }
   }, [selectedPlan, formData.startDate, formData.status]);
-  (0, import_react66.useEffect)(() => {
+  (0, import_react65.useEffect)(() => {
     if (formData.status === "ACTIVE" && selectedPlan) {
       const endDate = new Date(formData.startDate || formData.currentPeriodStart);
       endDate.setMonth(endDate.getMonth() + 1);
@@ -23124,8 +23112,8 @@ function SubscriptionForm({
         nextBillingDate: formData.nextBillingDate
       };
       await onSubmit(submitData);
-    } catch (error2) {
-      console.error("Error submitting subscription:", error2);
+    } catch (error) {
+      console.error("Error submitting subscription:", error);
     }
   };
   const handleInputChange = (field, value) => {
@@ -23474,7 +23462,7 @@ function SubscriptionForm({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionPreviewPage.tsx
-var import_react67 = require("react");
+var import_react66 = require("react");
 var import_ui85 = require("@rentalshop/ui");
 var import_utils30 = require("@rentalshop/utils");
 var import_lucide_react57 = require("lucide-react");
@@ -23484,12 +23472,12 @@ var SubscriptionPreviewPage = ({
   showSelectButton = true,
   className
 }) => {
-  const [plans, setPlans] = (0, import_react67.useState)([]);
-  const [loading, setLoading] = (0, import_react67.useState)(true);
-  const [error2, setError] = (0, import_react67.useState)(null);
-  const [selectedPlan, setSelectedPlan] = (0, import_react67.useState)(null);
-  const [selectedDuration, setSelectedDuration] = (0, import_react67.useState)(1);
-  (0, import_react67.useEffect)(() => {
+  const [plans, setPlans] = (0, import_react66.useState)([]);
+  const [loading, setLoading] = (0, import_react66.useState)(true);
+  const [error, setError] = (0, import_react66.useState)(null);
+  const [selectedPlan, setSelectedPlan] = (0, import_react66.useState)(null);
+  const [selectedDuration, setSelectedDuration] = (0, import_react66.useState)(1);
+  (0, import_react66.useEffect)(() => {
     fetchPlans();
   }, []);
   const fetchPlans = async () => {
@@ -23599,9 +23587,9 @@ var SubscriptionPreviewPage = ({
       /* @__PURE__ */ (0, import_jsx_runtime127.jsx)("p", { className: "mt-4 text-gray-600", children: "Loading subscription plans..." })
     ] }) }) });
   }
-  if (error2) {
+  if (error) {
     return /* @__PURE__ */ (0, import_jsx_runtime127.jsx)("div", { className: "min-h-screen bg-gray-50 py-12", children: /* @__PURE__ */ (0, import_jsx_runtime127.jsx)("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ (0, import_jsx_runtime127.jsx)("div", { className: "text-center", children: /* @__PURE__ */ (0, import_jsx_runtime127.jsxs)("div", { className: "bg-red-50 border border-red-200 rounded-lg p-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime127.jsx)("p", { className: "text-red-800", children: error2 }),
+      /* @__PURE__ */ (0, import_jsx_runtime127.jsx)("p", { className: "text-red-800", children: error }),
       /* @__PURE__ */ (0, import_jsx_runtime127.jsx)(
         import_ui85.Button,
         {
@@ -23892,7 +23880,7 @@ var SubscriptionPreviewPage = ({
 };
 
 // src/components/features/Subscriptions/components/PlanSelectionModal.tsx
-var import_react68 = require("react");
+var import_react67 = require("react");
 var import_ui86 = require("@rentalshop/ui");
 var import_lucide_react58 = require("lucide-react");
 var import_jsx_runtime128 = require("react/jsx-runtime");
@@ -23940,11 +23928,11 @@ var PlanSelectionModal = ({
   currentPlan,
   loading = false
 }) => {
-  const [selectedPlan, setSelectedPlan] = (0, import_react68.useState)(null);
-  const [selectedBillingCycle, setSelectedBillingCycle] = (0, import_react68.useState)("monthly");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = (0, import_react68.useState)("STRIPE");
-  const [calculatedPrice, setCalculatedPrice] = (0, import_react68.useState)(0);
-  (0, import_react68.useEffect)(() => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react67.useState)(null);
+  const [selectedBillingCycle, setSelectedBillingCycle] = (0, import_react67.useState)("monthly");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = (0, import_react67.useState)("STRIPE");
+  const [calculatedPrice, setCalculatedPrice] = (0, import_react67.useState)(0);
+  (0, import_react67.useEffect)(() => {
     if (selectedPlan) {
       const billingCycle = BILLING_CYCLES2.find((bc) => bc.value === selectedBillingCycle);
       if (billingCycle) {
@@ -24473,7 +24461,7 @@ function RestrictedSection({
 }
 
 // src/components/features/Subscriptions/components/PaymentHistoryTable.tsx
-var import_react69 = require("react");
+var import_react68 = require("react");
 var import_ui87 = require("@rentalshop/ui");
 var import_utils32 = require("@rentalshop/utils");
 var import_lucide_react62 = require("lucide-react");
@@ -24486,8 +24474,8 @@ function PaymentHistoryTable({
   onDownloadInvoice,
   pagination
 }) {
-  const [statusFilter, setStatusFilter] = (0, import_react69.useState)("all");
-  const [methodFilter, setMethodFilter] = (0, import_react69.useState)("all");
+  const [statusFilter, setStatusFilter] = (0, import_react68.useState)("all");
+  const [methodFilter, setMethodFilter] = (0, import_react68.useState)("all");
   const getStatusBadge = (status) => {
     const statusMap = {
       COMPLETED: { variant: "success", label: "Paid" },
@@ -24601,7 +24589,7 @@ function PaymentHistoryTable({
 }
 
 // src/components/features/Subscriptions/components/ManualRenewalModal.tsx
-var import_react70 = require("react");
+var import_react69 = require("react");
 var import_ui88 = require("@rentalshop/ui");
 var import_utils33 = require("@rentalshop/utils");
 var import_constants13 = require("@rentalshop/constants");
@@ -24615,12 +24603,12 @@ function ManualRenewalModal({
   onRenew,
   loading = false
 }) {
-  const [method, setMethod] = (0, import_react70.useState)("TRANSFER");
-  const [duration, setDuration] = (0, import_react70.useState)(1);
-  const [transactionId, setTransactionId] = (0, import_react70.useState)("");
-  const [reference, setReference] = (0, import_react70.useState)("");
-  const [description, setDescription] = (0, import_react70.useState)("");
-  const [errors, setErrors] = (0, import_react70.useState)({});
+  const [method, setMethod] = (0, import_react69.useState)("TRANSFER");
+  const [duration, setDuration] = (0, import_react69.useState)(1);
+  const [transactionId, setTransactionId] = (0, import_react69.useState)("");
+  const [reference, setReference] = (0, import_react69.useState)("");
+  const [description, setDescription] = (0, import_react69.useState)("");
+  const [errors, setErrors] = (0, import_react69.useState)({});
   const calculateTotal = () => (0, import_utils34.calculateRenewalPrice)(subscription.amount, duration);
   const getSavings = () => (0, import_utils34.calculateSavings)(subscription.amount, duration);
   const nextPeriodStart = new Date(subscription.currentPeriodEnd);
@@ -24648,8 +24636,8 @@ function ManualRenewalModal({
       setReference("");
       setDescription("");
       onClose();
-    } catch (error2) {
-      console.error("Renewal failed:", error2);
+    } catch (error) {
+      console.error("Renewal failed:", error);
     }
   };
   return /* @__PURE__ */ (0, import_jsx_runtime133.jsx)(import_ui88.Dialog, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime133.jsxs)(import_ui88.DialogContent, { className: "max-w-2xl max-h-[90vh] overflow-hidden flex flex-col", children: [
@@ -24841,7 +24829,7 @@ function ManualRenewalModal({
 }
 
 // src/components/features/Subscriptions/components/UpgradeTrialModal.tsx
-var import_react71 = require("react");
+var import_react70 = require("react");
 var import_ui89 = require("@rentalshop/ui");
 var import_utils35 = require("@rentalshop/utils");
 var import_lucide_react64 = require("lucide-react");
@@ -24854,10 +24842,10 @@ function UpgradeTrialModal({
   onUpgrade,
   loading = false
 }) {
-  const [selectedPlan, setSelectedPlan] = (0, import_react71.useState)(null);
-  const [billingCycle, setBillingCycle] = (0, import_react71.useState)("month");
-  const [paymentMethod, setPaymentMethod] = (0, import_react71.useState)("STRIPE");
-  (0, import_react71.useEffect)(() => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react70.useState)(null);
+  const [billingCycle, setBillingCycle] = (0, import_react70.useState)("month");
+  const [paymentMethod, setPaymentMethod] = (0, import_react70.useState)("STRIPE");
+  (0, import_react70.useEffect)(() => {
     if (plans.length > 0 && !selectedPlan) {
       const firstPaidPlan = plans.find((p2) => p2.name !== "Trial" && p2.basePrice > 0);
       if (firstPaidPlan) {
@@ -24901,8 +24889,8 @@ function UpgradeTrialModal({
     try {
       await onUpgrade(selectedPlan.id, billingCycle, paymentMethod);
       onClose();
-    } catch (error2) {
-      console.error("Upgrade failed:", error2);
+    } catch (error) {
+      console.error("Upgrade failed:", error);
     }
   };
   const paidPlans = plans.filter((p2) => p2.name !== "Trial" && p2.basePrice > 0);
@@ -25133,7 +25121,7 @@ function UpgradeTrialModal({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionActivityTimeline.tsx
-var import_react72 = __toESM(require("react"));
+var import_react71 = __toESM(require("react"));
 var import_utils36 = require("@rentalshop/utils");
 var import_lucide_react65 = require("lucide-react");
 var import_jsx_runtime135 = require("react/jsx-runtime");
@@ -25143,7 +25131,7 @@ function SubscriptionActivityTimeline({
   loading = false,
   onExport
 }) {
-  const timeline = import_react72.default.useMemo(() => {
+  const timeline = import_react71.default.useMemo(() => {
     const items = [];
     activities.forEach((activity) => {
       items.push({
@@ -25427,16 +25415,16 @@ function SubscriptionActivityTimeline({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionHistoryDialog.tsx
-var import_react73 = require("react");
+var import_react72 = require("react");
 var import_utils37 = require("@rentalshop/utils");
 var import_jsx_runtime136 = require("react/jsx-runtime");
 function SubscriptionHistoryDialog({
   subscriptionId,
   merchantId
 }) {
-  const [activities, setActivities] = (0, import_react73.useState)([]);
-  const [payments, setPayments] = (0, import_react73.useState)([]);
-  const [loading, setLoading] = (0, import_react73.useState)(false);
+  const [activities, setActivities] = (0, import_react72.useState)([]);
+  const [payments, setPayments] = (0, import_react72.useState)([]);
+  const [loading, setLoading] = (0, import_react72.useState)(false);
   const fetchHistory = async () => {
     if (!subscriptionId)
       return;
@@ -25452,13 +25440,13 @@ function SubscriptionHistoryDialog({
       if (paymentsResponse.success && paymentsResponse.data) {
         setPayments(paymentsResponse.data);
       }
-    } catch (error2) {
-      console.error("Error fetching subscription history:", error2);
+    } catch (error) {
+      console.error("Error fetching subscription history:", error);
     } finally {
       setLoading(false);
     }
   };
-  (0, import_react73.useEffect)(() => {
+  (0, import_react72.useEffect)(() => {
     if (subscriptionId) {
       fetchHistory();
     }
@@ -25563,21 +25551,21 @@ function MerchantPlanManagement({
   const isActivePaidStatus = subscriptionStatus === "active";
   const isPaused = subscriptionStatus === "paused";
   const isTrialPlan = currentSubscription.plan?.name?.toLowerCase() === "trial" || currentSubscription.plan?.basePrice === 0;
-  const [showChangeDialog, setShowChangeDialog] = (0, import_react74.useState)(false);
-  const [showRenewalModal, setShowRenewalModal] = (0, import_react74.useState)(false);
-  const [showCancelDialog, setShowCancelDialog] = (0, import_react74.useState)(false);
-  const [showSuspendDialog, setShowSuspendDialog] = (0, import_react74.useState)(false);
-  const [showResumeDialog, setShowResumeDialog] = (0, import_react74.useState)(false);
-  const [showHistoryDialog, setShowHistoryDialog] = (0, import_react74.useState)(false);
-  const [cancelReason, setCancelReason] = (0, import_react74.useState)("");
-  const [cancelType, setCancelType] = (0, import_react74.useState)("end_of_period");
-  const [suspendReason, setSuspendReason] = (0, import_react74.useState)("");
-  const [isSubmitting, setIsSubmitting] = (0, import_react74.useState)(false);
-  const [renewalLoading, setRenewalLoading] = (0, import_react74.useState)(false);
-  const [selectedPlanId, setSelectedPlanId] = (0, import_react74.useState)("");
-  const [changeReason, setChangeReason] = (0, import_react74.useState)("");
-  const [notifyMerchant, setNotifyMerchant] = (0, import_react74.useState)(true);
-  const [changeBillingInterval, setChangeBillingInterval] = (0, import_react74.useState)("month");
+  const [showChangeDialog, setShowChangeDialog] = (0, import_react73.useState)(false);
+  const [showRenewalModal, setShowRenewalModal] = (0, import_react73.useState)(false);
+  const [showCancelDialog, setShowCancelDialog] = (0, import_react73.useState)(false);
+  const [showSuspendDialog, setShowSuspendDialog] = (0, import_react73.useState)(false);
+  const [showResumeDialog, setShowResumeDialog] = (0, import_react73.useState)(false);
+  const [showHistoryDialog, setShowHistoryDialog] = (0, import_react73.useState)(false);
+  const [cancelReason, setCancelReason] = (0, import_react73.useState)("");
+  const [cancelType, setCancelType] = (0, import_react73.useState)("end_of_period");
+  const [suspendReason, setSuspendReason] = (0, import_react73.useState)("");
+  const [isSubmitting, setIsSubmitting] = (0, import_react73.useState)(false);
+  const [renewalLoading, setRenewalLoading] = (0, import_react73.useState)(false);
+  const [selectedPlanId, setSelectedPlanId] = (0, import_react73.useState)("");
+  const [changeReason, setChangeReason] = (0, import_react73.useState)("");
+  const [notifyMerchant, setNotifyMerchant] = (0, import_react73.useState)(true);
+  const [changeBillingInterval, setChangeBillingInterval] = (0, import_react73.useState)("month");
   const handleOpenChangeDialog = () => {
     setShowChangeDialog(true);
     setSelectedPlanId("");
@@ -25585,7 +25573,7 @@ function MerchantPlanManagement({
     setChangeBillingInterval("month");
     setNotifyMerchant(true);
   };
-  (0, import_react74.useEffect)(() => {
+  (0, import_react73.useEffect)(() => {
     if (showChangeDialog && !changeBillingInterval) {
       setChangeBillingInterval("month");
     }
@@ -25639,9 +25627,9 @@ function MerchantPlanManagement({
         // Include payment info
       });
       setShowRenewalModal(false);
-    } catch (error2) {
-      console.error("Failed to renew subscription:", error2);
-      throw error2;
+    } catch (error) {
+      console.error("Failed to renew subscription:", error);
+      throw error;
     } finally {
       setRenewalLoading(false);
     }
@@ -25655,8 +25643,8 @@ function MerchantPlanManagement({
       setShowCancelDialog(false);
       setCancelReason("");
       setCancelType("end_of_period");
-    } catch (error2) {
-      console.error("Error canceling subscription:", error2);
+    } catch (error) {
+      console.error("Error canceling subscription:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -25684,8 +25672,8 @@ function MerchantPlanManagement({
       setChangeReason("");
       setNotifyMerchant(true);
       setChangeBillingInterval("month");
-    } catch (error2) {
-      console.error("Error changing plan:", error2);
+    } catch (error) {
+      console.error("Error changing plan:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -25698,8 +25686,8 @@ function MerchantPlanManagement({
       await onSuspend?.(currentSubscription, suspendReason.trim());
       setShowSuspendDialog(false);
       setSuspendReason("");
-    } catch (error2) {
-      console.error("Error suspending subscription:", error2);
+    } catch (error) {
+      console.error("Error suspending subscription:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -25711,8 +25699,8 @@ function MerchantPlanManagement({
     try {
       await onReactivate?.(currentSubscription);
       setShowResumeDialog(false);
-    } catch (error2) {
-      console.error("Error reactivating subscription:", error2);
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -26273,13 +26261,13 @@ function Merchants({
     shouldShowPagination: data.total > 0,
     paginationCondition: `data.total > 0 = ${data.total} > 0 = ${data.total > 0}`
   });
-  const memoizedOnFiltersChange = import_react75.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react75.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react75.default.useCallback(onClearFilters || (() => {
+  const memoizedOnFiltersChange = import_react74.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react74.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react74.default.useCallback(onClearFilters || (() => {
   }), [onClearFilters]);
-  const memoizedOnMerchantAction = import_react75.default.useCallback(onMerchantAction, [onMerchantAction]);
-  const memoizedOnPageChange = import_react75.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react75.default.useCallback(onSort || (() => {
+  const memoizedOnMerchantAction = import_react74.default.useCallback(onMerchantAction, [onMerchantAction]);
+  const memoizedOnPageChange = import_react74.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react74.default.useCallback(onSort || (() => {
   }), [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime138.jsxs)("div", { className: "flex flex-col h-full", children: [
     /* @__PURE__ */ (0, import_jsx_runtime138.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
@@ -26323,7 +26311,7 @@ var Merchants_default = Merchants;
 var import_navigation5 = require("next/navigation");
 
 // src/components/features/Merchants/components/MerchantSubscriptionSection.tsx
-var import_react76 = require("react");
+var import_react75 = require("react");
 var import_lucide_react67 = require("lucide-react");
 var import_jsx_runtime139 = require("react/jsx-runtime");
 function MerchantSubscriptionSection({
@@ -26331,11 +26319,11 @@ function MerchantSubscriptionSection({
   subscription,
   loading = false
 }) {
-  const [activities, setActivities] = (0, import_react76.useState)([]);
-  const [payments, setPayments] = (0, import_react76.useState)([]);
-  const [loadingHistory, setLoadingHistory] = (0, import_react76.useState)(false);
-  const [showHistoryDialog, setShowHistoryDialog] = (0, import_react76.useState)(false);
-  (0, import_react76.useEffect)(() => {
+  const [activities, setActivities] = (0, import_react75.useState)([]);
+  const [payments, setPayments] = (0, import_react75.useState)([]);
+  const [loadingHistory, setLoadingHistory] = (0, import_react75.useState)(false);
+  const [showHistoryDialog, setShowHistoryDialog] = (0, import_react75.useState)(false);
+  (0, import_react75.useEffect)(() => {
     if (subscription && showHistoryDialog) {
       fetchHistory();
     }
@@ -26364,8 +26352,8 @@ function MerchantSubscriptionSection({
         console.log("Payments not yet implemented or error:", err);
         setPayments([]);
       }
-    } catch (error2) {
-      console.error("Error fetching history:", error2);
+    } catch (error) {
+      console.error("Error fetching history:", error);
     } finally {
       setLoadingHistory(false);
     }
@@ -26395,8 +26383,8 @@ function MerchantSubscriptionSection({
         return 0;
       const diff = end.getTime() - now.getTime();
       return Math.ceil(diff / (1e3 * 60 * 60 * 24));
-    } catch (error2) {
-      console.error("Error calculating days remaining:", error2);
+    } catch (error) {
+      console.error("Error calculating days remaining:", error);
       return 0;
     }
   };
@@ -26594,7 +26582,7 @@ function MerchantDetail({
 }
 
 // src/components/features/Calendars/Calendars.tsx
-var import_react78 = require("react");
+var import_react77 = require("react");
 
 // src/components/features/Calendars/components/CalendarHeader.tsx
 var import_lucide_react69 = require("lucide-react");
@@ -26737,7 +26725,7 @@ function CalendarStats({
 }
 
 // src/components/features/Calendars/components/CalendarGrid.tsx
-var import_react77 = __toESM(require("react"));
+var import_react76 = __toESM(require("react"));
 var import_hooks42 = require("@rentalshop/hooks");
 var import_jsx_runtime144 = require("react/jsx-runtime");
 function CalendarGrid({
@@ -26748,7 +26736,7 @@ function CalendarGrid({
   className = ""
 }) {
   const t2 = (0, import_hooks42.useCalendarTranslations)();
-  const calendarDays = import_react77.default.useMemo(() => {
+  const calendarDays = import_react76.default.useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -26936,7 +26924,7 @@ var import_jsx_runtime146 = require("react/jsx-runtime");
 function Calendars({
   orders = [],
   loading = false,
-  error: error2 = null,
+  error = null,
   authenticated = false,
   onFiltersChange,
   onOrderClick,
@@ -26946,20 +26934,20 @@ function Calendars({
   onRetry,
   className = ""
 }) {
-  const [currentDate, setCurrentDate] = (0, import_react78.useState)(/* @__PURE__ */ new Date());
-  const [selectedDate, setSelectedDate] = (0, import_react78.useState)(null);
-  const goToPreviousMonth = (0, import_react78.useCallback)(() => {
+  const [currentDate, setCurrentDate] = (0, import_react77.useState)(/* @__PURE__ */ new Date());
+  const [selectedDate, setSelectedDate] = (0, import_react77.useState)(null);
+  const goToPreviousMonth = (0, import_react77.useCallback)(() => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   }, []);
-  const goToNextMonth = (0, import_react78.useCallback)(() => {
+  const goToNextMonth = (0, import_react77.useCallback)(() => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   }, []);
-  const goToToday = (0, import_react78.useCallback)(() => {
+  const goToToday = (0, import_react77.useCallback)(() => {
     const today = /* @__PURE__ */ new Date();
     setCurrentDate(today);
     setSelectedDate(today);
   }, []);
-  const handleDateClick = (0, import_react78.useCallback)((date2) => {
+  const handleDateClick = (0, import_react77.useCallback)((date2) => {
     setSelectedDate(date2);
     onDateSelect?.(date2);
   }, [onDateSelect]);
@@ -27067,7 +27055,7 @@ function OrdersList({
 }
 
 // src/components/features/Users/Users.tsx
-var import_react86 = __toESM(require("react"));
+var import_react85 = __toESM(require("react"));
 var import_ui106 = require("@rentalshop/ui");
 
 // src/components/features/Users/components/UserHeader.tsx
@@ -27298,7 +27286,7 @@ function UserGrid({ users, onUserAction }) {
 }
 
 // src/components/features/Users/components/UserTable.tsx
-var import_react79 = __toESM(require("react"));
+var import_react78 = __toESM(require("react"));
 var import_lucide_react75 = require("lucide-react");
 var import_hooks43 = require("@rentalshop/hooks");
 var import_jsx_runtime152 = require("react/jsx-runtime");
@@ -27310,7 +27298,7 @@ function UserTable({
   onSort
 }) {
   const t2 = (0, import_hooks43.useUsersTranslations)();
-  const [openDropdownId, setOpenDropdownId] = import_react79.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react78.default.useState(null);
   if (users.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime152.jsx)(Card, { className: "shadow-sm border-border", children: /* @__PURE__ */ (0, import_jsx_runtime152.jsx)(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime152.jsxs)("div", { className: "text-text-tertiary", children: [
       /* @__PURE__ */ (0, import_jsx_runtime152.jsx)("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
@@ -27451,18 +27439,18 @@ function UsersLoading() {
 }
 
 // src/components/features/Users/components/UserActions.tsx
-var import_react82 = require("react");
+var import_react81 = require("react");
 var import_navigation6 = require("next/navigation");
 var import_ui102 = require("@rentalshop/ui");
 
 // src/components/features/Users/components/UserDetailDialog.tsx
-var import_react81 = require("react");
+var import_react80 = require("react");
 var import_ui99 = require("@rentalshop/ui");
 var import_ui100 = require("@rentalshop/ui");
 var import_ui101 = require("@rentalshop/ui");
 
 // src/components/features/Users/components/ChangePasswordDialog.tsx
-var import_react80 = require("react");
+var import_react79 = require("react");
 
 // src/components/features/Users/lib/UserApiClient.ts
 var import_utils39 = require("@rentalshop/utils");
@@ -27488,9 +27476,9 @@ var UserApiClient = class {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
       return await response.json();
-    } catch (error2) {
-      console.error(`API request failed for ${endpoint}:`, error2);
-      throw error2;
+    } catch (error) {
+      console.error(`API request failed for ${endpoint}:`, error);
+      throw error;
     }
   }
   async getUsers(filters = {}, options = {}) {
@@ -27565,13 +27553,13 @@ var ChangePasswordDialog = ({
   onSuccess,
   onError
 }) => {
-  const [formData, setFormData] = (0, import_react80.useState)({
+  const [formData, setFormData] = (0, import_react79.useState)({
     newPassword: "",
     confirmPassword: ""
   });
-  const [errors, setErrors] = (0, import_react80.useState)({});
-  const [isLoading, setIsLoading] = (0, import_react80.useState)(false);
-  const [showPasswords, setShowPasswords] = (0, import_react80.useState)({
+  const [errors, setErrors] = (0, import_react79.useState)({});
+  const [isLoading, setIsLoading] = (0, import_react79.useState)(false);
+  const [showPasswords, setShowPasswords] = (0, import_react79.useState)({
     new: false,
     confirm: false
   });
@@ -27621,8 +27609,8 @@ var ChangePasswordDialog = ({
       } else {
         onError?.(response.error || "Failed to change password");
       }
-    } catch (error2) {
-      const errorMessage = error2 instanceof Error ? error2.message : "An error occurred";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -27911,11 +27899,11 @@ var UserDetailDialog = ({
 }) => {
   const t2 = (0, import_hooks45.useUsersTranslations)();
   const tc = (0, import_hooks45.useCommonTranslations)();
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = (0, import_react81.useState)(false);
-  const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = (0, import_react81.useState)(false);
-  const [isActivateConfirmOpen, setIsActivateConfirmOpen] = (0, import_react81.useState)(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = (0, import_react81.useState)(false);
-  const [isLoading, setIsLoading] = (0, import_react81.useState)(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = (0, import_react80.useState)(false);
+  const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = (0, import_react80.useState)(false);
+  const [isActivateConfirmOpen, setIsActivateConfirmOpen] = (0, import_react80.useState)(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = (0, import_react80.useState)(false);
+  const [isLoading, setIsLoading] = (0, import_react80.useState)(false);
   if (!user)
     return null;
   const handleDeactivateUser = async () => {
@@ -27929,8 +27917,8 @@ var UserDetailDialog = ({
       } else {
         onError?.(response.error || "Failed to deactivate user");
       }
-    } catch (error2) {
-      const errorMessage = error2 instanceof Error ? error2.message : "An error occurred";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -27947,8 +27935,8 @@ var UserDetailDialog = ({
       } else {
         onError?.(response.error || "Failed to activate user");
       }
-    } catch (error2) {
-      const errorMessage = error2 instanceof Error ? error2.message : "An error occurred";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -27957,8 +27945,8 @@ var UserDetailDialog = ({
   const handlePasswordChangeSuccess = () => {
     console.log("Password changed successfully");
   };
-  const handlePasswordChangeError = (error2) => {
-    onError?.(error2);
+  const handlePasswordChangeError = (error) => {
+    onError?.(error);
   };
   const handleDeleteUser = async () => {
     setIsLoading(true);
@@ -27970,8 +27958,8 @@ var UserDetailDialog = ({
       } else {
         onError?.(response.error || "Failed to delete user");
       }
-    } catch (error2) {
-      const errorMessage = error2 instanceof Error ? error2.message : "An error occurred";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -28067,11 +28055,11 @@ function UserActions({
   onSuccess
 }) {
   const router = (0, import_navigation6.useRouter)();
-  const [isViewDialogOpen, setIsViewDialogOpen] = (0, import_react82.useState)(false);
-  const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = (0, import_react82.useState)(false);
-  const [selectedUser, setSelectedUser] = (0, import_react82.useState)(null);
-  const [userToDeactivate, setUserToDeactivate] = (0, import_react82.useState)(null);
-  (0, import_react82.useEffect)(() => {
+  const [isViewDialogOpen, setIsViewDialogOpen] = (0, import_react81.useState)(false);
+  const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = (0, import_react81.useState)(false);
+  const [selectedUser, setSelectedUser] = (0, import_react81.useState)(null);
+  const [userToDeactivate, setUserToDeactivate] = (0, import_react81.useState)(null);
+  (0, import_react81.useEffect)(() => {
     const handleUserAction = (event) => {
       const { action, userId, user } = event.detail;
       console.log("\u{1F50D} UserActions: Event received:", { action, userId, user });
@@ -28169,14 +28157,14 @@ function UserActions({
 }
 
 // src/components/features/Users/components/AddUserDialog.tsx
-var import_react85 = require("react");
+var import_react84 = require("react");
 
 // src/components/features/Users/components/UserForm.tsx
-var import_react84 = require("react");
+var import_react83 = require("react");
 var import_lucide_react78 = require("lucide-react");
 
 // src/components/features/Users/components/UserFormFields.tsx
-var import_react83 = require("react");
+var import_react82 = require("react");
 var import_lucide_react77 = require("lucide-react");
 var import_jsx_runtime158 = require("react/jsx-runtime");
 var FormField = ({
@@ -28184,14 +28172,14 @@ var FormField = ({
   label,
   value,
   onChange,
-  error: error2,
+  error,
   disabled = false,
   required = false,
   placeholder,
   type = "text",
   showPasswordToggle = false
 }) => {
-  const [showPassword, setShowPassword] = (0, import_react83.useState)(false);
+  const [showPassword, setShowPassword] = (0, import_react82.useState)(false);
   const inputType = type === "password" && showPassword ? "text" : type;
   return /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)("div", { className: "space-y-2", children: [
     /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)(Label2, { htmlFor: id, children: [
@@ -28208,7 +28196,7 @@ var FormField = ({
           value,
           onChange: (e2) => onChange(e2.target.value),
           placeholder,
-          className: error2 ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "",
+          className: error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "",
           disabled,
           required
         }
@@ -28226,13 +28214,13 @@ var FormField = ({
         }
       )
     ] }),
-    error2 && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-red-600", children: error2 })
+    error && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-red-600", children: error })
   ] });
 };
 var RoleSelect = ({
   value,
   onChange,
-  error: error2,
+  error,
   disabled = false,
   currentUserRole
 }) => {
@@ -28248,7 +28236,7 @@ var RoleSelect = ({
         onValueChange: onChange,
         disabled,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(SelectTrigger, { className: error2 ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "", children: /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(SelectValue, { placeholder: value ? `Current: ${value}` : "Select role" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(SelectTrigger, { className: error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "", children: /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(SelectValue, { placeholder: value ? `Current: ${value}` : "Select role" }) }),
           /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)(SelectContent, { children: [
             currentUserRole === "ADMIN" && /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)(import_jsx_runtime158.Fragment, { children: [
               /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(SelectItem, { value: "ADMIN", children: "System Admin" }),
@@ -28260,7 +28248,7 @@ var RoleSelect = ({
         ]
       }
     ),
-    error2 && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-red-600", children: error2 })
+    error && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-red-600", children: error })
   ] });
 };
 var MerchantSelect = ({
@@ -28268,7 +28256,7 @@ var MerchantSelect = ({
   onChange,
   merchants,
   loading,
-  error: error2,
+  error,
   disabled = false,
   canSelect,
   currentUser
@@ -28291,7 +28279,7 @@ var MerchantSelect = ({
         placeholder: loading ? "Loading merchants..." : "Search and select merchant",
         searchPlaceholder: "Search merchants...",
         emptyText: "No merchants found",
-        className: error2 ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+        className: error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
       },
       `merchant-${merchants.length}`
     ) : /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(
@@ -28303,7 +28291,7 @@ var MerchantSelect = ({
         placeholder: "Current merchant"
       }
     ),
-    error2 && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-red-600", children: error2 })
+    error && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-red-600", children: error })
   ] });
 };
 var OutletSelect = ({
@@ -28311,7 +28299,7 @@ var OutletSelect = ({
   onChange,
   outlets,
   loading,
-  error: error2,
+  error,
   disabled = false,
   canSelect,
   canSelectMerchant,
@@ -28336,7 +28324,7 @@ var OutletSelect = ({
         placeholder: loading ? "Loading outlets..." : !merchantId && canSelectMerchant ? "Select merchant first" : "Search and select outlet",
         searchPlaceholder: "Search outlets...",
         emptyText: "No outlets found",
-        className: error2 ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+        className: error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
       },
       `outlet-${outlets.length}-${merchantId}`
     ) : /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(
@@ -28348,7 +28336,7 @@ var OutletSelect = ({
         placeholder: "Current outlet"
       }
     ),
-    error2 && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-red-600", children: error2 })
+    error && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)("p", { className: "text-sm text-red-600", children: error })
   ] });
 };
 
@@ -28507,7 +28495,7 @@ var UserForm = ({
   const t2 = (0, import_hooks46.useUsersTranslations)();
   const tc = (0, import_hooks46.useCommonTranslations)();
   const isEditMode = mode === "edit";
-  const [formData, setFormData] = (0, import_react84.useState)(() => {
+  const [formData, setFormData] = (0, import_react83.useState)(() => {
     console.log("\u{1F50D} UserForm: Initial state setup - isEditMode:", isEditMode, "user:", user);
     if (isEditMode && user) {
       const initialData = {
@@ -28539,18 +28527,18 @@ var UserForm = ({
       return initialData;
     }
   });
-  const [errors, setErrors] = (0, import_react84.useState)({});
-  const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react84.useState)(false);
-  const [merchants, setMerchants] = (0, import_react84.useState)([]);
-  const [outlets, setOutlets] = (0, import_react84.useState)([]);
-  const [loadingMerchants, setLoadingMerchants] = (0, import_react84.useState)(false);
-  const [loadingOutlets, setLoadingOutlets] = (0, import_react84.useState)(false);
+  const [errors, setErrors] = (0, import_react83.useState)({});
+  const [internalIsSubmitting, setInternalIsSubmitting] = (0, import_react83.useState)(false);
+  const [merchants, setMerchants] = (0, import_react83.useState)([]);
+  const [outlets, setOutlets] = (0, import_react83.useState)([]);
+  const [loadingMerchants, setLoadingMerchants] = (0, import_react83.useState)(false);
+  const [loadingOutlets, setLoadingOutlets] = (0, import_react83.useState)(false);
   const isSubmitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : internalIsSubmitting;
   const canSelectMerchant = currentUser?.role === "ADMIN";
   const canSelectOutlet = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT";
   const showMerchantField = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT" || currentUser?.role === "OUTLET_ADMIN" || currentUser?.role === "OUTLET_STAFF";
   const showOutletField = currentUser?.role === "ADMIN" || currentUser?.role === "MERCHANT" || currentUser?.role === "OUTLET_ADMIN" || currentUser?.role === "OUTLET_STAFF";
-  (0, import_react84.useEffect)(() => {
+  (0, import_react83.useEffect)(() => {
     if (isEditMode && user) {
       console.log("\u{1F50D} UserForm: User object for edit:", user);
       console.log("\u{1F50D} UserForm: User role:", user.role, "Type:", typeof user.role);
@@ -28576,7 +28564,7 @@ var UserForm = ({
       console.log("\u{1F50D} UserForm: Final role set:", formData2.role);
     }
   }, [user, isEditMode]);
-  (0, import_react84.useEffect)(() => {
+  (0, import_react83.useEffect)(() => {
     if (!isEditMode && currentUser) {
       const updates = {};
       const userMerchantId = currentUser.merchantId || currentUser.merchant?.id;
@@ -28592,15 +28580,15 @@ var UserForm = ({
       }
     }
   }, [currentUser, canSelectMerchant, canSelectOutlet, isEditMode]);
-  (0, import_react84.useEffect)(() => {
+  (0, import_react83.useEffect)(() => {
     if (!isEditMode && canSelectMerchant) {
       setLoadingMerchants(true);
       import_utils41.merchantsApi.getMerchants().then((response) => {
         if (response.success && response.data) {
           setMerchants(response.data.merchants || []);
         }
-      }).catch((error2) => {
-        console.error("Error loading merchants:", error2);
+      }).catch((error) => {
+        console.error("Error loading merchants:", error);
       }).finally(() => {
         setLoadingMerchants(false);
       });
@@ -28613,7 +28601,7 @@ var UserForm = ({
       setFormData((prev) => ({ ...prev, merchantId: userMerchantId?.toString() || "" }));
     }
   }, [canSelectMerchant, currentUser, isEditMode]);
-  (0, import_react84.useEffect)(() => {
+  (0, import_react83.useEffect)(() => {
     if (!isEditMode && canSelectOutlet) {
       setLoadingOutlets(true);
       const merchantId = canSelectMerchant ? formData.merchantId : currentUser?.merchantId || currentUser?.merchant?.id;
@@ -28629,8 +28617,8 @@ var UserForm = ({
             console.warn("\u{1F50D} UserForm: No outlets data in response:", response);
             setOutlets([]);
           }
-        }).catch((error2) => {
-          console.error("\u{1F50D} UserForm: Error loading outlets:", error2);
+        }).catch((error) => {
+          console.error("\u{1F50D} UserForm: Error loading outlets:", error);
           setOutlets([]);
         }).finally(() => {
           setLoadingOutlets(false);
@@ -28649,7 +28637,7 @@ var UserForm = ({
       setFormData((prev) => ({ ...prev, outletId: currentUser.outletId?.toString() || "" }));
     }
   }, [canSelectOutlet, canSelectMerchant, formData.merchantId, currentUser?.merchantId, currentUser?.outletId, isEditMode]);
-  (0, import_react84.useEffect)(() => {
+  (0, import_react83.useEffect)(() => {
     if (!isEditMode && canSelectMerchant && formData.merchantId) {
       console.log("\u{1F50D} UserForm: Merchant changed, resetting outlet and reloading outlets");
       setFormData((prev) => ({ ...prev, outletId: "" }));
@@ -28662,8 +28650,8 @@ var UserForm = ({
         } else {
           setOutlets([]);
         }
-      }).catch((error2) => {
-        console.error("\u{1F50D} UserForm: Error reloading outlets:", error2);
+      }).catch((error) => {
+        console.error("\u{1F50D} UserForm: Error reloading outlets:", error);
         setOutlets([]);
       }).finally(() => {
         setLoadingOutlets(false);
@@ -28730,8 +28718,8 @@ var UserForm = ({
       console.log("\u{1F50D} UserForm: Submit data keys:", Object.keys(submitData));
       await onSave(submitData);
       console.log("\u2705 UserForm: User operation completed successfully");
-    } catch (error2) {
-      console.error("\u274C UserForm: Error in user operation:", error2);
+    } catch (error) {
+      console.error("\u274C UserForm: Error in user operation:", error);
     } finally {
       if (!externalIsSubmitting) {
         setInternalIsSubmitting(false);
@@ -28949,13 +28937,13 @@ var UserForm = ({
       /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("span", { className: "text-yellow-400 text-lg", children: "\u26A0\uFE0F" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("div", { className: "ml-3", children: [
         /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("h3", { className: "text-sm font-medium text-yellow-800", children: t2("messages.validationErrors") }),
-        /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("div", { className: "mt-2 text-sm text-yellow-700", children: /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("ul", { className: "list-disc list-inside space-y-1", children: Object.entries(errors).map(([field, error2]) => /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("li", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("div", { className: "mt-2 text-sm text-yellow-700", children: /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("ul", { className: "list-disc list-inside space-y-1", children: Object.entries(errors).map(([field, error]) => /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("li", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("strong", { children: [
             field.charAt(0).toUpperCase() + field.slice(1),
             ":"
           ] }),
           " ",
-          error2
+          error
         ] }, field)) }) })
       ] })
     ] }) }),
@@ -28999,7 +28987,7 @@ var AddUserDialog = ({
   currentUser
 }) => {
   const t2 = (0, import_hooks47.useUsersTranslations)();
-  const [isSubmitting, setIsSubmitting] = (0, import_react85.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react84.useState)(false);
   const handleSave = async (userData) => {
     try {
       setIsSubmitting(true);
@@ -29007,10 +28995,10 @@ var AddUserDialog = ({
         await onUserCreated(userData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C AddUserDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C AddUserDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create user");
+        onError(error instanceof Error ? error.message : "Failed to create user");
       }
     } finally {
       setIsSubmitting(false);
@@ -29371,12 +29359,12 @@ var Users9 = ({
     totalPages,
     limit
   });
-  const memoizedOnFiltersChange = import_react86.default.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = import_react86.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = import_react86.default.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnUserAction = import_react86.default.useCallback(onUserAction, [onUserAction]);
-  const memoizedOnPageChange = import_react86.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react86.default.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = import_react85.default.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = import_react85.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = import_react85.default.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnUserAction = import_react85.default.useCallback(onUserAction, [onUserAction]);
+  const memoizedOnPageChange = import_react85.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react85.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime164.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime164.jsxs)("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime164.jsx)(
@@ -29437,7 +29425,7 @@ var Users9 = ({
 var Users_default = Users9;
 
 // src/components/features/Outlets/Outlets.tsx
-var import_react90 = __toESM(require("react"));
+var import_react89 = __toESM(require("react"));
 var import_ui114 = require("@rentalshop/ui");
 
 // src/components/features/Outlets/components/OutletHeader.tsx
@@ -29657,7 +29645,7 @@ function OutletGrid({
 }
 
 // src/components/features/Outlets/components/OutletTable.tsx
-var import_react87 = __toESM(require("react"));
+var import_react86 = __toESM(require("react"));
 var import_lucide_react85 = require("lucide-react");
 var import_hooks50 = require("@rentalshop/hooks");
 var import_jsx_runtime168 = require("react/jsx-runtime");
@@ -29670,7 +29658,7 @@ function OutletTable({
 }) {
   const t2 = (0, import_hooks50.useOutletsTranslations)();
   const tc = (0, import_hooks50.useCommonTranslations)();
-  const [openDropdownId, setOpenDropdownId] = import_react87.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react86.default.useState(null);
   if (outlets.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(import_lucide_react85.Building2, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
@@ -29880,10 +29868,10 @@ function OutletPagination({
 }
 
 // src/components/features/Outlets/components/AddOutletDialog.tsx
-var import_react89 = require("react");
+var import_react88 = require("react");
 
 // src/components/features/Outlets/components/AddOutletForm.tsx
-var import_react88 = require("react");
+var import_react87 = require("react");
 var import_lucide_react86 = require("lucide-react");
 var import_ui112 = require("@rentalshop/ui");
 var import_hooks52 = require("@rentalshop/hooks");
@@ -29896,7 +29884,7 @@ var AddOutletForm = ({
 }) => {
   const t2 = (0, import_hooks52.useOutletsTranslations)();
   const tc = (0, import_hooks52.useCommonTranslations)();
-  const [formData, setFormData] = (0, import_react88.useState)({
+  const [formData, setFormData] = (0, import_react87.useState)({
     name: "",
     address: "",
     city: "",
@@ -29907,7 +29895,7 @@ var AddOutletForm = ({
     description: "",
     merchantId: merchantId || 0
   });
-  const [errors, setErrors] = (0, import_react88.useState)({});
+  const [errors, setErrors] = (0, import_react87.useState)({});
   const validateForm = () => {
     const newErrors = {};
     if (!formData.name.trim()) {
@@ -29923,8 +29911,8 @@ var AddOutletForm = ({
     }
     try {
       await onSave(formData);
-    } catch (error2) {
-      console.error("Error saving outlet:", error2);
+    } catch (error) {
+      console.error("Error saving outlet:", error);
     }
   };
   const handleCancel = () => {
@@ -30078,7 +30066,7 @@ var AddOutletDialog = ({
   merchantId
 }) => {
   const t2 = (0, import_hooks53.useOutletsTranslations)();
-  const [isSubmitting, setIsSubmitting] = (0, import_react89.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react88.useState)(false);
   const handleSave = async (outletData) => {
     try {
       setIsSubmitting(true);
@@ -30086,10 +30074,10 @@ var AddOutletDialog = ({
         await onOutletCreated(outletData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C AddOutletDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C AddOutletDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create outlet");
+        onError(error instanceof Error ? error.message : "Failed to create outlet");
       }
     } finally {
       setIsSubmitting(false);
@@ -30136,10 +30124,10 @@ var Outlets = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = import_react90.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnOutletAction = import_react90.default.useCallback(onOutletAction, [onOutletAction]);
-  const memoizedOnPageChange = import_react90.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react90.default.useCallback(onSort, [onSort]);
+  const memoizedOnSearchChange = import_react89.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnOutletAction = import_react89.default.useCallback(onOutletAction, [onOutletAction]);
+  const memoizedOnPageChange = import_react89.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react89.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime173.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_ui114.Card, { className: "shadow-sm border-border", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(import_ui114.CardContent, { className: "pt-4 pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
       OutletSearch,
@@ -30181,7 +30169,7 @@ var Outlets = ({
 };
 
 // src/components/features/Categories/Categories.tsx
-var import_react96 = __toESM(require("react"));
+var import_react95 = __toESM(require("react"));
 var import_ui124 = require("@rentalshop/ui");
 
 // src/components/features/Categories/components/CategoryHeader.tsx
@@ -30206,15 +30194,15 @@ var CategoryHeader = ({
 };
 
 // src/components/features/Categories/components/CategoryActions.tsx
-var import_react93 = require("react");
+var import_react92 = require("react");
 var import_hooks57 = require("@rentalshop/hooks");
 
 // src/components/features/Categories/components/AddCategoryDialog.tsx
-var import_react92 = require("react");
+var import_react91 = require("react");
 var import_hooks56 = require("@rentalshop/hooks");
 
 // src/components/features/Categories/components/CategoryFormContent.tsx
-var import_react91 = require("react");
+var import_react90 = require("react");
 var import_hooks55 = require("@rentalshop/hooks");
 var import_lucide_react89 = require("lucide-react");
 var import_jsx_runtime175 = require("react/jsx-runtime");
@@ -30227,14 +30215,14 @@ var CategoryFormContent = ({
 }) => {
   const t2 = (0, import_hooks55.useCategoriesTranslations)();
   const tc = (0, import_hooks55.useCommonTranslations)();
-  const [formData, setFormData] = (0, import_react91.useState)({
+  const [formData, setFormData] = (0, import_react90.useState)({
     name: "",
     description: ""
   });
-  const [errors, setErrors] = (0, import_react91.useState)({});
-  const [isSubmitting, setIsSubmitting] = (0, import_react91.useState)(false);
+  const [errors, setErrors] = (0, import_react90.useState)({});
+  const [isSubmitting, setIsSubmitting] = (0, import_react90.useState)(false);
   const submitting = externalIsSubmitting !== void 0 ? externalIsSubmitting : isSubmitting;
-  (0, import_react91.useEffect)(() => {
+  (0, import_react90.useEffect)(() => {
     if (category && mode === "edit") {
       setFormData({
         name: category.name || "",
@@ -30277,8 +30265,8 @@ var CategoryFormContent = ({
         description: formData.description.trim() || void 0
       };
       await onSave(categoryData);
-    } catch (error2) {
-      console.error("Error saving category:", error2);
+    } catch (error) {
+      console.error("Error saving category:", error);
     } finally {
       if (externalIsSubmitting === void 0) {
         setIsSubmitting(false);
@@ -30369,7 +30357,7 @@ var AddCategoryDialog = ({
   onError
 }) => {
   const t2 = (0, import_hooks56.useCategoriesTranslations)();
-  const [isSubmitting, setIsSubmitting] = (0, import_react92.useState)(false);
+  const [isSubmitting, setIsSubmitting] = (0, import_react91.useState)(false);
   const handleSave = async (categoryData) => {
     try {
       setIsSubmitting(true);
@@ -30377,10 +30365,10 @@ var AddCategoryDialog = ({
         await onCategoryCreated(categoryData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C AddCategoryDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C AddCategoryDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create category");
+        onError(error instanceof Error ? error.message : "Failed to create category");
       }
     } finally {
       setIsSubmitting(false);
@@ -30416,7 +30404,7 @@ var CategoryActions = ({
   onCategoryCreated,
   onError
 }) => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react93.useState)(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react92.useState)(false);
   const { canManageCategories } = (0, import_hooks57.useUserRole)();
   const allActions = [
     {
@@ -30617,7 +30605,7 @@ var CategoryGrid = ({
 };
 
 // src/components/features/Categories/components/CategoryTable.tsx
-var import_react94 = __toESM(require("react"));
+var import_react93 = __toESM(require("react"));
 var import_hooks58 = require("@rentalshop/hooks");
 var import_lucide_react91 = require("lucide-react");
 var import_jsx_runtime180 = require("react/jsx-runtime");
@@ -30628,7 +30616,7 @@ function CategoryTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = import_react94.default.useState(null);
+  const [openDropdownId, setOpenDropdownId] = import_react93.default.useState(null);
   const t2 = (0, import_hooks58.useCategoriesTranslations)();
   const tc = (0, import_hooks58.useCommonTranslations)();
   if (categories.length === 0) {
@@ -30808,7 +30796,7 @@ var CategoryForm = ({
 };
 
 // src/components/features/Categories/components/CategoryView.tsx
-var import_react95 = require("react");
+var import_react94 = require("react");
 var import_hooks60 = require("@rentalshop/hooks");
 var import_utils42 = require("@rentalshop/utils");
 var import_jsx_runtime182 = require("react/jsx-runtime");
@@ -30821,7 +30809,7 @@ var CategoryView = ({
   const t2 = (0, import_hooks60.useCategoriesTranslations)();
   const tc = (0, import_hooks60.useCommonTranslations)();
   const locale2 = Z();
-  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react95.useState)(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react94.useState)(false);
   if (!category)
     return null;
   const handleEdit = () => {
@@ -31065,10 +31053,10 @@ var Categories = ({
   const currentPage = data?.currentPage || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = import_react96.default.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnCategoryAction = import_react96.default.useCallback(onCategoryAction, [onCategoryAction]);
-  const memoizedOnPageChange = import_react96.default.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = import_react96.default.useCallback(onSort, [onSort]);
+  const memoizedOnSearchChange = import_react95.default.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnCategoryAction = import_react95.default.useCallback(onCategoryAction, [onCategoryAction]);
+  const memoizedOnPageChange = import_react95.default.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = import_react95.default.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui124.Card, { className: "shadow-sm border-border", children: /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(import_ui124.CardContent, { className: "pt-4 pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
       CategorySearch,
@@ -31148,8 +31136,8 @@ var PlanDialog = ({
     try {
       await onSubmit(data);
       onOpenChange(false);
-    } catch (error2) {
-      console.error("Error submitting plan:", error2);
+    } catch (error) {
+      console.error("Error submitting plan:", error);
     }
   };
   const handleCancel = () => {
@@ -31259,7 +31247,7 @@ var PlanActions = ({
 };
 
 // src/components/features/Plans/components/PlanSelection.tsx
-var import_react97 = require("react");
+var import_react96 = require("react");
 var import_ui127 = require("@rentalshop/ui");
 var import_lucide_react94 = require("lucide-react");
 var import_constants14 = require("@rentalshop/constants");
@@ -31273,14 +31261,14 @@ var PlanSelection = ({
   loading = false,
   disabled = false
 }) => {
-  const [selectedPlan, setSelectedPlan] = (0, import_react97.useState)(selectedPlanId);
-  const [selectedCycle, setSelectedCycle] = (0, import_react97.useState)(selectedBillingCycle);
-  (0, import_react97.useEffect)(() => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react96.useState)(selectedPlanId);
+  const [selectedCycle, setSelectedCycle] = (0, import_react96.useState)(selectedBillingCycle);
+  (0, import_react96.useEffect)(() => {
     if (selectedPlanId) {
       setSelectedPlan(selectedPlanId);
     }
   }, [selectedPlanId]);
-  (0, import_react97.useEffect)(() => {
+  (0, import_react96.useEffect)(() => {
     if (selectedBillingCycle) {
       setSelectedCycle(selectedBillingCycle);
     }
@@ -31695,7 +31683,7 @@ var PlanCard = ({
 };
 
 // src/components/features/Plans/components/PlanTable.tsx
-var import_react98 = require("react");
+var import_react97 = require("react");
 var import_ui129 = require("@rentalshop/ui");
 var import_lucide_react96 = require("lucide-react");
 var import_jsx_runtime191 = require("react/jsx-runtime");
@@ -31710,7 +31698,7 @@ var PlanTable = ({
   onSort,
   loading = false
 }) => {
-  const [openMenuId, setOpenMenuId] = (0, import_react98.useState)(null);
+  const [openMenuId, setOpenMenuId] = (0, import_react97.useState)(null);
   const formatCurrency22 = (price, currency) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -32324,7 +32312,7 @@ var BillingCycleTable = ({
 };
 
 // src/components/features/BillingCycles/components/BillingCycleForm.tsx
-var import_react99 = require("react");
+var import_react98 = require("react");
 var import_ui133 = require("@rentalshop/ui");
 var import_jsx_runtime196 = require("react/jsx-runtime");
 var BillingCycleForm = ({
@@ -32333,7 +32321,7 @@ var BillingCycleForm = ({
   onCancel,
   loading = false
 }) => {
-  const [formData, setFormData] = (0, import_react99.useState)({
+  const [formData, setFormData] = (0, import_react98.useState)({
     name: initialData.name || "",
     value: initialData.value || "",
     months: initialData.months || 1,
@@ -32342,8 +32330,8 @@ var BillingCycleForm = ({
     isActive: initialData.isActive !== void 0 ? initialData.isActive : true,
     sortOrder: initialData.sortOrder || 0
   });
-  const [errors, setErrors] = (0, import_react99.useState)({});
-  (0, import_react99.useEffect)(() => {
+  const [errors, setErrors] = (0, import_react98.useState)({});
+  (0, import_react98.useEffect)(() => {
     if (initialData) {
       setFormData({
         name: initialData.name || "",
@@ -32579,7 +32567,7 @@ var BillingCycleForm = ({
 };
 
 // src/components/features/BillingCycles/components/BillingCycleDetailDialog.tsx
-var import_react100 = __toESM(require("react"));
+var import_react99 = __toESM(require("react"));
 var import_ui134 = require("@rentalshop/ui");
 var import_lucide_react99 = require("lucide-react");
 var import_jsx_runtime197 = require("react/jsx-runtime");
@@ -32592,9 +32580,9 @@ var BillingCycleDetailDialog = ({
   onDelete,
   loading = false
 }) => {
-  const [isEditing, setIsEditing] = (0, import_react100.useState)(false);
-  const [tempStatus, setTempStatus] = (0, import_react100.useState)(billingCycle?.isActive ?? false);
-  import_react100.default.useEffect(() => {
+  const [isEditing, setIsEditing] = (0, import_react99.useState)(false);
+  const [tempStatus, setTempStatus] = (0, import_react99.useState)(billingCycle?.isActive ?? false);
+  import_react99.default.useEffect(() => {
     setTempStatus(billingCycle?.isActive ?? false);
   }, [billingCycle]);
   const handleToggleStatus = () => {
@@ -32800,7 +32788,7 @@ var BillingCycleDetailDialog = ({
 };
 
 // src/components/features/Payments/components/PaymentForm.tsx
-var import_react101 = __toESM(require("react"));
+var import_react100 = __toESM(require("react"));
 var import_ui135 = require("@rentalshop/ui");
 var import_utils45 = require("@rentalshop/utils");
 var import_lucide_react100 = require("lucide-react");
@@ -32825,7 +32813,7 @@ var PaymentForm = ({
   existingPayment
   // ✅ NEW: Existing payment data for edit mode
 }) => {
-  const [formData, setFormData] = (0, import_react101.useState)(() => {
+  const [formData, setFormData] = (0, import_react100.useState)(() => {
     if (mode === "edit" && existingPayment) {
       return {
         merchantId: existingPayment.merchantId,
@@ -32860,10 +32848,10 @@ var PaymentForm = ({
       endDate: nextMonthStr
     };
   });
-  const [selectedPlan, setSelectedPlan] = (0, import_react101.useState)(null);
-  const [selectedPlanVariant, setSelectedPlanVariant] = (0, import_react101.useState)(null);
-  const [isSearchingMerchants, setIsSearchingMerchants] = (0, import_react101.useState)(false);
-  const searchMerchants = import_react101.default.useCallback(async (query) => {
+  const [selectedPlan, setSelectedPlan] = (0, import_react100.useState)(null);
+  const [selectedPlanVariant, setSelectedPlanVariant] = (0, import_react100.useState)(null);
+  const [isSearchingMerchants, setIsSearchingMerchants] = (0, import_react100.useState)(false);
+  const searchMerchants = import_react100.default.useCallback(async (query) => {
     console.log("\u{1F50D} PaymentForm: searchMerchants called with query:", query);
     if (!query.trim()) {
       console.log("\u{1F50D} PaymentForm: Empty query, returning empty array");
@@ -32916,15 +32904,15 @@ var PaymentForm = ({
       }
       console.log("\u{1F50D} PaymentForm: No success or data, returning empty array");
       return [];
-    } catch (error2) {
-      console.error("\u{1F50D} PaymentForm: Error searching merchants:", error2);
+    } catch (error) {
+      console.error("\u{1F50D} PaymentForm: Error searching merchants:", error);
       return [];
     } finally {
       setIsSearchingMerchants(false);
       console.log("\u{1F50D} PaymentForm: Search completed for query:", query);
     }
   }, []);
-  (0, import_react101.useEffect)(() => {
+  (0, import_react100.useEffect)(() => {
     if (mode === "edit" && existingPayment && plans.length > 0 && planVariants.length > 0) {
       const plan = plans.find((p2) => p2.id === existingPayment.planId);
       const planVariant = planVariants.find((v2) => v2.id === existingPayment.planVariantId);
@@ -32934,7 +32922,7 @@ var PaymentForm = ({
         setSelectedPlanVariant(planVariant);
     }
   }, [mode, existingPayment, plans, planVariants]);
-  (0, import_react101.useEffect)(() => {
+  (0, import_react100.useEffect)(() => {
     if (selectedPlan && selectedPlanVariant) {
       const totalAmount = selectedPlanVariant.price;
       const currency = selectedPlan.currency;
@@ -33469,7 +33457,7 @@ var PaymentDetailDialog = ({
 };
 
 // src/components/features/Payments/components/PaymentTable.tsx
-var import_react102 = require("react");
+var import_react101 = require("react");
 var import_lucide_react102 = require("lucide-react");
 var import_jsx_runtime200 = require("react/jsx-runtime");
 function PaymentTable({
@@ -33479,7 +33467,7 @@ function PaymentTable({
   onRefund,
   loading = false
 }) {
-  const [openMenuId, setOpenMenuId] = (0, import_react102.useState)(null);
+  const [openMenuId, setOpenMenuId] = (0, import_react101.useState)(null);
   const formatCurrency22 = (amount, currency = "USD") => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -35590,7 +35578,7 @@ function BackupSchedulesGrid({
 }
 
 // src/components/features/ApiManagement/components/ApiKeyCard.tsx
-var import_react103 = require("react");
+var import_react102 = require("react");
 var import_lucide_react113 = require("lucide-react");
 var import_jsx_runtime230 = require("react/jsx-runtime");
 var getTypeColor4 = (type) => {
@@ -35628,7 +35616,7 @@ function ApiKeyCard({
   onDelete,
   onViewDetails
 }) {
-  const [showKey, setShowKey] = (0, import_react103.useState)(false);
+  const [showKey, setShowKey] = (0, import_react102.useState)(false);
   const toggleKeyVisibility = () => {
     setShowKey(!showKey);
   };
@@ -36447,11 +36435,11 @@ function SecurityMetricsCard({ metrics }) {
 }
 
 // src/components/features/AuditLogs/AuditLogViewer.tsx
-var import_react105 = require("react");
+var import_react104 = require("react");
 var import_ui138 = require("@rentalshop/ui");
 
 // src/components/features/AuditLogs/AuditLogDetail.tsx
-var import_react104 = __toESM(require("react"));
+var import_react103 = __toESM(require("react"));
 var import_ui137 = require("@rentalshop/ui");
 var import_lucide_react119 = require("lucide-react");
 var import_jsx_runtime240 = require("react/jsx-runtime");
@@ -36511,7 +36499,7 @@ function ActionBadge({ action }) {
   return /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui137.Badge, { className: getActionStyle(action), children: action });
 }
 function JsonViewer({ data, title }) {
-  const [isExpanded, setIsExpanded] = import_react104.default.useState(false);
+  const [isExpanded, setIsExpanded] = import_react103.default.useState(false);
   if (!data) {
     return /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)(import_ui137.Card, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui137.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_ui137.CardTitle, { className: "text-sm", children: title }) }),
@@ -36566,7 +36554,7 @@ function ChangesViewer({ changes }) {
   ] });
 }
 function AuditLogDetail({ log, isOpen, onClose }) {
-  const [activeTab, setActiveTab] = (0, import_react104.useState)("overview");
+  const [activeTab, setActiveTab] = (0, import_react103.useState)("overview");
   if (!log)
     return null;
   const formatDate11 = (dateString) => {
@@ -37044,9 +37032,9 @@ function AuditLogViewer({
   onViewDetails = () => {
   }
 }) {
-  const [selectedLog, setSelectedLog] = (0, import_react105.useState)(null);
-  const [isDetailOpen, setIsDetailOpen] = (0, import_react105.useState)(false);
-  const [activeTab, setActiveTab] = (0, import_react105.useState)("logs");
+  const [selectedLog, setSelectedLog] = (0, import_react104.useState)(null);
+  const [isDetailOpen, setIsDetailOpen] = (0, import_react104.useState)(false);
+  const [activeTab, setActiveTab] = (0, import_react104.useState)("logs");
   const handleViewDetails = (log) => {
     setSelectedLog(log);
     setIsDetailOpen(true);
@@ -37190,7 +37178,7 @@ function AuditLogViewerSimple({ className = "" }) {
 }
 
 // src/components/features/OrderDetail/OrderDetail.tsx
-var import_react106 = require("react");
+var import_react105 = require("react");
 var import_ui145 = require("@rentalshop/ui");
 var import_ui146 = require("@rentalshop/ui");
 var import_constants16 = require("@rentalshop/constants");
@@ -37391,8 +37379,8 @@ var CollectionReturnModal = ({
         await onConfirmReturn();
       }
       onClose();
-    } catch (error2) {
-      console.error("Error in modal confirmation:", error2);
+    } catch (error) {
+      console.error("Error in modal confirmation:", error);
     }
   };
   return /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(import_ui139.Dialog, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)(import_ui139.DialogContent, { className: "max-w-2xl", children: [
@@ -38056,23 +38044,23 @@ var OrderDetail = ({
     "Passport",
     "Other"
   ];
-  const [settingsForm, setSettingsForm] = (0, import_react106.useState)({
+  const [settingsForm, setSettingsForm] = (0, import_react105.useState)({
     damageFee: order.damageFee || 0,
     securityDeposit: order.securityDeposit || 0,
     collateralType: order.collateralType || "Other",
     collateralDetails: order.collateralDetails || "",
     notes: order.notes || ""
   });
-  const [isEditingSettings, setIsEditingSettings] = (0, import_react106.useState)(false);
-  const [tempSettings, setTempSettings] = (0, import_react106.useState)(settingsForm);
-  const [isSavingSettings, setIsSavingSettings] = (0, import_react106.useState)(false);
-  const [isCollectionModalOpen, setIsCollectionModalOpen] = (0, import_react106.useState)(false);
-  const [isReturnModalOpen, setIsReturnModalOpen] = (0, import_react106.useState)(false);
-  const [isPickupLoading, setIsPickupLoading] = (0, import_react106.useState)(false);
-  const [isReturnLoading, setIsReturnLoading] = (0, import_react106.useState)(false);
-  const [isCancelLoading, setIsCancelLoading] = (0, import_react106.useState)(false);
-  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = (0, import_react106.useState)(false);
-  (0, import_react106.useEffect)(() => {
+  const [isEditingSettings, setIsEditingSettings] = (0, import_react105.useState)(false);
+  const [tempSettings, setTempSettings] = (0, import_react105.useState)(settingsForm);
+  const [isSavingSettings, setIsSavingSettings] = (0, import_react105.useState)(false);
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = (0, import_react105.useState)(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = (0, import_react105.useState)(false);
+  const [isPickupLoading, setIsPickupLoading] = (0, import_react105.useState)(false);
+  const [isReturnLoading, setIsReturnLoading] = (0, import_react105.useState)(false);
+  const [isCancelLoading, setIsCancelLoading] = (0, import_react105.useState)(false);
+  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = (0, import_react105.useState)(false);
+  (0, import_react105.useEffect)(() => {
     if (order) {
       const newSettings = {
         damageFee: order.damageFee || 0,
@@ -38171,7 +38159,7 @@ var OrderDetail = ({
         toastSuccess(t2("detail.settingsSaved"), t2("detail.settingsSavedMessage"));
         setSettingsForm(tempSettings);
         setIsEditingSettings(false);
-      } catch (error2) {
+      } catch (error) {
         toastError(t2("detail.saveFailed"), t2("detail.saveFailedMessage"));
       } finally {
         setIsSavingSettings(false);
@@ -38188,7 +38176,7 @@ var OrderDetail = ({
   const handlePrintOrder = () => {
     try {
       window.print();
-    } catch (error2) {
+    } catch (error) {
       toastError("Print Error", "Failed to start printing. Please try again.");
     }
   };
@@ -38202,7 +38190,7 @@ var OrderDetail = ({
       if (typeof window !== "undefined") {
         window.location.reload();
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Pickup Failed", "Failed to process order pickup. Please try again.");
     } finally {
       setIsPickupLoading(false);
@@ -38218,7 +38206,7 @@ var OrderDetail = ({
       if (typeof window !== "undefined") {
         window.location.reload();
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Return Failed", "Failed to process order return. Please try again.");
     } finally {
       setIsReturnLoading(false);
@@ -38236,7 +38224,7 @@ var OrderDetail = ({
       if (typeof window !== "undefined") {
         window.location.reload();
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Cancellation Failed", "Failed to cancel order. Please try again.");
     } finally {
       setIsCancelLoading(false);
@@ -38253,7 +38241,7 @@ var OrderDetail = ({
     if (onEdit) {
       try {
         onEdit(order);
-      } catch (error2) {
+      } catch (error) {
         toastError("Edit Failed", "Failed to enter edit mode. Please try again.");
       }
     }
@@ -38270,7 +38258,7 @@ var OrderDetail = ({
           notes: tempSettings.notes
         };
         onEdit(enhancedOrder);
-      } catch (error2) {
+      } catch (error) {
         toastError("Edit Failed", "Failed to enter edit mode. Please try again.");
       }
     }
@@ -38547,7 +38535,7 @@ function OutletDetailLoading() {
 }
 
 // src/components/features/Settings/Settings.tsx
-var import_react111 = require("react");
+var import_react110 = require("react");
 var import_navigation8 = require("next/navigation");
 var import_lucide_react134 = require("lucide-react");
 var import_hooks76 = require("@rentalshop/hooks");
@@ -38555,7 +38543,7 @@ var import_utils52 = require("@rentalshop/utils");
 var import_ui156 = require("@rentalshop/ui");
 
 // src/components/features/Settings/components/SettingsLayout.tsx
-var import_react107 = require("react");
+var import_react106 = require("react");
 var import_ui148 = require("@rentalshop/ui");
 var import_lucide_react128 = require("lucide-react");
 var import_hooks67 = require("@rentalshop/hooks");
@@ -38568,7 +38556,7 @@ var SettingsLayout2 = ({
   activeSection,
   onSectionChange
 }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react107.useState)(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react106.useState)(false);
   const t2 = (0, import_hooks67.useSettingsTranslations)();
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)(import_ui148.PageWrapper, { children: [
@@ -38719,7 +38707,7 @@ var ProfileSection = ({
 };
 
 // src/components/features/Settings/components/MerchantSection.tsx
-var import_react108 = require("react");
+var import_react107 = require("react");
 var import_ui150 = require("@rentalshop/ui");
 var import_lucide_react129 = require("lucide-react");
 var import_utils51 = require("@rentalshop/utils");
@@ -38739,11 +38727,11 @@ var MerchantSection = ({
   onCurrencyChange
 }) => {
   const t2 = (0, import_hooks69.useSettingsTranslations)();
-  const [merchantData, setMerchantData] = (0, import_react108.useState)(null);
-  const [loadingMerchant, setLoadingMerchant] = (0, import_react108.useState)(false);
-  const [selectedCurrency, setSelectedCurrency] = (0, import_react108.useState)(currentCurrency);
-  const [isSavingCurrency, setIsSavingCurrency] = (0, import_react108.useState)(false);
-  const fetchingRef = (0, import_react108.useRef)(false);
+  const [merchantData, setMerchantData] = (0, import_react107.useState)(null);
+  const [loadingMerchant, setLoadingMerchant] = (0, import_react107.useState)(false);
+  const [selectedCurrency, setSelectedCurrency] = (0, import_react107.useState)(currentCurrency);
+  const [isSavingCurrency, setIsSavingCurrency] = (0, import_react107.useState)(false);
+  const fetchingRef = (0, import_react107.useRef)(false);
   const CURRENCY_OPTIONS2 = [
     { value: "USD", label: t2("merchant.usDollar"), symbol: "$" },
     { value: "VND", label: t2("merchant.vietnameseDong"), symbol: "\u0111" }
@@ -38754,7 +38742,7 @@ var MerchantSection = ({
   console.log("\u{1F50D} MerchantSection render - user role:", user?.role);
   console.log("\u{1F50D} MerchantSection render - loadingMerchant:", loadingMerchant);
   console.log("\u{1F50D} MerchantSection render - fetchingRef.current:", fetchingRef.current);
-  (0, import_react108.useEffect)(() => {
+  (0, import_react107.useEffect)(() => {
     const fetchMerchantData = async () => {
       if (user?.merchantId && !user?.merchant && !fetchingRef.current) {
         console.log("\u{1F504} Fetching merchant data for merchantId:", user.merchantId);
@@ -38770,8 +38758,8 @@ var MerchantSection = ({
           } else {
             console.error("\u274C Failed to fetch merchant data:", result);
           }
-        } catch (error2) {
-          console.error("\u{1F4A5} Error fetching merchant data:", error2);
+        } catch (error) {
+          console.error("\u{1F4A5} Error fetching merchant data:", error);
         } finally {
           setLoadingMerchant(false);
           fetchingRef.current = false;
@@ -38784,7 +38772,7 @@ var MerchantSection = ({
     };
   }, [user?.merchantId, user?.merchant]);
   const merchant = user?.merchant || merchantData;
-  (0, import_react108.useEffect)(() => {
+  (0, import_react107.useEffect)(() => {
     setSelectedCurrency(currentCurrency);
   }, [currentCurrency]);
   const handleCurrencySelect = async (currency) => {
@@ -38794,8 +38782,8 @@ var MerchantSection = ({
     try {
       await onCurrencyChange(currency);
       setSelectedCurrency(currency);
-    } catch (error2) {
-      console.error("Failed to update currency:", error2);
+    } catch (error) {
+      console.error("Failed to update currency:", error);
       setSelectedCurrency(currentCurrency);
     } finally {
       setIsSavingCurrency(false);
@@ -39311,7 +39299,7 @@ var AccountSection = ({
 };
 
 // src/components/features/Settings/components/LanguageSection.tsx
-var import_react109 = require("react");
+var import_react108 = require("react");
 var import_lucide_react132 = require("lucide-react");
 var import_navigation7 = require("next/navigation");
 var import_hooks73 = require("@rentalshop/hooks");
@@ -39324,8 +39312,8 @@ function LanguageSection() {
   const t2 = (0, import_hooks73.useSettingsTranslations)();
   const currentLocale = Z();
   const router = (0, import_navigation7.useRouter)();
-  const [isPending, startTransition] = (0, import_react109.useTransition)();
-  const [selectedLanguage, setSelectedLanguage] = (0, import_react109.useState)(currentLocale);
+  const [isPending, startTransition] = (0, import_react108.useTransition)();
+  const [selectedLanguage, setSelectedLanguage] = (0, import_react108.useState)(currentLocale);
   const handleLanguageChange = (newLocale) => {
     setSelectedLanguage(newLocale);
     startTransition(() => {
@@ -39386,7 +39374,7 @@ function LanguageSection() {
 }
 
 // src/components/features/Settings/components/ChangePasswordDialog.tsx
-var import_react110 = require("react");
+var import_react109 = require("react");
 var import_ui154 = require("@rentalshop/ui");
 var import_lucide_react133 = require("lucide-react");
 var import_hooks74 = require("@rentalshop/hooks");
@@ -39400,9 +39388,9 @@ var ChangePasswordDialog2 = ({
   onSubmit
 }) => {
   const t2 = (0, import_hooks74.useSettingsTranslations)();
-  const [showCurrentPassword, setShowCurrentPassword] = (0, import_react110.useState)(false);
-  const [showNewPassword, setShowNewPassword] = (0, import_react110.useState)(false);
-  const [showConfirmPassword, setShowConfirmPassword] = (0, import_react110.useState)(false);
+  const [showCurrentPassword, setShowCurrentPassword] = (0, import_react109.useState)(false);
+  const [showNewPassword, setShowNewPassword] = (0, import_react109.useState)(false);
+  const [showConfirmPassword, setShowConfirmPassword] = (0, import_react109.useState)(false);
   if (!isOpen)
     return null;
   return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
@@ -39624,17 +39612,17 @@ var SettingsComponent = () => {
   const router = (0, import_navigation8.useRouter)();
   const searchParams = (0, import_navigation8.useSearchParams)();
   const tabFromUrl = searchParams.get("tab") || "profile";
-  const [activeSection, setActiveSection] = (0, import_react111.useState)(tabFromUrl);
-  const [isEditingPersonal, setIsEditingPersonal] = (0, import_react111.useState)(false);
-  const [isEditingMerchant, setIsEditingMerchant] = (0, import_react111.useState)(false);
-  const [isEditingOutlet, setIsEditingOutlet] = (0, import_react111.useState)(false);
-  const [isUpdating, setIsUpdating] = (0, import_react111.useState)(false);
-  const [personalFormData, setPersonalFormData] = (0, import_react111.useState)({
+  const [activeSection, setActiveSection] = (0, import_react110.useState)(tabFromUrl);
+  const [isEditingPersonal, setIsEditingPersonal] = (0, import_react110.useState)(false);
+  const [isEditingMerchant, setIsEditingMerchant] = (0, import_react110.useState)(false);
+  const [isEditingOutlet, setIsEditingOutlet] = (0, import_react110.useState)(false);
+  const [isUpdating, setIsUpdating] = (0, import_react110.useState)(false);
+  const [personalFormData, setPersonalFormData] = (0, import_react110.useState)({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     phone: user?.phone || ""
   });
-  const [merchantFormData, setMerchantFormData] = (0, import_react111.useState)({
+  const [merchantFormData, setMerchantFormData] = (0, import_react110.useState)({
     name: "",
     phone: "",
     address: "",
@@ -39646,24 +39634,24 @@ var SettingsComponent = () => {
     pricingType: "",
     taxId: ""
   });
-  const [outletFormData, setOutletFormData] = (0, import_react111.useState)({
+  const [outletFormData, setOutletFormData] = (0, import_react110.useState)({
     name: "",
     phone: "",
     address: "",
     description: ""
   });
-  const [showChangePassword, setShowChangePassword] = (0, import_react111.useState)(false);
-  const [isChangingPassword, setIsChangingPassword] = (0, import_react111.useState)(false);
-  const [passwordData, setPasswordData] = (0, import_react111.useState)({
+  const [showChangePassword, setShowChangePassword] = (0, import_react110.useState)(false);
+  const [isChangingPassword, setIsChangingPassword] = (0, import_react110.useState)(false);
+  const [passwordData, setPasswordData] = (0, import_react110.useState)({
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   });
-  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react111.useState)(false);
-  const [isDeleting, setIsDeleting] = (0, import_react111.useState)(false);
-  const [subscriptionData, setSubscriptionData] = (0, import_react111.useState)(null);
-  const [subscriptionLoading, setSubscriptionLoading] = (0, import_react111.useState)(true);
-  (0, import_react111.useEffect)(() => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = (0, import_react110.useState)(false);
+  const [isDeleting, setIsDeleting] = (0, import_react110.useState)(false);
+  const [subscriptionData, setSubscriptionData] = (0, import_react110.useState)(null);
+  const [subscriptionLoading, setSubscriptionLoading] = (0, import_react110.useState)(true);
+  (0, import_react110.useEffect)(() => {
     const tabFromUrl2 = searchParams.get("tab") || "profile";
     if (tabFromUrl2 !== activeSection) {
       setActiveSection(tabFromUrl2);
@@ -39673,7 +39661,7 @@ var SettingsComponent = () => {
     setActiveSection(section);
     router.push(`/settings?tab=${section}`);
   };
-  (0, import_react111.useEffect)(() => {
+  (0, import_react110.useEffect)(() => {
     if (user) {
       setPersonalFormData({
         firstName: user.firstName || "",
@@ -39682,7 +39670,7 @@ var SettingsComponent = () => {
       });
     }
   }, [user]);
-  (0, import_react111.useEffect)(() => {
+  (0, import_react110.useEffect)(() => {
     const fetchSubscriptionData = async () => {
       try {
         setSubscriptionLoading(true);
@@ -39747,8 +39735,8 @@ var SettingsComponent = () => {
           console.log("\u274C Settings - No subscription data:", response);
           setSubscriptionData(null);
         }
-      } catch (error2) {
-        console.error("Error fetching subscription data:", error2);
+      } catch (error) {
+        console.error("Error fetching subscription data:", error);
         setSubscriptionData(null);
       } finally {
         setSubscriptionLoading(false);
@@ -39756,7 +39744,7 @@ var SettingsComponent = () => {
     };
     fetchSubscriptionData();
   }, []);
-  (0, import_react111.useEffect)(() => {
+  (0, import_react110.useEffect)(() => {
     if (user?.merchant && user?.role === "MERCHANT") {
       setMerchantFormData({
         name: user.merchant.name || "",
@@ -39833,7 +39821,7 @@ var SettingsComponent = () => {
       } else {
         toastError("Error", response.error || t2("messages.personalProfileUpdateFailed"));
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Error", t2("messages.personalProfileUpdateFailed"));
     } finally {
       setIsUpdating(false);
@@ -39876,8 +39864,8 @@ var SettingsComponent = () => {
         console.log("\u274C API failed:", response.error);
         toastError("Error", response.error || t2("messages.businessInfoUpdateFailed"));
       }
-    } catch (error2) {
-      console.error("\u274C Error in handleUpdateMerchantInfo:", error2);
+    } catch (error) {
+      console.error("\u274C Error in handleUpdateMerchantInfo:", error);
       toastError("Error", t2("messages.businessInfoUpdateFailed"));
     } finally {
       setIsUpdating(false);
@@ -39895,7 +39883,7 @@ var SettingsComponent = () => {
       } else {
         toastError("Error", response.error || t2("messages.outletInfoUpdateFailed"));
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Error", t2("messages.outletInfoUpdateFailed"));
     } finally {
       setIsUpdating(false);
@@ -39905,8 +39893,8 @@ var SettingsComponent = () => {
   const handleSignOut = async () => {
     try {
       await logout();
-    } catch (error2) {
-      console.error("Error signing out:", error2);
+    } catch (error) {
+      console.error("Error signing out:", error);
     }
   };
   const handleDeleteAccount = async () => {
@@ -39922,7 +39910,7 @@ var SettingsComponent = () => {
       } else {
         toastError("Delete Failed", response.message || t2("messages.accountDeleteFailed"));
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Delete Failed", t2("messages.accountDeleteFailed"));
     } finally {
       setIsDeleting(false);
@@ -39946,8 +39934,8 @@ var SettingsComponent = () => {
       } else {
         throw new Error(response.message || t2("messages.passwordChangeFailed"));
       }
-    } catch (error2) {
-      toastError("Password Change Failed", error2 instanceof Error ? error2.message : t2("messages.passwordChangeFailed"));
+    } catch (error) {
+      toastError("Password Change Failed", error instanceof Error ? error.message : t2("messages.passwordChangeFailed"));
     } finally {
       setIsChangingPassword(false);
     }
@@ -39970,7 +39958,7 @@ var SettingsComponent = () => {
       } else {
         toastError("Error", response.error || t2("messages.currencyUpdateFailed"));
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Error", t2("messages.currencyUpdateFailed"));
     } finally {
       setIsUpdating(false);
@@ -40128,7 +40116,7 @@ var SecuritySection = ({
 };
 
 // src/components/features/Settings/components/CurrencySection.tsx
-var import_react112 = require("react");
+var import_react111 = require("react");
 var import_lucide_react136 = require("lucide-react");
 var import_utils53 = require("@rentalshop/utils");
 var import_ui158 = require("@rentalshop/ui");
@@ -40143,9 +40131,9 @@ var CurrencySection = ({
   isUpdating = false,
   onCurrencyChange
 }) => {
-  const [selectedCurrency, setSelectedCurrency] = (0, import_react112.useState)(currentCurrency);
-  const [hasChanges, setHasChanges] = (0, import_react112.useState)(false);
-  (0, import_react112.useEffect)(() => {
+  const [selectedCurrency, setSelectedCurrency] = (0, import_react111.useState)(currentCurrency);
+  const [hasChanges, setHasChanges] = (0, import_react111.useState)(false);
+  (0, import_react111.useEffect)(() => {
     setSelectedCurrency(currentCurrency);
     setHasChanges(false);
   }, [currentCurrency]);
@@ -40315,7 +40303,7 @@ var CurrencySection = ({
 };
 
 // src/components/layout/TopNavigation.tsx
-var import_react113 = require("react");
+var import_react112 = require("react");
 var import_lucide_react137 = require("lucide-react");
 var import_jsx_runtime264 = require("react/jsx-runtime");
 function TopNavigation({
@@ -40327,7 +40315,7 @@ function TopNavigation({
   onProfileClick,
   userRole
 }) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react113.useState)(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react112.useState)(false);
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: import_lucide_react137.Home },
     { href: "/products", label: "Products", icon: import_lucide_react137.Package },
@@ -40695,7 +40683,7 @@ function ServerTopNavigation({
 }
 
 // src/components/layout/DashboardWrapperClean.tsx
-var import_react114 = require("react");
+var import_react113 = require("react");
 var import_jsx_runtime266 = require("react/jsx-runtime");
 function DashboardWrapperClean({
   children,
@@ -40706,7 +40694,7 @@ function DashboardWrapperClean({
   hideSidebar = false,
   allowCollapse = true
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react114.useState)(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react113.useState)(false);
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -40726,7 +40714,7 @@ function DashboardWrapperClean({
 }
 
 // src/components/layout/DashboardWrapperColorful.tsx
-var import_react115 = require("react");
+var import_react114 = require("react");
 var import_jsx_runtime267 = require("react/jsx-runtime");
 function DashboardWrapperColorful({
   children,
@@ -40737,7 +40725,7 @@ function DashboardWrapperColorful({
   hideSidebar = false,
   allowCollapse = true
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react115.useState)(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react114.useState)(false);
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -41063,7 +41051,7 @@ var QuickActionsGrid = () => {
 };
 
 // src/components/layout/SearchInput.tsx
-var import_react116 = require("react");
+var import_react115 = require("react");
 var import_lucide_react139 = require("lucide-react");
 var import_ui159 = require("@rentalshop/ui");
 var import_ui160 = require("@rentalshop/ui");
@@ -41089,12 +41077,12 @@ var SearchInput = ({
     minLength,
     onSearch
   });
-  (0, import_react116.useEffect)(() => {
+  (0, import_react115.useEffect)(() => {
     if (defaultValue && !query) {
       handleSearchChange(defaultValue);
     }
   }, [defaultValue, query, handleSearchChange]);
-  (0, import_react116.useEffect)(() => {
+  (0, import_react115.useEffect)(() => {
     return cleanup;
   }, [cleanup]);
   return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { className: (0, import_ui159.cn)("relative", className), children: [
@@ -41133,7 +41121,7 @@ var SearchInput = ({
 };
 
 // src/components/layout/navigation.tsx
-var import_react117 = require("react");
+var import_react116 = require("react");
 var import_lucide_react140 = require("lucide-react");
 var import_ui161 = require("@rentalshop/ui");
 var import_jsx_runtime273 = require("react/jsx-runtime");
@@ -41146,7 +41134,7 @@ function Navigation({
   isCollapsed = false,
   userRole
 }) {
-  const [isOpen, setIsOpen] = (0, import_react117.useState)(false);
+  const [isOpen, setIsOpen] = (0, import_react116.useState)(false);
   const clientNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: import_lucide_react140.Home },
     { href: "/products", label: "Products", icon: import_lucide_react140.Store },
@@ -41249,7 +41237,7 @@ function Navigation({
 }
 
 // src/components/layout/AdminSidebar.tsx
-var import_react118 = require("react");
+var import_react117 = require("react");
 var import_link3 = __toESM(require("next/link"));
 var import_navigation9 = require("next/navigation");
 var import_ui162 = require("@rentalshop/ui");
@@ -41320,7 +41308,7 @@ var AdminSidebar = ({
   onCollapseToggle,
   notificationsCount = 0
 }) => {
-  const [expandedItems, setExpandedItems] = (0, import_react118.useState)([]);
+  const [expandedItems, setExpandedItems] = (0, import_react117.useState)([]);
   const pathname = (0, import_navigation9.usePathname)();
   const toggleExpanded = (href) => {
     setExpandedItems(
@@ -41457,7 +41445,7 @@ var AdminSidebar = ({
 };
 
 // src/components/layout/ClientSidebar.tsx
-var import_react119 = require("react");
+var import_react118 = require("react");
 var import_link4 = __toESM(require("next/link"));
 var import_navigation10 = require("next/navigation");
 var import_ui164 = require("@rentalshop/ui");
@@ -41532,10 +41520,10 @@ var ClientSidebar = ({
   onNavigate,
   onPrefetch
 }) => {
-  const [expandedItems, setExpandedItems] = (0, import_react119.useState)([]);
-  const [hoveredTab, setHoveredTab] = (0, import_react119.useState)(null);
-  const [clickedTab, setClickedTab] = (0, import_react119.useState)(null);
-  const [localCurrentPage, setLocalCurrentPage] = (0, import_react119.useState)(currentPath);
+  const [expandedItems, setExpandedItems] = (0, import_react118.useState)([]);
+  const [hoveredTab, setHoveredTab] = (0, import_react118.useState)(null);
+  const [clickedTab, setClickedTab] = (0, import_react118.useState)(null);
+  const [localCurrentPage, setLocalCurrentPage] = (0, import_react118.useState)(currentPath);
   const pathname = (0, import_navigation10.usePathname)();
   const t2 = (0, import_hooks78.useCommonTranslations)();
   const filterMenuItemsByRole = (items, userRole) => {
@@ -41553,17 +41541,17 @@ var ClientSidebar = ({
     return items;
   };
   const menuItems2 = filterMenuItemsByRole(getClientMenuItems(t2), user?.role);
-  (0, import_react119.useEffect)(() => {
+  (0, import_react118.useEffect)(() => {
     setLocalCurrentPage(currentPath);
   }, [currentPath]);
-  (0, import_react119.useEffect)(() => {
+  (0, import_react118.useEffect)(() => {
     if (onPrefetch) {
       menuItems2.forEach((item) => {
         onPrefetch(item.href);
       });
     }
   }, [menuItems2, onPrefetch]);
-  (0, import_react119.useEffect)(() => {
+  (0, import_react118.useEffect)(() => {
     const handleClickOutside = (event) => {
       const target = event.target;
       const isClickingNavItem = target.closest(".nav-item");
@@ -41766,7 +41754,7 @@ var ClientSidebar = ({
 };
 
 // src/components/layout/layout.tsx
-var import_react120 = require("react");
+var import_react119 = require("react");
 var import_lucide_react143 = require("lucide-react");
 var import_ui166 = require("@rentalshop/ui");
 var import_jsx_runtime276 = require("react/jsx-runtime");
@@ -41780,8 +41768,8 @@ function Layout({
   hideSidebar = false,
   allowCollapse = true
 }) {
-  const [sidebarOpen, setSidebarOpen] = (0, import_react120.useState)(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react120.useState)(false);
+  const [sidebarOpen, setSidebarOpen] = (0, import_react119.useState)(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = (0, import_react119.useState)(false);
   const handleCollapseToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -41843,14 +41831,14 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     daysUntilExpiry,
     planName,
     loading,
-    error: error2,
+    error,
     statusMessage
     // Use statusReason from API
   } = (0, import_hooks79.useSubscriptionStatusInfo)();
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
   }
-  if (error2 || !hasSubscription) {
+  if (error || !hasSubscription) {
     return /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { className, children: (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
       Button2,
       {

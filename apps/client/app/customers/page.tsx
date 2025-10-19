@@ -78,7 +78,7 @@ export default function CustomersPage() {
     sortOrder
   }), [search, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useCustomersData({ filters });
+  const { data, loading, error, refetch } = useCustomersData({ filters });
   
   // Debug: Log data state
   console.log('📊 Customers Page - Data state:', {
@@ -203,7 +203,7 @@ export default function CustomersPage() {
         toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
         setShowEditDialog(false);
         setSelectedCustomer(null);
-        router.refresh();
+        refetch();
       } else {
         throw new Error(response.error || t('messages.updateFailed'));
       }
@@ -211,7 +211,7 @@ export default function CustomersPage() {
         toastError(t('messages.updateFailed'), (error as Error).message);
       throw error;
     }
-  }, [selectedCustomer, router, toastSuccess, toastError]);
+  }, [selectedCustomer, router, toastSuccess, toastError, refetch]);
   
   // Handle delete confirmation
   const handleConfirmDelete = useCallback(async () => {
@@ -223,14 +223,14 @@ export default function CustomersPage() {
         toastSuccess(t('messages.deleteSuccess'), t('messages.deleteSuccess'));
         setShowDeleteConfirm(false);
         setCustomerToDelete(null);
-        router.refresh();
+        refetch();
       } else {
         throw new Error(response.error || t('messages.deleteFailed'));
       }
     } catch (error) {
         toastError(t('messages.deleteFailed'), (error as Error).message);
     }
-  }, [customerToDelete, router, toastSuccess, toastError]);
+  }, [customerToDelete, router, toastSuccess, toastError, refetch]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -360,7 +360,7 @@ export default function CustomersPage() {
             
             if (response.success) {
               toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
-              router.refresh();
+              refetch();
             } else {
               throw new Error(response.error || t('messages.createFailed'));
             }

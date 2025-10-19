@@ -68,6 +68,7 @@ export function useDedupedApi<TFilters, TData>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isStale, setIsStale] = useState(false);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
   
   // ============================================================================
   // REFS - For tracking and avoiding stale updates
@@ -237,7 +238,7 @@ export function useDedupedApi<TFilters, TData>(
         requestCache.delete(cacheKey);
       });
 
-  }, [cacheKey, enabled, staleTime, cacheTime]); // ✅ fetchFn removed - use ref instead
+  }, [cacheKey, enabled, staleTime, cacheTime, refetchTrigger]); // ✅ Add refetchTrigger dependency
 
   // ============================================================================
   // WINDOW FOCUS REFETCH (Optional)
@@ -274,10 +275,11 @@ export function useDedupedApi<TFilters, TData>(
     
     console.log('🔄 Manual refetch triggered');
     
-    // Clear cache and trigger refetch
+    // Clear cache and trigger refetch by updating state
     dataCache.delete(cacheKey);
     filtersRef.current = '';
     fetchIdRef.current += 1;
+    setRefetchTrigger(prev => prev + 1); // ✅ Trigger useEffect via state change
   }, [enabled, cacheKey]);
 
   return {

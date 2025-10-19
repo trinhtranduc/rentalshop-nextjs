@@ -73,7 +73,7 @@ export default function CategoriesPage() {
     sortOrder
   }), [search, merchantId, status, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useCategoriesWithFilters({ filters });
+  const { data, loading, error, refetch } = useCategoriesWithFilters({ filters });
 
   // ============================================================================
   // URL UPDATE HELPER
@@ -149,7 +149,7 @@ export default function CategoriesPage() {
                 tc(`messages.${action === 'activate' ? 'updateSuccess' : 'updateSuccess'}`), 
                 tc(`messages.${action === 'activate' ? 'updateSuccess' : 'updateSuccess'}`)
               );
-              router.refresh();
+              refetch();
       } else {
               toastError(tc('messages.updateFailed'), response.error || tc('messages.updateFailed'));
             }
@@ -162,7 +162,7 @@ export default function CategoriesPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.categories, router, toastSuccess, toastError]);
+  }, [data?.categories, router, toastSuccess, toastError, refetch]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!categoryToDelete) return;
@@ -171,7 +171,7 @@ export default function CategoriesPage() {
       const response = await categoriesApi.deleteCategory(categoryToDelete.id);
       if (response.success) {
         toastSuccess(tc('messages.deleteSuccess'), tc('messages.deleteSuccess'));
-        router.refresh();
+        refetch();
       } else {
         toastError(tc('messages.deleteFailed'), response.error || tc('messages.deleteFailed'));
       }
@@ -181,7 +181,7 @@ export default function CategoriesPage() {
       setShowDeleteConfirm(false);
       setCategoryToDelete(null);
     }
-  }, [categoryToDelete, router, toastSuccess, toastError]);
+  }, [categoryToDelete, router, toastSuccess, toastError, refetch]);
 
   // ============================================================================
   // TRANSFORM DATA
@@ -291,7 +291,7 @@ export default function CategoriesPage() {
             
             if (response.success) {
               toastSuccess(tc('messages.createSuccess'), tc('messages.createSuccess'));
-              router.refresh();
+              refetch();
             } else {
               throw new Error(response.error || tc('messages.createFailed'));
             }
@@ -330,7 +330,7 @@ export default function CategoriesPage() {
                       toastSuccess(tc('messages.updateSuccess'), tc('messages.updateSuccess'));
                       setShowEditDialog(false);
                       setCategoryToEdit(null);
-                      router.refresh();
+                      refetch();
                     } else {
                       throw new Error(response.error || tc('messages.updateFailed'));
                     }

@@ -620,6 +620,7 @@ function useDedupedApi(options) {
   const [loading, setLoading] = (0, import_react6.useState)(true);
   const [error, setError] = (0, import_react6.useState)(null);
   const [isStale, setIsStale] = (0, import_react6.useState)(false);
+  const [refetchTrigger, setRefetchTrigger] = (0, import_react6.useState)(0);
   const fetchIdRef = (0, import_react6.useRef)(0);
   const filtersRef = (0, import_react6.useRef)("");
   const fetchFnRef = (0, import_react6.useRef)(fetchFn);
@@ -724,7 +725,7 @@ function useDedupedApi(options) {
     }).finally(() => {
       requestCache.delete(cacheKey);
     });
-  }, [cacheKey, enabled, staleTime, cacheTime]);
+  }, [cacheKey, enabled, staleTime, cacheTime, refetchTrigger]);
   (0, import_react6.useEffect)(() => {
     if (!refetchOnWindowFocus || !enabled)
       return;
@@ -750,6 +751,7 @@ function useDedupedApi(options) {
     dataCache.delete(cacheKey);
     filtersRef.current = "";
     fetchIdRef.current += 1;
+    setRefetchTrigger((prev) => prev + 1);
   }, [enabled, cacheKey]);
   return {
     data,

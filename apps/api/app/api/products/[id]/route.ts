@@ -138,6 +138,10 @@ export async function PUT(
       // Validate input data
       const validatedData = productUpdateSchema.parse(body);
       console.log('✅ Validated update data:', validatedData);
+      
+      // Extract outletStock from validated data
+      const { outletStock, ...productUpdateData } = validatedData;
+      console.log('🔍 PUT /api/products/[id] - Processing outletStock:', outletStock);
 
       // Check if product exists and user has access to it
       const existingProduct = await db.products.findById(productId);
@@ -146,30 +150,71 @@ export async function PUT(
       }
 
       // Check for duplicate product name if name is being updated
-      if (validatedData.name && validatedData.name !== existingProduct.name) {
+      if (productUpdateData.name && productUpdateData.name !== existingProduct.name) {
         const duplicateProduct = await db.products.findFirst({
-          name: validatedData.name,
+          name: productUpdateData.name,
           merchantId: userMerchantId,
           isActive: true,
           id: { not: productId }
         });
 
         if (duplicateProduct) {
-          console.log('❌ Product name already exists:', validatedData.name);
+          console.log('❌ Product name already exists:', productUpdateData.name);
           return NextResponse.json(
             {
               success: false,
               code: 'PRODUCT_NAME_EXISTS',
-              message: `A product with the name "${validatedData.name}" already exists. Please choose a different name.`
+              message: `A product with the name "${productUpdateData.name}" already exists. Please choose a different name.`
             },
             { status: 409 }
           );
         }
       }
 
-      // Update the product using the simplified database API
-      const updatedProduct = await db.products.update(productId, validatedData);
-      console.log('✅ Product updated successfully:', updatedProduct);
+      // Prepare outletStock nested write if provided
+      let finalUpdateData: any = { ...productUpdateData };
+      
+      if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
+        console.log('🔄 Preparing outlet stock nested write:', outletStock);
+        
+        // Verify all outlets exist first using db API
+        const validOutletStock = [];
+        for (const stock of outletStock) {
+          if (stock.outletId && typeof stock.stock === 'number') {
+            console.log(`🔍 Verifying outlet ID: ${stock.outletId}`);
+            const outlet = await db.outlets.findById(stock.outletId);
+            if (outlet) {
+              console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name });
+              // For nested write, we need to use outlet's database ID (number)
+              validOutletStock.push({
+                outletId: outlet.id, // This is the number ID for nested write
+                stock: stock.stock,
+                available: stock.stock,
+                renting: 0
+              });
+            } else {
+              console.log(`❌ Outlet not found for ID: ${stock.outletId}`);
+            }
+          } else {
+            console.log(`❌ Invalid outletStock entry:`, stock);
+          }
+        }
+        
+        if (validOutletStock.length > 0) {
+          // Use nested write to replace all outlet stock
+          finalUpdateData.outletStock = {
+            deleteMany: {}, // Delete all existing outlet stock
+            create: validOutletStock // Create new ones
+          };
+          console.log('✅ Prepared outletStock nested write:', finalUpdateData.outletStock);
+        }
+      } else {
+        console.log('ℹ️ No outletStock provided or empty array');
+      }
+
+      // Update the product using the simplified database API with nested write
+      const updatedProduct = await db.products.update(productId, finalUpdateData);
+      console.log('✅ Product updated successfully with outletStock:', updatedProduct);
 
       // Transform the response to match frontend expectations
       const transformedProduct = {

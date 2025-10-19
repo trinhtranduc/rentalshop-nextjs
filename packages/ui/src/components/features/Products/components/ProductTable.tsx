@@ -1,4 +1,6 @@
-import React from 'react';
+'use client'
+
+import React, { useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
@@ -30,7 +32,7 @@ export function ProductTable({
   sortOrder = 'asc',
   onSort 
 }: ProductTableProps) {
-  const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
@@ -261,7 +263,7 @@ export function ProductTable({
                 {/* Actions - Dropdown Menu */}
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <DropdownMenu>
-                    <DropdownMenuTrigger>
+                    <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
