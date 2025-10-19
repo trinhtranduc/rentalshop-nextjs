@@ -482,30 +482,28 @@ export async function generatePresignedUrl(
 }
 
 /**
- * Generate presigned URL for file access
+ * Generate clean S3 URL for file access (direct or CDN)
  */
 export async function generateAccessUrl(
   key: string,
   expiresIn: number = 3600
 ): Promise<string | null> {
   try {
-    let url: string;
+    const region = AWS_REGION || process.env.AWS_REGION || 'ap-southeast-1';
     
-    // Prefer CloudFront URL if available (much cleaner than presigned URLs)
+    // Prefer CloudFront URL if available (much cleaner)
     if (CLOUDFRONT_DOMAIN) {
-      url = `https://${CLOUDFRONT_DOMAIN}/${key}`;
-    } else {
-      // Fallback to presigned URL if no CloudFront
-      const command = new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-      });
-
-      url = await getSignedUrl(s3Client, command, { expiresIn });
+      const cleanKey = normalizeImageKeyToJpg(key);
+      return `https://${CLOUDFRONT_DOMAIN}/${cleanKey}`;
     }
     
-    // Normalize extension to .jpg for consistent display
-    return normalizeImageUrlToJpg(url);
+    // Use direct S3 URL - clean and simple
+    if (BUCKET_NAME) {
+      const cleanKey = normalizeImageKeyToJpg(key);
+      return `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${cleanKey}`;
+    }
+    
+    return null;
   } catch (error) {
     console.error('AWS S3 access URL error:', error);
     return null;
@@ -573,6 +571,23 @@ export async function processProductImages(
 
   // Filter out null values and return
   return processedImages.filter(Boolean) as string[];
+}
+
+/**
+ * Normalize image key/path to JPG extension
+ */
+export function normalizeImageKeyToJpg(key: string): string {
+  try {
+    // Check if it's an image key
+    if (key.match(/\.(webp|png|jpeg|jpg)$/i)) {
+      // Remove existing extension and add .jpg
+      return key.replace(/\.(webp|png|jpeg|jpg)$/i, '.jpg');
+    }
+    return key;
+  } catch (error) {
+    console.warn('Failed to normalize image key:', error);
+    return key;
+  }
 }
 
 /**
