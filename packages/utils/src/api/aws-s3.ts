@@ -110,11 +110,23 @@ export async function uploadToS3(
       expiresIn = 3600
     } = options;
 
-    // Generate unique filename
+    // Generate unique filename with correct extension
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
     const fileExtension = contentType.split('/')[1] || 'jpg';
-    finalFileName = fileName || `${timestamp}-${randomId}.${fileExtension}`;
+    
+    if (fileName) {
+      // Ensure filename has correct extension
+      if (fileName.includes('.')) {
+        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+        finalFileName = `${nameWithoutExt}-${randomId}.${fileExtension}`;
+      } else {
+        finalFileName = `${fileName}-${randomId}.${fileExtension}`;
+      }
+    } else {
+      finalFileName = `file-${timestamp}-${randomId}.${fileExtension}`;
+    }
+    
     folder = optionsFolder;
     
     // Clean key to prevent signature mismatch issues (common problem from Stack Overflow)
