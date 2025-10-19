@@ -77,7 +77,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
 
     // Upload to AWS S3
     const result = await uploadToS3(buffer, {
-      folder: 'images',
+      folder: 'product',
       fileName: file.name,
       contentType: file.type
     });
