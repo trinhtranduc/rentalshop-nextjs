@@ -643,7 +643,13 @@ export const simplifiedUsers = {
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
     if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
-    if (whereFilters.role) where.role = whereFilters.role;
+    
+    // Handle role filtering - roles array has priority over single role
+    if (whereFilters.roles && Array.isArray(whereFilters.roles)) {
+      where.role = { in: whereFilters.roles };
+    } else if (whereFilters.role) {
+      where.role = whereFilters.role;
+    }
     
     // Text search (case-insensitive)
     if (whereFilters.search) {
