@@ -63,6 +63,7 @@ export interface S3UploadOptions {
   fileName?: string;
   contentType?: string;
   expiresIn?: number; // seconds
+  preserveOriginalName?: boolean; // Whether to preserve original filename structure
 }
 
 export interface S3StreamUploadOptions extends S3UploadOptions {
@@ -79,6 +80,40 @@ export interface S3UploadResponse {
     cdnUrl?: string;
   };
   error?: string;
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Simple validation - only support JPG and PNG
+ */
+function validateImageType(contentType: string, buffer: Buffer): { isValid: boolean; actualType: string } {
+  const isJpg = contentType === 'image/jpeg' || contentType === 'image/jpg';
+  const isPng = contentType === 'image/png';
+  
+  // Quick magic bytes check for additional validation
+  if (buffer.length >= 4) {
+    const header = buffer.subarray(0, 4);
+    
+    // PNG: 89 50 4E 47
+    if (header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4E && header[3] === 0x47) {
+      return { isValid: true, actualType: 'image/png' };
+    }
+    
+    // JPEG: FF D8
+    if (header[0] === 0xFF && header[1] === 0xD8) {
+      return { isValid: true, actualType: 'image/jpeg' };
+    }
+  }
+  
+  // If magic bytes don't match but content type is valid, trust content type
+  if (isJpg || isPng) {
+    return { isValid: true, actualType: contentType };
+  }
+  
+  return { isValid: false, actualType: contentType };
 }
 
 // ============================================================================
@@ -107,24 +142,48 @@ export async function uploadToS3(
       folder: optionsFolder = 'uploads',
       fileName,
       contentType = 'image/jpeg',
-      expiresIn = 3600
+      expiresIn = 3600,
+      preserveOriginalName = false
     } = options;
 
-    // Generate unique filename with correct extension
+    // Simple validation - only support JPG and PNG
+    const inputBuffer = Buffer.isBuffer(file) ? file : Buffer.from(file);
+    const isImage = contentType.startsWith('image/');
+    
+    if (isImage) {
+      const validation = validateImageType(contentType, inputBuffer);
+      if (!validation.isValid) {
+        throw new Error(`Invalid image type. Only JPG and PNG are supported, got: ${contentType}`);
+      }
+    }
+    
+    // Generate filename with correct extension
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
-    const fileExtension = contentType.split('/')[1] || 'jpg';
+    
+    let fileExtension = 'bin';
+    if (isImage) {
+      if (contentType === 'image/png') {
+        fileExtension = 'png';
+      } else {
+        fileExtension = 'jpg'; // Default to jpg for jpeg/jpg
+      }
+    }
     
     if (fileName) {
-      // Ensure filename has correct extension
-      if (fileName.includes('.')) {
-        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-        finalFileName = `${nameWithoutExt}-${randomId}.${fileExtension}`;
-      } else {
-        finalFileName = `${fileName}-${randomId}.${fileExtension}`;
-      }
+      const nameWithoutExt = fileName.includes('.') 
+        ? fileName.substring(0, fileName.lastIndexOf('.'))
+        : fileName;
+      
+      const sanitizedName = nameWithoutExt
+        .replace(/[^a-zA-Z0-9_-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 50);
+      
+      finalFileName = `${sanitizedName}-${timestamp}-${randomId}.${fileExtension}`;
     } else {
-      finalFileName = `file-${timestamp}-${randomId}.${fileExtension}`;
+      finalFileName = `upload-${timestamp}-${randomId}.${fileExtension}`;
     }
     
     folder = optionsFolder;
@@ -133,12 +192,13 @@ export async function uploadToS3(
     const cleanFileName = finalFileName.replace(/^\./, ''); // Remove leading dots
     key = `${folder}/${cleanFileName}`.replace(/\/+/g, '/'); // Remove double slashes
 
-    // Upload to S3 (bucket does not allow ACLs)
+    // Simple S3 Upload - Use original buffer with proper content type
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
-      Body: file,
-      ContentType: contentType,
+      Body: inputBuffer, // Use original buffer - no conversion
+      ContentType: contentType, // Use actual content type (jpg or png)
+      ContentDisposition: 'inline',
       // ACL removed - bucket does not allow ACLs
     });
 
@@ -200,10 +260,11 @@ export async function uploadStreamToS3(
       contentType = 'application/octet-stream',
     } = options;
 
-    // Generate unique filename
+    // Generate unique filename - force JPG for images
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
-    const fileExtension = contentType.split('/')[1] || 'bin';
+    const isImage = contentType.startsWith('image/');
+    const fileExtension = isImage ? 'jpg' : (contentType.split('/')[1] || 'bin');
     finalFileName = fileName || `${timestamp}-${randomId}.${fileExtension}`;
     folder = optionsFolder;
     
@@ -216,7 +277,12 @@ export async function uploadStreamToS3(
       Bucket: BUCKET_NAME,
       Key: key,
       Body: stream, // Stream directly - AWS SDK v3 handles this automatically
-      ContentType: contentType,
+      ContentType: isImage ? 'image/jpeg' : contentType, // Force JPG for images
+      ContentDisposition: 'inline',
+      Metadata: isImage ? {
+        'file-type': 'jpg',
+        'original-format': 'converted-to-jpg'
+      } : undefined,
       // ACL removed - bucket does not allow ACLs
     });
 
@@ -338,11 +404,12 @@ export async function commitStagingFiles(
     const cleanTargetKey = `${targetFolder}/${filename}`.replace(/\/+/g, '/');
     
     try {
-      // Copy from staging to target with clean keys
+      // Copy from staging to target - Standard AWS approach
       const copyCommand = new CopyObjectCommand({
         Bucket: BUCKET_NAME,
         CopySource: `${BUCKET_NAME}/${cleanStagingKey}`,
         Key: cleanTargetKey,
+        MetadataDirective: 'COPY', // Preserve all original metadata and content type
         // ACL removed - bucket does not allow ACLs
       });
 
@@ -424,6 +491,64 @@ export async function generateAccessUrl(
 }
 
 /**
+ * Process product images to ensure they have valid presigned URLs
+ * This utility helps display thumbnails properly from S3
+ */
+export async function processProductImages(
+  images: string | string[] | null | undefined,
+  expiresIn: number = 86400 * 7 // 7 days default
+): Promise<string[]> {
+  if (!images) return [];
+  
+  // Normalize images to array
+  const imageUrls = Array.isArray(images) 
+    ? images 
+    : typeof images === 'string' 
+      ? images.split(',').filter(Boolean)
+      : [];
+
+  if (imageUrls.length === 0) return [];
+
+  // Process each image URL
+  const processedImages = await Promise.all(
+    imageUrls.map(async (url) => {
+      if (!url || typeof url !== 'string') return null;
+      
+      try {
+        // If it's already a presigned URL or external URL, keep it as is
+        if (url.includes('?') || !url.includes('amazonaws.com')) {
+          return url;
+        }
+        
+        // If it's a direct S3 URL, extract key and generate presigned URL
+        if (url.includes('amazonaws.com/')) {
+          const urlParts = url.split('amazonaws.com/');
+          if (urlParts.length > 1) {
+            const key = urlParts[1].split('?')[0]; // Remove any existing query params
+            const presignedUrl = await generateAccessUrl(key, expiresIn);
+            return presignedUrl || url; // Fallback to original if presigned fails
+          }
+        }
+        
+        // If it's just a key (without full URL), generate presigned URL directly
+        if (!url.startsWith('http')) {
+          const presignedUrl = await generateAccessUrl(url, expiresIn);
+          return presignedUrl || url;
+        }
+        
+        return url;
+      } catch (error) {
+        console.warn('Failed to process image URL:', url, error);
+        return url; // Return original on error
+      }
+    })
+  );
+
+  // Filter out null values and return
+  return processedImages.filter(Boolean) as string[];
+}
+
+/**
  * Extract S3 key from URL
  */
 export function extractS3KeyFromUrl(url: string): string | null {
@@ -453,6 +578,7 @@ export function isS3Url(url: string): boolean {
     return false;
   }
 }
+
 
 // ============================================================================
 // EXPORTS

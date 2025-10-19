@@ -175,15 +175,33 @@ export const formatProductPrice = (price: number, currency: string = 'USD'): str
 };
 
 /**
- * Get product's primary image URL
+ * Get product's primary image URL with better handling for S3 URLs
  * @param product - Product object
  * @returns Primary image URL or placeholder
  */
 export const getProductImageUrl = (product: Product | ProductWithDetails): string => {
-  if (product.images && product.images.length > 0) {
-    return product.images[0];
+  if (!product.images) {
+    return '/images/product-placeholder.png';
   }
-  return '/images/product-placeholder.png'; // Default placeholder
+
+  // Handle different image formats (string, array, comma-separated)
+  let imageUrls: string[] = [];
+  
+  if (Array.isArray(product.images)) {
+    imageUrls = product.images.filter(Boolean);
+  } else if (typeof product.images === 'string') {
+    // Handle comma-separated string or JSON string
+    try {
+      const parsed = JSON.parse(product.images);
+      imageUrls = Array.isArray(parsed) ? parsed : product.images.split(',').filter(Boolean);
+    } catch {
+      imageUrls = product.images.split(',').filter(Boolean);
+    }
+  }
+
+  // Return first valid image URL or empty string (components will handle placeholder)
+  const firstImage = imageUrls.find(url => url && typeof url === 'string' && url.trim());
+  return firstImage || '';
 };
 
 /**
