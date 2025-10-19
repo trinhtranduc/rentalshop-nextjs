@@ -135,7 +135,7 @@ export default function OrdersPage() {
     sortOrder
   }), [search, status, orderType, outletId, startDate, endDate, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useOrdersData({ filters });
+  const { data, loading, error, refetch } = useOrdersData({ filters });
   
   // Debug: Log when filters or data changes
   console.log('📊 Orders Page - Current state:', {
@@ -281,7 +281,7 @@ export default function OrdersPage() {
             if (response.success) {
               toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
               // ✅ Force re-fetch by updating URL (trigger data refresh)
-              router.refresh();
+              refetch();
             } else {
               throw new Error(response.error || t('messages.updateFailed'));
             }
@@ -299,7 +299,7 @@ export default function OrdersPage() {
             if (response.success) {
               toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
               // ✅ Force re-fetch by updating URL (trigger data refresh)
-              router.refresh();
+              refetch();
             } else {
               throw new Error(response.error || t('messages.updateFailed'));
             }
@@ -318,7 +318,7 @@ export default function OrdersPage() {
             if (response.success) {
               toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
               // ✅ Force re-fetch by updating URL (trigger data refresh)
-              router.refresh();
+              refetch();
             } else {
               throw new Error(response.error || t('messages.updateFailed'));
             }
@@ -335,7 +335,7 @@ export default function OrdersPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.orders, router, toastSuccess, toastError]);
+  }, [data?.orders, router, toastSuccess, toastError, refetch]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI

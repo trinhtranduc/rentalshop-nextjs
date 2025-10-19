@@ -86,7 +86,7 @@ export default function UsersPage() {
     sortOrder
   }), [search, role, status, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useUsersData({ filters });
+  const { data, loading, error, refetch } = useUsersData({ filters });
 
   // ============================================================================
   // URL UPDATE HELPER
@@ -213,7 +213,7 @@ export default function UsersPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.users, router, toastSuccess, toastError]);
+  }, [data?.users, router, toastSuccess, toastError, refetch]);
   
   // Handle user update from edit dialog
   const handleUserUpdate = useCallback(async (userData: UserCreateInput | UserUpdateInput) => {
@@ -225,7 +225,7 @@ export default function UsersPage() {
         toastSuccess(tu('messages.updateSuccess'), tu('messages.updateSuccess'));
         setShowEditDialog(false);
         setSelectedUser(null);
-        router.refresh();
+        refetch();
       } else {
         throw new Error(response.error || tu('messages.updateFailed'));
       }
@@ -233,7 +233,7 @@ export default function UsersPage() {
       toastError(tu('messages.updateFailed'), (error as Error).message);
       throw error;
     }
-  }, [selectedUser, router, toastSuccess, toastError]);
+  }, [selectedUser, router, toastSuccess, toastError, refetch]);
   
   // Handle delete confirmation
   const handleConfirmDelete = useCallback(async () => {
@@ -245,14 +245,14 @@ export default function UsersPage() {
         toastSuccess(tu('messages.deleteSuccess'), `${tu('messages.deleteSuccess')} - "${userToDelete.firstName} ${userToDelete.lastName}"`);
         setShowDeleteConfirm(false);
         setUserToDelete(null);
-        router.refresh();
+        refetch();
       } else {
         throw new Error(response.error || tu('messages.deleteFailed'));
       }
     } catch (error) {
       toastError(tu('messages.deleteFailed'), (error as Error).message);
     }
-  }, [userToDelete, router, toastSuccess, toastError]);
+  }, [userToDelete, router, toastSuccess, toastError, refetch]);
   
   // Handle activate confirmation
   const handleConfirmActivate = useCallback(async () => {
@@ -267,14 +267,14 @@ export default function UsersPage() {
         toastSuccess(tu('messages.activateSuccess'), `${tu('messages.activateSuccess')} - "${userToActivate.firstName} ${userToActivate.lastName}"`);
         setShowActivateConfirm(false);
         setUserToActivate(null);
-        router.refresh();
+        refetch();
       } else {
         throw new Error(response.error || tu('messages.activateFailed'));
       }
     } catch (error) {
       toastError(tu('messages.activateFailed'), (error as Error).message);
     }
-  }, [userToActivate, router, toastSuccess, toastError, tu]);
+  }, [userToActivate, router, toastSuccess, toastError, tu, refetch]);
   
   // Handle deactivate confirmation
   const handleConfirmDeactivate = useCallback(async () => {
@@ -289,14 +289,14 @@ export default function UsersPage() {
         toastSuccess(tu('messages.deactivateSuccess'), `${tu('messages.deactivateSuccess')} - "${userToDeactivate.firstName} ${userToDeactivate.lastName}"`);
         setShowDeactivateConfirm(false);
         setUserToDeactivate(null);
-        router.refresh();
+        refetch();
       } else {
         throw new Error(response.error || tu('messages.deactivateFailed'));
       }
     } catch (error) {
       toastError(tu('messages.deactivateFailed'), (error as Error).message);
     }
-  }, [userToDeactivate, router, toastSuccess, toastError, tu]);
+  }, [userToDeactivate, router, toastSuccess, toastError, tu, refetch]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -409,7 +409,7 @@ export default function UsersPage() {
             
             if (response.success) {
               toastSuccess(tu('messages.createSuccess'), `${tu('messages.createSuccess')} - "${userData.firstName} ${userData.lastName}"`);
-              router.refresh();
+              refetch();
             } else {
               throw new Error(response.error || tu('messages.createFailed'));
             }

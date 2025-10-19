@@ -6,6 +6,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
+  DialogDescription,
   Button
 } from '../../../ui';
 import { ProductAddForm } from './ProductAddForm';
@@ -69,6 +70,9 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
           <DialogTitle className="text-xl font-semibold text-gray-900">
             Add New Product
           </DialogTitle>
+          <DialogDescription>
+            Create a new product for your rental shop inventory.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="p-6">

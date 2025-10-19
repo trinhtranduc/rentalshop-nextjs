@@ -305,12 +305,12 @@ var require_react_fast_compare = __commonJS({
     module2.exports = function exportedEqual(a, b) {
       try {
         return equal(a, b);
-      } catch (error2) {
-        if (error2.message && error2.message.match(/stack|recursion/i) || error2.number === -2146828260) {
-          console.warn("Warning: react-fast-compare does not handle circular references.", error2.name, error2.message);
+      } catch (error) {
+        if (error.message && error.message.match(/stack|recursion/i) || error.number === -2146828260) {
+          console.warn("Warning: react-fast-compare does not handle circular references.", error.name, error.message);
           return false;
         }
-        throw error2;
+        throw error;
       }
     };
   }
@@ -2307,7 +2307,7 @@ var NumericInput = ({
   onChange,
   placeholder = "0",
   className,
-  error: error2 = false,
+  error = false,
   disabled = false,
   min = 0,
   max,
@@ -2387,7 +2387,7 @@ var NumericInput = ({
           placeholder,
           className: cn(
             suffix ? "pr-12" : "",
-            error2 && "border-red-500 focus:border-red-500",
+            error && "border-red-500 focus:border-red-500",
             className
           ),
           disabled
@@ -2546,7 +2546,7 @@ var LimitInput = ({
   onChange,
   placeholder = "-1 (unlimited)",
   className,
-  error: error2 = false,
+  error = false,
   disabled = false,
   min = -1,
   max,
@@ -2594,7 +2594,7 @@ var LimitInput = ({
         max,
         disabled,
         className: cn(
-          error2 && "border-red-500 focus:border-red-500",
+          error && "border-red-500 focus:border-red-500",
           className
         )
       }
@@ -3177,7 +3177,7 @@ var ProductAvailabilityAsyncDisplay = ({
 }) => {
   const [availability, setAvailability] = useState6(null);
   const [isLoading, setIsLoading] = useState6(false);
-  const [error2, setError] = useState6(null);
+  const [error, setError] = useState6(null);
   useEffect5(() => {
     if (!product || !pickupDate || !returnDate) {
       setAvailability(null);
@@ -3212,7 +3212,7 @@ var ProductAvailabilityAsyncDisplay = ({
       "Checking..."
     ] });
   }
-  if (error2) {
+  if (error) {
     return /* @__PURE__ */ jsx33("div", { className: "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600", children: "\u26A0\uFE0F Error checking availability" });
   }
   if (!availability) {
@@ -4131,7 +4131,7 @@ var ProductForm = ({
       await new Promise((resolve) => setTimeout(resolve, 1e3));
       setAutoSaveStatus("saved");
       setTimeout(() => setAutoSaveStatus("idle"), 3e3);
-    } catch (error2) {
+    } catch (error) {
       setAutoSaveStatus("error");
       setTimeout(() => setAutoSaveStatus("idle"), 3e3);
     }
@@ -4338,11 +4338,11 @@ var ProductForm = ({
             images: prev.images.filter((img) => img !== `uploading-${fileId}`)
           }));
         }
-      } catch (error2) {
-        console.error("Upload error:", error2);
+      } catch (error) {
+        console.error("Upload error:", error);
         setUploadErrors((prev) => ({
           ...prev,
-          [fileId]: error2 instanceof Error ? error2.message : "Upload failed"
+          [fileId]: error instanceof Error ? error.message : "Upload failed"
         }));
         setFormData((prev) => ({
           ...prev,
@@ -4688,11 +4688,11 @@ var ProductForm = ({
               }
             )
           ] }),
-          Object.keys(uploadErrors).length > 0 && /* @__PURE__ */ jsx39("div", { className: "space-y-2", children: Object.entries(uploadErrors).map(([fileId, error2]) => /* @__PURE__ */ jsxs25("div", { className: "flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg", children: [
+          Object.keys(uploadErrors).length > 0 && /* @__PURE__ */ jsx39("div", { className: "space-y-2", children: Object.entries(uploadErrors).map(([fileId, error]) => /* @__PURE__ */ jsxs25("div", { className: "flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg", children: [
             /* @__PURE__ */ jsx39(AlertCircle4, { className: "w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" }),
             /* @__PURE__ */ jsxs25("div", { className: "flex-1", children: [
               /* @__PURE__ */ jsx39("p", { className: "text-sm text-red-700 font-medium", children: t2("messages.uploadFailed") }),
-              /* @__PURE__ */ jsx39("p", { className: "text-xs text-red-600 mt-1", children: error2 })
+              /* @__PURE__ */ jsx39("p", { className: "text-xs text-red-600 mt-1", children: error })
             ] }),
             /* @__PURE__ */ jsx39(
               Button2,
@@ -5465,8 +5465,8 @@ var useCreateOrderForm = (props) => {
         apiPayload.id = initialOrder.id;
       }
       props.onSubmit?.(apiPayload);
-    } catch (error2) {
-      throw error2;
+    } catch (error) {
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -5688,8 +5688,8 @@ var useProductSearch = (currency = "USD") => {
         });
       }
       return [];
-    } catch (error2) {
-      console.error("Error searching products:", error2);
+    } catch (error) {
+      console.error("Error searching products:", error);
       return [];
     } finally {
       setIsLoadingProducts(false);
@@ -5708,8 +5708,8 @@ var useProductSearch = (currency = "USD") => {
         return result.data.products;
       }
       return [];
-    } catch (error2) {
-      console.error("Error searching products:", error2);
+    } catch (error) {
+      console.error("Error searching products:", error);
       return [];
     } finally {
       setIsLoadingProducts(false);
@@ -5753,8 +5753,8 @@ var useCustomerSearch = () => {
         setCustomerSearchResults([]);
         return [];
       }
-    } catch (error2) {
-      console.error("Error searching customers:", error2);
+    } catch (error) {
+      console.error("Error searching customers:", error);
       setCustomerSearchResults([]);
       return [];
     } finally {
@@ -6823,15 +6823,15 @@ var AddCustomerForm = ({
       setInternalIsSubmitting(true);
       setErrorMessage(null);
       await onSave(formData);
-    } catch (error2) {
+    } catch (error) {
       let errorMsg = "An unexpected error occurred";
-      if (error2 instanceof Error) {
-        if (error2.message.includes("DUPLICATE_PHONE")) {
+      if (error instanceof Error) {
+        if (error.message.includes("DUPLICATE_PHONE")) {
           errorMsg = "A customer with this phone number already exists";
-        } else if (error2.message.includes("DUPLICATE_EMAIL")) {
+        } else if (error.message.includes("DUPLICATE_EMAIL")) {
           errorMsg = "A customer with this email address already exists";
         } else {
-          errorMsg = error2.message;
+          errorMsg = error.message;
         }
       }
       setErrorMessage(errorMsg);
@@ -7034,10 +7034,10 @@ var CustomerCreationDialog = ({
             await onCustomerCreated(customerData);
             console.log("\u{1F50D} CustomerCreationDialog: Customer created successfully, closing dialog...");
             onOpenChange(false);
-          } catch (error2) {
-            console.error("\u274C CustomerCreationDialog: Error occurred:", error2);
+          } catch (error) {
+            console.error("\u274C CustomerCreationDialog: Error occurred:", error);
             setIsCreatingCustomer(false);
-            throw error2;
+            throw error;
           } finally {
             console.log("\u{1F50D} CustomerCreationDialog: Finally block executed");
             setIsCreatingCustomer(false);
@@ -7527,8 +7527,8 @@ var CreateOrderForm = (props) => {
         ].filter(Boolean),
         type: "product"
       }));
-    } catch (error2) {
-      console.error("Error searching products:", error2);
+    } catch (error) {
+      console.error("Error searching products:", error);
       return [];
     }
   }, [searchProducts, currency]);
@@ -7587,8 +7587,8 @@ var CreateOrderForm = (props) => {
           color: "bg-red-100 text-red-600"
         };
       }
-    } catch (error2) {
-      console.error("Error checking availability:", error2);
+    } catch (error) {
+      console.error("Error checking availability:", error);
       const outletStock = product.outletStock?.[0];
       const available = outletStock?.available ?? 0;
       if (available === 0) {
@@ -7668,9 +7668,9 @@ var CreateOrderForm = (props) => {
         toastError(t2("messages.error"), errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error2) {
-      console.error("\u274C handleAddNewCustomer: Error occurred:", error2);
-      throw error2;
+    } catch (error) {
+      console.error("\u274C handleAddNewCustomer: Error occurred:", error);
+      throw error;
     }
   }, [merchantId, outlets, customerSearchResults, setCustomerResults, setFormData, toastSuccess, toastError]);
   const handleCustomerSelect = useCallback6((customer) => {
@@ -7951,8 +7951,8 @@ var PlanForm = ({
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
-    } catch (error2) {
-      console.error("Error submitting plan:", error2);
+    } catch (error) {
+      console.error("Error submitting plan:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -8668,9 +8668,9 @@ function createValidation(config) {
         spec: schema.spec,
         disableStackTrace: overrides.disableStackTrace || disableStackTrace
       }, params, overrides.params), resolveOptions);
-      const error2 = new ValidationError(ValidationError.formatError(overrides.message || message, nextParams), value, nextParams.path, overrides.type || name, nextParams.disableStackTrace);
-      error2.params = nextParams;
-      return error2;
+      const error = new ValidationError(ValidationError.formatError(overrides.message || message, nextParams), value, nextParams.path, overrides.type || name, nextParams.disableStackTrace);
+      error.params = nextParams;
+      return error;
     }
     const invalid = abortEarly ? panic : next;
     let ctx = {
@@ -8887,20 +8887,20 @@ function createStandardPath(path) {
   }
   return segments;
 }
-function createStandardIssues(error2, parentPath) {
-  const path = parentPath ? `${parentPath}.${error2.path}` : error2.path;
-  return error2.errors.map((err) => ({
+function createStandardIssues(error, parentPath) {
+  const path = parentPath ? `${parentPath}.${error.path}` : error.path;
+  return error.errors.map((err) => ({
     message: err,
     path: createStandardPath(path)
   }));
 }
-function issuesFromValidationError(error2, parentPath) {
+function issuesFromValidationError(error, parentPath) {
   var _error$inner;
-  if (!((_error$inner = error2.inner) != null && _error$inner.length) && error2.errors.length) {
-    return createStandardIssues(error2, parentPath);
+  if (!((_error$inner = error.inner) != null && _error$inner.length) && error.errors.length) {
+    return createStandardIssues(error, parentPath);
   }
-  const path = parentPath ? `${parentPath}.${error2.path}` : error2.path;
-  return error2.inner.flatMap((err) => issuesFromValidationError(err, path));
+  const path = parentPath ? `${parentPath}.${error.path}` : error.path;
+  return error.inner.flatMap((err) => issuesFromValidationError(err, path));
 }
 var Schema = class {
   constructor(options) {
@@ -9185,10 +9185,10 @@ attempted value: ${formattedValue}
       value
     }));
     let disableStackTrace = (_options$disableStack2 = options == null ? void 0 : options.disableStackTrace) != null ? _options$disableStack2 : schema.spec.disableStackTrace;
-    return new Promise((resolve, reject) => schema._validate(value, options, (error2, parsed) => {
-      if (ValidationError.isError(error2))
-        error2.value = parsed;
-      reject(error2);
+    return new Promise((resolve, reject) => schema._validate(value, options, (error, parsed) => {
+      if (ValidationError.isError(error))
+        error.value = parsed;
+      reject(error);
     }, (errors, validated) => {
       if (errors.length)
         reject(new ValidationError(errors, validated, void 0, void 0, disableStackTrace));
@@ -9205,10 +9205,10 @@ attempted value: ${formattedValue}
     let disableStackTrace = (_options$disableStack3 = options == null ? void 0 : options.disableStackTrace) != null ? _options$disableStack3 : schema.spec.disableStackTrace;
     schema._validate(value, Object.assign({}, options, {
       sync: true
-    }), (error2, parsed) => {
-      if (ValidationError.isError(error2))
-        error2.value = parsed;
-      throw error2;
+    }), (error, parsed) => {
+      if (ValidationError.isError(error))
+        error.value = parsed;
+      throw error;
     }, (errors, validated) => {
       if (errors.length)
         throw new ValidationError(errors, value, void 0, void 0, disableStackTrace);
@@ -12566,12 +12566,12 @@ function useFormik(_ref) {
         });
         return maybePromise.then(function(x) {
           return x;
-        }).then(function(error2) {
+        }).then(function(error) {
           dispatch({
             type: "SET_FIELD_ERROR",
             payload: {
               field: name,
-              value: error2
+              value: error
             }
           });
           dispatch({
@@ -12596,12 +12596,12 @@ function useFormik(_ref) {
       });
       return runValidationSchema(state.values, name).then(function(x) {
         return x;
-      }).then(function(error2) {
+      }).then(function(error) {
         dispatch({
           type: "SET_FIELD_ERROR",
           payload: {
             field: name,
-            value: getIn2(error2, name)
+            value: getIn2(error, name)
           }
         });
         dispatch({
@@ -12776,8 +12776,8 @@ function useFormik(_ref) {
           if (promiseOrUndefined === void 0) {
             return;
           }
-        } catch (error2) {
-          throw error2;
+        } catch (error) {
+          throw error;
         }
         return Promise.resolve(promiseOrUndefined).then(function(result) {
           if (!!isMounted.current) {
@@ -13415,7 +13415,7 @@ import { jsx as jsx51, jsxs as jsxs37 } from "react/jsx-runtime";
 var LoginForm = ({
   onLogin,
   onNavigate,
-  error: error2,
+  error,
   loading = false,
   isAdmin = false,
   onInputChange
@@ -13440,8 +13440,8 @@ var LoginForm = ({
         } else {
           console.log("Login data:", values);
         }
-      } catch (error3) {
-        console.error("Login failed:", error3);
+      } catch (error2) {
+        console.error("Login failed:", error2);
       }
     }
   });
@@ -13510,9 +13510,9 @@ var LoginForm = ({
         /* @__PURE__ */ jsx51("p", { className: "mt-3 text-base text-gray-600 max-w-sm mx-auto", children: isAdmin ? "Access your admin dashboard" : t2("login.subtitle") })
       ] }),
       /* @__PURE__ */ jsx51(Card7, { className: "shadow-2xl border-0 bg-white/80 backdrop-blur-sm relative z-10", children: /* @__PURE__ */ jsx51(CardContent7, { className: "p-8", children: /* @__PURE__ */ jsxs37("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
-        error2 && /* @__PURE__ */ jsxs37("div", { className: "mb-4 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center", children: [
+        error && /* @__PURE__ */ jsxs37("div", { className: "mb-4 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center", children: [
           /* @__PURE__ */ jsx51("div", { className: "w-4 h-4 mr-2", children: "\u26A0\uFE0F" }),
-          error2
+          error
         ] }),
         /* @__PURE__ */ jsxs37("div", { className: "space-y-4", children: [
           /* @__PURE__ */ jsxs37("div", { children: [
@@ -13769,10 +13769,10 @@ var RegisterForm = ({
         setTimeout(() => {
           window.location.href = "/login";
         }, 2e3);
-      } catch (error2) {
+      } catch (error) {
         toastError(
           t2("register.registrationFailed"),
-          error2.message || t2("register.somethingWentWrong")
+          error.message || t2("register.somethingWentWrong")
         );
       } finally {
         clearTimeout(timeoutId);
@@ -14227,7 +14227,7 @@ import { jsx as jsx53, jsxs as jsxs39 } from "react/jsx-runtime";
 var ForgetPasswordForm = ({
   onResetPassword,
   onNavigate,
-  error: error2,
+  error,
   loading = false,
   success = false
 }) => {
@@ -14251,8 +14251,8 @@ var ForgetPasswordForm = ({
           console.log("Reset password data:", values);
           setEmailSent(true);
         }
-      } catch (error3) {
-        console.error("Password reset failed:", error3);
+      } catch (error2) {
+        console.error("Password reset failed:", error2);
       }
     }
   });
@@ -14321,9 +14321,9 @@ var ForgetPasswordForm = ({
         /* @__PURE__ */ jsx53(CardDescription4, { className: "text-sm text-gray-600 mt-1", children: t2("forgotPassword.subtitle") })
       ] }),
       /* @__PURE__ */ jsx53(CardContent9, { className: "p-6", children: /* @__PURE__ */ jsxs39("form", { onSubmit: handleSubmit, children: [
-        error2 && /* @__PURE__ */ jsxs39("div", { className: "mb-4 p-3 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg flex items-center", children: [
+        error && /* @__PURE__ */ jsxs39("div", { className: "mb-4 p-3 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg flex items-center", children: [
           /* @__PURE__ */ jsx53("div", { className: "w-4 h-4 mr-2", children: "\u26A0\uFE0F" }),
-          error2
+          error
         ] }),
         /* @__PURE__ */ jsxs39("div", { className: "space-y-4", children: [
           /* @__PURE__ */ jsxs39("div", { children: [
@@ -15558,7 +15558,7 @@ function Dashboard({ data, onPeriodChange, onActionClick }) {
 var Dashboard_default = Dashboard;
 
 // src/components/features/Products/Products.tsx
-import React55 from "react";
+import React54 from "react";
 
 // src/components/features/Products/components/ProductHeader.tsx
 import { jsx as jsx73, jsxs as jsxs59 } from "react/jsx-runtime";
@@ -15817,8 +15817,8 @@ var ProductCard = ({
     onProductUpdated?.(updatedProduct);
     setIsEditDialogOpen(false);
   };
-  const handleError = (error2) => {
-    onError?.(error2);
+  const handleError = (error) => {
+    onError?.(error);
   };
   return /* @__PURE__ */ jsx76(Fragment11, { children: /* @__PURE__ */ jsxs62(Card, { className: cn2("overflow-hidden transition-all hover:shadow-lg", className), children: [
     /* @__PURE__ */ jsxs62("div", { className: "relative aspect-square overflow-hidden bg-gray-100", children: [
@@ -16002,9 +16002,9 @@ function ProductGrid({
     }
     setIsAddDialogOpen(false);
   };
-  const handleError = (error2) => {
+  const handleError = (error) => {
     if (onError) {
-      onError(error2);
+      onError(error);
     }
   };
   if (products.length === 0) {
@@ -16051,7 +16051,7 @@ function ProductGrid({
 }
 
 // src/components/features/Products/components/ProductTable.tsx
-import React43 from "react";
+import { useState as useState28 } from "react";
 import { useFormatCurrency as useFormatCurrency4 } from "@rentalshop/ui";
 import { useProductTranslations as useProductTranslations4, useCommonTranslations as useCommonTranslations7 } from "@rentalshop/hooks";
 import { getProductImageUrl as getProductImageUrl2 } from "@rentalshop/utils";
@@ -16064,7 +16064,7 @@ function ProductTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = React43.useState(null);
+  const [openDropdownId, setOpenDropdownId] = useState28(null);
   const formatMoney = useFormatCurrency4();
   const t2 = useProductTranslations4();
   const tc = useCommonTranslations7();
@@ -16181,7 +16181,7 @@ function ProductTable({
         day: "numeric"
       }) : "N/A" }) }),
       /* @__PURE__ */ jsx78("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ jsxs64(DropdownMenu, { children: [
-        /* @__PURE__ */ jsx78(DropdownMenuTrigger, { children: /* @__PURE__ */ jsx78(
+        /* @__PURE__ */ jsx78(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsx78(
           Button2,
           {
             variant: "ghost",
@@ -16243,14 +16243,14 @@ function ProductTable({
 }
 
 // src/components/features/Products/components/ProductActions.tsx
-import { useState as useState30 } from "react";
+import { useState as useState31 } from "react";
 import { useUserRole } from "@rentalshop/hooks";
 
 // src/components/features/Products/components/ProductAddDialog.tsx
-import { useState as useState29 } from "react";
+import { useState as useState30 } from "react";
 
 // src/components/features/Products/components/ProductAddForm.tsx
-import { useState as useState28 } from "react";
+import { useState as useState29 } from "react";
 import { Plus as Plus4, Loader2 as Loader24, AlertCircle as AlertCircle5 } from "lucide-react";
 import { useToast as useToast6 } from "@rentalshop/ui";
 import { useProductTranslations as useProductTranslations5, useCommonTranslations as useCommonTranslations8 } from "@rentalshop/hooks";
@@ -16263,7 +16263,7 @@ var ProductAddForm = ({
   onCancel,
   onBack
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState28(false);
+  const [isSubmitting, setIsSubmitting] = useState29(false);
   const { toastSuccess, toastError } = useToast6();
   const t2 = useProductTranslations5();
   const tc = useCommonTranslations8();
@@ -16338,7 +16338,7 @@ var ProductAddForm = ({
             title: outlets.length === 0 ? t2("messages.needOutletFirst") : void 0,
             children: isSubmitting ? /* @__PURE__ */ jsxs65(Fragment13, { children: [
               /* @__PURE__ */ jsx79(Loader24, { className: "h-4 w-4 mr-2 animate-spin" }),
-              t2("messages.creating")
+              tc("buttons.creating")
             ] }) : /* @__PURE__ */ jsxs65(Fragment13, { children: [
               /* @__PURE__ */ jsx79(Plus4, { className: "h-4 w-4 mr-2" }),
               t2("createProduct")
@@ -16361,7 +16361,7 @@ var ProductAddDialog = ({
   onProductCreated,
   onError
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState29(false);
+  const [isSubmitting, setIsSubmitting] = useState30(false);
   console.log("\u{1F7E2} ProductAddDialog: Rendered with open =", open);
   const handleSave = async (productData) => {
     try {
@@ -16370,10 +16370,10 @@ var ProductAddDialog = ({
         await onProductCreated(productData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C ProductAddDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C ProductAddDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create product");
+        onError(error instanceof Error ? error.message : "Failed to create product");
       }
     } finally {
       setIsSubmitting(false);
@@ -16385,7 +16385,10 @@ var ProductAddDialog = ({
     onOpenChange(false);
   };
   return /* @__PURE__ */ jsx80(Dialog, { open, onOpenChange, children: /* @__PURE__ */ jsxs66(DialogContent, { className: "max-w-4xl max-h-[95vh] overflow-y-auto p-0", children: [
-    /* @__PURE__ */ jsx80(DialogHeader, { className: "px-6 py-4 border-b border-gray-200", children: /* @__PURE__ */ jsx80(DialogTitle, { className: "text-xl font-semibold text-gray-900", children: "Add New Product" }) }),
+    /* @__PURE__ */ jsxs66(DialogHeader, { className: "px-6 py-4 border-b border-gray-200", children: [
+      /* @__PURE__ */ jsx80(DialogTitle, { className: "text-xl font-semibold text-gray-900", children: "Add New Product" }),
+      /* @__PURE__ */ jsx80(DialogDescription, { children: "Create a new product for your rental shop inventory." })
+    ] }),
     /* @__PURE__ */ jsx80("div", { className: "p-6", children: /* @__PURE__ */ jsx80(
       ProductAddForm,
       {
@@ -16411,8 +16414,8 @@ function ProductActions({
   onError
 }) {
   const { role: currentUserRole, canManageProducts, canManageCategories } = useUserRole();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState30(false);
-  const [editingProduct, setEditingProduct] = useState30(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState31(false);
+  const [editingProduct, setEditingProduct] = useState31(null);
   const handleAddProduct = () => {
     console.log("\u{1F535} ProductActions: handleAddProduct called");
     setEditingProduct(null);
@@ -16435,8 +16438,8 @@ function ProductActions({
     }
     setIsAddDialogOpen(false);
   };
-  const handleError = (error2) => {
-    onError?.(error2);
+  const handleError = (error) => {
+    onError?.(error);
   };
   const allActions = [
     {
@@ -16574,7 +16577,6 @@ function ProductDetailLoading() {
 }
 
 // src/components/features/Products/components/ProductDetailList.tsx
-import { useState as useState31 } from "react";
 import { useRouter as useRouter3 } from "next/navigation";
 import { useProductTranslations as useProductTranslations6, useCommonTranslations as useCommonTranslations9 } from "@rentalshop/hooks";
 import {
@@ -16617,9 +16619,6 @@ var ProductDetailList = ({
     }
   };
   const imageArray = normalizeImages(product.images);
-  const [selectedImage, setSelectedImage] = useState31(
-    imageArray.length > 0 ? imageArray[0] : null
-  );
   const handleImageError = (e2) => {
     e2.currentTarget.style.display = "none";
   };
@@ -16729,48 +16728,29 @@ var ProductDetailList = ({
     ] }),
     imageArray.length > 0 && /* @__PURE__ */ jsxs69("div", { className: "bg-white border border-gray-200 rounded-lg", children: [
       /* @__PURE__ */ jsx83("div", { className: "px-4 py-2 border-b border-gray-200", children: /* @__PURE__ */ jsx83("h2", { className: "text-lg font-semibold text-gray-900", children: t2("fields.images") }) }),
-      /* @__PURE__ */ jsxs69("div", { className: "p-3", children: [
-        /* @__PURE__ */ jsx83("div", { className: "flex gap-4 overflow-x-auto", children: imageArray.length > 0 ? imageArray.map((image, index) => /* @__PURE__ */ jsx83(
-          "div",
-          {
-            onClick: () => setSelectedImage(image),
-            className: `flex-shrink-0 w-56 h-56 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${selectedImage === image ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-gray-300"}`,
-            children: /* @__PURE__ */ jsxs69("div", { className: "relative w-full h-full", children: [
-              /* @__PURE__ */ jsx83(
-                "img",
-                {
-                  src: image,
-                  alt: `${product.name} ${index + 1}`,
-                  className: "w-full h-full object-cover",
-                  onError: (e2) => {
-                    const target = e2.target;
-                    target.style.display = "none";
-                    target.nextElementSibling?.classList.remove("hidden");
-                  }
+      /* @__PURE__ */ jsx83("div", { className: "p-3", children: /* @__PURE__ */ jsx83("div", { className: "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4", children: imageArray.length > 0 ? imageArray.map((image, index) => /* @__PURE__ */ jsx83(
+        "div",
+        {
+          className: "aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-all hover:scale-105",
+          children: /* @__PURE__ */ jsxs69("div", { className: "relative w-full h-full", children: [
+            /* @__PURE__ */ jsx83(
+              "img",
+              {
+                src: image,
+                alt: `${product.name} ${index + 1}`,
+                className: "w-full h-full object-cover",
+                onError: (e2) => {
+                  const target = e2.target;
+                  target.style.display = "none";
+                  target.nextElementSibling?.classList.remove("hidden");
                 }
-              ),
-              /* @__PURE__ */ jsx83("div", { className: "hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ jsx83(Package9, { className: "w-12 h-12 text-gray-400" }) })
-            ] })
-          },
-          index
-        )) : /* @__PURE__ */ jsx83("div", { className: "flex items-center justify-center w-full h-32 text-gray-500", children: /* @__PURE__ */ jsx83("span", { children: "No images available" }) }) }),
-        selectedImage && imageArray.length > 1 && /* @__PURE__ */ jsx83("div", { className: "mt-6", children: /* @__PURE__ */ jsxs69("div", { className: "aspect-square max-w-2xl mx-auto bg-gray-100 rounded-lg overflow-hidden relative", children: [
-          /* @__PURE__ */ jsx83(
-            "img",
-            {
-              src: selectedImage,
-              alt: product.name,
-              className: "w-full h-full object-cover",
-              onError: (e2) => {
-                const target = e2.target;
-                target.style.display = "none";
-                target.nextElementSibling?.classList.remove("hidden");
               }
-            }
-          ),
-          /* @__PURE__ */ jsx83("div", { className: "hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ jsx83(Package9, { className: "w-16 h-16 text-gray-400" }) })
-        ] }) })
-      ] })
+            ),
+            /* @__PURE__ */ jsx83("div", { className: "hidden absolute inset-0 w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ jsx83(Package9, { className: "w-8 h-8 text-gray-400" }) })
+          ] })
+        },
+        index
+      )) : /* @__PURE__ */ jsx83("div", { className: "col-span-full flex items-center justify-center h-32 text-gray-500", children: /* @__PURE__ */ jsx83("span", { children: "No images available" }) }) }) })
     ] })
   ] });
 };
@@ -16825,7 +16805,11 @@ var ProductEdit = ({
     console.log("\u{1F50D} ProductEdit - product.category:", product.category);
     console.log("\u{1F50D} ProductEdit - product.outletStock:", product.outletStock);
     console.log("\u{1F50D} ProductEdit - outlets:", outlets);
-  }, [product, outlets]);
+    console.log("\u{1F50D} ProductEdit - onSave type:", typeof onSave);
+    console.log("\u{1F50D} ProductEdit - onSave:", onSave);
+    console.log("\u{1F50D} ProductEdit - onCancel type:", typeof onCancel);
+    console.log("\u{1F50D} ProductEdit - merchantId:", merchantId);
+  }, [product, outlets, onSave, onCancel, merchantId]);
   const initialFormData = {
     name: product.name,
     description: product.description || "",
@@ -16877,9 +16861,13 @@ var ProductEdit = ({
   const handleSubmit = async (data) => {
     setIsSubmitting(true);
     try {
+      if (typeof onSave !== "function") {
+        throw new Error("onSave function is not provided or invalid");
+      }
       await onSave(data);
     } catch (err) {
-      error("Error", err instanceof Error ? err.message : "Failed to update product");
+      console.error("\u274C ProductEdit: Error in handleSubmit:", err);
+      toastError(t2("messages.updateFailed"), err instanceof Error ? err.message : "Failed to update product");
     } finally {
       setIsSubmitting(false);
     }
@@ -16943,11 +16931,11 @@ import {
 import { useOrderTranslations as useOrderTranslations9, useCommonTranslations as useCommonTranslations12 } from "@rentalshop/hooks";
 
 // src/components/features/Orders/components/OrderHeader.tsx
-import React49 from "react";
+import React48 from "react";
 import { Card as Card13, CardContent as CardContent12, CardHeader as CardHeader12, CardTitle as CardTitle12 } from "@rentalshop/ui";
 import { useOrderTranslations as useOrderTranslations6 } from "@rentalshop/hooks";
 import { jsx as jsx86, jsxs as jsxs71 } from "react/jsx-runtime";
-var OrderHeader = React49.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
+var OrderHeader = React48.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
   const t2 = useOrderTranslations6();
   console.log("OrderHeader received stats:", stats);
   console.log("OrderHeader received totalOrders:", totalOrders);
@@ -17009,14 +16997,14 @@ var OrderHeader = React49.memo(function OrderHeader2({ totalOrders, stats, showS
 });
 
 // src/components/features/Orders/components/OrderFilters.tsx
-import React50, { useState as useState33, useEffect as useEffect17 } from "react";
+import React49, { useState as useState33, useEffect as useEffect17 } from "react";
 import { Input as Input9, Button as Button15 } from "@rentalshop/ui";
 import { Select as Select6, SelectContent as SelectContent6, SelectItem as SelectItem6, SelectTrigger as SelectTrigger6, SelectValue as SelectValue6 } from "@rentalshop/ui";
 import { outletsApi } from "@rentalshop/utils";
 import { ORDER_STATUS, ORDER_TYPE } from "@rentalshop/constants";
 import { useOrderTranslations as useOrderTranslations7, useCommonTranslations as useCommonTranslations11 } from "@rentalshop/hooks";
 import { Fragment as Fragment16, jsx as jsx87, jsxs as jsxs72 } from "react/jsx-runtime";
-var OrderFilters = React50.memo(function OrderFilters2({
+var OrderFilters = React49.memo(function OrderFilters2({
   filters,
   onFiltersChange,
   onSearchChange,
@@ -17047,8 +17035,8 @@ var OrderFilters = React50.memo(function OrderFilters2({
           setOutletError("Failed to load outlets");
           setOutlets([]);
         }
-      } catch (error2) {
-        console.error("Error fetching outlets:", error2);
+      } catch (error) {
+        console.error("Error fetching outlets:", error);
         setOutletError("Failed to load outlets");
         setOutlets([]);
       } finally {
@@ -17486,14 +17474,14 @@ function OrderDateRangeFilter({
 }
 
 // src/components/features/Orders/components/OrderTable.tsx
-import React52 from "react";
+import React51 from "react";
 import { useFormatCurrency as useFormatCurrency5 } from "@rentalshop/ui";
 import { useOrderTranslations as useOrderTranslations8 } from "@rentalshop/hooks";
 import { useFormattedFullDate } from "@rentalshop/utils";
 import { ORDER_STATUS_COLORS as ORDER_STATUS_COLORS2, ORDER_TYPE_COLORS } from "@rentalshop/constants";
 import { Eye as Eye6, Edit as Edit5 } from "lucide-react";
 import { jsx as jsx90, jsxs as jsxs75 } from "react/jsx-runtime";
-var OrderTable = React52.memo(function OrderTable2({
+var OrderTable = React51.memo(function OrderTable2({
   orders,
   onOrderAction,
   sortBy = "createdAt",
@@ -17502,7 +17490,7 @@ var OrderTable = React52.memo(function OrderTable2({
 }) {
   const formatMoney = useFormatCurrency5();
   const t2 = useOrderTranslations8();
-  React52.useEffect(() => {
+  React51.useEffect(() => {
     if (orders.length > 0) {
       console.log("\u{1F4CB} OrderTable - Order statuses:", orders.map((o2) => ({
         orderNumber: o2.orderNumber,
@@ -17940,7 +17928,7 @@ var ProductOrdersView = ({
   const tc = useCommonTranslations12();
   const [orders, setOrders] = useState35([]);
   const [loading, setLoading] = useState35(false);
-  const [error2, setError] = useState35(null);
+  const [error, setError] = useState35(null);
   const [currentPage, setCurrentPage] = useState35(1);
   const [totalPages, setTotalPages] = useState35(1);
   const [filters, setFilters] = useState35({
@@ -18102,11 +18090,11 @@ var ProductOrdersView = ({
   if (loading) {
     return /* @__PURE__ */ jsx95("div", { className: `space-y-6 ${className}`, children: /* @__PURE__ */ jsx95(ProductsLoading, {}) });
   }
-  if (error2) {
+  if (error) {
     return /* @__PURE__ */ jsx95("div", { className: `space-y-6 ${className}`, children: /* @__PURE__ */ jsx95(Card, { children: /* @__PURE__ */ jsxs79(CardContent, { className: "p-6 text-center", children: [
       /* @__PURE__ */ jsx95("div", { className: "text-red-500 mb-4", children: /* @__PURE__ */ jsx95(BarChart32, { className: "h-12 w-12 mx-auto" }) }),
       /* @__PURE__ */ jsx95("h3", { className: "text-lg font-semibold mb-2", children: t2("messages.errorLoadingOrders") }),
-      /* @__PURE__ */ jsx95("p", { className: "text-gray-600 mb-4", children: error2 }),
+      /* @__PURE__ */ jsx95("p", { className: "text-gray-600 mb-4", children: error }),
       /* @__PURE__ */ jsxs79(Button2, { onClick: () => window.location.reload(), children: [
         /* @__PURE__ */ jsx95(RefreshCw2, { className: "h-4 w-4 mr-2" }),
         tc("buttons.tryAgain")
@@ -18278,7 +18266,7 @@ import { jsx as jsx96, jsxs as jsxs80 } from "react/jsx-runtime";
 function ProductOrdersDialog({ open, onOpenChange, product }) {
   const [orders, setOrders] = useState36([]);
   const [loading, setLoading] = useState36(false);
-  const [error2, setError] = useState36(null);
+  const [error, setError] = useState36(null);
   useEffect19(() => {
     if (open && product) {
       fetchProductOrders();
@@ -18299,8 +18287,8 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
       } else {
         setError("Failed to fetch orders");
       }
-    } catch (error3) {
-      console.error("Error fetching product orders:", error3);
+    } catch (error2) {
+      console.error("Error fetching product orders:", error2);
       setError("Failed to fetch orders");
     } finally {
       setLoading(false);
@@ -18368,10 +18356,10 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
     /* @__PURE__ */ jsx96("div", { className: "flex-1 overflow-y-auto", children: loading ? /* @__PURE__ */ jsxs80("div", { className: "flex items-center justify-center py-12", children: [
       /* @__PURE__ */ jsx96("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary" }),
       /* @__PURE__ */ jsx96("span", { className: "ml-2 text-text-secondary", children: "Loading orders..." })
-    ] }) : error2 ? /* @__PURE__ */ jsxs80("div", { className: "text-center py-12", children: [
+    ] }) : error ? /* @__PURE__ */ jsxs80("div", { className: "text-center py-12", children: [
       /* @__PURE__ */ jsx96("div", { className: "text-red-500 mb-4", children: "\u274C" }),
       /* @__PURE__ */ jsx96("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "Error Loading Orders" }),
-      /* @__PURE__ */ jsx96("p", { className: "text-text-secondary mb-4", children: error2 }),
+      /* @__PURE__ */ jsx96("p", { className: "text-text-secondary mb-4", children: error }),
       /* @__PURE__ */ jsx96(Button17, { onClick: fetchProductOrders, variant: "outline", children: "Try Again" })
     ] }) : orders.length === 0 ? /* @__PURE__ */ jsx96(
       EmptyState,
@@ -18508,12 +18496,12 @@ function Products({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = React55.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = React55.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = React55.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnProductAction = React55.useCallback(onProductAction, [onProductAction]);
-  const memoizedOnPageChange = React55.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React55.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = React54.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React54.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React54.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnProductAction = React54.useCallback(onProductAction, [onProductAction]);
+  const memoizedOnPageChange = React54.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React54.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs81("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsxs81("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ jsxs81(
@@ -18593,7 +18581,7 @@ function Products({
 var Products_default = Products;
 
 // src/components/features/Customers/Customers.tsx
-import React63 from "react";
+import React62 from "react";
 import {
   Pagination as Pagination5,
   EmptyState as EmptyState3,
@@ -18603,7 +18591,7 @@ import {
 } from "@rentalshop/ui";
 
 // src/components/features/Customers/components/CustomerTable.tsx
-import React56 from "react";
+import React55 from "react";
 import { Button as Button19 } from "@rentalshop/ui";
 import { Card as Card18, CardContent as CardContent17 } from "@rentalshop/ui";
 import {
@@ -18624,7 +18612,7 @@ function CustomerTable({
   onSort
 }) {
   const t2 = useCustomerTranslations2();
-  const [openDropdownId, setOpenDropdownId] = React56.useState(null);
+  const [openDropdownId, setOpenDropdownId] = React55.useState(null);
   if (customers.length === 0) {
     return /* @__PURE__ */ jsx98(Card18, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx98(CardContent17, { className: "text-center py-12", children: /* @__PURE__ */ jsxs82("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx98("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
@@ -18808,8 +18796,8 @@ var CustomerDetailDialog = ({
           console.error("\u274C CustomerDetailDialog: Merchant API error:", response.error);
           setMerchant(null);
         }
-      } catch (error2) {
-        console.error("\u274C CustomerDetailDialog: Error fetching merchant:", error2);
+      } catch (error) {
+        console.error("\u274C CustomerDetailDialog: Error fetching merchant:", error);
         setMerchant(null);
       } finally {
         setIsLoadingMerchant(false);
@@ -18847,8 +18835,8 @@ var CustomerDetailDialog = ({
       await onDelete(customer.id);
       setShowDeleteConfirm(false);
       onOpenChange(false);
-    } catch (error2) {
-      console.error("Error deleting customer:", error2);
+    } catch (error) {
+      console.error("Error deleting customer:", error);
     } finally {
       setIsDeleting(false);
     }
@@ -19224,10 +19212,10 @@ var AddCustomerDialog = ({
         await onCustomerCreated(customerData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C AddCustomerDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C AddCustomerDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create customer");
+        onError(error instanceof Error ? error.message : "Failed to create customer");
       }
     } finally {
       setIsSubmitting(false);
@@ -19380,9 +19368,9 @@ var EditCustomerForm = forwardRef13(
         );
         await onSave(changedFields);
         console.log("\u2705 EditCustomerForm: Customer updated successfully");
-      } catch (error2) {
-        console.error("\u274C EditCustomerForm: Error updating customer:", error2);
-        const errorMessage2 = error2 instanceof Error ? error2.message : "An unexpected error occurred";
+      } catch (error) {
+        console.error("\u274C EditCustomerForm: Error updating customer:", error);
+        const errorMessage2 = error instanceof Error ? error.message : "An unexpected error occurred";
         setErrorMessage(errorMessage2);
       } finally {
         setInternalIsSubmitting(false);
@@ -19673,8 +19661,8 @@ var CustomerForm = ({
         // Only ADMIN users need to send merchantId in request
       };
       await onSave(customerData);
-    } catch (error2) {
-      console.error("Error saving customer:", error2);
+    } catch (error) {
+      console.error("Error saving customer:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -20261,7 +20249,7 @@ var CustomerOrdersDialog = ({
 }) => {
   const [orders, setOrders] = useState42([]);
   const [loading, setLoading] = useState42(false);
-  const [error2, setError] = useState42(null);
+  const [error, setError] = useState42(null);
   useEffect24(() => {
     if (open && customer) {
       fetchCustomerOrders(customer.id);
@@ -20408,9 +20396,9 @@ var CustomerOrdersDialog = ({
       loading ? /* @__PURE__ */ jsx110(Card25, { children: /* @__PURE__ */ jsx110(CardContent24, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-gray-500", children: [
         /* @__PURE__ */ jsx110(Package12, { className: "w-8 h-8 mx-auto mb-2 animate-spin" }),
         /* @__PURE__ */ jsx110("p", { children: "Loading orders..." })
-      ] }) }) }) : error2 ? /* @__PURE__ */ jsx110(Card25, { children: /* @__PURE__ */ jsx110(CardContent24, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-red-500", children: [
+      ] }) }) }) : error ? /* @__PURE__ */ jsx110(Card25, { children: /* @__PURE__ */ jsx110(CardContent24, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-red-500", children: [
         /* @__PURE__ */ jsx110(Package12, { className: "w-8 h-8 mx-auto mb-2" }),
-        /* @__PURE__ */ jsx110("p", { children: error2 })
+        /* @__PURE__ */ jsx110("p", { children: error })
       ] }) }) }) : orders.length === 0 ? /* @__PURE__ */ jsx110(Card25, { children: /* @__PURE__ */ jsx110(CardContent24, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-gray-500", children: [
         /* @__PURE__ */ jsx110(Package12, { className: "w-8 h-8 mx-auto mb-2" }),
         /* @__PURE__ */ jsx110("p", { children: "No orders found for this customer" })
@@ -20564,12 +20552,12 @@ var Customers = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnFiltersChange = React63.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = React63.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = React63.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnCustomerAction = React63.useCallback(onCustomerAction, [onCustomerAction]);
-  const memoizedOnPageChange = React63.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React63.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = React62.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React62.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React62.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnCustomerAction = React62.useCallback(onCustomerAction, [onCustomerAction]);
+  const memoizedOnPageChange = React62.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React62.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs96("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsxs96("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ jsxs96(
@@ -20649,12 +20637,12 @@ var Customers = ({
 var Customers_default = Customers;
 
 // src/components/features/Orders/Orders.tsx
-import React64 from "react";
+import React63 from "react";
 import { Pagination as Pagination6, Card as Card27, CardContent as CardContent26 } from "@rentalshop/ui";
 import { AlertCircle as AlertCircle9 } from "lucide-react";
 import { useOrderTranslations as useOrderTranslations10 } from "@rentalshop/hooks";
 import { jsx as jsx113, jsxs as jsxs97 } from "react/jsx-runtime";
-var Orders = React64.memo(function Orders2({
+var Orders = React63.memo(function Orders2({
   data,
   filters,
   onFiltersChange,
@@ -20672,7 +20660,7 @@ var Orders = React64.memo(function Orders2({
   // ⭐ Default to dropdown (modern pattern)
 }) {
   const t2 = useOrderTranslations10();
-  React64.useEffect(() => {
+  React63.useEffect(() => {
     console.log("\u{1F4CA} Orders Component: received new data", {
       ordersCount: data.orders.length,
       searchTerm: filters.search,
@@ -20680,17 +20668,17 @@ var Orders = React64.memo(function Orders2({
       firstOrder: data.orders[0]?.orderNumber
     });
   }, [data.orders, filters.search, filters.status]);
-  const memoizedOnFiltersChange = React64.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = React64.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = React64.useCallback(onClearFilters || (() => {
+  const memoizedOnFiltersChange = React63.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React63.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React63.useCallback(onClearFilters || (() => {
   }), [onClearFilters]);
-  const memoizedOnOrderAction = React64.useCallback(onOrderAction, [onOrderAction]);
-  const memoizedOnPageChange = React64.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React64.useCallback(onSort || (() => {
+  const memoizedOnOrderAction = React63.useCallback(onOrderAction, [onOrderAction]);
+  const memoizedOnPageChange = React63.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React63.useCallback(onSort || (() => {
   }), [onSort]);
-  const memoizedOnQuickFilterChange = React64.useCallback(onQuickFilterChange || (() => {
+  const memoizedOnQuickFilterChange = React63.useCallback(onQuickFilterChange || (() => {
   }), [onQuickFilterChange]);
-  const memoizedOnDateRangeChange = React64.useCallback(onDateRangeChange || (() => {
+  const memoizedOnDateRangeChange = React63.useCallback(onDateRangeChange || (() => {
   }), [onDateRangeChange]);
   const showLargeDatasetWarning = activeQuickFilter === "all" && data.total > 1e4;
   return /* @__PURE__ */ jsxs97("div", { className: "flex flex-col h-full", children: [
@@ -20832,8 +20820,8 @@ var RentalPeriodSelector2 = ({
               1
             );
             onPriceChange(pricing);
-          } catch (error2) {
-            console.error("Price calculation error:", error2);
+          } catch (error) {
+            console.error("Price calculation error:", error);
           }
         }
       }
@@ -20886,7 +20874,7 @@ var RentalPeriodSelector2 = ({
         1
       );
       return pricing.totalPrice;
-    } catch (error2) {
+    } catch (error) {
       return 0;
     }
   };
@@ -21041,7 +21029,7 @@ var RentalPeriodSelector2 = ({
 };
 
 // src/components/features/Merchants/Merchants.tsx
-import React81 from "react";
+import React80 from "react";
 
 // src/components/features/Merchants/components/MerchantHeader.tsx
 import { Users as Users4, Building2 as Building22, TrendingUp as TrendingUp4 } from "lucide-react";
@@ -22191,8 +22179,8 @@ function SubscriptionFormSimple({
         changeReason: formData.changeReason
       };
       await onSubmit(submitData);
-    } catch (error2) {
-      console.error("Error submitting subscription:", error2);
+    } catch (error) {
+      console.error("Error submitting subscription:", error);
     }
   };
   const getDiscountPercentage3 = (period) => {
@@ -22516,8 +22504,8 @@ function SubscriptionEditDialog({
     try {
       await onSave(data);
       onClose();
-    } catch (error2) {
-      console.error("Failed to update subscription:", error2);
+    } catch (error) {
+      console.error("Failed to update subscription:", error);
     }
   };
   const handleCancel = () => {
@@ -23094,8 +23082,8 @@ function SubscriptionForm({
         nextBillingDate: formData.nextBillingDate
       };
       await onSubmit(submitData);
-    } catch (error2) {
-      console.error("Error submitting subscription:", error2);
+    } catch (error) {
+      console.error("Error submitting subscription:", error);
     }
   };
   const handleInputChange = (field, value) => {
@@ -23473,7 +23461,7 @@ var SubscriptionPreviewPage = ({
 }) => {
   const [plans, setPlans] = useState51([]);
   const [loading, setLoading] = useState51(true);
-  const [error2, setError] = useState51(null);
+  const [error, setError] = useState51(null);
   const [selectedPlan, setSelectedPlan] = useState51(null);
   const [selectedDuration, setSelectedDuration] = useState51(1);
   useEffect29(() => {
@@ -23586,9 +23574,9 @@ var SubscriptionPreviewPage = ({
       /* @__PURE__ */ jsx126("p", { className: "mt-4 text-gray-600", children: "Loading subscription plans..." })
     ] }) }) });
   }
-  if (error2) {
+  if (error) {
     return /* @__PURE__ */ jsx126("div", { className: "min-h-screen bg-gray-50 py-12", children: /* @__PURE__ */ jsx126("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ jsx126("div", { className: "text-center", children: /* @__PURE__ */ jsxs110("div", { className: "bg-red-50 border border-red-200 rounded-lg p-6", children: [
-      /* @__PURE__ */ jsx126("p", { className: "text-red-800", children: error2 }),
+      /* @__PURE__ */ jsx126("p", { className: "text-red-800", children: error }),
       /* @__PURE__ */ jsx126(
         Button31,
         {
@@ -24706,8 +24694,8 @@ function ManualRenewalModal({
       setReference("");
       setDescription("");
       onClose();
-    } catch (error2) {
-      console.error("Renewal failed:", error2);
+    } catch (error) {
+      console.error("Renewal failed:", error);
     }
   };
   return /* @__PURE__ */ jsx132(Dialog11, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs116(DialogContent11, { className: "max-w-2xl max-h-[90vh] overflow-hidden flex flex-col", children: [
@@ -24969,8 +24957,8 @@ function UpgradeTrialModal({
     try {
       await onUpgrade(selectedPlan.id, billingCycle, paymentMethod);
       onClose();
-    } catch (error2) {
-      console.error("Upgrade failed:", error2);
+    } catch (error) {
+      console.error("Upgrade failed:", error);
     }
   };
   const paidPlans = plans.filter((p2) => p2.name !== "Trial" && p2.basePrice > 0);
@@ -25201,7 +25189,7 @@ function UpgradeTrialModal({
 }
 
 // src/components/features/Subscriptions/components/SubscriptionActivityTimeline.tsx
-import React78 from "react";
+import React77 from "react";
 import { formatDate as formatDate10, formatCurrency as formatCurrency16 } from "@rentalshop/utils";
 import {
   Clock as Clock14,
@@ -25228,7 +25216,7 @@ function SubscriptionActivityTimeline({
   loading = false,
   onExport
 }) {
-  const timeline = React78.useMemo(() => {
+  const timeline = React77.useMemo(() => {
     const items = [];
     activities.forEach((activity) => {
       items.push({
@@ -25537,8 +25525,8 @@ function SubscriptionHistoryDialog({
       if (paymentsResponse.success && paymentsResponse.data) {
         setPayments(paymentsResponse.data);
       }
-    } catch (error2) {
-      console.error("Error fetching subscription history:", error2);
+    } catch (error) {
+      console.error("Error fetching subscription history:", error);
     } finally {
       setLoading(false);
     }
@@ -25733,9 +25721,9 @@ function MerchantPlanManagement({
         // Include payment info
       });
       setShowRenewalModal(false);
-    } catch (error2) {
-      console.error("Failed to renew subscription:", error2);
-      throw error2;
+    } catch (error) {
+      console.error("Failed to renew subscription:", error);
+      throw error;
     } finally {
       setRenewalLoading(false);
     }
@@ -25749,8 +25737,8 @@ function MerchantPlanManagement({
       setShowCancelDialog(false);
       setCancelReason("");
       setCancelType("end_of_period");
-    } catch (error2) {
-      console.error("Error canceling subscription:", error2);
+    } catch (error) {
+      console.error("Error canceling subscription:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -25778,8 +25766,8 @@ function MerchantPlanManagement({
       setChangeReason("");
       setNotifyMerchant(true);
       setChangeBillingInterval("month");
-    } catch (error2) {
-      console.error("Error changing plan:", error2);
+    } catch (error) {
+      console.error("Error changing plan:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -25792,8 +25780,8 @@ function MerchantPlanManagement({
       await onSuspend?.(currentSubscription, suspendReason.trim());
       setShowSuspendDialog(false);
       setSuspendReason("");
-    } catch (error2) {
-      console.error("Error suspending subscription:", error2);
+    } catch (error) {
+      console.error("Error suspending subscription:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -25805,8 +25793,8 @@ function MerchantPlanManagement({
     try {
       await onReactivate?.(currentSubscription);
       setShowResumeDialog(false);
-    } catch (error2) {
-      console.error("Error reactivating subscription:", error2);
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -26367,13 +26355,13 @@ function Merchants({
     shouldShowPagination: data.total > 0,
     paginationCondition: `data.total > 0 = ${data.total} > 0 = ${data.total > 0}`
   });
-  const memoizedOnFiltersChange = React81.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = React81.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = React81.useCallback(onClearFilters || (() => {
+  const memoizedOnFiltersChange = React80.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React80.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React80.useCallback(onClearFilters || (() => {
   }), [onClearFilters]);
-  const memoizedOnMerchantAction = React81.useCallback(onMerchantAction, [onMerchantAction]);
-  const memoizedOnPageChange = React81.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React81.useCallback(onSort || (() => {
+  const memoizedOnMerchantAction = React80.useCallback(onMerchantAction, [onMerchantAction]);
+  const memoizedOnPageChange = React80.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React80.useCallback(onSort || (() => {
   }), [onSort]);
   return /* @__PURE__ */ jsxs120("div", { className: "flex flex-col h-full", children: [
     /* @__PURE__ */ jsxs120("div", { className: "flex-shrink-0 space-y-4", children: [
@@ -26465,8 +26453,8 @@ function MerchantSubscriptionSection({
         console.log("Payments not yet implemented or error:", err);
         setPayments([]);
       }
-    } catch (error2) {
-      console.error("Error fetching history:", error2);
+    } catch (error) {
+      console.error("Error fetching history:", error);
     } finally {
       setLoadingHistory(false);
     }
@@ -26496,8 +26484,8 @@ function MerchantSubscriptionSection({
         return 0;
       const diff = end.getTime() - now.getTime();
       return Math.ceil(diff / (1e3 * 60 * 60 * 24));
-    } catch (error2) {
-      console.error("Error calculating days remaining:", error2);
+    } catch (error) {
+      console.error("Error calculating days remaining:", error);
       return 0;
     }
   };
@@ -26838,7 +26826,7 @@ function CalendarStats({
 }
 
 // src/components/features/Calendars/components/CalendarGrid.tsx
-import React83 from "react";
+import React82 from "react";
 import { useCalendarTranslations as useCalendarTranslations4 } from "@rentalshop/hooks";
 import { jsx as jsx143, jsxs as jsxs126 } from "react/jsx-runtime";
 function CalendarGrid({
@@ -26849,7 +26837,7 @@ function CalendarGrid({
   className = ""
 }) {
   const t2 = useCalendarTranslations4();
-  const calendarDays = React83.useMemo(() => {
+  const calendarDays = React82.useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -27037,7 +27025,7 @@ import { jsx as jsx145, jsxs as jsxs128 } from "react/jsx-runtime";
 function Calendars({
   orders = [],
   loading = false,
-  error: error2 = null,
+  error = null,
   authenticated = false,
   onFiltersChange,
   onOrderClick,
@@ -27168,7 +27156,7 @@ function OrdersList({
 }
 
 // src/components/features/Users/Users.tsx
-import React92 from "react";
+import React91 from "react";
 import {
   Pagination as Pagination8,
   EmptyState as EmptyState4,
@@ -27412,7 +27400,7 @@ function UserGrid({ users, onUserAction }) {
 }
 
 // src/components/features/Users/components/UserTable.tsx
-import React85 from "react";
+import React84 from "react";
 import { Eye as Eye12, Edit as Edit11, Trash2 as Trash29, MoreVertical as MoreVertical5, UserCheck as UserCheck2, UserX } from "lucide-react";
 import { useUsersTranslations } from "@rentalshop/hooks";
 import { jsx as jsx151, jsxs as jsxs134 } from "react/jsx-runtime";
@@ -27424,7 +27412,7 @@ function UserTable({
   onSort
 }) {
   const t2 = useUsersTranslations();
-  const [openDropdownId, setOpenDropdownId] = React85.useState(null);
+  const [openDropdownId, setOpenDropdownId] = React84.useState(null);
   if (users.length === 0) {
     return /* @__PURE__ */ jsx151(Card, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx151(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ jsxs134("div", { className: "text-text-tertiary", children: [
       /* @__PURE__ */ jsx151("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
@@ -27609,9 +27597,9 @@ var UserApiClient = class {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
       return await response.json();
-    } catch (error2) {
-      console.error(`API request failed for ${endpoint}:`, error2);
-      throw error2;
+    } catch (error) {
+      console.error(`API request failed for ${endpoint}:`, error);
+      throw error;
     }
   }
   async getUsers(filters = {}, options = {}) {
@@ -27742,8 +27730,8 @@ var ChangePasswordDialog = ({
       } else {
         onError?.(response.error || "Failed to change password");
       }
-    } catch (error2) {
-      const errorMessage = error2 instanceof Error ? error2.message : "An error occurred";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -28050,8 +28038,8 @@ var UserDetailDialog = ({
       } else {
         onError?.(response.error || "Failed to deactivate user");
       }
-    } catch (error2) {
-      const errorMessage = error2 instanceof Error ? error2.message : "An error occurred";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -28068,8 +28056,8 @@ var UserDetailDialog = ({
       } else {
         onError?.(response.error || "Failed to activate user");
       }
-    } catch (error2) {
-      const errorMessage = error2 instanceof Error ? error2.message : "An error occurred";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -28078,8 +28066,8 @@ var UserDetailDialog = ({
   const handlePasswordChangeSuccess = () => {
     console.log("Password changed successfully");
   };
-  const handlePasswordChangeError = (error2) => {
-    onError?.(error2);
+  const handlePasswordChangeError = (error) => {
+    onError?.(error);
   };
   const handleDeleteUser = async () => {
     setIsLoading(true);
@@ -28091,8 +28079,8 @@ var UserDetailDialog = ({
       } else {
         onError?.(response.error || "Failed to delete user");
       }
-    } catch (error2) {
-      const errorMessage = error2 instanceof Error ? error2.message : "An error occurred";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -28305,7 +28293,7 @@ var FormField = ({
   label,
   value,
   onChange,
-  error: error2,
+  error,
   disabled = false,
   required = false,
   placeholder,
@@ -28329,7 +28317,7 @@ var FormField = ({
           value,
           onChange: (e2) => onChange(e2.target.value),
           placeholder,
-          className: error2 ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "",
+          className: error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "",
           disabled,
           required
         }
@@ -28347,13 +28335,13 @@ var FormField = ({
         }
       )
     ] }),
-    error2 && /* @__PURE__ */ jsx157("p", { className: "text-sm text-red-600", children: error2 })
+    error && /* @__PURE__ */ jsx157("p", { className: "text-sm text-red-600", children: error })
   ] });
 };
 var RoleSelect = ({
   value,
   onChange,
-  error: error2,
+  error,
   disabled = false,
   currentUserRole
 }) => {
@@ -28369,7 +28357,7 @@ var RoleSelect = ({
         onValueChange: onChange,
         disabled,
         children: [
-          /* @__PURE__ */ jsx157(SelectTrigger, { className: error2 ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "", children: /* @__PURE__ */ jsx157(SelectValue, { placeholder: value ? `Current: ${value}` : "Select role" }) }),
+          /* @__PURE__ */ jsx157(SelectTrigger, { className: error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "", children: /* @__PURE__ */ jsx157(SelectValue, { placeholder: value ? `Current: ${value}` : "Select role" }) }),
           /* @__PURE__ */ jsxs140(SelectContent, { children: [
             currentUserRole === "ADMIN" && /* @__PURE__ */ jsxs140(Fragment33, { children: [
               /* @__PURE__ */ jsx157(SelectItem, { value: "ADMIN", children: "System Admin" }),
@@ -28381,7 +28369,7 @@ var RoleSelect = ({
         ]
       }
     ),
-    error2 && /* @__PURE__ */ jsx157("p", { className: "text-sm text-red-600", children: error2 })
+    error && /* @__PURE__ */ jsx157("p", { className: "text-sm text-red-600", children: error })
   ] });
 };
 var MerchantSelect = ({
@@ -28389,7 +28377,7 @@ var MerchantSelect = ({
   onChange,
   merchants,
   loading,
-  error: error2,
+  error,
   disabled = false,
   canSelect,
   currentUser
@@ -28412,7 +28400,7 @@ var MerchantSelect = ({
         placeholder: loading ? "Loading merchants..." : "Search and select merchant",
         searchPlaceholder: "Search merchants...",
         emptyText: "No merchants found",
-        className: error2 ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+        className: error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
       },
       `merchant-${merchants.length}`
     ) : /* @__PURE__ */ jsx157(
@@ -28424,7 +28412,7 @@ var MerchantSelect = ({
         placeholder: "Current merchant"
       }
     ),
-    error2 && /* @__PURE__ */ jsx157("p", { className: "text-sm text-red-600", children: error2 })
+    error && /* @__PURE__ */ jsx157("p", { className: "text-sm text-red-600", children: error })
   ] });
 };
 var OutletSelect = ({
@@ -28432,7 +28420,7 @@ var OutletSelect = ({
   onChange,
   outlets,
   loading,
-  error: error2,
+  error,
   disabled = false,
   canSelect,
   canSelectMerchant,
@@ -28457,7 +28445,7 @@ var OutletSelect = ({
         placeholder: loading ? "Loading outlets..." : !merchantId && canSelectMerchant ? "Select merchant first" : "Search and select outlet",
         searchPlaceholder: "Search outlets...",
         emptyText: "No outlets found",
-        className: error2 ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+        className: error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
       },
       `outlet-${outlets.length}-${merchantId}`
     ) : /* @__PURE__ */ jsx157(
@@ -28469,7 +28457,7 @@ var OutletSelect = ({
         placeholder: "Current outlet"
       }
     ),
-    error2 && /* @__PURE__ */ jsx157("p", { className: "text-sm text-red-600", children: error2 })
+    error && /* @__PURE__ */ jsx157("p", { className: "text-sm text-red-600", children: error })
   ] });
 };
 
@@ -28720,8 +28708,8 @@ var UserForm = ({
         if (response.success && response.data) {
           setMerchants(response.data.merchants || []);
         }
-      }).catch((error2) => {
-        console.error("Error loading merchants:", error2);
+      }).catch((error) => {
+        console.error("Error loading merchants:", error);
       }).finally(() => {
         setLoadingMerchants(false);
       });
@@ -28750,8 +28738,8 @@ var UserForm = ({
             console.warn("\u{1F50D} UserForm: No outlets data in response:", response);
             setOutlets([]);
           }
-        }).catch((error2) => {
-          console.error("\u{1F50D} UserForm: Error loading outlets:", error2);
+        }).catch((error) => {
+          console.error("\u{1F50D} UserForm: Error loading outlets:", error);
           setOutlets([]);
         }).finally(() => {
           setLoadingOutlets(false);
@@ -28783,8 +28771,8 @@ var UserForm = ({
         } else {
           setOutlets([]);
         }
-      }).catch((error2) => {
-        console.error("\u{1F50D} UserForm: Error reloading outlets:", error2);
+      }).catch((error) => {
+        console.error("\u{1F50D} UserForm: Error reloading outlets:", error);
         setOutlets([]);
       }).finally(() => {
         setLoadingOutlets(false);
@@ -28851,8 +28839,8 @@ var UserForm = ({
       console.log("\u{1F50D} UserForm: Submit data keys:", Object.keys(submitData));
       await onSave(submitData);
       console.log("\u2705 UserForm: User operation completed successfully");
-    } catch (error2) {
-      console.error("\u274C UserForm: Error in user operation:", error2);
+    } catch (error) {
+      console.error("\u274C UserForm: Error in user operation:", error);
     } finally {
       if (!externalIsSubmitting) {
         setInternalIsSubmitting(false);
@@ -29070,13 +29058,13 @@ var UserForm = ({
       /* @__PURE__ */ jsx158("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx158("span", { className: "text-yellow-400 text-lg", children: "\u26A0\uFE0F" }) }),
       /* @__PURE__ */ jsxs141("div", { className: "ml-3", children: [
         /* @__PURE__ */ jsx158("h3", { className: "text-sm font-medium text-yellow-800", children: t2("messages.validationErrors") }),
-        /* @__PURE__ */ jsx158("div", { className: "mt-2 text-sm text-yellow-700", children: /* @__PURE__ */ jsx158("ul", { className: "list-disc list-inside space-y-1", children: Object.entries(errors).map(([field, error2]) => /* @__PURE__ */ jsxs141("li", { children: [
+        /* @__PURE__ */ jsx158("div", { className: "mt-2 text-sm text-yellow-700", children: /* @__PURE__ */ jsx158("ul", { className: "list-disc list-inside space-y-1", children: Object.entries(errors).map(([field, error]) => /* @__PURE__ */ jsxs141("li", { children: [
           /* @__PURE__ */ jsxs141("strong", { children: [
             field.charAt(0).toUpperCase() + field.slice(1),
             ":"
           ] }),
           " ",
-          error2
+          error
         ] }, field)) }) })
       ] })
     ] }) }),
@@ -29128,10 +29116,10 @@ var AddUserDialog = ({
         await onUserCreated(userData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C AddUserDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C AddUserDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create user");
+        onError(error instanceof Error ? error.message : "Failed to create user");
       }
     } finally {
       setIsSubmitting(false);
@@ -29505,12 +29493,12 @@ var Users9 = ({
     totalPages,
     limit
   });
-  const memoizedOnFiltersChange = React92.useCallback(onFiltersChange, [onFiltersChange]);
-  const memoizedOnSearchChange = React92.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnClearFilters = React92.useCallback(onClearFilters, [onClearFilters]);
-  const memoizedOnUserAction = React92.useCallback(onUserAction, [onUserAction]);
-  const memoizedOnPageChange = React92.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React92.useCallback(onSort, [onSort]);
+  const memoizedOnFiltersChange = React91.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React91.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React91.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnUserAction = React91.useCallback(onUserAction, [onUserAction]);
+  const memoizedOnPageChange = React91.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React91.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs146("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsxs146("div", { className: "flex-shrink-0 space-y-4", children: [
       /* @__PURE__ */ jsx163(
@@ -29571,7 +29559,7 @@ var Users9 = ({
 var Users_default = Users9;
 
 // src/components/features/Outlets/Outlets.tsx
-import React96 from "react";
+import React95 from "react";
 import {
   Pagination as Pagination10,
   EmptyState as EmptyState5,
@@ -29827,7 +29815,7 @@ function OutletGrid({
 }
 
 // src/components/features/Outlets/components/OutletTable.tsx
-import React93 from "react";
+import React92 from "react";
 import { Eye as Eye18, Edit as Edit14, XCircle as XCircle13, CheckCircle as CheckCircle18, MoreVertical as MoreVertical6, Building2 as Building211 } from "lucide-react";
 import { useOutletsTranslations as useOutletsTranslations2, useCommonTranslations as useCommonTranslations18 } from "@rentalshop/hooks";
 import { Fragment as Fragment36, jsx as jsx167, jsxs as jsxs150 } from "react/jsx-runtime";
@@ -29840,7 +29828,7 @@ function OutletTable({
 }) {
   const t2 = useOutletsTranslations2();
   const tc = useCommonTranslations18();
-  const [openDropdownId, setOpenDropdownId] = React93.useState(null);
+  const [openDropdownId, setOpenDropdownId] = React92.useState(null);
   if (outlets.length === 0) {
     return /* @__PURE__ */ jsx167(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx167(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ jsxs150("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx167(Building211, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
@@ -30093,8 +30081,8 @@ var AddOutletForm = ({
     }
     try {
       await onSave(formData);
-    } catch (error2) {
-      console.error("Error saving outlet:", error2);
+    } catch (error) {
+      console.error("Error saving outlet:", error);
     }
   };
   const handleCancel = () => {
@@ -30256,10 +30244,10 @@ var AddOutletDialog = ({
         await onOutletCreated(outletData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C AddOutletDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C AddOutletDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create outlet");
+        onError(error instanceof Error ? error.message : "Failed to create outlet");
       }
     } finally {
       setIsSubmitting(false);
@@ -30306,10 +30294,10 @@ var Outlets = ({
   const currentPage = data?.page || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = React96.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnOutletAction = React96.useCallback(onOutletAction, [onOutletAction]);
-  const memoizedOnPageChange = React96.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React96.useCallback(onSort, [onSort]);
+  const memoizedOnSearchChange = React95.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnOutletAction = React95.useCallback(onOutletAction, [onOutletAction]);
+  const memoizedOnPageChange = React95.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React95.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs154("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsx172("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ jsx172(Card46, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx172(CardContent45, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx172("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx172(
       OutletSearch,
@@ -30351,7 +30339,7 @@ var Outlets = ({
 };
 
 // src/components/features/Categories/Categories.tsx
-import React102 from "react";
+import React101 from "react";
 import {
   Pagination as Pagination11,
   EmptyState as EmptyState6,
@@ -30452,8 +30440,8 @@ var CategoryFormContent = ({
         description: formData.description.trim() || void 0
       };
       await onSave(categoryData);
-    } catch (error2) {
-      console.error("Error saving category:", error2);
+    } catch (error) {
+      console.error("Error saving category:", error);
     } finally {
       if (externalIsSubmitting === void 0) {
         setIsSubmitting(false);
@@ -30552,10 +30540,10 @@ var AddCategoryDialog = ({
         await onCategoryCreated(categoryData);
       }
       onOpenChange(false);
-    } catch (error2) {
-      console.error("\u274C AddCategoryDialog: Error occurred:", error2);
+    } catch (error) {
+      console.error("\u274C AddCategoryDialog: Error occurred:", error);
       if (onError) {
-        onError(error2 instanceof Error ? error2.message : "Failed to create category");
+        onError(error instanceof Error ? error.message : "Failed to create category");
       }
     } finally {
       setIsSubmitting(false);
@@ -30792,7 +30780,7 @@ var CategoryGrid = ({
 };
 
 // src/components/features/Categories/components/CategoryTable.tsx
-import React100 from "react";
+import React99 from "react";
 import { useCategoriesTranslations as useCategoriesTranslations3, useCommonTranslations as useCommonTranslations22 } from "@rentalshop/hooks";
 import { Eye as Eye20, Edit as Edit16, Trash2 as Trash211, MoreVertical as MoreVertical7, FolderOpen } from "lucide-react";
 import { Fragment as Fragment40, jsx as jsx179, jsxs as jsxs161 } from "react/jsx-runtime";
@@ -30803,7 +30791,7 @@ function CategoryTable({
   sortOrder = "asc",
   onSort
 }) {
-  const [openDropdownId, setOpenDropdownId] = React100.useState(null);
+  const [openDropdownId, setOpenDropdownId] = React99.useState(null);
   const t2 = useCategoriesTranslations3();
   const tc = useCommonTranslations22();
   if (categories.length === 0) {
@@ -31240,10 +31228,10 @@ var Categories = ({
   const currentPage = data?.currentPage || 1;
   const totalPages = data?.totalPages || 1;
   const limit = data?.limit || 25;
-  const memoizedOnSearchChange = React102.useCallback(onSearchChange, [onSearchChange]);
-  const memoizedOnCategoryAction = React102.useCallback(onCategoryAction, [onCategoryAction]);
-  const memoizedOnPageChange = React102.useCallback(onPageChange, [onPageChange]);
-  const memoizedOnSort = React102.useCallback(onSort, [onSort]);
+  const memoizedOnSearchChange = React101.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnCategoryAction = React101.useCallback(onCategoryAction, [onCategoryAction]);
+  const memoizedOnPageChange = React101.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React101.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs167("div", { className: `flex flex-col h-full ${className}`, children: [
     /* @__PURE__ */ jsx185("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ jsx185(Card47, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx185(CardContent46, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx185("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx185(
       CategorySearch,
@@ -31329,8 +31317,8 @@ var PlanDialog = ({
     try {
       await onSubmit(data);
       onOpenChange(false);
-    } catch (error2) {
-      console.error("Error submitting plan:", error2);
+    } catch (error) {
+      console.error("Error submitting plan:", error);
     }
   };
   const handleCancel = () => {
@@ -32860,7 +32848,7 @@ var BillingCycleForm = ({
 };
 
 // src/components/features/BillingCycles/components/BillingCycleDetailDialog.tsx
-import React106, { useState as useState75 } from "react";
+import React105, { useState as useState75 } from "react";
 import {
   Dialog as Dialog15,
   DialogContent as DialogContent15,
@@ -32898,7 +32886,7 @@ var BillingCycleDetailDialog = ({
 }) => {
   const [isEditing, setIsEditing] = useState75(false);
   const [tempStatus, setTempStatus] = useState75(billingCycle?.isActive ?? false);
-  React106.useEffect(() => {
+  React105.useEffect(() => {
     setTempStatus(billingCycle?.isActive ?? false);
   }, [billingCycle]);
   const handleToggleStatus = () => {
@@ -33104,7 +33092,7 @@ var BillingCycleDetailDialog = ({
 };
 
 // src/components/features/Payments/components/PaymentForm.tsx
-import React107, { useState as useState76, useEffect as useEffect41 } from "react";
+import React106, { useState as useState76, useEffect as useEffect41 } from "react";
 import {
   Button as Button59,
   Input as Input27,
@@ -33183,7 +33171,7 @@ var PaymentForm = ({
   const [selectedPlan, setSelectedPlan] = useState76(null);
   const [selectedPlanVariant, setSelectedPlanVariant] = useState76(null);
   const [isSearchingMerchants, setIsSearchingMerchants] = useState76(false);
-  const searchMerchants = React107.useCallback(async (query) => {
+  const searchMerchants = React106.useCallback(async (query) => {
     console.log("\u{1F50D} PaymentForm: searchMerchants called with query:", query);
     if (!query.trim()) {
       console.log("\u{1F50D} PaymentForm: Empty query, returning empty array");
@@ -33236,8 +33224,8 @@ var PaymentForm = ({
       }
       console.log("\u{1F50D} PaymentForm: No success or data, returning empty array");
       return [];
-    } catch (error2) {
-      console.error("\u{1F50D} PaymentForm: Error searching merchants:", error2);
+    } catch (error) {
+      console.error("\u{1F50D} PaymentForm: Error searching merchants:", error);
       return [];
     } finally {
       setIsSearchingMerchants(false);
@@ -36864,7 +36852,7 @@ import {
 } from "@rentalshop/ui";
 
 // src/components/features/AuditLogs/AuditLogDetail.tsx
-import React110, { useState as useState79 } from "react";
+import React109, { useState as useState79 } from "react";
 import {
   Dialog as Dialog16,
   DialogContent as DialogContent16,
@@ -36947,7 +36935,7 @@ function ActionBadge({ action }) {
   return /* @__PURE__ */ jsx239(Badge26, { className: getActionStyle(action), children: action });
 }
 function JsonViewer({ data, title }) {
-  const [isExpanded, setIsExpanded] = React110.useState(false);
+  const [isExpanded, setIsExpanded] = React109.useState(false);
   if (!data) {
     return /* @__PURE__ */ jsxs214(Card55, { children: [
       /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsx239(CardTitle37, { className: "text-sm", children: title }) }),
@@ -37851,8 +37839,8 @@ var CollectionReturnModal = ({
         await onConfirmReturn();
       }
       onClose();
-    } catch (error2) {
-      console.error("Error in modal confirmation:", error2);
+    } catch (error) {
+      console.error("Error in modal confirmation:", error);
     }
   };
   return /* @__PURE__ */ jsx241(Dialog17, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs216(DialogContent17, { className: "max-w-2xl", children: [
@@ -38645,7 +38633,7 @@ var OrderDetail = ({
         toastSuccess(t2("detail.settingsSaved"), t2("detail.settingsSavedMessage"));
         setSettingsForm(tempSettings);
         setIsEditingSettings(false);
-      } catch (error2) {
+      } catch (error) {
         toastError(t2("detail.saveFailed"), t2("detail.saveFailedMessage"));
       } finally {
         setIsSavingSettings(false);
@@ -38662,7 +38650,7 @@ var OrderDetail = ({
   const handlePrintOrder = () => {
     try {
       window.print();
-    } catch (error2) {
+    } catch (error) {
       toastError("Print Error", "Failed to start printing. Please try again.");
     }
   };
@@ -38676,7 +38664,7 @@ var OrderDetail = ({
       if (typeof window !== "undefined") {
         window.location.reload();
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Pickup Failed", "Failed to process order pickup. Please try again.");
     } finally {
       setIsPickupLoading(false);
@@ -38692,7 +38680,7 @@ var OrderDetail = ({
       if (typeof window !== "undefined") {
         window.location.reload();
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Return Failed", "Failed to process order return. Please try again.");
     } finally {
       setIsReturnLoading(false);
@@ -38710,7 +38698,7 @@ var OrderDetail = ({
       if (typeof window !== "undefined") {
         window.location.reload();
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Cancellation Failed", "Failed to cancel order. Please try again.");
     } finally {
       setIsCancelLoading(false);
@@ -38727,7 +38715,7 @@ var OrderDetail = ({
     if (onEdit) {
       try {
         onEdit(order);
-      } catch (error2) {
+      } catch (error) {
         toastError("Edit Failed", "Failed to enter edit mode. Please try again.");
       }
     }
@@ -38744,7 +38732,7 @@ var OrderDetail = ({
           notes: tempSettings.notes
         };
         onEdit(enhancedOrder);
-      } catch (error2) {
+      } catch (error) {
         toastError("Edit Failed", "Failed to enter edit mode. Please try again.");
       }
     }
@@ -39279,8 +39267,8 @@ var MerchantSection = ({
           } else {
             console.error("\u274C Failed to fetch merchant data:", result);
           }
-        } catch (error2) {
-          console.error("\u{1F4A5} Error fetching merchant data:", error2);
+        } catch (error) {
+          console.error("\u{1F4A5} Error fetching merchant data:", error);
         } finally {
           setLoadingMerchant(false);
           fetchingRef.current = false;
@@ -39303,8 +39291,8 @@ var MerchantSection = ({
     try {
       await onCurrencyChange(currency);
       setSelectedCurrency(currency);
-    } catch (error2) {
-      console.error("Failed to update currency:", error2);
+    } catch (error) {
+      console.error("Failed to update currency:", error);
       setSelectedCurrency(currentCurrency);
     } finally {
       setIsSavingCurrency(false);
@@ -40283,8 +40271,8 @@ var SettingsComponent = () => {
           console.log("\u274C Settings - No subscription data:", response);
           setSubscriptionData(null);
         }
-      } catch (error2) {
-        console.error("Error fetching subscription data:", error2);
+      } catch (error) {
+        console.error("Error fetching subscription data:", error);
         setSubscriptionData(null);
       } finally {
         setSubscriptionLoading(false);
@@ -40369,7 +40357,7 @@ var SettingsComponent = () => {
       } else {
         toastError("Error", response.error || t2("messages.personalProfileUpdateFailed"));
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Error", t2("messages.personalProfileUpdateFailed"));
     } finally {
       setIsUpdating(false);
@@ -40412,8 +40400,8 @@ var SettingsComponent = () => {
         console.log("\u274C API failed:", response.error);
         toastError("Error", response.error || t2("messages.businessInfoUpdateFailed"));
       }
-    } catch (error2) {
-      console.error("\u274C Error in handleUpdateMerchantInfo:", error2);
+    } catch (error) {
+      console.error("\u274C Error in handleUpdateMerchantInfo:", error);
       toastError("Error", t2("messages.businessInfoUpdateFailed"));
     } finally {
       setIsUpdating(false);
@@ -40431,7 +40419,7 @@ var SettingsComponent = () => {
       } else {
         toastError("Error", response.error || t2("messages.outletInfoUpdateFailed"));
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Error", t2("messages.outletInfoUpdateFailed"));
     } finally {
       setIsUpdating(false);
@@ -40441,8 +40429,8 @@ var SettingsComponent = () => {
   const handleSignOut = async () => {
     try {
       await logout();
-    } catch (error2) {
-      console.error("Error signing out:", error2);
+    } catch (error) {
+      console.error("Error signing out:", error);
     }
   };
   const handleDeleteAccount = async () => {
@@ -40458,7 +40446,7 @@ var SettingsComponent = () => {
       } else {
         toastError("Delete Failed", response.message || t2("messages.accountDeleteFailed"));
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Delete Failed", t2("messages.accountDeleteFailed"));
     } finally {
       setIsDeleting(false);
@@ -40482,8 +40470,8 @@ var SettingsComponent = () => {
       } else {
         throw new Error(response.message || t2("messages.passwordChangeFailed"));
       }
-    } catch (error2) {
-      toastError("Password Change Failed", error2 instanceof Error ? error2.message : t2("messages.passwordChangeFailed"));
+    } catch (error) {
+      toastError("Password Change Failed", error instanceof Error ? error.message : t2("messages.passwordChangeFailed"));
     } finally {
       setIsChangingPassword(false);
     }
@@ -40506,7 +40494,7 @@ var SettingsComponent = () => {
       } else {
         toastError("Error", response.error || t2("messages.currencyUpdateFailed"));
       }
-    } catch (error2) {
+    } catch (error) {
       toastError("Error", t2("messages.currencyUpdateFailed"));
     } finally {
       setIsUpdating(false);
@@ -42478,14 +42466,14 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     daysUntilExpiry,
     planName,
     loading,
-    error: error2,
+    error,
     statusMessage
     // Use statusReason from API
   } = useSubscriptionStatusInfo2();
   if (loading) {
     return /* @__PURE__ */ jsx276("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ jsx276("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
   }
-  if (error2 || !hasSubscription) {
+  if (error || !hasSubscription) {
     return /* @__PURE__ */ jsx276("div", { className, children: (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsxs251(
       Button2,
       {

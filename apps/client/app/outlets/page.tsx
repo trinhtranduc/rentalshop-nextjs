@@ -112,7 +112,7 @@ export default function OutletsPage() {
     [search, merchantId, status, page, limit, sortBy, sortOrder]
   );
 
-  const { data, loading, error } = useOutletsWithFilters({ filters });
+  const { data, loading, error, refetch } = useOutletsWithFilters({ filters });
 
   // ============================================================================
   // URL UPDATE HELPER
@@ -211,7 +211,7 @@ export default function OutletsPage() {
                     to("messages.enableSuccess"),
                     `${to("messages.enableSuccess")} - "${outlet.name}"`
                   );
-                  router.refresh();
+                  refetch();
                 } else {
                   toastError(
                     to("messages.enableFailed"),
@@ -232,7 +232,7 @@ export default function OutletsPage() {
           console.log("Unknown action:", action);
       }
     },
-    [data?.outlets, router, toastSuccess, toastError]
+    [data?.outlets, router, toastSuccess, toastError, refetch]
   );
 
   const handleConfirmDisable = useCallback(async () => {
@@ -248,7 +248,7 @@ export default function OutletsPage() {
           to("messages.disableSuccess"),
           `${to("messages.disableSuccess")} - "${outletToDisable.name}"`
         );
-        router.refresh();
+        refetch();
       } else {
         toastError(
           to("messages.disableFailed"),
@@ -261,7 +261,7 @@ export default function OutletsPage() {
       setShowDisableConfirm(false);
       setOutletToDisable(null);
     }
-  }, [outletToDisable, router, toastSuccess, toastError]);
+  }, [outletToDisable, router, toastSuccess, toastError, refetch]);
 
   // Handle outlet update from edit dialog
   const handleOutletUpdate = useCallback(
@@ -289,7 +289,7 @@ export default function OutletsPage() {
           );
           setShowEditDialog(false);
           setSelectedOutlet(null);
-          router.refresh();
+          refetch();
         } else {
           toastError(
             to("messages.updateFailed"),
@@ -300,7 +300,7 @@ export default function OutletsPage() {
         toastError(to("messages.updateFailed"), to("messages.updateFailed"));
       }
     },
-    [selectedOutlet, formData, router, toastSuccess, toastError]
+    [selectedOutlet, formData, router, toastSuccess, toastError, refetch]
   );
 
   // ============================================================================
@@ -634,7 +634,7 @@ export default function OutletsPage() {
                 to("messages.createSuccess"),
                 to("messages.createSuccess")
               );
-              router.refresh();
+              refetch();
             } else {
               throw new Error(response.error || to("messages.createFailed"));
             }

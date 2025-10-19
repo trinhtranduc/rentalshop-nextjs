@@ -77,6 +77,7 @@ export const productUpdateSchema = z.object({
   images: z.string().optional(),
   categoryId: z.coerce.number().int().positive().optional(), // Changed from string to number
   totalStock: z.number().int().min(0).optional(),
+  outletStock: z.array(outletStockItemSchema).optional(), // Add outletStock field
 });
 
 export const productsQuerySchema = z.object({

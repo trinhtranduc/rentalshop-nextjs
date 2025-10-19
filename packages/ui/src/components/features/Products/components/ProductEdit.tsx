@@ -38,13 +38,17 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
   const t = useProductTranslations();
   const tc = useCommonTranslations();
 
-  // Debug: Log product data structure
+  // Debug: Log product data structure and props
   useEffect(() => {
     console.log('🔍 ProductEdit - product data:', product);
     console.log('🔍 ProductEdit - product.category:', product.category);
     console.log('🔍 ProductEdit - product.outletStock:', product.outletStock);
     console.log('🔍 ProductEdit - outlets:', outlets);
-  }, [product, outlets]);
+    console.log('🔍 ProductEdit - onSave type:', typeof onSave);
+    console.log('🔍 ProductEdit - onSave:', onSave);
+    console.log('🔍 ProductEdit - onCancel type:', typeof onCancel);
+    console.log('🔍 ProductEdit - merchantId:', merchantId);
+  }, [product, outlets, onSave, onCancel, merchantId]);
 
   // Transform product data to form format
   const initialFormData = {
@@ -105,10 +109,14 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     setIsSubmitting(true);
 
     try {
+      if (typeof onSave !== 'function') {
+        throw new Error('onSave function is not provided or invalid');
+      }
       await onSave(data);
       // Parent component will handle success toast
     } catch (err) {
-      error('Error', err instanceof Error ? err.message : 'Failed to update product');
+      console.error('❌ ProductEdit: Error in handleSubmit:', err);
+      toastError(t('messages.updateFailed'), err instanceof Error ? err.message : 'Failed to update product');
     } finally {
       setIsSubmitting(false);
     }
