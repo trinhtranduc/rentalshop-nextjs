@@ -82,6 +82,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       contentType: file.type
     });
     console.log('✅ Image uploaded to AWS S3');
+    console.log('📊 Upload result:', JSON.stringify(result, null, 2));
 
     if (result.success && result.data) {
       return NextResponse.json({
