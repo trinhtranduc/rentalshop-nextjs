@@ -19,16 +19,22 @@ if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
 
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 
-// Create S3Client function - ĐƠN GIẢN
+// Create S3Client function - Production Ready
 function createS3Client() {
-  const region = AWS_REGION || process.env.AWS_REGION || 'us-east-1';
+  const region = process.env.AWS_REGION || 'ap-southeast-1';
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
   
-  // Sử dụng trực tiếp credentials từ environment
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error('AWS credentials not found in environment variables. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY');
+  }
+  
+  // Sử dụng credentials từ environment variables
   const client = new S3Client({
     region,
     credentials: {
-      accessKeyId: AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: AWS_SECRET_ACCESS_KEY || '',
+      accessKeyId,
+      secretAccessKey,
     },
   });
   
@@ -45,7 +51,7 @@ try {
   s3Client = new S3Client({ region: AWS_REGION });
 }
 
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'rentalshop-images';
+const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
 const CLOUDFRONT_DOMAIN = process.env.AWS_CLOUDFRONT_DOMAIN || '';
 
 // ============================================================================
@@ -92,6 +98,11 @@ export async function uploadToS3(
   let key: string = '';
 
   try {
+    // Validate required environment variables
+    if (!BUCKET_NAME) {
+      throw new Error('AWS_S3_BUCKET_NAME environment variable is not set');
+    }
+
     const {
       folder: optionsFolder = 'uploads',
       fileName,
@@ -110,13 +121,13 @@ export async function uploadToS3(
     const cleanFileName = finalFileName.replace(/^\./, ''); // Remove leading dots
     key = `${folder}/${cleanFileName}`.replace(/\/+/g, '/'); // Remove double slashes
 
-    // Upload to S3
+    // Upload to S3 (bucket does not allow ACLs)
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
       Body: file,
       ContentType: contentType,
-      ACL: 'public-read', // Make file publicly accessible
+      // ACL removed - bucket does not allow ACLs
     });
 
     // Sử dụng client đơn giản
@@ -133,7 +144,7 @@ export async function uploadToS3(
       data: {
         url: s3Url,
         key,
-        bucket: BUCKET_NAME,
+        bucket: BUCKET_NAME!,
         region,
         cdnUrl
       }
@@ -194,7 +205,7 @@ export async function uploadStreamToS3(
       Key: key,
       Body: stream, // Stream directly - AWS SDK v3 handles this automatically
       ContentType: contentType,
-      ACL: 'public-read',
+      // ACL removed - bucket does not allow ACLs
     });
 
     // Create fresh client to avoid signature issues
@@ -210,7 +221,7 @@ export async function uploadStreamToS3(
       data: {
         url: s3Url,
         key,
-        bucket: BUCKET_NAME,
+        bucket: BUCKET_NAME!,
         region: process.env.AWS_REGION || 'us-east-1',
         cdnUrl
       }
@@ -280,7 +291,7 @@ export async function commitStagingFiles(
         Bucket: BUCKET_NAME,
         CopySource: `${BUCKET_NAME}/${cleanStagingKey}`,
         Key: cleanTargetKey,
-        ACL: 'public-read',
+        // ACL removed - bucket does not allow ACLs
       });
 
       // Use fresh client for copy operation

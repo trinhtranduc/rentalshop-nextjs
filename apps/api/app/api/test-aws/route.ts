@@ -35,9 +35,9 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
     });
 
   } catch (error) {
-    console.error('Error checking AWS credentials:', error);
+    console.error('Error testing AWS S3:', error);
     return NextResponse.json(
-      ResponseBuilder.error('AWS_CREDENTIALS_CHECK_FAILED', error instanceof Error ? error.message : 'Unknown error'),
+      ResponseBuilder.error('AWS_S3_TEST_FAILED', error instanceof Error ? error.message : 'Unknown error'),
       { status: 500 }
     );
   }
