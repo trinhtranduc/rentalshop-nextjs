@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 
@@ -237,19 +237,45 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
         const commitResult = await commitStagingFiles(stagingKeys, 'product');
         
         if (commitResult.success) {
-          // Generate new production URLs
-          committedImageUrls = commitResult.committedKeys.map(key => {
-            const region = process.env.AWS_REGION || 'us-east-1';
-            return `https://${process.env.AWS_S3_BUCKET_NAME || 'rentalshop-images'}.s3.${region}.amazonaws.com/${key}`;
-          });
-          console.log('✅ Committed staging files:', committedImageUrls);
+          // Generate production URLs with presigned access
+          committedImageUrls = await Promise.all(
+            commitResult.committedKeys.map(async (key) => {
+              const presignedUrl = await generateAccessUrl(key, 86400 * 365); // 1 year expiration
+              if (presignedUrl) {
+                return presignedUrl;
+              }
+              // Fallback to direct URL if presigned fails
+              const region = process.env.AWS_REGION || 'ap-southeast-1';
+              const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
+              return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+            })
+          );
+          console.log('✅ Committed staging files with presigned URLs:', committedImageUrls);
         } else {
           console.error('❌ Failed to commit staging files:', commitResult.errors);
           // Continue with original URLs if commit fails
           committedImageUrls = imageUrls;
         }
       } else {
-        committedImageUrls = imageUrls;
+        // No staging files, but ensure URLs have presigned access if they're S3 URLs
+        committedImageUrls = await Promise.all(
+          imageUrls.map(async (url) => {
+            // If it's already a presigned URL or external URL, keep it as is
+            if (url.includes('?') || !url.includes('amazonaws.com')) {
+              return url;
+            }
+            
+            // Extract key from S3 URL and generate presigned URL
+            const urlParts = url.split('amazonaws.com/');
+            if (urlParts.length > 1) {
+              const key = urlParts[1];
+              const presignedUrl = await generateAccessUrl(key, 86400 * 365);
+              return presignedUrl || url;
+            }
+            
+            return url;
+          })
+        );
       }
     }
 

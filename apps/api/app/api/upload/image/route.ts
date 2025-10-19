@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { ResponseBuilder } from '@rentalshop/utils';
-import { uploadToS3 } from '@rentalshop/utils';
+import { uploadToS3, generateAccessUrl } from '@rentalshop/utils';
 
 // Allowed image types
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
@@ -75,37 +75,43 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to AWS S3 staging folder (Two-Phase Upload Pattern)
+    // Let uploadToS3 handle filename generation and extension logic
+    const fileName = file.name === 'blob' || !file.name ? undefined : file.name;
+
+    console.log('📸 Uploading image:', {
+      originalName: file.name,
+      fileName: fileName,
+      contentType: file.type,
+      size: file.size
+    });
+
+    // Upload to AWS S3 staging folder
     const result = await uploadToS3(buffer, {
       folder: 'staging',
-      fileName: file.name,
+      fileName: fileName,
       contentType: file.type
     });
     console.log('✅ Image uploaded to AWS S3');
     console.log('📊 Upload result:', JSON.stringify(result, null, 2));
 
     if (result.success && result.data) {
-      const responseData = {
+      // Generate presigned URL for immediate access
+      const presignedUrl = await generateAccessUrl(result.data.key, 86400); // 24 hours
+      const accessUrl = presignedUrl || result.data.cdnUrl || result.data.url;
+      
+      return NextResponse.json({
         success: true,
         data: {
-          url: result.data.cdnUrl || result.data.url, // Use CDN URL if available
+          url: accessUrl,
           publicId: result.data.key,
           width: 0,
           height: 0,
           format: file.type.split('/')[1] || 'jpg',
           size: file.size
         },
-        code: 'IMAGE_UPLOADED_SUCCESS', 
+        code: 'IMAGE_UPLOADED_SUCCESS',
         message: 'Image uploaded successfully to AWS S3'
-      };
-      
-      console.log('✅ Upload successful, returning:', {
-        url: responseData.data.url,
-        key: responseData.data.publicId,
-        bucket: result.data.bucket
       });
-      
-      return NextResponse.json(responseData);
     } else {
       console.error('❌ Upload failed:', result);
       throw new Error(result.error || 'Failed to upload to S3');
