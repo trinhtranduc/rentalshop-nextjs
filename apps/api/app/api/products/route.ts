@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 
@@ -104,6 +104,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/products - User: ${user.email} (${user.role})`);
   
+  // Store parsed data for potential cleanup
+  let uploadedImages: string[] = [];
+  
   try {
     const body = await request.json();
     const parsed = productCreateSchema.safeParse(body);
@@ -205,10 +208,56 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       );
     }
 
-    // Handle images - convert array to JSON string if needed
+    // Handle images - Two-Phase Upload Pattern
     let imagesValue = parsed.data.images;
+    let stagingKeys: string[] = [];
+    let committedImageUrls: string[] = [];
+
+    if (imagesValue) {
+      // Parse images (could be array, string, or comma-separated)
+      const imageUrls = Array.isArray(imagesValue) 
+        ? imagesValue 
+        : typeof imagesValue === 'string' 
+          ? imagesValue.split(',').filter(Boolean)
+          : [];
+
+      // Extract staging keys from URLs
+      stagingKeys = imageUrls
+        .filter(url => url && url.includes('amazonaws.com'))
+        .map(url => {
+          const urlParts = url.split('amazonaws.com/');
+          return urlParts.length > 1 ? urlParts[1].split('?')[0] : null;
+        })
+        .filter(Boolean) as string[];
+
+      console.log('🔍 Found staging keys:', stagingKeys);
+
+      // Commit staging files to production
+      if (stagingKeys.length > 0) {
+        const commitResult = await commitStagingFiles(stagingKeys, 'product');
+        
+        if (commitResult.success) {
+          // Generate new production URLs
+          committedImageUrls = commitResult.committedKeys.map(key => {
+            const region = process.env.AWS_REGION || 'us-east-1';
+            return `https://${process.env.AWS_S3_BUCKET_NAME || 'rentalshop-images'}.s3.${region}.amazonaws.com/${key}`;
+          });
+          console.log('✅ Committed staging files:', committedImageUrls);
+        } else {
+          console.error('❌ Failed to commit staging files:', commitResult.errors);
+          // Continue with original URLs if commit fails
+          committedImageUrls = imageUrls;
+        }
+      } else {
+        committedImageUrls = imageUrls;
+      }
+    }
+
+    // Use committed URLs for product data
     if (Array.isArray(imagesValue)) {
-      imagesValue = JSON.stringify(imagesValue);
+      imagesValue = JSON.stringify(committedImageUrls);
+    } else if (typeof imagesValue === 'string') {
+      imagesValue = committedImageUrls.join(',');
     }
 
     // Use Prisma relation syntax with CUID
@@ -250,6 +299,10 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
 
   } catch (error: any) {
     console.error('Error in POST /api/products:', error);
+    
+    // Note: With Two-Phase Upload Pattern, staging files remain in staging/
+    // They will be cleaned up by background job or TTL policy
+    // No manual cleanup needed on product creation failure
     
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);

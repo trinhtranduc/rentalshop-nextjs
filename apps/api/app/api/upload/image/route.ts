@@ -75,9 +75,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to AWS S3
+    // Upload to AWS S3 staging folder (Two-Phase Upload Pattern)
     const result = await uploadToS3(buffer, {
-      folder: 'product',
+      folder: 'staging',
       fileName: file.name,
       contentType: file.type
     });

@@ -472,7 +472,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       try {
         // Upload with progress tracking, compression, and optimization
         const uploadResult = await uploadImage(file, token, {
-          folder: 'product',
+          folder: 'staging',
           maxFileSize: 5 * 1024 * 1024, // 5MB
           allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
           maxWidth: 1200, // Client-side resize before upload

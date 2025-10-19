@@ -4287,12 +4287,10 @@ var ProductForm = ({
       }));
       try {
         const uploadResult = await uploadImage(file, token, {
-          folder: "rentalshop/products",
+          folder: "staging",
           maxFileSize: 5 * 1024 * 1024,
           // 5MB
           allowedTypes: ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"],
-          useBase64Fallback: true,
-          // Enable fallback for development
           maxWidth: 1200,
           // Client-side resize before upload
           maxHeight: 900,
@@ -15754,7 +15752,8 @@ var ProductCard = ({
   onError
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState26(false);
-  const mainImage = images?.[0] || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBDMTE2LjU2OSA3MCAxMzAgODMuNDMxIDMwIDEwMEMxMzAgMTE2LjU2OSAxMTYuNTY5IDEzMCAxMDAgMTMwQzgzLjQzMSAxMzAgNzAgMTE2LjU2OSA3MCAxMEM3MCA4My40MzEgODMuNDMxIDcwIDEwMCA3MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHBhdGggZD0iTTEwMCAxMTVDMTA4LjI4NCAxMTUgMTE1IDEwOC4yODQgMTE1IDEwMEMxMTUgOTEuNzE2IDEwOC4yODQgODUgMTAwIDg1QzkxLjcxNiA4NSA4NSA5MS43MTYgODUgMTAwQzg1IDEwOC4yODQgOTEuNzE2IDExNSAxMDAgMTE1WiIgZmlsbD0iI0E5Q0JCRiIvPgo8L3N2Zz4K";
+  const imageArray = typeof images === "string" ? JSON.parse(images) : images;
+  const mainImage = imageArray?.[0] || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBDMTE2LjU2OSA3MCAxMzAgODMuNDMxIDMwIDEwMEMxMzAgMTE2LjU2OSAxMTYuNTY5IDEzMCAxMDAgMTMwQzgzLjQzMSAxMzAgNzAgMTE2LjU2OSA3MCAxMEM3MCA4My40MzEgODMuNDMxIDcwIDEwMCA3MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHBhdGggZD0iTTEwMCAxMTVDMTA4LjI4NCAxMTUgMTE1IDEwOC4yODQgMTE1IDEwMEMxMTUgOTEuNzE2IDEwOC4yODQgODUgMTAwIDg1QzkxLjcxNiA4NSA4NSA5MS43MTYgODUgMTAwQzg1IDEwOC4yODQgOTEuNzE2IDExNSAxMDAgMTE1WiIgZmlsbD0iI0E5Q0JCRiIvPgo8L3N2Zz4K";
   const isAvailable = available > 0;
   const handleEdit = () => {
     if (categories.length > 0 && outlets.length > 0 && merchantId) {
@@ -16252,7 +16251,7 @@ var ProductAddForm = ({
         salePrice: data.salePrice,
         deposit: data.deposit,
         totalStock: data.totalStock,
-        images: data.images || "",
+        images: Array.isArray(data.images) ? data.images.join(",") : data.images || "",
         outletStock: data.outletStock
       };
       await onSave(transformedData);
@@ -16678,27 +16677,17 @@ var ProductDetailList = ({
       ] }) })
     ] }),
     product.images && /* @__PURE__ */ jsxs69("div", { className: "bg-white border border-gray-200 rounded-lg", children: [
-      /* @__PURE__ */ jsx83("div", { className: "px-6 py-4 border-b border-gray-200", children: /* @__PURE__ */ jsx83("h2", { className: "text-lg font-semibold text-gray-900", children: t2("fields.images") }) }),
-      /* @__PURE__ */ jsxs69("div", { className: "p-6", children: [
-        selectedImage && /* @__PURE__ */ jsx83("div", { className: "mb-6", children: /* @__PURE__ */ jsx83("div", { className: "aspect-video bg-gray-100 rounded-lg overflow-hidden", children: /* @__PURE__ */ jsx83(
-          "img",
-          {
-            src: selectedImage,
-            alt: product.name,
-            className: "w-full h-full object-cover",
-            onError: handleImageError
-          }
-        ) }) }),
-        /* @__PURE__ */ jsx83("div", { className: "grid grid-cols-4 md:grid-cols-6 gap-3", children: (() => {
+      /* @__PURE__ */ jsx83("div", { className: "px-4 py-2 border-b border-gray-200", children: /* @__PURE__ */ jsx83("h2", { className: "text-lg font-semibold text-gray-900", children: t2("fields.images") }) }),
+      /* @__PURE__ */ jsxs69("div", { className: "p-3", children: [
+        /* @__PURE__ */ jsx83("div", { className: "flex gap-4 overflow-x-auto", children: (() => {
           try {
             const imageArray = typeof product.images === "string" ? JSON.parse(product.images) : product.images;
             if (Array.isArray(imageArray) && imageArray.length > 0) {
               return imageArray.map((image, index) => /* @__PURE__ */ jsx83(
-                Button2,
+                "div",
                 {
-                  variant: "outline",
                   onClick: () => setSelectedImage(image),
-                  className: `aspect-square rounded-lg overflow-hidden border-2 transition-colors p-0 h-auto ${selectedImage === image ? "border-blue-500" : "border-gray-200 hover:border-gray-300"}`,
+                  className: `flex-shrink-0 w-56 h-56 rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-105 ${selectedImage === image ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-gray-300"}`,
                   children: /* @__PURE__ */ jsx83(
                     "img",
                     {
@@ -16716,7 +16705,23 @@ var ProductDetailList = ({
           } catch (error2) {
             return null;
           }
-        })() })
+        })() }),
+        selectedImage && (() => {
+          try {
+            const imageArray = typeof product.images === "string" ? JSON.parse(product.images) : product.images;
+            return Array.isArray(imageArray) && imageArray.length > 1;
+          } catch {
+            return false;
+          }
+        })() && /* @__PURE__ */ jsx83("div", { className: "mt-6", children: /* @__PURE__ */ jsx83("div", { className: "aspect-square max-w-2xl mx-auto bg-gray-100 rounded-lg overflow-hidden", children: /* @__PURE__ */ jsx83(
+          "img",
+          {
+            src: selectedImage,
+            alt: product.name,
+            className: "w-full h-full object-cover",
+            onError: handleImageError
+          }
+        ) }) })
       ] })
     ] })
   ] });
@@ -16891,7 +16896,7 @@ import { useOrderTranslations as useOrderTranslations9, useCommonTranslations as
 
 // src/components/features/Orders/components/OrderHeader.tsx
 import React49 from "react";
-import { Card as Card14, CardContent as CardContent13, CardHeader as CardHeader13, CardTitle as CardTitle13 } from "@rentalshop/ui";
+import { Card as Card13, CardContent as CardContent12, CardHeader as CardHeader12, CardTitle as CardTitle12 } from "@rentalshop/ui";
 import { useOrderTranslations as useOrderTranslations6 } from "@rentalshop/hooks";
 import { jsx as jsx86, jsxs as jsxs71 } from "react/jsx-runtime";
 var OrderHeader = React49.memo(function OrderHeader2({ totalOrders, stats, showStats = true }) {
@@ -16920,30 +16925,30 @@ var OrderHeader = React49.memo(function OrderHeader2({ totalOrders, stats, showS
     return null;
   }
   return /* @__PURE__ */ jsx86("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs71("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [
-    /* @__PURE__ */ jsxs71(Card14, { children: [
-      /* @__PURE__ */ jsx86(CardHeader13, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx86(CardTitle13, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.totalOrders") }) }),
-      /* @__PURE__ */ jsxs71(CardContent13, { children: [
+    /* @__PURE__ */ jsxs71(Card13, { children: [
+      /* @__PURE__ */ jsx86(CardHeader12, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx86(CardTitle12, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.totalOrders") }) }),
+      /* @__PURE__ */ jsxs71(CardContent12, { children: [
         /* @__PURE__ */ jsx86("div", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: (safeStats.totalOrders || 0).toLocaleString() }),
         /* @__PURE__ */ jsx86("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: t2("stats.allTimeOrders") })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs71(Card14, { children: [
-      /* @__PURE__ */ jsx86(CardHeader13, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx86(CardTitle13, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.activeRentals") }) }),
-      /* @__PURE__ */ jsxs71(CardContent13, { children: [
+    /* @__PURE__ */ jsxs71(Card13, { children: [
+      /* @__PURE__ */ jsx86(CardHeader12, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx86(CardTitle12, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.activeRentals") }) }),
+      /* @__PURE__ */ jsxs71(CardContent12, { children: [
         /* @__PURE__ */ jsx86("div", { className: "text-2xl font-bold text-blue-700 dark:text-blue-400", children: (safeStats.activeRentals || 0).toLocaleString() }),
         /* @__PURE__ */ jsx86("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: t2("stats.currentlyPickuped") })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs71(Card14, { children: [
-      /* @__PURE__ */ jsx86(CardHeader13, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx86(CardTitle13, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.totalRevenue") }) }),
-      /* @__PURE__ */ jsxs71(CardContent13, { children: [
+    /* @__PURE__ */ jsxs71(Card13, { children: [
+      /* @__PURE__ */ jsx86(CardHeader12, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx86(CardTitle12, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.totalRevenue") }) }),
+      /* @__PURE__ */ jsxs71(CardContent12, { children: [
         /* @__PURE__ */ jsx86("div", { className: "text-2xl font-bold text-green-600 dark:text-green-400", children: formatCurrency22(safeStats.totalRevenue || 0) }),
         /* @__PURE__ */ jsx86("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: t2("stats.lifetimeRevenue") })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs71(Card14, { children: [
-      /* @__PURE__ */ jsx86(CardHeader13, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx86(CardTitle13, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.completedOrders") }) }),
-      /* @__PURE__ */ jsxs71(CardContent13, { children: [
+    /* @__PURE__ */ jsxs71(Card13, { children: [
+      /* @__PURE__ */ jsx86(CardHeader12, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx86(CardTitle12, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: t2("stats.completedOrders") }) }),
+      /* @__PURE__ */ jsxs71(CardContent12, { children: [
         /* @__PURE__ */ jsx86("div", { className: "text-2xl font-bold text-purple-600 dark:text-purple-400", children: (safeStats.completedOrders || 0).toLocaleString() }),
         /* @__PURE__ */ jsxs71("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: [
           formatCurrency22(safeStats.averageOrderValue || 0),
@@ -17606,7 +17611,7 @@ var OrderTable = React52.memo(function OrderTable2({
 
 // src/components/features/Orders/components/OrderActions.tsx
 import { Button as Button16 } from "@rentalshop/ui";
-import { Card as Card15, CardContent as CardContent14 } from "@rentalshop/ui";
+import { Card as Card14, CardContent as CardContent13 } from "@rentalshop/ui";
 import { jsx as jsx91, jsxs as jsxs76 } from "react/jsx-runtime";
 function OrderActions({ onAction }) {
   const actions = [
@@ -17653,7 +17658,7 @@ function OrderActions({ onAction }) {
       variant: "outline"
     }
   ];
-  return /* @__PURE__ */ jsx91(Card15, { children: /* @__PURE__ */ jsx91(CardContent14, { className: "p-4", children: /* @__PURE__ */ jsx91("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3", children: actions.map((action) => /* @__PURE__ */ jsx91(
+  return /* @__PURE__ */ jsx91(Card14, { children: /* @__PURE__ */ jsx91(CardContent13, { className: "p-4", children: /* @__PURE__ */ jsx91("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3", children: actions.map((action) => /* @__PURE__ */ jsx91(
     Button16,
     {
       variant: action.variant,
@@ -17672,8 +17677,8 @@ function OrderActions({ onAction }) {
 }
 
 // src/components/features/Orders/components/OrderStats.tsx
-import { Card as Card16, CardContent as CardContent15, CardHeader as CardHeader14, CardTitle as CardTitle14 } from "@rentalshop/ui";
-import { Badge as Badge5 } from "@rentalshop/ui";
+import { Card as Card15, CardContent as CardContent14, CardHeader as CardHeader13, CardTitle as CardTitle13 } from "@rentalshop/ui";
+import { Badge as Badge4 } from "@rentalshop/ui";
 import { jsx as jsx92, jsxs as jsxs77 } from "react/jsx-runtime";
 function OrderStats({ stats }) {
   const formatCurrency22 = (amount) => {
@@ -17697,12 +17702,12 @@ function OrderStats({ stats }) {
     ];
   };
   return /* @__PURE__ */ jsxs77("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsxs77(Card16, { children: [
-      /* @__PURE__ */ jsxs77(CardHeader14, { children: [
-        /* @__PURE__ */ jsx92(CardTitle14, { children: "Order Status Distribution" }),
+    /* @__PURE__ */ jsxs77(Card15, { children: [
+      /* @__PURE__ */ jsxs77(CardHeader13, { children: [
+        /* @__PURE__ */ jsx92(CardTitle13, { children: "Order Status Distribution" }),
         /* @__PURE__ */ jsx92("p", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Breakdown of orders by current status" })
       ] }),
-      /* @__PURE__ */ jsx92(CardContent15, { children: /* @__PURE__ */ jsx92("div", { className: "space-y-4", children: getStatusDistribution().map((status) => /* @__PURE__ */ jsxs77("div", { className: "space-y-2", children: [
+      /* @__PURE__ */ jsx92(CardContent14, { children: /* @__PURE__ */ jsx92("div", { className: "space-y-4", children: getStatusDistribution().map((status) => /* @__PURE__ */ jsxs77("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsxs77("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsx92("span", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: status.label }),
           /* @__PURE__ */ jsxs77("div", { className: "flex items-center space-x-2", children: [
@@ -17726,9 +17731,9 @@ function OrderStats({ stats }) {
       ] }, status.label)) }) })
     ] }),
     /* @__PURE__ */ jsxs77("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ jsxs77(Card16, { children: [
-        /* @__PURE__ */ jsx92(CardHeader14, { children: /* @__PURE__ */ jsx92(CardTitle14, { children: "Revenue Metrics" }) }),
-        /* @__PURE__ */ jsx92(CardContent15, { children: /* @__PURE__ */ jsxs77("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs77(Card15, { children: [
+        /* @__PURE__ */ jsx92(CardHeader13, { children: /* @__PURE__ */ jsx92(CardTitle13, { children: "Revenue Metrics" }) }),
+        /* @__PURE__ */ jsx92(CardContent14, { children: /* @__PURE__ */ jsxs77("div", { className: "space-y-4", children: [
           /* @__PURE__ */ jsxs77("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsx92("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Total Revenue" }),
             /* @__PURE__ */ jsx92("span", { className: "font-medium text-lg text-green-600 dark:text-green-400", children: formatCurrency22(stats.totalRevenue) })
@@ -17743,23 +17748,23 @@ function OrderStats({ stats }) {
           ] }),
           /* @__PURE__ */ jsxs77("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsx92("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Overdue Rentals" }),
-            /* @__PURE__ */ jsx92("div", { className: "flex items-center space-x-2", children: /* @__PURE__ */ jsxs77(Badge5, { variant: "outline", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200", children: [
+            /* @__PURE__ */ jsx92("div", { className: "flex items-center space-x-2", children: /* @__PURE__ */ jsxs77(Badge4, { variant: "outline", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200", children: [
               stats.overdueRentals,
               " orders"
             ] }) })
           ] })
         ] }) })
       ] }),
-      /* @__PURE__ */ jsxs77(Card16, { children: [
-        /* @__PURE__ */ jsx92(CardHeader14, { children: /* @__PURE__ */ jsx92(CardTitle14, { children: "Order Volume" }) }),
-        /* @__PURE__ */ jsx92(CardContent15, { children: /* @__PURE__ */ jsxs77("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs77(Card15, { children: [
+        /* @__PURE__ */ jsx92(CardHeader13, { children: /* @__PURE__ */ jsx92(CardTitle13, { children: "Order Volume" }) }),
+        /* @__PURE__ */ jsx92(CardContent14, { children: /* @__PURE__ */ jsxs77("div", { className: "space-y-4", children: [
           /* @__PURE__ */ jsxs77("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsx92("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Total Orders" }),
             /* @__PURE__ */ jsx92("span", { className: "font-medium text-lg", children: stats.totalOrders.toLocaleString() })
           ] }),
           /* @__PURE__ */ jsxs77("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsx92("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Active Rentals" }),
-            /* @__PURE__ */ jsx92("div", { className: "flex items-center space-x-2", children: /* @__PURE__ */ jsxs77(Badge5, { variant: "outline", className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200", children: [
+            /* @__PURE__ */ jsx92("div", { className: "flex items-center space-x-2", children: /* @__PURE__ */ jsxs77(Badge4, { variant: "outline", className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200", children: [
               stats.activeRentals,
               " orders"
             ] }) })
@@ -17775,9 +17780,9 @@ function OrderStats({ stats }) {
         ] }) })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs77(Card16, { children: [
-      /* @__PURE__ */ jsx92(CardHeader14, { children: /* @__PURE__ */ jsx92(CardTitle14, { children: "Performance Insights" }) }),
-      /* @__PURE__ */ jsx92(CardContent15, { children: /* @__PURE__ */ jsxs77("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
+    /* @__PURE__ */ jsxs77(Card15, { children: [
+      /* @__PURE__ */ jsx92(CardHeader13, { children: /* @__PURE__ */ jsx92(CardTitle13, { children: "Performance Insights" }) }),
+      /* @__PURE__ */ jsx92(CardContent14, { children: /* @__PURE__ */ jsxs77("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
         /* @__PURE__ */ jsxs77("div", { className: "text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800", children: [
           /* @__PURE__ */ jsxs77("div", { className: "text-2xl font-bold text-orange-600 dark:text-orange-400", children: [
             stats.totalOrders > 0 ? (stats.activeRentals / stats.totalOrders * 100).toFixed(1) : 0,
@@ -18205,11 +18210,11 @@ import {
   DialogTitle as DialogTitle4,
   DialogDescription as DialogDescription2,
   Button as Button17,
-  Card as Card17,
-  CardContent as CardContent16,
-  CardHeader as CardHeader16,
-  CardTitle as CardTitle16,
-  Badge as Badge7,
+  Card as Card16,
+  CardContent as CardContent15,
+  CardHeader as CardHeader15,
+  CardTitle as CardTitle15,
+  Badge as Badge6,
   EmptyState
 } from "@rentalshop/ui";
 import {
@@ -18279,7 +18284,7 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
       "CANCELLED": { color: "bg-red-100 text-red-800", text: "Cancelled" }
     };
     const config = statusConfig[status] || statusConfig["RESERVED"];
-    return /* @__PURE__ */ jsx96(Badge7, { className: config.color, children: config.text });
+    return /* @__PURE__ */ jsx96(Badge6, { className: config.color, children: config.text });
   };
   const getOrderTypeBadge = (orderType) => {
     const typeConfig = {
@@ -18287,7 +18292,7 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
       "SALE": { color: "bg-green-100 text-green-800", text: "Sale" }
     };
     const config = typeConfig[orderType] || typeConfig["RENT"];
-    return /* @__PURE__ */ jsx96(Badge7, { className: config.color, children: config.text });
+    return /* @__PURE__ */ jsx96(Badge6, { className: config.color, children: config.text });
   };
   if (!product)
     return null;
@@ -18327,9 +18332,9 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
         title: "No Orders Found",
         description: "This product hasn't been ordered yet."
       }
-    ) : /* @__PURE__ */ jsx96("div", { className: "space-y-4", children: orders.map((order) => /* @__PURE__ */ jsxs80(Card17, { className: "border border-border", children: [
-      /* @__PURE__ */ jsx96(CardHeader16, { className: "pb-3", children: /* @__PURE__ */ jsxs80("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ jsxs80(CardTitle16, { className: "text-lg", children: [
+    ) : /* @__PURE__ */ jsx96("div", { className: "space-y-4", children: orders.map((order) => /* @__PURE__ */ jsxs80(Card16, { className: "border border-border", children: [
+      /* @__PURE__ */ jsx96(CardHeader15, { className: "pb-3", children: /* @__PURE__ */ jsxs80("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxs80(CardTitle15, { className: "text-lg", children: [
           "Order #",
           order.orderNumber
         ] }),
@@ -18338,7 +18343,7 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
           getStatusBadge(order.status)
         ] })
       ] }) }),
-      /* @__PURE__ */ jsxs80(CardContent16, { children: [
+      /* @__PURE__ */ jsxs80(CardContent15, { children: [
         /* @__PURE__ */ jsxs80("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
           /* @__PURE__ */ jsxs80("div", { className: "flex items-center gap-3", children: [
             /* @__PURE__ */ jsx96(User5, { className: "w-4 h-4 text-text-tertiary" }),
@@ -18402,8 +18407,8 @@ import {
   Pagination as Pagination4,
   EmptyState as EmptyState2,
   Button as Button18,
-  Card as Card18,
-  CardContent as CardContent17
+  Card as Card17,
+  CardContent as CardContent16
 } from "@rentalshop/ui";
 import { useUserRole as useUserRole2 } from "@rentalshop/hooks";
 import {
@@ -18495,7 +18500,7 @@ function Products({
           ]
         }
       ),
-      /* @__PURE__ */ jsx97(Card18, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx97(CardContent17, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx97("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx97(
+      /* @__PURE__ */ jsx97(Card17, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx97(CardContent16, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx97("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx97(
         ProductFilters,
         {
           filters,
@@ -18545,14 +18550,14 @@ import {
   Pagination as Pagination5,
   EmptyState as EmptyState3,
   Button as Button25,
-  Card as Card27,
-  CardContent as CardContent26
+  Card as Card26,
+  CardContent as CardContent25
 } from "@rentalshop/ui";
 
 // src/components/features/Customers/components/CustomerTable.tsx
 import React56 from "react";
 import { Button as Button19 } from "@rentalshop/ui";
-import { Card as Card19, CardContent as CardContent18 } from "@rentalshop/ui";
+import { Card as Card18, CardContent as CardContent17 } from "@rentalshop/ui";
 import {
   DropdownMenu as DropdownMenu2,
   DropdownMenuContent as DropdownMenuContent2,
@@ -18573,7 +18578,7 @@ function CustomerTable({
   const t2 = useCustomerTranslations2();
   const [openDropdownId, setOpenDropdownId] = React56.useState(null);
   if (customers.length === 0) {
-    return /* @__PURE__ */ jsx98(Card19, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx98(CardContent18, { className: "text-center py-12", children: /* @__PURE__ */ jsxs82("div", { className: "text-gray-500 dark:text-gray-400", children: [
+    return /* @__PURE__ */ jsx98(Card18, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx98(CardContent17, { className: "text-center py-12", children: /* @__PURE__ */ jsxs82("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx98("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
       /* @__PURE__ */ jsx98("h3", { className: "text-lg font-medium mb-2", children: t2("messages.noCustomers") }),
       /* @__PURE__ */ jsx98("p", { className: "text-sm", children: t2("messages.noCustomersDescription") })
@@ -18594,7 +18599,7 @@ function CustomerTable({
       onSort(column);
     }
   };
-  return /* @__PURE__ */ jsx98(Card19, { className: "shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col", children: /* @__PURE__ */ jsx98("div", { className: "overflow-auto flex-1", children: /* @__PURE__ */ jsxs82("table", { className: "w-full min-w-[900px]", children: [
+  return /* @__PURE__ */ jsx98(Card18, { className: "shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col", children: /* @__PURE__ */ jsx98("div", { className: "overflow-auto flex-1", children: /* @__PURE__ */ jsxs82("table", { className: "w-full min-w-[900px]", children: [
     /* @__PURE__ */ jsx98("thead", { className: "bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10", children: /* @__PURE__ */ jsxs82("tr", { children: [
       /* @__PURE__ */ jsx98(
         "th",
@@ -18921,7 +18926,7 @@ var CustomerDetailDialog = ({
 };
 
 // src/components/features/Customers/components/CustomerInfoCard.tsx
-import { Card as Card20, CardContent as CardContent19, CardHeader as CardHeader17, CardTitle as CardTitle17 } from "@rentalshop/ui";
+import { Card as Card19, CardContent as CardContent18, CardHeader as CardHeader16, CardTitle as CardTitle16 } from "@rentalshop/ui";
 import { Button as Button20 } from "@rentalshop/ui";
 import {
   Edit as Edit5,
@@ -18962,9 +18967,9 @@ var CustomerInfoCard = ({
     return parts.length > 0 ? parts.join(", ") : t2("fields.noAddress");
   };
   if (isLoading) {
-    return /* @__PURE__ */ jsxs84(Card20, { children: [
-      /* @__PURE__ */ jsx100(CardHeader17, { children: /* @__PURE__ */ jsx100(CardTitle17, { className: "text-lg font-semibold text-gray-900", children: t2("customerInformation") }) }),
-      /* @__PURE__ */ jsx100(CardContent19, { children: /* @__PURE__ */ jsx100("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs84("div", { className: "animate-pulse", children: [
+    return /* @__PURE__ */ jsxs84(Card19, { children: [
+      /* @__PURE__ */ jsx100(CardHeader16, { children: /* @__PURE__ */ jsx100(CardTitle16, { className: "text-lg font-semibold text-gray-900", children: t2("customerInformation") }) }),
+      /* @__PURE__ */ jsx100(CardContent18, { children: /* @__PURE__ */ jsx100("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs84("div", { className: "animate-pulse", children: [
         /* @__PURE__ */ jsx100("div", { className: "h-4 bg-gray-200 rounded w-3/4 mb-4" }),
         /* @__PURE__ */ jsx100("div", { className: "h-4 bg-gray-200 rounded w-1/2 mb-2" }),
         /* @__PURE__ */ jsx100("div", { className: "h-4 bg-gray-200 rounded w-2/3 mb-2" }),
@@ -18973,15 +18978,15 @@ var CustomerInfoCard = ({
     ] });
   }
   if (!customer) {
-    return /* @__PURE__ */ jsxs84(Card20, { children: [
-      /* @__PURE__ */ jsx100(CardHeader17, { children: /* @__PURE__ */ jsx100(CardTitle17, { className: "text-lg font-semibold text-gray-900", children: t2("customerInformation") }) }),
-      /* @__PURE__ */ jsx100(CardContent19, { children: /* @__PURE__ */ jsx100("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx100("p", { className: "text-gray-500", children: t2("noDataAvailable") }) }) })
+    return /* @__PURE__ */ jsxs84(Card19, { children: [
+      /* @__PURE__ */ jsx100(CardHeader16, { children: /* @__PURE__ */ jsx100(CardTitle16, { className: "text-lg font-semibold text-gray-900", children: t2("customerInformation") }) }),
+      /* @__PURE__ */ jsx100(CardContent18, { children: /* @__PURE__ */ jsx100("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx100("p", { className: "text-gray-500", children: t2("noDataAvailable") }) }) })
     ] });
   }
-  return /* @__PURE__ */ jsxs84(Card20, { children: [
-    /* @__PURE__ */ jsxs84(CardHeader17, { children: [
+  return /* @__PURE__ */ jsxs84(Card19, { children: [
+    /* @__PURE__ */ jsxs84(CardHeader16, { children: [
       /* @__PURE__ */ jsxs84("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ jsx100(CardTitle17, { className: "text-lg font-semibold text-gray-900", children: t2("customerInformation") }),
+        /* @__PURE__ */ jsx100(CardTitle16, { className: "text-lg font-semibold text-gray-900", children: t2("customerInformation") }),
         showActions && /* @__PURE__ */ jsxs84("div", { className: "flex items-center space-x-2", children: [
           onEdit && /* @__PURE__ */ jsxs84(
             Button20,
@@ -19026,7 +19031,7 @@ var CustomerInfoCard = ({
       ] }),
       /* @__PURE__ */ jsx100("div", { className: "border-b border-gray-200 mt-4" })
     ] }),
-    /* @__PURE__ */ jsx100(CardContent19, { children: /* @__PURE__ */ jsxs84("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+    /* @__PURE__ */ jsx100(CardContent18, { children: /* @__PURE__ */ jsxs84("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
       /* @__PURE__ */ jsx100("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs84("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs84("div", { children: [
           /* @__PURE__ */ jsx100("label", { className: "block text-sm font-normal text-gray-500 mb-2", children: t2("fields.fullName") }),
@@ -19060,7 +19065,7 @@ var CustomerInfoCard = ({
 };
 
 // src/components/features/Customers/components/CustomerOrdersSummaryCard.tsx
-import { Card as Card21, CardContent as CardContent20, CardHeader as CardHeader18, CardTitle as CardTitle18 } from "@rentalshop/ui";
+import { Card as Card20, CardContent as CardContent19, CardHeader as CardHeader17, CardTitle as CardTitle17 } from "@rentalshop/ui";
 import { jsx as jsx101, jsxs as jsxs85 } from "react/jsx-runtime";
 var CustomerOrdersSummaryCard = ({
   customer,
@@ -19086,9 +19091,9 @@ var CustomerOrdersSummaryCard = ({
     }).format(amount);
   };
   if (isLoading) {
-    return /* @__PURE__ */ jsxs85(Card21, { children: [
-      /* @__PURE__ */ jsx101(CardHeader18, { children: /* @__PURE__ */ jsx101(CardTitle18, { className: "text-lg font-semibold text-gray-900", children: "Customer Orders Summary" }) }),
-      /* @__PURE__ */ jsx101(CardContent20, { children: /* @__PURE__ */ jsx101("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs85("div", { className: "animate-pulse", children: [
+    return /* @__PURE__ */ jsxs85(Card20, { children: [
+      /* @__PURE__ */ jsx101(CardHeader17, { children: /* @__PURE__ */ jsx101(CardTitle17, { className: "text-lg font-semibold text-gray-900", children: "Customer Orders Summary" }) }),
+      /* @__PURE__ */ jsx101(CardContent19, { children: /* @__PURE__ */ jsx101("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs85("div", { className: "animate-pulse", children: [
         /* @__PURE__ */ jsx101("div", { className: "h-4 bg-gray-200 rounded w-3/4 mb-4" }),
         /* @__PURE__ */ jsx101("div", { className: "h-4 bg-gray-200 rounded w-1/2 mb-2" }),
         /* @__PURE__ */ jsx101("div", { className: "h-4 bg-gray-200 rounded w-2/3 mb-2" }),
@@ -19097,22 +19102,22 @@ var CustomerOrdersSummaryCard = ({
     ] });
   }
   if (!customer) {
-    return /* @__PURE__ */ jsxs85(Card21, { children: [
-      /* @__PURE__ */ jsx101(CardHeader18, { children: /* @__PURE__ */ jsx101(CardTitle18, { className: "text-lg font-semibold text-gray-900", children: "Customer Orders Summary" }) }),
-      /* @__PURE__ */ jsx101(CardContent20, { children: /* @__PURE__ */ jsx101("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx101("p", { className: "text-gray-500", children: "No customer data available" }) }) })
+    return /* @__PURE__ */ jsxs85(Card20, { children: [
+      /* @__PURE__ */ jsx101(CardHeader17, { children: /* @__PURE__ */ jsx101(CardTitle17, { className: "text-lg font-semibold text-gray-900", children: "Customer Orders Summary" }) }),
+      /* @__PURE__ */ jsx101(CardContent19, { children: /* @__PURE__ */ jsx101("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx101("p", { className: "text-gray-500", children: "No customer data available" }) }) })
     ] });
   }
   return /* @__PURE__ */ jsxs85("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-    /* @__PURE__ */ jsxs85(Card21, { children: [
-      /* @__PURE__ */ jsx101(CardHeader18, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx101(CardTitle18, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Total Orders" }) }),
-      /* @__PURE__ */ jsxs85(CardContent20, { children: [
+    /* @__PURE__ */ jsxs85(Card20, { children: [
+      /* @__PURE__ */ jsx101(CardHeader17, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx101(CardTitle17, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Total Orders" }) }),
+      /* @__PURE__ */ jsxs85(CardContent19, { children: [
         /* @__PURE__ */ jsx101("div", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: (orderStats?.totalOrders || 0).toLocaleString() }),
         /* @__PURE__ */ jsx101("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "All time orders" })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs85(Card21, { children: [
-      /* @__PURE__ */ jsx101(CardHeader18, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx101(CardTitle18, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Total Revenue" }) }),
-      /* @__PURE__ */ jsxs85(CardContent20, { children: [
+    /* @__PURE__ */ jsxs85(Card20, { children: [
+      /* @__PURE__ */ jsx101(CardHeader17, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx101(CardTitle17, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Total Revenue" }) }),
+      /* @__PURE__ */ jsxs85(CardContent19, { children: [
         /* @__PURE__ */ jsx101("div", { className: "text-2xl font-bold text-green-600 dark:text-green-400", children: formatCurrency22(orderStats?.totalRevenue || 0) }),
         /* @__PURE__ */ jsx101("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "Lifetime revenue" })
       ] })
@@ -19209,7 +19214,7 @@ import { Save as Save3, X as X8 } from "lucide-react";
 import { Button as Button22 } from "@rentalshop/ui";
 import { Input as Input11 } from "@rentalshop/ui";
 import { Label as Label3 } from "@rentalshop/ui";
-import { Card as Card22, CardContent as CardContent21 } from "@rentalshop/ui";
+import { Card as Card21, CardContent as CardContent20 } from "@rentalshop/ui";
 import {
   useCustomerTranslations as useCustomerTranslations6,
   useCommonTranslations as useCommonTranslations14
@@ -19349,7 +19354,7 @@ var EditCustomerForm = forwardRef13(
         handleSubmit(syntheticEvent);
       }
     }));
-    return /* @__PURE__ */ jsx104("form", { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx104(Card22, { children: /* @__PURE__ */ jsxs88(CardContent21, { className: "p-6 space-y-4", children: [
+    return /* @__PURE__ */ jsx104("form", { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx104(Card21, { children: /* @__PURE__ */ jsxs88(CardContent20, { className: "p-6 space-y-4", children: [
       errorMessage && /* @__PURE__ */ jsx104("div", { className: "p-4 bg-red-50 border border-red-200 rounded-lg", children: /* @__PURE__ */ jsx104("p", { className: "text-sm text-red-800", children: errorMessage }) }),
       /* @__PURE__ */ jsxs88("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
         /* @__PURE__ */ jsxs88("div", { children: [
@@ -19519,7 +19524,7 @@ import { Button as Button23 } from "@rentalshop/ui";
 import { Input as Input12 } from "@rentalshop/ui";
 import { Label as Label4 } from "@rentalshop/ui";
 import { Select as Select8, SelectContent as SelectContent8, SelectItem as SelectItem8, SelectTrigger as SelectTrigger8, SelectValue as SelectValue8 } from "@rentalshop/ui";
-import { Card as Card23, CardContent as CardContent22 } from "@rentalshop/ui";
+import { Card as Card22, CardContent as CardContent21 } from "@rentalshop/ui";
 import { jsx as jsx105, jsxs as jsxs89 } from "react/jsx-runtime";
 var CustomerForm = ({
   mode = "create",
@@ -19633,7 +19638,7 @@ var CustomerForm = ({
   };
   const isFormSubmitting = isSubmitting || externalIsSubmitting;
   return /* @__PURE__ */ jsxs89("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
-    /* @__PURE__ */ jsx105(Card23, { children: /* @__PURE__ */ jsxs89(CardContent22, { className: "pt-6", children: [
+    /* @__PURE__ */ jsx105(Card22, { children: /* @__PURE__ */ jsxs89(CardContent21, { className: "pt-6", children: [
       /* @__PURE__ */ jsxs89("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
         /* @__PURE__ */ jsxs89("div", { className: "space-y-2", children: [
           /* @__PURE__ */ jsx105(Label4, { htmlFor: "firstName", children: "First Name *" }),
@@ -19968,7 +19973,7 @@ function CustomerActions({
 }
 
 // src/components/features/Customers/components/CustomerHeader.tsx
-import { Card as Card24, CardContent as CardContent23, CardHeader as CardHeader19, CardTitle as CardTitle19 } from "@rentalshop/ui";
+import { Card as Card23, CardContent as CardContent22, CardHeader as CardHeader18, CardTitle as CardTitle18 } from "@rentalshop/ui";
 import { jsx as jsx107, jsxs as jsxs91 } from "react/jsx-runtime";
 function CustomerHeader({ totalCustomers, stats }) {
   const formatCurrency22 = (amount) => {
@@ -19982,16 +19987,16 @@ function CustomerHeader({ totalCustomers, stats }) {
   const activeCustomers = stats.topCustomers.length;
   const totalRevenue = stats.topCustomers.reduce((sum, customer) => sum + customer.totalSpent, 0);
   return /* @__PURE__ */ jsx107("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs91("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [
-    /* @__PURE__ */ jsxs91(Card24, { children: [
-      /* @__PURE__ */ jsx107(CardHeader19, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx107(CardTitle19, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Total Customers" }) }),
-      /* @__PURE__ */ jsxs91(CardContent23, { children: [
+    /* @__PURE__ */ jsxs91(Card23, { children: [
+      /* @__PURE__ */ jsx107(CardHeader18, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx107(CardTitle18, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Total Customers" }) }),
+      /* @__PURE__ */ jsxs91(CardContent22, { children: [
         /* @__PURE__ */ jsx107("div", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: stats.totalCustomers.toLocaleString() }),
         /* @__PURE__ */ jsx107("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "All time customers" })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs91(Card24, { children: [
-      /* @__PURE__ */ jsx107(CardHeader19, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx107(CardTitle19, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Active Customers" }) }),
-      /* @__PURE__ */ jsxs91(CardContent23, { children: [
+    /* @__PURE__ */ jsxs91(Card23, { children: [
+      /* @__PURE__ */ jsx107(CardHeader18, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx107(CardTitle18, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Active Customers" }) }),
+      /* @__PURE__ */ jsxs91(CardContent22, { children: [
         /* @__PURE__ */ jsx107("div", { className: "text-2xl font-bold text-green-600 dark:text-green-400", children: activeCustomers.toLocaleString() }),
         /* @__PURE__ */ jsxs91("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: [
           (activeCustomers / stats.totalCustomers * 100).toFixed(1),
@@ -19999,16 +20004,16 @@ function CustomerHeader({ totalCustomers, stats }) {
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs91(Card24, { children: [
-      /* @__PURE__ */ jsx107(CardHeader19, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx107(CardTitle19, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "New This Month" }) }),
-      /* @__PURE__ */ jsxs91(CardContent23, { children: [
+    /* @__PURE__ */ jsxs91(Card23, { children: [
+      /* @__PURE__ */ jsx107(CardHeader18, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx107(CardTitle18, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "New This Month" }) }),
+      /* @__PURE__ */ jsxs91(CardContent22, { children: [
         /* @__PURE__ */ jsx107("div", { className: "text-2xl font-bold text-blue-700 dark:text-blue-400", children: stats.newCustomersThisMonth.toLocaleString() }),
         /* @__PURE__ */ jsx107("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "Recent signups" })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs91(Card24, { children: [
-      /* @__PURE__ */ jsx107(CardHeader19, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx107(CardTitle19, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Total Revenue" }) }),
-      /* @__PURE__ */ jsxs91(CardContent23, { children: [
+    /* @__PURE__ */ jsxs91(Card23, { children: [
+      /* @__PURE__ */ jsx107(CardHeader18, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: /* @__PURE__ */ jsx107(CardTitle18, { className: "text-sm font-medium text-gray-600 dark:text-gray-400", children: "Total Revenue" }) }),
+      /* @__PURE__ */ jsxs91(CardContent22, { children: [
         /* @__PURE__ */ jsx107("div", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: formatCurrency22(totalRevenue) }),
         /* @__PURE__ */ jsx107("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "From all customers" })
       ] })
@@ -20070,8 +20075,8 @@ function CustomerSearch({ filters, onFiltersChange, onSearchChange, onClearFilte
 }
 
 // src/components/features/Customers/components/CustomerStats.tsx
-import { Card as Card25, CardContent as CardContent24, CardHeader as CardHeader20, CardTitle as CardTitle20 } from "@rentalshop/ui";
-import { Badge as Badge8 } from "@rentalshop/ui";
+import { Card as Card24, CardContent as CardContent23, CardHeader as CardHeader19, CardTitle as CardTitle19 } from "@rentalshop/ui";
+import { Badge as Badge7 } from "@rentalshop/ui";
 import { jsx as jsx109, jsxs as jsxs93 } from "react/jsx-runtime";
 function CustomerStats({ stats }) {
   const formatCurrency22 = (amount) => {
@@ -20093,12 +20098,12 @@ function CustomerStats({ stats }) {
   const totalRevenue = stats.topCustomers.reduce((sum, customer) => sum + customer.totalSpent, 0);
   const averageOrderValue = activeCustomers > 0 ? totalRevenue / activeCustomers : 0;
   return /* @__PURE__ */ jsxs93("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsxs93(Card25, { children: [
-      /* @__PURE__ */ jsxs93(CardHeader20, { children: [
-        /* @__PURE__ */ jsx109(CardTitle20, { children: "Top Customers" }),
+    /* @__PURE__ */ jsxs93(Card24, { children: [
+      /* @__PURE__ */ jsxs93(CardHeader19, { children: [
+        /* @__PURE__ */ jsx109(CardTitle19, { children: "Top Customers" }),
         /* @__PURE__ */ jsx109("p", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Customers with highest lifetime value" })
       ] }),
-      /* @__PURE__ */ jsx109(CardContent24, { children: /* @__PURE__ */ jsxs93("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsx109(CardContent23, { children: /* @__PURE__ */ jsxs93("div", { className: "space-y-4", children: [
         stats.topCustomers.map((customer, index) => /* @__PURE__ */ jsxs93("div", { className: "flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700", children: [
           /* @__PURE__ */ jsxs93("div", { className: "flex items-center space-x-3", children: [
             /* @__PURE__ */ jsxs93("div", { className: `w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${index === 0 ? "bg-yellow-100 text-yellow-800" : index === 1 ? "bg-gray-100 text-gray-800" : index === 2 ? "bg-orange-100 text-orange-800" : "bg-blue-100 text-blue-800"}`, children: [
@@ -20125,9 +20130,9 @@ function CustomerStats({ stats }) {
       ] }) })
     ] }),
     /* @__PURE__ */ jsxs93("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ jsxs93(Card25, { children: [
-        /* @__PURE__ */ jsx109(CardHeader20, { children: /* @__PURE__ */ jsx109(CardTitle20, { children: "Customer Distribution" }) }),
-        /* @__PURE__ */ jsx109(CardContent24, { children: /* @__PURE__ */ jsxs93("div", { className: "space-y-3", children: [
+      /* @__PURE__ */ jsxs93(Card24, { children: [
+        /* @__PURE__ */ jsx109(CardHeader19, { children: /* @__PURE__ */ jsx109(CardTitle19, { children: "Customer Distribution" }) }),
+        /* @__PURE__ */ jsx109(CardContent23, { children: /* @__PURE__ */ jsxs93("div", { className: "space-y-3", children: [
           /* @__PURE__ */ jsxs93("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsx109("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Active" }),
             /* @__PURE__ */ jsxs93("div", { className: "flex items-center space-x-2", children: [
@@ -20169,16 +20174,16 @@ function CustomerStats({ stats }) {
           ] })
         ] }) })
       ] }),
-      /* @__PURE__ */ jsxs93(Card25, { children: [
-        /* @__PURE__ */ jsx109(CardHeader20, { children: /* @__PURE__ */ jsx109(CardTitle20, { children: "Performance Metrics" }) }),
-        /* @__PURE__ */ jsx109(CardContent24, { children: /* @__PURE__ */ jsxs93("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs93(Card24, { children: [
+        /* @__PURE__ */ jsx109(CardHeader19, { children: /* @__PURE__ */ jsx109(CardTitle19, { children: "Performance Metrics" }) }),
+        /* @__PURE__ */ jsx109(CardContent23, { children: /* @__PURE__ */ jsxs93("div", { className: "space-y-4", children: [
           /* @__PURE__ */ jsxs93("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsx109("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Average Order Value" }),
             /* @__PURE__ */ jsx109("span", { className: "font-medium", children: formatCurrency22(averageOrderValue) })
           ] }),
           /* @__PURE__ */ jsxs93("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsx109("span", { className: "text-sm text-gray-600 dark:text-gray-400", children: "New This Month" }),
-            /* @__PURE__ */ jsx109("div", { className: "flex items-center space-x-2", children: /* @__PURE__ */ jsxs93(Badge8, { variant: "outline", className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200", children: [
+            /* @__PURE__ */ jsx109("div", { className: "flex items-center space-x-2", children: /* @__PURE__ */ jsxs93(Badge7, { variant: "outline", className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200", children: [
               "+",
               stats.newCustomersThisMonth
             ] }) })
@@ -20196,8 +20201,8 @@ function CustomerStats({ stats }) {
 // src/components/features/Customers/components/CustomerOrdersDialog.tsx
 import { useState as useState42, useEffect as useEffect24 } from "react";
 import { Dialog as Dialog5, DialogContent as DialogContent5, DialogHeader as DialogHeader5, DialogTitle as DialogTitle5, DialogDescription as DialogDescription3 } from "@rentalshop/ui";
-import { Card as Card26, CardContent as CardContent25, CardHeader as CardHeader21, CardTitle as CardTitle21 } from "@rentalshop/ui";
-import { Badge as Badge9 } from "@rentalshop/ui";
+import { Card as Card25, CardContent as CardContent24, CardHeader as CardHeader20, CardTitle as CardTitle20 } from "@rentalshop/ui";
+import { Badge as Badge8 } from "@rentalshop/ui";
 import { Package as Package10, Calendar as Calendar8, DollarSign as DollarSign6, User as User7, MapPin as MapPin4, Clock as Clock4 } from "lucide-react";
 import { ORDER_STATUS_COLORS as ORDER_STATUS_COLORS3 } from "@rentalshop/constants";
 import { jsx as jsx110, jsxs as jsxs94 } from "react/jsx-runtime";
@@ -20272,7 +20277,7 @@ var CustomerOrdersDialog = ({
   };
   const getStatusBadge = (status) => {
     const colors = ORDER_STATUS_COLORS3[status] || "bg-gray-100 text-gray-800";
-    return /* @__PURE__ */ jsx110(Badge9, { variant: "outline", className: colors, children: status });
+    return /* @__PURE__ */ jsx110(Badge8, { variant: "outline", className: colors, children: status });
   };
   const getOrderTypeBadge = (orderType) => {
     const variants = {
@@ -20280,7 +20285,7 @@ var CustomerOrdersDialog = ({
       SALE: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
       RENT_TO_OWN: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
     };
-    return /* @__PURE__ */ jsx110(Badge9, { variant: "outline", className: variants[orderType] || variants.RENT, children: orderType });
+    return /* @__PURE__ */ jsx110(Badge8, { variant: "outline", className: variants[orderType] || variants.RENT, children: orderType });
   };
   const formatCurrency22 = (amount) => {
     return new Intl.NumberFormat("en-US", {
@@ -20319,9 +20324,9 @@ var CustomerOrdersDialog = ({
       ] })
     ] }) }),
     /* @__PURE__ */ jsxs94("div", { className: "mt-6", children: [
-      /* @__PURE__ */ jsxs94(Card26, { className: "mb-6", children: [
-        /* @__PURE__ */ jsx110(CardHeader21, { className: "pb-3", children: /* @__PURE__ */ jsx110(CardTitle21, { className: "text-lg", children: "Customer Information" }) }),
-        /* @__PURE__ */ jsx110(CardContent25, { children: /* @__PURE__ */ jsxs94("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
+      /* @__PURE__ */ jsxs94(Card25, { className: "mb-6", children: [
+        /* @__PURE__ */ jsx110(CardHeader20, { className: "pb-3", children: /* @__PURE__ */ jsx110(CardTitle20, { className: "text-lg", children: "Customer Information" }) }),
+        /* @__PURE__ */ jsx110(CardContent24, { children: /* @__PURE__ */ jsxs94("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [
           /* @__PURE__ */ jsxs94("div", { className: "flex items-center gap-3", children: [
             /* @__PURE__ */ jsx110(User7, { className: "w-5 h-5 text-gray-500" }),
             /* @__PURE__ */ jsxs94("div", { children: [
@@ -20352,16 +20357,16 @@ var CustomerOrdersDialog = ({
           ] })
         ] }) })
       ] }),
-      loading ? /* @__PURE__ */ jsx110(Card26, { children: /* @__PURE__ */ jsx110(CardContent25, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-gray-500", children: [
+      loading ? /* @__PURE__ */ jsx110(Card25, { children: /* @__PURE__ */ jsx110(CardContent24, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-gray-500", children: [
         /* @__PURE__ */ jsx110(Package10, { className: "w-8 h-8 mx-auto mb-2 animate-spin" }),
         /* @__PURE__ */ jsx110("p", { children: "Loading orders..." })
-      ] }) }) }) : error2 ? /* @__PURE__ */ jsx110(Card26, { children: /* @__PURE__ */ jsx110(CardContent25, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-red-500", children: [
+      ] }) }) }) : error2 ? /* @__PURE__ */ jsx110(Card25, { children: /* @__PURE__ */ jsx110(CardContent24, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-red-500", children: [
         /* @__PURE__ */ jsx110(Package10, { className: "w-8 h-8 mx-auto mb-2" }),
         /* @__PURE__ */ jsx110("p", { children: error2 })
-      ] }) }) }) : orders.length === 0 ? /* @__PURE__ */ jsx110(Card26, { children: /* @__PURE__ */ jsx110(CardContent25, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-gray-500", children: [
+      ] }) }) }) : orders.length === 0 ? /* @__PURE__ */ jsx110(Card25, { children: /* @__PURE__ */ jsx110(CardContent24, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-gray-500", children: [
         /* @__PURE__ */ jsx110(Package10, { className: "w-8 h-8 mx-auto mb-2" }),
         /* @__PURE__ */ jsx110("p", { children: "No orders found for this customer" })
-      ] }) }) }) : /* @__PURE__ */ jsx110("div", { className: "space-y-4", children: orders.map((order) => /* @__PURE__ */ jsx110(Card26, { className: "hover:shadow-md transition-shadow", children: /* @__PURE__ */ jsx110(CardContent25, { className: "p-4", children: /* @__PURE__ */ jsxs94("div", { className: "flex items-start justify-between", children: [
+      ] }) }) }) : /* @__PURE__ */ jsx110("div", { className: "space-y-4", children: orders.map((order) => /* @__PURE__ */ jsx110(Card25, { className: "hover:shadow-md transition-shadow", children: /* @__PURE__ */ jsx110(CardContent24, { className: "p-4", children: /* @__PURE__ */ jsxs94("div", { className: "flex items-start justify-between", children: [
         /* @__PURE__ */ jsxs94("div", { className: "flex-1", children: [
           /* @__PURE__ */ jsxs94("div", { className: "flex items-center gap-3 mb-3", children: [
             /* @__PURE__ */ jsxs94("h3", { className: "font-semibold text-lg", children: [
@@ -20370,7 +20375,7 @@ var CustomerOrdersDialog = ({
             ] }),
             getStatusBadge(order.status),
             getOrderTypeBadge(order.orderType),
-            order.status === "PICKUPED" && order.returnPlanAt && /* @__PURE__ */ new Date() > order.returnPlanAt && /* @__PURE__ */ jsxs94(Badge9, { variant: "outline", className: "bg-red-50 text-red-700 border-red-200", children: [
+            order.status === "PICKUPED" && order.returnPlanAt && /* @__PURE__ */ new Date() > order.returnPlanAt && /* @__PURE__ */ jsxs94(Badge8, { variant: "outline", className: "bg-red-50 text-red-700 border-red-200", children: [
               getDaysOverdue(order.returnPlanAt),
               " days overdue"
             ] })
@@ -20551,7 +20556,7 @@ var Customers = ({
           ]
         }
       ),
-      /* @__PURE__ */ jsx112(Card27, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx112(CardContent26, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx112("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx112(
+      /* @__PURE__ */ jsx112(Card26, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx112(CardContent25, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx112("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx112(
         CustomerSearch,
         {
           filters,
@@ -20597,7 +20602,7 @@ var Customers_default = Customers;
 
 // src/components/features/Orders/Orders.tsx
 import React64 from "react";
-import { Pagination as Pagination6, Card as Card28, CardContent as CardContent27 } from "@rentalshop/ui";
+import { Pagination as Pagination6, Card as Card27, CardContent as CardContent26 } from "@rentalshop/ui";
 import { AlertCircle as AlertCircle8 } from "lucide-react";
 import { useOrderTranslations as useOrderTranslations10 } from "@rentalshop/hooks";
 import { jsx as jsx113, jsxs as jsxs97 } from "react/jsx-runtime";
@@ -20650,7 +20655,7 @@ var Orders = React64.memo(function Orders2({
           showStats
         }
       ),
-      /* @__PURE__ */ jsx113(Card28, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx113(CardContent27, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsxs97("div", { className: "flex flex-wrap items-center gap-3", children: [
+      /* @__PURE__ */ jsx113(Card27, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx113(CardContent26, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsxs97("div", { className: "flex flex-wrap items-center gap-3", children: [
         showQuickFilters && filterStyle === "dropdown" && /* @__PURE__ */ jsx113(
           OrderDateRangeFilter,
           {
@@ -21291,11 +21296,11 @@ import {
   DialogDescription as DialogDescription4,
   DialogFooter as DialogFooter2,
   Button as Button27,
-  Card as Card30,
-  CardHeader as CardHeader23,
-  CardTitle as CardTitle23,
-  CardContent as CardContent29,
-  Badge as Badge11,
+  Card as Card29,
+  CardHeader as CardHeader22,
+  CardTitle as CardTitle22,
+  CardContent as CardContent28,
+  Badge as Badge10,
   Separator as Separator4
 } from "@rentalshop/ui";
 import { formatDate as formatDate4, formatCurrency as formatCurrency8 } from "@rentalshop/ui";
@@ -21370,7 +21375,7 @@ function SubscriptionViewDialog({
     /* @__PURE__ */ jsxs103(DialogHeader6, { children: [
       /* @__PURE__ */ jsxs103(DialogTitle6, { className: "flex items-center gap-3", children: [
         /* @__PURE__ */ jsx119("span", { children: "Subscription Details" }),
-        /* @__PURE__ */ jsx119(Badge11, { variant: getStatusColor11(subscription.status), children: subscription.status })
+        /* @__PURE__ */ jsx119(Badge10, { variant: getStatusColor11(subscription.status), children: subscription.status })
       ] }),
       /* @__PURE__ */ jsxs103(DialogDescription4, { children: [
         "View and manage subscription information for ",
@@ -21378,16 +21383,16 @@ function SubscriptionViewDialog({
       ] })
     ] }),
     /* @__PURE__ */ jsxs103("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ jsxs103(Card30, { children: [
-        /* @__PURE__ */ jsx119(CardHeader23, { children: /* @__PURE__ */ jsx119(CardTitle23, { children: "Basic Information" }) }),
-        /* @__PURE__ */ jsx119(CardContent29, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
+      /* @__PURE__ */ jsxs103(Card29, { children: [
+        /* @__PURE__ */ jsx119(CardHeader22, { children: /* @__PURE__ */ jsx119(CardTitle22, { children: "Basic Information" }) }),
+        /* @__PURE__ */ jsx119(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
           /* @__PURE__ */ jsxs103("div", { children: [
             /* @__PURE__ */ jsx119("label", { className: "text-sm font-medium text-gray-500", children: "Subscription ID" }),
             /* @__PURE__ */ jsx119("p", { className: "text-sm", children: subscription.id })
           ] }),
           /* @__PURE__ */ jsxs103("div", { children: [
             /* @__PURE__ */ jsx119("label", { className: "text-sm font-medium text-gray-500", children: "Status" }),
-            /* @__PURE__ */ jsx119("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx119(Badge11, { variant: getStatusColor11(subscription.status), children: subscription.status }) })
+            /* @__PURE__ */ jsx119("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx119(Badge10, { variant: getStatusColor11(subscription.status), children: subscription.status }) })
           ] }),
           /* @__PURE__ */ jsxs103("div", { children: [
             /* @__PURE__ */ jsx119("label", { className: "text-sm font-medium text-gray-500", children: "Plan" }),
@@ -21407,9 +21412,9 @@ function SubscriptionViewDialog({
           ] })
         ] }) })
       ] }),
-      /* @__PURE__ */ jsxs103(Card30, { children: [
-        /* @__PURE__ */ jsx119(CardHeader23, { children: /* @__PURE__ */ jsx119(CardTitle23, { children: "Merchant Information" }) }),
-        /* @__PURE__ */ jsx119(CardContent29, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
+      /* @__PURE__ */ jsxs103(Card29, { children: [
+        /* @__PURE__ */ jsx119(CardHeader22, { children: /* @__PURE__ */ jsx119(CardTitle22, { children: "Merchant Information" }) }),
+        /* @__PURE__ */ jsx119(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
           /* @__PURE__ */ jsxs103("div", { children: [
             /* @__PURE__ */ jsx119("label", { className: "text-sm font-medium text-gray-500", children: "Merchant ID" }),
             /* @__PURE__ */ jsx119("p", { className: "text-sm", children: subscription.merchantId })
@@ -21428,9 +21433,9 @@ function SubscriptionViewDialog({
           ] })
         ] }) })
       ] }),
-      /* @__PURE__ */ jsxs103(Card30, { children: [
-        /* @__PURE__ */ jsx119(CardHeader23, { children: /* @__PURE__ */ jsx119(CardTitle23, { children: "Plan Details" }) }),
-        /* @__PURE__ */ jsx119(CardContent29, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
+      /* @__PURE__ */ jsxs103(Card29, { children: [
+        /* @__PURE__ */ jsx119(CardHeader22, { children: /* @__PURE__ */ jsx119(CardTitle22, { children: "Plan Details" }) }),
+        /* @__PURE__ */ jsx119(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
           /* @__PURE__ */ jsxs103("div", { children: [
             /* @__PURE__ */ jsx119("label", { className: "text-sm font-medium text-gray-500", children: "Plan ID" }),
             /* @__PURE__ */ jsx119("p", { className: "text-sm", children: subscription.planId })
@@ -21457,9 +21462,9 @@ function SubscriptionViewDialog({
           ] })
         ] }) })
       ] }),
-      /* @__PURE__ */ jsxs103(Card30, { children: [
-        /* @__PURE__ */ jsx119(CardHeader23, { children: /* @__PURE__ */ jsx119(CardTitle23, { children: "Important Dates" }) }),
-        /* @__PURE__ */ jsx119(CardContent29, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
+      /* @__PURE__ */ jsxs103(Card29, { children: [
+        /* @__PURE__ */ jsx119(CardHeader22, { children: /* @__PURE__ */ jsx119(CardTitle22, { children: "Important Dates" }) }),
+        /* @__PURE__ */ jsx119(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
           /* @__PURE__ */ jsxs103("div", { children: [
             /* @__PURE__ */ jsx119("label", { className: "text-sm font-medium text-gray-500", children: "Current Period Start" }),
             /* @__PURE__ */ jsx119("p", { className: "text-sm", children: formatDate4(subscription.currentPeriodStart) })
@@ -21486,9 +21491,9 @@ function SubscriptionViewDialog({
           ] })
         ] }) })
       ] }),
-      subscription.status === "cancelled" && /* @__PURE__ */ jsxs103(Card30, { children: [
-        /* @__PURE__ */ jsx119(CardHeader23, { children: /* @__PURE__ */ jsx119(CardTitle23, { children: "Cancellation Information" }) }),
-        /* @__PURE__ */ jsx119(CardContent29, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
+      subscription.status === "cancelled" && /* @__PURE__ */ jsxs103(Card29, { children: [
+        /* @__PURE__ */ jsx119(CardHeader22, { children: /* @__PURE__ */ jsx119(CardTitle22, { children: "Cancellation Information" }) }),
+        /* @__PURE__ */ jsx119(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs103("div", { className: "grid grid-cols-2 gap-4", children: [
           /* @__PURE__ */ jsxs103("div", { children: [
             /* @__PURE__ */ jsx119("label", { className: "text-sm font-medium text-gray-500", children: "Cancelled At" }),
             /* @__PURE__ */ jsx119("p", { className: "text-sm", children: formatDate4(subscription.updatedAt) })
@@ -21593,10 +21598,10 @@ import {
   DialogDescription as DialogDescription5,
   DialogFooter as DialogFooter3,
   Button as Button28,
-  Card as Card31,
-  CardHeader as CardHeader24,
-  CardTitle as CardTitle24,
-  CardContent as CardContent30,
+  Card as Card30,
+  CardHeader as CardHeader23,
+  CardTitle as CardTitle23,
+  CardContent as CardContent29,
   Input as Input15,
   Label as Label6,
   Alert as Alert3,
@@ -21659,9 +21664,9 @@ function SubscriptionExtendDialog({
       ] })
     ] }),
     /* @__PURE__ */ jsxs104("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ jsxs104(Card31, { children: [
-        /* @__PURE__ */ jsx120(CardHeader24, { children: /* @__PURE__ */ jsx120(CardTitle24, { children: "Current Subscription" }) }),
-        /* @__PURE__ */ jsx120(CardContent30, { className: "space-y-4", children: /* @__PURE__ */ jsxs104("div", { className: "grid grid-cols-2 gap-4", children: [
+      /* @__PURE__ */ jsxs104(Card30, { children: [
+        /* @__PURE__ */ jsx120(CardHeader23, { children: /* @__PURE__ */ jsx120(CardTitle23, { children: "Current Subscription" }) }),
+        /* @__PURE__ */ jsx120(CardContent29, { className: "space-y-4", children: /* @__PURE__ */ jsxs104("div", { className: "grid grid-cols-2 gap-4", children: [
           /* @__PURE__ */ jsxs104("div", { children: [
             /* @__PURE__ */ jsx120(Label6, { className: "text-sm font-medium text-gray-500", children: "Plan" }),
             /* @__PURE__ */ jsx120("p", { className: "text-sm font-medium", children: subscription.plan?.name || "Unknown Plan" })
@@ -21806,10 +21811,10 @@ import {
   DialogDescription as DialogDescription6,
   DialogFooter as DialogFooter4,
   Button as Button29,
-  Card as Card32,
-  CardHeader as CardHeader25,
-  CardTitle as CardTitle25,
-  CardContent as CardContent31,
+  Card as Card31,
+  CardHeader as CardHeader24,
+  CardTitle as CardTitle24,
+  CardContent as CardContent30,
   Label as Label7,
   Alert as Alert4,
   AlertDescription as AlertDescription4,
@@ -21818,7 +21823,7 @@ import {
   SelectItem as SelectItem9,
   SelectTrigger as SelectTrigger9,
   SelectValue as SelectValue9,
-  Badge as Badge12
+  Badge as Badge11
 } from "@rentalshop/ui";
 import { formatCurrency as formatCurrency10 } from "@rentalshop/ui";
 import { ArrowRight as ArrowRight2, Check as Check3, X as X11 } from "lucide-react";
@@ -21872,9 +21877,9 @@ function SubscriptionChangePlanDialog({
       ] })
     ] }),
     /* @__PURE__ */ jsxs105("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ jsxs105(Card32, { children: [
-        /* @__PURE__ */ jsx121(CardHeader25, { children: /* @__PURE__ */ jsx121(CardTitle25, { children: "Current Plan" }) }),
-        /* @__PURE__ */ jsx121(CardContent31, { children: /* @__PURE__ */ jsxs105("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsxs105(Card31, { children: [
+        /* @__PURE__ */ jsx121(CardHeader24, { children: /* @__PURE__ */ jsx121(CardTitle24, { children: "Current Plan" }) }),
+        /* @__PURE__ */ jsx121(CardContent30, { children: /* @__PURE__ */ jsxs105("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs105("div", { children: [
             /* @__PURE__ */ jsx121("h3", { className: "text-lg font-semibold", children: currentPlan?.name || "Unknown Plan" }),
             /* @__PURE__ */ jsx121("p", { className: "text-sm text-gray-600", children: currentPlan?.description || "No description" })
@@ -21903,24 +21908,24 @@ function SubscriptionChangePlanDialog({
           const periodKey = selectedPeriod === 1 ? "monthly" : selectedPeriod === 3 ? "quarterly" : "yearly";
           const periodPricing = pricing[periodKey] || { price: plan.basePrice, discount: 0, discountedPrice: plan.basePrice, savings: 0 };
           return /* @__PURE__ */ jsxs105(
-            Card32,
+            Card31,
             {
               className: `cursor-pointer transition-all ${selectedPlanId === plan.id ? "ring-2 ring-blue-500 border-blue-500" : "hover:border-gray-300"}`,
               onClick: () => setSelectedPlanId(plan.id),
               children: [
-                /* @__PURE__ */ jsxs105(CardHeader25, { children: [
+                /* @__PURE__ */ jsxs105(CardHeader24, { children: [
                   /* @__PURE__ */ jsxs105("div", { className: "flex items-center justify-between", children: [
-                    /* @__PURE__ */ jsx121(CardTitle25, { className: "text-lg", children: plan.name }),
+                    /* @__PURE__ */ jsx121(CardTitle24, { className: "text-lg", children: plan.name }),
                     selectedPlanId === plan.id && /* @__PURE__ */ jsx121(Check3, { className: "h-5 w-5 text-blue-700" })
                   ] }),
                   /* @__PURE__ */ jsx121("p", { className: "text-sm text-gray-600", children: plan.description })
                 ] }),
-                /* @__PURE__ */ jsx121(CardContent31, { children: /* @__PURE__ */ jsxs105("div", { className: "space-y-3", children: [
+                /* @__PURE__ */ jsx121(CardContent30, { children: /* @__PURE__ */ jsxs105("div", { className: "space-y-3", children: [
                   /* @__PURE__ */ jsxs105("div", { className: "text-center", children: [
                     /* @__PURE__ */ jsx121("div", { className: "text-2xl font-bold", children: formatCurrency10(periodPricing.price, plan.currency) }),
                     /* @__PURE__ */ jsx121("div", { className: "text-sm text-gray-600", children: selectedPeriod === 1 ? "per month" : selectedPeriod === 3 ? "per quarter" : "per year" }),
                     periodPricing.discount > 0 && /* @__PURE__ */ jsxs105("div", { className: "flex items-center justify-center gap-2 mt-1", children: [
-                      /* @__PURE__ */ jsxs105(Badge12, { variant: "outline", className: "text-green-600 border-green-200", children: [
+                      /* @__PURE__ */ jsxs105(Badge11, { variant: "outline", className: "text-green-600 border-green-200", children: [
                         periodPricing.discount,
                         "% off"
                       ] }),
@@ -21955,9 +21960,9 @@ function SubscriptionChangePlanDialog({
           );
         }) })
       ] }),
-      selectedPlan && /* @__PURE__ */ jsxs105(Card32, { children: [
-        /* @__PURE__ */ jsx121(CardHeader25, { children: /* @__PURE__ */ jsx121(CardTitle25, { children: "Plan Comparison" }) }),
-        /* @__PURE__ */ jsx121(CardContent31, { children: /* @__PURE__ */ jsxs105("div", { className: "space-y-4", children: [
+      selectedPlan && /* @__PURE__ */ jsxs105(Card31, { children: [
+        /* @__PURE__ */ jsx121(CardHeader24, { children: /* @__PURE__ */ jsx121(CardTitle24, { children: "Plan Comparison" }) }),
+        /* @__PURE__ */ jsx121(CardContent30, { children: /* @__PURE__ */ jsxs105("div", { className: "space-y-4", children: [
           /* @__PURE__ */ jsxs105("div", { className: "grid grid-cols-3 gap-4 text-sm", children: [
             /* @__PURE__ */ jsx121("div", { className: "font-medium", children: "Feature" }),
             /* @__PURE__ */ jsx121("div", { className: "font-medium text-center", children: "Current" }),
@@ -22016,11 +22021,11 @@ import {
   DialogDescription as DialogDescription7,
   DialogFooter as DialogFooter5,
   Button as Button30,
-  Card as Card33,
-  CardHeader as CardHeader26,
-  CardTitle as CardTitle26,
-  CardContent as CardContent32,
-  Badge as Badge14,
+  Card as Card32,
+  CardHeader as CardHeader25,
+  CardTitle as CardTitle25,
+  CardContent as CardContent31,
+  Badge as Badge13,
   cn as cn4
 } from "@rentalshop/ui";
 
@@ -22520,12 +22525,12 @@ function SubscriptionEditDialog({
         }
       ) }),
       selectedPlan && /* @__PURE__ */ jsxs107("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6", children: [
-        /* @__PURE__ */ jsx123("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs107(Card33, { children: [
-          /* @__PURE__ */ jsx123(CardHeader26, { children: /* @__PURE__ */ jsxs107(CardTitle26, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsx123("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs107(Card32, { children: [
+          /* @__PURE__ */ jsx123(CardHeader25, { children: /* @__PURE__ */ jsxs107(CardTitle25, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx123(Percent, { className: "h-5 w-5" }),
             "Discount Breakdown by Period"
           ] }) }),
-          /* @__PURE__ */ jsx123(CardContent32, { children: /* @__PURE__ */ jsx123("div", { className: "space-y-4", children: calculateDiscountBreakdown(selectedPlan.basePrice, formData.currency || "USD").map((period) => /* @__PURE__ */ jsxs107(
+          /* @__PURE__ */ jsx123(CardContent31, { children: /* @__PURE__ */ jsx123("div", { className: "space-y-4", children: calculateDiscountBreakdown(selectedPlan.basePrice, formData.currency || "USD").map((period) => /* @__PURE__ */ jsxs107(
             "div",
             {
               className: cn4(
@@ -22537,12 +22542,12 @@ function SubscriptionEditDialog({
                   /* @__PURE__ */ jsxs107("div", { className: "flex items-center gap-2", children: [
                     /* @__PURE__ */ jsx123(Calendar11, { className: "h-4 w-4 text-gray-600" }),
                     /* @__PURE__ */ jsx123("span", { className: "font-semibold text-gray-900", children: period.label }),
-                    period.savingsPercentage > 0 && /* @__PURE__ */ jsxs107(Badge14, { className: "bg-green-100 text-green-800 border-green-200", children: [
+                    period.savingsPercentage > 0 && /* @__PURE__ */ jsxs107(Badge13, { className: "bg-green-100 text-green-800 border-green-200", children: [
                       period.savingsPercentage,
                       "% OFF"
                     ] })
                   ] }),
-                  formData.period === period.duration && /* @__PURE__ */ jsx123(Badge14, { className: "bg-blue-100 text-blue-800 border-blue-200", children: "Current" })
+                  formData.period === period.duration && /* @__PURE__ */ jsx123(Badge13, { className: "bg-blue-100 text-blue-800 border-blue-200", children: "Current" })
                 ] }),
                 /* @__PURE__ */ jsxs107("div", { className: "grid grid-cols-2 gap-4 text-sm", children: [
                   /* @__PURE__ */ jsxs107("div", { children: [
@@ -22573,12 +22578,12 @@ function SubscriptionEditDialog({
             period.duration
           )) }) })
         ] }) }),
-        /* @__PURE__ */ jsx123("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs107(Card33, { children: [
-          /* @__PURE__ */ jsx123(CardHeader26, { children: /* @__PURE__ */ jsxs107(CardTitle26, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsx123("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs107(Card32, { children: [
+          /* @__PURE__ */ jsx123(CardHeader25, { children: /* @__PURE__ */ jsxs107(CardTitle25, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx123(DollarSign10, { className: "h-5 w-5" }),
             "Current Subscription Summary"
           ] }) }),
-          /* @__PURE__ */ jsx123(CardContent32, { children: /* @__PURE__ */ jsxs107("div", { className: "space-y-3", children: [
+          /* @__PURE__ */ jsx123(CardContent31, { children: /* @__PURE__ */ jsxs107("div", { className: "space-y-3", children: [
             /* @__PURE__ */ jsxs107("div", { className: "flex justify-between", children: [
               /* @__PURE__ */ jsx123("span", { className: "text-gray-600", children: "Plan" }),
               /* @__PURE__ */ jsx123("span", { className: "font-semibold", children: selectedPlan.name })
@@ -23393,12 +23398,12 @@ function SubscriptionForm({
 // src/components/features/Subscriptions/components/SubscriptionPreviewPage.tsx
 import { useState as useState51, useEffect as useEffect29 } from "react";
 import {
-  Card as Card34,
-  CardHeader as CardHeader27,
-  CardTitle as CardTitle27,
-  CardContent as CardContent34,
+  Card as Card33,
+  CardHeader as CardHeader26,
+  CardTitle as CardTitle26,
+  CardContent as CardContent33,
   Button as Button31,
-  Badge as Badge16,
+  Badge as Badge15,
   cn as cn5
 } from "@rentalshop/ui";
 import { publicPlansApi, formatCurrency as formatCurrency12 } from "@rentalshop/utils";
@@ -23611,16 +23616,16 @@ var SubscriptionPreviewPage = ({
     /* @__PURE__ */ jsx126("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12", children: plans.map((plan) => {
       const pricing = calculatePlanPricing(plan, selectedDuration);
       return /* @__PURE__ */ jsxs110(
-        Card34,
+        Card33,
         {
           className: cn5(
             "relative transition-all duration-200 hover:shadow-lg bg-white border-2",
             plan.isPopular ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
           ),
           children: [
-            plan.isPopular && /* @__PURE__ */ jsx126("div", { className: "absolute -top-3 left-1/2 transform -translate-x-1/2", children: /* @__PURE__ */ jsx126(Badge16, { className: "bg-blue-700 text-white px-4 py-1 rounded-full text-sm font-medium", children: "Most Popular" }) }),
-            /* @__PURE__ */ jsxs110(CardHeader27, { className: "text-center pb-4 pt-8", children: [
-              /* @__PURE__ */ jsx126(CardTitle27, { className: "text-2xl font-bold text-gray-900 mb-2", children: plan.name }),
+            plan.isPopular && /* @__PURE__ */ jsx126("div", { className: "absolute -top-3 left-1/2 transform -translate-x-1/2", children: /* @__PURE__ */ jsx126(Badge15, { className: "bg-blue-700 text-white px-4 py-1 rounded-full text-sm font-medium", children: "Most Popular" }) }),
+            /* @__PURE__ */ jsxs110(CardHeader26, { className: "text-center pb-4 pt-8", children: [
+              /* @__PURE__ */ jsx126(CardTitle26, { className: "text-2xl font-bold text-gray-900 mb-2", children: plan.name }),
               /* @__PURE__ */ jsx126("p", { className: "text-gray-600 text-sm mb-4", children: plan.description }),
               /* @__PURE__ */ jsx126("div", { className: "mb-4", children: plan.name === "Trial" ? /* @__PURE__ */ jsxs110("div", { children: [
                 /* @__PURE__ */ jsx126("span", { className: "text-3xl font-bold text-green-600", children: "Free" }),
@@ -23636,7 +23641,7 @@ var SubscriptionPreviewPage = ({
                       formatCurrency12(pricing.basePrice, plan.currency),
                       "/month"
                     ] }),
-                    /* @__PURE__ */ jsxs110(Badge16, { className: cn5("text-xs font-medium", getDiscountBadgeColor(pricing.discount)), children: [
+                    /* @__PURE__ */ jsxs110(Badge15, { className: cn5("text-xs font-medium", getDiscountBadgeColor(pricing.discount)), children: [
                       pricing.discount,
                       "% OFF"
                     ] })
@@ -23659,7 +23664,7 @@ var SubscriptionPreviewPage = ({
                 ] })
               ] }) })
             ] }),
-            /* @__PURE__ */ jsxs110(CardContent34, { className: "pt-0", children: [
+            /* @__PURE__ */ jsxs110(CardContent33, { className: "pt-0", children: [
               /* @__PURE__ */ jsxs110("div", { className: "space-y-3 mb-6", children: [
                 /* @__PURE__ */ jsxs110("div", { className: "flex items-center justify-between text-sm", children: [
                   /* @__PURE__ */ jsx126("span", { className: "text-gray-700", children: "Outlets" }),
@@ -23833,11 +23838,11 @@ import {
   DialogHeader as DialogHeader10,
   DialogTitle as DialogTitle10,
   Button as Button32,
-  Card as Card35,
-  CardContent as CardContent35,
-  CardHeader as CardHeader28,
-  CardTitle as CardTitle28,
-  Badge as Badge17,
+  Card as Card34,
+  CardContent as CardContent34,
+  CardHeader as CardHeader27,
+  CardTitle as CardTitle27,
+  Badge as Badge16,
   Select as Select10,
   SelectContent as SelectContent10,
   SelectItem as SelectItem10,
@@ -23952,29 +23957,29 @@ var PlanSelectionModal = ({
       "Subscription Expired - Select a Plan"
     ] }) }),
     /* @__PURE__ */ jsxs111("div", { className: "space-y-6", children: [
-      currentPlan && /* @__PURE__ */ jsx127(Card35, { className: "border-orange-200 bg-orange-50", children: /* @__PURE__ */ jsxs111(CardContent35, { className: "pt-6", children: [
+      currentPlan && /* @__PURE__ */ jsx127(Card34, { className: "border-orange-200 bg-orange-50", children: /* @__PURE__ */ jsxs111(CardContent34, { className: "pt-6", children: [
         /* @__PURE__ */ jsxs111("div", { className: "flex items-center gap-2 text-orange-700", children: [
           /* @__PURE__ */ jsx127(Clock9, { className: "h-4 w-4" }),
           /* @__PURE__ */ jsxs111("span", { className: "font-medium", children: [
             "Current Plan: ",
             currentPlan.name
           ] }),
-          /* @__PURE__ */ jsx127(Badge17, { variant: "destructive", children: "Expired" })
+          /* @__PURE__ */ jsx127(Badge16, { variant: "destructive", children: "Expired" })
         ] }),
         /* @__PURE__ */ jsx127("p", { className: "text-sm text-orange-600 mt-1", children: "Your subscription has expired. Please select a new plan to continue using the service." })
       ] }) }),
       /* @__PURE__ */ jsxs111("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsx127("h3", { className: "text-lg font-semibold", children: "Choose Your Plan" }),
         /* @__PURE__ */ jsx127("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4", children: plans.map((plan) => /* @__PURE__ */ jsxs111(
-          Card35,
+          Card34,
           {
             className: `cursor-pointer transition-all hover:shadow-md ${selectedPlan?.id === plan.id ? "ring-2 ring-blue-500 border-blue-500" : "hover:border-gray-300"} ${plan.isPopular ? "border-blue-500 bg-blue-50" : ""}`,
             onClick: () => handlePlanSelect(plan),
             children: [
-              /* @__PURE__ */ jsxs111(CardHeader28, { className: "pb-3", children: [
+              /* @__PURE__ */ jsxs111(CardHeader27, { className: "pb-3", children: [
                 /* @__PURE__ */ jsxs111("div", { className: "flex items-center justify-between", children: [
-                  /* @__PURE__ */ jsx127(CardTitle28, { className: "text-lg", children: plan.name }),
-                  plan.isPopular && /* @__PURE__ */ jsx127(Badge17, { className: "bg-blue-500", children: "Most Popular" })
+                  /* @__PURE__ */ jsx127(CardTitle27, { className: "text-lg", children: plan.name }),
+                  plan.isPopular && /* @__PURE__ */ jsx127(Badge16, { className: "bg-blue-500", children: "Most Popular" })
                 ] }),
                 /* @__PURE__ */ jsxs111("div", { className: "text-2xl font-bold text-blue-700", children: [
                   formatPrice(plan.price, plan.currency),
@@ -23985,7 +23990,7 @@ var PlanSelectionModal = ({
                 ] }),
                 /* @__PURE__ */ jsx127("p", { className: "text-sm text-gray-600", children: plan.description })
               ] }),
-              /* @__PURE__ */ jsx127(CardContent35, { className: "pt-0", children: /* @__PURE__ */ jsx127("div", { className: "space-y-2", children: (typeof plan.features === "string" ? JSON.parse(plan.features) : plan.features || []).map((feature, index) => {
+              /* @__PURE__ */ jsx127(CardContent34, { className: "pt-0", children: /* @__PURE__ */ jsx127("div", { className: "space-y-2", children: (typeof plan.features === "string" ? JSON.parse(plan.features) : plan.features || []).map((feature, index) => {
                 const Icon2 = getFeatureIcon(feature);
                 return /* @__PURE__ */ jsxs111("div", { className: "flex items-center gap-2 text-sm", children: [
                   /* @__PURE__ */ jsx127(Icon2, { className: "h-4 w-4 text-green-500" }),
@@ -24000,13 +24005,13 @@ var PlanSelectionModal = ({
       selectedPlan && /* @__PURE__ */ jsxs111("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsx127("h3", { className: "text-lg font-semibold", children: "Choose Billing Cycle" }),
         /* @__PURE__ */ jsx127("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3", children: BILLING_CYCLES2.map((cycle) => /* @__PURE__ */ jsx127(
-          Card35,
+          Card34,
           {
             className: `cursor-pointer transition-all hover:shadow-md ${selectedBillingCycle === cycle.value ? "ring-2 ring-blue-500 border-blue-500" : "hover:border-gray-300"}`,
             onClick: () => handleBillingCycleChange(cycle.value),
-            children: /* @__PURE__ */ jsx127(CardContent35, { className: "pt-4", children: /* @__PURE__ */ jsxs111("div", { className: "text-center", children: [
+            children: /* @__PURE__ */ jsx127(CardContent34, { className: "pt-4", children: /* @__PURE__ */ jsxs111("div", { className: "text-center", children: [
               /* @__PURE__ */ jsx127("h4", { className: "font-semibold", children: cycle.label }),
-              cycle.discount > 0 && /* @__PURE__ */ jsxs111(Badge17, { className: "mt-1 bg-green-500", children: [
+              cycle.discount > 0 && /* @__PURE__ */ jsxs111(Badge16, { className: "mt-1 bg-green-500", children: [
                 "Save ",
                 cycle.discount,
                 "%"
@@ -24030,7 +24035,7 @@ var PlanSelectionModal = ({
           }) })
         ] })
       ] }),
-      selectedPlan && /* @__PURE__ */ jsx127(Card35, { className: "bg-gray-50", children: /* @__PURE__ */ jsx127(CardContent35, { className: "pt-4", children: /* @__PURE__ */ jsxs111("div", { className: "space-y-2", children: [
+      selectedPlan && /* @__PURE__ */ jsx127(Card34, { className: "bg-gray-50", children: /* @__PURE__ */ jsx127(CardContent34, { className: "pt-4", children: /* @__PURE__ */ jsxs111("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsxs111("div", { className: "flex justify-between items-center", children: [
           /* @__PURE__ */ jsx127("span", { className: "font-medium", children: "Plan:" }),
           /* @__PURE__ */ jsx127("span", { children: selectedPlan.name })
@@ -24450,12 +24455,12 @@ function RestrictedSection({
 // src/components/features/Subscriptions/components/PaymentHistoryTable.tsx
 import { useState as useState53 } from "react";
 import {
-  Card as Card36,
-  CardHeader as CardHeader29,
-  CardTitle as CardTitle29,
-  CardContent as CardContent36,
+  Card as Card35,
+  CardHeader as CardHeader28,
+  CardTitle as CardTitle28,
+  CardContent as CardContent35,
   Button as Button33,
-  Badge as Badge18,
+  Badge as Badge17,
   Pagination as Pagination7
 } from "@rentalshop/ui";
 import { formatDate as formatDate7, formatCurrency as formatCurrency13 } from "@rentalshop/utils";
@@ -24479,7 +24484,7 @@ function PaymentHistoryTable({
       REFUNDED: { variant: "secondary", label: "Refunded" }
     };
     const config = statusMap[status] || { variant: "default", label: status };
-    return /* @__PURE__ */ jsx131(Badge18, { variant: config.variant, children: config.label });
+    return /* @__PURE__ */ jsx131(Badge17, { variant: config.variant, children: config.label });
   };
   const getMethodIcon = (method) => {
     switch (method.toUpperCase()) {
@@ -24512,20 +24517,20 @@ function PaymentHistoryTable({
     a.click();
   };
   if (loading) {
-    return /* @__PURE__ */ jsx131(Card36, { children: /* @__PURE__ */ jsxs115(CardContent36, { className: "p-8 text-center", children: [
+    return /* @__PURE__ */ jsx131(Card35, { children: /* @__PURE__ */ jsxs115(CardContent35, { className: "p-8 text-center", children: [
       /* @__PURE__ */ jsx131("div", { className: "animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" }),
       /* @__PURE__ */ jsx131("p", { className: "mt-4 text-gray-600", children: "Loading payment history..." })
     ] }) });
   }
-  return /* @__PURE__ */ jsxs115(Card36, { children: [
-    /* @__PURE__ */ jsx131(CardHeader29, { children: /* @__PURE__ */ jsxs115("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsx131(CardTitle29, { children: "\u{1F4B3} Payment History" }),
+  return /* @__PURE__ */ jsxs115(Card35, { children: [
+    /* @__PURE__ */ jsx131(CardHeader28, { children: /* @__PURE__ */ jsxs115("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsx131(CardTitle28, { children: "\u{1F4B3} Payment History" }),
       /* @__PURE__ */ jsx131("div", { className: "flex gap-2", children: /* @__PURE__ */ jsxs115(Button33, { variant: "outline", size: "sm", onClick: exportToCSV, children: [
         /* @__PURE__ */ jsx131(Download5, { className: "w-4 h-4 mr-2" }),
         "Export CSV"
       ] }) })
     ] }) }),
-    /* @__PURE__ */ jsx131(CardContent36, { children: payments.length === 0 ? /* @__PURE__ */ jsxs115("div", { className: "text-center py-12", children: [
+    /* @__PURE__ */ jsx131(CardContent35, { children: payments.length === 0 ? /* @__PURE__ */ jsxs115("div", { className: "text-center py-12", children: [
       /* @__PURE__ */ jsx131(FileText, { className: "w-12 h-12 text-gray-300 mx-auto mb-4" }),
       /* @__PURE__ */ jsx131("p", { className: "text-gray-600", children: "No payment history yet" })
     ] }) : /* @__PURE__ */ jsxs115(Fragment26, { children: [
@@ -24856,7 +24861,7 @@ import {
   DialogFooter as DialogFooter7,
   Button as Button35,
   Label as Label9,
-  Card as Card37
+  Card as Card36
 } from "@rentalshop/ui";
 import { formatDate as formatDate9, formatCurrency as formatCurrency15 } from "@rentalshop/utils";
 import { Check as Check6, CreditCard as CreditCard10, Building2 as Building24, Sparkles } from "lucide-react";
@@ -24940,7 +24945,7 @@ function UpgradeTrialModal({
       /* @__PURE__ */ jsxs117("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsx133(Label9, { className: "text-lg font-semibold", children: "Choose a Plan *" }),
         /* @__PURE__ */ jsx133("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: paidPlans.map((plan) => /* @__PURE__ */ jsx133(
-          Card37,
+          Card36,
           {
             className: `cursor-pointer transition-all ${selectedPlan?.id === plan.id ? "border-blue-500 bg-blue-50 shadow-lg" : "hover:border-gray-400"} ${plan.isPopular ? "ring-2 ring-blue-500" : ""}`,
             onClick: () => setSelectedPlan(plan),
@@ -25115,7 +25120,7 @@ function UpgradeTrialModal({
           )
         ] })
       ] }),
-      selectedPlan && /* @__PURE__ */ jsx133(Card37, { className: "bg-gray-50 border-gray-200", children: /* @__PURE__ */ jsxs117("div", { className: "p-4 space-y-2", children: [
+      selectedPlan && /* @__PURE__ */ jsx133(Card36, { className: "bg-gray-50 border-gray-200", children: /* @__PURE__ */ jsxs117("div", { className: "p-4 space-y-2", children: [
         /* @__PURE__ */ jsx133("h3", { className: "font-semibold", children: "Payment Summary" }),
         /* @__PURE__ */ jsxs117("div", { className: "space-y-1 text-sm", children: [
           /* @__PURE__ */ jsxs117("div", { className: "flex justify-between", children: [
@@ -27119,8 +27124,8 @@ import React92 from "react";
 import {
   Pagination as Pagination8,
   EmptyState as EmptyState4,
-  Card as Card43,
-  CardContent as CardContent42
+  Card as Card42,
+  CardContent as CardContent41
 } from "@rentalshop/ui";
 
 // src/components/features/Users/components/UserHeader.tsx
@@ -27245,7 +27250,7 @@ function UserFilters({ filters, onFiltersChange, onSearchChange, onClearFilters 
 }
 
 // src/components/features/Users/components/UserCard.tsx
-import { Card as Card39, Badge as Badge21, Button as Button37 } from "@rentalshop/ui";
+import { Card as Card38, Badge as Badge20, Button as Button37 } from "@rentalshop/ui";
 import { Mail as Mail6, Phone as Phone3, Calendar as Calendar17, Building as Building5, User as UserIcon2 } from "lucide-react";
 import { jsx as jsx149, jsxs as jsxs132 } from "react/jsx-runtime";
 function UserCard({ user, onUserAction }) {
@@ -27284,16 +27289,16 @@ function UserCard({ user, onUserAction }) {
       day: "numeric"
     });
   };
-  return /* @__PURE__ */ jsx149(Card39, { className: "overflow-hidden hover:shadow-lg transition-shadow", children: /* @__PURE__ */ jsxs132("div", { className: "p-6", children: [
+  return /* @__PURE__ */ jsx149(Card38, { className: "overflow-hidden hover:shadow-lg transition-shadow", children: /* @__PURE__ */ jsxs132("div", { className: "p-6", children: [
     /* @__PURE__ */ jsxs132("div", { className: "flex items-start justify-between mb-4", children: [
       /* @__PURE__ */ jsxs132("div", { className: "flex items-center gap-3", children: [
         /* @__PURE__ */ jsx149("div", { className: "w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx149(UserIcon2, { className: "w-6 h-6 text-blue-700" }) }),
         /* @__PURE__ */ jsxs132("div", { children: [
           /* @__PURE__ */ jsx149("h3", { className: "font-semibold text-lg text-gray-900", children: user.name }),
-          /* @__PURE__ */ jsx149(Badge21, { variant: getRoleBadgeVariant(user.role), children: getRoleDisplayName(user.role) })
+          /* @__PURE__ */ jsx149(Badge20, { variant: getRoleBadgeVariant(user.role), children: getRoleDisplayName(user.role) })
         ] })
       ] }),
-      /* @__PURE__ */ jsx149(Badge21, { variant: user.isActive ? "default" : "secondary", children: user.isActive ? "Active" : "Inactive" })
+      /* @__PURE__ */ jsx149(Badge20, { variant: user.isActive ? "default" : "secondary", children: user.isActive ? "Active" : "Inactive" })
     ] }),
     /* @__PURE__ */ jsxs132("div", { className: "space-y-2 mb-4", children: [
       /* @__PURE__ */ jsxs132("div", { className: "flex items-center gap-2 text-sm text-gray-600", children: [
@@ -27338,11 +27343,11 @@ function UserCard({ user, onUserAction }) {
 }
 
 // src/components/features/Users/components/UserGrid.tsx
-import { Card as Card40, CardContent as CardContent39 } from "@rentalshop/ui";
+import { Card as Card39, CardContent as CardContent38 } from "@rentalshop/ui";
 import { jsx as jsx150, jsxs as jsxs133 } from "react/jsx-runtime";
 function UserGrid({ users, onUserAction }) {
   if (users.length === 0) {
-    return /* @__PURE__ */ jsx150(Card40, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx150(CardContent39, { className: "text-center py-12", children: /* @__PURE__ */ jsxs133("div", { className: "text-gray-500 dark:text-gray-400", children: [
+    return /* @__PURE__ */ jsx150(Card39, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx150(CardContent38, { className: "text-center py-12", children: /* @__PURE__ */ jsxs133("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx150("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
       /* @__PURE__ */ jsx150("h3", { className: "text-lg font-medium mb-2", children: "No users found" }),
       /* @__PURE__ */ jsx150("p", { className: "text-sm", children: "Try adjusting your filters or add some users to get started." })
@@ -27798,7 +27803,7 @@ var ChangePasswordDialog = ({
 };
 
 // src/components/features/Users/components/UserDisplayInfo.tsx
-import { Card as Card41, CardContent as CardContent40, Button as Button38 } from "@rentalshop/ui";
+import { Card as Card40, CardContent as CardContent39, Button as Button38 } from "@rentalshop/ui";
 import { useUsersTranslations as useUsersTranslations2 } from "@rentalshop/hooks";
 import { Fragment as Fragment30, jsx as jsx154, jsxs as jsxs137 } from "react/jsx-runtime";
 var UserDisplayInfo = ({
@@ -27843,7 +27848,7 @@ var UserDisplayInfo = ({
   const getStatusDisplayName = (isActive) => {
     return isActive ? t2("fields.active") : t2("fields.inactive");
   };
-  return /* @__PURE__ */ jsx154(Card41, { children: /* @__PURE__ */ jsxs137(CardContent40, { className: "p-6 space-y-6", children: [
+  return /* @__PURE__ */ jsx154(Card40, { children: /* @__PURE__ */ jsxs137(CardContent39, { className: "p-6 space-y-6", children: [
     /* @__PURE__ */ jsxs137("div", { children: [
       /* @__PURE__ */ jsx154("h3", { className: "text-sm font-medium text-gray-900 mb-4", children: t2("userInformation") }),
       /* @__PURE__ */ jsxs137("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
@@ -29107,8 +29112,8 @@ var AddUserDialog = ({
 
 // src/components/features/Users/components/UserRow.tsx
 import {
-  Card as Card42,
-  CardContent as CardContent41,
+  Card as Card41,
+  CardContent as CardContent40,
   Button as Button40
 } from "@rentalshop/ui";
 import {
@@ -29228,7 +29233,7 @@ function UserRow({
         return null;
     }
   };
-  return /* @__PURE__ */ jsx160(Card42, { className: "hover:shadow-md transition-shadow duration-200", children: /* @__PURE__ */ jsx160(CardContent41, { className, children: /* @__PURE__ */ jsxs143("div", { className: "flex items-center justify-between", children: [
+  return /* @__PURE__ */ jsx160(Card41, { className: "hover:shadow-md transition-shadow duration-200", children: /* @__PURE__ */ jsx160(CardContent40, { className, children: /* @__PURE__ */ jsxs143("div", { className: "flex items-center justify-between", children: [
     /* @__PURE__ */ jsx160("div", { className: "flex-1", children: /* @__PURE__ */ jsx160("div", { className: "flex items-center gap-4", children: /* @__PURE__ */ jsxs143("div", { className: "flex-1", children: [
       /* @__PURE__ */ jsxs143("div", { className: "flex items-center gap-3 mb-2", children: [
         /* @__PURE__ */ jsx160("h3", { className: "text-lg font-semibold text-text-primary", children: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.name || "Unknown User" }),
@@ -29473,7 +29478,7 @@ var Users9 = ({
           exportButtonText
         }
       ),
-      /* @__PURE__ */ jsx163(Card43, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx163(CardContent42, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx163("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx163(
+      /* @__PURE__ */ jsx163(Card42, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx163(CardContent41, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx163("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx163(
         UserFilters,
         {
           filters,
@@ -29522,15 +29527,15 @@ import React96 from "react";
 import {
   Pagination as Pagination10,
   EmptyState as EmptyState5,
-  Card as Card47,
-  CardContent as CardContent46
+  Card as Card46,
+  CardContent as CardContent45
 } from "@rentalshop/ui";
 
 // src/components/features/Outlets/components/OutletHeader.tsx
 import {
-  Card as Card44,
-  CardHeader as CardHeader32,
-  CardTitle as CardTitle32,
+  Card as Card43,
+  CardHeader as CardHeader31,
+  CardTitle as CardTitle31,
   Button as Button43
 } from "@rentalshop/ui";
 import {
@@ -29549,8 +29554,8 @@ function OutletHeader({
   merchantId
 }) {
   const t2 = useOutletsTranslations();
-  return /* @__PURE__ */ jsx164(Card44, { children: /* @__PURE__ */ jsxs147(CardHeader32, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-    /* @__PURE__ */ jsx164("div", { className: "flex items-center space-x-4", children: /* @__PURE__ */ jsxs147(CardTitle32, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsx164(Card43, { children: /* @__PURE__ */ jsxs147(CardHeader31, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+    /* @__PURE__ */ jsx164("div", { className: "flex items-center space-x-4", children: /* @__PURE__ */ jsxs147(CardTitle31, { className: "flex items-center gap-2", children: [
       /* @__PURE__ */ jsx164(Building29, { className: "w-5 h-5" }),
       t2("title"),
       " (",
@@ -29669,10 +29674,10 @@ function OutletFilters({
 
 // src/components/features/Outlets/components/OutletGrid.tsx
 import {
-  Card as Card45,
-  CardContent as CardContent44,
-  CardHeader as CardHeader33,
-  CardTitle as CardTitle33,
+  Card as Card44,
+  CardContent as CardContent43,
+  CardHeader as CardHeader32,
+  CardTitle as CardTitle32,
   Button as Button45,
   StatusBadge as StatusBadge2
 } from "@rentalshop/ui";
@@ -29689,15 +29694,15 @@ function OutletGrid({
   onOutletAction
 }) {
   if (outlets.length === 0) {
-    return /* @__PURE__ */ jsx166(Card45, { children: /* @__PURE__ */ jsxs149(CardContent44, { className: "text-center py-8 text-gray-500 dark:text-gray-400", children: [
+    return /* @__PURE__ */ jsx166(Card44, { children: /* @__PURE__ */ jsxs149(CardContent43, { className: "text-center py-8 text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx166(Building210, { className: "w-12 h-12 mx-auto mb-4 text-gray-300" }),
       /* @__PURE__ */ jsx166("h3", { className: "text-lg font-medium mb-2", children: "No Outlets Found" }),
       /* @__PURE__ */ jsx166("p", { className: "text-sm", children: "No outlets match your current filters." })
     ] }) });
   }
-  return /* @__PURE__ */ jsx166("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: outlets.map((outlet) => /* @__PURE__ */ jsxs149(Card45, { className: "hover:shadow-lg transition-shadow", children: [
-    /* @__PURE__ */ jsx166(CardHeader33, { children: /* @__PURE__ */ jsxs149("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsxs149(CardTitle33, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsx166("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: outlets.map((outlet) => /* @__PURE__ */ jsxs149(Card44, { className: "hover:shadow-lg transition-shadow", children: [
+    /* @__PURE__ */ jsx166(CardHeader32, { children: /* @__PURE__ */ jsxs149("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsxs149(CardTitle32, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx166(Building210, { className: "w-5 h-5" }),
         outlet.name,
         outlet.isDefault && /* @__PURE__ */ jsx166(
@@ -29717,7 +29722,7 @@ function OutletGrid({
         }
       )
     ] }) }),
-    /* @__PURE__ */ jsxs149(CardContent44, { className: "space-y-4", children: [
+    /* @__PURE__ */ jsxs149(CardContent43, { className: "space-y-4", children: [
       outlet.address && /* @__PURE__ */ jsxs149("div", { className: "flex items-start gap-2", children: [
         /* @__PURE__ */ jsx166(MapPin5, { className: "w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" }),
         /* @__PURE__ */ jsx166("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: outlet.address })
@@ -30002,7 +30007,7 @@ import { useState as useState67 } from "react";
 // src/components/features/Outlets/components/AddOutletForm.tsx
 import { useState as useState66 } from "react";
 import { Save as Save6, X as X14 } from "lucide-react";
-import { Button as Button47, Input as Input22, Label as Label10, Textarea as Textarea5, Card as Card46, CardContent as CardContent45 } from "@rentalshop/ui";
+import { Button as Button47, Input as Input22, Label as Label10, Textarea as Textarea5, Card as Card45, CardContent as CardContent44 } from "@rentalshop/ui";
 import { useOutletsTranslations as useOutletsTranslations4, useCommonTranslations as useCommonTranslations20 } from "@rentalshop/hooks";
 import { jsx as jsx170, jsxs as jsxs152 } from "react/jsx-runtime";
 var AddOutletForm = ({
@@ -30049,7 +30054,7 @@ var AddOutletForm = ({
       onCancel();
     }
   };
-  return /* @__PURE__ */ jsx170("form", { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx170(Card46, { children: /* @__PURE__ */ jsxs152(CardContent45, { className: "p-6 space-y-4", children: [
+  return /* @__PURE__ */ jsx170("form", { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx170(Card45, { children: /* @__PURE__ */ jsxs152(CardContent44, { className: "p-6 space-y-4", children: [
     /* @__PURE__ */ jsxs152("div", { children: [
       /* @__PURE__ */ jsxs152(Label10, { htmlFor: "name", children: [
         t2("fields.name"),
@@ -30258,7 +30263,7 @@ var Outlets = ({
   const memoizedOnPageChange = React96.useCallback(onPageChange, [onPageChange]);
   const memoizedOnSort = React96.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs154("div", { className: `flex flex-col h-full ${className}`, children: [
-    /* @__PURE__ */ jsx172("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ jsx172(Card47, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx172(CardContent46, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx172("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx172(
+    /* @__PURE__ */ jsx172("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ jsx172(Card46, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx172(CardContent45, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx172("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx172(
       OutletSearch,
       {
         value: filters.q || "",
@@ -30302,8 +30307,8 @@ import React102 from "react";
 import {
   Pagination as Pagination11,
   EmptyState as EmptyState6,
-  Card as Card48,
-  CardContent as CardContent47
+  Card as Card47,
+  CardContent as CardContent46
 } from "@rentalshop/ui";
 
 // src/components/features/Categories/components/CategoryHeader.tsx
@@ -31192,7 +31197,7 @@ var Categories = ({
   const memoizedOnPageChange = React102.useCallback(onPageChange, [onPageChange]);
   const memoizedOnSort = React102.useCallback(onSort, [onSort]);
   return /* @__PURE__ */ jsxs167("div", { className: `flex flex-col h-full ${className}`, children: [
-    /* @__PURE__ */ jsx185("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ jsx185(Card48, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx185(CardContent47, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx185("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx185(
+    /* @__PURE__ */ jsx185("div", { className: "flex-shrink-0 mb-4", children: /* @__PURE__ */ jsx185(Card47, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx185(CardContent46, { className: "pt-4 pb-4", children: /* @__PURE__ */ jsx185("div", { className: "flex flex-wrap items-center gap-3", children: /* @__PURE__ */ jsx185(
       CategorySearch,
       {
         value: filters.q || "",
@@ -31405,12 +31410,12 @@ var PlanActions = ({
 // src/components/features/Plans/components/PlanSelection.tsx
 import { useState as useState72, useEffect as useEffect39 } from "react";
 import {
-  Card as Card49,
-  CardHeader as CardHeader34,
-  CardTitle as CardTitle34,
-  CardContent as CardContent48,
+  Card as Card48,
+  CardHeader as CardHeader33,
+  CardTitle as CardTitle33,
+  CardContent as CardContent47,
   Button as Button52,
-  Badge as Badge22,
+  Badge as Badge21,
   RadioGroup as RadioGroup2,
   RadioGroupItem as RadioGroupItem2,
   Label as Label11
@@ -31524,7 +31529,7 @@ var PlanSelection = ({
                 children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
                   /* @__PURE__ */ jsx188("div", { className: "font-medium text-text-primary", children: cycle.label }),
                   /* @__PURE__ */ jsx188("div", { className: "text-sm text-text-secondary", children: cycle.description }),
-                  getBillingCycleDiscount2(cycle.value) > 0 && /* @__PURE__ */ jsxs170(Badge22, { variant: "default", className: "mt-2", children: [
+                  getBillingCycleDiscount2(cycle.value) > 0 && /* @__PURE__ */ jsxs170(Badge21, { variant: "default", className: "mt-2", children: [
                     getBillingCycleDiscount2(cycle.value),
                     "% OFF"
                   ] })
@@ -31541,20 +31546,20 @@ var PlanSelection = ({
         /* @__PURE__ */ jsx188("p", { className: "text-text-secondary", children: "Choose the plan that best fits your business needs" })
       ] }),
       /* @__PURE__ */ jsx188("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4", children: plans.map((plan) => /* @__PURE__ */ jsxs170(
-        Card49,
+        Card48,
         {
           className: `cursor-pointer transition-all duration-200 hover:shadow-lg ${selectedPlan === plan.id ? "ring-2 ring-action-primary" : ""} ${plan.isPopular ? "ring-2 ring-action-primary" : ""}`,
           onClick: () => !disabled && handlePlanSelect(plan.id),
           children: [
-            /* @__PURE__ */ jsx188(CardHeader34, { children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
+            /* @__PURE__ */ jsx188(CardHeader33, { children: /* @__PURE__ */ jsxs170("div", { className: "text-center", children: [
               plan.isPopular && /* @__PURE__ */ jsxs170("div", { className: "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-action-primary text-white mb-3", children: [
                 /* @__PURE__ */ jsx188(Star4, { className: "w-3 h-3 mr-1" }),
                 "Most Popular"
               ] }),
-              /* @__PURE__ */ jsx188(CardTitle34, { children: plan.name }),
+              /* @__PURE__ */ jsx188(CardTitle33, { children: plan.name }),
               /* @__PURE__ */ jsx188("p", { className: "text-text-secondary text-sm mt-2", children: plan.description })
             ] }) }),
-            /* @__PURE__ */ jsxs170(CardContent48, { children: [
+            /* @__PURE__ */ jsxs170(CardContent47, { children: [
               /* @__PURE__ */ jsxs170("div", { className: "text-center mb-6", children: [
                 /* @__PURE__ */ jsx188("div", { className: "text-4xl font-bold text-text-primary", children: formatCurrency22(getBillingCyclePrice(plan, selectedCycle), plan.currency) }),
                 /* @__PURE__ */ jsxs170("div", { className: "text-lg text-text-secondary", children: [
@@ -31638,11 +31643,11 @@ var PlanSelection = ({
 
 // src/components/features/Plans/components/PlanCard.tsx
 import {
-  Card as Card50,
-  CardHeader as CardHeader35,
-  CardTitle as CardTitle35,
-  CardContent as CardContent49,
-  Badge as Badge23,
+  Card as Card49,
+  CardHeader as CardHeader34,
+  CardTitle as CardTitle34,
+  CardContent as CardContent48,
+  Badge as Badge22,
   Button as Button53
 } from "@rentalshop/ui";
 import {
@@ -31684,11 +31689,11 @@ var PlanCard = ({
     });
   };
   if (variant === "compact") {
-    return /* @__PURE__ */ jsx189(Card50, { className: "hover:shadow-md transition-shadow", children: /* @__PURE__ */ jsx189(CardContent49, { className: "p-4", children: /* @__PURE__ */ jsxs171("div", { className: "flex items-center justify-between", children: [
+    return /* @__PURE__ */ jsx189(Card49, { className: "hover:shadow-md transition-shadow", children: /* @__PURE__ */ jsx189(CardContent48, { className: "p-4", children: /* @__PURE__ */ jsxs171("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsx189("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ jsxs171("div", { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx189(Package16, { className: "w-4 h-4 text-text-tertiary" }),
         /* @__PURE__ */ jsx189("span", { className: "font-medium text-text-primary", children: plan.name }),
-        plan.isPopular && /* @__PURE__ */ jsxs171(Badge23, { variant: "default", className: "text-xs", children: [
+        plan.isPopular && /* @__PURE__ */ jsxs171(Badge22, { variant: "default", className: "text-xs", children: [
           /* @__PURE__ */ jsx189(Star5, { className: "w-3 h-3 mr-1" }),
           "Popular"
         ] })
@@ -31700,12 +31705,12 @@ var PlanCard = ({
     ] }) }) });
   }
   if (variant === "detailed") {
-    return /* @__PURE__ */ jsxs171(Card50, { className: "hover:shadow-md transition-shadow", children: [
-      /* @__PURE__ */ jsx189(CardHeader35, { children: /* @__PURE__ */ jsxs171("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ jsxs171(CardTitle35, { className: "flex items-center gap-2", children: [
+    return /* @__PURE__ */ jsxs171(Card49, { className: "hover:shadow-md transition-shadow", children: [
+      /* @__PURE__ */ jsx189(CardHeader34, { children: /* @__PURE__ */ jsxs171("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxs171(CardTitle34, { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx189(Package16, { className: "w-5 h-5" }),
           plan.name,
-          plan.isPopular && /* @__PURE__ */ jsxs171(Badge23, { variant: "default", className: "text-xs", children: [
+          plan.isPopular && /* @__PURE__ */ jsxs171(Badge22, { variant: "default", className: "text-xs", children: [
             /* @__PURE__ */ jsx189(Star5, { className: "w-3 h-3 mr-1" }),
             "Popular"
           ] })
@@ -31721,7 +31726,7 @@ var PlanCard = ({
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ jsxs171(CardContent49, { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs171(CardContent48, { className: "space-y-4", children: [
         /* @__PURE__ */ jsx189("p", { className: "text-text-secondary", children: plan.description }),
         /* @__PURE__ */ jsxs171("div", { className: "grid grid-cols-2 gap-4 text-sm", children: [
           /* @__PURE__ */ jsxs171("div", { className: "flex items-center gap-2", children: [
@@ -31801,12 +31806,12 @@ var PlanCard = ({
       ] })
     ] });
   }
-  return /* @__PURE__ */ jsxs171(Card50, { className: "hover:shadow-md transition-shadow", children: [
-    /* @__PURE__ */ jsx189(CardHeader35, { children: /* @__PURE__ */ jsxs171("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsxs171(CardTitle35, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsxs171(Card49, { className: "hover:shadow-md transition-shadow", children: [
+    /* @__PURE__ */ jsx189(CardHeader34, { children: /* @__PURE__ */ jsxs171("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsxs171(CardTitle34, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx189(Package16, { className: "w-5 h-5" }),
         plan.name,
-        plan.isPopular && /* @__PURE__ */ jsxs171(Badge23, { variant: "default", className: "text-xs", children: [
+        plan.isPopular && /* @__PURE__ */ jsxs171(Badge22, { variant: "default", className: "text-xs", children: [
           /* @__PURE__ */ jsx189(Star5, { className: "w-3 h-3 mr-1" }),
           "Popular"
         ] })
@@ -31822,7 +31827,7 @@ var PlanCard = ({
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsxs171(CardContent49, { className: "space-y-3", children: [
+    /* @__PURE__ */ jsxs171(CardContent48, { className: "space-y-3", children: [
       /* @__PURE__ */ jsx189("p", { className: "text-sm text-text-secondary line-clamp-2", children: plan.description }),
       /* @__PURE__ */ jsxs171("div", { className: "grid grid-cols-2 gap-2 text-xs", children: [
         /* @__PURE__ */ jsxs171("div", { className: "flex items-center gap-1", children: [
@@ -31875,9 +31880,9 @@ var PlanCard = ({
 // src/components/features/Plans/components/PlanTable.tsx
 import { useState as useState73 } from "react";
 import {
-  Card as Card51,
-  CardContent as CardContent50,
-  Badge as Badge24,
+  Card as Card50,
+  CardContent as CardContent49,
+  Badge as Badge23,
   Button as Button54,
   StatusBadge as StatusBadge3,
   DropdownMenu as DropdownMenu4,
@@ -31940,16 +31945,16 @@ var PlanTable = ({
     return sortOrder === "asc" ? /* @__PURE__ */ jsx190(ChevronUp2, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx190(ChevronDown6, { className: "w-4 h-4" });
   };
   if (loading) {
-    return /* @__PURE__ */ jsx190(Card51, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx190(CardContent50, { className: "p-0", children: /* @__PURE__ */ jsx190("div", { className: "animate-pulse space-y-4 p-6", children: [...Array(3)].map((_, i) => /* @__PURE__ */ jsx190("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) }) });
+    return /* @__PURE__ */ jsx190(Card50, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx190(CardContent49, { className: "p-0", children: /* @__PURE__ */ jsx190("div", { className: "animate-pulse space-y-4 p-6", children: [...Array(3)].map((_, i) => /* @__PURE__ */ jsx190("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) }) });
   }
   if (plans.length === 0) {
-    return /* @__PURE__ */ jsx190(Card51, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx190(CardContent50, { className: "text-center py-12", children: /* @__PURE__ */ jsxs172("div", { className: "text-text-tertiary", children: [
+    return /* @__PURE__ */ jsx190(Card50, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx190(CardContent49, { className: "text-center py-12", children: /* @__PURE__ */ jsxs172("div", { className: "text-text-tertiary", children: [
       /* @__PURE__ */ jsx190("div", { className: "text-4xl mb-4", children: "\u{1F4CB}" }),
       /* @__PURE__ */ jsx190("h3", { className: "text-lg font-medium mb-2", children: "No plans found" }),
       /* @__PURE__ */ jsx190("p", { className: "text-sm", children: "Get started by creating your first subscription plan." })
     ] }) }) });
   }
-  return /* @__PURE__ */ jsx190(Card51, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx190(CardContent50, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsx190("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ jsxs172("table", { className: "w-full", children: [
+  return /* @__PURE__ */ jsx190(Card50, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx190(CardContent49, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsx190("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ jsxs172("table", { className: "w-full", children: [
     /* @__PURE__ */ jsx190("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ jsxs172("tr", { children: [
       /* @__PURE__ */ jsx190("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Plan Name" }),
       /* @__PURE__ */ jsx190("th", { className: "px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider", children: "Price & Billing" }),
@@ -31964,7 +31969,7 @@ var PlanTable = ({
         /* @__PURE__ */ jsxs172("div", { children: [
           /* @__PURE__ */ jsxs172("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx190("div", { className: "text-sm font-medium text-text-primary", children: plan.name }),
-            plan.isPopular && /* @__PURE__ */ jsxs172(Badge24, { className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200", children: [
+            plan.isPopular && /* @__PURE__ */ jsxs172(Badge23, { className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200", children: [
               /* @__PURE__ */ jsx190(Star6, { className: "w-3 h-3 mr-1" }),
               "Popular"
             ] })
@@ -32153,8 +32158,8 @@ var PlanFilters = ({
 
 // src/components/features/Plans/components/PlanStats.tsx
 import {
-  Card as Card52,
-  CardContent as CardContent51
+  Card as Card51,
+  CardContent as CardContent50
 } from "@rentalshop/ui";
 import { jsx as jsx192, jsxs as jsxs174 } from "react/jsx-runtime";
 var PlanStats = ({
@@ -32165,19 +32170,19 @@ var PlanStats = ({
   className = ""
 }) => {
   return /* @__PURE__ */ jsxs174("div", { className: `grid grid-cols-1 md:grid-cols-4 gap-6 ${className}`, children: [
-    /* @__PURE__ */ jsx192(Card52, { children: /* @__PURE__ */ jsx192(CardContent51, { className: "pt-6", children: /* @__PURE__ */ jsxs174("div", { className: "text-center", children: [
+    /* @__PURE__ */ jsx192(Card51, { children: /* @__PURE__ */ jsx192(CardContent50, { className: "pt-6", children: /* @__PURE__ */ jsxs174("div", { className: "text-center", children: [
       /* @__PURE__ */ jsx192("div", { className: "text-2xl font-bold text-action-primary", children: totalPlans }),
       /* @__PURE__ */ jsx192("div", { className: "text-sm text-text-secondary", children: "Total Plans" })
     ] }) }) }),
-    /* @__PURE__ */ jsx192(Card52, { children: /* @__PURE__ */ jsx192(CardContent51, { className: "pt-6", children: /* @__PURE__ */ jsxs174("div", { className: "text-center", children: [
+    /* @__PURE__ */ jsx192(Card51, { children: /* @__PURE__ */ jsx192(CardContent50, { className: "pt-6", children: /* @__PURE__ */ jsxs174("div", { className: "text-center", children: [
       /* @__PURE__ */ jsx192("div", { className: "text-2xl font-bold text-action-success", children: activePlans }),
       /* @__PURE__ */ jsx192("div", { className: "text-sm text-text-secondary", children: "Active Plans" })
     ] }) }) }),
-    /* @__PURE__ */ jsx192(Card52, { children: /* @__PURE__ */ jsx192(CardContent51, { className: "pt-6", children: /* @__PURE__ */ jsxs174("div", { className: "text-center", children: [
+    /* @__PURE__ */ jsx192(Card51, { children: /* @__PURE__ */ jsx192(CardContent50, { className: "pt-6", children: /* @__PURE__ */ jsxs174("div", { className: "text-center", children: [
       /* @__PURE__ */ jsx192("div", { className: "text-2xl font-bold text-brand-secondary", children: featuredPlans }),
       /* @__PURE__ */ jsx192("div", { className: "text-sm text-text-secondary", children: "Featured Plans" })
     ] }) }) }),
-    /* @__PURE__ */ jsx192(Card52, { children: /* @__PURE__ */ jsx192(CardContent51, { className: "pt-6", children: /* @__PURE__ */ jsxs174("div", { className: "text-center", children: [
+    /* @__PURE__ */ jsx192(Card51, { children: /* @__PURE__ */ jsx192(CardContent50, { className: "pt-6", children: /* @__PURE__ */ jsxs174("div", { className: "text-center", children: [
       /* @__PURE__ */ jsx192("div", { className: "text-2xl font-bold text-action-primary", children: plansWithTrial }),
       /* @__PURE__ */ jsx192("div", { className: "text-sm text-text-secondary", children: "Plans with Trial" })
     ] }) }) })
@@ -32385,9 +32390,9 @@ var PlanDetailModal = ({
 
 // src/components/features/BillingCycles/components/BillingCycleTable.tsx
 import {
-  Card as Card53,
-  CardContent as CardContent52,
-  Badge as Badge25,
+  Card as Card52,
+  CardContent as CardContent51,
+  Badge as Badge24,
   Button as Button56,
   StatusBadge as StatusBadge4
 } from "@rentalshop/ui";
@@ -32427,9 +32432,9 @@ var BillingCycleTable = ({
     return sortOrder === "asc" ? /* @__PURE__ */ jsx194(ChevronUp3, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx194(ChevronDown7, { className: "w-4 h-4" });
   };
   if (loading) {
-    return /* @__PURE__ */ jsx194(Card53, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx194(CardContent52, { children: /* @__PURE__ */ jsx194("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ jsx194("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) }) });
+    return /* @__PURE__ */ jsx194(Card52, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx194(CardContent51, { children: /* @__PURE__ */ jsx194("div", { className: "animate-pulse space-y-4", children: [...Array(3)].map((_, i) => /* @__PURE__ */ jsx194("div", { className: "h-16 bg-bg-tertiary rounded" }, i)) }) }) });
   }
-  return /* @__PURE__ */ jsx194(Card53, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx194(CardContent52, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsxs176("div", { className: "flex-1 overflow-auto h-full", children: [
+  return /* @__PURE__ */ jsx194(Card52, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx194(CardContent51, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsxs176("div", { className: "flex-1 overflow-auto h-full", children: [
     /* @__PURE__ */ jsxs176("table", { className: "w-full", children: [
       /* @__PURE__ */ jsx194("thead", { className: "bg-bg-secondary border-b border-border sticky top-0 z-10", children: /* @__PURE__ */ jsxs176("tr", { children: [
         /* @__PURE__ */ jsx194(
@@ -32493,13 +32498,13 @@ var BillingCycleTable = ({
       ] }) }),
       /* @__PURE__ */ jsx194("tbody", { children: billingCycles.map((cycle) => /* @__PURE__ */ jsxs176("tr", { className: "border-b border-border hover:bg-bg-secondary", children: [
         /* @__PURE__ */ jsx194("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx194("div", { className: "font-medium text-text-primary", children: cycle.name }) }),
-        /* @__PURE__ */ jsx194("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx194(Badge25, { variant: "outline", className: "font-mono", children: cycle.value }) }),
+        /* @__PURE__ */ jsx194("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx194(Badge24, { variant: "outline", className: "font-mono", children: cycle.value }) }),
         /* @__PURE__ */ jsx194("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsxs176("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx194(Calendar21, { className: "w-4 h-4 text-text-tertiary" }),
           /* @__PURE__ */ jsx194("span", { className: "font-medium", children: cycle.months }),
           /* @__PURE__ */ jsx194("span", { className: "text-sm text-text-secondary", children: cycle.months === 1 ? "month" : "months" })
         ] }) }),
-        /* @__PURE__ */ jsx194("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx194("div", { className: "flex items-center gap-2", children: cycle.discount > 0 ? /* @__PURE__ */ jsxs176(Badge25, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
+        /* @__PURE__ */ jsx194("td", { className: "py-4 px-4", children: /* @__PURE__ */ jsx194("div", { className: "flex items-center gap-2", children: cycle.discount > 0 ? /* @__PURE__ */ jsxs176(Badge24, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
           cycle.discount,
           "%"
         ] }) : /* @__PURE__ */ jsx194("span", { className: "text-text-tertiary", children: "No discount" }) }) }),
@@ -32814,10 +32819,10 @@ import {
   DialogHeader as DialogHeader15,
   DialogTitle as DialogTitle15,
   DialogDescription as DialogDescription12,
-  Card as Card54,
-  CardContent as CardContent53,
+  Card as Card53,
+  CardContent as CardContent52,
   Button as Button58,
-  Badge as Badge26,
+  Badge as Badge25,
   StatusBadge as StatusBadge5,
   Switch as Switch3,
   Label as Label13
@@ -32921,7 +32926,7 @@ var BillingCycleDetailDialog = ({
       ] })
     ] }) }),
     /* @__PURE__ */ jsxs178("div", { className: "mt-6 space-y-6", children: [
-      /* @__PURE__ */ jsx196(Card54, { children: /* @__PURE__ */ jsxs178(CardContent53, { className: "p-6", children: [
+      /* @__PURE__ */ jsx196(Card53, { children: /* @__PURE__ */ jsxs178(CardContent52, { className: "p-6", children: [
         /* @__PURE__ */ jsxs178("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
           /* @__PURE__ */ jsx196(Info7, { className: "w-5 h-5 text-text-tertiary" }),
           "Basic Information"
@@ -32933,7 +32938,7 @@ var BillingCycleDetailDialog = ({
           ] }),
           /* @__PURE__ */ jsxs178("div", { children: [
             /* @__PURE__ */ jsx196(Label13, { className: "text-sm font-medium text-text-secondary", children: "Value" }),
-            /* @__PURE__ */ jsx196("div", { className: "mt-1", children: /* @__PURE__ */ jsx196(Badge26, { variant: "outline", className: "font-mono text-sm", children: billingCycle.value }) })
+            /* @__PURE__ */ jsx196("div", { className: "mt-1", children: /* @__PURE__ */ jsx196(Badge25, { variant: "outline", className: "font-mono text-sm", children: billingCycle.value }) })
           ] }),
           /* @__PURE__ */ jsxs178("div", { children: [
             /* @__PURE__ */ jsx196(Label13, { className: "text-sm font-medium text-text-secondary", children: "Description" }),
@@ -32945,7 +32950,7 @@ var BillingCycleDetailDialog = ({
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ jsx196(Card54, { children: /* @__PURE__ */ jsxs178(CardContent53, { className: "p-6", children: [
+      /* @__PURE__ */ jsx196(Card53, { children: /* @__PURE__ */ jsxs178(CardContent52, { className: "p-6", children: [
         /* @__PURE__ */ jsxs178("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
           /* @__PURE__ */ jsx196(DollarSign15, { className: "w-5 h-5 text-text-tertiary" }),
           "Billing Details"
@@ -32963,7 +32968,7 @@ var BillingCycleDetailDialog = ({
             /* @__PURE__ */ jsx196(Label13, { className: "text-sm font-medium text-text-secondary", children: "Discount" }),
             /* @__PURE__ */ jsxs178("div", { className: "flex items-center gap-2 mt-1", children: [
               /* @__PURE__ */ jsx196(Percent3, { className: "w-4 h-4 text-text-tertiary" }),
-              billingCycle.discount > 0 ? /* @__PURE__ */ jsxs178(Badge26, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
+              billingCycle.discount > 0 ? /* @__PURE__ */ jsxs178(Badge25, { variant: "default", className: "bg-green-100 text-green-800 border-green-200", children: [
                 billingCycle.discount,
                 "% off"
               ] }) : /* @__PURE__ */ jsx196("span", { className: "text-text-tertiary", children: "No discount" })
@@ -32971,7 +32976,7 @@ var BillingCycleDetailDialog = ({
           ] })
         ] })
       ] }) }),
-      /* @__PURE__ */ jsx196(Card54, { children: /* @__PURE__ */ jsxs178(CardContent53, { className: "p-6", children: [
+      /* @__PURE__ */ jsx196(Card53, { children: /* @__PURE__ */ jsxs178(CardContent52, { className: "p-6", children: [
         /* @__PURE__ */ jsxs178("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
           /* @__PURE__ */ jsx196(Clock17, { className: "w-5 h-5 text-text-tertiary" }),
           "Status Management"
@@ -33030,7 +33035,7 @@ var BillingCycleDetailDialog = ({
           ) })
         ] }) })
       ] }) }),
-      /* @__PURE__ */ jsx196(Card54, { children: /* @__PURE__ */ jsxs178(CardContent53, { className: "p-6", children: [
+      /* @__PURE__ */ jsx196(Card53, { children: /* @__PURE__ */ jsxs178(CardContent52, { className: "p-6", children: [
         /* @__PURE__ */ jsxs178("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
           /* @__PURE__ */ jsx196(Clock17, { className: "w-5 h-5 text-text-tertiary" }),
           "Timestamps"
@@ -33062,10 +33067,10 @@ import {
   SelectItem as SelectItem16,
   SelectTrigger as SelectTrigger16,
   SelectValue as SelectValue16,
-  Card as Card55,
-  CardContent as CardContent54,
-  CardHeader as CardHeader37,
-  CardTitle as CardTitle37,
+  Card as Card54,
+  CardContent as CardContent53,
+  CardHeader as CardHeader36,
+  CardTitle as CardTitle36,
   Switch as Switch4,
   SearchableSelect as SearchableSelect4
 } from "@rentalshop/ui";
@@ -33259,12 +33264,12 @@ var PaymentForm = ({
     onSubmit(formData);
   };
   const isFormValid = formData.merchantId && formData.planId && formData.planVariantId > 0 && formData.amount > 0 && formData.startDate && formData.endDate;
-  return /* @__PURE__ */ jsxs179(Card55, { children: [
-    /* @__PURE__ */ jsx197(CardHeader37, { children: /* @__PURE__ */ jsxs179(CardTitle37, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsxs179(Card54, { children: [
+    /* @__PURE__ */ jsx197(CardHeader36, { children: /* @__PURE__ */ jsxs179(CardTitle36, { className: "flex items-center gap-2", children: [
       /* @__PURE__ */ jsx197(DollarSign16, { className: "w-5 h-5" }),
       mode === "edit" ? "Edit Payment" : "Create Manual Payment"
     ] }) }),
-    /* @__PURE__ */ jsx197(CardContent54, { children: /* @__PURE__ */ jsxs179("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
+    /* @__PURE__ */ jsx197(CardContent53, { children: /* @__PURE__ */ jsxs179("form", { onSubmit: handleSubmit, className: "space-y-6", children: [
       /* @__PURE__ */ jsxs179("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx197(Label14, { htmlFor: "merchant", children: "Merchant *" }),
         /* @__PURE__ */ jsx197(
@@ -36796,10 +36801,10 @@ function SecurityMetricsCard({ metrics }) {
 // src/components/features/AuditLogs/AuditLogViewer.tsx
 import { useState as useState80 } from "react";
 import {
-  Card as Card57,
-  CardContent as CardContent56,
-  CardHeader as CardHeader39,
-  CardTitle as CardTitle39,
+  Card as Card56,
+  CardContent as CardContent55,
+  CardHeader as CardHeader38,
+  CardTitle as CardTitle38,
   Button as Button61,
   Input as Input28,
   Select as Select17,
@@ -36807,7 +36812,7 @@ import {
   SelectItem as SelectItem17,
   SelectTrigger as SelectTrigger17,
   SelectValue as SelectValue17,
-  Badge as Badge28
+  Badge as Badge27
 } from "@rentalshop/ui";
 
 // src/components/features/AuditLogs/AuditLogDetail.tsx
@@ -36818,11 +36823,11 @@ import {
   DialogHeader as DialogHeader16,
   DialogTitle as DialogTitle16,
   Button as Button60,
-  Badge as Badge27,
-  Card as Card56,
-  CardContent as CardContent55,
-  CardHeader as CardHeader38,
-  CardTitle as CardTitle38
+  Badge as Badge26,
+  Card as Card55,
+  CardContent as CardContent54,
+  CardHeader as CardHeader37,
+  CardTitle as CardTitle37
 } from "@rentalshop/ui";
 import {
   User as User20,
@@ -36867,7 +36872,7 @@ function SeverityBadge({ severity }) {
         return /* @__PURE__ */ jsx239(Info11, { className: "w-3 h-3" });
     }
   };
-  return /* @__PURE__ */ jsxs214(Badge27, { className: `inline-flex items-center gap-1 ${getSeverityStyle(severity)}`, children: [
+  return /* @__PURE__ */ jsxs214(Badge26, { className: `inline-flex items-center gap-1 ${getSeverityStyle(severity)}`, children: [
     getSeverityIcon3(severity),
     severity
   ] });
@@ -36891,18 +36896,18 @@ function ActionBadge({ action }) {
         return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800";
     }
   };
-  return /* @__PURE__ */ jsx239(Badge27, { className: getActionStyle(action), children: action });
+  return /* @__PURE__ */ jsx239(Badge26, { className: getActionStyle(action), children: action });
 }
 function JsonViewer({ data, title }) {
   const [isExpanded, setIsExpanded] = React110.useState(false);
   if (!data) {
-    return /* @__PURE__ */ jsxs214(Card56, { children: [
-      /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsx239(CardTitle38, { className: "text-sm", children: title }) }),
-      /* @__PURE__ */ jsx239(CardContent55, { children: /* @__PURE__ */ jsx239("p", { className: "text-text-secondary text-sm", children: "No data available" }) })
+    return /* @__PURE__ */ jsxs214(Card55, { children: [
+      /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsx239(CardTitle37, { className: "text-sm", children: title }) }),
+      /* @__PURE__ */ jsx239(CardContent54, { children: /* @__PURE__ */ jsx239("p", { className: "text-text-secondary text-sm", children: "No data available" }) })
     ] });
   }
-  return /* @__PURE__ */ jsxs214(Card56, { children: [
-    /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsxs214(CardTitle38, { className: "text-sm flex items-center justify-between", children: [
+  return /* @__PURE__ */ jsxs214(Card55, { children: [
+    /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsxs214(CardTitle37, { className: "text-sm flex items-center justify-between", children: [
       title,
       /* @__PURE__ */ jsxs214(
         Button60,
@@ -36917,23 +36922,23 @@ function JsonViewer({ data, title }) {
         }
       )
     ] }) }),
-    /* @__PURE__ */ jsx239(CardContent55, { children: /* @__PURE__ */ jsx239("pre", { className: `text-xs font-mono bg-bg-secondary p-3 rounded-lg overflow-auto ${isExpanded ? "max-h-96" : "max-h-32"}`, children: JSON.stringify(data, null, 2) }) })
+    /* @__PURE__ */ jsx239(CardContent54, { children: /* @__PURE__ */ jsx239("pre", { className: `text-xs font-mono bg-bg-secondary p-3 rounded-lg overflow-auto ${isExpanded ? "max-h-96" : "max-h-32"}`, children: JSON.stringify(data, null, 2) }) })
   ] });
 }
 function ChangesViewer({ changes }) {
   if (!changes || Object.keys(changes).length === 0) {
-    return /* @__PURE__ */ jsxs214(Card56, { children: [
-      /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsx239(CardTitle38, { className: "text-sm", children: "Changes" }) }),
-      /* @__PURE__ */ jsx239(CardContent55, { children: /* @__PURE__ */ jsx239("p", { className: "text-text-secondary text-sm", children: "No changes detected" }) })
+    return /* @__PURE__ */ jsxs214(Card55, { children: [
+      /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsx239(CardTitle37, { className: "text-sm", children: "Changes" }) }),
+      /* @__PURE__ */ jsx239(CardContent54, { children: /* @__PURE__ */ jsx239("p", { className: "text-text-secondary text-sm", children: "No changes detected" }) })
     ] });
   }
-  return /* @__PURE__ */ jsxs214(Card56, { children: [
-    /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsxs214(CardTitle38, { className: "text-sm", children: [
+  return /* @__PURE__ */ jsxs214(Card55, { children: [
+    /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsxs214(CardTitle37, { className: "text-sm", children: [
       "Changes (",
       Object.keys(changes).length,
       " fields)"
     ] }) }),
-    /* @__PURE__ */ jsx239(CardContent55, { children: /* @__PURE__ */ jsx239("div", { className: "space-y-3", children: Object.entries(changes).map(([field, change]) => /* @__PURE__ */ jsxs214("div", { className: "border rounded-lg p-3", children: [
+    /* @__PURE__ */ jsx239(CardContent54, { children: /* @__PURE__ */ jsx239("div", { className: "space-y-3", children: Object.entries(changes).map(([field, change]) => /* @__PURE__ */ jsxs214("div", { className: "border rounded-lg p-3", children: [
       /* @__PURE__ */ jsx239("div", { className: "font-medium text-sm mb-2", children: field }),
       /* @__PURE__ */ jsxs214("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-3", children: [
         /* @__PURE__ */ jsxs214("div", { children: [
@@ -36980,11 +36985,11 @@ function AuditLogDetail({ log, isOpen, onClose }) {
   return /* @__PURE__ */ jsx239(Dialog16, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs214(DialogContent16, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
     /* @__PURE__ */ jsx239(DialogHeader16, { children: /* @__PURE__ */ jsx239(DialogTitle16, { children: "Audit Log Details" }) }),
     /* @__PURE__ */ jsxs214("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ jsx239(Card56, { children: /* @__PURE__ */ jsxs214(CardContent55, { className: "p-4", children: [
+      /* @__PURE__ */ jsx239(Card55, { children: /* @__PURE__ */ jsxs214(CardContent54, { className: "p-4", children: [
         /* @__PURE__ */ jsxs214("div", { className: "flex items-center gap-3 mb-4", children: [
           /* @__PURE__ */ jsx239(ActionBadge, { action: log.action }),
           /* @__PURE__ */ jsx239(SeverityBadge, { severity: log.severity }),
-          /* @__PURE__ */ jsxs214(Badge27, { variant: "outline", className: "flex items-center gap-1", children: [
+          /* @__PURE__ */ jsxs214(Badge26, { variant: "outline", className: "flex items-center gap-1", children: [
             getCategoryIcon2(log.category),
             log.category
           ] })
@@ -37039,12 +37044,12 @@ function AuditLogDetail({ log, isOpen, onClose }) {
         ] }),
         activeTab === "overview" && /* @__PURE__ */ jsxs214("div", { className: "space-y-4", children: [
           /* @__PURE__ */ jsxs214("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-            /* @__PURE__ */ jsxs214(Card56, { children: [
-              /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsxs214(CardTitle38, { className: "text-sm flex items-center gap-2", children: [
+            /* @__PURE__ */ jsxs214(Card55, { children: [
+              /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsxs214(CardTitle37, { className: "text-sm flex items-center gap-2", children: [
                 /* @__PURE__ */ jsx239(User20, { className: "w-4 h-4" }),
                 "User Information"
               ] }) }),
-              /* @__PURE__ */ jsx239(CardContent55, { className: "space-y-2", children: log.user ? /* @__PURE__ */ jsxs214(Fragment48, { children: [
+              /* @__PURE__ */ jsx239(CardContent54, { className: "space-y-2", children: log.user ? /* @__PURE__ */ jsxs214(Fragment48, { children: [
                 /* @__PURE__ */ jsxs214("div", { children: [
                   /* @__PURE__ */ jsx239("div", { className: "text-xs text-text-secondary", children: "Name" }),
                   /* @__PURE__ */ jsx239("div", { className: "text-sm font-medium", children: log.user.name })
@@ -37059,12 +37064,12 @@ function AuditLogDetail({ log, isOpen, onClose }) {
                 ] })
               ] }) : /* @__PURE__ */ jsx239("p", { className: "text-text-secondary text-sm", children: "No user information available" }) })
             ] }),
-            /* @__PURE__ */ jsxs214(Card56, { children: [
-              /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsxs214(CardTitle38, { className: "text-sm flex items-center gap-2", children: [
+            /* @__PURE__ */ jsxs214(Card55, { children: [
+              /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsxs214(CardTitle37, { className: "text-sm flex items-center gap-2", children: [
                 /* @__PURE__ */ jsx239(Calendar29, { className: "w-4 h-4" }),
                 "Event Information"
               ] }) }),
-              /* @__PURE__ */ jsxs214(CardContent55, { className: "space-y-2", children: [
+              /* @__PURE__ */ jsxs214(CardContent54, { className: "space-y-2", children: [
                 /* @__PURE__ */ jsxs214("div", { children: [
                   /* @__PURE__ */ jsx239("div", { className: "text-xs text-text-secondary", children: "Timestamp" }),
                   /* @__PURE__ */ jsx239("div", { className: "text-sm", children: formatDate11(log.createdAt) })
@@ -37084,9 +37089,9 @@ function AuditLogDetail({ log, isOpen, onClose }) {
               ] })
             ] })
           ] }),
-          log.merchant && /* @__PURE__ */ jsxs214(Card56, { children: [
-            /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsx239(CardTitle38, { className: "text-sm", children: "Merchant Context" }) }),
-            /* @__PURE__ */ jsx239(CardContent55, { children: /* @__PURE__ */ jsxs214("div", { className: "space-y-2", children: [
+          log.merchant && /* @__PURE__ */ jsxs214(Card55, { children: [
+            /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsx239(CardTitle37, { className: "text-sm", children: "Merchant Context" }) }),
+            /* @__PURE__ */ jsx239(CardContent54, { children: /* @__PURE__ */ jsxs214("div", { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs214("div", { children: [
                 /* @__PURE__ */ jsx239("div", { className: "text-xs text-text-secondary", children: "Merchant Name" }),
                 /* @__PURE__ */ jsx239("div", { className: "text-sm font-medium", children: log.merchant.name })
@@ -37097,9 +37102,9 @@ function AuditLogDetail({ log, isOpen, onClose }) {
               ] })
             ] }) })
           ] }),
-          log.outlet && /* @__PURE__ */ jsxs214(Card56, { children: [
-            /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsx239(CardTitle38, { className: "text-sm", children: "Outlet Context" }) }),
-            /* @__PURE__ */ jsx239(CardContent55, { children: /* @__PURE__ */ jsxs214("div", { className: "space-y-2", children: [
+          log.outlet && /* @__PURE__ */ jsxs214(Card55, { children: [
+            /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsx239(CardTitle37, { className: "text-sm", children: "Outlet Context" }) }),
+            /* @__PURE__ */ jsx239(CardContent54, { children: /* @__PURE__ */ jsxs214("div", { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs214("div", { children: [
                 /* @__PURE__ */ jsx239("div", { className: "text-xs text-text-secondary", children: "Outlet Name" }),
                 /* @__PURE__ */ jsx239("div", { className: "text-sm font-medium", children: log.outlet.name })
@@ -37113,12 +37118,12 @@ function AuditLogDetail({ log, isOpen, onClose }) {
         ] }),
         activeTab === "changes" && /* @__PURE__ */ jsx239("div", { className: "space-y-4", children: /* @__PURE__ */ jsx239(ChangesViewer, { changes: log.changes }) }),
         activeTab === "context" && /* @__PURE__ */ jsx239("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs214("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ jsxs214(Card56, { children: [
-            /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsxs214(CardTitle38, { className: "text-sm flex items-center gap-2", children: [
+          /* @__PURE__ */ jsxs214(Card55, { children: [
+            /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsxs214(CardTitle37, { className: "text-sm flex items-center gap-2", children: [
               /* @__PURE__ */ jsx239(MapPin6, { className: "w-4 h-4" }),
               "Network Information"
             ] }) }),
-            /* @__PURE__ */ jsxs214(CardContent55, { className: "space-y-2", children: [
+            /* @__PURE__ */ jsxs214(CardContent54, { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs214("div", { children: [
                 /* @__PURE__ */ jsx239("div", { className: "text-xs text-text-secondary", children: "IP Address" }),
                 /* @__PURE__ */ jsx239("div", { className: "text-sm font-mono", children: log.ipAddress || "Unknown" })
@@ -37133,12 +37138,12 @@ function AuditLogDetail({ log, isOpen, onClose }) {
               ] })
             ] })
           ] }),
-          /* @__PURE__ */ jsxs214(Card56, { children: [
-            /* @__PURE__ */ jsx239(CardHeader38, { children: /* @__PURE__ */ jsxs214(CardTitle38, { className: "text-sm flex items-center gap-2", children: [
+          /* @__PURE__ */ jsxs214(Card55, { children: [
+            /* @__PURE__ */ jsx239(CardHeader37, { children: /* @__PURE__ */ jsxs214(CardTitle37, { className: "text-sm flex items-center gap-2", children: [
               /* @__PURE__ */ jsx239(Monitor2, { className: "w-4 h-4" }),
               "User Agent"
             ] }) }),
-            /* @__PURE__ */ jsx239(CardContent55, { children: /* @__PURE__ */ jsx239("div", { className: "text-xs font-mono bg-bg-secondary p-2 rounded break-all", children: log.userAgent || "Unknown" }) })
+            /* @__PURE__ */ jsx239(CardContent54, { children: /* @__PURE__ */ jsx239("div", { className: "text-xs font-mono bg-bg-secondary p-2 rounded break-all", children: log.userAgent || "Unknown" }) })
           ] })
         ] }) }),
         activeTab === "raw" && /* @__PURE__ */ jsxs214("div", { className: "space-y-4", children: [
@@ -37192,7 +37197,7 @@ function SeverityBadge2({ severity }) {
         return /* @__PURE__ */ jsx240(Info12, { className: "w-3 h-3" });
     }
   };
-  return /* @__PURE__ */ jsxs215(Badge28, { className: `inline-flex items-center gap-1 ${getSeverityStyle(severity)}`, children: [
+  return /* @__PURE__ */ jsxs215(Badge27, { className: `inline-flex items-center gap-1 ${getSeverityStyle(severity)}`, children: [
     getSeverityIcon3(severity),
     severity
   ] });
@@ -37216,7 +37221,7 @@ function ActionBadge2({ action }) {
         return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800";
     }
   };
-  return /* @__PURE__ */ jsx240(Badge28, { className: getActionStyle(action), children: action });
+  return /* @__PURE__ */ jsx240(Badge27, { className: getActionStyle(action), children: action });
 }
 function AuditLogRow({ log, onViewDetails }) {
   const formatDate11 = (dateString) => {
@@ -37227,7 +37232,7 @@ function AuditLogRow({ log, onViewDetails }) {
       minute: "2-digit"
     });
   };
-  return /* @__PURE__ */ jsx240(Card57, { className: "mb-2 hover:shadow-sm transition-shadow", children: /* @__PURE__ */ jsx240(CardContent56, { className: "p-3", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
+  return /* @__PURE__ */ jsx240(Card56, { className: "mb-2 hover:shadow-sm transition-shadow", children: /* @__PURE__ */ jsx240(CardContent55, { className: "p-3", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
     /* @__PURE__ */ jsxs215("div", { className: "flex items-center gap-3 flex-1 min-w-0", children: [
       /* @__PURE__ */ jsx240(ActionBadge2, { action: log.action }),
       /* @__PURE__ */ jsx240(SeverityBadge2, { severity: log.severity }),
@@ -37269,12 +37274,12 @@ function AuditLogFilter({ filter, onFilterChange, onReset }) {
       [field]: value === "all" || value === "" ? void 0 : value
     });
   };
-  return /* @__PURE__ */ jsxs215(Card57, { className: "mb-6", children: [
-    /* @__PURE__ */ jsx240(CardHeader39, { children: /* @__PURE__ */ jsxs215(CardTitle39, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsxs215(Card56, { className: "mb-6", children: [
+    /* @__PURE__ */ jsx240(CardHeader38, { children: /* @__PURE__ */ jsxs215(CardTitle38, { className: "flex items-center gap-2", children: [
       /* @__PURE__ */ jsx240(Filter5, { className: "w-5 h-5" }),
       "Filter Audit Logs"
     ] }) }),
-    /* @__PURE__ */ jsxs215(CardContent56, { children: [
+    /* @__PURE__ */ jsxs215(CardContent55, { children: [
       /* @__PURE__ */ jsxs215("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [
         /* @__PURE__ */ jsxs215("div", { className: "space-y-2", children: [
           /* @__PURE__ */ jsx240("label", { className: "text-sm font-medium", children: "Action" }),
@@ -37481,8 +37486,8 @@ function AuditLogViewer({
             onReset: onFilterReset
           }
         ),
-        /* @__PURE__ */ jsxs215(Card57, { children: [
-          /* @__PURE__ */ jsx240(CardHeader39, { children: /* @__PURE__ */ jsxs215(CardTitle39, { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxs215(Card56, { children: [
+          /* @__PURE__ */ jsx240(CardHeader38, { children: /* @__PURE__ */ jsxs215(CardTitle38, { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsxs215("span", { children: [
               "Audit Logs (",
               pagination?.total || 0,
@@ -37502,7 +37507,7 @@ function AuditLogViewer({
               }
             ) })
           ] }) }),
-          /* @__PURE__ */ jsx240(CardContent56, { children: loading ? /* @__PURE__ */ jsxs215("div", { className: "text-center py-8", children: [
+          /* @__PURE__ */ jsx240(CardContent55, { children: loading ? /* @__PURE__ */ jsxs215("div", { className: "text-center py-8", children: [
             /* @__PURE__ */ jsx240(RefreshCw6, { className: "w-6 h-6 animate-spin mx-auto mb-2" }),
             /* @__PURE__ */ jsx240("p", { className: "text-text-secondary", children: "Loading audit logs..." })
           ] }) : !logs || logs.length === 0 ? /* @__PURE__ */ jsx240("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx240("p", { className: "text-text-secondary", children: "No audit logs found." }) }) : /* @__PURE__ */ jsx240("div", { className: "space-y-3", children: logs.map((log) => /* @__PURE__ */ jsx240(
@@ -37516,14 +37521,14 @@ function AuditLogViewer({
         ] })
       ] }),
       activeTab === "stats" && /* @__PURE__ */ jsx240("div", { className: "space-y-6", children: stats ? /* @__PURE__ */ jsxs215("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: [
-        /* @__PURE__ */ jsx240(Card57, { children: /* @__PURE__ */ jsx240(CardContent56, { className: "p-6", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx240(Card56, { children: /* @__PURE__ */ jsx240(CardContent55, { className: "p-6", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs215("div", { children: [
             /* @__PURE__ */ jsx240("p", { className: "text-sm font-medium text-text-secondary", children: "Total Logs" }),
             /* @__PURE__ */ jsx240("p", { className: "text-2xl font-bold text-text-primary", children: stats.totalLogs })
           ] }),
           /* @__PURE__ */ jsx240(Activity7, { className: "w-8 h-8 text-blue-500" })
         ] }) }) }),
-        /* @__PURE__ */ jsx240(Card57, { children: /* @__PURE__ */ jsx240(CardContent56, { className: "p-6", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx240(Card56, { children: /* @__PURE__ */ jsx240(CardContent55, { className: "p-6", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs215("div", { children: [
             /* @__PURE__ */ jsx240("p", { className: "text-sm font-medium text-text-secondary", children: "Recent Activity" }),
             /* @__PURE__ */ jsx240("p", { className: "text-2xl font-bold text-text-primary", children: stats.recentActivity }),
@@ -37531,14 +37536,14 @@ function AuditLogViewer({
           ] }),
           /* @__PURE__ */ jsx240(Clock29, { className: "w-8 h-8 text-green-500" })
         ] }) }) }),
-        /* @__PURE__ */ jsx240(Card57, { children: /* @__PURE__ */ jsx240(CardContent56, { className: "p-6", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx240(Card56, { children: /* @__PURE__ */ jsx240(CardContent55, { className: "p-6", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs215("div", { children: [
             /* @__PURE__ */ jsx240("p", { className: "text-sm font-medium text-text-secondary", children: "Security Events" }),
             /* @__PURE__ */ jsx240("p", { className: "text-2xl font-bold text-text-primary", children: stats.logsByCategory.SECURITY || 0 })
           ] }),
           /* @__PURE__ */ jsx240(AlertTriangle20, { className: "w-8 h-8 text-red-500" })
         ] }) }) }),
-        /* @__PURE__ */ jsx240(Card57, { children: /* @__PURE__ */ jsx240(CardContent56, { className: "p-6", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx240(Card56, { children: /* @__PURE__ */ jsx240(CardContent55, { className: "p-6", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs215("div", { children: [
             /* @__PURE__ */ jsx240("p", { className: "text-sm font-medium text-text-secondary", children: "Business Events" }),
             /* @__PURE__ */ jsx240("p", { className: "text-2xl font-bold text-text-primary", children: stats.logsByCategory.BUSINESS || 0 })
@@ -37584,10 +37589,10 @@ function AuditLogViewerSimple({ className = "" }) {
 // src/components/features/OrderDetail/OrderDetail.tsx
 import { useState as useState81, useEffect as useEffect43 } from "react";
 import {
-  Card as Card59,
-  CardHeader as CardHeader41,
-  CardContent as CardContent58,
-  Badge as Badge30,
+  Card as Card58,
+  CardHeader as CardHeader40,
+  CardContent as CardContent57,
+  Badge as Badge29,
   Skeleton as Skeleton5,
   ConfirmationDialog as ConfirmationDialog4
 } from "@rentalshop/ui";
@@ -37603,7 +37608,7 @@ import {
   DialogTitle as DialogTitle17,
   DialogFooter as DialogFooter10,
   Button as Button62,
-  Badge as Badge29
+  Badge as Badge28
 } from "@rentalshop/ui";
 import { Package as Package20, RotateCcw as RotateCcw3 } from "lucide-react";
 import { formatCurrency as formatCurrency18 } from "@rentalshop/ui";
@@ -37814,7 +37819,7 @@ var CollectionReturnModal = ({
             "Order #",
             order.orderNumber
           ] }),
-          /* @__PURE__ */ jsx241(Badge29, { variant: order.orderType === "RENT" ? "default" : "secondary", children: order.orderType })
+          /* @__PURE__ */ jsx241(Badge28, { variant: order.orderType === "RENT" ? "default" : "secondary", children: order.orderType })
         ] }),
         /* @__PURE__ */ jsxs216("div", { className: "text-sm text-gray-600", children: [
           "Customer: ",
@@ -38031,10 +38036,10 @@ var OrderSummaryCard = ({
 
 // src/components/features/OrderDetail/components/OrderSettingsCard.tsx
 import {
-  Card as Card58,
-  CardHeader as CardHeader40,
-  CardTitle as CardTitle40,
-  CardContent as CardContent57,
+  Card as Card57,
+  CardHeader as CardHeader39,
+  CardTitle as CardTitle39,
+  CardContent as CardContent56,
   Button as Button63,
   Input as Input29,
   Label as Label15,
@@ -38068,12 +38073,12 @@ var OrderSettingsCard = ({
 }) => {
   const t2 = useOrderTranslations15();
   const formatMoney = useFormatCurrency8();
-  return /* @__PURE__ */ jsxs220(Card58, { children: [
-    /* @__PURE__ */ jsx245(CardHeader40, { children: /* @__PURE__ */ jsxs220(CardTitle40, { className: "text-lg flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsxs220(Card57, { children: [
+    /* @__PURE__ */ jsx245(CardHeader39, { children: /* @__PURE__ */ jsxs220(CardTitle39, { className: "text-lg flex items-center gap-2", children: [
       /* @__PURE__ */ jsx245(Settings9, { className: "w-5 h-5" }),
       t2("detail.orderSettings")
     ] }) }),
-    /* @__PURE__ */ jsx245(CardContent57, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ jsxs220(Fragment50, { children: [
+    /* @__PURE__ */ jsx245(CardContent56, { className: "space-y-4", children: isEditingSettings ? /* @__PURE__ */ jsxs220(Fragment50, { children: [
       /* @__PURE__ */ jsxs220("div", { children: [
         /* @__PURE__ */ jsxs220(Label15, { htmlFor: "damageFee", className: "text-sm font-medium text-gray-700", children: [
           t2("amount.damageFee"),
@@ -38382,12 +38387,12 @@ var OrderDetailSkeleton = () => {
     ] }) }),
     /* @__PURE__ */ jsxs222("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-4", children: [
       /* @__PURE__ */ jsxs222("div", { className: "lg:col-span-2 space-y-4", children: [
-        /* @__PURE__ */ jsx247("div", { children: /* @__PURE__ */ jsxs222(Card59, { className: "flex flex-col", children: [
-          /* @__PURE__ */ jsx247(CardHeader41, { children: /* @__PURE__ */ jsxs222("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsx247("div", { children: /* @__PURE__ */ jsxs222(Card58, { className: "flex flex-col", children: [
+          /* @__PURE__ */ jsx247(CardHeader40, { children: /* @__PURE__ */ jsxs222("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx247(Skeleton5, { className: "h-5 w-5" }),
             /* @__PURE__ */ jsx247(Skeleton5, { className: "h-6 w-32" })
           ] }) }),
-          /* @__PURE__ */ jsxs222(CardContent58, { className: "space-y-4 flex-1", children: [
+          /* @__PURE__ */ jsxs222(CardContent57, { className: "space-y-4 flex-1", children: [
             /* @__PURE__ */ jsxs222("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
               /* @__PURE__ */ jsx247("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsxs222("div", { className: "flex justify-between", children: [
                 /* @__PURE__ */ jsx247(Skeleton5, { className: "h-4 w-24" }),
@@ -38401,12 +38406,12 @@ var OrderDetailSkeleton = () => {
             /* @__PURE__ */ jsx247("div", { className: "flex-1" })
           ] })
         ] }) }),
-        /* @__PURE__ */ jsxs222(Card59, { children: [
-          /* @__PURE__ */ jsx247(CardHeader41, { children: /* @__PURE__ */ jsxs222("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxs222(Card58, { children: [
+          /* @__PURE__ */ jsx247(CardHeader40, { children: /* @__PURE__ */ jsxs222("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx247(Skeleton5, { className: "h-5 w-5" }),
             /* @__PURE__ */ jsx247(Skeleton5, { className: "h-6 w-20" })
           ] }) }),
-          /* @__PURE__ */ jsx247(CardContent58, { children: /* @__PURE__ */ jsx247("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsx247("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ jsxs222("div", { className: "flex items-start gap-3", children: [
+          /* @__PURE__ */ jsx247(CardContent57, { children: /* @__PURE__ */ jsx247("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, index) => /* @__PURE__ */ jsx247("div", { className: "p-3 bg-gray-50 rounded-lg border border-gray-100", children: /* @__PURE__ */ jsxs222("div", { className: "flex items-start gap-3", children: [
             /* @__PURE__ */ jsx247(Skeleton5, { className: "w-12 h-12 rounded-lg" }),
             /* @__PURE__ */ jsxs222("div", { className: "flex-1 space-y-2", children: [
               /* @__PURE__ */ jsx247(Skeleton5, { className: "h-4 w-32" }),
@@ -38417,12 +38422,12 @@ var OrderDetailSkeleton = () => {
         ] })
       ] }),
       /* @__PURE__ */ jsxs222("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ jsxs222(Card59, { children: [
-          /* @__PURE__ */ jsx247(CardHeader41, { children: /* @__PURE__ */ jsxs222("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxs222(Card58, { children: [
+          /* @__PURE__ */ jsx247(CardHeader40, { children: /* @__PURE__ */ jsxs222("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx247(Skeleton5, { className: "h-5 w-5" }),
             /* @__PURE__ */ jsx247(Skeleton5, { className: "h-6 w-28" })
           ] }) }),
-          /* @__PURE__ */ jsxs222(CardContent58, { className: "space-y-3", children: [
+          /* @__PURE__ */ jsxs222(CardContent57, { className: "space-y-3", children: [
             Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs222("div", { className: "flex justify-between text-sm", children: [
               /* @__PURE__ */ jsx247(Skeleton5, { className: "h-4 w-20" }),
               /* @__PURE__ */ jsx247(Skeleton5, { className: "h-4 w-16" })
@@ -38433,12 +38438,12 @@ var OrderDetailSkeleton = () => {
             ] }) })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs222(Card59, { children: [
-          /* @__PURE__ */ jsx247(CardHeader41, { children: /* @__PURE__ */ jsxs222("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxs222(Card58, { children: [
+          /* @__PURE__ */ jsx247(CardHeader40, { children: /* @__PURE__ */ jsxs222("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx247(Skeleton5, { className: "h-5 w-5" }),
             /* @__PURE__ */ jsx247(Skeleton5, { className: "h-6 w-28" })
           ] }) }),
-          /* @__PURE__ */ jsxs222(CardContent58, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs222(CardContent57, { className: "space-y-4", children: [
             /* @__PURE__ */ jsx247("div", { className: "space-y-3", children: Array.from({ length: 4 }).map((_, index) => /* @__PURE__ */ jsxs222("div", { className: "flex justify-between", children: [
               /* @__PURE__ */ jsx247(Skeleton5, { className: "h-4 w-24" }),
               /* @__PURE__ */ jsx247(Skeleton5, { className: "h-4 w-32" })
@@ -38713,7 +38718,7 @@ var OrderDetail = ({
             ":"
           ] }),
           /* @__PURE__ */ jsx247(
-            Badge30,
+            Badge29,
             {
               className: ORDER_TYPE_COLORS2[order.orderType],
               children: t2(`orderType.${order.orderType}`)
@@ -38726,7 +38731,7 @@ var OrderDetail = ({
             ":"
           ] }),
           /* @__PURE__ */ jsx247(
-            Badge30,
+            Badge29,
             {
               className: ORDER_STATUS_COLORS5[order.status] || "bg-gray-100 text-gray-800",
               children: t2(`status.${order.status}`)
@@ -38985,8 +38990,8 @@ import { useToast as useToast10 } from "@rentalshop/ui";
 // src/components/features/Settings/components/SettingsLayout.tsx
 import { useState as useState82 } from "react";
 import {
-  Card as Card60,
-  CardContent as CardContent59,
+  Card as Card59,
+  CardContent as CardContent58,
   PageWrapper as PageWrapper5,
   PageHeader as PageHeader2,
   PageTitle as PageTitle2,
@@ -39024,7 +39029,7 @@ var SettingsLayout2 = ({
       /* @__PURE__ */ jsx251("p", { children: t2("subtitle") })
     ] }),
     /* @__PURE__ */ jsxs226("div", { className: "flex flex-col lg:flex-row gap-6", children: [
-      /* @__PURE__ */ jsx251("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ jsx251(Card60, { children: /* @__PURE__ */ jsx251(CardContent59, { className: "p-0", children: /* @__PURE__ */ jsx251("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
+      /* @__PURE__ */ jsx251("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ jsx251(Card59, { children: /* @__PURE__ */ jsx251(CardContent58, { className: "p-0", children: /* @__PURE__ */ jsx251("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
         if (!item.roles)
           return true;
         const userRole = (user?.role || "").trim().toUpperCase();
@@ -39058,9 +39063,9 @@ var SettingsLayout2 = ({
 
 // src/components/features/Settings/components/ProfileSection.tsx
 import {
-  Card as Card61,
-  CardHeader as CardHeader42,
-  CardContent as CardContent60,
+  Card as Card60,
+  CardHeader as CardHeader41,
+  CardContent as CardContent59,
   Button as Button66,
   Input as Input31,
   Label as Label17
@@ -39087,15 +39092,15 @@ var ProfileSection = ({
     "user.phone": user?.phone,
     "user.role": user?.role
   });
-  return /* @__PURE__ */ jsx252("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs227(Card61, { children: [
-    /* @__PURE__ */ jsxs227(CardHeader42, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
+  return /* @__PURE__ */ jsx252("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs227(Card60, { children: [
+    /* @__PURE__ */ jsxs227(CardHeader41, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
       /* @__PURE__ */ jsx252("h3", { className: "text-base font-semibold text-gray-900", children: t2("profile.personalInformation") }),
       !isEditing ? /* @__PURE__ */ jsx252(Button66, { onClick: onEdit, size: "sm", children: t2("profile.edit") }) : /* @__PURE__ */ jsxs227("div", { className: "flex gap-2", children: [
         /* @__PURE__ */ jsx252(Button66, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("profile.saving") : t2("profile.save") }),
         /* @__PURE__ */ jsx252(Button66, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("profile.cancel") })
       ] })
     ] }),
-    /* @__PURE__ */ jsx252(CardContent60, { className: "p-6 pt-4", children: /* @__PURE__ */ jsx252("div", { className: "space-y-8", children: /* @__PURE__ */ jsxs227("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+    /* @__PURE__ */ jsx252(CardContent59, { className: "p-6 pt-4", children: /* @__PURE__ */ jsx252("div", { className: "space-y-8", children: /* @__PURE__ */ jsxs227("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
       /* @__PURE__ */ jsxs227("div", { children: [
         /* @__PURE__ */ jsx252(Label17, { htmlFor: "firstName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("profile.firstName") }),
         isEditing ? /* @__PURE__ */ jsx252(
@@ -39164,13 +39169,13 @@ var ProfileSection = ({
 // src/components/features/Settings/components/MerchantSection.tsx
 import { useState as useState83, useEffect as useEffect44, useRef as useRef8 } from "react";
 import {
-  Card as Card62,
-  CardHeader as CardHeader43,
-  CardContent as CardContent61,
+  Card as Card61,
+  CardHeader as CardHeader42,
+  CardContent as CardContent60,
   Button as Button67,
   Input as Input32,
   Label as Label18,
-  Badge as Badge31,
+  Badge as Badge30,
   SearchableCountrySelect as SearchableCountrySelect2
 } from "@rentalshop/ui";
 import { CheckCircle2 as CheckCircle210, DollarSign as DollarSign21 } from "lucide-react";
@@ -39267,15 +39272,15 @@ var MerchantSection = ({
     "merchant.businessType": merchant?.businessType
   });
   return /* @__PURE__ */ jsxs228("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsxs228(Card62, { children: [
-      /* @__PURE__ */ jsxs228(CardHeader43, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
+    /* @__PURE__ */ jsxs228(Card61, { children: [
+      /* @__PURE__ */ jsxs228(CardHeader42, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
         /* @__PURE__ */ jsx253("h3", { className: "text-base font-semibold text-gray-900", children: t2("merchant.businessInformation") }),
         !isEditing ? /* @__PURE__ */ jsx253(Button67, { onClick: onEdit, size: "sm", children: t2("merchant.edit") }) : /* @__PURE__ */ jsxs228("div", { className: "flex gap-2", children: [
           /* @__PURE__ */ jsx253(Button67, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("merchant.saving") : t2("merchant.save") }),
           /* @__PURE__ */ jsx253(Button67, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("merchant.cancel") })
         ] })
       ] }),
-      /* @__PURE__ */ jsx253(CardContent61, { className: "p-6 pt-4", children: loadingMerchant ? /* @__PURE__ */ jsx253("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx253("p", { className: "text-gray-500", children: "Loading business information..." }) }) : !merchant && !user?.merchantId ? /* @__PURE__ */ jsxs228("div", { className: "text-center py-8", children: [
+      /* @__PURE__ */ jsx253(CardContent60, { className: "p-6 pt-4", children: loadingMerchant ? /* @__PURE__ */ jsx253("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx253("p", { className: "text-gray-500", children: "Loading business information..." }) }) : !merchant && !user?.merchantId ? /* @__PURE__ */ jsxs228("div", { className: "text-center py-8", children: [
         /* @__PURE__ */ jsx253("p", { className: "text-gray-500", children: "No business information available" }),
         /* @__PURE__ */ jsxs228("p", { className: "text-gray-400 text-sm mt-2", children: [
           "User role: ",
@@ -39460,7 +39465,7 @@ var MerchantSection = ({
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsx253(Card62, { children: /* @__PURE__ */ jsxs228(CardContent61, { className: "p-6", children: [
+    /* @__PURE__ */ jsx253(Card61, { children: /* @__PURE__ */ jsxs228(CardContent60, { className: "p-6", children: [
       /* @__PURE__ */ jsxs228("div", { className: "flex items-center gap-2 mb-4", children: [
         /* @__PURE__ */ jsx253(DollarSign21, { className: "h-5 w-5 text-blue-700" }),
         /* @__PURE__ */ jsx253("h3", { className: "text-lg font-semibold text-gray-900", children: t2("merchant.currencySettings") })
@@ -39489,7 +39494,7 @@ var MerchantSection = ({
                     /* @__PURE__ */ jsx253("div", { className: "text-sm text-gray-600", children: option.value })
                   ] })
                 ] }),
-                isCurrent && /* @__PURE__ */ jsxs228(Badge31, { variant: "default", className: "bg-green-100 text-green-800", children: [
+                isCurrent && /* @__PURE__ */ jsxs228(Badge30, { variant: "default", className: "bg-green-100 text-green-800", children: [
                   /* @__PURE__ */ jsx253(CheckCircle210, { className: "h-3 w-3 mr-1" }),
                   t2("merchant.selected")
                 ] })
@@ -39516,9 +39521,9 @@ var MerchantSection = ({
 
 // src/components/features/Settings/components/OutletSection.tsx
 import {
-  Card as Card63,
-  CardHeader as CardHeader44,
-  CardContent as CardContent62,
+  Card as Card62,
+  CardHeader as CardHeader43,
+  CardContent as CardContent61,
   Button as Button68,
   Input as Input33,
   Label as Label19
@@ -39536,15 +39541,15 @@ var OutletSection = ({
   onInputChange
 }) => {
   const t2 = useSettingsTranslations4();
-  return /* @__PURE__ */ jsx254("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs229(Card63, { children: [
-    /* @__PURE__ */ jsxs229(CardHeader44, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
+  return /* @__PURE__ */ jsx254("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs229(Card62, { children: [
+    /* @__PURE__ */ jsxs229(CardHeader43, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
       /* @__PURE__ */ jsx254("h3", { className: "text-base font-semibold text-gray-900", children: t2("outlet.outletInformation") }),
       !isEditing ? /* @__PURE__ */ jsx254(Button68, { onClick: onEdit, size: "sm", children: t2("outlet.edit") }) : /* @__PURE__ */ jsxs229("div", { className: "flex gap-2", children: [
         /* @__PURE__ */ jsx254(Button68, { onClick: onSave, variant: "default", size: "sm", disabled: isUpdating, children: isUpdating ? t2("outlet.saving") : t2("outlet.save") }),
         /* @__PURE__ */ jsx254(Button68, { onClick: onCancel, variant: "outline", size: "sm", disabled: isUpdating, children: t2("outlet.cancel") })
       ] })
     ] }),
-    /* @__PURE__ */ jsx254(CardContent62, { className: "p-6 pt-4", children: !user?.outlet ? /* @__PURE__ */ jsx254("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx254("p", { className: "text-gray-500", children: t2("outlet.noOutletInfo") }) }) : /* @__PURE__ */ jsxs229("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+    /* @__PURE__ */ jsx254(CardContent61, { className: "p-6 pt-4", children: !user?.outlet ? /* @__PURE__ */ jsx254("div", { className: "text-center py-8", children: /* @__PURE__ */ jsx254("p", { className: "text-gray-500", children: t2("outlet.noOutletInfo") }) }) : /* @__PURE__ */ jsxs229("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
       /* @__PURE__ */ jsxs229("div", { children: [
         /* @__PURE__ */ jsx254(Label19, { htmlFor: "outletName", className: "block text-sm font-medium text-gray-700 mb-2", children: t2("outlet.name") }),
         isEditing ? /* @__PURE__ */ jsx254(
@@ -39607,10 +39612,10 @@ var OutletSection = ({
 
 // src/components/features/Settings/components/SubscriptionSection.tsx
 import {
-  Card as Card64,
-  CardContent as CardContent63,
+  Card as Card63,
+  CardContent as CardContent62,
   Button as Button69,
-  Badge as Badge32
+  Badge as Badge31
 } from "@rentalshop/ui";
 import {
   CreditCard as CreditCard21,
@@ -39628,13 +39633,13 @@ var SubscriptionSection = ({
 }) => {
   const t2 = useSettingsTranslations5();
   if (subscriptionLoading) {
-    return /* @__PURE__ */ jsx255("div", { className: "space-y-6", children: /* @__PURE__ */ jsx255(Card64, { children: /* @__PURE__ */ jsx255(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs230("div", { className: "flex items-center justify-center py-8", children: [
+    return /* @__PURE__ */ jsx255("div", { className: "space-y-6", children: /* @__PURE__ */ jsx255(Card63, { children: /* @__PURE__ */ jsx255(CardContent62, { className: "p-6", children: /* @__PURE__ */ jsxs230("div", { className: "flex items-center justify-center py-8", children: [
       /* @__PURE__ */ jsx255("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700" }),
       /* @__PURE__ */ jsx255("span", { className: "ml-2 text-gray-600", children: t2("subscription.loading") })
     ] }) }) }) });
   }
   if (subscriptionData?.hasSubscription) {
-    return /* @__PURE__ */ jsx255("div", { className: "space-y-6", children: /* @__PURE__ */ jsx255(Card64, { children: /* @__PURE__ */ jsxs230(CardContent63, { className: "p-6", children: [
+    return /* @__PURE__ */ jsx255("div", { className: "space-y-6", children: /* @__PURE__ */ jsx255(Card63, { children: /* @__PURE__ */ jsxs230(CardContent62, { className: "p-6", children: [
       /* @__PURE__ */ jsxs230("div", { className: "flex items-center justify-between mb-4", children: [
         /* @__PURE__ */ jsxs230("div", { className: "flex items-center space-x-3", children: [
           /* @__PURE__ */ jsx255(CreditCard21, { className: "h-6 w-6 text-blue-700" }),
@@ -39644,7 +39649,7 @@ var SubscriptionSection = ({
           ] })
         ] }),
         /* @__PURE__ */ jsx255(
-          Badge32,
+          Badge31,
           {
             variant: subscriptionData.isExpired ? "destructive" : "default",
             className: subscriptionData.isExpired ? "bg-red-100 text-red-800" : subscriptionData.isExpiringSoon ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800",
@@ -39704,7 +39709,7 @@ var SubscriptionSection = ({
       /* @__PURE__ */ jsx255("div", { className: "mt-6 pt-4 border-t border-gray-200", children: /* @__PURE__ */ jsx255("p", { className: "text-sm text-gray-600 text-center", children: currentUserRole === "OUTLET_ADMIN" ? t2("subscription.contactMerchant") : t2("subscription.comingSoon") }) })
     ] }) }) });
   }
-  return /* @__PURE__ */ jsx255("div", { className: "space-y-6", children: /* @__PURE__ */ jsx255(Card64, { children: /* @__PURE__ */ jsx255(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs230("div", { className: "text-center py-8", children: [
+  return /* @__PURE__ */ jsx255("div", { className: "space-y-6", children: /* @__PURE__ */ jsx255(Card63, { children: /* @__PURE__ */ jsx255(CardContent62, { className: "p-6", children: /* @__PURE__ */ jsxs230("div", { className: "text-center py-8", children: [
     /* @__PURE__ */ jsx255(CreditCard21, { className: "mx-auto h-12 w-12 text-gray-400 mb-4" }),
     /* @__PURE__ */ jsx255("h3", { className: "text-base font-semibold text-gray-900 mb-2", children: t2("subscription.noSubscription") }),
     /* @__PURE__ */ jsx255("p", { className: "text-sm text-gray-600 mb-6", children: t2("subscription.noSubscriptionDesc") }),
@@ -39715,8 +39720,8 @@ var SubscriptionSection = ({
 
 // src/components/features/Settings/components/AccountSection.tsx
 import {
-  Card as Card65,
-  CardContent as CardContent64,
+  Card as Card64,
+  CardContent as CardContent63,
   Button as Button70,
   Separator as Separator6
 } from "@rentalshop/ui";
@@ -39730,7 +39735,7 @@ var AccountSection = ({
   isDeleting
 }) => {
   const t2 = useSettingsTranslations6();
-  return /* @__PURE__ */ jsx256("div", { className: "space-y-6", children: /* @__PURE__ */ jsx256(Card65, { children: /* @__PURE__ */ jsx256(CardContent64, { className: "p-6", children: /* @__PURE__ */ jsxs231("div", { className: "space-y-6", children: [
+  return /* @__PURE__ */ jsx256("div", { className: "space-y-6", children: /* @__PURE__ */ jsx256(Card64, { children: /* @__PURE__ */ jsx256(CardContent63, { className: "p-6", children: /* @__PURE__ */ jsxs231("div", { className: "space-y-6", children: [
     /* @__PURE__ */ jsxs231("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
       /* @__PURE__ */ jsxs231("div", { className: "flex items-center space-x-3", children: [
         /* @__PURE__ */ jsx256(Key2, { className: "h-5 w-5 text-gray-600" }),
@@ -40580,8 +40585,8 @@ var Settings_default = SettingsComponent;
 
 // src/components/features/Settings/components/SecuritySection.tsx
 import {
-  Card as Card66,
-  CardContent as CardContent65,
+  Card as Card65,
+  CardContent as CardContent64,
   Button as Button73
 } from "@rentalshop/ui";
 import { Shield as Shield8 } from "lucide-react";
@@ -40594,7 +40599,7 @@ var SecuritySection = ({
       /* @__PURE__ */ jsx261("h2", { className: "text-2xl font-bold text-gray-900", children: "Security" }),
       /* @__PURE__ */ jsx261("p", { className: "text-gray-600", children: "Manage your password and account security settings" })
     ] }),
-    /* @__PURE__ */ jsx261(Card66, { children: /* @__PURE__ */ jsx261(CardContent65, { className: "p-6", children: /* @__PURE__ */ jsx261("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs236("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
+    /* @__PURE__ */ jsx261(Card65, { children: /* @__PURE__ */ jsx261(CardContent64, { className: "p-6", children: /* @__PURE__ */ jsx261("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs236("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
       /* @__PURE__ */ jsxs236("div", { className: "flex items-center space-x-3", children: [
         /* @__PURE__ */ jsx261(Shield8, { className: "h-5 w-5 text-gray-600" }),
         /* @__PURE__ */ jsxs236("div", { children: [
@@ -40619,13 +40624,13 @@ import { useState as useState87, useEffect as useEffect46 } from "react";
 import { DollarSign as DollarSign23, CheckCircle2 as CheckCircle211, AlertCircle as AlertCircle17 } from "lucide-react";
 import { formatCurrency as formatCurrency21, getCurrency as getCurrency2 } from "@rentalshop/utils";
 import {
-  Card as Card67,
-  CardContent as CardContent66,
+  Card as Card66,
+  CardContent as CardContent65,
   CardDescription as CardDescription6,
-  CardHeader as CardHeader45,
-  CardTitle as CardTitle42,
+  CardHeader as CardHeader44,
+  CardTitle as CardTitle41,
   Button as Button74,
-  Badge as Badge33
+  Badge as Badge32
 } from "@rentalshop/ui";
 import { jsx as jsx262, jsxs as jsxs237 } from "react/jsx-runtime";
 var CURRENCY_OPTIONS = [
@@ -40673,12 +40678,12 @@ var CurrencySection = ({
         /* @__PURE__ */ jsx262("p", { className: "text-sm text-yellow-700 mt-1", children: 'You have unsaved currency changes. Click "Save Changes" to apply them.' })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs237(Card67, { children: [
-      /* @__PURE__ */ jsxs237(CardHeader45, { children: [
-        /* @__PURE__ */ jsx262(CardTitle42, { className: "text-lg", children: "Current Currency" }),
+    /* @__PURE__ */ jsxs237(Card66, { children: [
+      /* @__PURE__ */ jsxs237(CardHeader44, { children: [
+        /* @__PURE__ */ jsx262(CardTitle41, { className: "text-lg", children: "Current Currency" }),
         /* @__PURE__ */ jsx262(CardDescription6, { children: "Your currently active currency for all price displays" })
       ] }),
-      /* @__PURE__ */ jsx262(CardContent66, { children: /* @__PURE__ */ jsxs237("div", { className: "flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg", children: [
+      /* @__PURE__ */ jsx262(CardContent65, { children: /* @__PURE__ */ jsxs237("div", { className: "flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg", children: [
         /* @__PURE__ */ jsx262("div", { className: "text-3xl", children: getCurrency2(currentCurrency)?.symbol || "$" }),
         /* @__PURE__ */ jsxs237("div", { className: "flex-1", children: [
           /* @__PURE__ */ jsx262("div", { className: "text-lg font-semibold text-gray-900", children: getCurrency2(currentCurrency)?.name || "US Dollar" }),
@@ -40687,18 +40692,18 @@ var CurrencySection = ({
             currentCurrency
           ] })
         ] }),
-        selectedCurrency === currentCurrency && !hasChanges && /* @__PURE__ */ jsxs237(Badge33, { variant: "default", className: "bg-green-100 text-green-800", children: [
+        selectedCurrency === currentCurrency && !hasChanges && /* @__PURE__ */ jsxs237(Badge32, { variant: "default", className: "bg-green-100 text-green-800", children: [
           /* @__PURE__ */ jsx262(CheckCircle211, { className: "h-3 w-3 mr-1" }),
           "Active"
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsxs237(Card67, { children: [
-      /* @__PURE__ */ jsxs237(CardHeader45, { children: [
-        /* @__PURE__ */ jsx262(CardTitle42, { className: "text-lg", children: "Select Currency" }),
+    /* @__PURE__ */ jsxs237(Card66, { children: [
+      /* @__PURE__ */ jsxs237(CardHeader44, { children: [
+        /* @__PURE__ */ jsx262(CardTitle41, { className: "text-lg", children: "Select Currency" }),
         /* @__PURE__ */ jsx262(CardDescription6, { children: "Choose from our supported currencies" })
       ] }),
-      /* @__PURE__ */ jsx262(CardContent66, { children: /* @__PURE__ */ jsx262("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: CURRENCY_OPTIONS.map((option) => {
+      /* @__PURE__ */ jsx262(CardContent65, { children: /* @__PURE__ */ jsx262("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: CURRENCY_OPTIONS.map((option) => {
         const config = getCurrency2(option.value);
         if (!config)
           return null;
@@ -40742,22 +40747,22 @@ var CurrencySection = ({
                   ] })
                 ] })
               ] }),
-              isCurrent && !hasChanges && /* @__PURE__ */ jsx262("div", { className: "absolute top-2 right-2", children: /* @__PURE__ */ jsx262(Badge33, { variant: "default", className: "bg-green-100 text-green-800 text-xs", children: "Current" }) })
+              isCurrent && !hasChanges && /* @__PURE__ */ jsx262("div", { className: "absolute top-2 right-2", children: /* @__PURE__ */ jsx262(Badge32, { variant: "default", className: "bg-green-100 text-green-800 text-xs", children: "Current" }) })
             ]
           },
           option.value
         );
       }) }) })
     ] }),
-    /* @__PURE__ */ jsxs237(Card67, { children: [
-      /* @__PURE__ */ jsxs237(CardHeader45, { children: [
-        /* @__PURE__ */ jsx262(CardTitle42, { className: "text-lg", children: "Currency Details" }),
+    /* @__PURE__ */ jsxs237(Card66, { children: [
+      /* @__PURE__ */ jsxs237(CardHeader44, { children: [
+        /* @__PURE__ */ jsx262(CardTitle41, { className: "text-lg", children: "Currency Details" }),
         /* @__PURE__ */ jsxs237(CardDescription6, { children: [
           "Technical information about ",
           getCurrency2(selectedCurrency)?.name || "Selected Currency"
         ] })
       ] }),
-      /* @__PURE__ */ jsx262(CardContent66, { children: /* @__PURE__ */ jsxs237("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
+      /* @__PURE__ */ jsx262(CardContent65, { children: /* @__PURE__ */ jsxs237("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
         /* @__PURE__ */ jsxs237("div", { children: [
           /* @__PURE__ */ jsx262("div", { className: "text-sm text-gray-500", children: "Symbol" }),
           /* @__PURE__ */ jsx262("div", { className: "text-lg font-semibold", children: getCurrency2(selectedCurrency)?.symbol || "$" })
