@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // ============================================================================
@@ -147,6 +147,52 @@ export async function deleteFromS3(key: string): Promise<boolean> {
     console.error('AWS S3 delete error:', error);
     return false;
   }
+}
+
+/**
+ * Move file from staging to production folder in S3
+ * This implements the Two-Phase Upload Pattern
+ */
+export async function commitStagingFiles(
+  stagingKeys: string[], 
+  targetFolder: string = 'product'
+): Promise<{ success: boolean; committedKeys: string[]; errors: string[] }> {
+  const committedKeys: string[] = [];
+  const errors: string[] = [];
+
+  for (const stagingKey of stagingKeys) {
+    try {
+      // Extract filename from staging key (remove staging/ prefix)
+      const filename = stagingKey.replace(/^staging\//, '');
+      const targetKey = `${targetFolder}/${filename}`;
+
+      // Copy from staging to target
+      const copyCommand = new CopyObjectCommand({
+        Bucket: BUCKET_NAME,
+        CopySource: `${BUCKET_NAME}/${stagingKey}`,
+        Key: targetKey,
+        ACL: 'public-read',
+      });
+
+      await s3Client.send(copyCommand);
+
+      // Delete staging file
+      await deleteFromS3(stagingKey);
+
+      committedKeys.push(targetKey);
+      console.log(`✅ Moved ${stagingKey} → ${targetKey}`);
+    } catch (error) {
+      const errorMsg = `Failed to commit ${stagingKey}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error('❌', errorMsg);
+      errors.push(errorMsg);
+    }
+  }
+
+  return {
+    success: errors.length === 0,
+    committedKeys,
+    errors
+  };
 }
 
 /**
