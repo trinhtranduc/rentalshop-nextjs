@@ -150,6 +150,12 @@
     "weeklyReport": "Báo cáo hàng tuần",
     "monthlyReport": "Báo cáo hàng tháng",
     "yearlyReport": "Báo cáo hàng năm"
+  },
+  "messages": {
+    "noBillingCycles": "Không tìm thấy chu kỳ thanh toán nào",
+    "getStartedBillingCycle": "Bắt đầu bằng cách tạo chu kỳ thanh toán đầu tiên của bạn",
+    "noPlanVariants": "Không tìm thấy biến thể gói nào",
+    "getStartedPlanVariant": "Bắt đầu bằng cách tạo biến thể gói đầu tiên của bạn"
   }
 }
 

@@ -17502,8 +17502,8 @@ var OrderTable = React51.memo(function OrderTable2({
   if (orders.length === 0) {
     return /* @__PURE__ */ jsx90(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx90(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ jsxs75("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx90("div", { className: "text-4xl mb-4", children: "\u{1F4CB}" }),
-      /* @__PURE__ */ jsx90("h3", { className: "text-lg font-medium mb-2", children: "No orders found" }),
-      /* @__PURE__ */ jsx90("p", { className: "text-sm", children: "Try adjusting your filters or create some orders to get started." })
+      /* @__PURE__ */ jsx90("h3", { className: "text-lg font-medium mb-2", children: t2("messages.noOrders") }),
+      /* @__PURE__ */ jsx90("p", { className: "text-sm", children: t2("messages.tryAdjustingFilters") })
     ] }) }) });
   }
   const getStatusBadge = (status) => {
@@ -18262,8 +18262,10 @@ import {
   X as X7
 } from "lucide-react";
 import { ordersApi as ordersApi2 } from "@rentalshop/utils";
+import { useOrderTranslations as useOrderTranslations10 } from "@rentalshop/hooks";
 import { jsx as jsx96, jsxs as jsxs80 } from "react/jsx-runtime";
 function ProductOrdersDialog({ open, onOpenChange, product }) {
+  const t2 = useOrderTranslations10();
   const [orders, setOrders] = useState36([]);
   const [loading, setLoading] = useState36(false);
   const [error, setError] = useState36(null);
@@ -18365,8 +18367,8 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
       EmptyState,
       {
         icon: ShoppingCart6,
-        title: "No Orders Found",
-        description: "This product hasn't been ordered yet."
+        title: t2("messages.noOrdersForProduct"),
+        description: t2("messages.noOrdersForProductDescription")
       }
     ) : /* @__PURE__ */ jsx96("div", { className: "space-y-4", children: orders.map((order) => /* @__PURE__ */ jsxs80(Card16, { className: "border border-border", children: [
       /* @__PURE__ */ jsx96(CardHeader15, { className: "pb-3", children: /* @__PURE__ */ jsxs80("div", { className: "flex items-center justify-between", children: [
@@ -18446,7 +18448,7 @@ import {
   Card as Card17,
   CardContent as CardContent16
 } from "@rentalshop/ui";
-import { useUserRole as useUserRole2 } from "@rentalshop/hooks";
+import { useUserRole as useUserRole2, useProductTranslations as useProductTranslations8 } from "@rentalshop/hooks";
 import {
   Package as PackageIcon,
   Download as Download2
@@ -18481,6 +18483,7 @@ function Products({
   className = ""
 }) {
   const { canManageProducts } = useUserRole2(currentUser);
+  const t2 = useProductTranslations8();
   const handleExport = () => {
     if (onExport) {
       onExport();
@@ -18559,10 +18562,8 @@ function Products({
       EmptyState2,
       {
         icon: PackageIcon,
-        title: "No products found",
-        description: filters.search || filters.categoryId || filters.outletId ? "Try adjusting your search or filters" : "Get started by adding your first product",
-        actionLabel: canManageProducts ? addButtonText : void 0,
-        onAction: canManageProducts ? handleAddProduct : void 0
+        title: t2("messages.noProducts"),
+        description: filters.search || filters.categoryId || filters.outletId ? t2("messages.tryAdjustingSearch") : t2("messages.getStarted")
       }
     ) }),
     products.length > 0 && totalProducts > limit && /* @__PURE__ */ jsx97("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ jsx97(
@@ -20241,12 +20242,14 @@ import { Card as Card25, CardContent as CardContent24, CardHeader as CardHeader2
 import { Badge as Badge8 } from "@rentalshop/ui";
 import { Package as Package12, Calendar as Calendar9, DollarSign as DollarSign7, User as User8, MapPin as MapPin5, Clock as Clock5 } from "lucide-react";
 import { ORDER_STATUS_COLORS as ORDER_STATUS_COLORS3 } from "@rentalshop/constants";
+import { useOrderTranslations as useOrderTranslations11 } from "@rentalshop/hooks";
 import { jsx as jsx110, jsxs as jsxs94 } from "react/jsx-runtime";
 var CustomerOrdersDialog = ({
   open,
   onOpenChange,
   customer
 }) => {
+  const t2 = useOrderTranslations11();
   const [orders, setOrders] = useState42([]);
   const [loading, setLoading] = useState42(false);
   const [error, setError] = useState42(null);
@@ -20401,7 +20404,7 @@ var CustomerOrdersDialog = ({
         /* @__PURE__ */ jsx110("p", { children: error })
       ] }) }) }) : orders.length === 0 ? /* @__PURE__ */ jsx110(Card25, { children: /* @__PURE__ */ jsx110(CardContent24, { className: "text-center py-12", children: /* @__PURE__ */ jsxs94("div", { className: "text-gray-500", children: [
         /* @__PURE__ */ jsx110(Package12, { className: "w-8 h-8 mx-auto mb-2" }),
-        /* @__PURE__ */ jsx110("p", { children: "No orders found for this customer" })
+        /* @__PURE__ */ jsx110("p", { children: t2("messages.noOrdersForCustomer") })
       ] }) }) }) : /* @__PURE__ */ jsx110("div", { className: "space-y-4", children: orders.map((order) => /* @__PURE__ */ jsx110(Card25, { className: "hover:shadow-md transition-shadow", children: /* @__PURE__ */ jsx110(CardContent24, { className: "p-4", children: /* @__PURE__ */ jsxs94("div", { className: "flex items-start justify-between", children: [
         /* @__PURE__ */ jsxs94("div", { className: "flex-1", children: [
           /* @__PURE__ */ jsxs94("div", { className: "flex items-center gap-3 mb-3", children: [
@@ -20506,7 +20509,7 @@ import {
   User as UserIcon,
   Download as Download3
 } from "lucide-react";
-import { useUserRole as useUserRole3 } from "@rentalshop/hooks";
+import { useUserRole as useUserRole3, useCustomerTranslations as useCustomerTranslations8 } from "@rentalshop/hooks";
 import { jsx as jsx112, jsxs as jsxs96 } from "react/jsx-runtime";
 var Customers = ({
   // Data props
@@ -20537,6 +20540,7 @@ var Customers = ({
   className = ""
 }) => {
   const { canManageUsers } = useUserRole3(currentUser);
+  const t2 = useCustomerTranslations8();
   const handleExport = () => {
     if (onExport) {
       onExport();
@@ -20615,10 +20619,8 @@ var Customers = ({
       EmptyState3,
       {
         icon: UserIcon,
-        title: "No customers found",
-        description: filters.search || filters.q ? "Try adjusting your search" : "Get started by adding your first customer",
-        actionLabel: canManageUsers ? addButtonText : void 0,
-        onAction: canManageUsers ? handleAddCustomer : void 0
+        title: t2("messages.noCustomers"),
+        description: filters.search || filters.q ? t2("messages.tryAdjustingSearch") : t2("messages.getStarted")
       }
     ) }),
     customers.length > 0 && totalCustomers > limit && /* @__PURE__ */ jsx112("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ jsx112(
@@ -20640,7 +20642,7 @@ var Customers_default = Customers;
 import React63 from "react";
 import { Pagination as Pagination6, Card as Card27, CardContent as CardContent26 } from "@rentalshop/ui";
 import { AlertCircle as AlertCircle9 } from "lucide-react";
-import { useOrderTranslations as useOrderTranslations10 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations12 } from "@rentalshop/hooks";
 import { jsx as jsx113, jsxs as jsxs97 } from "react/jsx-runtime";
 var Orders = React63.memo(function Orders2({
   data,
@@ -20659,7 +20661,7 @@ var Orders = React63.memo(function Orders2({
   filterStyle = "dropdown"
   // ⭐ Default to dropdown (modern pattern)
 }) {
-  const t2 = useOrderTranslations10();
+  const t2 = useOrderTranslations12();
   React63.useEffect(() => {
     console.log("\u{1F4CA} Orders Component: received new data", {
       ordersCount: data.orders.length,
@@ -20752,7 +20754,7 @@ var Orders_default = Orders;
 import { useState as useState43, useEffect as useEffect25 } from "react";
 import { Button as Button26, Label as Label5, DateRangePicker as DateRangePicker3 } from "@rentalshop/ui";
 import { PricingResolver, PricingValidator } from "@rentalshop/utils";
-import { useOrderTranslations as useOrderTranslations11 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations13 } from "@rentalshop/hooks";
 import { jsx as jsx114, jsxs as jsxs98 } from "react/jsx-runtime";
 var RentalPeriodSelector2 = ({
   product,
@@ -20762,7 +20764,7 @@ var RentalPeriodSelector2 = ({
   initialStartDate,
   initialEndDate
 }) => {
-  const t2 = useOrderTranslations11();
+  const t2 = useOrderTranslations13();
   const [rentalStartAt, setRentalStartAt] = useState43(
     () => initialStartDate ? new Date(initialStartDate) : null
   );
@@ -27098,6 +27100,7 @@ function Calendars({
 
 // src/components/features/Calendars/components/OrdersList.tsx
 import { Package as Package16, User as User10, Clock as Clock17 } from "lucide-react";
+import { useOrderTranslations as useOrderTranslations14 } from "@rentalshop/hooks";
 import { jsx as jsx146, jsxs as jsxs129 } from "react/jsx-runtime";
 function OrdersList({
   orders,
@@ -27105,10 +27108,11 @@ function OrdersList({
   onOrderClick,
   className = ""
 }) {
+  const t2 = useOrderTranslations14();
   if (orders.length === 0) {
     return /* @__PURE__ */ jsxs129("div", { className: `text-center py-8 text-gray-500 ${className}`, children: [
       /* @__PURE__ */ jsx146(Package16, { className: "w-12 h-12 mx-auto mb-4 text-gray-300" }),
-      /* @__PURE__ */ jsx146("p", { className: "text-lg font-medium", children: "No orders found" }),
+      /* @__PURE__ */ jsx146("p", { className: "text-lg font-medium", children: t2("messages.noOrders") }),
       selectedDate && /* @__PURE__ */ jsxs129("p", { className: "text-sm", children: [
         "for ",
         selectedDate.toLocaleDateString()
@@ -27380,13 +27384,15 @@ function UserCard({ user, onUserAction }) {
 
 // src/components/features/Users/components/UserGrid.tsx
 import { Card as Card39, CardContent as CardContent38 } from "@rentalshop/ui";
+import { useUsersTranslations } from "@rentalshop/hooks";
 import { jsx as jsx150, jsxs as jsxs133 } from "react/jsx-runtime";
 function UserGrid({ users, onUserAction }) {
+  const t2 = useUsersTranslations();
   if (users.length === 0) {
     return /* @__PURE__ */ jsx150(Card39, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx150(CardContent38, { className: "text-center py-12", children: /* @__PURE__ */ jsxs133("div", { className: "text-gray-500 dark:text-gray-400", children: [
       /* @__PURE__ */ jsx150("div", { className: "text-4xl mb-4", children: "\u{1F465}" }),
-      /* @__PURE__ */ jsx150("h3", { className: "text-lg font-medium mb-2", children: "No users found" }),
-      /* @__PURE__ */ jsx150("p", { className: "text-sm", children: "Try adjusting your filters or add some users to get started." })
+      /* @__PURE__ */ jsx150("h3", { className: "text-lg font-medium mb-2", children: t2("messages.noUsers") }),
+      /* @__PURE__ */ jsx150("p", { className: "text-sm", children: t2("messages.tryAdjustingSearch") })
     ] }) }) });
   }
   return /* @__PURE__ */ jsx150("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6", children: users.map((user) => /* @__PURE__ */ jsx150(
@@ -27402,7 +27408,7 @@ function UserGrid({ users, onUserAction }) {
 // src/components/features/Users/components/UserTable.tsx
 import React84 from "react";
 import { Eye as Eye12, Edit as Edit11, Trash2 as Trash29, MoreVertical as MoreVertical5, UserCheck as UserCheck2, UserX } from "lucide-react";
-import { useUsersTranslations } from "@rentalshop/hooks";
+import { useUsersTranslations as useUsersTranslations2 } from "@rentalshop/hooks";
 import { jsx as jsx151, jsxs as jsxs134 } from "react/jsx-runtime";
 function UserTable({
   users,
@@ -27411,7 +27417,7 @@ function UserTable({
   sortOrder = "desc",
   onSort
 }) {
-  const t2 = useUsersTranslations();
+  const t2 = useUsersTranslations2();
   const [openDropdownId, setOpenDropdownId] = React84.useState(null);
   if (users.length === 0) {
     return /* @__PURE__ */ jsx151(Card, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx151(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ jsxs134("div", { className: "text-text-tertiary", children: [
@@ -27840,7 +27846,7 @@ var ChangePasswordDialog = ({
 
 // src/components/features/Users/components/UserDisplayInfo.tsx
 import { Card as Card40, CardContent as CardContent39, Button as Button38 } from "@rentalshop/ui";
-import { useUsersTranslations as useUsersTranslations2 } from "@rentalshop/hooks";
+import { useUsersTranslations as useUsersTranslations3 } from "@rentalshop/hooks";
 import { Fragment as Fragment30, jsx as jsx154, jsxs as jsxs137 } from "react/jsx-runtime";
 var UserDisplayInfo = ({
   user,
@@ -27853,7 +27859,7 @@ var UserDisplayInfo = ({
   onChangePassword,
   isLoading = false
 }) => {
-  const t2 = useUsersTranslations2();
+  const t2 = useUsersTranslations3();
   const getRoleBadgeStyle = (role) => {
     switch (role) {
       case "ADMIN":
@@ -28009,7 +28015,7 @@ var UserDisplayInfo = ({
 
 // src/components/features/Users/components/UserDetailDialog.tsx
 import { usersApi } from "@rentalshop/utils";
-import { useUsersTranslations as useUsersTranslations3, useCommonTranslations as useCommonTranslations16 } from "@rentalshop/hooks";
+import { useUsersTranslations as useUsersTranslations4, useCommonTranslations as useCommonTranslations16 } from "@rentalshop/hooks";
 import { Fragment as Fragment31, jsx as jsx155, jsxs as jsxs138 } from "react/jsx-runtime";
 var UserDetailDialog = ({
   open,
@@ -28018,7 +28024,7 @@ var UserDetailDialog = ({
   onUserUpdated,
   onError
 }) => {
-  const t2 = useUsersTranslations3();
+  const t2 = useUsersTranslations4();
   const tc = useCommonTranslations16();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState61(false);
   const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = useState61(false);
@@ -28603,7 +28609,7 @@ var validateUserUpdateInput = (data) => {
 
 // src/components/features/Users/components/UserForm.tsx
 import { merchantsApi, outletsApi as outletsApi2 } from "@rentalshop/utils";
-import { useUsersTranslations as useUsersTranslations4, useCommonTranslations as useCommonTranslations17 } from "@rentalshop/hooks";
+import { useUsersTranslations as useUsersTranslations5, useCommonTranslations as useCommonTranslations17 } from "@rentalshop/hooks";
 import { Fragment as Fragment34, jsx as jsx158, jsxs as jsxs141 } from "react/jsx-runtime";
 var UserForm = ({
   mode,
@@ -28613,7 +28619,7 @@ var UserForm = ({
   isSubmitting: externalIsSubmitting,
   currentUser
 }) => {
-  const t2 = useUsersTranslations4();
+  const t2 = useUsersTranslations5();
   const tc = useCommonTranslations17();
   const isEditMode = mode === "edit";
   const [formData, setFormData] = useState64(() => {
@@ -29098,7 +29104,7 @@ var UserForm = ({
 };
 
 // src/components/features/Users/components/AddUserDialog.tsx
-import { useUsersTranslations as useUsersTranslations5 } from "@rentalshop/hooks";
+import { useUsersTranslations as useUsersTranslations6 } from "@rentalshop/hooks";
 import { jsx as jsx159, jsxs as jsxs142 } from "react/jsx-runtime";
 var AddUserDialog = ({
   open,
@@ -29107,7 +29113,7 @@ var AddUserDialog = ({
   onError,
   currentUser
 }) => {
-  const t2 = useUsersTranslations5();
+  const t2 = useUsersTranslations6();
   const [isSubmitting, setIsSubmitting] = useState65(false);
   const handleSave = async (userData) => {
     try {
@@ -29433,7 +29439,7 @@ var AccountManagementCard = ({
 import {
   User as UserIcon3
 } from "lucide-react";
-import { useUserRole as useUserRole4 } from "@rentalshop/hooks";
+import { useUserRole as useUserRole4, useUsersTranslations as useUsersTranslations7 } from "@rentalshop/hooks";
 import { jsx as jsx163, jsxs as jsxs146 } from "react/jsx-runtime";
 var Users9 = ({
   // Data props
@@ -29464,6 +29470,7 @@ var Users9 = ({
   className = ""
 }) => {
   const { canManageUsers } = useUserRole4(currentUser);
+  const t2 = useUsersTranslations7();
   console.log("\u{1F465} Users Component - Received data:", {
     hasData: !!data,
     usersCount: data?.users?.length || 0,
@@ -29537,10 +29544,8 @@ var Users9 = ({
       EmptyState4,
       {
         icon: UserIcon3,
-        title: "No users found",
-        description: filters.search || filters.q || filters.role ? "Try adjusting your search or filters" : "Get started by adding your first user",
-        actionLabel: canManageUsers ? addButtonText : void 0,
-        onAction: canManageUsers ? handleAddUser : void 0
+        title: t2("messages.noUsers"),
+        description: filters.search || filters.q || filters.role ? t2("messages.tryAdjustingSearch") : t2("messages.getStarted")
       }
     ) }),
     users.length > 0 && totalUsers > limit && /* @__PURE__ */ jsx163("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ jsx163(
@@ -30274,6 +30279,7 @@ var AddOutletDialog = ({
 
 // src/components/features/Outlets/Outlets.tsx
 import { Building2 as Building212 } from "lucide-react";
+import { useOutletsTranslations as useOutletsTranslations6 } from "@rentalshop/hooks";
 import { jsx as jsx172, jsxs as jsxs154 } from "react/jsx-runtime";
 var Outlets = ({
   data,
@@ -30289,6 +30295,7 @@ var Outlets = ({
   currentUser,
   className = ""
 }) => {
+  const t2 = useOutletsTranslations6();
   const outlets = data?.outlets || [];
   const totalOutlets = data?.total || 0;
   const currentPage = data?.page || 1;
@@ -30320,8 +30327,8 @@ var Outlets = ({
       EmptyState5,
       {
         icon: Building212,
-        title: "No outlets found",
-        description: filters.q ? "Try adjusting your search" : "Get started by adding your first outlet"
+        title: t2("messages.noOutlets"),
+        description: filters.q ? t2("messages.tryAdjustingSearch") : t2("messages.getStarted")
       }
     ) }),
     outlets.length > 0 && totalOutlets > limit && /* @__PURE__ */ jsx172("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ jsx172(
@@ -30734,6 +30741,7 @@ var CategoryCard = ({
 };
 
 // src/components/features/Categories/components/CategoryGrid.tsx
+import { useCategoriesTranslations as useCategoriesTranslations3 } from "@rentalshop/hooks";
 import { jsx as jsx178, jsxs as jsxs160 } from "react/jsx-runtime";
 var CategoryGrid = ({
   categories,
@@ -30743,6 +30751,7 @@ var CategoryGrid = ({
   sortOrder,
   onSortChange
 }) => {
+  const t2 = useCategoriesTranslations3();
   if (categories.length === 0) {
     return /* @__PURE__ */ jsx178("div", { className: "bg-white rounded-lg border p-6", children: /* @__PURE__ */ jsxs160("div", { className: "text-center py-12", children: [
       /* @__PURE__ */ jsx178("div", { className: "mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4", children: /* @__PURE__ */ jsx178(
@@ -30764,8 +30773,8 @@ var CategoryGrid = ({
           )
         }
       ) }),
-      /* @__PURE__ */ jsx178("h3", { className: "text-lg font-medium text-muted-foreground mb-2", children: "No categories found" }),
-      /* @__PURE__ */ jsx178("p", { className: "text-muted-foreground mb-4", children: "Get started by creating your first product category" })
+      /* @__PURE__ */ jsx178("h3", { className: "text-lg font-medium text-muted-foreground mb-2", children: t2("messages.noCategories") }),
+      /* @__PURE__ */ jsx178("p", { className: "text-muted-foreground mb-4", children: t2("messages.getStarted") })
     ] }) });
   }
   return /* @__PURE__ */ jsx178("div", { className: "bg-white rounded-lg border p-6", children: /* @__PURE__ */ jsx178("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6", children: categories.map((category) => /* @__PURE__ */ jsx178(
@@ -30781,7 +30790,7 @@ var CategoryGrid = ({
 
 // src/components/features/Categories/components/CategoryTable.tsx
 import React99 from "react";
-import { useCategoriesTranslations as useCategoriesTranslations3, useCommonTranslations as useCommonTranslations22 } from "@rentalshop/hooks";
+import { useCategoriesTranslations as useCategoriesTranslations4, useCommonTranslations as useCommonTranslations22 } from "@rentalshop/hooks";
 import { Eye as Eye20, Edit as Edit16, Trash2 as Trash211, MoreVertical as MoreVertical7, FolderOpen } from "lucide-react";
 import { Fragment as Fragment40, jsx as jsx179, jsxs as jsxs161 } from "react/jsx-runtime";
 function CategoryTable({
@@ -30792,7 +30801,7 @@ function CategoryTable({
   onSort
 }) {
   const [openDropdownId, setOpenDropdownId] = React99.useState(null);
-  const t2 = useCategoriesTranslations3();
+  const t2 = useCategoriesTranslations4();
   const tc = useCommonTranslations22();
   if (categories.length === 0) {
     return /* @__PURE__ */ jsx179(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx179(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ jsxs161("div", { className: "text-gray-500 dark:text-gray-400", children: [
@@ -30947,7 +30956,7 @@ function CategoryTable({
 }
 
 // src/components/features/Categories/components/CategoryForm.tsx
-import { useCategoriesTranslations as useCategoriesTranslations4 } from "@rentalshop/hooks";
+import { useCategoriesTranslations as useCategoriesTranslations5 } from "@rentalshop/hooks";
 import { jsx as jsx180, jsxs as jsxs162 } from "react/jsx-runtime";
 var CategoryForm = ({
   category,
@@ -30955,7 +30964,7 @@ var CategoryForm = ({
   onCancel,
   mode
 }) => {
-  const t2 = useCategoriesTranslations4();
+  const t2 = useCategoriesTranslations5();
   return /* @__PURE__ */ jsx180(Dialog, { open: true, onOpenChange: onCancel, children: /* @__PURE__ */ jsxs162(DialogContent, { className: "sm:max-w-[600px]", children: [
     /* @__PURE__ */ jsx180(DialogHeader, { children: /* @__PURE__ */ jsx180(DialogTitle, { children: mode === "create" ? t2("dialog.addNew") : t2("dialog.edit") }) }),
     /* @__PURE__ */ jsx180(
@@ -30972,7 +30981,7 @@ var CategoryForm = ({
 
 // src/components/features/Categories/components/CategoryView.tsx
 import { useState as useState71 } from "react";
-import { useCategoriesTranslations as useCategoriesTranslations5, useCommonTranslations as useCommonTranslations23 } from "@rentalshop/hooks";
+import { useCategoriesTranslations as useCategoriesTranslations6, useCommonTranslations as useCommonTranslations23 } from "@rentalshop/hooks";
 import { formatDateWithLocale } from "@rentalshop/utils";
 import { Fragment as Fragment41, jsx as jsx181, jsxs as jsxs163 } from "react/jsx-runtime";
 var CategoryView = ({
@@ -30981,7 +30990,7 @@ var CategoryView = ({
   onEdit,
   onDelete
 }) => {
-  const t2 = useCategoriesTranslations5();
+  const t2 = useCategoriesTranslations6();
   const tc = useCommonTranslations23();
   const locale2 = Z();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState71(false);
@@ -31208,6 +31217,7 @@ function CategoryDetailLoading() {
 
 // src/components/features/Categories/Categories.tsx
 import { FolderOpen as FolderOpen2 } from "lucide-react";
+import { useCategoriesTranslations as useCategoriesTranslations7 } from "@rentalshop/hooks";
 import { jsx as jsx185, jsxs as jsxs167 } from "react/jsx-runtime";
 var Categories = ({
   data,
@@ -31223,6 +31233,7 @@ var Categories = ({
   currentUser,
   className = ""
 }) => {
+  const t2 = useCategoriesTranslations7();
   const categories = data?.categories || [];
   const totalCategories = data?.total || 0;
   const currentPage = data?.currentPage || 1;
@@ -31254,8 +31265,8 @@ var Categories = ({
       EmptyState6,
       {
         icon: FolderOpen2,
-        title: "No categories found",
-        description: filters.q ? "Try adjusting your search" : "Get started by adding your first category"
+        title: t2("messages.noCategories"),
+        description: filters.q ? t2("messages.tryAdjustingSearch") : t2("messages.getStarted")
       }
     ) }),
     categories.length > 0 && totalCategories > limit && /* @__PURE__ */ jsx185("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ jsx185(
@@ -31938,6 +31949,7 @@ import {
   Trash2 as Trash213,
   MoreVertical as MoreVertical8
 } from "lucide-react";
+import { usePlansTranslations } from "@rentalshop/hooks";
 import { Fragment as Fragment44, jsx as jsx190, jsxs as jsxs172 } from "react/jsx-runtime";
 var PlanTable = ({
   plans,
@@ -31950,6 +31962,7 @@ var PlanTable = ({
   onSort,
   loading = false
 }) => {
+  const t2 = usePlansTranslations();
   const [openMenuId, setOpenMenuId] = useState73(null);
   const formatCurrency22 = (price, currency) => {
     return new Intl.NumberFormat("en-US", {
@@ -31986,8 +31999,8 @@ var PlanTable = ({
   if (plans.length === 0) {
     return /* @__PURE__ */ jsx190(Card50, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx190(CardContent49, { className: "text-center py-12", children: /* @__PURE__ */ jsxs172("div", { className: "text-text-tertiary", children: [
       /* @__PURE__ */ jsx190("div", { className: "text-4xl mb-4", children: "\u{1F4CB}" }),
-      /* @__PURE__ */ jsx190("h3", { className: "text-lg font-medium mb-2", children: "No plans found" }),
-      /* @__PURE__ */ jsx190("p", { className: "text-sm", children: "Get started by creating your first subscription plan." })
+      /* @__PURE__ */ jsx190("h3", { className: "text-lg font-medium mb-2", children: t2("messages.noPlans") }),
+      /* @__PURE__ */ jsx190("p", { className: "text-sm", children: t2("messages.getStarted") })
     ] }) }) });
   }
   return /* @__PURE__ */ jsx190(Card50, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx190(CardContent49, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsx190("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ jsxs172("table", { className: "w-full", children: [
@@ -32439,6 +32452,7 @@ import {
   ChevronDown as ChevronDown7,
   Eye as Eye24
 } from "lucide-react";
+import { useCommonTranslations as useCommonTranslations24 } from "@rentalshop/hooks";
 import { jsx as jsx194, jsxs as jsxs176 } from "react/jsx-runtime";
 var BillingCycleTable = ({
   billingCycles,
@@ -32450,6 +32464,7 @@ var BillingCycleTable = ({
   onSort,
   loading = false
 }) => {
+  const t2 = useCommonTranslations24();
   const formatDate11 = (date2) => {
     return new Date(date2).toLocaleDateString("en-US", {
       year: "numeric",
@@ -32580,8 +32595,8 @@ var BillingCycleTable = ({
     ] }),
     billingCycles.length === 0 && /* @__PURE__ */ jsxs176("div", { className: "text-center py-12", children: [
       /* @__PURE__ */ jsx194(Calendar22, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
-      /* @__PURE__ */ jsx194("h3", { className: "text-lg font-medium text-text-primary mb-2", children: "No billing cycles found" }),
-      /* @__PURE__ */ jsx194("p", { className: "text-text-secondary", children: "Get started by creating your first billing cycle" })
+      /* @__PURE__ */ jsx194("h3", { className: "text-lg font-medium text-text-primary mb-2", children: t2("messages.noBillingCycles") }),
+      /* @__PURE__ */ jsx194("p", { className: "text-text-secondary", children: t2("messages.getStartedBillingCycle") })
     ] })
   ] }) }) });
 };
@@ -37634,7 +37649,7 @@ import {
 } from "@rentalshop/ui";
 import { useFormatCurrency as useFormatCurrency9, useToast as useToast9 } from "@rentalshop/ui";
 import { ORDER_STATUS_COLORS as ORDER_STATUS_COLORS5, ORDER_TYPE_COLORS as ORDER_TYPE_COLORS2 } from "@rentalshop/constants";
-import { useOrderTranslations as useOrderTranslations17 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations20 } from "@rentalshop/hooks";
 
 // src/components/features/OrderDetail/components/CollectionReturnModal.tsx
 import {
@@ -37892,11 +37907,11 @@ var CollectionReturnModal = ({
 
 // src/components/features/OrderDetail/components/OrderInformation.tsx
 import { Info as Info15 } from "lucide-react";
-import { useOrderTranslations as useOrderTranslations12 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations15 } from "@rentalshop/hooks";
 import { useFormattedFullDate as useFormattedFullDate2 } from "@rentalshop/utils";
 import { Fragment as Fragment49, jsx as jsx242, jsxs as jsxs217 } from "react/jsx-runtime";
 var OrderInformation = ({ order }) => {
-  const t2 = useOrderTranslations12();
+  const t2 = useOrderTranslations15();
   return /* @__PURE__ */ jsxs217(Card, { className: "flex flex-col", children: [
     /* @__PURE__ */ jsx242(CardHeader, { children: /* @__PURE__ */ jsxs217(CardTitle, { className: "text-lg flex items-center gap-2", children: [
       /* @__PURE__ */ jsx242(Info15, { className: "w-5 h-5" }),
@@ -37960,11 +37975,11 @@ var OrderInformation = ({ order }) => {
 
 // src/components/features/OrderDetail/components/OrderProductsList.tsx
 import { Package as Package23 } from "lucide-react";
-import { useOrderTranslations as useOrderTranslations13 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations16 } from "@rentalshop/hooks";
 import { useFormatCurrency as useFormatCurrency6 } from "@rentalshop/ui";
 import { jsx as jsx243, jsxs as jsxs218 } from "react/jsx-runtime";
 var OrderProductsList = ({ order }) => {
-  const t2 = useOrderTranslations13();
+  const t2 = useOrderTranslations16();
   const formatMoney = useFormatCurrency6();
   return /* @__PURE__ */ jsxs218(Card, { children: [
     /* @__PURE__ */ jsx243(CardHeader, { children: /* @__PURE__ */ jsxs218(CardTitle, { className: "text-lg flex items-center gap-2", children: [
@@ -37996,7 +38011,7 @@ var OrderProductsList = ({ order }) => {
 
 // src/components/features/OrderDetail/components/OrderSummaryCard.tsx
 import { DollarSign as DollarSign20 } from "lucide-react";
-import { useOrderTranslations as useOrderTranslations14 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations17 } from "@rentalshop/hooks";
 import { useFormatCurrency as useFormatCurrency7 } from "@rentalshop/ui";
 import { jsx as jsx244, jsxs as jsxs219 } from "react/jsx-runtime";
 var OrderSummaryCard = ({
@@ -38004,7 +38019,7 @@ var OrderSummaryCard = ({
   tempSettings,
   calculateCollectionTotal: calculateCollectionTotal2
 }) => {
-  const t2 = useOrderTranslations14();
+  const t2 = useOrderTranslations17();
   const formatMoney = useFormatCurrency7();
   return /* @__PURE__ */ jsxs219(Card, { children: [
     /* @__PURE__ */ jsx244(CardHeader, { children: /* @__PURE__ */ jsxs219(CardTitle, { className: "text-lg flex items-center gap-2", children: [
@@ -38087,7 +38102,7 @@ import {
   SelectValue as SelectValue18
 } from "@rentalshop/ui";
 import { Settings as Settings9, Save as Save9, Edit as Edit23 } from "lucide-react";
-import { useOrderTranslations as useOrderTranslations15 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations18 } from "@rentalshop/hooks";
 import { useFormatCurrency as useFormatCurrency8 } from "@rentalshop/ui";
 import { Fragment as Fragment50, jsx as jsx245, jsxs as jsxs220 } from "react/jsx-runtime";
 var OrderSettingsCard = ({
@@ -38107,7 +38122,7 @@ var OrderSettingsCard = ({
   onStartEdit,
   collateralTypes
 }) => {
-  const t2 = useOrderTranslations15();
+  const t2 = useOrderTranslations18();
   const formatMoney = useFormatCurrency8();
   return /* @__PURE__ */ jsxs220(Card57, { children: [
     /* @__PURE__ */ jsx245(CardHeader39, { children: /* @__PURE__ */ jsxs220(CardTitle39, { className: "text-lg flex items-center gap-2", children: [
@@ -38284,7 +38299,7 @@ var OrderSettingsCard = ({
 
 // src/components/features/OrderDetail/components/OrderActionsSection.tsx
 import { Edit as Edit24, X as X17, Package as Package24, RotateCcw as RotateCcw4, Printer, Info as Info16 } from "lucide-react";
-import { useOrderTranslations as useOrderTranslations16 } from "@rentalshop/hooks";
+import { useOrderTranslations as useOrderTranslations19 } from "@rentalshop/hooks";
 import { ORDER_STATUSES } from "@rentalshop/constants";
 import { jsx as jsx246, jsxs as jsxs221 } from "react/jsx-runtime";
 var OrderActionsSection = ({
@@ -38305,7 +38320,7 @@ var OrderActionsSection = ({
   onReturn,
   onPrint
 }) => {
-  const t2 = useOrderTranslations16();
+  const t2 = useOrderTranslations19();
   return /* @__PURE__ */ jsx246("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ jsxs221("div", { className: "space-y-4", children: [
     /* @__PURE__ */ jsx246("h3", { className: "text-lg font-medium text-gray-900", children: t2("detail.orderActions") }),
     /* @__PURE__ */ jsxs221("div", { className: "flex justify-between items-center", children: [
@@ -38511,7 +38526,7 @@ var OrderDetail = ({
 }) => {
   const formatMoney = useFormatCurrency9();
   const { toastSuccess, toastError, toastInfo, removeToast } = useToast9();
-  const t2 = useOrderTranslations17();
+  const t2 = useOrderTranslations20();
   const COLLATERAL_TYPES = [
     "ID Card",
     "Driver License",
@@ -42063,7 +42078,7 @@ import Link4 from "next/link";
 import { usePathname as usePathname2 } from "next/navigation";
 import { cn as cn8 } from "@rentalshop/ui";
 import { Button as Button78 } from "@rentalshop/ui";
-import { useCommonTranslations as useCommonTranslations24 } from "@rentalshop/hooks";
+import { useCommonTranslations as useCommonTranslations25 } from "@rentalshop/hooks";
 import {
   ChevronLeft as ChevronLeft6,
   ChevronRight as ChevronRight8,
@@ -42153,7 +42168,7 @@ var ClientSidebar = ({
   const [clickedTab, setClickedTab] = useState93(null);
   const [localCurrentPage, setLocalCurrentPage] = useState93(currentPath);
   const pathname = usePathname2();
-  const t2 = useCommonTranslations24();
+  const t2 = useCommonTranslations25();
   const filterMenuItemsByRole = (items, userRole) => {
     if (!userRole)
       return items;

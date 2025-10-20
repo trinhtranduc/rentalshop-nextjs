@@ -3,6 +3,7 @@
 import React from 'react';
 import { CategoryCard } from './CategoryCard';
 import type { Category } from '@rentalshop/types';
+import { useCategoriesTranslations } from '@rentalshop/hooks';
 
 interface CategoryGridProps {
   categories: Category[];
@@ -21,6 +22,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
   sortOrder,
   onSortChange
 }) => {
+  const t = useCategoriesTranslations();
   if (categories.length === 0) {
     return (
       <div className="bg-white rounded-lg border p-6">
@@ -42,10 +44,10 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
             </svg>
           </div>
           <h3 className="text-lg font-medium text-muted-foreground mb-2">
-            No categories found
+            {t('messages.noCategories')}
           </h3>
           <p className="text-muted-foreground mb-4">
-            Get started by creating your first product category
+            {t('messages.getStarted')}
           </p>
         </div>
       </div>

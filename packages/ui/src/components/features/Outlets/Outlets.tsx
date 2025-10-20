@@ -10,6 +10,7 @@ import {
 import { OutletTable, OutletSearch } from './components';
 import { Building2 } from 'lucide-react';
 import type { Outlet, OutletFilters } from '@rentalshop/types';
+import { useOutletsTranslations } from '@rentalshop/hooks';
 
 // Data interface for outlets list
 export interface OutletsData {
@@ -48,6 +49,9 @@ export const Outlets: React.FC<OutletsProps> = ({
   currentUser,
   className = ""
 }) => {
+  
+  // Get translations
+  const t = useOutletsTranslations();
   
   const outlets = data?.outlets || [];
   const totalOutlets = data?.total || 0;
@@ -91,11 +95,11 @@ export const Outlets: React.FC<OutletsProps> = ({
         ) : (
           <EmptyState
             icon={Building2}
-            title="No outlets found"
+            title={t('messages.noOutlets')}
             description={
               filters.q
-                ? 'Try adjusting your search'
-                : 'Get started by adding your first outlet'
+                ? t('messages.tryAdjustingSearch')
+                : t('messages.getStarted')
             }
           />
         )}

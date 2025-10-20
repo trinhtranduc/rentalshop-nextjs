@@ -60,9 +60,9 @@ export const OrderTable = React.memo(function OrderTable({
         <CardContent className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <div className="text-4xl mb-4">📋</div>
-            <h3 className="text-lg font-medium mb-2">No orders found</h3>
+            <h3 className="text-lg font-medium mb-2">{t('messages.noOrders')}</h3>
             <p className="text-sm">
-              Try adjusting your filters or create some orders to get started.
+              {t('messages.tryAdjustingFilters')}
             </p>
           </div>
         </CardContent>

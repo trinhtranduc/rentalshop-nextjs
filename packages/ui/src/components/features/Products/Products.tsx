@@ -19,7 +19,7 @@ import {
   ProductSearchResult as ProductData, 
   ProductFilters as ProductFiltersType
 } from '@rentalshop/types';
-import { useUserRole } from '@rentalshop/hooks';
+import { useUserRole, useProductTranslations } from '@rentalshop/hooks';
 import { 
   Package as PackageIcon, 
   Download
@@ -84,6 +84,9 @@ export function Products({
   
   // User role check for permissions
   const { canManageProducts } = useUserRole(currentUser);
+  
+  // Get translations
+  const t = useProductTranslations();
   
   // Handler for export button
   const handleExport = () => {
@@ -171,14 +174,12 @@ export function Products({
         ) : (
           <EmptyState
             icon={PackageIcon}
-            title="No products found"
+            title={t('messages.noProducts')}
             description={
               filters.search || filters.categoryId || filters.outletId
-                ? 'Try adjusting your search or filters'
-                : 'Get started by adding your first product'
+                ? t('messages.tryAdjustingSearch')
+                : t('messages.getStarted')
             }
-            actionLabel={canManageProducts ? addButtonText : undefined}
-            onAction={canManageProducts ? handleAddProduct : undefined}
           />
         )}
       </div>

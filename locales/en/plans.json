@@ -59,7 +59,9 @@
     "cancelFailed": "Failed to cancel subscription",
     "confirmUpgrade": "Are you sure you want to upgrade to this plan?",
     "confirmDowngrade": "Are you sure you want to downgrade to this plan?",
-    "confirmCancel": "Are you sure you want to cancel your subscription?"
+    "confirmCancel": "Are you sure you want to cancel your subscription?",
+    "noPlans": "No plans found",
+    "getStarted": "Get started by creating your first subscription plan"
   },
   "status": {
     "active": "Active",

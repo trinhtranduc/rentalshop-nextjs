@@ -47,7 +47,9 @@
     "confirmDelete": "Are you sure you want to delete this category?",
     "noCategories": "No categories found",
     "noCategoriesDescription": "Try adjusting your search or add categories to get started.",
-    "loadingCategories": "Loading categories..."
+    "loadingCategories": "Loading categories...",
+    "tryAdjustingSearch": "Try adjusting your search",
+    "getStarted": "Get started by adding your first category"
   },
   "search": {
     "placeholder": "Search categories..."

@@ -59,7 +59,9 @@
     "cancelFailed": "Hủy đăng ký thất bại",
     "confirmUpgrade": "Bạn có chắc chắn muốn nâng cấp lên gói này?",
     "confirmDowngrade": "Bạn có chắc chắn muốn hạ cấp xuống gói này?",
-    "confirmCancel": "Bạn có chắc chắn muốn hủy đăng ký?"
+    "confirmCancel": "Bạn có chắc chắn muốn hủy đăng ký?",
+    "noPlans": "Không tìm thấy gói nào",
+    "getStarted": "Bắt đầu bằng cách tạo gói đăng ký đầu tiên của bạn"
   },
   "status": {
     "active": "Đang hoạt động",
