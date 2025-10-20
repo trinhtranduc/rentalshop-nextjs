@@ -17,6 +17,7 @@ import {
   Plus,
   Eye
 } from 'lucide-react';
+import { useCommonTranslations } from '@rentalshop/hooks';
 
 // Local type definitions
 interface BillingCycle {
@@ -53,6 +54,7 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
   onSort,
   loading = false
 }) => {
+  const t = useCommonTranslations();
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -226,9 +228,9 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
           {billingCycles.length === 0 && (
             <div className="text-center py-12">
               <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-text-primary mb-2">No billing cycles found</h3>
+              <h3 className="text-lg font-medium text-text-primary mb-2">{t('messages.noBillingCycles')}</h3>
               <p className="text-text-secondary">
-                Get started by creating your first billing cycle
+                {t('messages.getStartedBillingCycle')}
               </p>
             </div>
           )}

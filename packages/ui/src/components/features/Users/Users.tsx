@@ -16,7 +16,7 @@ import {
   Download
 } from 'lucide-react';
 import type { User, UserFilters } from '@rentalshop/types';
-import { useUserRole } from '@rentalshop/hooks';
+import { useUserRole, useUsersTranslations } from '@rentalshop/hooks';
 
 // Data interface for users list
 export interface UsersData {
@@ -87,6 +87,9 @@ export const Users: React.FC<UsersProps> = ({
   
   // User role check for permissions
   const { canManageUsers } = useUserRole(currentUser);
+  
+  // Get translations
+  const t = useUsersTranslations();
   
   // Debug: Log received data
   console.log('👥 Users Component - Received data:', {
@@ -177,14 +180,12 @@ export const Users: React.FC<UsersProps> = ({
         ) : (
           <EmptyState
             icon={UserIcon}
-            title="No users found"
+            title={t('messages.noUsers')}
             description={
               filters.search || filters.q || filters.role
-                ? 'Try adjusting your search or filters'
-                : 'Get started by adding your first user'
+                ? t('messages.tryAdjustingSearch')
+                : t('messages.getStarted')
             }
-            actionLabel={canManageUsers ? addButtonText : undefined}
-            onAction={canManageUsers ? handleAddUser : undefined}
           />
         )}
       </div>

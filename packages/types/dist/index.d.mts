@@ -3010,6 +3010,8 @@ var messages$2 = {
 	noProducts: "No products found",
 	noProductsDescription: "Try adjusting your filters or add some products to get started.",
 	loadingProducts: "Loading products...",
+	tryAdjustingSearch: "Try adjusting your search or filters",
+	getStarted: "Get started by adding your first product",
 	generateBarcode: "Generate new barcode",
 	maxImagesReached: "Maximum images reached",
 	dragDropImages: "Drag and drop images here",
@@ -3234,6 +3236,11 @@ var messages$1 = {
 	confirmCancel: "Are you sure you want to cancel this order?",
 	noOrders: "No orders found",
 	loadingOrders: "Loading orders...",
+	tryAdjustingFilters: "Try adjusting your filters or create some orders to get started.",
+	getStarted: "Get started by creating your first order",
+	noOrdersForProduct: "No Orders Found",
+	noOrdersForProductDescription: "This product hasn't been ordered yet.",
+	noOrdersForCustomer: "No orders found for this customer",
 	viewingAllOrders: "Viewing all",
 	mayBeSlow: "orders may be slow",
 	cannotEditOrder: "Only RESERVED orders can be edited",
@@ -3777,27 +3784,10 @@ var labels = {
 	unknown: "Unknown"
 };
 var messages = {
-	saveSuccess: "Saved successfully",
-	saveFailed: "Failed to save",
-	deleteSuccess: "Deleted successfully",
-	deleteFailed: "Failed to delete",
-	updateSuccess: "Updated successfully",
-	updateFailed: "Failed to update",
-	createSuccess: "Created successfully",
-	createFailed: "Failed to create",
-	confirmDelete: "Are you sure you want to delete this item?",
-	confirmAction: "Are you sure you want to proceed?",
-	noData: "No data available",
-	loadingData: "Loading data...",
-	errorLoadingData: "Error loading data",
-	invalidInput: "Invalid input",
-	requiredField: "This field is required",
-	sessionExpired: "Your session has expired. Please login again.",
-	unauthorized: "You are not authorized to perform this action",
-	serverError: "Server error. Please try again later.",
-	networkError: "Network error. Please check your connection.",
-	comingSoon: "Feature coming soon!",
-	notFound: "The item you're looking for doesn't exist or has been removed."
+	noBillingCycles: "No billing cycles found",
+	getStartedBillingCycle: "Get started by creating your first billing cycle",
+	noPlanVariants: "No plan variants found",
+	getStartedPlanVariant: "Get started by creating your first plan variant"
 };
 var navigation = {
 	home: "Home",

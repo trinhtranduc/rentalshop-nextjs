@@ -105,6 +105,8 @@
     "noProducts": "Không tìm thấy sản phẩm",
     "noProductsDescription": "Thử điều chỉnh bộ lọc hoặc thêm sản phẩm để bắt đầu.",
     "loadingProducts": "Đang tải sản phẩm...",
+    "tryAdjustingSearch": "Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn",
+    "getStarted": "Bắt đầu bằng cách thêm sản phẩm đầu tiên của bạn",
     "generateBarcode": "Tạo mã vạch mới",
     "maxImagesReached": "Đã đạt giới hạn ảnh",
     "dragDropImages": "Kéo thả ảnh vào đây",

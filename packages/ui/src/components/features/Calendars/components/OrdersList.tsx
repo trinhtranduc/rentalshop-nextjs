@@ -2,6 +2,7 @@ import React from 'react';
 import { Package, User, Mail, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import type { PickupOrder } from '@rentalshop/types';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface OrdersListProps {
   orders: PickupOrder[];
@@ -16,11 +17,13 @@ export function OrdersList({
   onOrderClick,
   className = '' 
 }: OrdersListProps) {
+  const t = useOrderTranslations();
+  
   if (orders.length === 0) {
     return (
       <div className={`text-center py-8 text-gray-500 ${className}`}>
         <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-        <p className="text-lg font-medium">No orders found</p>
+        <p className="text-lg font-medium">{t('messages.noOrders')}</p>
         {selectedDate && (
           <p className="text-sm">for {selectedDate.toLocaleDateString()}</p>
         )}

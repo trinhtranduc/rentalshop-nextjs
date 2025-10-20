@@ -10,6 +10,7 @@ import {
 import { CategoryTable, CategorySearch } from './components';
 import { FolderOpen } from 'lucide-react';
 import type { Category, CategoryFilters } from '@rentalshop/types';
+import { useCategoriesTranslations } from '@rentalshop/hooks';
 
 // Data interface for categories list
 export interface CategoriesData {
@@ -48,6 +49,9 @@ export const Categories: React.FC<CategoriesProps> = ({
   currentUser,
   className = ""
 }) => {
+  
+  // Get translations
+  const t = useCategoriesTranslations();
   
   const categories = data?.categories || [];
   const totalCategories = data?.total || 0;
@@ -91,11 +95,11 @@ export const Categories: React.FC<CategoriesProps> = ({
         ) : (
           <EmptyState
             icon={FolderOpen}
-            title="No categories found"
+            title={t('messages.noCategories')}
             description={
               filters.q
-                ? 'Try adjusting your search'
-                : 'Get started by adding your first category'
+                ? t('messages.tryAdjustingSearch')
+                : t('messages.getStarted')
             }
           />
         )}

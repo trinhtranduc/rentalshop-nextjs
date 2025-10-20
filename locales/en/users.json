@@ -113,7 +113,9 @@
     "loadingUsers": "Loading users...",
     "noDataAvailable": "No user data available",
     "na": "N/A",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "tryAdjustingSearch": "Try adjusting your search or filters",
+    "getStarted": "Get started by adding your first user"
   },
   "search": {
     "placeholder": "Search users by name, email, or phone..."

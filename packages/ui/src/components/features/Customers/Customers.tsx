@@ -16,7 +16,7 @@ import {
   Download
 } from 'lucide-react';
 import type { Customer, CustomerFilters } from '@rentalshop/types';
-import { useUserRole } from '@rentalshop/hooks';
+import { useUserRole, useCustomerTranslations } from '@rentalshop/hooks';
 
 // Data interface for customers list
 export interface CustomersData {
@@ -88,6 +88,9 @@ export const Customers: React.FC<CustomersProps> = ({
   
   // User role check for permissions
   const { canManageUsers } = useUserRole(currentUser);
+  
+  // Get translations
+  const t = useCustomerTranslations();
   
   // Handler for export button
   const handleExport = () => {
@@ -175,14 +178,12 @@ export const Customers: React.FC<CustomersProps> = ({
         ) : (
           <EmptyState
             icon={UserIcon}
-            title="No customers found"
+            title={t('messages.noCustomers')}
             description={
               filters.search || filters.q
-                ? 'Try adjusting your search'
-                : 'Get started by adding your first customer'
+                ? t('messages.tryAdjustingSearch')
+                : t('messages.getStarted')
             }
-            actionLabel={canManageUsers ? addButtonText : undefined}
-            onAction={canManageUsers ? handleAddCustomer : undefined}
           />
         )}
       </div>

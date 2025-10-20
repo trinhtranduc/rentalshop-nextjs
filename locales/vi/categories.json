@@ -47,7 +47,9 @@
     "confirmDelete": "Bạn có chắc chắn muốn xóa danh mục này?",
     "noCategories": "Không tìm thấy danh mục",
     "noCategoriesDescription": "Thử điều chỉnh tìm kiếm hoặc thêm danh mục để bắt đầu.",
-    "loadingCategories": "Đang tải danh sách danh mục..."
+    "loadingCategories": "Đang tải danh sách danh mục...",
+    "tryAdjustingSearch": "Thử điều chỉnh tìm kiếm của bạn",
+    "getStarted": "Bắt đầu bằng cách thêm danh mục đầu tiên của bạn"
   },
   "search": {
     "placeholder": "Tìm kiếm danh mục..."

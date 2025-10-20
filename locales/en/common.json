@@ -150,6 +150,12 @@
     "weeklyReport": "Weekly Report",
     "monthlyReport": "Monthly Report",
     "yearlyReport": "Yearly Report"
+  },
+  "messages": {
+    "noBillingCycles": "No billing cycles found",
+    "getStartedBillingCycle": "Get started by creating your first billing cycle",
+    "noPlanVariants": "No plan variants found",
+    "getStartedPlanVariant": "Get started by creating your first plan variant"
   }
 }
 

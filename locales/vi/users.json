@@ -113,7 +113,9 @@
     "loadingUsers": "Đang tải danh sách người dùng...",
     "noDataAvailable": "Không có dữ liệu người dùng",
     "na": "Không có",
-    "error": "Đã xảy ra lỗi"
+    "error": "Đã xảy ra lỗi",
+    "tryAdjustingSearch": "Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn",
+    "getStarted": "Bắt đầu bằng cách thêm người dùng đầu tiên của bạn"
   },
   "search": {
     "placeholder": "Tìm kiếm theo tên, email hoặc số điện thoại..."

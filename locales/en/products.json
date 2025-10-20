@@ -105,6 +105,8 @@
     "noProducts": "No products found",
     "noProductsDescription": "Try adjusting your filters or add some products to get started.",
     "loadingProducts": "Loading products...",
+    "tryAdjustingSearch": "Try adjusting your search or filters",
+    "getStarted": "Get started by adding your first product",
     "generateBarcode": "Generate new barcode",
     "maxImagesReached": "Maximum images reached",
     "dragDropImages": "Drag and drop images here",
