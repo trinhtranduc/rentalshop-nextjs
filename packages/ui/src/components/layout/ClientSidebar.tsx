@@ -120,6 +120,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPath);
+  const [isNavigating, setIsNavigating] = useState<string | null>(null);
   const pathname = usePathname();
   
   // Get translations
@@ -154,10 +155,15 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
 
   const menuItems = filterMenuItemsByRole(getClientMenuItems(t), user?.role);
 
-  // Update local state when prop changes
+  // Update local state when prop changes - prioritize pathname for immediate updates
   useEffect(() => {
-    setLocalCurrentPage(currentPath);
-  }, [currentPath]);
+    const actualPath = pathname || currentPath;
+    setLocalCurrentPage(actualPath);
+    // Clear navigation state when path actually changes
+    if (isNavigating && actualPath !== isNavigating) {
+      setIsNavigating(null);
+    }
+  }, [pathname, currentPath, isNavigating]);
 
   // AGGRESSIVE PREFETCHING: Prefetch all pages on mount for instant navigation
   useEffect(() => {
@@ -193,25 +199,31 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   };
 
   const isActive = (href: string) => {
+    // Use pathname as primary source for immediate feedback, fallback to localCurrentPage
+    const currentPathToCheck = pathname || localCurrentPage;
     if (href === '/dashboard') {
-      return localCurrentPage === '/dashboard';
+      return currentPathToCheck === '/dashboard';
     }
-    return localCurrentPage.startsWith(href);
+    return currentPathToCheck.startsWith(href);
   };
 
   const handleTabClick = (href: string) => {
-    // Immediately update local state for instant visual feedback
+    // OPTIMISTIC UI UPDATE: Immediately set navigation state for instant visual feedback
+    setIsNavigating(href);
     setLocalCurrentPage(href);
     
-    // Set clicked state for visual feedback
+    // Set clicked state for immediate visual feedback
     setClickedTab(href);
     
-    // Clear clicked state after a short delay
-    setTimeout(() => setClickedTab(null), 200);
+    // Clear clicked state quickly for responsive feel
+    setTimeout(() => setClickedTab(null), 150);
     
-    // Navigate
+    // Navigate asynchronously - don't block UI updates
     if (onNavigate) {
-      onNavigate(href);
+      // Use requestAnimationFrame to ensure state updates render first
+      requestAnimationFrame(() => {
+        onNavigate(href);
+      });
     }
   };
 
@@ -228,7 +240,12 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
     const isExpanded = expandedItems.includes(item.href);
     const active = isActive(item.href);
     const isHovered = hoveredTab === item.href;
+    const isNavigatingTo = isNavigating === item.href;
+    const isClicked = clickedTab === item.href;
     const Icon = item.icon;
+    
+    // Combined state for immediate visual feedback
+    const shouldHighlight = active || isNavigatingTo;
 
     return (
       <div key={item.href} className="relative">
@@ -243,18 +260,19 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             onMouseEnter={() => handleTabHover(item.href)}
             onMouseLeave={() => setHoveredTab(null)}
             className={cn(
-              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative',
-              active 
-                ? 'text-blue-700 font-medium' 
+              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative',
+              shouldHighlight
+                ? 'nav-item-active text-blue-700 font-medium bg-blue-50/80' 
                 : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary',
-              isHovered ? 'scale-[1.02]' : '',
-              clickedTab === item.href ? 'scale-[0.98]' : ''
+              isHovered && !shouldHighlight ? 'hover:shadow-sm' : '',
+              isClicked ? 'scale-[0.98] transform' : '',
+              isNavigatingTo ? 'nav-item-loading ring-1 ring-blue-200/50' : ''
             )}
           >
             <div className="flex items-center gap-2">
               <Icon className={cn(
-                'w-4 h-4',
-                active ? 'text-blue-700' : 'text-text-secondary'
+                'w-4 h-4 transition-colors duration-100',
+                shouldHighlight ? 'text-blue-700' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
@@ -267,9 +285,14 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
               )} />
             )}
             
-            {/* Hover effect */}
-            {isHovered && !active && (
-              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200"></div>
+            {/* Hover effect - only show when not currently active/navigating */}
+            {isHovered && !shouldHighlight && (
+              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100"></div>
+            )}
+            
+            {/* Navigation indicator */}
+            {isNavigatingTo && (
+              <div className="absolute inset-0 bg-blue-50/30 rounded-lg animate-pulse transition-all duration-100"></div>
             )}
           </Button>
         ) : (
@@ -283,18 +306,19 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             onMouseEnter={() => handleTabHover(item.href)}
             onMouseLeave={() => setHoveredTab(null)}
             className={cn(
-              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative',
-              active 
-                ? 'text-blue-700 font-medium' 
+              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative',
+              shouldHighlight
+                ? 'nav-item-active text-blue-700 font-medium bg-blue-50/80' 
                 : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary',
-              isHovered ? 'scale-[1.02]' : '',
-              clickedTab === item.href ? 'scale-[0.98]' : ''
+              isHovered && !shouldHighlight ? 'hover:shadow-sm' : '',
+              isClicked ? 'scale-[0.98] transform' : '',
+              isNavigatingTo ? 'nav-item-loading ring-1 ring-blue-200/50' : ''
             )}
           >
             <div className="flex items-center gap-2">
               <Icon className={cn(
-                'w-4 h-4',
-                active ? 'text-blue-700' : 'text-text-secondary'
+                'w-4 h-4 transition-colors duration-100',
+                shouldHighlight ? 'text-blue-700' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
@@ -306,9 +330,14 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
               </span>
             )}
             
-            {/* Hover effect */}
-            {isHovered && !active && (
-              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200"></div>
+            {/* Hover effect - only show when not currently active/navigating */}
+            {isHovered && !shouldHighlight && (
+              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100"></div>
+            )}
+            
+            {/* Navigation indicator */}
+            {isNavigatingTo && (
+              <div className="absolute inset-0 bg-blue-50/30 rounded-lg animate-pulse transition-all duration-100"></div>
             )}
           </Button>
         )}
@@ -319,6 +348,9 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             {item.subItems?.map((subItem) => {
               const SubIcon = subItem.icon;
               const subActive = isActive(subItem.href);
+              const subNavigating = isNavigating === subItem.href;
+              const subClicked = clickedTab === subItem.href;
+              const subShouldHighlight = subActive || subNavigating;
               
               return (
                 <Button
@@ -331,15 +363,23 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
                     // Add small delay before closing submenu to ensure navigation processes
                     setTimeout(() => {
                       setExpandedItems([]);
-                    }, 100);
+                    }, 50); // Reduced delay for faster response
                   }}
                   className={cn(
-                    'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg justify-start h-auto',
-                    subActive ? 'text-blue-700 font-medium' : 'text-text-primary hover:text-blue-700'
+                    'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-all duration-100 rounded-lg justify-start h-auto will-change-transform',
+                    subShouldHighlight ? 'text-blue-700 font-medium bg-blue-50/80' : 'text-text-primary hover:text-blue-700',
+                    subClicked ? 'scale-[0.99] transform' : '',
+                    subNavigating ? 'ring-1 ring-blue-200/50' : ''
                   )}
                 >
-                  <SubIcon className="w-4 h-4" />
+                  <SubIcon className={cn(
+                    'w-4 h-4 transition-colors duration-100',
+                    subShouldHighlight ? 'text-blue-700' : 'text-text-secondary'
+                  )} />
                   {subItem.label}
+                  {subNavigating && (
+                    <div className="absolute inset-0 bg-blue-50/20 rounded-lg transition-all duration-100"></div>
+                  )}
                 </Button>
               );
             })}

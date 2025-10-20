@@ -100,6 +100,7 @@ export default function ClientLayout({
               isOpen={isMobileMenuOpen}
               onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               onLogout={handleLogout}
+              currentPath={pathname}
               isCollapsed={isCollapsed}
               onCollapseToggle={() => setIsCollapsed(!isCollapsed)}
               notificationsCount={notificationsCount}
