@@ -42167,6 +42167,7 @@ var ClientSidebar = ({
   const [hoveredTab, setHoveredTab] = useState93(null);
   const [clickedTab, setClickedTab] = useState93(null);
   const [localCurrentPage, setLocalCurrentPage] = useState93(currentPath);
+  const [isNavigating, setIsNavigating] = useState93(null);
   const pathname = usePathname2();
   const t2 = useCommonTranslations25();
   const filterMenuItemsByRole = (items, userRole) => {
@@ -42185,8 +42186,12 @@ var ClientSidebar = ({
   };
   const menuItems2 = filterMenuItemsByRole(getClientMenuItems(t2), user?.role);
   useEffect48(() => {
-    setLocalCurrentPage(currentPath);
-  }, [currentPath]);
+    const actualPath = pathname || currentPath;
+    setLocalCurrentPage(actualPath);
+    if (isNavigating && actualPath !== isNavigating) {
+      setIsNavigating(null);
+    }
+  }, [pathname, currentPath, isNavigating]);
   useEffect48(() => {
     if (onPrefetch) {
       menuItems2.forEach((item) => {
@@ -42212,17 +42217,21 @@ var ClientSidebar = ({
     );
   };
   const isActive = (href) => {
+    const currentPathToCheck = pathname || localCurrentPage;
     if (href === "/dashboard") {
-      return localCurrentPage === "/dashboard";
+      return currentPathToCheck === "/dashboard";
     }
-    return localCurrentPage.startsWith(href);
+    return currentPathToCheck.startsWith(href);
   };
   const handleTabClick = (href) => {
+    setIsNavigating(href);
     setLocalCurrentPage(href);
     setClickedTab(href);
-    setTimeout(() => setClickedTab(null), 200);
+    setTimeout(() => setClickedTab(null), 150);
     if (onNavigate) {
-      onNavigate(href);
+      requestAnimationFrame(() => {
+        onNavigate(href);
+      });
     }
   };
   const handleTabHover = (href) => {
@@ -42236,7 +42245,10 @@ var ClientSidebar = ({
     const isExpanded = expandedItems.includes(item.href);
     const active = isActive(item.href);
     const isHovered = hoveredTab === item.href;
+    const isNavigatingTo = isNavigating === item.href;
+    const isClicked = clickedTab === item.href;
     const Icon2 = item.icon;
+    const shouldHighlight = active || isNavigatingTo;
     return /* @__PURE__ */ jsxs249("div", { className: "relative", children: [
       hasSubItems ? /* @__PURE__ */ jsxs249(
         Button78,
@@ -42250,16 +42262,17 @@ var ClientSidebar = ({
           onMouseEnter: () => handleTabHover(item.href),
           onMouseLeave: () => setHoveredTab(null),
           className: cn8(
-            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
-            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
-            isHovered ? "scale-[1.02]" : "",
-            clickedTab === item.href ? "scale-[0.98]" : ""
+            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative",
+            shouldHighlight ? "nav-item-active text-blue-700 font-medium bg-blue-50/80" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
+            isHovered && !shouldHighlight ? "hover:shadow-sm" : "",
+            isClicked ? "scale-[0.98] transform" : "",
+            isNavigatingTo ? "nav-item-loading ring-1 ring-blue-200/50" : ""
           ),
           children: [
             /* @__PURE__ */ jsxs249("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx274(Icon2, { className: cn8(
-                "w-4 h-4",
-                active ? "text-blue-700" : "text-text-secondary"
+                "w-4 h-4 transition-colors duration-100",
+                shouldHighlight ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ jsx274("span", { children: item.label })
             ] }),
@@ -42267,7 +42280,8 @@ var ClientSidebar = ({
               "w-4 h-4 transition-transform duration-200",
               isExpanded ? "rotate-180" : ""
             ) }),
-            isHovered && !active && /* @__PURE__ */ jsx274("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
+            isHovered && !shouldHighlight && /* @__PURE__ */ jsx274("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100" }),
+            isNavigatingTo && /* @__PURE__ */ jsx274("div", { className: "absolute inset-0 bg-blue-50/30 rounded-lg animate-pulse transition-all duration-100" })
           ]
         }
       ) : /* @__PURE__ */ jsxs249(
@@ -42282,27 +42296,32 @@ var ClientSidebar = ({
           onMouseEnter: () => handleTabHover(item.href),
           onMouseLeave: () => setHoveredTab(null),
           className: cn8(
-            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative",
-            active ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
-            isHovered ? "scale-[1.02]" : "",
-            clickedTab === item.href ? "scale-[0.98]" : ""
+            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative",
+            shouldHighlight ? "nav-item-active text-blue-700 font-medium bg-blue-50/80" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
+            isHovered && !shouldHighlight ? "hover:shadow-sm" : "",
+            isClicked ? "scale-[0.98] transform" : "",
+            isNavigatingTo ? "nav-item-loading ring-1 ring-blue-200/50" : ""
           ),
           children: [
             /* @__PURE__ */ jsxs249("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx274(Icon2, { className: cn8(
-                "w-4 h-4",
-                active ? "text-blue-700" : "text-text-secondary"
+                "w-4 h-4 transition-colors duration-100",
+                shouldHighlight ? "text-blue-700" : "text-text-secondary"
               ) }),
               !isCollapsed && /* @__PURE__ */ jsx274("span", { children: item.label })
             ] }),
             !isCollapsed && item.badge && /* @__PURE__ */ jsx274("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge }),
-            isHovered && !active && /* @__PURE__ */ jsx274("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-200" })
+            isHovered && !shouldHighlight && /* @__PURE__ */ jsx274("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100" }),
+            isNavigatingTo && /* @__PURE__ */ jsx274("div", { className: "absolute inset-0 bg-blue-50/30 rounded-lg animate-pulse transition-all duration-100" })
           ]
         }
       ),
       hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ jsx274("div", { className: "ml-6 mt-1 space-y-1", "data-submenu": "true", children: item.subItems?.map((subItem) => {
         const SubIcon = subItem.icon;
         const subActive = isActive(subItem.href);
+        const subNavigating = isNavigating === subItem.href;
+        const subClicked = clickedTab === subItem.href;
+        const subShouldHighlight = subActive || subNavigating;
         return /* @__PURE__ */ jsxs249(
           Button78,
           {
@@ -42313,15 +42332,21 @@ var ClientSidebar = ({
               handleTabClick(subItem.href);
               setTimeout(() => {
                 setExpandedItems([]);
-              }, 100);
+              }, 50);
             },
             className: cn8(
-              "w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-colors rounded-lg justify-start h-auto",
-              subActive ? "text-blue-700 font-medium" : "text-text-primary hover:text-blue-700"
+              "w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-all duration-100 rounded-lg justify-start h-auto will-change-transform",
+              subShouldHighlight ? "text-blue-700 font-medium bg-blue-50/80" : "text-text-primary hover:text-blue-700",
+              subClicked ? "scale-[0.99] transform" : "",
+              subNavigating ? "ring-1 ring-blue-200/50" : ""
             ),
             children: [
-              /* @__PURE__ */ jsx274(SubIcon, { className: "w-4 h-4" }),
-              subItem.label
+              /* @__PURE__ */ jsx274(SubIcon, { className: cn8(
+                "w-4 h-4 transition-colors duration-100",
+                subShouldHighlight ? "text-blue-700" : "text-text-secondary"
+              ) }),
+              subItem.label,
+              subNavigating && /* @__PURE__ */ jsx274("div", { className: "absolute inset-0 bg-blue-50/20 rounded-lg transition-all duration-100" })
             ]
           },
           subItem.href
