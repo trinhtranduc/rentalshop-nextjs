@@ -311,7 +311,7 @@ function getApiBaseUrlInternal(): string {
   
   switch (env) {
     case 'local':
-      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-apis-development.up.railway.app';
     
     case 'development':
       return process.env.NEXT_PUBLIC_API_URL || 'https://dev-apis-development.up.railway.app';
@@ -320,7 +320,7 @@ function getApiBaseUrlInternal(): string {
       return process.env.NEXT_PUBLIC_API_URL || 'https://apis-development.up.railway.app';
     
     default:
-      return 'http://localhost:3002';
+      return 'https://dev-apis-development.up.railway.app';
   }
 }
 
@@ -379,7 +379,7 @@ function getApiConfig(): ApiConfig {
         urls: {
           client: process.env.CLIENT_URL || 'http://localhost:3000',
           admin: process.env.ADMIN_URL || 'http://localhost:3001',
-          api: process.env.API_URL || 'http://localhost:3002',
+          api: process.env.API_URL || 'https://dev-apis-development.up.railway.app',
           mobile: process.env.MOBILE_URL || 'http://localhost:3003'
         },
         logging: {
@@ -418,7 +418,7 @@ function getApiConfig(): ApiConfig {
         urls: {
           client: process.env.CLIENT_URL || 'https://dev.rentalshop.com',
           admin: process.env.ADMIN_URL || 'https://admin.dev.rentalshop.com',
-          api: process.env.API_URL || 'https://api.dev.rentalshop.com',
+          api: process.env.API_URL || 'https://dev-apis-development.up.railway.app',
           mobile: process.env.MOBILE_URL || 'https://mobile.dev.rentalshop.com'
         },
         logging: {
@@ -457,7 +457,7 @@ function getApiConfig(): ApiConfig {
         urls: {
           client: process.env.CLIENT_URL || 'https://client-production-d10a.up.railway.app',
           admin: process.env.ADMIN_URL || 'https://admin-production-89d0.up.railway.app',
-          api: process.env.API_URL || 'https://apis-production-b698.up.railway.app',
+          api: process.env.API_URL || 'https://apis-development.up.railway.app',
           mobile: process.env.MOBILE_URL || 'https://mobile.rentalshop.com'
         },
         logging: {

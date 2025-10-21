@@ -1,22 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getApiUrl, getCurrentEnvironment } from '@rentalshop/utils';
 
 export async function GET(request: NextRequest) {
+  const environment = getCurrentEnvironment();
+  const apiUrl = getApiUrl();
+
+  const getServerDescription = (env: string) => {
+    switch (env) {
+      case 'production':
+        return 'Production Railway server';
+      case 'development':
+        return 'Development Railway server';
+      default:
+        return 'Railway development server';
+    }
+  };
+
   const specs = {
     openapi: '3.0.0',
     info: {
       title: 'Rental Shop API',
-      version: '1.0.0',
-      description: 'REST API for rental shop management system',
+      version: '2.0.0',
+      description: 'REST API for rental shop management system with comprehensive endpoints for authentication, products, customers, analytics, and more',
       contact: {
         name: 'RentalShop Support',
         email: 'support@rentalshop.com',
+        url: 'https://rentalshop.com/support'
       },
+      license: {
+        name: 'MIT',
+        url: 'https://opensource.org/licenses/MIT'
+      }
     },
     servers: [
       {
-        url: 'http://localhost:3002',
-        description: 'Development server',
+        url: 'https://dev-apis-development.up.railway.app',
+        description: 'Development Railway server (Recommended for Local)',
       },
+      {
+        url: 'https://apis-development.up.railway.app',
+        description: 'Production Railway server',
+      },
+      {
+        url: apiUrl,
+        description: getServerDescription(environment),
+      },
+      {
+        url: 'http://localhost:3002',
+        description: 'Local development server (Fallback)',
+      }
+    ],
+    tags: [
+      {
+        name: 'Authentication',
+        description: 'User authentication and authorization endpoints'
+      },
+      {
+        name: 'Mobile',
+        description: 'Mobile-specific API endpoints'
+      },
+      {
+        name: 'Notifications',
+        description: 'Push notification management'
+      },
+      {
+        name: 'Sync',
+        description: 'Data synchronization endpoints'
+      }
     ],
     paths: {
       '/api/auth/login': {
@@ -455,7 +505,47 @@ export async function GET(request: NextRequest) {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT'
+          bearerFormat: 'JWT',
+          description: 'JWT token obtained from login endpoint'
+        }
+      },
+      schemas: {
+        ErrorResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: false
+            },
+            message: {
+              type: 'string',
+              example: 'Error message'
+            },
+            errors: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'Validation errors if applicable'
+            }
+          }
+        },
+        SuccessResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            message: {
+              type: 'string',
+              example: 'Operation successful'
+            },
+            data: {
+              type: 'object',
+              description: 'Response data'
+            }
+          }
         }
       }
     },

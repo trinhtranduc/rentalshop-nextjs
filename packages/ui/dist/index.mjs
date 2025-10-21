@@ -41,8 +41,7 @@ var require_property_expr = __commonJS({
     };
     Cache.prototype.set = function(key, value) {
       this._size >= this._maxSize && this.clear();
-      if (!(key in this._values))
-        this._size++;
+      if (!(key in this._values)) this._size++;
       return this._values[key] = value;
     };
     var SPLIT_REGEX = /[^.^\]^[]+|(?=\[\]|\.\.)/g;
@@ -79,10 +78,8 @@ var require_property_expr = __commonJS({
         return getCache.get(path) || getCache.set(path, function getter2(data) {
           var index = 0, len = parts.length;
           while (index < len) {
-            if (data != null || !safe)
-              data = data[parts[index++]];
-            else
-              return;
+            if (data != null || !safe) data = data[parts[index++]];
+            else return;
           }
           return data;
         });
@@ -182,8 +179,7 @@ var require_toposort = __commonJS({
         }
       });
       while (i--) {
-        if (!visited[i])
-          visit(nodes[i], i, /* @__PURE__ */ new Set());
+        if (!visited[i]) visit(nodes[i], i, /* @__PURE__ */ new Set());
       }
       return sorted;
       function visit(node, i2, predecessors) {
@@ -199,8 +195,7 @@ var require_toposort = __commonJS({
         if (!nodesHash.has(node)) {
           throw new Error("Found unknown node. Make sure to provided all involved nodes. Unknown node: " + JSON.stringify(node));
         }
-        if (visited[i2])
-          return;
+        if (visited[i2]) return;
         visited[i2] = true;
         var outgoing = outgoingEdges.get(node) || /* @__PURE__ */ new Set();
         outgoing = Array.from(outgoing);
@@ -228,10 +223,8 @@ var require_toposort = __commonJS({
       var edges = /* @__PURE__ */ new Map();
       for (var i = 0, len = arr.length; i < len; i++) {
         var edge = arr[i];
-        if (!edges.has(edge[0]))
-          edges.set(edge[0], /* @__PURE__ */ new Set());
-        if (!edges.has(edge[1]))
-          edges.set(edge[1], /* @__PURE__ */ new Set());
+        if (!edges.has(edge[0])) edges.set(edge[0], /* @__PURE__ */ new Set());
+        if (!edges.has(edge[1])) edges.set(edge[1], /* @__PURE__ */ new Set());
         edges.get(edge[0]).add(edge[1]);
       }
       return edges;
@@ -255,38 +248,29 @@ var require_react_fast_compare = __commonJS({
     var hasProp = Object.prototype.hasOwnProperty;
     var hasElementType = typeof Element !== "undefined";
     function equal(a, b) {
-      if (a === b)
-        return true;
+      if (a === b) return true;
       if (a && b && typeof a == "object" && typeof b == "object") {
         var arrA = isArray2(a), arrB = isArray2(b), i, length, key;
         if (arrA && arrB) {
           length = a.length;
-          if (length != b.length)
-            return false;
+          if (length != b.length) return false;
           for (i = length; i-- !== 0; )
-            if (!equal(a[i], b[i]))
-              return false;
+            if (!equal(a[i], b[i])) return false;
           return true;
         }
-        if (arrA != arrB)
-          return false;
+        if (arrA != arrB) return false;
         var dateA = a instanceof Date, dateB = b instanceof Date;
-        if (dateA != dateB)
-          return false;
-        if (dateA && dateB)
-          return a.getTime() == b.getTime();
+        if (dateA != dateB) return false;
+        if (dateA && dateB) return a.getTime() == b.getTime();
         var regexpA = a instanceof RegExp, regexpB = b instanceof RegExp;
-        if (regexpA != regexpB)
-          return false;
-        if (regexpA && regexpB)
-          return a.toString() == b.toString();
+        if (regexpA != regexpB) return false;
+        if (regexpA && regexpB) return a.toString() == b.toString();
         var keys2 = keyList(a);
         length = keys2.length;
         if (length !== keyList(b).length)
           return false;
         for (i = length; i-- !== 0; )
-          if (!hasProp.call(b, keys2[i]))
-            return false;
+          if (!hasProp.call(b, keys2[i])) return false;
         if (hasElementType && a instanceof Element && b instanceof Element)
           return a === b;
         for (i = length; i-- !== 0; ) {
@@ -294,8 +278,7 @@ var require_react_fast_compare = __commonJS({
           if (key === "_owner" && a.$$typeof) {
             continue;
           } else {
-            if (!equal(a[key], b[key]))
-              return false;
+            if (!equal(a[key], b[key])) return false;
           }
         }
         return true;
@@ -695,11 +678,9 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 function formatDate(date2, locale2 = "vi-VN") {
-  if (!date2)
-    return "N/A";
+  if (!date2) return "N/A";
   const dateObj = typeof date2 === "string" ? new Date(date2) : date2;
-  if (isNaN(dateObj.getTime()))
-    return "Invalid Date";
+  if (isNaN(dateObj.getTime())) return "Invalid Date";
   return new Intl.DateTimeFormat(locale2, {
     year: "numeric",
     month: "2-digit",
@@ -1012,8 +993,7 @@ var ButtonClean = React3.forwardRef(
   }, ref) => {
     const Comp = asChild ? "button" : "button";
     const renderIcon = () => {
-      if (!icon || !showIcon)
-        return null;
+      if (!icon || !showIcon) return null;
       return /* @__PURE__ */ jsx6("span", { className: cn2(
         "inline-flex items-center",
         iconPosition === "left" ? "mr-2" : "ml-2"
@@ -1781,8 +1761,7 @@ var Input = React11.forwardRef(({ className, type, variant = "filled", leadingIc
       ...props
     }
   );
-  if (!leadingIcon)
-    return input;
+  if (!leadingIcon) return input;
   return /* @__PURE__ */ jsxs10("div", { className: "relative", children: [
     /* @__PURE__ */ jsx18("span", { className: "absolute left-3 top-1/2 -translate-y-1/2 text-gray-400", children: leadingIcon }),
     React11.cloneElement(input, {
@@ -2073,8 +2052,7 @@ var DropdownMenuContent = React15.forwardRef(({ className, align = "start", side
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [open, onOpenChange]);
-  if (!open)
-    return null;
+  if (!open) return null;
   return /* @__PURE__ */ jsx24(
     "div",
     {
@@ -2326,8 +2304,7 @@ var NumericInput = ({
     if (numValue === void 0 || numValue === null || isNaN(numValue)) {
       return "";
     }
-    if (numValue === 0)
-      return "";
+    if (numValue === 0) return "";
     if (allowDecimals) {
       return numValue.toLocaleString("en-US", {
         minimumFractionDigits: 0,
@@ -2347,16 +2324,12 @@ var NumericInput = ({
     const cleanValue = inputValue.replace(regex, "");
     if (allowDecimals) {
       const parts = cleanValue.split(".");
-      if (parts.length > 2)
-        return;
-      if (parts[1] && parts[1].length > maxDecimalPlaces)
-        return;
+      if (parts.length > 2) return;
+      if (parts[1] && parts[1].length > maxDecimalPlaces) return;
     }
     const numericValue = allowDecimals ? parseFloat(cleanValue) || 0 : parseInt(cleanValue) || 0;
-    if (min !== void 0 && numericValue < min)
-      return;
-    if (max !== void 0 && numericValue > max)
-      return;
+    if (min !== void 0 && numericValue < min) return;
+    if (max !== void 0 && numericValue > max) return;
     setDisplayValue(cleanValue);
     onChange(numericValue);
   };
@@ -2649,8 +2622,7 @@ var DateRangePicker = ({
     return `${day}/${month}`;
   };
   const formatDisplayValue = () => {
-    if (!value?.from && !value?.to)
-      return placeholder;
+    if (!value?.from && !value?.to) return placeholder;
     if (value.from && value.to) {
       return `${formatDate11(value.from, "long")} - ${formatDate11(value.to, "long")}`;
     }
@@ -2672,8 +2644,7 @@ var DateRangePicker = ({
     return { daysInMonth: daysInMonth2, startingDayOfWeek: startingDayOfWeek2 };
   };
   const isDateInRange = (date2) => {
-    if (!tempRange.from && !tempRange.to)
-      return false;
+    if (!tempRange.from && !tempRange.to) return false;
     const dateTime = date2.getTime();
     const fromTime = tempRange.from?.getTime() || 0;
     const toTime = tempRange.to?.getTime() || 0;
@@ -2689,8 +2660,7 @@ var DateRangePicker = ({
     return false;
   };
   const isDateSelected = (date2) => {
-    if (!tempRange.from && !tempRange.to)
-      return false;
+    if (!tempRange.from && !tempRange.to) return false;
     const dateTime = date2.getTime();
     const fromTime = tempRange.from?.getTime() || 0;
     const toTime = tempRange.to?.getTime() || 0;
@@ -2699,15 +2669,12 @@ var DateRangePicker = ({
   const isDateDisabled = (date2) => {
     const today = /* @__PURE__ */ new Date();
     today.setHours(0, 0, 0, 0);
-    if (minDate && date2 < minDate)
-      return true;
-    if (maxDate && date2 > maxDate)
-      return true;
+    if (minDate && date2 < minDate) return true;
+    if (maxDate && date2 > maxDate) return true;
     return false;
   };
   const handleDateClick = (date2) => {
-    if (isDateDisabled(date2))
-      return;
+    if (isDateDisabled(date2)) return;
     if (!tempRange.from || tempRange.from && tempRange.to) {
       setTempRange({ from: date2, to: void 0 });
     } else {
@@ -3204,8 +3171,7 @@ var ProductAvailabilityAsyncDisplay = ({
     const timeoutId = setTimeout(checkAvailability, 300);
     return () => clearTimeout(timeoutId);
   }, [product, pickupDate, returnDate, requestedQuantity, getProductAvailabilityStatus]);
-  if (!product)
-    return null;
+  if (!product) return null;
   if (isLoading) {
     return /* @__PURE__ */ jsxs19("div", { className: "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600", children: [
       /* @__PURE__ */ jsx33(Loader2, { className: "w-3 h-3 animate-spin mr-1" }),
@@ -3335,8 +3301,7 @@ var ProductAvailabilityWarning = ({
   }
   const problematicProducts = orderItems.filter((order) => {
     const availability = availabilityData[order.productId];
-    if (!availability)
-      return false;
+    if (!availability) return false;
     return availability.status === "unavailable";
   });
   if (problematicProducts.length === 0) {
@@ -3346,8 +3311,7 @@ var ProductAvailabilityWarning = ({
     const hasUnavailable = problematicProducts.some(
       (p2) => availabilityData[p2.productId]?.status === "unavailable"
     );
-    if (hasUnavailable)
-      return "warning";
+    if (hasUnavailable) return "warning";
     return "info";
   };
   const getWarningIcon = () => {
@@ -3383,8 +3347,7 @@ var ProductAvailabilityWarning = ({
       /* @__PURE__ */ jsx35("h4", { className: "font-medium mb-2", children: getWarningTitle() }),
       /* @__PURE__ */ jsx35("div", { className: "space-y-2", children: problematicProducts.map((product) => {
         const availability = availabilityData[product.productId];
-        if (!availability)
-          return null;
+        if (!availability) return null;
         const getProductStatusText = () => {
           const { hasDateConflict, conflictingQuantity } = availability;
           switch (availability.status) {
@@ -3506,8 +3469,7 @@ var SearchableSelect = ({
   React23.useEffect(() => {
     const handler = (e2) => {
       const el = rootRef.current;
-      if (!el)
-        return;
+      if (!el) return;
       if (open && !el.contains(e2.target)) {
         setOpen(false);
       }
@@ -3724,8 +3686,7 @@ var SearchableCountrySelect = ({
   React24.useEffect(() => {
     const handler = (e2) => {
       const el = rootRef.current;
-      if (!el)
-        return;
+      if (!el) return;
       if (open && !el.contains(e2.target)) {
         setOpen(false);
       }
@@ -4014,7 +3975,8 @@ var ProductForm = ({
   merchantId = "",
   hideHeader = false,
   hideSubmitButton = false,
-  formId
+  formId,
+  useMultipartUpload = false
 }) => {
   const t2 = useProductTranslations();
   const tc = useCommonTranslations2();
@@ -4038,6 +4000,7 @@ var ProductForm = ({
   const [autoSaveStatus, setAutoSaveStatus] = useState10("idle");
   const [uploadProgress, setUploadProgress] = useState10({});
   const [uploadErrors, setUploadErrors] = useState10({});
+  const [selectedFiles, setSelectedFiles] = useState10([]);
   const fileInputRef = useRef5(null);
   useEffect9(() => {
     console.log("\u{1F50D} ProductForm - initialData changed:", initialData);
@@ -4222,11 +4185,15 @@ var ProductForm = ({
       rentPrice: formData.rentPrice,
       salePrice: formData.salePrice > 0 ? formData.salePrice : void 0,
       deposit: formData.deposit,
-      images: formData.images,
-      // Keep as array for ProductInput
+      images: useMultipartUpload ? [] : formData.images,
+      // Empty array for multipart, existing images for immediate upload
       outletStock: formData.outletStock
     };
-    onSubmit(productData);
+    if (useMultipartUpload) {
+      onSubmit(productData, selectedFiles);
+    } else {
+      onSubmit(productData);
+    }
   };
   const handleInputChange = (field, value) => {
     let processedValue = value;
@@ -4257,14 +4224,20 @@ var ProductForm = ({
     }));
   };
   const handleImageUpload = async (files) => {
-    if (!files)
-      return;
-    if (formData.images.length >= 3) {
+    if (!files) return;
+    const currentImageCount2 = useMultipartUpload ? selectedFiles.length : formData.images.length;
+    if (currentImageCount2 >= 3) {
       console.warn("Maximum 3 images allowed");
       return;
     }
     const filesArray = Array.from(files);
-    const filesToUpload = filesArray.slice(0, 3 - formData.images.length);
+    const filesToUpload = filesArray.slice(0, 3 - currentImageCount2);
+    if (useMultipartUpload) {
+      console.log("\u{1F50D} Using multipart upload mode - storing files locally");
+      setSelectedFiles((prev) => [...prev, ...filesToUpload]);
+      setUploadErrors({});
+      return;
+    }
     const token = getAuthToken();
     if (!token) {
       console.error("No authentication token found");
@@ -4352,10 +4325,14 @@ var ProductForm = ({
     }
   };
   const removeImage = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+    if (useMultipartUpload) {
+      setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    }
   };
   const handleDrag = useCallback((e2) => {
     e2.preventDefault();
@@ -4370,16 +4347,22 @@ var ProductForm = ({
     e2.preventDefault();
     e2.stopPropagation();
     setDragActive(false);
-    if (e2.dataTransfer.files && e2.dataTransfer.files[0] && formData.images.length < 3) {
+    const currentImageCount2 = useMultipartUpload ? selectedFiles.length : formData.images.length;
+    if (e2.dataTransfer.files && e2.dataTransfer.files[0] && currentImageCount2 < 3) {
       handleImageUpload(e2.dataTransfer.files);
     }
-  }, [formData.images.length]);
+  }, [formData.images.length, selectedFiles.length, useMultipartUpload]);
   const getProductStatus = () => {
-    if (formData.totalStock === 0)
-      return { status: "Out of Stock", variant: "destructive" };
+    if (formData.totalStock === 0) return { status: "Out of Stock", variant: "destructive" };
     return { status: "In Stock", variant: "default" };
   };
   const { status, variant } = getProductStatus();
+  const currentImages = useMultipartUpload ? selectedFiles : formData.images;
+  const currentImageCount = currentImages.length;
+  const isMaxImagesReached = currentImageCount >= 3;
+  const createFilePreviewUrl = (file) => {
+    return URL.createObjectURL(file);
+  };
   return /* @__PURE__ */ jsxs25("div", { className: "space-y-6", children: [
     !hideHeader && /* @__PURE__ */ jsxs25("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsxs25("div", { children: [
@@ -4635,15 +4618,15 @@ var ProductForm = ({
           /* @__PURE__ */ jsxs25(
             "div",
             {
-              className: `border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive && formData.images.length < 3 ? "border-action-primary bg-action-primary/10" : formData.images.length >= 3 ? "border-gray-300 bg-gray-50" : "border-border hover:border-action-primary/50"}`,
-              onDragEnter: formData.images.length < 3 ? handleDrag : void 0,
-              onDragLeave: formData.images.length < 3 ? handleDrag : void 0,
-              onDragOver: formData.images.length < 3 ? handleDrag : void 0,
-              onDrop: formData.images.length < 3 ? handleDrop : void 0,
+              className: `border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive && !isMaxImagesReached ? "border-action-primary bg-action-primary/10" : isMaxImagesReached ? "border-gray-300 bg-gray-50" : "border-border hover:border-action-primary/50"}`,
+              onDragEnter: !isMaxImagesReached ? handleDrag : void 0,
+              onDragLeave: !isMaxImagesReached ? handleDrag : void 0,
+              onDragOver: !isMaxImagesReached ? handleDrag : void 0,
+              onDrop: !isMaxImagesReached ? handleDrop : void 0,
               children: [
-                /* @__PURE__ */ jsx39(Upload, { className: `w-8 h-8 mx-auto mb-2 ${formData.images.length >= 3 ? "text-gray-400" : "text-text-secondary"}` }),
-                /* @__PURE__ */ jsx39("p", { className: "text-text-primary font-medium mb-1", children: formData.images.length >= 3 ? t2("messages.maxImagesReached") : t2("messages.dragDropImages") }),
-                /* @__PURE__ */ jsx39("p", { className: "text-text-secondary text-sm mb-3", children: t2("messages.imageFormats") }),
+                /* @__PURE__ */ jsx39(Upload, { className: `w-8 h-8 mx-auto mb-2 ${isMaxImagesReached ? "text-gray-400" : "text-text-secondary"}` }),
+                /* @__PURE__ */ jsx39("p", { className: "text-text-primary font-medium mb-1", children: isMaxImagesReached ? t2("messages.maxImagesReached") : t2("messages.dragDropImages") }),
+                /* @__PURE__ */ jsx39("p", { className: "text-text-secondary text-sm mb-3", children: useMultipartUpload ? `${t2("messages.imageFormats")} (will be uploaded with form data)` : t2("messages.imageFormats") }),
                 /* @__PURE__ */ jsx39(
                   "input",
                   {
@@ -4654,7 +4637,7 @@ var ProductForm = ({
                     onChange: (e2) => handleImageUpload(e2.target.files),
                     className: "hidden",
                     id: "image-upload",
-                    disabled: formData.images.length >= 3
+                    disabled: isMaxImagesReached
                   }
                 ),
                 /* @__PURE__ */ jsx39(
@@ -4664,8 +4647,8 @@ var ProductForm = ({
                     variant: "outline",
                     size: "sm",
                     onClick: () => fileInputRef.current?.click(),
-                    disabled: formData.images.length >= 3,
-                    children: formData.images.length >= 3 ? t2("messages.maxImagesReached") : tc("buttons.browse")
+                    disabled: isMaxImagesReached,
+                    children: isMaxImagesReached ? t2("messages.maxImagesReached") : tc("buttons.browse")
                   }
                 )
               ]
@@ -4673,17 +4656,23 @@ var ProductForm = ({
           ),
           /* @__PURE__ */ jsxs25("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsxs25("p", { className: "text-sm text-text-secondary", children: [
-              formData.images.length,
+              currentImageCount,
               "/3 ",
-              t2("messages.imagesUploaded")
+              useMultipartUpload ? t2("messages.imagesSelected") : t2("messages.imagesUploaded")
             ] }),
-            formData.images.length > 0 && /* @__PURE__ */ jsx39(
+            currentImageCount > 0 && /* @__PURE__ */ jsx39(
               Button2,
               {
                 type: "button",
                 variant: "outline",
                 size: "sm",
-                onClick: () => setFormData((prev) => ({ ...prev, images: [] })),
+                onClick: () => {
+                  if (useMultipartUpload) {
+                    setSelectedFiles([]);
+                  } else {
+                    setFormData((prev) => ({ ...prev, images: [] }));
+                  }
+                },
                 children: t2("messages.clearAllImages")
               }
             )
@@ -4710,56 +4699,90 @@ var ProductForm = ({
               }
             )
           ] }, fileId)) }),
-          formData.images.length > 0 && /* @__PURE__ */ jsx39("div", { className: "grid grid-cols-3 gap-3", children: formData.images.map((image, index) => {
-            const isUploading = image.startsWith("uploading-");
-            const fileId = isUploading ? image.replace("uploading-", "") : "";
-            const progress = isUploading ? uploadProgress[fileId] : null;
-            return /* @__PURE__ */ jsx39("div", { className: "relative group", children: isUploading ? (
-              // Upload Progress Card
-              /* @__PURE__ */ jsxs25("div", { className: "w-full h-24 rounded-lg border border-action-primary bg-action-primary/5 flex flex-col items-center justify-center gap-2", children: [
-                /* @__PURE__ */ jsx39(Loader23, { className: "w-6 h-6 animate-spin text-action-primary" }),
-                progress && /* @__PURE__ */ jsxs25(Fragment3, { children: [
-                  /* @__PURE__ */ jsx39("div", { className: "w-full px-4", children: /* @__PURE__ */ jsx39("div", { className: "w-full bg-gray-200 rounded-full h-2", children: /* @__PURE__ */ jsx39(
-                    "div",
-                    {
-                      className: "bg-action-primary h-2 rounded-full transition-all duration-300",
-                      style: { width: `${progress.percentage}%` }
-                    }
-                  ) }) }),
-                  /* @__PURE__ */ jsxs25("p", { className: "text-xs text-text-secondary", children: [
-                    progress.stage === "preparing" && t2("messages.preparing"),
-                    progress.stage === "uploading" && `${t2("messages.uploading")} ${progress.percentage}%`,
-                    progress.stage === "processing" && t2("messages.processing"),
-                    progress.stage === "complete" && t2("messages.complete")
-                  ] })
-                ] })
-              ] })
-            ) : (
-              // Image Preview
-              /* @__PURE__ */ jsxs25(Fragment3, { children: [
+          currentImageCount > 0 && /* @__PURE__ */ jsx39("div", { className: "grid grid-cols-3 gap-3", children: useMultipartUpload ? (
+            // Render selected files for multipart upload
+            selectedFiles.map((file, index) => {
+              const previewUrl = createFilePreviewUrl(file);
+              return /* @__PURE__ */ jsxs25("div", { className: "relative group", children: [
                 /* @__PURE__ */ jsx39(
                   "img",
                   {
-                    src: image,
-                    alt: `${t2("fields.name")} ${index + 1}`,
+                    src: previewUrl,
+                    alt: `${file.name}`,
                     className: "w-full h-24 object-cover rounded-lg border"
                   }
                 ),
+                /* @__PURE__ */ jsx39("div", { className: "absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 rounded-b-lg truncate", children: file.name }),
                 /* @__PURE__ */ jsx39(
                   Button2,
                   {
                     variant: "ghost",
                     size: "icon",
                     type: "button",
-                    onClick: () => removeImage(index),
+                    onClick: () => {
+                      removeImage(index);
+                      URL.revokeObjectURL(previewUrl);
+                    },
                     className: "absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 h-6 w-6",
                     title: t2("messages.removeImage"),
                     children: /* @__PURE__ */ jsx39(XCircle4, { className: "w-4 h-4" })
                   }
                 )
-              ] })
-            ) }, index);
-          }) })
+              ] }, index);
+            })
+          ) : (
+            // Render uploaded images (existing behavior)
+            formData.images.map((image, index) => {
+              const isUploading = image.startsWith("uploading-");
+              const fileId = isUploading ? image.replace("uploading-", "") : "";
+              const progress = isUploading ? uploadProgress[fileId] : null;
+              return /* @__PURE__ */ jsx39("div", { className: "relative group", children: isUploading ? (
+                // Upload Progress Card
+                /* @__PURE__ */ jsxs25("div", { className: "w-full h-24 rounded-lg border border-action-primary bg-action-primary/5 flex flex-col items-center justify-center gap-2", children: [
+                  /* @__PURE__ */ jsx39(Loader23, { className: "w-6 h-6 animate-spin text-action-primary" }),
+                  progress && /* @__PURE__ */ jsxs25(Fragment3, { children: [
+                    /* @__PURE__ */ jsx39("div", { className: "w-full px-4", children: /* @__PURE__ */ jsx39("div", { className: "w-full bg-gray-200 rounded-full h-2", children: /* @__PURE__ */ jsx39(
+                      "div",
+                      {
+                        className: "bg-action-primary h-2 rounded-full transition-all duration-300",
+                        style: { width: `${progress.percentage}%` }
+                      }
+                    ) }) }),
+                    /* @__PURE__ */ jsxs25("p", { className: "text-xs text-text-secondary", children: [
+                      progress.stage === "preparing" && t2("messages.preparing"),
+                      progress.stage === "uploading" && `${t2("messages.uploading")} ${progress.percentage}%`,
+                      progress.stage === "processing" && t2("messages.processing"),
+                      progress.stage === "complete" && t2("messages.complete")
+                    ] })
+                  ] })
+                ] })
+              ) : (
+                // Image Preview
+                /* @__PURE__ */ jsxs25(Fragment3, { children: [
+                  /* @__PURE__ */ jsx39(
+                    "img",
+                    {
+                      src: image,
+                      alt: `${t2("fields.name")} ${index + 1}`,
+                      className: "w-full h-24 object-cover rounded-lg border"
+                    }
+                  ),
+                  /* @__PURE__ */ jsx39(
+                    Button2,
+                    {
+                      variant: "ghost",
+                      size: "icon",
+                      type: "button",
+                      onClick: () => removeImage(index),
+                      className: "absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 h-6 w-6",
+                      title: t2("messages.removeImage"),
+                      children: /* @__PURE__ */ jsx39(XCircle4, { className: "w-4 h-4" })
+                    }
+                  )
+                ] })
+              ) }, index);
+            })
+          ) })
         ] })
       ] }),
       !hideSubmitButton && /* @__PURE__ */ jsx39("div", { className: "flex justify-end", children: /* @__PURE__ */ jsx39(
@@ -5389,8 +5412,7 @@ var useCreateOrderForm = (props) => {
     setOrderItems(updatedItems);
   }, [orderItems]);
   const calculateRentalDays = useCallback2((startDate, endDate) => {
-    if (!startDate || !endDate)
-      return 0;
+    if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -5426,8 +5448,7 @@ var useCreateOrderForm = (props) => {
   const handleSubmit = useCallback2(async (e2) => {
     e2.preventDefault();
     const currentOrderItems = orderItemsRef.current;
-    if (isSubmitting)
-      return;
+    if (isSubmitting) return;
     if (!currentOrderItems || currentOrderItems.length === 0) {
       throw new Error("Please add at least one product to the order before submitting.");
     }
@@ -5569,8 +5590,7 @@ import { BUSINESS as BUSINESS2, VALIDATION as VALIDATION2 } from "@rentalshop/co
 var useOrderValidation = () => {
   const [validationErrors, setValidationErrors] = useState13({});
   const calculateRentalDays = useCallback3((startDate, endDate) => {
-    if (!startDate || !endDate)
-      return 0;
+    if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -5696,8 +5716,7 @@ var useProductSearch = (currency = "USD") => {
     }
   }, [currency]);
   const searchProducts = useCallback4(async (query) => {
-    if (!query.trim())
-      return [];
+    if (!query.trim()) return [];
     try {
       setIsLoadingProducts(true);
       const result = await productsApi.getProducts({
@@ -7120,8 +7139,7 @@ var OrderPreviewForm = ({
     return 0;
   };
   const getValidationWarnings = () => {
-    if (!showValidation)
-      return [];
+    if (!showValidation) return [];
     const warnings2 = [];
     if (!orderData.customerId && !orderData.customerName) {
       warnings2.push(t2("messages.customerInformationMissing"));
@@ -7712,8 +7730,7 @@ var CreateOrderForm = (props) => {
   }, [isEditMode, initialOrder]);
   const validateFormAndSubmit = useCallback6(async (e2) => {
     e2.preventDefault();
-    if (isSubmitting)
-      return;
+    if (isSubmitting) return;
     if (!validateForm(formData, orderItems)) {
       return;
     }
@@ -8326,40 +8343,29 @@ var regExpToString = RegExp.prototype.toString;
 var symbolToString = typeof Symbol !== "undefined" ? Symbol.prototype.toString : () => "";
 var SYMBOL_REGEXP = /^Symbol\((.*)\)(.*)$/;
 function printNumber(val) {
-  if (val != +val)
-    return "NaN";
+  if (val != +val) return "NaN";
   const isNegativeZero = val === 0 && 1 / val < 0;
   return isNegativeZero ? "-0" : "" + val;
 }
 function printSimpleValue(val, quoteStrings = false) {
-  if (val == null || val === true || val === false)
-    return "" + val;
+  if (val == null || val === true || val === false) return "" + val;
   const typeOf = typeof val;
-  if (typeOf === "number")
-    return printNumber(val);
-  if (typeOf === "string")
-    return quoteStrings ? `"${val}"` : val;
-  if (typeOf === "function")
-    return "[Function " + (val.name || "anonymous") + "]";
-  if (typeOf === "symbol")
-    return symbolToString.call(val).replace(SYMBOL_REGEXP, "Symbol($1)");
+  if (typeOf === "number") return printNumber(val);
+  if (typeOf === "string") return quoteStrings ? `"${val}"` : val;
+  if (typeOf === "function") return "[Function " + (val.name || "anonymous") + "]";
+  if (typeOf === "symbol") return symbolToString.call(val).replace(SYMBOL_REGEXP, "Symbol($1)");
   const tag = toString.call(val).slice(8, -1);
-  if (tag === "Date")
-    return isNaN(val.getTime()) ? "" + val : val.toISOString(val);
-  if (tag === "Error" || val instanceof Error)
-    return "[" + errorToString.call(val) + "]";
-  if (tag === "RegExp")
-    return regExpToString.call(val);
+  if (tag === "Date") return isNaN(val.getTime()) ? "" + val : val.toISOString(val);
+  if (tag === "Error" || val instanceof Error) return "[" + errorToString.call(val) + "]";
+  if (tag === "RegExp") return regExpToString.call(val);
   return null;
 }
 function printValue(value, quoteStrings) {
   let result = printSimpleValue(value, quoteStrings);
-  if (result !== null)
-    return result;
+  if (result !== null) return result;
   return JSON.stringify(value, function(key, value2) {
     let result2 = printSimpleValue(this[key], quoteStrings);
-    if (result2 !== null)
-      return result2;
+    if (result2 !== null) return result2;
     return value2;
   }, 2);
 }
@@ -8409,10 +8415,8 @@ var ValidationError = class _ValidationError extends Error {
       path,
       originalPath: params.path
     });
-    if (typeof message === "string")
-      return message.replace(strReg, (_, key) => printValue(params[key]));
-    if (typeof message === "function")
-      return message(params);
+    if (typeof message === "string") return message.replace(strReg, (_, key) => printValue(params[key]));
+    if (typeof message === "function") return message(params);
     return message;
   }
   static isError(err) {
@@ -8512,10 +8516,8 @@ var tuple = {
     } = params;
     const typeLen = spec.types.length;
     if (Array.isArray(value)) {
-      if (value.length < typeLen)
-        return `${path} tuple value has too few items, expected a length of ${typeLen} but got ${value.length} for value: \`${printValue(value, true)}\``;
-      if (value.length > typeLen)
-        return `${path} tuple value has too many items, expected a length of ${typeLen} but got ${value.length} for value: \`${printValue(value, true)}\``;
+      if (value.length < typeLen) return `${path} tuple value has too few items, expected a length of ${typeLen} but got ${value.length} for value: \`${printValue(value, true)}\``;
+      if (value.length > typeLen) return `${path} tuple value has too many items, expected a length of ${typeLen} but got ${value.length} for value: \`${printValue(value, true)}\``;
     }
     return ValidationError.formatError(mixed.notType, params);
   }
@@ -8533,8 +8535,7 @@ var locale = Object.assign(/* @__PURE__ */ Object.create(null), {
 var isSchema = (obj) => obj && obj.__isYupSchema__;
 var Condition = class _Condition {
   static fromOptions(refs, config) {
-    if (!config.then && !config.otherwise)
-      throw new TypeError("either `then:` or `otherwise:` is required for `when()` conditions");
+    if (!config.then && !config.otherwise) throw new TypeError("either `then:` or `otherwise:` is required for `when()` conditions");
     let {
       is,
       then,
@@ -8563,8 +8564,7 @@ var Condition = class _Condition {
     schema === base) {
       return base;
     }
-    if (!isSchema(schema))
-      throw new TypeError("conditions must return a schema object");
+    if (!isSchema(schema)) throw new TypeError("conditions must return a schema object");
     return schema.resolve(options);
   }
 };
@@ -8584,11 +8584,9 @@ var Reference = class {
     this.path = void 0;
     this.getter = void 0;
     this.map = void 0;
-    if (typeof key !== "string")
-      throw new TypeError("ref must be a string, got: " + key);
+    if (typeof key !== "string") throw new TypeError("ref must be a string, got: " + key);
     this.key = key.trim();
-    if (key === "")
-      throw new TypeError("ref must be a non-empty string");
+    if (key === "") throw new TypeError("ref must be a non-empty string");
     this.isContext = this.key[0] === prefixes.context;
     this.isValue = this.key[0] === prefixes.value;
     this.isSibling = !this.isContext && !this.isValue;
@@ -8599,10 +8597,8 @@ var Reference = class {
   }
   getValue(value, parent, context) {
     let result = this.isContext ? context : this.isValue ? value : parent;
-    if (this.getter)
-      result = this.getter(result || {});
-    if (this.map)
-      result = this.map(result);
+    if (this.getter) result = this.getter(result || {});
+    if (this.map) result = this.map(result);
     return result;
   }
   /**
@@ -8687,18 +8683,13 @@ function createValidation(config) {
       schema
     };
     const handleResult = (validOrError) => {
-      if (ValidationError.isError(validOrError))
-        invalid(validOrError);
-      else if (!validOrError)
-        invalid(createError());
-      else
-        next(null);
+      if (ValidationError.isError(validOrError)) invalid(validOrError);
+      else if (!validOrError) invalid(createError());
+      else next(null);
     };
     const handleError = (err) => {
-      if (ValidationError.isError(err))
-        invalid(err);
-      else
-        panic(err);
+      if (ValidationError.isError(err)) invalid(err);
+      else panic(err);
     };
     const shouldSkip = skipAbsent && isAbsent(value);
     if (shouldSkip) {
@@ -8724,8 +8715,7 @@ function createValidation(config) {
   return validate;
 }
 function resolveParams(params, options) {
-  if (!params)
-    return params;
+  if (!params) return params;
   for (const key of Object.keys(params)) {
     params[key] = resolveMaybeRef(params[key], options);
   }
@@ -8736,12 +8726,11 @@ function resolveMaybeRef(item, options) {
 }
 function getIn(schema, path, value, context = value) {
   let parent, lastPart, lastPartDebug;
-  if (!path)
-    return {
-      parent,
-      parentPath: path,
-      schema
-    };
+  if (!path) return {
+    parent,
+    parentPath: path,
+    schema
+  };
   (0, import_property_expr.forEach)(path, (_part, isBracket, isArray2) => {
     let part = isBracket ? _part.slice(1, _part.length - 1) : _part;
     schema = schema.resolve({
@@ -8752,8 +8741,7 @@ function getIn(schema, path, value, context = value) {
     let isTuple = schema.type === "tuple";
     let idx = isArray2 ? parseInt(part, 10) : 0;
     if (schema.innerType || isTuple) {
-      if (isTuple && !isArray2)
-        throw new Error(`Yup.reach cannot implicitly index into a tuple type. the path part "${lastPartDebug}" must contain an index to the tuple element, e.g. "${lastPartDebug}[0]"`);
+      if (isTuple && !isArray2) throw new Error(`Yup.reach cannot implicitly index into a tuple type. the path part "${lastPartDebug}" must contain an index to the tuple element, e.g. "${lastPartDebug}[0]"`);
       if (value && idx >= value.length) {
         throw new Error(`Yup.reach cannot resolve an array item at index: ${_part}, in the path: ${path}. because there is no value at that index. `);
       }
@@ -8762,8 +8750,7 @@ function getIn(schema, path, value, context = value) {
       schema = isTuple ? schema.spec.types[idx] : schema.innerType;
     }
     if (!isArray2) {
-      if (!schema.fields || !schema.fields[part])
-        throw new Error(`The schema does not contain the path: ${path}. (failed at: ${lastPartDebug} which is a type: "${schema.type}")`);
+      if (!schema.fields || !schema.fields[part]) throw new Error(`The schema does not contain the path: ${path}. (failed at: ${lastPartDebug} which is a type: "${schema.type}")`);
       parent = value;
       value = value && value[part];
       schema = schema.fields[part];
@@ -8803,10 +8790,8 @@ var ReferenceSet = class _ReferenceSet extends Set {
   }
 };
 function clone(src, seen = /* @__PURE__ */ new Map()) {
-  if (isSchema(src) || !src || typeof src !== "object")
-    return src;
-  if (seen.has(src))
-    return seen.get(src);
+  if (isSchema(src) || !src || typeof src !== "object") return src;
+  if (seen.has(src)) return seen.get(src);
   let copy;
   if (src instanceof Date) {
     copy = new Date(src.getTime());
@@ -8817,23 +8802,19 @@ function clone(src, seen = /* @__PURE__ */ new Map()) {
   } else if (Array.isArray(src)) {
     copy = new Array(src.length);
     seen.set(src, copy);
-    for (let i = 0; i < src.length; i++)
-      copy[i] = clone(src[i], seen);
+    for (let i = 0; i < src.length; i++) copy[i] = clone(src[i], seen);
   } else if (src instanceof Map) {
     copy = /* @__PURE__ */ new Map();
     seen.set(src, copy);
-    for (const [k2, v2] of src.entries())
-      copy.set(k2, clone(v2, seen));
+    for (const [k2, v2] of src.entries()) copy.set(k2, clone(v2, seen));
   } else if (src instanceof Set) {
     copy = /* @__PURE__ */ new Set();
     seen.set(src, copy);
-    for (const v2 of src)
-      copy.add(clone(v2, seen));
+    for (const v2 of src) copy.add(clone(v2, seen));
   } else if (src instanceof Object) {
     copy = {};
     seen.set(src, copy);
-    for (const [k2, v2] of Object.entries(src))
-      copy[k2] = clone(v2, seen);
+    for (const [k2, v2] of Object.entries(src)) copy[k2] = clone(v2, seen);
   } else {
     throw Error(`Unable to clone ${src}`);
   }
@@ -8943,8 +8924,7 @@ var Schema = class {
   }
   clone(spec) {
     if (this._mutate) {
-      if (spec)
-        Object.assign(this.spec, spec);
+      if (spec) Object.assign(this.spec, spec);
       return this;
     }
     const next = Object.create(Object.getPrototypeOf(this));
@@ -8967,8 +8947,7 @@ var Schema = class {
     return next;
   }
   meta(...args) {
-    if (args.length === 0)
-      return this.spec.meta;
+    if (args.length === 0) return this.spec.meta;
     let next = this.clone();
     next.spec.meta = Object.assign(next.spec.meta || {}, args[0]);
     return next;
@@ -8981,10 +8960,8 @@ var Schema = class {
     return result;
   }
   concat(schema) {
-    if (!schema || schema === this)
-      return this;
-    if (schema.type !== this.type && this.type !== "mixed")
-      throw new TypeError(`You cannot \`concat()\` schema's of different types: ${this.type} and ${schema.type}`);
+    if (!schema || schema === this) return this;
+    if (schema.type !== this.type && this.type !== "mixed") throw new TypeError(`You cannot \`concat()\` schema's of different types: ${this.type} and ${schema.type}`);
     let base = this;
     let combined = schema.clone();
     const mergedSpec = Object.assign({}, base.spec, combined.spec);
@@ -9004,10 +8981,8 @@ var Schema = class {
   }
   isType(v2) {
     if (v2 == null) {
-      if (this.spec.nullable && v2 === null)
-        return true;
-      if (this.spec.optional && v2 === void 0)
-        return true;
+      if (this.spec.nullable && v2 === null) return true;
+      if (this.spec.optional && v2 === void 0) return true;
       return false;
     }
     return this._typeCheck(v2);
@@ -9078,8 +9053,7 @@ attempted value: ${formattedValue}
     }
     let initialTests = [];
     for (let test of Object.values(this.internalTests)) {
-      if (test)
-        initialTests.push(test);
+      if (test) initialTests.push(test);
     }
     this.runTests({
       path,
@@ -9114,21 +9088,18 @@ attempted value: ${formattedValue}
       options
     } = runOptions;
     let panicOnce = (arg) => {
-      if (fired)
-        return;
+      if (fired) return;
       fired = true;
       panic(arg, value);
     };
     let nextOnce = (arg) => {
-      if (fired)
-        return;
+      if (fired) return;
       fired = true;
       next(arg, value);
     };
     let count = tests.length;
     let nestedErrors = [];
-    if (!count)
-      return nextOnce([]);
+    if (!count) return nextOnce([]);
     let args = {
       value,
       originalValue,
@@ -9186,14 +9157,11 @@ attempted value: ${formattedValue}
     }));
     let disableStackTrace = (_options$disableStack2 = options == null ? void 0 : options.disableStackTrace) != null ? _options$disableStack2 : schema.spec.disableStackTrace;
     return new Promise((resolve, reject) => schema._validate(value, options, (error, parsed) => {
-      if (ValidationError.isError(error))
-        error.value = parsed;
+      if (ValidationError.isError(error)) error.value = parsed;
       reject(error);
     }, (errors, validated) => {
-      if (errors.length)
-        reject(new ValidationError(errors, validated, void 0, void 0, disableStackTrace));
-      else
-        resolve(validated);
+      if (errors.length) reject(new ValidationError(errors, validated, void 0, void 0, disableStackTrace));
+      else resolve(validated);
     }));
   }
   validateSync(value, options) {
@@ -9206,20 +9174,17 @@ attempted value: ${formattedValue}
     schema._validate(value, Object.assign({}, options, {
       sync: true
     }), (error, parsed) => {
-      if (ValidationError.isError(error))
-        error.value = parsed;
+      if (ValidationError.isError(error)) error.value = parsed;
       throw error;
     }, (errors, validated) => {
-      if (errors.length)
-        throw new ValidationError(errors, value, void 0, void 0, disableStackTrace);
+      if (errors.length) throw new ValidationError(errors, value, void 0, void 0, disableStackTrace);
       result = validated;
     });
     return result;
   }
   isValid(value, options) {
     return this.validate(value, options).then(() => true, (err) => {
-      if (ValidationError.isError(err))
-        return false;
+      if (ValidationError.isError(err)) return false;
       throw err;
     });
   }
@@ -9228,8 +9193,7 @@ attempted value: ${formattedValue}
       this.validateSync(value, options);
       return true;
     } catch (err) {
-      if (ValidationError.isError(err))
-        return false;
+      if (ValidationError.isError(err)) return false;
       throw err;
     }
   }
@@ -9342,25 +9306,19 @@ attempted value: ${formattedValue}
         test: args[2]
       };
     }
-    if (opts.message === void 0)
-      opts.message = mixed.default;
-    if (typeof opts.test !== "function")
-      throw new TypeError("`test` is a required parameters");
+    if (opts.message === void 0) opts.message = mixed.default;
+    if (typeof opts.test !== "function") throw new TypeError("`test` is a required parameters");
     let next = this.clone();
     let validate = createValidation(opts);
     let isExclusive = opts.exclusive || opts.name && next.exclusiveTests[opts.name] === true;
     if (opts.exclusive) {
-      if (!opts.name)
-        throw new TypeError("Exclusive tests must provide a unique `name` identifying the test");
+      if (!opts.name) throw new TypeError("Exclusive tests must provide a unique `name` identifying the test");
     }
-    if (opts.name)
-      next.exclusiveTests[opts.name] = !!opts.exclusive;
+    if (opts.name) next.exclusiveTests[opts.name] = !!opts.exclusive;
     next.tests = next.tests.filter((fn) => {
       if (fn.OPTIONS.name === opts.name) {
-        if (isExclusive)
-          return false;
-        if (fn.OPTIONS.test === validate.OPTIONS.test)
-          return false;
+        if (isExclusive) return false;
+        if (fn.OPTIONS.test === validate.OPTIONS.test) return false;
       }
       return true;
     });
@@ -9375,8 +9333,7 @@ attempted value: ${formattedValue}
     let next = this.clone();
     let deps = toArray(keys2).map((key) => new Reference(key));
     deps.forEach((dep) => {
-      if (dep.isSibling)
-        next.deps.push(dep.key);
+      if (dep.isSibling) next.deps.push(dep.key);
     });
     next.conditions.push(typeof options === "function" ? new Condition(deps, options) : Condition.fromOptions(deps, options));
     return next;
@@ -9388,12 +9345,11 @@ attempted value: ${formattedValue}
       name: "typeError",
       skipAbsent: true,
       test(value) {
-        if (!this.schema._typeCheck(value))
-          return this.createError({
-            params: {
-              type: this.schema.type
-            }
-          });
+        if (!this.schema._typeCheck(value)) return this.createError({
+          params: {
+            type: this.schema.type
+          }
+        });
         return true;
       }
     });
@@ -9434,13 +9390,12 @@ attempted value: ${formattedValue}
       test(value) {
         let invalids = this.schema._blacklist;
         let resolved = invalids.resolveAll(this.resolve);
-        if (resolved.includes(value))
-          return this.createError({
-            params: {
-              values: Array.from(invalids).join(", "),
-              resolved
-            }
-          });
+        if (resolved.includes(value)) return this.createError({
+          params: {
+            values: Array.from(invalids).join(", "),
+            resolved
+          }
+        });
         return true;
       }
     });
@@ -9510,22 +9465,19 @@ attempted value: ${formattedValue}
   }
 };
 Schema.prototype.__isYupSchema__ = true;
-for (const method of ["validate", "validateSync"])
-  Schema.prototype[`${method}At`] = function(path, value, options = {}) {
-    const {
-      parent,
-      parentPath,
-      schema
-    } = getIn(this, path, value, options.context);
-    return schema[method](parent && parent[parentPath], Object.assign({}, options, {
-      parent,
-      path
-    }));
-  };
-for (const alias of ["equals", "is"])
-  Schema.prototype[alias] = Schema.prototype.oneOf;
-for (const alias of ["not", "nope"])
-  Schema.prototype[alias] = Schema.prototype.notOneOf;
+for (const method of ["validate", "validateSync"]) Schema.prototype[`${method}At`] = function(path, value, options = {}) {
+  const {
+    parent,
+    parentPath,
+    schema
+  } = getIn(this, path, value, options.context);
+  return schema[method](parent && parent[parentPath], Object.assign({}, options, {
+    parent,
+    path
+  }));
+};
+for (const alias of ["equals", "is"]) Schema.prototype[alias] = Schema.prototype.oneOf;
+for (const alias of ["not", "nope"]) Schema.prototype[alias] = Schema.prototype.notOneOf;
 var returnsTrue = () => true;
 function create$8(spec) {
   return new MixedSchema(spec);
@@ -9550,18 +9502,15 @@ var BooleanSchema = class extends Schema {
     super({
       type: "boolean",
       check(v2) {
-        if (v2 instanceof Boolean)
-          v2 = v2.valueOf();
+        if (v2 instanceof Boolean) v2 = v2.valueOf();
         return typeof v2 === "boolean";
       }
     });
     this.withMutation(() => {
       this.transform((value, _raw) => {
         if (this.spec.coerce && !this.isType(value)) {
-          if (/^(true|1)$/i.test(String(value)))
-            return true;
-          if (/^(false|0)$/i.test(String(value)))
-            return false;
+          if (/^(true|1)$/i.test(String(value))) return true;
+          if (/^(false|0)$/i.test(String(value))) return false;
         }
         return value;
       });
@@ -9622,24 +9571,21 @@ create$7.prototype = BooleanSchema.prototype;
 var isoReg = /^(\d{4}|[+-]\d{6})(?:-?(\d{2})(?:-?(\d{2}))?)?(?:[ T]?(\d{2}):?(\d{2})(?::?(\d{2})(?:[,.](\d{1,}))?)?(?:(Z)|([+-])(\d{2})(?::?(\d{2}))?)?)?$/;
 function parseIsoDate(date2) {
   const struct = parseDateStruct(date2);
-  if (!struct)
-    return Date.parse ? Date.parse(date2) : Number.NaN;
+  if (!struct) return Date.parse ? Date.parse(date2) : Number.NaN;
   if (struct.z === void 0 && struct.plusMinus === void 0) {
     return new Date(struct.year, struct.month, struct.day, struct.hour, struct.minute, struct.second, struct.millisecond).valueOf();
   }
   let totalMinutesOffset = 0;
   if (struct.z !== "Z" && struct.plusMinus !== void 0) {
     totalMinutesOffset = struct.hourOffset * 60 + struct.minuteOffset;
-    if (struct.plusMinus === "+")
-      totalMinutesOffset = 0 - totalMinutesOffset;
+    if (struct.plusMinus === "+") totalMinutesOffset = 0 - totalMinutesOffset;
   }
   return Date.UTC(struct.year, struct.month, struct.day, struct.hour, struct.minute + totalMinutesOffset, struct.second, struct.millisecond);
 }
 function parseDateStruct(date2) {
   var _regexResult$7$length, _regexResult$;
   const regexResult = isoReg.exec(date2);
-  if (!regexResult)
-    return null;
+  if (!regexResult) return null;
   return {
     year: toNumber(regexResult[1]),
     month: toNumber(regexResult[2], 1) - 1,
@@ -9684,20 +9630,16 @@ var StringSchema = class extends Schema {
     super({
       type: "string",
       check(value) {
-        if (value instanceof String)
-          value = value.valueOf();
+        if (value instanceof String) value = value.valueOf();
         return typeof value === "string";
       }
     });
     this.withMutation(() => {
       this.transform((value, _raw) => {
-        if (!this.spec.coerce || this.isType(value))
-          return value;
-        if (Array.isArray(value))
-          return value;
+        if (!this.spec.coerce || this.isType(value)) return value;
+        if (Array.isArray(value)) return value;
         const strValue = value != null && value.toString ? value.toString() : value;
-        if (strValue === objStringTag)
-          return value;
+        if (strValue === objStringTag) return value;
         return strValue;
       });
     });
@@ -9831,11 +9773,9 @@ var StringSchema = class extends Schema {
       },
       skipAbsent: true,
       test: (value) => {
-        if (!value || allowOffset)
-          return true;
+        if (!value || allowOffset) return true;
         const struct = parseDateStruct(value);
-        if (!struct)
-          return false;
+        if (!struct) return false;
         return !!struct.z;
       }
     }).test({
@@ -9846,11 +9786,9 @@ var StringSchema = class extends Schema {
       },
       skipAbsent: true,
       test: (value) => {
-        if (!value || precision == void 0)
-          return true;
+        if (!value || precision == void 0) return true;
         const struct = parseDateStruct(value);
-        if (!struct)
-          return false;
+        if (!struct) return false;
         return struct.precision === precision;
       }
     });
@@ -9895,24 +9833,20 @@ var NumberSchema = class extends Schema {
     super({
       type: "number",
       check(value) {
-        if (value instanceof Number)
-          value = value.valueOf();
+        if (value instanceof Number) value = value.valueOf();
         return typeof value === "number" && !isNaN$1(value);
       }
     });
     this.withMutation(() => {
       this.transform((value, _raw) => {
-        if (!this.spec.coerce)
-          return value;
+        if (!this.spec.coerce) return value;
         let parsed = value;
         if (typeof parsed === "string") {
           parsed = parsed.replace(/\s/g, "");
-          if (parsed === "")
-            return NaN;
+          if (parsed === "") return NaN;
           parsed = +parsed;
         }
-        if (this.isType(parsed) || parsed === null)
-          return parsed;
+        if (this.isType(parsed) || parsed === null) return parsed;
         return parseFloat(parsed);
       });
     });
@@ -9994,10 +9928,8 @@ var NumberSchema = class extends Schema {
     var _method;
     let avail = ["ceil", "floor", "round", "trunc"];
     method = ((_method = method) == null ? void 0 : _method.toLowerCase()) || "round";
-    if (method === "trunc")
-      return this.truncate();
-    if (avail.indexOf(method.toLowerCase()) === -1)
-      throw new TypeError("Only valid options for round() are: " + avail.join(", "));
+    if (method === "trunc") return this.truncate();
+    if (avail.indexOf(method.toLowerCase()) === -1) throw new TypeError("Only valid options for round() are: " + avail.join(", "));
     return this.transform((value) => !isAbsent(value) ? Math[method](value) : value);
   }
 };
@@ -10017,8 +9949,7 @@ var DateSchema = class _DateSchema extends Schema {
     });
     this.withMutation(() => {
       this.transform((value, _raw) => {
-        if (!this.spec.coerce || this.isType(value) || value === null)
-          return value;
+        if (!this.spec.coerce || this.isType(value) || value === null) return value;
         value = parseIsoDate(value);
         return !isNaN(value) ? new Date(value) : _DateSchema.INVALID_DATE;
       });
@@ -10028,8 +9959,7 @@ var DateSchema = class _DateSchema extends Schema {
     let param;
     if (!Reference.isRef(ref)) {
       let cast = this.cast(ref);
-      if (!this._typeCheck(cast))
-        throw new TypeError(`\`${name}\` must be a Date or a value that can be \`cast()\` to a Date`);
+      if (!this._typeCheck(cast)) throw new TypeError(`\`${name}\` must be a Date or a value that can be \`cast()\` to a Date`);
       param = cast;
     } else {
       param = ref;
@@ -10077,16 +10007,13 @@ function sortFields(fields, excludedEdges = []) {
   function addNode(depPath, key) {
     let node = (0, import_property_expr.split)(depPath)[0];
     nodes.add(node);
-    if (!excludes.has(`${key}-${node}`))
-      edges.push([key, node]);
+    if (!excludes.has(`${key}-${node}`)) edges.push([key, node]);
   }
   for (const key of Object.keys(fields)) {
     let value = fields[key];
     nodes.add(key);
-    if (Reference.isRef(value) && value.isSibling)
-      addNode(value.path, key);
-    else if (isSchema(value) && "deps" in value)
-      value.deps.forEach((path) => addNode(path, key));
+    if (Reference.isRef(value) && value.isSibling) addNode(value.path, key);
+    else if (isSchema(value) && "deps" in value) value.deps.forEach((path) => addNode(path, key));
   }
   return import_toposort.default.array(Array.from(nodes), edges).reverse();
 }
@@ -10127,8 +10054,7 @@ function deepPartial(schema) {
   }
   if (schema.type === "array") {
     const nextArray = schema.optional();
-    if (nextArray.innerType)
-      nextArray.innerType = deepPartial(nextArray.innerType);
+    if (nextArray.innerType) nextArray.innerType = deepPartial(nextArray.innerType);
     return nextArray;
   }
   if (schema.type === "tuple") {
@@ -10143,8 +10069,7 @@ function deepPartial(schema) {
 }
 var deepHas = (obj, p2) => {
   const path = [...(0, import_property_expr.normalizePath)(p2)];
-  if (path.length === 1)
-    return path[0] in obj;
+  if (path.length === 1) return path[0] in obj;
   let last = path.pop();
   let parent = (0, import_property_expr.getter)((0, import_property_expr.join)(path), true)(obj);
   return !!(parent && last in parent);
@@ -10179,10 +10104,8 @@ var ObjectSchema = class extends Schema {
   _cast(_value, options = {}) {
     var _options$stripUnknown;
     let value = super._cast(_value, options);
-    if (value === void 0)
-      return this.getDefault(options);
-    if (!this._typeCheck(value))
-      return value;
+    if (value === void 0) return this.getDefault(options);
+    if (!this._typeCheck(value)) return value;
     let fields = this.fields;
     let strip = (_options$stripUnknown = options.stripUnknown) != null ? _options$stripUnknown : this.spec.noUnknown;
     let props = [].concat(this._nodes, Object.keys(value).filter((v2) => !this._nodes.includes(v2)));
@@ -10312,16 +10235,14 @@ var ObjectSchema = class extends Schema {
     next.fields = shape;
     next._nodes = sortFields(shape, excludedEdges);
     next._sortErrors = sortByKeyOrder(Object.keys(shape));
-    if (excludedEdges)
-      next._excludedEdges = excludedEdges;
+    if (excludedEdges) next._excludedEdges = excludedEdges;
     return next;
   }
   shape(additions, excludes = []) {
     return this.clone().withMutation((next) => {
       let edges = next._excludedEdges;
       if (excludes.length) {
-        if (!Array.isArray(excludes[0]))
-          excludes = [excludes];
+        if (!Array.isArray(excludes[0])) excludes = [excludes];
         edges = [...next._excludedEdges, ...excludes];
       }
       return next.setFields(Object.assign(next.fields, additions), edges);
@@ -10341,16 +10262,14 @@ var ObjectSchema = class extends Schema {
   pick(keys2) {
     const picked = {};
     for (const key of keys2) {
-      if (this.fields[key])
-        picked[key] = this.fields[key];
+      if (this.fields[key]) picked[key] = this.fields[key];
     }
     return this.setFields(picked, this._excludedEdges.filter(([a, b]) => keys2.includes(a) && keys2.includes(b)));
   }
   omit(keys2) {
     const remaining = [];
     for (const key of Object.keys(this.fields)) {
-      if (keys2.includes(key))
-        continue;
+      if (keys2.includes(key)) continue;
       remaining.push(key);
     }
     return this.pick(remaining);
@@ -10358,13 +10277,11 @@ var ObjectSchema = class extends Schema {
   from(from, to, alias) {
     let fromGetter = (0, import_property_expr.getter)(from, true);
     return this.transform((obj) => {
-      if (!obj)
-        return obj;
+      if (!obj) return obj;
       let newObj = obj;
       if (deepHas(obj, from)) {
         newObj = Object.assign({}, obj);
-        if (!alias)
-          delete newObj[from];
+        if (!alias) delete newObj[from];
         newObj[to] = fromGetter(obj);
       }
       return newObj;
@@ -10383,8 +10300,7 @@ var ObjectSchema = class extends Schema {
       exclusive: true,
       message: message || object.exact,
       test(value) {
-        if (value == null)
-          return true;
+        if (value == null) return true;
         const unknownKeys = unknown(this.schema, value);
         return unknownKeys.length === 0 || this.createError({
           params: {
@@ -10409,8 +10325,7 @@ var ObjectSchema = class extends Schema {
       exclusive: true,
       message,
       test(value) {
-        if (value == null)
-          return true;
+        if (value == null) return true;
         const unknownKeys = unknown(this.schema, value);
         return !noAllow || unknownKeys.length === 0 || this.createError({
           params: {
@@ -10427,11 +10342,9 @@ var ObjectSchema = class extends Schema {
   }
   transformKeys(fn) {
     return this.transform((obj) => {
-      if (!obj)
-        return obj;
+      if (!obj) return obj;
       const result = {};
-      for (const key of Object.keys(obj))
-        result[fn(key)] = obj[key];
+      for (const key of Object.keys(obj)) result[fn(key)] = obj[key];
       return result;
     });
   }
@@ -10552,8 +10465,7 @@ var ArraySchema = class extends Schema {
   }
   of(schema) {
     let next = this.clone();
-    if (!isSchema(schema))
-      throw new TypeError("`array.of()` sub-schema must be a valid yup schema not: " + printValue(schema));
+    if (!isSchema(schema)) throw new TypeError("`array.of()` sub-schema must be a valid yup schema not: " + printValue(schema));
     next.innerType = schema;
     next.spec = Object.assign({}, next.spec, {
       types: schema
@@ -10607,8 +10519,7 @@ var ArraySchema = class extends Schema {
   }
   ensure() {
     return this.default(() => []).transform((val, original) => {
-      if (this._typeCheck(val))
-        return val;
+      if (this._typeCheck(val)) return val;
       return original == null ? [] : [].concat(original);
     });
   }
@@ -10670,8 +10581,7 @@ var TupleSchema = class extends Schema {
         value: value[idx],
         index: idx
       }));
-      if (castElement !== value[idx])
-        isChanged = true;
+      if (castElement !== value[idx]) isChanged = true;
       return castElement;
     });
     return isChanged ? castArray : value;
@@ -11025,10 +10935,10 @@ var coreJsData = root_default["__core-js_shared__"];
 var coreJsData_default = coreJsData;
 
 // ../../node_modules/lodash-es/_isMasked.js
-var maskSrcKey = function() {
+var maskSrcKey = (function() {
   var uid = /[^.]+$/.exec(coreJsData_default && coreJsData_default.keys && coreJsData_default.keys.IE_PROTO || "");
   return uid ? "Symbol(src)_1." + uid : "";
-}();
+})();
 function isMasked(func) {
   return !!maskSrcKey && maskSrcKey in func;
 }
@@ -11270,14 +11180,14 @@ function arrayEach(array2, iteratee) {
 var arrayEach_default = arrayEach;
 
 // ../../node_modules/lodash-es/_defineProperty.js
-var defineProperty = function() {
+var defineProperty = (function() {
   try {
     var func = getNative_default(Object, "defineProperty");
     func({}, "", {});
     return func;
   } catch (e2) {
   }
-}();
+})();
 var defineProperty_default = defineProperty;
 
 // ../../node_modules/lodash-es/_baseAssignValue.js
@@ -11348,9 +11258,9 @@ var baseIsArguments_default = baseIsArguments;
 var objectProto8 = Object.prototype;
 var hasOwnProperty7 = objectProto8.hasOwnProperty;
 var propertyIsEnumerable = objectProto8.propertyIsEnumerable;
-var isArguments = baseIsArguments_default(/* @__PURE__ */ function() {
+var isArguments = baseIsArguments_default(/* @__PURE__ */ (function() {
   return arguments;
-}()) ? baseIsArguments_default : function(value) {
+})()) ? baseIsArguments_default : function(value) {
   return isObjectLike_default(value) && hasOwnProperty7.call(value, "callee") && !propertyIsEnumerable.call(value, "callee");
 };
 var isArguments_default = isArguments;
@@ -11437,7 +11347,7 @@ var freeExports2 = typeof exports == "object" && exports && !exports.nodeType &&
 var freeModule2 = freeExports2 && typeof module == "object" && module && !module.nodeType && module;
 var moduleExports2 = freeModule2 && freeModule2.exports === freeExports2;
 var freeProcess = moduleExports2 && freeGlobal_default.process;
-var nodeUtil = function() {
+var nodeUtil = (function() {
   try {
     var types = freeModule2 && freeModule2.require && freeModule2.require("util").types;
     if (types) {
@@ -11446,7 +11356,7 @@ var nodeUtil = function() {
     return freeProcess && freeProcess.binding && freeProcess.binding("util");
   } catch (e2) {
   }
-}();
+})();
 var nodeUtil_default = nodeUtil;
 
 // ../../node_modules/lodash-es/isTypedArray.js
@@ -11838,7 +11748,7 @@ var initCloneByTag_default = initCloneByTag;
 
 // ../../node_modules/lodash-es/_baseCreate.js
 var objectCreate = Object.create;
-var baseCreate = /* @__PURE__ */ function() {
+var baseCreate = /* @__PURE__ */ (function() {
   function object2() {
   }
   return function(proto) {
@@ -11853,7 +11763,7 @@ var baseCreate = /* @__PURE__ */ function() {
     object2.prototype = void 0;
     return result;
   };
-}();
+})();
 var baseCreate_default = baseCreate;
 
 // ../../node_modules/lodash-es/_initCloneObject.js
@@ -12153,15 +12063,13 @@ function _inheritsLoose(subClass, superClass) {
   subClass.__proto__ = superClass;
 }
 function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null)
-    return {};
+  if (source == null) return {};
   var target = {};
   var sourceKeys = Object.keys(source);
   var key, i;
   for (i = 0; i < sourceKeys.length; i++) {
     key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0)
-      continue;
+    if (excluded.indexOf(key) >= 0) continue;
     target[key] = source[key];
   }
   return target;
@@ -12380,10 +12288,9 @@ function useFormik(_ref) {
   var dispatch = useCallback7(function(action) {
     var prev = stateRef.current;
     stateRef.current = formikReducer(prev, action);
-    if (prev !== stateRef.current)
-      setIteration(function(x) {
-        return x + 1;
-      });
+    if (prev !== stateRef.current) setIteration(function(x) {
+      return x + 1;
+    });
   }, []);
   var runValidateHandler = useCallback7(function(values, field) {
     return new Promise(function(resolve, reject) {
@@ -12955,13 +12862,11 @@ function yupToFormErrors(yupError) {
     for (var _iterator = yupError.inner, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator](); ; ) {
       var _ref5;
       if (_isArray) {
-        if (_i >= _iterator.length)
-          break;
+        if (_i >= _iterator.length) break;
         _ref5 = _iterator[_i++];
       } else {
         _i = _iterator.next();
-        if (_i.done)
-          break;
+        if (_i.done) break;
         _ref5 = _i.value;
       }
       var err = _ref5;
@@ -13125,7 +13030,7 @@ var createAlterationHandler = function createAlterationHandler2(alteration, defa
     return data;
   };
 };
-var FieldArrayInner = /* @__PURE__ */ function(_React$Component) {
+var FieldArrayInner = /* @__PURE__ */ (function(_React$Component) {
   _inheritsLoose(FieldArrayInner2, _React$Component);
   function FieldArrayInner2(props) {
     var _this;
@@ -13307,7 +13212,7 @@ var FieldArrayInner = /* @__PURE__ */ function(_React$Component) {
     return component ? createElement(component, props) : render2 ? render2(props) : children ? typeof children === "function" ? children(props) : !isEmptyChildren(children) ? Children.only(children) : null : null;
   };
   return FieldArrayInner2;
-}(Component);
+})(Component);
 FieldArrayInner.defaultProps = {
   validateOnChange: true
 };
@@ -13326,8 +13231,7 @@ import { jsx as g } from "react/jsx-runtime";
 var d = e(void 0);
 function v() {
   const e2 = r(d);
-  if (!e2)
-    throw new Error(void 0);
+  if (!e2) throw new Error(void 0);
   return e2;
 }
 function Z() {
@@ -13346,8 +13250,7 @@ var LanguageSwitcher = ({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const handleLanguageChange = (newLocale) => {
-    if (newLocale === currentLocale)
-      return;
+    if (newLocale === currentLocale) return;
     startTransition(() => {
       document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
       if (typeof window !== "undefined") {
@@ -15755,10 +15658,8 @@ var ProductCard = ({
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState26(false);
   const normalizeImages = (images2) => {
-    if (!images2)
-      return [];
-    if (Array.isArray(images2))
-      return images2.filter(Boolean);
+    if (!images2) return [];
+    if (Array.isArray(images2)) return images2.filter(Boolean);
     if (typeof images2 === "string") {
       try {
         const parsed = JSON.parse(images2);
@@ -16261,13 +16162,14 @@ var ProductAddForm = ({
   merchantId,
   onSave,
   onCancel,
-  onBack
+  onBack,
+  useMultipartUpload = false
 }) => {
   const [isSubmitting, setIsSubmitting] = useState29(false);
   const { toastSuccess, toastError } = useToast6();
   const t2 = useProductTranslations5();
   const tc = useCommonTranslations8();
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data, files) => {
     setIsSubmitting(true);
     try {
       const transformedData = {
@@ -16279,10 +16181,14 @@ var ProductAddForm = ({
         salePrice: data.salePrice,
         deposit: data.deposit,
         totalStock: data.totalStock,
-        images: Array.isArray(data.images) ? data.images.join(",") : data.images || "",
+        images: useMultipartUpload ? [] : Array.isArray(data.images) ? data.images.join(",") : data.images || "",
         outletStock: data.outletStock
       };
-      await onSave(transformedData);
+      if (useMultipartUpload && files) {
+        await onSave(transformedData, files);
+      } else {
+        await onSave(transformedData);
+      }
     } catch (err) {
       console.error("\u274C ProductAddForm: Error in handleSubmit:", err);
       toastError(t2("messages.createFailed"), err instanceof Error ? err.message : t2("messages.createFailed"));
@@ -16291,8 +16197,7 @@ var ProductAddForm = ({
     }
   };
   const handleCancel = () => {
-    if (isSubmitting)
-      return;
+    if (isSubmitting) return;
     onCancel();
   };
   return /* @__PURE__ */ jsxs65("div", { className: "space-y-6", children: [
@@ -16309,6 +16214,7 @@ var ProductAddForm = ({
         hideHeader: true,
         hideSubmitButton: true,
         formId: "product-form",
+        useMultipartUpload,
         submitText: isSubmitting ? /* @__PURE__ */ jsxs65(Fragment13, { children: [
           /* @__PURE__ */ jsx79(Loader24, { className: "h-4 w-4 mr-2 animate-spin" }),
           "Creating..."
@@ -16380,8 +16286,7 @@ var ProductAddDialog = ({
     }
   };
   const handleCancel = () => {
-    if (isSubmitting)
-      return;
+    if (isSubmitting) return;
     onOpenChange(false);
   };
   return /* @__PURE__ */ jsx80(Dialog, { open, onOpenChange, children: /* @__PURE__ */ jsxs66(DialogContent, { className: "max-w-4xl max-h-[95vh] overflow-y-auto p-0", children: [
@@ -16600,8 +16505,7 @@ var ProductDetailList = ({
   const t2 = useProductTranslations6();
   const tc = useCommonTranslations9();
   const normalizeImages = (images) => {
-    if (!images)
-      return [];
+    if (!images) return [];
     try {
       if (Array.isArray(images)) {
         return images.filter(Boolean);
@@ -16873,8 +16777,7 @@ var ProductEdit = ({
     }
   };
   const handleCancel = () => {
-    if (isSubmitting)
-      return;
+    if (isSubmitting) return;
     onCancel();
   };
   return /* @__PURE__ */ jsxs70("div", { className: "space-y-6", children: [
@@ -17363,8 +17266,7 @@ function OrderDateRangeFilter({
     }
   };
   const handleCustomApply = () => {
-    if (!customStart || !customEnd)
-      return;
+    if (!customStart || !customEnd) return;
     const start = new Date(customStart);
     start.setHours(0, 0, 0, 0);
     const end = new Date(customEnd);
@@ -17513,8 +17415,7 @@ var OrderTable = React51.memo(function OrderTable2({
     return /* @__PURE__ */ jsx90(Badge, { variant: "outline", className: ORDER_TYPE_COLORS[type], children: t2(`orderType.${type}`) });
   };
   const formatDate11 = (dateString) => {
-    if (!dateString)
-      return "N/A";
+    if (!dateString) return "N/A";
     return useFormattedFullDate(dateString);
   };
   const getOrderIcon = () => {
@@ -17727,8 +17628,7 @@ function OrderStats({ stats }) {
   };
   const getStatusDistribution = () => {
     const total = stats.totalOrders;
-    if (total === 0)
-      return [];
+    if (total === 0) return [];
     const reservedOrders = Math.max(0, total - stats.activeRentals - stats.completedOrders - stats.cancelledOrders);
     return [
       { label: "Reserved", count: reservedOrders, percentage: reservedOrders / total * 100, color: "bg-red-500" },
@@ -18275,8 +18175,7 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
     }
   }, [open, product]);
   const fetchProductOrders = async () => {
-    if (!product)
-      return;
+    if (!product) return;
     try {
       setLoading(true);
       setError(null);
@@ -18332,8 +18231,7 @@ function ProductOrdersDialog({ open, onOpenChange, product }) {
     const config = typeConfig[orderType] || typeConfig["RENT"];
     return /* @__PURE__ */ jsx96(Badge6, { className: config.color, children: config.text });
   };
-  if (!product)
-    return null;
+  if (!product) return null;
   return /* @__PURE__ */ jsx96(Dialog4, { open, onOpenChange, children: /* @__PURE__ */ jsxs80(DialogContent4, { className: "max-w-4xl max-h-[80vh] overflow-hidden flex flex-col", children: [
     /* @__PURE__ */ jsx96(DialogHeader4, { children: /* @__PURE__ */ jsxs80("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsxs80("div", { children: [
@@ -18622,8 +18520,7 @@ function CustomerTable({
     ] }) }) });
   }
   const formatDate11 = (dateString) => {
-    if (!dateString)
-      return t2("messages.na");
+    if (!dateString) return t2("messages.na");
     const date2 = typeof dateString === "string" ? new Date(dateString) : dateString;
     return date2.toLocaleDateString("en-US", {
       year: "numeric",
@@ -18806,11 +18703,9 @@ var CustomerDetailDialog = ({
     };
     fetchMerchant();
   }, [customer?.merchantId]);
-  if (!customer)
-    return null;
+  if (!customer) return null;
   const formatDate11 = (date2) => {
-    if (!date2)
-      return t2("messages.na");
+    if (!date2) return t2("messages.na");
     const dateObj = typeof date2 === "string" ? new Date(date2) : date2;
     return dateObj.toLocaleDateString("en-US", {
       year: "numeric",
@@ -18829,8 +18724,7 @@ var CustomerDetailDialog = ({
     return isActive ? t2("status.active") : t2("status.inactive");
   };
   const handleDelete = async () => {
-    if (!customer || !onDelete)
-      return;
+    if (!customer || !onDelete) return;
     try {
       setIsDeleting(true);
       await onDelete(customer.id);
@@ -18982,8 +18876,7 @@ var CustomerInfoCard = ({
 }) => {
   const t2 = useCustomerTranslations4();
   const formatDate11 = (date2) => {
-    if (!date2)
-      return t2("messages.na");
+    if (!date2) return t2("messages.na");
     const dateObj = typeof date2 === "string" ? new Date(date2) : date2;
     return dateObj.toLocaleDateString("en-US", {
       year: "numeric",
@@ -18992,8 +18885,7 @@ var CustomerInfoCard = ({
     });
   };
   const formatAddress = () => {
-    if (!customer)
-      return t2("fields.noAddress");
+    if (!customer) return t2("fields.noAddress");
     const parts = [
       customer.address,
       customer.city,
@@ -19110,8 +19002,7 @@ var CustomerOrdersSummaryCard = ({
   isLoading = false
 }) => {
   const formatDate11 = (date2) => {
-    if (!date2)
-      return "N/A";
+    if (!date2) return "N/A";
     const dateObj = typeof date2 === "string" ? new Date(date2) : date2;
     return dateObj.toLocaleDateString("en-US", {
       year: "numeric",
@@ -19223,8 +19114,7 @@ var AddCustomerDialog = ({
     }
   };
   const handleCancel = () => {
-    if (isSubmitting)
-      return;
+    if (isSubmitting) return;
     onOpenChange(false);
   };
   return /* @__PURE__ */ jsx103(Dialog, { open, onOpenChange, children: /* @__PURE__ */ jsxs87(DialogContent, { className: "max-w-4xl max-h-[95vh] overflow-y-auto p-0", children: [
@@ -19928,8 +19818,7 @@ function CustomerActions({
   useEffect23(() => {
     const handleCustomerAction = (event) => {
       const { action, customer } = event.detail;
-      if (!customer)
-        return;
+      if (!customer) return;
       switch (action) {
         case "view":
           if (customer.id) {
@@ -20334,8 +20223,7 @@ var CustomerOrdersDialog = ({
     }).format(amount);
   };
   const formatDate11 = (date2) => {
-    if (!date2)
-      return "N/A";
+    if (!date2) return "N/A";
     return date2.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -20343,15 +20231,13 @@ var CustomerOrdersDialog = ({
     });
   };
   const getDaysOverdue = (returnDate) => {
-    if (!returnDate)
-      return 0;
+    if (!returnDate) return 0;
     const today = /* @__PURE__ */ new Date();
     const diffTime = today.getTime() - returnDate.getTime();
     const diffDays = Math.ceil(diffTime / (1e3 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 0;
   };
-  if (!customer)
-    return null;
+  if (!customer) return null;
   return /* @__PURE__ */ jsx110(Dialog5, { open, onOpenChange, children: /* @__PURE__ */ jsxs94(DialogContent5, { className: "max-w-6xl max-h-[90vh] overflow-y-auto", children: [
     /* @__PURE__ */ jsx110(DialogHeader5, { children: /* @__PURE__ */ jsxs94("div", { children: [
       /* @__PURE__ */ jsx110(DialogTitle5, { className: "text-xl font-semibold", children: "Customer Orders" }),
@@ -20865,8 +20751,7 @@ var RentalPeriodSelector2 = ({
     }
   };
   const calculateTotalPrice = () => {
-    if (!rentalStartAt || !rentalEndAt)
-      return 0;
+    if (!rentalStartAt || !rentalEndAt) return 0;
     try {
       const pricing = PricingResolver.calculatePrice(
         product,
@@ -20907,10 +20792,8 @@ var RentalPeriodSelector2 = ({
           to: rentalEndAt || void 0
         },
         onChange: (range) => {
-          if (range?.from)
-            setRentalStartAt(range.from);
-          if (range?.to)
-            setRentalEndAt(range.to);
+          if (range?.from) setRentalStartAt(range.from);
+          if (range?.to) setRentalEndAt(range.to);
         },
         placeholder: "Select pickup and return dates",
         minDate: /* @__PURE__ */ new Date(),
@@ -21362,8 +21245,7 @@ function SubscriptionViewDialog({
   onReactivate,
   onChangePlan
 }) {
-  if (!subscription)
-    return null;
+  if (!subscription) return null;
   const getStatusColor11 = (status) => {
     const normalizedStatus2 = status.toLowerCase();
     switch (normalizedStatus2) {
@@ -21667,8 +21549,7 @@ function SubscriptionExtendDialog({
   const [method, setMethod] = useState45("MANUAL_EXTENSION");
   const [description, setDescription] = useState45("");
   const handleSubmit = () => {
-    if (!subscription || !newEndDate || !amount)
-      return;
+    if (!subscription || !newEndDate || !amount) return;
     const extensionData = {
       newEndDate: new Date(newEndDate),
       amount: parseFloat(amount),
@@ -21684,8 +21565,7 @@ function SubscriptionExtendDialog({
     setDescription("");
     onClose();
   };
-  if (!subscription)
-    return null;
+  if (!subscription) return null;
   const currentEndDate = subscription.endDate ? new Date(subscription.endDate) : /* @__PURE__ */ new Date();
   const minDate = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const suggestedEndDate = new Date(currentEndDate.getTime() + 30 * 24 * 60 * 60 * 1e3).toISOString().split("T")[0];
@@ -21877,16 +21757,14 @@ function SubscriptionChangePlanDialog({
   const [selectedPlanId, setSelectedPlanId] = useState46(null);
   const [selectedPeriod, setSelectedPeriod] = useState46(1);
   const handleSubmit = () => {
-    if (!subscription || !selectedPlanId)
-      return;
+    if (!subscription || !selectedPlanId) return;
     onConfirm(subscription, selectedPlanId, selectedPeriod);
   };
   const handleClose = () => {
     setSelectedPlanId(null);
     onClose();
   };
-  if (!subscription)
-    return null;
+  if (!subscription) return null;
   const currentPlan = subscription.plan;
   const selectedPlan = plans.find((p2) => p2.id === selectedPlanId);
   const getFeatureComparison = (current, selected) => {
@@ -22535,8 +22413,7 @@ function SubscriptionEditDialog({
     });
   };
   const selectedPlan = plans.find((plan) => plan.id === formData.planId);
-  if (!subscription)
-    return null;
+  if (!subscription) return null;
   return /* @__PURE__ */ jsx123(Dialog9, { open: isOpen, onOpenChange: handleCancel, children: /* @__PURE__ */ jsxs107(DialogContent9, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
     /* @__PURE__ */ jsxs107(DialogHeader9, { children: [
       /* @__PURE__ */ jsx123(DialogTitle9, { children: "Edit Subscription" }),
@@ -22705,16 +22582,14 @@ function SubscriptionList({
     }).format(amount);
   };
   const isExpiringSoon = (endDate) => {
-    if (!endDate)
-      return false;
+    if (!endDate) return false;
     const end = new Date(endDate);
     const now = /* @__PURE__ */ new Date();
     const daysUntilExpiry = Math.ceil((end.getTime() - now.getTime()) / (1e3 * 60 * 60 * 24));
     return daysUntilExpiry <= 7 && daysUntilExpiry > 0;
   };
   const isExpired = (endDate) => {
-    if (!endDate)
-      return false;
+    if (!endDate) return false;
     return new Date(endDate) < /* @__PURE__ */ new Date();
   };
   const handleView = (subscription) => {
@@ -23519,23 +23394,16 @@ var SubscriptionPreviewPage = ({
     return /* @__PURE__ */ jsx126(Check4, { className: "w-4 h-4" });
   };
   const getDurationText = (duration) => {
-    if (duration === 1)
-      return "1 Month";
-    if (duration === 3)
-      return "3 Months";
-    if (duration === 6)
-      return "6 Months";
-    if (duration === 12)
-      return "1 Year";
+    if (duration === 1) return "1 Month";
+    if (duration === 3) return "3 Months";
+    if (duration === 6) return "6 Months";
+    if (duration === 12) return "1 Year";
     return `${duration} Months`;
   };
   const getDiscountBadgeColor = (discount) => {
-    if (discount >= 20)
-      return "bg-red-100 text-red-800 border-red-200";
-    if (discount >= 10)
-      return "bg-orange-100 text-orange-800 border-orange-200";
-    if (discount > 0)
-      return "bg-green-100 text-green-800 border-green-200";
+    if (discount >= 20) return "bg-red-100 text-red-800 border-red-200";
+    if (discount >= 10) return "bg-orange-100 text-orange-800 border-orange-200";
+    if (discount > 0) return "bg-green-100 text-green-800 border-green-200";
     return "bg-gray-100 text-gray-800 border-gray-200";
   };
   const getPlatformDisplayText = (platform) => {
@@ -23592,14 +23460,10 @@ var SubscriptionPreviewPage = ({
   }
   const durations = [1, 3, 6, 12];
   const getDiscountForDuration = (duration) => {
-    if (duration === 1)
-      return 0;
-    if (duration === 3)
-      return 10;
-    if (duration === 6)
-      return 15;
-    if (duration === 12)
-      return 20;
+    if (duration === 1) return 0;
+    if (duration === 3) return 10;
+    if (duration === 6) return 15;
+    if (duration === 12) return 20;
     return 0;
   };
   const calculatePlanPricing = (plan, duration) => {
@@ -23972,12 +23836,9 @@ var PlanSelectionModal = ({
     }
   };
   const getFeatureIcon = (feature) => {
-    if (feature.toLowerCase().includes("unlimited"))
-      return Zap3;
-    if (feature.toLowerCase().includes("security") || feature.toLowerCase().includes("secure"))
-      return Shield2;
-    if (feature.toLowerCase().includes("support"))
-      return Shield2;
+    if (feature.toLowerCase().includes("unlimited")) return Zap3;
+    if (feature.toLowerCase().includes("security") || feature.toLowerCase().includes("secure")) return Shield2;
+    if (feature.toLowerCase().includes("support")) return Shield2;
     return Check5;
   };
   const formatPrice = (price, currency = "USD") => {
@@ -24157,16 +24018,11 @@ function SubscriptionStatusBanner({
     return null;
   }
   const getStatusIcon5 = () => {
-    if (isDenied)
-      return /* @__PURE__ */ jsx128(XCircle8, { className: "w-5 h-5" });
-    if (isReadOnly)
-      return /* @__PURE__ */ jsx128(Shield3, { className: "w-5 h-5" });
-    if (isLimited)
-      return /* @__PURE__ */ jsx128(Clock11, { className: "w-5 h-5" });
-    if (requiresPayment)
-      return /* @__PURE__ */ jsx128(CreditCard6, { className: "w-5 h-5" });
-    if (upgradeRequired)
-      return /* @__PURE__ */ jsx128(AlertTriangle8, { className: "w-5 h-5" });
+    if (isDenied) return /* @__PURE__ */ jsx128(XCircle8, { className: "w-5 h-5" });
+    if (isReadOnly) return /* @__PURE__ */ jsx128(Shield3, { className: "w-5 h-5" });
+    if (isLimited) return /* @__PURE__ */ jsx128(Clock11, { className: "w-5 h-5" });
+    if (requiresPayment) return /* @__PURE__ */ jsx128(CreditCard6, { className: "w-5 h-5" });
+    if (upgradeRequired) return /* @__PURE__ */ jsx128(AlertTriangle8, { className: "w-5 h-5" });
     return /* @__PURE__ */ jsx128(Info7, { className: "w-5 h-5" });
   };
   const getStatusVariant = () => {
@@ -24252,16 +24108,11 @@ function SubscriptionStatusCard({
     return null;
   }
   const getStatusIcon5 = () => {
-    if (isDenied)
-      return /* @__PURE__ */ jsx128(XCircle8, { className: "w-6 h-6 text-red-500" });
-    if (isReadOnly)
-      return /* @__PURE__ */ jsx128(Shield3, { className: "w-6 h-6 text-yellow-500" });
-    if (isLimited)
-      return /* @__PURE__ */ jsx128(Clock11, { className: "w-6 h-6 text-orange-500" });
-    if (requiresPayment)
-      return /* @__PURE__ */ jsx128(CreditCard6, { className: "w-6 h-6 text-orange-500" });
-    if (upgradeRequired)
-      return /* @__PURE__ */ jsx128(AlertTriangle8, { className: "w-6 h-6 text-red-500" });
+    if (isDenied) return /* @__PURE__ */ jsx128(XCircle8, { className: "w-6 h-6 text-red-500" });
+    if (isReadOnly) return /* @__PURE__ */ jsx128(Shield3, { className: "w-6 h-6 text-yellow-500" });
+    if (isLimited) return /* @__PURE__ */ jsx128(Clock11, { className: "w-6 h-6 text-orange-500" });
+    if (requiresPayment) return /* @__PURE__ */ jsx128(CreditCard6, { className: "w-6 h-6 text-orange-500" });
+    if (upgradeRequired) return /* @__PURE__ */ jsx128(AlertTriangle8, { className: "w-6 h-6 text-red-500" });
     return /* @__PURE__ */ jsx128(Info7, { className: "w-6 h-6 text-blue-500" });
   };
   const getStatusColor11 = () => {
@@ -24418,18 +24269,15 @@ function RestrictedButton({
   const canPerform = useCanPerform(action);
   const isDisabled = disabled || !canPerform;
   const getRestrictionIcon = () => {
-    if (fallbackIcon)
-      return fallbackIcon;
+    if (fallbackIcon) return fallbackIcon;
     if (action.includes("Manage") || action.includes("Process")) {
       return /* @__PURE__ */ jsx130(Lock3, { className: "w-4 h-4" });
     }
     return /* @__PURE__ */ jsx130(AlertTriangle10, { className: "w-4 h-4" });
   };
   const getRestrictionText = () => {
-    if (fallbackText)
-      return fallbackText;
-    if (reason)
-      return reason;
+    if (fallbackText) return fallbackText;
+    if (reason) return reason;
     switch (action) {
       case "canCreate":
         return "Cannot create with current subscription";
@@ -24683,8 +24531,7 @@ function ManualRenewalModal({
     return Object.keys(newErrors).length === 0;
   };
   const handleSubmit = async () => {
-    if (!validate())
-      return;
+    if (!validate()) return;
     try {
       await onRenew({
         method,
@@ -24927,8 +24774,10 @@ function UpgradeTrialModal({
     switch (cycle) {
       case "quarter":
         return basePrice * 3 * 0.9;
+      // 10% discount
       case "year":
         return basePrice * 12 * 0.8;
+      // 20% discount
       default:
         return basePrice;
     }
@@ -24954,8 +24803,7 @@ function UpgradeTrialModal({
     return next;
   };
   const handleSubmit = async () => {
-    if (!selectedPlan)
-      return;
+    if (!selectedPlan) return;
     try {
       await onUpgrade(selectedPlan.id, billingCycle, paymentMethod);
       onClose();
@@ -25513,8 +25361,7 @@ function SubscriptionHistoryDialog({
   const [payments, setPayments] = useState56([]);
   const [loading, setLoading] = useState56(false);
   const fetchHistory = async () => {
-    if (!subscriptionId)
-      return;
+    if (!subscriptionId) return;
     setLoading(true);
     try {
       const [activitiesResponse, paymentsResponse] = await Promise.all([
@@ -25608,16 +25455,14 @@ var getDiscountPercentage2 = (intervalId) => {
 };
 var calculateDiscountedPrice2 = (basePrice, intervalId, duration = 1) => {
   const interval = BILLING_INTERVALS.find((i) => i.id === intervalId);
-  if (!interval)
-    return basePrice * duration;
+  if (!interval) return basePrice * duration;
   const discount = interval.discountPercentage / 100;
   const discountedPrice = basePrice * (1 - discount);
   return discountedPrice * duration;
 };
 var formatBillingInterval = (intervalId) => {
   const interval = BILLING_INTERVALS.find((i) => i.id === intervalId);
-  if (!interval)
-    return intervalId;
+  if (!interval) return intervalId;
   const discount = interval.discountPercentage > 0 ? ` (${interval.discountPercentage}% discount)` : "";
   return `${interval.name}${discount}`;
 };
@@ -25709,8 +25554,7 @@ function MerchantPlanManagement({
     }
   };
   const handleRenewal = async (paymentData) => {
-    if (!currentSubscription || !onExtend)
-      return;
+    if (!currentSubscription || !onExtend) return;
     try {
       setRenewalLoading(true);
       await onExtend({
@@ -25731,8 +25575,7 @@ function MerchantPlanManagement({
     }
   };
   const handleCancel = async () => {
-    if (!currentSubscription || !cancelReason.trim())
-      return;
+    if (!currentSubscription || !cancelReason.trim()) return;
     setIsSubmitting(true);
     try {
       await onCancel?.(currentSubscription, cancelReason.trim(), cancelType);
@@ -25746,8 +25589,7 @@ function MerchantPlanManagement({
     }
   };
   const handleChangePlan = async () => {
-    if (!selectedPlanId || !changeBillingInterval)
-      return;
+    if (!selectedPlanId || !changeBillingInterval) return;
     setIsSubmitting(true);
     try {
       const selectedPlan = plans.find((p2) => p2.id.toString() === selectedPlanId);
@@ -25775,8 +25617,7 @@ function MerchantPlanManagement({
     }
   };
   const handleSuspend = async () => {
-    if (!currentSubscription || !suspendReason.trim())
-      return;
+    if (!currentSubscription || !suspendReason.trim()) return;
     setIsSubmitting(true);
     try {
       await onSuspend?.(currentSubscription, suspendReason.trim());
@@ -25789,8 +25630,7 @@ function MerchantPlanManagement({
     }
   };
   const handleReactivate = async () => {
-    if (!currentSubscription)
-      return;
+    if (!currentSubscription) return;
     setIsSubmitting(true);
     try {
       await onReactivate?.(currentSubscription);
@@ -26082,8 +25922,7 @@ function MerchantPlanManagement({
               /* @__PURE__ */ jsxs119("span", { className: "font-bold text-blue-900", children: [
                 (() => {
                   const selectedPlan = plans.find((p2) => p2.id.toString() === selectedPlanId);
-                  if (!selectedPlan)
-                    return "$0.00";
+                  if (!selectedPlan) return "$0.00";
                   const discount = getDiscountPercentage2(changeBillingInterval);
                   const discountedPrice = selectedPlan.basePrice * (1 - discount / 100);
                   return formatPrice(discountedPrice, selectedPlan.currency);
@@ -26432,8 +26271,7 @@ function MerchantSubscriptionSection({
     }
   }, [subscription, showHistoryDialog]);
   const fetchHistory = async () => {
-    if (!subscription)
-      return;
+    if (!subscription) return;
     try {
       setLoadingHistory(true);
       const { subscriptionsApi: subscriptionsApi3 } = await import("@rentalshop/utils");
@@ -26477,13 +26315,11 @@ function MerchantSubscriptionSection({
     ] });
   };
   const getDaysRemaining = () => {
-    if (!subscription || !subscription.currentPeriodEnd)
-      return 0;
+    if (!subscription || !subscription.currentPeriodEnd) return 0;
     try {
       const now = /* @__PURE__ */ new Date();
       const end = new Date(subscription.currentPeriodEnd);
-      if (isNaN(end.getTime()))
-        return 0;
+      if (isNaN(end.getTime())) return 0;
       const diff = end.getTime() - now.getTime();
       return Math.ceil(diff / (1e3 * 60 * 60 * 24));
     } catch (error) {
@@ -27427,8 +27263,7 @@ function UserTable({
     ] }) }) });
   }
   const formatDate11 = (dateString) => {
-    if (!dateString)
-      return t2("messages.na");
+    if (!dateString) return t2("messages.na");
     const date2 = typeof dateString === "string" ? new Date(dateString) : dateString;
     return date2.toLocaleDateString("en-US", {
       year: "numeric",
@@ -27610,20 +27445,13 @@ var UserApiClient = class {
   }
   async getUsers(filters = {}, options = {}) {
     const params = new URLSearchParams();
-    if (filters.search)
-      params.append("search", filters.search);
-    if (filters.role)
-      params.append("role", filters.role);
-    if (filters.isActive !== void 0)
-      params.append("isActive", filters.isActive.toString());
-    if (options.page)
-      params.append("page", options.page.toString());
-    if (options.limit)
-      params.append("limit", options.limit.toString());
-    if (options.sortBy)
-      params.append("sortBy", options.sortBy);
-    if (options.sortOrder)
-      params.append("sortOrder", options.sortOrder);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.role) params.append("role", filters.role);
+    if (filters.isActive !== void 0) params.append("isActive", filters.isActive.toString());
+    if (options.page) params.append("page", options.page.toString());
+    if (options.limit) params.append("limit", options.limit.toString());
+    if (options.sortBy) params.append("sortBy", options.sortBy);
+    if (options.sortOrder) params.append("sortOrder", options.sortOrder);
     const queryString = params.toString();
     const endpoint = `/users${queryString ? `?${queryString}` : ""}`;
     return this.request(endpoint);
@@ -28031,8 +27859,7 @@ var UserDetailDialog = ({
   const [isActivateConfirmOpen, setIsActivateConfirmOpen] = useState61(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState61(false);
   const [isLoading, setIsLoading] = useState61(false);
-  if (!user)
-    return null;
+  if (!user) return null;
   const handleDeactivateUser = async () => {
     setIsLoading(true);
     try {
@@ -28526,17 +28353,13 @@ var validateUserCreateInput = (data) => {
   const lastName = nameParts.slice(1).join(" ") || "";
   console.log("\u{1F50D} UserFormValidation: Name parts:", { firstName, lastName });
   const firstNameError = validateName(firstName, "First name");
-  if (firstNameError)
-    errors.firstName = firstNameError;
+  if (firstNameError) errors.firstName = firstNameError;
   const lastNameError = lastName ? validateName(lastName, "Last name") : null;
-  if (lastNameError)
-    errors.lastName = lastNameError;
+  if (lastNameError) errors.lastName = lastNameError;
   const emailError = validateEmail(data.email || "");
-  if (emailError)
-    errors.email = emailError;
+  if (emailError) errors.email = emailError;
   const phoneError = validatePhone(data.phone || "");
-  if (phoneError)
-    errors.phone = phoneError;
+  if (phoneError) errors.phone = phoneError;
   if (!data.role) {
     errors.role = "Role is required";
   }
@@ -28559,11 +28382,9 @@ var validateUserCreateInput = (data) => {
     }
   }
   const passwordError = validatePassword(data.password || "");
-  if (passwordError)
-    errors.password = passwordError;
+  if (passwordError) errors.password = passwordError;
   const confirmPasswordError = validateConfirmPassword(data.password || "", data.confirmPassword || "");
-  if (confirmPasswordError)
-    errors.confirmPassword = confirmPasswordError;
+  if (confirmPasswordError) errors.confirmPassword = confirmPasswordError;
   console.log("\u{1F50D} UserFormValidation: Validation errors:", errors);
   return errors;
 };
@@ -28571,17 +28392,13 @@ var validateUserUpdateInput = (data) => {
   const errors = {};
   console.log("\u{1F50D} UserFormValidation: Validating update input:", data);
   const firstNameError = validateName(data.firstName || "", "First name");
-  if (firstNameError)
-    errors.firstName = firstNameError;
+  if (firstNameError) errors.firstName = firstNameError;
   const lastNameError = validateName(data.lastName || "", "Last name");
-  if (lastNameError)
-    errors.lastName = lastNameError;
+  if (lastNameError) errors.lastName = lastNameError;
   const emailError = validateEmail(data.email || "");
-  if (emailError)
-    errors.email = emailError;
+  if (emailError) errors.email = emailError;
   const phoneError = validatePhone(data.phone || "");
-  if (phoneError)
-    errors.phone = phoneError;
+  if (phoneError) errors.phone = phoneError;
   if (!data.role) {
     errors.role = "Role is required";
   }
@@ -29132,8 +28949,7 @@ var AddUserDialog = ({
     }
   };
   const handleCancel = () => {
-    if (isSubmitting)
-      return;
+    if (isSubmitting) return;
     onOpenChange(false);
   };
   return /* @__PURE__ */ jsx159(Dialog, { open, onOpenChange, children: /* @__PURE__ */ jsxs142(DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto p-0", children: [
@@ -29319,10 +29135,8 @@ function UserRow({
       ] })
     ] }) }) }),
     showActions && /* @__PURE__ */ jsx160("div", { className: "flex items-center gap-2", children: actions.map((action) => {
-      if (action === "activate" && user.isActive)
-        return null;
-      if (action === "deactivate" && !user.isActive)
-        return null;
+      if (action === "activate" && user.isActive) return null;
+      if (action === "deactivate" && !user.isActive) return null;
       return /* @__PURE__ */ jsx160("div", { children: renderActionButton(action) }, action);
     }) })
   ] }) }) });
@@ -29842,8 +29656,7 @@ function OutletTable({
     ] }) }) });
   }
   const formatDate11 = (dateString) => {
-    if (!dateString)
-      return t2("fields.notAvailable");
+    if (!dateString) return t2("fields.notAvailable");
     const date2 = typeof dateString === "string" ? new Date(dateString) : dateString;
     return date2.toLocaleDateString("en-US", {
       year: "numeric",
@@ -30259,8 +30072,7 @@ var AddOutletDialog = ({
     }
   };
   const handleCancel = () => {
-    if (isSubmitting)
-      return;
+    if (isSubmitting) return;
     onOpenChange(false);
   };
   return /* @__PURE__ */ jsx171(Dialog, { open, onOpenChange, children: /* @__PURE__ */ jsxs153(DialogContent, { className: "max-w-4xl max-h-[90vh] overflow-y-auto p-0", children: [
@@ -30456,8 +30268,7 @@ var CategoryFormContent = ({
     }
   };
   const handleCancel = () => {
-    if (submitting)
-      return;
+    if (submitting) return;
     onCancel();
   };
   return /* @__PURE__ */ jsxs156("form", { onSubmit: handleSubmit, className: "space-y-4", children: [
@@ -30557,8 +30368,7 @@ var AddCategoryDialog = ({
     }
   };
   const handleCancel = () => {
-    if (isSubmitting)
-      return;
+    if (isSubmitting) return;
     onOpenChange(false);
   };
   return /* @__PURE__ */ jsx175(Dialog, { open, onOpenChange, children: /* @__PURE__ */ jsxs157(DialogContent, { className: "sm:max-w-[600px]", children: [
@@ -30811,8 +30621,7 @@ function CategoryTable({
     ] }) }) });
   }
   const formatDate11 = (dateString) => {
-    if (!dateString)
-      return "N/A";
+    if (!dateString) return "N/A";
     const date2 = typeof dateString === "string" ? new Date(dateString) : dateString;
     return date2.toLocaleDateString("en-US", {
       year: "numeric",
@@ -30994,8 +30803,7 @@ var CategoryView = ({
   const tc = useCommonTranslations23();
   const locale2 = Z();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState71(false);
-  if (!category)
-    return null;
+  if (!category) return null;
   const handleEdit = () => {
     onEdit(category);
     onClose();
@@ -31520,16 +31328,13 @@ var PlanSelection = ({
     return limit === -1 ? "Unlimited" : limit.toString();
   };
   const getPlanCardVariant = (plan) => {
-    if (selectedPlan === plan.id)
-      return "default";
-    if (plan.isPopular)
-      return "bordered";
+    if (selectedPlan === plan.id) return "default";
+    if (plan.isPopular) return "bordered";
     return "bordered";
   };
   const getBillingCyclePrice = (plan, cycle) => {
     const cycleOption = BILLING_CYCLES3.find((option) => option.value === cycle);
-    if (!cycleOption)
-      return plan.price;
+    if (!cycleOption) return plan.price;
     const totalPrice = plan.price * cycleOption.months;
     const discount = getBillingCycleDiscount2(cycle);
     const discountAmount = totalPrice * (discount / 100);
@@ -31971,8 +31776,7 @@ var PlanTable = ({
     }).format(price);
   };
   const getLimitText = (limit) => {
-    if (limit === void 0 || limit === null)
-      return "N/A";
+    if (limit === void 0 || limit === null) return "N/A";
     return limit === -1 ? "Unlimited" : limit.toString();
   };
   const formatDate11 = (date2) => {
@@ -31989,8 +31793,7 @@ var PlanTable = ({
     }
   };
   const getSortIcon = (field) => {
-    if (sortBy !== field)
-      return null;
+    if (sortBy !== field) return null;
     return sortOrder === "asc" ? /* @__PURE__ */ jsx190(ChevronUp2, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx190(ChevronDown6, { className: "w-4 h-4" });
   };
   if (loading) {
@@ -32273,8 +32076,7 @@ var PlanDetailModal = ({
   onOpenChange,
   onSubscribe
 }) => {
-  if (!plan)
-    return null;
+  if (!plan) return null;
   const handleSubscribe = (billingCycle) => {
     onSubscribe(plan.id, billingCycle);
   };
@@ -32478,8 +32280,7 @@ var BillingCycleTable = ({
     }
   };
   const getSortIcon = (field) => {
-    if (sortBy !== field)
-      return null;
+    if (sortBy !== field) return null;
     return sortOrder === "asc" ? /* @__PURE__ */ jsx194(ChevronUp3, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx194(ChevronDown7, { className: "w-4 h-4" });
   };
   if (loading) {
@@ -32939,8 +32740,7 @@ var BillingCycleDetailDialog = ({
       minute: "2-digit"
     });
   };
-  if (!billingCycle)
-    return null;
+  if (!billingCycle) return null;
   return /* @__PURE__ */ jsx196(Dialog15, { open, onOpenChange, children: /* @__PURE__ */ jsxs178(DialogContent15, { className: "max-w-4xl max-h-[90vh] overflow-y-auto", children: [
     /* @__PURE__ */ jsx196(DialogHeader15, { children: /* @__PURE__ */ jsxs178("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsxs178("div", { children: [
@@ -33205,28 +33005,19 @@ var PaymentForm = ({
       if (response.success && response.data) {
         const results = response.data.merchants.map((merchant) => {
           const descriptionParts = [];
-          if (merchant.phone)
-            descriptionParts.push(`${merchant.phone}`);
-          if (merchant.email)
-            descriptionParts.push(`${merchant.email}`);
+          if (merchant.phone) descriptionParts.push(`${merchant.phone}`);
+          if (merchant.email) descriptionParts.push(`${merchant.email}`);
           const addressParts = [];
-          if (merchant.address)
-            addressParts.push(merchant.address);
-          if (merchant.city)
-            addressParts.push(merchant.city);
-          if (merchant.state)
-            addressParts.push(merchant.state);
-          if (merchant.zipCode)
-            addressParts.push(merchant.zipCode);
-          if (merchant.country)
-            addressParts.push(merchant.country);
+          if (merchant.address) addressParts.push(merchant.address);
+          if (merchant.city) addressParts.push(merchant.city);
+          if (merchant.state) addressParts.push(merchant.state);
+          if (merchant.zipCode) addressParts.push(merchant.zipCode);
+          if (merchant.country) addressParts.push(merchant.country);
           if (addressParts.length > 0) {
             descriptionParts.push(`${addressParts.join(", ")}`);
           }
-          if (merchant.businessType)
-            descriptionParts.push(`Business: ${merchant.businessType}`);
-          if (merchant.website)
-            descriptionParts.push(`Website: ${merchant.website}`);
+          if (merchant.businessType) descriptionParts.push(`Business: ${merchant.businessType}`);
+          if (merchant.website) descriptionParts.push(`Website: ${merchant.website}`);
           return {
             value: merchant.id.toString(),
             label: merchant.name,
@@ -33251,10 +33042,8 @@ var PaymentForm = ({
     if (mode === "edit" && existingPayment && plans.length > 0 && planVariants.length > 0) {
       const plan = plans.find((p2) => p2.id === existingPayment.planId);
       const planVariant = planVariants.find((v2) => v2.id === existingPayment.planVariantId);
-      if (plan)
-        setSelectedPlan(plan);
-      if (planVariant)
-        setSelectedPlanVariant(planVariant);
+      if (plan) setSelectedPlan(plan);
+      if (planVariant) setSelectedPlanVariant(planVariant);
     }
   }, [mode, existingPayment, plans, planVariants]);
   useEffect41(() => {
@@ -33572,8 +33361,7 @@ var PaymentDetailDialog = ({
   onRefundPayment,
   onDownloadReceipt
 }) => {
-  if (!payment)
-    return null;
+  if (!payment) return null;
   const getStatusBadge = (status) => {
     const statusConfig = {
       "completed": { color: "bg-action-success/10 text-action-success", icon: CheckCircle21, text: "Completed" },
@@ -34955,10 +34743,8 @@ var getTrendIcon = (trend) => {
   }
 };
 var getTrendColor = (trend, change) => {
-  if (trend === "UP")
-    return "text-red-500";
-  if (trend === "DOWN")
-    return "text-green-500";
+  if (trend === "UP") return "text-red-500";
+  if (trend === "DOWN") return "text-green-500";
   return "text-gray-500";
 };
 function PerformanceMetricCard({ metric, onClick }) {
@@ -37006,8 +36792,7 @@ function ChangesViewer({ changes }) {
 }
 function AuditLogDetail({ log, isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState79("overview");
-  if (!log)
-    return null;
+  if (!log) return null;
   const formatDate11 = (dateString) => {
     return new Date(dateString).toLocaleString("en-US", {
       year: "numeric",
@@ -38576,15 +38361,16 @@ var OrderDetail = ({
   const canReturn = onReturn && isRentOrder && currentStatus === "PICKUPED";
   const canPrint = true;
   const isDamageFeeEnabled = () => {
-    if (isSaleOrder)
-      return false;
+    if (isSaleOrder) return false;
     if (isRentOrder) {
       switch (currentStatus) {
         case "RESERVED":
           return false;
+        // Disable for reserved orders
         case "PICKUPED":
         case "RETURNED":
           return true;
+        // Enable for picked up and returned orders
         default:
           return false;
       }
@@ -38592,14 +38378,14 @@ var OrderDetail = ({
     return false;
   };
   const isSecurityDepositEnabled = () => {
-    if (isSaleOrder)
-      return false;
+    if (isSaleOrder) return false;
     if (isRentOrder) {
       switch (currentStatus) {
         case "RESERVED":
         case "PICKUPED":
         case "RETURNED":
           return true;
+        // Always enable for RENT orders
         default:
           return false;
       }
@@ -38607,14 +38393,14 @@ var OrderDetail = ({
     return false;
   };
   const isCollateralTypeEnabled = () => {
-    if (isSaleOrder)
-      return false;
+    if (isSaleOrder) return false;
     if (isRentOrder) {
       switch (currentStatus) {
         case "RESERVED":
         case "PICKUPED":
         case "RETURNED":
           return true;
+        // Always enable for RENT orders
         default:
           return false;
       }
@@ -38622,14 +38408,14 @@ var OrderDetail = ({
     return false;
   };
   const isCollateralDetailsEnabled = () => {
-    if (isSaleOrder)
-      return false;
+    if (isSaleOrder) return false;
     if (isRentOrder) {
       switch (currentStatus) {
         case "RESERVED":
         case "PICKUPED":
         case "RETURNED":
           return true;
+        // Always enable for RENT orders
         default:
           return false;
       }
@@ -39081,8 +38867,7 @@ var SettingsLayout2 = ({
     ] }),
     /* @__PURE__ */ jsxs226("div", { className: "flex flex-col lg:flex-row gap-6", children: [
       /* @__PURE__ */ jsx251("div", { className: "lg:w-64 flex-shrink-0", children: /* @__PURE__ */ jsx251(Card59, { children: /* @__PURE__ */ jsx251(CardContent58, { className: "p-0", children: /* @__PURE__ */ jsx251("nav", { className: "space-y-1", children: menuItems2.filter((item) => {
-        if (!item.roles)
-          return true;
+        if (!item.roles) return true;
         const userRole = (user?.role || "").trim().toUpperCase();
         const hasRole = item.roles.some((role) => role.toUpperCase() === userRole);
         return hasRole;
@@ -39300,8 +39085,7 @@ var MerchantSection = ({
     setSelectedCurrency(currentCurrency);
   }, [currentCurrency]);
   const handleCurrencySelect = async (currency) => {
-    if (currency === currentCurrency)
-      return;
+    if (currency === currentCurrency) return;
     setIsSavingCurrency(true);
     try {
       await onCurrencyChange(currency);
@@ -39942,8 +39726,7 @@ var ChangePasswordDialog2 = ({
   const [showCurrentPassword, setShowCurrentPassword] = useState85(false);
   const [showNewPassword, setShowNewPassword] = useState85(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState85(false);
-  if (!isOpen)
-    return null;
+  if (!isOpen) return null;
   return /* @__PURE__ */ jsx258("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ jsxs233("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
     /* @__PURE__ */ jsxs233("div", { className: "flex items-center justify-between mb-4", children: [
       /* @__PURE__ */ jsx258("h3", { className: "text-lg font-medium text-gray-900", children: t2("changePassword.title") }),
@@ -40071,8 +39854,7 @@ var DeleteAccountDialog = ({
   onConfirm
 }) => {
   const t2 = useSettingsTranslations9();
-  if (!isOpen)
-    return null;
+  if (!isOpen) return null;
   return /* @__PURE__ */ jsx259("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ jsxs234("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
     /* @__PURE__ */ jsxs234("div", { className: "flex items-center mb-4", children: [
       /* @__PURE__ */ jsx259("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx259("svg", { className: "h-6 w-6 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx259("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" }) }) }),
@@ -40705,8 +40487,7 @@ var CurrencySection = ({
     setHasChanges(currency !== currentCurrency);
   };
   const handleSave = async () => {
-    if (!hasChanges)
-      return;
+    if (!hasChanges) return;
     await onCurrencyChange(selectedCurrency);
     setHasChanges(false);
   };
@@ -40756,8 +40537,7 @@ var CurrencySection = ({
       ] }),
       /* @__PURE__ */ jsx262(CardContent65, { children: /* @__PURE__ */ jsx262("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: CURRENCY_OPTIONS.map((option) => {
         const config = getCurrency2(option.value);
-        if (!config)
-          return null;
+        if (!config) return null;
         const isSelected = selectedCurrency === option.value;
         const isCurrent = currentCurrency === option.value;
         return /* @__PURE__ */ jsxs237(
@@ -40928,8 +40708,7 @@ function TopNavigation({
     }
   ];
   const filterNavItemsByRole = (items, userRole2) => {
-    if (!userRole2)
-      return items;
+    if (!userRole2) return items;
     if (userRole2 === "OUTLET_ADMIN") {
       return items.filter(
         (item) => item.href !== "/outlets" && item.href !== "/subscriptions" && item.href !== "/plans" && item.href !== "/payments"
@@ -41764,8 +41543,7 @@ function Navigation({
     { href: "/settings", label: "Settings", icon: Settings12 }
   ];
   const filterNavItemsByRole = (items, userRole2) => {
-    if (!userRole2)
-      return items;
+    if (!userRole2) return items;
     if (userRole2 === "OUTLET_ADMIN") {
       return items.filter(
         (item) => item.href !== "/outlets" && item.href !== "/subscriptions" && item.href !== "/plans" && item.href !== "/payments"
@@ -42171,8 +41949,7 @@ var ClientSidebar = ({
   const pathname = usePathname2();
   const t2 = useCommonTranslations25();
   const filterMenuItemsByRole = (items, userRole) => {
-    if (!userRole)
-      return items;
+    if (!userRole) return items;
     if (userRole === "OUTLET_ADMIN") {
       return items.filter(
         (item) => item.href !== "/outlets" && item.href !== "/subscriptions" && item.href !== "/plans" && item.href !== "/payments"
@@ -42564,8 +42341,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     }
   };
   const getStatusText = () => {
-    if (statusMessage)
-      return statusMessage;
+    if (statusMessage) return statusMessage;
     switch (status) {
       case "ACTIVE":
         return isExpiringSoon ? `Expires in ${daysUntilExpiry} days` : "Active";
@@ -42894,6 +42670,7 @@ export {
   ProductOrdersDialog,
   ProductOrdersView,
   ProductPageHeader,
+  ProductAddForm as ProductSimpleForm,
   ProductTable,
   Products_default as Products,
   ProductsLoading,
