@@ -18,9 +18,10 @@ interface ProductAddFormProps {
   categories: Category[];
   outlets: Outlet[];
   merchantId: string;
-  onSave: (data: ProductCreateInput) => Promise<void>;
+  onSave: (data: ProductCreateInput, files?: File[]) => Promise<void>; // Updated to support files
   onCancel: () => void;
   onBack?: () => void;
+  useMultipartUpload?: boolean; // New prop to enable multipart upload
 }
 
 export const ProductAddForm: React.FC<ProductAddFormProps> = ({
@@ -29,14 +30,15 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
   merchantId,
   onSave,
   onCancel,
-  onBack
+  onBack,
+  useMultipartUpload = false
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, toastError } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: any, files?: File[]) => {
     setIsSubmitting(true);
 
     try {
@@ -50,10 +52,16 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
         salePrice: data.salePrice,
         deposit: data.deposit,
         totalStock: data.totalStock,
-        images: Array.isArray(data.images) ? data.images.join(',') : (data.images || ''),
+        images: useMultipartUpload ? [] : (Array.isArray(data.images) ? data.images.join(',') : (data.images || '')),
         outletStock: data.outletStock,
       };
-      await onSave(transformedData);
+      
+      if (useMultipartUpload && files) {
+        await onSave(transformedData, files);
+      } else {
+        await onSave(transformedData);
+      }
+      
       // Parent component will handle success toast
       
       // Reset form after successful creation
@@ -85,6 +93,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
             hideHeader={true}
             hideSubmitButton={true}
             formId="product-form"
+            useMultipartUpload={useMultipartUpload}
             submitText={isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

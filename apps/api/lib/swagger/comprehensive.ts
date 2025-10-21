@@ -1,17 +1,40 @@
 /**
  * Comprehensive Swagger documentation for all Rental Shop APIs
  */
-import { getApiUrl } from '@rentalshop/utils';
+import { getApiUrl, getCurrentEnvironment } from '@rentalshop/utils';
+// Temporarily comment out imports to fix webpack error
+// import { userSwaggerConfig } from './users';
+// import { orderSwaggerConfig } from './orders';
+// import { categorySwaggerConfig } from './categories';
+// import { planSwaggerConfig } from './plans';
+// import { merchantSwaggerConfig } from './merchants';
+// import { outletSwaggerConfig } from './outlets';
+// import { subscriptionSwaggerConfig } from './subscriptions';
+
+const environment = getCurrentEnvironment();
+const apiUrl = getApiUrl();
+
+const getServerDescription = (env: string) => {
+  switch (env) {
+    case 'production':
+      return 'Production Railway server';
+    case 'development':
+      return 'Development Railway server';
+    default:
+      return 'Railway development server';
+  }
+};
 
 export const comprehensiveSwaggerConfig = {
   openapi: '3.0.0',
   info: {
     title: 'Rental Shop API',
     description: 'Complete API documentation for the Rental Shop system including authentication, products, analytics, and more',
-    version: '1.0.0',
+    version: '2.0.0',
     contact: {
       name: 'Rental Shop API Support',
-      email: 'support@rentalshop.com'
+      email: 'support@rentalshop.com',
+      url: 'https://rentalshop.com/support'
     },
     license: {
       name: 'MIT',
@@ -20,20 +43,49 @@ export const comprehensiveSwaggerConfig = {
   },
   servers: [
     {
-      url: getApiUrl(),
-      description: 'API server'
+      url: 'https://dev-apis-development.up.railway.app',
+      description: 'Development Railway server (Recommended for Local)'
+    },
+    {
+      url: 'https://apis-development.up.railway.app',
+      description: 'Production Railway server'
+    },
+    {
+      url: apiUrl,
+      description: getServerDescription(environment)
+    },
+    {
+      url: 'http://localhost:3002',
+      description: 'Local development server (Fallback)'
     }
   ],
   tags: [
     { name: 'Authentication', description: 'User authentication and authorization endpoints' },
+    { name: 'User Management', description: 'User CRUD operations and management' },
+    { name: 'User Roles', description: 'Role-based access control operations' },
     { name: 'Products', description: 'Product management operations' },
     { name: 'Product Search', description: 'Product search and filtering operations' },
     { name: 'Product Barcode', description: 'Barcode-based product operations' },
+    { name: 'Orders', description: 'Order management operations' },
+    { name: 'Order Status', description: 'Order status management and updates' },
+    { name: 'Order Analytics', description: 'Order analytics and reporting' },
     { name: 'Customers', description: 'Customer management operations' },
     { name: 'Customer Search', description: 'Customer search and filtering operations' },
+    { name: 'Categories', description: 'Category management operations' },
+    { name: 'Plans', description: 'Subscription plan management' },
+    { name: 'Merchants', description: 'Merchant management operations' },
+    { name: 'Outlets', description: 'Outlet management operations' },
+    { name: 'Subscriptions', description: 'Subscription management operations' },
     { name: 'Analytics', description: 'Analytics and reporting endpoints' },
     { name: 'Mobile', description: 'Mobile-optimized endpoints' },
     { name: 'System', description: 'System and utility endpoints' }
+  ],
+  security: [
+    { bearerAuth: [] },
+    { clientPlatformHeader: [] },
+    { deviceTypeHeader: [] },
+    { appVersionHeader: [] },
+    { userAgentHeader: [] }
   ],
   paths: {
     // Authentication Endpoints
@@ -1453,6 +1505,95 @@ export const comprehensiveSwaggerConfig = {
           }
         }
       }
+    },
+
+    // User Management Endpoints
+    '/api/users': {
+      get: {
+        tags: ['User Management'],
+        summary: 'Get users with filtering and pagination',
+        description: 'Retrieve users with various filters including merchant, outlet, role, and status',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'merchantId',
+            in: 'query',
+            description: 'Filter by specific merchant',
+            schema: { type: 'string' }
+          },
+          {
+            name: 'role',
+            in: 'query',
+            description: 'Filter by user role',
+            schema: { 
+              type: 'string',
+              enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']
+            }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Users retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        users: {
+                          type: 'array',
+                          items: { $ref: '#/components/schemas/User' }
+                        },
+                        total: { type: 'integer' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    // Order Management Endpoints
+    '/api/orders': {
+      get: {
+        tags: ['Orders'],
+        summary: 'Get orders with filtering and pagination',
+        description: 'Retrieve orders with various filters',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'status',
+            in: 'query',
+            description: 'Filter by order status',
+            schema: {
+              type: 'string',
+              enum: ['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']
+            }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Orders retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { type: 'object' } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   components: {
@@ -1462,6 +1603,30 @@ export const comprehensiveSwaggerConfig = {
         scheme: 'bearer',
         bearerFormat: 'JWT',
         description: 'JWT token obtained from login endpoint'
+      },
+      clientPlatformHeader: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-Client-Platform',
+        description: 'Client platform (mobile/web)'
+      },
+      deviceTypeHeader: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-Device-Type',
+        description: 'Device type (ios/android/browser)'
+      },
+      appVersionHeader: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-App-Version',
+        description: 'App version (for mobile)'
+      },
+      userAgentHeader: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'User-Agent',
+        description: 'Client user agent'
       }
     },
     schemas: {
@@ -1793,7 +1958,9 @@ export const comprehensiveSwaggerConfig = {
              }
            }
          }
-       }
+       },
+      // TODO: Add additional schemas from other modules
+      // Temporarily commented out due to webpack import issues
     }
   }
 }; 

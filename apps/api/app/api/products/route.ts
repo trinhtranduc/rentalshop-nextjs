@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
+import { z } from 'zod';
 
 /**
  * GET /api/products
@@ -104,8 +105,52 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 });
 
 /**
+ * Helper function to validate image file
+ */
+function validateImage(file: File): { isValid: boolean; error?: string } {
+  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  
+  const fileTypeLower = file.type.toLowerCase().trim();
+  const fileNameLower = file.name.toLowerCase().trim();
+  
+  const isValidMimeType = fileTypeLower ? ALLOWED_TYPES.some(type => 
+    fileTypeLower === type.toLowerCase()
+  ) : false;
+  
+  const isValidExtension = ALLOWED_EXTENSIONS.some(ext => 
+    fileNameLower.endsWith(ext)
+  );
+  
+  if (!isValidMimeType && !isValidExtension) {
+    return {
+      isValid: false,
+      error: `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')} or extensions: ${ALLOWED_EXTENSIONS.join(',')}. File type: "${file.type}", File name: "${file.name}"`
+    };
+  }
+  
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      isValid: false,
+      error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`
+    };
+  }
+  
+  if (file.size < 100) {
+    return {
+      isValid: false,
+      error: 'File size is too small, file may be corrupted'
+    };
+  }
+  
+  return { isValid: true };
+}
+
+/**
  * POST /api/products
  * Create a new product using simplified database API
+ * SUPPORTS: Both JSON payload and multipart FormData with file uploads
  * REFACTORED: Now uses unified withAuth pattern
  * Requires active subscription
  */
@@ -116,15 +161,100 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
   let uploadedImages: string[] = [];
   
   try {
-    const body = await request.json();
-    const parsed = productCreateSchema.safeParse(body);
-    if (!parsed.success) {
+    const contentType = request.headers.get('content-type') || '';
+    let parsedResult: any;
+    let productDataFromRequest: any = {};
+    let uploadedFiles: string[] = [];
+
+    // Check if request contains multipart form data
+    if (contentType.includes('multipart/form-data')) {
+      console.log('🔍 Processing multipart form data with file uploads');
+      
+      const formData = await request.formData();
+      
+      // Extract JSON data from form fields
+      const jsonDataStr = formData.get('data') as string;
+      if (!jsonDataStr) {
+        return NextResponse.json(
+          ResponseBuilder.error('MISSING_PRODUCT_DATA'),
+          { status: 400 }
+        );
+      }
+      
+      try {
+        productDataFromRequest = JSON.parse(jsonDataStr);
+      } catch (parseError) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_JSON_DATA'),
+          { status: 400 }
+        );
+      }
+
+      // Handle file uploads
+      const imageFiles = formData.getAll('images') as File[];
+      console.log(`🔍 Found ${imageFiles.length} image files`);
+      
+      for (const file of imageFiles) {
+        if (file && file.size > 0) {
+          const validation = validateImage(file);
+          if (!validation.isValid) {
+            return NextResponse.json(
+              ResponseBuilder.error('IMAGE_VALIDATION_FAILED', { details: validation.error }),
+              { status: 400 }
+            );
+          }
+          
+          // Convert file to buffer and upload to S3
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          
+          const uploadResult = await uploadToS3(buffer, {
+            folder: 'staging',
+            fileName: file.name,
+            contentType: file.type,
+            preserveOriginalName: false
+          });
+          
+          if (uploadResult.success && uploadResult.data) {
+            // Generate presigned URL for immediate access
+            const presignedUrl = await generateAccessUrl(uploadResult.data.key, 86400);
+            const accessUrl = presignedUrl || uploadResult.data.cdnUrl || uploadResult.data.url;
+            uploadedFiles.push(accessUrl);
+            console.log(`✅ Uploaded image: ${file.name} -> ${accessUrl}`);
+          } else {
+            console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
+            return NextResponse.json(
+              ResponseBuilder.error('IMAGE_UPLOAD_FAILED', { details: uploadResult.error }),
+              { status: 500 }
+            );
+          }
+        }
+      }
+      
+      // Combine uploaded files with existing images
+      productDataFromRequest.images = [
+        ...(productDataFromRequest.images || []),
+        ...uploadedFiles
+      ];
+      
+    } else {
+      // Handle regular JSON request
+      console.log('🔍 Processing JSON request');
+      const body = await request.json();
+      productDataFromRequest = body;
+    }
+
+    // Validate product data
+    parsedResult = productCreateSchema.safeParse(productDataFromRequest);
+    if (!parsedResult.success) {
       return NextResponse.json({ 
         success: false, 
         code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
-        error: parsed.error.flatten() 
+        error: parsedResult.error.flatten() 
       }, { status: 400 });
     }
+    
+    const parsed = parsedResult;
 
     console.log('🔍 Raw outletStock from request:', parsed.data.outletStock);
     
@@ -136,7 +266,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       );
     }
     
-    const outletStock: Array<{ outletId: number; stock: number }> = parsed.data.outletStock.map(os => ({
+    const outletStock: Array<{ outletId: number; stock: number }> = parsed.data.outletStock.map((os: any) => ({
       outletId: os.outletId,
       stock: os.stock || 0,
     }));
@@ -216,12 +346,12 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       );
     }
 
-    // Handle images - Two-Phase Upload Pattern
+    // Handle images - Support both uploaded files and staging files
     let imagesValue = parsed.data.images;
     let stagingKeys: string[] = [];
     let committedImageUrls: string[] = [];
 
-    if (imagesValue) {
+    if (imagesValue && imagesValue.length > 0) {
       // Parse images (could be array, string, or comma-separated)
       const imageUrls = Array.isArray(imagesValue) 
         ? imagesValue 
@@ -229,24 +359,25 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
           ? imagesValue.split(',').filter(Boolean)
           : [];
 
-      // Extract staging keys from URLs
+      // Extract staging keys from URLs (both uploaded files and existing staging files)
       stagingKeys = imageUrls
         .filter(url => url && url.includes('amazonaws.com'))
         .map(url => {
           const urlParts = url.split('amazonaws.com/');
           return urlParts.length > 1 ? urlParts[1].split('?')[0] : null;
         })
-        .filter(Boolean) as string[];
+        .filter((key): key is string => key !== null && key.startsWith('staging/'));
 
-      console.log('🔍 Found staging keys:', stagingKeys);
+      console.log('🔍 Found staging keys to commit:', stagingKeys);
+      console.log('🔍 All image URLs:', imageUrls);
 
-      // Commit staging files to production
+      // Commit staging files to production (including newly uploaded files)
       if (stagingKeys.length > 0) {
         const commitResult = await commitStagingFiles(stagingKeys, 'product');
         
         if (commitResult.success) {
           // Generate production URLs with presigned access
-          committedImageUrls = await Promise.all(
+          const productionUrls = await Promise.all(
             commitResult.committedKeys.map(async (key) => {
               const presignedUrl = await generateAccessUrl(key, 86400 * 365); // 1 year expiration
               if (presignedUrl) {
@@ -258,6 +389,22 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
               return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
             })
           );
+          
+          // Map staging URLs to production URLs
+          committedImageUrls = imageUrls.map(url => {
+            const urlParts = url.split('amazonaws.com/');
+            if (urlParts.length > 1) {
+              const key = urlParts[1].split('?')[0];
+              const committedKey = commitResult.committedKeys.find(ck => 
+                ck.replace('product/', '') === key.replace('staging/', '')
+              );
+              if (committedKey) {
+                return productionUrls[commitResult.committedKeys.indexOf(committedKey)];
+              }
+            }
+            return url; // Keep original URL if not found in staging
+          });
+          
           console.log('✅ Committed staging files with presigned URLs:', committedImageUrls);
         } else {
           console.error('❌ Failed to commit staging files:', commitResult.errors);
@@ -295,7 +442,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     }
 
     // Use Prisma relation syntax with CUID
-    const productData: any = {
+    const finalProductData: any = {
       merchant: { connect: { id: merchant.id } }, // Use CUID, not publicId
       name: parsed.data.name,
       description: parsed.data.description,
@@ -316,13 +463,13 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     // Only add category connection if categoryId is provided
     // If not provided, simplifiedProducts.create will use default category
     if (parsed.data.categoryId) {
-      productData.category = { connect: { id: parsed.data.categoryId } };
+      finalProductData.category = { connect: { id: parsed.data.categoryId } };
     }
 
-    console.log('🔍 Creating product with data:', productData);
+    console.log('🔍 Creating product with data:', finalProductData);
     
     // Use simplified database API
-    const product = await db.products.create(productData);
+    const product = await db.products.create(finalProductData);
     console.log('✅ Product created successfully:', product);
 
     return NextResponse.json({

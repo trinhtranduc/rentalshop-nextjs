@@ -75,7 +75,7 @@ interface ProductFormProps {
   initialData?: Partial<ProductFormData>;
   categories: Category[];
   outlets: Array<{ id: number; name: string; address?: string }>;
-  onSubmit: (data: ProductInput) => void;
+  onSubmit: (data: ProductInput, files?: File[]) => void; // Updated to support files
   onCancel?: () => void;
   loading?: boolean;
   title?: string;
@@ -85,6 +85,7 @@ interface ProductFormProps {
   hideHeader?: boolean; // Hide header when used in dialog
   hideSubmitButton?: boolean; // Hide submit button when using external action buttons
   formId?: string; // Form ID for external submit buttons
+  useMultipartUpload?: boolean; // New prop to enable multipart form data upload
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -100,7 +101,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   merchantId = '',
   hideHeader = false,
   hideSubmitButton = false,
-  formId
+  formId,
+  useMultipartUpload = false
 }) => {
   const t = useProductTranslations();
   const tc = useCommonTranslations();
@@ -128,6 +130,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [uploadProgress, setUploadProgress] = useState<Record<string, UploadProgress>>({});
   const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // New state for files when using multipart upload
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Debug: Log initial data changes
@@ -380,11 +383,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       rentPrice: formData.rentPrice,
       salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
       deposit: formData.deposit,
-      images: formData.images, // Keep as array for ProductInput
+      images: useMultipartUpload ? [] : formData.images, // Empty array for multipart, existing images for immediate upload
       outletStock: formData.outletStock,
     };
 
-    onSubmit(productData);
+    // Pass files when using multipart upload
+    if (useMultipartUpload) {
+      onSubmit(productData, selectedFiles);
+    } else {
+      onSubmit(productData);
+    }
   };
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
@@ -429,20 +437,31 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
 
 
-  // Image handling with enhanced Cloudinary upload and progress tracking
+  // Image handling - supports both immediate upload and multipart form data
   const handleImageUpload = async (files: FileList | null) => {
     if (!files) return;
     
     // Check if adding more files would exceed the 3 image limit
-    if (formData.images.length >= 3) {
+    const currentImageCount = useMultipartUpload ? selectedFiles.length : formData.images.length;
+    if (currentImageCount >= 3) {
       console.warn('Maximum 3 images allowed');
       return;
     }
     
     const filesArray = Array.from(files);
-    const filesToUpload = filesArray.slice(0, 3 - formData.images.length);
+    const filesToUpload = filesArray.slice(0, 3 - currentImageCount);
     
-    // Get auth token
+    if (useMultipartUpload) {
+      // For multipart upload, just store files and show preview
+      console.log('🔍 Using multipart upload mode - storing files locally');
+      setSelectedFiles(prev => [...prev, ...filesToUpload]);
+      
+      // Clear any upload errors
+      setUploadErrors({});
+      return;
+    }
+    
+    // Get auth token for immediate upload
     const token = getAuthToken();
     if (!token) {
       console.error('No authentication token found');
@@ -545,10 +564,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   };
 
   const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+    if (useMultipartUpload) {
+      // Remove from selectedFiles
+      setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    } else {
+      // Remove from formData.images (existing behavior)
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    }
   };
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -566,10 +591,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     e.stopPropagation();
     setDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0] && formData.images.length < 3) {
+    const currentImageCount = useMultipartUpload ? selectedFiles.length : formData.images.length;
+    if (e.dataTransfer.files && e.dataTransfer.files[0] && currentImageCount < 3) {
       handleImageUpload(e.dataTransfer.files);
     }
-  }, [formData.images.length]);
+  }, [formData.images.length, selectedFiles.length, useMultipartUpload]);
 
   const getProductStatus = () => {
     if (formData.totalStock === 0) return { status: 'Out of Stock', variant: 'destructive' as const };
@@ -578,7 +604,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const { status, variant } = getProductStatus();
 
+  // Helper variables for image handling
+  const currentImages = useMultipartUpload ? selectedFiles : formData.images;
+  const currentImageCount = currentImages.length;
+  const isMaxImagesReached = currentImageCount >= 3;
 
+  // Helper function to create image preview URL for files
+  const createFilePreviewUrl = (file: File): string => {
+    return URL.createObjectURL(file);
+  };
 
   return (
     <div className="space-y-6">
@@ -867,23 +901,26 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             {/* Drag & Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive && formData.images.length < 3
+                dragActive && !isMaxImagesReached
                   ? 'border-action-primary bg-action-primary/10' 
-                  : formData.images.length >= 3
+                  : isMaxImagesReached
                   ? 'border-gray-300 bg-gray-50'
                   : 'border-border hover:border-action-primary/50'
               }`}
-              onDragEnter={formData.images.length < 3 ? handleDrag : undefined}
-              onDragLeave={formData.images.length < 3 ? handleDrag : undefined}
-              onDragOver={formData.images.length < 3 ? handleDrag : undefined}
-              onDrop={formData.images.length < 3 ? handleDrop : undefined}
+              onDragEnter={!isMaxImagesReached ? handleDrag : undefined}
+              onDragLeave={!isMaxImagesReached ? handleDrag : undefined}
+              onDragOver={!isMaxImagesReached ? handleDrag : undefined}
+              onDrop={!isMaxImagesReached ? handleDrop : undefined}
             >
-              <Upload className={`w-8 h-8 mx-auto mb-2 ${formData.images.length >= 3 ? 'text-gray-400' : 'text-text-secondary'}`} />
+              <Upload className={`w-8 h-8 mx-auto mb-2 ${isMaxImagesReached ? 'text-gray-400' : 'text-text-secondary'}`} />
               <p className="text-text-primary font-medium mb-1">
-                {formData.images.length >= 3 ? t('messages.maxImagesReached') : t('messages.dragDropImages')}
+                {isMaxImagesReached ? t('messages.maxImagesReached') : t('messages.dragDropImages')}
               </p>
               <p className="text-text-secondary text-sm mb-3">
-                {t('messages.imageFormats')}
+                {useMultipartUpload 
+                  ? `${t('messages.imageFormats')} (will be uploaded with form data)`
+                  : t('messages.imageFormats')
+                }
               </p>
               
               {/* File Input */}
@@ -895,7 +932,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 onChange={(e) => handleImageUpload(e.target.files)}
                 className="hidden"
                 id="image-upload"
-                disabled={formData.images.length >= 3}
+                disabled={isMaxImagesReached}
               />
               
               {/* Browse Button */}
@@ -904,23 +941,29 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 variant="outline" 
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={formData.images.length >= 3}
+                disabled={isMaxImagesReached}
               >
-                {formData.images.length >= 3 ? t('messages.maxImagesReached') : tc('buttons.browse')}
+                {isMaxImagesReached ? t('messages.maxImagesReached') : tc('buttons.browse')}
               </Button>
             </div>
 
             {/* Image Counter and Preview Grid */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-text-secondary">
-                {formData.images.length}/3 {t('messages.imagesUploaded')}
+                {currentImageCount}/3 {useMultipartUpload ? t('messages.imagesSelected') : t('messages.imagesUploaded')}
               </p>
-              {formData.images.length > 0 && (
+              {currentImageCount > 0 && (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setFormData(prev => ({ ...prev, images: [] }))}
+                  onClick={() => {
+                    if (useMultipartUpload) {
+                      setSelectedFiles([]);
+                    } else {
+                      setFormData(prev => ({ ...prev, images: [] }));
+                    }
+                  }}
                 >
                   {t('messages.clearAllImages')}
                 </Button>
@@ -955,62 +998,95 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </div>
             )}
             
-            {formData.images.length > 0 && (
+            {currentImageCount > 0 && (
               <div className="grid grid-cols-3 gap-3">
-                {formData.images.map((image, index) => {
-                  // Check if this is an uploading placeholder
-                  const isUploading = image.startsWith('uploading-');
-                  const fileId = isUploading ? image.replace('uploading-', '') : '';
-                  const progress = isUploading ? uploadProgress[fileId] : null;
-                  
-                  return (
-                    <div key={index} className="relative group">
-                      {isUploading ? (
-                        // Upload Progress Card
-                        <div className="w-full h-24 rounded-lg border border-action-primary bg-action-primary/5 flex flex-col items-center justify-center gap-2">
-                          <Loader2 className="w-6 h-6 animate-spin text-action-primary" />
-                          {progress && (
-                            <>
-                              <div className="w-full px-4">
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                  <div 
-                                    className="bg-action-primary h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${progress.percentage}%` }}
-                                  />
-                                </div>
-                              </div>
-                              <p className="text-xs text-text-secondary">
-                                {progress.stage === 'preparing' && t('messages.preparing')}
-                                {progress.stage === 'uploading' && `${t('messages.uploading')} ${progress.percentage}%`}
-                                {progress.stage === 'processing' && t('messages.processing')}
-                                {progress.stage === 'complete' && t('messages.complete')}
-                              </p>
-                            </>
-                          )}
+                {useMultipartUpload ? (
+                  // Render selected files for multipart upload
+                  selectedFiles.map((file, index) => {
+                    const previewUrl = createFilePreviewUrl(file);
+                    return (
+                      <div key={index} className="relative group">
+                        <img
+                          src={previewUrl}
+                          alt={`${file.name}`}
+                          className="w-full h-24 object-cover rounded-lg border"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 rounded-b-lg truncate">
+                          {file.name}
                         </div>
-                      ) : (
-                        // Image Preview
-                        <>
-                          <img
-                            src={image}
-                            alt={`${t('fields.name')} ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg border"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 h-6 w-6"
-                            title={t('messages.removeImage')}
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          type="button"
+                          onClick={() => {
+                            removeImage(index);
+                            URL.revokeObjectURL(previewUrl); // Clean up object URL
+                          }}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 h-6 w-6"
+                          title={t('messages.removeImage')}
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  // Render uploaded images (existing behavior)
+                  formData.images.map((image, index) => {
+                    // Check if this is an uploading placeholder
+                    const isUploading = image.startsWith('uploading-');
+                    const fileId = isUploading ? image.replace('uploading-', '') : '';
+                    const progress = isUploading ? uploadProgress[fileId] : null;
+                    
+                    return (
+                      <div key={index} className="relative group">
+                        {isUploading ? (
+                          // Upload Progress Card
+                          <div className="w-full h-24 rounded-lg border border-action-primary bg-action-primary/5 flex flex-col items-center justify-center gap-2">
+                            <Loader2 className="w-6 h-6 animate-spin text-action-primary" />
+                            {progress && (
+                              <>
+                                <div className="w-full px-4">
+                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div 
+                                      className="bg-action-primary h-2 rounded-full transition-all duration-300"
+                                      style={{ width: `${progress.percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                <p className="text-xs text-text-secondary">
+                                  {progress.stage === 'preparing' && t('messages.preparing')}
+                                  {progress.stage === 'uploading' && `${t('messages.uploading')} ${progress.percentage}%`}
+                                  {progress.stage === 'processing' && t('messages.processing')}
+                                  {progress.stage === 'complete' && t('messages.complete')}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          // Image Preview
+                          <>
+                            <img
+                              src={image}
+                              alt={`${t('fields.name')} ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg border"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 h-6 w-6"
+                              title={t('messages.removeImage')}
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
           </CardContent>

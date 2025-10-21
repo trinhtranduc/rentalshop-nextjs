@@ -107,10 +107,12 @@ export default function ProductAddPage() {
     fetchData();
   }, [authLoading]);
 
-  const handleSave = async (data: ProductCreateInput) => {
+  const handleSave = async (data: ProductCreateInput, files?: File[]) => {
     try {
-      // Call the create API
-      const response = await productsApi.createProduct(data);
+      // Call the appropriate API method based on whether files are provided
+      const response = files && files.length > 0 
+        ? await productsApi.createProductWithFiles(data, files)
+        : await productsApi.createProduct(data);
       
       // Redirect to the new product view page
       if (response.data?.id) {
@@ -241,6 +243,7 @@ export default function ProductAddPage() {
           onSubmit={handleSave}
           onCancel={handleCancel}
           mode="create"
+          useMultipartUpload={true}
         />
       </PageContent>
     </PageWrapper>

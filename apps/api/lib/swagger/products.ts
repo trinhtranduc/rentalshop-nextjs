@@ -16,9 +16,28 @@ export const productSwaggerConfig = {
   },
   servers: [
     {
+      url: 'https://dev-apis-development.up.railway.app',
+      description: 'Development Railway server (Recommended for Local)'
+    },
+    {
+      url: 'https://apis-development.up.railway.app',
+      description: 'Production Railway server'
+    },
+    {
       url: getApiUrl(),
-      description: 'API server'
+      description: 'Railway API server'
+    },
+    {
+      url: 'http://localhost:3002',
+      description: 'Local development server (Fallback)'
     }
+  ],
+  security: [
+    { bearerAuth: [] },
+    { 'X-Client-Platform': [] },
+    { 'X-Device-Type': [] },
+    { 'X-App-Version': [] },
+    { 'User-Agent': [] }
   ],
   tags: [
     {
@@ -768,7 +787,32 @@ export const productSwaggerConfig = {
       bearerAuth: {
         type: 'http',
         scheme: 'bearer',
-        bearerFormat: 'JWT'
+        bearerFormat: 'JWT',
+        description: 'JWT token obtained from login endpoint'
+      },
+      'X-Client-Platform': {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-Client-Platform',
+        description: 'Client platform (mobile/web)'
+      },
+      'X-Device-Type': {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-Device-Type',
+        description: 'Device type (ios/android/browser)'
+      },
+      'X-App-Version': {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-App-Version',
+        description: 'App version (for mobile)'
+      },
+      'User-Agent': {
+        type: 'apiKey',
+        in: 'header',
+        name: 'User-Agent',
+        description: 'Client user agent'
       }
     },
     schemas: {

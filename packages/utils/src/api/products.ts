@@ -118,6 +118,36 @@ export const productsApi = {
   },
 
   /**
+   * Create a new product with multipart form data (includes file uploads)
+   */
+  async createProductWithFiles(productData: ProductCreateInput, files?: File[]): Promise<ApiResponse<Product>> {
+    if (!files || files.length === 0) {
+      // If no files, fall back to regular JSON request
+      return this.createProduct(productData);
+    }
+
+    // Create multipart form data
+    const formData = new FormData();
+    
+    // Add product data as JSON string
+    formData.append('data', JSON.stringify(productData));
+    
+    // Add files
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+
+    // Send multipart request
+    const response = await authenticatedFetch(apiUrls.products.create, {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type header for FormData - browser will set it with boundary
+    });
+    
+    return await parseApiResponse<Product>(response);
+  },
+
+  /**
    * Update an existing product
    */
   async updateProduct(productId: number, productData: ProductUpdateInput): Promise<ApiResponse<Product>> {
