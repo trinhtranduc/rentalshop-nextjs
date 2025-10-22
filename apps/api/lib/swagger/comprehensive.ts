@@ -2,14 +2,14 @@
  * Comprehensive Swagger documentation for all Rental Shop APIs
  */
 import { getApiUrl, getCurrentEnvironment } from '@rentalshop/utils';
-// Temporarily comment out imports to fix webpack error
-// import { userSwaggerConfig } from './users';
-// import { orderSwaggerConfig } from './orders';
-// import { categorySwaggerConfig } from './categories';
-// import { planSwaggerConfig } from './plans';
-// import { merchantSwaggerConfig } from './merchants';
-// import { outletSwaggerConfig } from './outlets';
-// import { subscriptionSwaggerConfig } from './subscriptions';
+// Import individual swagger configs
+import { userSwaggerConfig } from './users';
+import { orderSwaggerConfig } from './orders';
+import { categorySwaggerConfig } from './categories';
+import { planSwaggerConfig } from './plans';
+import { merchantSwaggerConfig } from './merchants';
+import { outletSwaggerConfig } from './outlets';
+import { subscriptionSwaggerConfig } from './subscriptions';
 
 const environment = getCurrentEnvironment();
 const apiUrl = getApiUrl();
@@ -1559,42 +1559,30 @@ export const comprehensiveSwaggerConfig = {
       }
     },
 
-    // Order Management Endpoints
-    '/api/orders': {
-      get: {
-        tags: ['Orders'],
-        summary: 'Get orders with filtering and pagination',
-        description: 'Retrieve orders with various filters',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'status',
-            in: 'query',
-            description: 'Filter by order status',
-            schema: {
-              type: 'string',
-              enum: ['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']
-            }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Orders retrieved successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: { type: 'array', items: { type: 'object' } }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    // Order Management Endpoints - Merge from orderSwaggerConfig
+    ...orderSwaggerConfig.paths,
+
+    // User Management Endpoints - Merge from userSwaggerConfig (excluding duplicates)
+    ...Object.fromEntries(
+      Object.entries(userSwaggerConfig.paths).filter(([path]) => 
+        !['/api/auth/register', '/api/auth/login'].includes(path)
+      )
+    ),
+
+    // Category Management Endpoints - Merge from categorySwaggerConfig
+    ...categorySwaggerConfig.paths,
+
+    // Plan Management Endpoints - Merge from planSwaggerConfig
+    ...planSwaggerConfig.paths,
+
+    // Merchant Management Endpoints - Merge from merchantSwaggerConfig
+    ...merchantSwaggerConfig.paths,
+
+    // Outlet Management Endpoints - Merge from outletSwaggerConfig
+    ...outletSwaggerConfig.paths,
+
+    // Subscription Management Endpoints - Merge from subscriptionSwaggerConfig
+    ...subscriptionSwaggerConfig.paths
   },
   components: {
     securitySchemes: {
@@ -1630,17 +1618,6 @@ export const comprehensiveSwaggerConfig = {
       }
     },
     schemas: {
-      User: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          email: { type: 'string', format: 'email' },
-          name: { type: 'string' },
-          role: { type: 'string', enum: ['user', 'admin', 'merchant'] },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' }
-        }
-      },
       Product: {
         type: 'object',
         properties: {
@@ -1819,32 +1796,6 @@ export const comprehensiveSwaggerConfig = {
           }
         }
       },
-      ErrorResponse: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean', example: false },
-          error: { type: 'string' },
-          message: { type: 'string' },
-          details: { type: 'string' }
-        }
-      },
-      ValidationError: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean', example: false },
-          message: { type: 'string', example: 'Validation failed' },
-          errors: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                field: { type: 'string' },
-                message: { type: 'string' }
-              }
-            }
-          }
-        }
-      },
              Customer: {
          type: 'object',
          properties: {
@@ -1959,8 +1910,14 @@ export const comprehensiveSwaggerConfig = {
            }
          }
        },
-      // TODO: Add additional schemas from other modules
-      // Temporarily commented out due to webpack import issues
+      // Merge schemas from other modules
+      ...orderSwaggerConfig.components?.schemas,
+      ...userSwaggerConfig.components?.schemas,
+      ...categorySwaggerConfig.components?.schemas,
+      ...planSwaggerConfig.components?.schemas,
+      ...merchantSwaggerConfig.components?.schemas,
+      ...outletSwaggerConfig.components?.schemas,
+      ...subscriptionSwaggerConfig.components?.schemas
     }
   }
 }; 
