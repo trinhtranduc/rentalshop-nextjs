@@ -673,7 +673,15 @@ export const simplifiedOrders = {
         outlet: { select: { id: true, name: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            productId: true,
+            notes: true,
+            rentalDays: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -700,7 +708,15 @@ export const simplifiedOrders = {
         },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            productId: true,
+            notes: true,
+            rentalDays: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -720,7 +736,15 @@ export const simplifiedOrders = {
         outlet: { select: { id: true, name: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            productId: true,
+            notes: true,
+            rentalDays: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
