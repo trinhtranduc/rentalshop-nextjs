@@ -118,9 +118,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     console.log('📊 PAGINATION DEBUG: page=', searchFilters.page, ', limit=', searchFilters.limit);
     
     // Use performance monitoring for query optimization
+    // For large datasets, use lightweight method for better performance
     const result = await PerformanceMonitor.measureQuery(
       'orders.search',
-      () => db.orders.search(searchFilters)
+      () => db.orders.findManyLightweight(searchFilters)
     );
     
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');

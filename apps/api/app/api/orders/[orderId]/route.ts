@@ -39,8 +39,13 @@ export const GET = async (
         );
       }
       
-      // Get order using the simplified database API
-      const order = await db.orders.findById(orderIdNum);
+      // Get order using the optimized database API
+      const order = await db.orders.findByIdOptimized(orderIdNum, {
+        includeItems: true,
+        includePayments: true,
+        includeCustomer: true,
+        includeOutlet: true
+      });
 
       if (!order) {
         console.log('❌ Order not found in database for orderId:', orderIdNum);
