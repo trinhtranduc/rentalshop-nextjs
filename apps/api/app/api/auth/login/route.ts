@@ -43,12 +43,45 @@ export async function POST(request: NextRequest) {
     let planName = 'Basic'; // Default plan
     let merchantData = null; // MerchantReference | null
     let outletData = null;   // OutletReference | null
+    let subscriptionData = null; // Subscription data
     
     if (user.merchantId) {
       const merchant = await db.merchants.findById(user.merchantId);
       if (merchant) {
         if (merchant.subscription?.plan) {
           planName = merchant.subscription.plan.name;
+          
+          // ✅ Return complete subscription data
+          subscriptionData = {
+            id: merchant.subscription.id,
+            merchantId: merchant.subscription.merchantId,
+            planId: merchant.subscription.planId,
+            status: merchant.subscription.status,
+            currentPeriodStart: merchant.subscription.currentPeriodStart,
+            currentPeriodEnd: merchant.subscription.currentPeriodEnd,
+            trialStart: merchant.subscription.trialStart || undefined,
+            trialEnd: merchant.subscription.trialEnd || undefined,
+            cancelAtPeriodEnd: merchant.subscription.cancelAtPeriodEnd,
+            canceledAt: merchant.subscription.canceledAt || undefined,
+            cancelReason: merchant.subscription.cancelReason || undefined,
+            amount: merchant.subscription.amount,
+            currency: merchant.subscription.currency,
+            interval: merchant.subscription.interval,
+            intervalCount: merchant.subscription.intervalCount,
+            // Include plan details
+            plan: {
+              id: merchant.subscription.plan.id,
+              name: merchant.subscription.plan.name,
+              description: merchant.subscription.plan.description,
+              basePrice: merchant.subscription.plan.basePrice,
+              currency: merchant.subscription.plan.currency,
+              trialDays: merchant.subscription.plan.trialDays,
+              features: merchant.subscription.plan.features,
+              limits: merchant.subscription.plan.limits,
+              isActive: merchant.subscription.plan.isActive,
+              isPopular: merchant.subscription.plan.isPopular,
+            }
+          };
         }
         // ✅ Return complete merchant data for Settings page
         merchantData = {
@@ -122,6 +155,8 @@ export async function POST(request: NextRequest) {
           merchant: merchantData,  // MerchantReference | null
           // ✅ Optional: outlet object (null for ADMIN/MERCHANT users without outlet)
           outlet: outletData,      // OutletReference | null
+          // ✅ Optional: subscription object (null for ADMIN users or merchants without subscription)
+          subscription: subscriptionData, // Subscription | null
         },
         token,
       },

@@ -7816,22 +7816,79 @@ var CreateOrderForm = (props) => {
   }, [searchProducts, currency]);
   const getProductAvailabilityStatus = (0, import_react23.useCallback)(async (product, startDate, endDate, requestedQuantity = import_constants6.BUSINESS.DEFAULT_QUANTITY) => {
     try {
-      const outletStock = product.outletStock?.[0];
-      const available = outletStock?.available ?? 0;
-      const stock = outletStock?.stock ?? 0;
-      const renting = outletStock?.renting ?? 0;
-      const totalStock = stock;
-      if (!startDate || !endDate) {
+      console.log("\u{1F50D} Checking availability for product:", {
+        productId: product.id,
+        productName: product.name,
+        startDate,
+        endDate,
+        requestedQuantity
+      });
+      const requestParams = {
+        quantity: requestedQuantity,
+        includeTimePrecision: true,
+        timeZone: "UTC"
+      };
+      if (startDate && endDate && formData.orderType === "RENT") {
+        requestParams.startDate = new Date(startDate).toISOString();
+        requestParams.endDate = new Date(endDate).toISOString();
+      }
+      const availabilityResponse = await import_utils15.productsApi.checkProductAvailability(product.id, requestParams);
+      if (availabilityResponse.success && availabilityResponse.data) {
+        const availabilityData = availabilityResponse.data;
+        console.log("\u{1F50D} Availability API response:", availabilityData);
+        if (!availabilityData.stockAvailable) {
+          return {
+            status: "out-of-stock",
+            text: `Out of Stock (need ${requestedQuantity}, have ${availabilityData.totalAvailableStock})`,
+            color: "bg-red-100 text-red-600"
+          };
+        }
+        if (startDate && endDate && formData.orderType === "RENT") {
+          if (!availabilityData.isAvailable || !availabilityData.hasNoConflicts) {
+            const conflictCount = availabilityData.totalConflictsFound;
+            return {
+              status: "unavailable",
+              text: conflictCount > 0 ? `Conflicts detected (${conflictCount} orders)` : "Unavailable for selected dates",
+              color: "bg-orange-100 text-orange-600"
+            };
+          }
+        }
+        const canFulfill = availabilityData.availabilityByOutlet?.some((outlet) => outlet.canFulfillRequest);
+        const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum, outlet) => sum + outlet.effectivelyAvailable, 0) || availabilityData.totalAvailableStock;
+        if (canFulfill) {
+          return {
+            status: "available",
+            text: `Available (${effectivelyAvailable} units)`,
+            color: "bg-green-100 text-green-600"
+          };
+        } else {
+          return {
+            status: "low-stock",
+            text: `Low Stock (${effectivelyAvailable}/${requestedQuantity})`,
+            color: "bg-orange-100 text-orange-600"
+          };
+        }
+      } else {
+        console.warn("Availability API failed, falling back to basic stock check");
+        throw new Error("API call failed");
+      }
+    } catch (error) {
+      console.error("Error checking availability via API:", error);
+      try {
+        const outletStock = product.outletStock?.[0];
+        const available = outletStock?.available ?? 0;
+        const stock = outletStock?.stock ?? 0;
+        console.log("\u{1F50D} Fallback to basic stock check:", { available, stock, requestedQuantity });
         if (available === 0) {
           return {
             status: "out-of-stock",
             text: t2("messages.outOfStock"),
             color: "bg-red-100 text-red-600"
           };
-        } else if (available <= import_constants6.VALIDATION.LOW_STOCK_THRESHOLD) {
+        } else if (available < requestedQuantity) {
           return {
             status: "low-stock",
-            text: `Low Stock (${available})`,
+            text: `Low Stock (${available}/${requestedQuantity})`,
             color: "bg-orange-100 text-orange-600"
           };
         } else {
@@ -7841,47 +7898,16 @@ var CreateOrderForm = (props) => {
             color: "bg-green-100 text-green-600"
           };
         }
-      }
-      const availability = calculateAvailability(
-        {
-          id: product.id,
-          name: product.name,
-          stock,
-          renting,
-          available
-        },
-        startDate,
-        endDate,
-        requestedQuantity
-      );
-      const availableQuantity = availability?.availableQuantity ?? 0;
-      const isAvailable = availability?.available ?? false;
-      if (isAvailable) {
+      } catch (fallbackError) {
+        console.error("Fallback availability check also failed:", fallbackError);
         return {
-          status: "available",
-          text: `Available (${availableQuantity})`,
-          color: "bg-green-100 text-green-600"
+          status: "unknown",
+          text: "Check unavailable",
+          color: "bg-gray-100 text-gray-600"
         };
-      } else {
-        return {
-          status: "unavailable",
-          text: `Unavailable (${availableQuantity}/${stock})`,
-          color: "bg-red-100 text-red-600"
-        };
-      }
-    } catch (error) {
-      console.error("Error checking availability:", error);
-      const outletStock = product.outletStock?.[0];
-      const available = outletStock?.available ?? 0;
-      if (available === 0) {
-        return { status: "unknown", text: t2("messages.outOfStock"), color: "bg-red-100 text-red-600" };
-      } else if (available <= import_constants6.VALIDATION.LOW_STOCK_THRESHOLD) {
-        return { status: "unknown", text: t2("messages.lowStock"), color: "bg-orange-100 text-orange-600" };
-      } else {
-        return { status: "unknown", text: t2("messages.inStock"), color: "bg-green-100 text-green-600" };
       }
     }
-  }, [calculateAvailability]);
+  }, [formData.orderType, t2]);
   const handleAddNewCustomer = (0, import_react23.useCallback)(async (customerData) => {
     try {
       console.log("\u{1F50D} handleAddNewCustomer: Starting customer creation...");
@@ -16761,7 +16787,7 @@ var ProductDetailList = ({
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { className: "ml-2 text-gray-900", children: product.merchant?.name || "Unknown" })
         ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4 text-sm", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4", children: [
           /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { className: "text-gray-500", children: [
               tc("labels.createdAt"),
@@ -16775,20 +16801,23 @@ var ProductDetailList = ({
               ":"
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { className: "ml-2 text-gray-900", children: formatDate(product.updatedAt) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { className: "text-gray-500", children: [
-              t2("inventory.totalStock"),
-              ":"
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("h3", { className: "text-sm font-medium text-gray-700 mb-3", children: t2("inventory.stockSummary") }),
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "grid grid-cols-2 md:grid-cols-3 gap-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "text-center", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "text-2xl font-bold text-gray-900", children: totalStock }),
+              /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "text-sm text-gray-600", children: t2("inventory.totalStock") })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { className: "ml-2 text-gray-900", children: totalStock })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { className: "text-gray-500", children: [
-              t2("inventory.availableStock"),
-              ":"
+            /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "text-center", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "text-2xl font-bold text-green-600", children: totalAvailable }),
+              /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "text-sm text-gray-600", children: t2("inventory.availableStock") })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { className: "ml-2 text-gray-900", children: totalAvailable })
+            /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className: "text-center", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "text-2xl font-bold text-blue-600", children: totalRenting }),
+              /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { className: "text-sm text-gray-600", children: t2("fields.renting") })
+            ] })
           ] })
         ] })
       ] }),

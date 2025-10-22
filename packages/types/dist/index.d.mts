@@ -2950,6 +2950,7 @@ var inventory = {
 	lowStock: "Low Stock",
 	totalStock: "Total Stock",
 	availableStock: "Available",
+	stockSummary: "Stock Summary",
 	rentedOut: "Rented Out",
 	reserved: "Reserved",
 	updateStock: "Update Stock",
