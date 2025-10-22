@@ -45,7 +45,7 @@
     "lowStock": "Sắp hết hàng",
     "totalStock": "Tổng tồn kho",
     "availableStock": "Có sẵn",
-    "rentedOut": "Đã cho thuê",
+    "stockSummary": "Tổng quan kho hàng",    "rentedOut": "Đã cho thuê",
     "reserved": "Đã đặt",
     "updateStock": "Cập nhật tồn kho",
     "stockHistory": "Lịch sử tồn kho",

@@ -1,0 +1,451 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { withAuthRoles } from '@rentalshop/auth';
+import { db } from '@rentalshop/database';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { z } from 'zod';
+
+// Validation schema for availability query
+const availabilityQuerySchema = z.object({
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  quantity: z.coerce.number().min(1).default(1),
+  // Support for more granular time-based checking
+  includeTimePrecision: z.coerce.boolean().optional().default(true),
+  timeZone: z.string().optional().default('UTC'), // Support timezone for proper time comparison
+});
+
+/**
+ * GET /api/products/[id]/availability
+ * Check product availability and booking conflicts with precise time-based checking
+ * 
+ * Query parameters:
+ * - startDate: ISO datetime string for rental start (e.g., "2024-01-15T09:30:00Z")
+ * - endDate: ISO datetime string for rental end (e.g., "2024-01-20T17:00:00Z")
+ * - quantity: Number of items requested (default: 1)
+ * - includeTimePrecision: Boolean to enable precise hour/minute checking (default: true)
+ * - timeZone: Timezone for time calculations (default: "UTC")
+ * 
+ * Response includes:
+ * - Real-time stock availability across all outlets
+ * - Hour-by-hour conflict analysis during rental period
+ * - Detailed breakdown by outlet with precise timing
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { id } = params;
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+    try {
+      console.log('🔍 GET /api/products/[id]/availability - Product ID:', id);
+
+      // Validate product ID format
+      if (!/^\d+$/.test(id)) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_PRODUCT_ID_FORMAT'),
+          { status: 400 }
+        );
+      }
+
+      const productId = parseInt(id);
+      const { searchParams } = new URL(request.url);
+      const query = Object.fromEntries(searchParams.entries());
+
+      // Validate query parameters
+      const parsedQuery = availabilityQuerySchema.safeParse(query);
+      if (!parsedQuery.success) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_QUERY_PARAMETERS', { 
+            details: parsedQuery.error.flatten() 
+          }),
+          { status: 400 }
+        );
+      }
+
+      const { startDate, endDate, quantity, includeTimePrecision, timeZone } = parsedQuery.data;
+
+      // Get user scope for merchant isolation
+      const userMerchantId = userScope.merchantId;
+      
+      if (!userMerchantId) {
+        return NextResponse.json(
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
+          { status: 400 }
+        );
+      }
+
+      // 1. Check if product exists and get basic info
+      const product = await db.products.findById(productId);
+      if (!product) {
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_NOT_FOUND'),
+          { status: 404 }
+        );
+      }
+
+      // Verify product belongs to user's merchant scope
+      if (user.role !== 'ADMIN' && product.merchantId !== userMerchantId) {
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
+          { status: 403 }
+        );
+      }
+
+      // 2. Get current stock availability from OutletStock
+      const outletStocks = await db.prisma.outletStock.findMany({
+        where: {
+          productId: productId,
+        },
+        include: {
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+            },
+          },
+        },
+      });
+
+      // Calculate total available stock across all outlets
+      const totalAvailableStock = outletStocks.reduce((sum, stock) => sum + stock.available, 0);
+      const totalStock = outletStocks.reduce((sum, stock) => sum + stock.stock, 0);
+      const totalRenting = outletStocks.reduce((sum, stock) => sum + stock.renting, 0);
+
+      console.log('🔍 Stock summary:', {
+        totalStock,
+        totalAvailableStock,
+        totalRenting,
+        requestedQuantity: quantity,
+      });
+
+      // 3. Check basic stock availability
+      const stockAvailable = totalAvailableStock >= quantity;
+      
+      // If no rental dates provided, return basic stock info
+      if (!startDate || !endDate) {
+        return NextResponse.json(
+          ResponseBuilder.success('AVAILABILITY_CHECKED', {
+            productId,
+            productName: product.name,
+            totalStock,
+            totalAvailableStock,
+            totalRenting,
+            requestedQuantity: quantity,
+            isAvailable: stockAvailable,
+            availabilityByOutlet: outletStocks.map(stock => ({
+              outletId: stock.outlet.id,
+              outletName: stock.outlet.name,
+              stock: stock.stock,
+              available: stock.available,
+              renting: stock.renting,
+            })),
+            conflicts: [],
+            message: stockAvailable 
+              ? `Available: ${totalAvailableStock} units` 
+              : `Insufficient stock: need ${quantity}, have ${totalAvailableStock}`,
+          })
+        );
+      }
+
+      // 4. Parse rental dates with timezone support and precise time checking
+      const rentalStart = new Date(startDate);
+      const rentalEnd = new Date(endDate);
+
+      // Validate date range
+      if (rentalStart >= rentalEnd) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_RENTAL_DATES', {
+            message: 'Start date must be before end date'
+          }),
+          { status: 400 }
+        );
+      }
+
+      // Calculate precise duration
+      const durationMs = rentalEnd.getTime() - rentalStart.getTime();
+      const durationHours = durationMs / (1000 * 60 * 60);
+      const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+      
+      console.log('🔍 Rental period analysis:', {
+        start: rentalStart.toISOString(),
+        end: rentalEnd.toISOString(),
+        durationHours: Math.round(durationHours * 100) / 100,
+        durationDays,
+        timeZone,
+        includeTimePrecision
+      });
+
+      // 5. Find existing orders that overlap with the requested rental period
+      // This checks for orders where:
+      // - Order items contain this product
+      // - Order is a RENT type (not SALE)
+      // - Order status indicates it's active (RESERVED, PICKUPED)
+      // - Rental period overlaps with requested period
+      
+      const conflictingOrders = await db.prisma.order.findMany({
+        where: {
+          orderType: 'RENT',
+          status: {
+            in: ['RESERVED', 'PICKUPED'] // Active rental orders
+          },
+          OR: [
+            // Pickup during requested period
+            {
+              AND: [
+                { pickupPlanAt: { lte: rentalEnd } },
+                { pickupPlanAt: { gte: rentalStart } }
+              ]
+            },
+            // Return during requested period  
+            {
+              AND: [
+                { returnPlanAt: { lte: rentalEnd } },
+                { returnPlanAt: { gte: rentalStart } }
+              ]
+            },
+            // Rental spans across requested period
+            {
+              AND: [
+                { pickupPlanAt: { lte: rentalStart } },
+                { returnPlanAt: { gte: rentalEnd } }
+              ]
+            }
+          ],
+          // Only check orders from user's merchant scope (except ADMIN)
+          ...(user.role !== 'ADMIN' ? {
+            outlet: {
+              merchantId: userMerchantId
+            }
+          } : {}),
+          orderItems: {
+            some: {
+              productId: productId,
+            }
+          }
+        },
+        include: {
+          orderItems: {
+            where: {
+              productId: productId,
+            },
+            select: {
+              quantity: true,
+              rentalDays: true,
+            }
+          },
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+            }
+          },
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+            }
+          }
+        },
+        orderBy: {
+          pickupPlanAt: 'asc'
+        }
+      });
+
+      // 6. Calculate conflicts by outlet with precise time analysis
+      const conflictsByOutlet = new Map<number, {
+        outletId: number;
+        outletName: string;
+        conflictingQuantity: number;
+        conflicts: Array<{
+          orderNumber: string;
+          customerName: string;
+          pickupDate: string;
+          returnDate: string;
+          pickupDateLocal: string;
+          returnDateLocal: string;
+          quantity: number;
+          conflictDuration: number; // in milliseconds
+          conflictHours: number;
+          conflictType: 'pickup_overlap' | 'return_overlap' | 'period_overlap' | 'complete_overlap';
+        }>;
+      }>();
+
+      conflictingOrders.forEach(order => {
+        const outletId = order.outlet.id;
+        const outletName = order.outlet.name;
+        
+        if (!conflictsByOutlet.has(outletId)) {
+          conflictsByOutlet.set(outletId, {
+            outletId,
+            outletName,
+            conflictingQuantity: 0,
+            conflicts: []
+          });
+        }
+
+        const outletConflict = conflictsByOutlet.get(outletId)!;
+        
+        order.orderItems.forEach(item => {
+          outletConflict.conflictingQuantity += item.quantity;
+          
+          // Calculate precise conflict analysis if time precision is enabled
+          const orderPickup = order.pickupPlanAt;
+          const orderReturn = order.returnPlanAt;
+          
+          if (orderPickup && orderReturn) {
+            // Determine conflict type and duration
+            let conflictType: 'pickup_overlap' | 'return_overlap' | 'period_overlap' | 'complete_overlap';
+            let conflictStart: Date;
+            let conflictEnd: Date;
+            
+            if (orderPickup <= rentalStart && orderReturn >= rentalEnd) {
+              // Order completely encompasses requested period
+              conflictType = 'complete_overlap';
+              conflictStart = rentalStart;
+              conflictEnd = rentalEnd;
+            } else if (orderPickup <= rentalStart && orderReturn > rentalStart) {
+              // Order starts before and ends during requested period
+              conflictType = 'period_overlap';
+              conflictStart = rentalStart;
+              conflictEnd = orderReturn;
+            } else if (orderPickup < rentalEnd && orderReturn >= rentalEnd) {
+              // Order starts during and ends after requested period
+              conflictType = 'period_overlap';
+              conflictStart = orderPickup;
+              conflictEnd = rentalEnd;
+            } else {
+              // Order is completely within requested period
+              conflictType = 'complete_overlap';
+              conflictStart = orderPickup;
+              conflictEnd = orderReturn;
+            }
+            
+            const conflictMs = conflictEnd.getTime() - conflictStart.getTime();
+            const conflictHours = conflictMs / (1000 * 60 * 60);
+            
+            outletConflict.conflicts.push({
+              orderNumber: order.orderNumber,
+              customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
+              pickupDate: orderPickup.toISOString(),
+              returnDate: orderReturn.toISOString(),
+              pickupDateLocal: includeTimePrecision 
+                ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
+                : orderPickup.toLocaleDateString('en-US'),
+              returnDateLocal: includeTimePrecision 
+                ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
+                : orderReturn.toLocaleDateString('en-US'),
+              quantity: item.quantity,
+              conflictDuration: conflictMs,
+              conflictHours: Math.round(conflictHours * 100) / 100,
+              conflictType,
+            });
+          } else {
+            // Fallback for orders without precise times
+            outletConflict.conflicts.push({
+              orderNumber: order.orderNumber,
+              customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
+              pickupDate: orderPickup?.toISOString() || '',
+              returnDate: orderReturn?.toISOString() || '',
+              pickupDateLocal: orderPickup ? 
+                (includeTimePrecision 
+                  ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
+                  : orderPickup.toLocaleDateString('en-US'))
+                : 'Unknown',
+              returnDateLocal: orderReturn ? 
+                (includeTimePrecision 
+                  ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
+                  : orderReturn.toLocaleDateString('en-US'))
+                : 'Unknown',
+              quantity: item.quantity,
+              conflictDuration: 0,
+              conflictHours: 0,
+              conflictType: 'complete_overlap',
+            });
+          }
+        });
+      });
+
+      // 7. Determine final availability considering conflicts
+      const availabilityResults = outletStocks.map(stock => {
+        const outletConflicts = conflictsByOutlet.get(stock.outlet.id);
+        const conflictingQuantity = outletConflicts?.conflictingQuantity || 0;
+        
+        // Calculate available quantity considering conflicts during rental period
+        const effectivelyAvailable = Math.max(0, stock.available - conflictingQuantity);
+        const canFulfillRequest = effectivelyAvailable >= quantity;
+
+        return {
+          outletId: stock.outlet.id,
+          outletName: stock.outlet.name,
+          stock: stock.stock,
+          available: stock.available,
+          renting: stock.renting,
+          conflictingQuantity,
+          effectivelyAvailable,
+          canFulfillRequest,
+          conflicts: outletConflicts?.conflicts || [],
+        };
+      });
+
+      // Overall availability (any outlet can fulfill the request)
+      const overallAvailable = availabilityResults.some(result => result.canFulfillRequest);
+
+      // Find the best outlet (most available stock)
+      const bestOutlet = availabilityResults
+        .filter(result => result.canFulfillRequest)
+        .sort((a, b) => b.effectivelyAvailable - a.effectivelyAvailable)[0];
+
+      return NextResponse.json(
+        ResponseBuilder.success('AVAILABILITY_CHECKED', {
+          productId,
+          productName: product.name,
+          totalStock,
+          totalAvailableStock,
+          totalRenting,
+          requestedQuantity: quantity,
+          rentalPeriod: {
+            startDate: rentalStart.toISOString(),
+            endDate: rentalEnd.toISOString(),
+            startDateLocal: includeTimePrecision 
+              ? rentalStart.toLocaleString('en-US', { timeZone, hour12: false })
+              : rentalStart.toLocaleDateString('en-US'),
+            endDateLocal: includeTimePrecision 
+              ? rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })
+              : rentalEnd.toLocaleDateString('en-US'),
+            durationMs,
+            durationHours: Math.round(durationHours * 100) / 100,
+            durationDays,
+            timeZone,
+            includeTimePrecision,
+          },
+          isAvailable: overallAvailable && stockAvailable,
+          stockAvailable,
+          hasNoConflicts: conflictingOrders.length === 0,
+          availabilityByOutlet: availabilityResults,
+          bestOutlet: bestOutlet ? {
+            outletId: bestOutlet.outletId,
+            outletName: bestOutlet.outletName,
+            effectivelyAvailable: bestOutlet.effectivelyAvailable,
+          } : null,
+          totalConflictsFound: conflictingOrders.length,
+          // Enhanced message with time precision
+          message: overallAvailable && stockAvailable
+            ? includeTimePrecision
+              ? `Available for rental from ${rentalStart.toLocaleString('en-US', { timeZone, hour12: false })} to ${rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })} (${Math.round(durationHours * 100) / 100} hours)`
+              : `Available for rental from ${rentalStart.toLocaleDateString()} to ${rentalEnd.toLocaleDateString()} (${durationDays} days)`
+            : stockAvailable
+            ? `Stock available but conflicts during requested period ${includeTimePrecision ? `(${Math.round(durationHours * 100) / 100} hours)` : `(${durationDays} days)`}`
+            : `Insufficient stock: need ${quantity}, have ${totalAvailableStock}`,
+        })
+      );
+
+    } catch (error: any) {
+      console.error('Error in GET /api/products/[id]/availability:', error);
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
+}

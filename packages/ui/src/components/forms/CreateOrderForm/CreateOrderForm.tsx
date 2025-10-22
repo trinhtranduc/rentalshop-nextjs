@@ -36,7 +36,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useToast, ToastContainer } from '@rentalshop/ui';
 import { AddCustomerForm } from '../../features/Customers/components/AddCustomerForm';
 
-import { customersApi, handleApiError, formatCurrency } from '@rentalshop/utils';
+import { customersApi, productsApi, handleApiError, formatCurrency, type ProductAvailabilityRequest } from '@rentalshop/utils';
 import { useProductAvailability, useOrderTranslations } from '@rentalshop/hooks';
 import { VALIDATION, BUSINESS } from '@rentalshop/constants';
 
@@ -197,7 +197,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     }
   }, [searchProducts, currency]);
 
-  // Create a custom getProductAvailabilityStatus function
+  // Create a custom getProductAvailabilityStatus function using new API
   const getProductAvailabilityStatus = useCallback(async (
     product: ProductWithStock, 
     startDate?: string, 
@@ -205,25 +205,103 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     requestedQuantity: number = BUSINESS.DEFAULT_QUANTITY
   ): Promise<ProductAvailabilityStatus> => {
     try {
-      // Get stock information from outletStock array
-      const outletStock = product.outletStock?.[0];
-      const available = outletStock?.available ?? 0;
-      const stock = outletStock?.stock ?? 0;
-      const renting = outletStock?.renting ?? 0;
-      const totalStock = stock;
+      console.log('🔍 Checking availability for product:', {
+        productId: product.id,
+        productName: product.name,
+        startDate,
+        endDate,
+        requestedQuantity
+      });
 
-      if (!startDate || !endDate) {
-        // Return basic availability status
+      // Prepare API request parameters
+      const requestParams: ProductAvailabilityRequest = {
+        quantity: requestedQuantity,
+        includeTimePrecision: true,
+        timeZone: 'UTC'
+      };
+
+      // Add rental dates if provided (for RENT mode)
+      if (startDate && endDate && formData.orderType === 'RENT') {
+        // Convert dates to ISO format for API
+        requestParams.startDate = new Date(startDate).toISOString();
+        requestParams.endDate = new Date(endDate).toISOString();
+      }
+
+      // Call the new availability API
+      const availabilityResponse = await productsApi.checkProductAvailability(product.id, requestParams);
+      
+      if (availabilityResponse.success && availabilityResponse.data) {
+        const availabilityData = availabilityResponse.data;
+        
+        console.log('🔍 Availability API response:', availabilityData);
+
+        // Determine status based on API response
+        if (!availabilityData.stockAvailable) {
+          return {
+            status: 'out-of-stock',
+            text: `Out of Stock (need ${requestedQuantity}, have ${availabilityData.totalAvailableStock})`,
+            color: 'bg-red-100 text-red-600'
+          };
+        }
+
+        if (startDate && endDate && formData.orderType === 'RENT') {
+          // For rental orders with dates, check if available considering conflicts
+          if (!availabilityData.isAvailable || !availabilityData.hasNoConflicts) {
+            const conflictCount = availabilityData.totalConflictsFound;
+            return {
+              status: 'unavailable',
+              text: conflictCount > 0 
+                ? `Conflicts detected (${conflictCount} orders)`
+                : 'Unavailable for selected dates',
+              color: 'bg-orange-100 text-orange-600'
+            };
+          }
+        }
+
+        // Check if any outlet can fulfill the request
+        const canFulfill = availabilityData.availabilityByOutlet?.some((outlet: any) => outlet.canFulfillRequest);
+        const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
+          sum + outlet.effectivelyAvailable, 0) || availabilityData.totalAvailableStock;
+
+        if (canFulfill) {
+          return {
+            status: 'available',
+            text: `Available (${effectivelyAvailable} units)`,
+            color: 'bg-green-100 text-green-600'
+          };
+        } else {
+          return {
+            status: 'low-stock',
+            text: `Low Stock (${effectivelyAvailable}/${requestedQuantity})`,
+            color: 'bg-orange-100 text-orange-600'
+          };
+        }
+      } else {
+        // API call failed, fallback to basic stock check
+        console.warn('Availability API failed, falling back to basic stock check');
+        throw new Error('API call failed');
+      }
+    } catch (error) {
+      console.error('Error checking availability via API:', error);
+      
+      // Fallback to basic stock availability check
+      try {
+        const outletStock = product.outletStock?.[0];
+        const available = outletStock?.available ?? 0;
+        const stock = outletStock?.stock ?? 0;
+
+        console.log('🔍 Fallback to basic stock check:', { available, stock, requestedQuantity });
+
         if (available === 0) {
           return { 
             status: 'out-of-stock', 
             text: t('messages.outOfStock'), 
             color: 'bg-red-100 text-red-600' 
           };
-        } else if (available <= VALIDATION.LOW_STOCK_THRESHOLD) {
+        } else if (available < requestedQuantity) {
           return { 
             status: 'low-stock', 
-            text: `Low Stock (${available})`, 
+            text: `Low Stock (${available}/${requestedQuantity})`, 
             color: 'bg-orange-100 text-orange-600' 
           };
         } else {
@@ -233,54 +311,16 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
             color: 'bg-green-100 text-green-600' 
           };
         }
-      }
-
-      // Use the hook's calculateAvailability function
-      const availability = calculateAvailability(
-        {
-          id: product.id,
-          name: product.name,
-          stock: stock,
-          renting: renting,
-          available: available
-        },
-        startDate,
-        endDate,
-        requestedQuantity
-      );
-
-      // Ensure we have valid numeric values from the hook response
-      const availableQuantity = availability?.availableQuantity ?? 0;
-      const isAvailable = availability?.available ?? false;
-
-      // Return formatted status for display
-      if (isAvailable) {
+      } catch (fallbackError) {
+        console.error('Fallback availability check also failed:', fallbackError);
         return { 
-          status: 'available', 
-          text: `Available (${availableQuantity})`, 
-          color: 'bg-green-100 text-green-600' 
+          status: 'unknown', 
+          text: 'Check unavailable', 
+          color: 'bg-gray-100 text-gray-600' 
         };
-      } else {
-        return { 
-          status: 'unavailable', 
-          text: `Unavailable (${availableQuantity}/${stock})`, 
-          color: 'bg-red-100 text-red-600' 
-        };
-      }
-    } catch (error) {
-      console.error('Error checking availability:', error);
-      // Fallback to basic status with safe defaults
-      const outletStock = product.outletStock?.[0];
-      const available = outletStock?.available ?? 0;
-      if (available === 0) {
-        return { status: 'unknown', text: t('messages.outOfStock'), color: 'bg-red-100 text-red-600' };
-      } else if (available <= VALIDATION.LOW_STOCK_THRESHOLD) {
-        return { status: 'unknown', text: t('messages.lowStock'), color: 'bg-orange-100 text-orange-600' };
-      } else {
-        return { status: 'unknown', text: t('messages.inStock'), color: 'bg-green-100 text-green-600' };
       }
     }
-  }, [calculateAvailability]);
+  }, [formData.orderType, t]);
 
   // Handle adding new customer
   const handleAddNewCustomer = useCallback(async (customerData: any) => {

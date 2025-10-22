@@ -64,6 +64,7 @@ export interface ApiUrls {
     delete: (id: number) => string;
     updateStock: (id: number) => string;
     bulkUpdate: string;
+    availability: (id: number) => string;
   };
   orders: {
     list: string;
@@ -506,6 +507,7 @@ function createApiUrls(): ApiUrls {
       delete: (id: number) => `${base}/api/products/${id}`,
       updateStock: (id: number) => `${base}/api/products/${id}/stock`,
       bulkUpdate: `${base}/api/products/bulk-update`,
+      availability: (id: number) => `${base}/api/products/${id}/availability`,
     },
     orders: {
       list: `${base}/api/orders`,
