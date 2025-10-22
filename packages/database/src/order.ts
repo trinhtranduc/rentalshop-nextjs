@@ -976,8 +976,8 @@ export const simplifiedOrders = {
   // ============================================================================
 
   /**
-   * Get orders list with minimal data for performance (for large datasets)
-   * Only includes essential fields, no heavy relations
+   * Get orders list with complete order information for performance (for large datasets)
+   * Includes all order fields, customer, outlet, createdBy but NO products (products only in detail)
    */
   findManyLightweight: async (filters: {
     merchantId?: number;
@@ -1034,34 +1034,64 @@ export const simplifiedOrders = {
           status: true,
           totalAmount: true,
           depositAmount: true,
+          securityDeposit: true,
+          damageFee: true,
+          lateFee: true,
+          discountType: true,
+          discountValue: true,
           discountAmount: true,
           pickupPlanAt: true,
           returnPlanAt: true,
+          pickedUpAt: true,
+          returnedAt: true,
+          rentalDuration: true,
           isReadyToDeliver: true,
+          collateralType: true,
+          collateralDetails: true,
+          notes: true,
+          pickupNotes: true,
+          returnNotes: true,
+          damageNotes: true,
           createdAt: true,
           updatedAt: true,
           outletId: true,
           customerId: true,
           createdById: true,
-          // Minimal customer data
+          // Customer data
           customer: {
             select: {
               id: true,
               firstName: true,
               lastName: true,
               phone: true,
-              email: true
+              email: true,
+              address: true,
+              city: true,
+              state: true,
+              zipCode: true,
+              country: true
             }
           },
-          // Minimal outlet data
+          // Outlet data
           outlet: {
             select: {
               id: true,
               name: true,
-              address: true
+              address: true,
+              phone: true,
+              city: true,
+              state: true,
+              zipCode: true,
+              country: true,
+              merchant: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
             }
           },
-          // Minimal createdBy data
+          // CreatedBy data
           createdBy: {
             select: {
               id: true,
@@ -1281,6 +1311,7 @@ export const simplifiedOrders = {
   /**
    * Search orders with cursor-based pagination for large datasets
    * More efficient than offset-based pagination for large datasets
+   * Includes complete order information but NO products (products only in detail)
    */
   searchWithCursor: async (filters: {
     merchantId?: number;
@@ -1344,10 +1375,24 @@ export const simplifiedOrders = {
         status: true,
         totalAmount: true,
         depositAmount: true,
+        securityDeposit: true,
+        damageFee: true,
+        lateFee: true,
+        discountType: true,
+        discountValue: true,
         discountAmount: true,
         pickupPlanAt: true,
         returnPlanAt: true,
+        pickedUpAt: true,
+        returnedAt: true,
+        rentalDuration: true,
         isReadyToDeliver: true,
+        collateralType: true,
+        collateralDetails: true,
+        notes: true,
+        pickupNotes: true,
+        returnNotes: true,
+        damageNotes: true,
         createdAt: true,
         updatedAt: true,
         outletId: true,
@@ -1359,14 +1404,30 @@ export const simplifiedOrders = {
             firstName: true,
             lastName: true,
             phone: true,
-            email: true
+            email: true,
+            address: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true
           }
         },
         outlet: {
           select: {
             id: true,
             name: true,
-            address: true
+            address: true,
+            phone: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true,
+            merchant: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         },
         createdBy: {
