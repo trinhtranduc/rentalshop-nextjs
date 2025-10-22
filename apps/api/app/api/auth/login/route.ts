@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
           pricingType: merchant.pricingType || undefined,
           taxId: merchant.taxId || undefined,
           currency: (merchant as any).currency || 'USD',
+          // ✅ Include subscription data in merchant object
+          subscription: subscriptionData,
         };
       }
     }
