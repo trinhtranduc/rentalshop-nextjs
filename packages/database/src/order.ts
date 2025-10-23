@@ -977,7 +977,7 @@ export const simplifiedOrders = {
 
   /**
    * Get orders list with complete order information for performance (for large datasets)
-   * Includes all order fields, customer, outlet, createdBy but NO products (products only in detail)
+   * Includes all order fields, customer, outlet, createdBy, and products
    */
   findManyLightweight: async (filters: {
     merchantId?: number;
@@ -1098,6 +1098,26 @@ export const simplifiedOrders = {
               firstName: true,
               lastName: true,
               email: true
+            }
+          },
+          // Include products for list view
+          orderItems: {
+            select: {
+              id: true,
+              quantity: true,
+              unitPrice: true,
+              totalPrice: true,
+              notes: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  barcode: true,
+                  images: true,
+                  rentPrice: true,
+                  deposit: true
+                }
+              }
             }
           }
         },
@@ -1311,7 +1331,7 @@ export const simplifiedOrders = {
   /**
    * Search orders with cursor-based pagination for large datasets
    * More efficient than offset-based pagination for large datasets
-   * Includes complete order information but NO products (products only in detail)
+   * Includes complete order information and products
    */
   searchWithCursor: async (filters: {
     merchantId?: number;
@@ -1436,6 +1456,26 @@ export const simplifiedOrders = {
             firstName: true,
             lastName: true,
             email: true
+          }
+        },
+        // Include products for list view
+        orderItems: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            notes: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true,
+                images: true,
+                rentPrice: true,
+                deposit: true
+              }
+            }
           }
         }
       },
