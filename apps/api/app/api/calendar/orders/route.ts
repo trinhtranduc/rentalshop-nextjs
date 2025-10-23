@@ -102,7 +102,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
             `${order.customer.firstName} ${order.customer.lastName || ''}`.trim() : 
             'Unknown Customer',
           customerPhone: order.customer?.phone,
-          productName: (order as any).orderItems?.[0]?.product?.name || 'Unknown Product',
           status: order.status,
           totalAmount: order.totalAmount,
           outletName: order.outlet?.name,

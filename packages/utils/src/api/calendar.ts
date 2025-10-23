@@ -7,8 +7,6 @@ export interface CalendarOrderSummary {
   orderNumber: string;
   customerName: string;
   customerPhone?: string;
-  productName: string;
-  productCount?: number;
   totalAmount: number;
   status: string;
   outletName?: string;
