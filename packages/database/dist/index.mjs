@@ -1357,7 +1357,7 @@ var simplifiedOrders = {
             }
           }
         },
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit
       }),
