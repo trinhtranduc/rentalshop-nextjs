@@ -121,24 +121,24 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // For large datasets, use lightweight method for better performance
     const result = await PerformanceMonitor.measureQuery(
       'orders.search',
-      () => db.orders.findManyMinimal(searchFilters)
+      () => db.orders.findManyLightweight(searchFilters)
     );
     
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
-    console.log('📊 RESULT DEBUG: page=', result.pagination?.page, ', total=', result.pagination?.total, ', limit=', result.pagination?.limit);
+    console.log('📊 RESULT DEBUG: page=', result.page, ', total=', result.total, ', limit=', result.limit);
 
     return NextResponse.json({
       success: true,
       data: {
         orders: result.data || [],
-        total: result.pagination?.total || 0,
-        page: result.pagination?.page || 1,
-        limit: result.pagination?.limit || 20,
-        offset: ((result.pagination?.page || 1) - 1) * (result.pagination?.limit || 20),
-        hasMore: (result.pagination?.page || 1) * (result.pagination?.limit || 20) < (result.pagination?.total || 0),
-        totalPages: Math.ceil((result.pagination?.total || 0) / (result.pagination?.limit || 20))
+        total: result.total || 0,
+        page: result.page || 1,
+        limit: result.limit || 20,
+        offset: ((result.page || 1) - 1) * (result.limit || 20),
+        hasMore: (result.page || 1) * (result.limit || 20) < (result.total || 0),
+        totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
-      code: "ORDERS_FOUND", message: `Found ${result.pagination?.total || 0} orders`
+      code: "ORDERS_FOUND", message: `Found ${result.total || 0} orders`
     });
 
   } catch (error) {
