@@ -30,7 +30,7 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
               <span className="text-sm font-medium">
                 {order.customer 
                   ? `${order.customer.firstName} ${order.customer.lastName}`.trim() 
-                  : t('customer.noCustomer')}
+                  : (order as any).customerName || t('customer.noCustomer')}
               </span>
             </div>
 
@@ -38,14 +38,16 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">{t('customer.phone')}:</span>
               <span className="text-sm font-medium">
-                {order.customer?.phone || 'N/A'}
+                {order.customer?.phone || (order as any).customerPhone || 'N/A'}
               </span>
             </div>
 
             {/* Seller */}
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">{t('detail.seller')}:</span>
-              <span className="text-sm font-medium">{order.outlet?.name || 'N/A'}</span>
+              <span className="text-sm font-medium">
+                {order.outlet?.name || (order as any).outletName || 'N/A'}
+              </span>
             </div>
           </div>
 

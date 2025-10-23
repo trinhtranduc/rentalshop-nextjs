@@ -8,24 +8,38 @@ import { useFormattedFullDate } from '@rentalshop/utils';
 import { ORDER_STATUS_COLORS, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit } from 'lucide-react';
 
-// Local interface matching what OrderTable actually uses
-interface OrderTableItem {
+// Temporary type definition until TypeScript cache updates
+interface OrderListItem {
   id: number;
   orderNumber: string;
   orderType: string;
   status: string;
-  customerName: string;
-  customerPhone: string;
-  outletName: string;
   totalAmount: number;
   depositAmount: number;
-  createdAt: Date;
-  pickupPlanAt?: Date;
-  returnPlanAt?: Date;
+  notes?: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  customerId?: number;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  outletId: number;
+  outletName?: string;
+  outletAddress?: string;
+  merchantId?: number;
+  merchantName?: string;
+  createdById: number;
+  createdByName?: string;
+  createdByEmail?: string;
+  itemCount: number;
+  paymentCount: number;
+  totalPaid: number;
+  pickupPlanAt?: Date | string;
+  returnPlanAt?: Date | string;
 }
 
 interface OrderTableProps {
-  orders: OrderTableItem[];
+  orders: OrderListItem[];
   onOrderAction: (action: string, orderId: string) => void;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -206,8 +220,8 @@ export const OrderTable = React.memo(function OrderTable({
                 {/* Customer */}
                 <td className="px-6 py-3">
                   <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">{order.customerName}</div>
-                    <div className="text-gray-500 dark:text-gray-400 text-xs">{order.customerPhone}</div>
+                    <div className="font-medium text-gray-900 dark:text-white">{order.customerName || 'N/A'}</div>
+                    <div className="text-gray-500 dark:text-gray-400 text-xs">{order.customerPhone || 'N/A'}</div>
                   </div>
                 </td>
                 
