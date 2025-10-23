@@ -1317,6 +1317,97 @@ var simplifiedOrders = {
    * Get orders list with minimal data for performance (for large datasets)
    * Only essential fields for list view - no nested objects
    */
+  /**
+   * Search orders with orderItems included (for calendar API)
+   */
+  searchWithItems: async (filters = {}) => {
+    const {
+      merchantId,
+      outletId,
+      status,
+      orderType,
+      startDate,
+      endDate,
+      search: search3,
+      page = 1,
+      limit = 1e3,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      where: whereClause
+    } = filters;
+    const where = whereClause || {};
+    if (merchantId) {
+      where.outlet = {
+        merchantId
+      };
+    }
+    if (outletId) {
+      where.outletId = outletId;
+    }
+    if (status) where.status = status;
+    if (orderType) where.orderType = orderType;
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    if (search3) {
+      where.OR = [
+        { orderNumber: { contains: search3 } },
+        { customer: { firstName: { contains: search3 } } },
+        { customer: { lastName: { contains: search3 } } },
+        { customer: { phone: { contains: search3 } } }
+      ];
+    }
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              email: true
+            }
+          },
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+              merchantId: true
+            }
+          },
+          orderItems: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  barcode: true,
+                  images: true,
+                  rentPrice: true,
+                  deposit: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { [sortBy]: sortOrder },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.order.count({ where })
+    ]);
+    return {
+      data: orders,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
+  },
   findManyMinimal: async (filters = {}) => {
     const {
       merchantId,
