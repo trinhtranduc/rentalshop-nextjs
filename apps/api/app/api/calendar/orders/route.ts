@@ -110,20 +110,22 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     console.log('🔍 Calendar where clause:', where);
 
-    // Fetch orders for the month using simplified database API
-    const orders = await db.orders.search({
-      ...where,
+    // Fetch orders for the month with orderItems included using db.orders.searchWithItems
+    const ordersResult = await db.orders.searchWithItems({
+      where,
       limit: 1000, // Get all orders for the month
       page: 1
     });
+    
+    const orders = ordersResult.data;
 
-    console.log('📦 Found orders:', orders.data?.length || 0);
+    console.log('📦 Found orders:', orders?.length || 0);
 
     // Group orders by date
     const calendarMap: { [dateKey: string]: CalendarOrderSummary[] } = {};
 
-    if (orders.data && Array.isArray(orders.data)) {
-      for (const order of orders.data) {
+    if (orders && Array.isArray(orders)) {
+      for (const order of orders) {
         const orderItems = (order as any).orderItems || [];
         const totalProductCount = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
         const firstProduct = orderItems[0]?.product;
@@ -244,7 +246,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       });
     }
 
-    // Return empty calendar data if orders.data is not an array
+    // Return empty calendar data if orders is not an array
     const emptyCalendarData: CalendarResponse = {
       calendar: [],
       summary: {
