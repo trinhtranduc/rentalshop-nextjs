@@ -1355,49 +1355,34 @@ export const simplifiedOrders = {
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       
-      // Flatten customer data
+      // Flatten customer data (simplified)
       customerId: order.customerId,
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
       customerPhone: order.customer?.phone || null,
-      customerEmail: order.customer?.email || null,
-      customerAddress: order.customer?.address || null,
-      customerCity: order.customer?.city || null,
-      customerState: order.customer?.state || null,
-      customerZipCode: order.customer?.zipCode || null,
-      customerCountry: order.customer?.country || null,
       
-      // Flatten outlet data
+      // Flatten outlet data (simplified)
       outletId: order.outletId,
       outletName: order.outlet?.name || null,
-      outletAddress: order.outlet?.address || null,
-      outletPhone: order.outlet?.phone || null,
-      outletCity: order.outlet?.city || null,
-      outletState: order.outlet?.state || null,
-      outletZipCode: order.outlet?.zipCode || null,
-      outletCountry: order.outlet?.country || null,
-      merchantId: order.outlet?.merchant?.id || null,
       merchantName: order.outlet?.merchant?.name || null,
       
       // Flatten createdBy data
       createdById: order.createdById,
       createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
-      createdByEmail: order.createdBy?.email || null,
       
-      // Order items (products)
+      // Order items with flattened product data
       orderItems: order.orderItems?.map(item => ({
         id: item.id,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
         notes: item.notes,
-        product: {
-          id: item.product?.id,
-          name: item.product?.name,
-          barcode: item.product?.barcode,
-          images: item.product?.images,
-          rentPrice: item.product?.rentPrice,
-          deposit: item.product?.deposit
-        }
+        // Flatten product data
+        productId: item.product?.id,
+        productName: item.product?.name,
+        productBarcode: item.product?.barcode,
+        productImages: item.product?.images,
+        productRentPrice: item.product?.rentPrice,
+        productDeposit: item.product?.deposit
       })) || [],
       
       // Calculated fields
