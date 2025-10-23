@@ -7,10 +7,13 @@ import { handleApiError } from '@rentalshop/utils';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
-  month: z.coerce.number().int().min(1).max(12),
-  year: z.coerce.number().int().min(2020).max(2030),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
   outletId: z.coerce.number().int().positive().optional(),
-  limit: z.coerce.number().int().min(1).max(10).default(4), // Max 4 orders per day
+  merchantId: z.coerce.number().int().positive().optional(),
+  status: z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']).optional(),
+  orderType: z.enum(['RENT', 'SALE']).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(10), // Max 50 orders per day
 });
 
 // Types are now imported from @rentalshop/utils
@@ -39,33 +42,59 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     console.log('📅 Calendar query:', validatedQuery);
 
-    const { month, year, outletId, limit } = validatedQuery;
+    const { startDate: startDateStr, endDate: endDateStr, outletId, merchantId, status, orderType, limit } = validatedQuery;
 
-    // Build date range for the requested month
-    const startDate = new Date(year, month - 1, 1); // month is 1-based
-    const endDate = new Date(year, month, 0); // Last day of the month
+    // Parse date strings
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
 
     console.log('📅 Date range:', { startDate, endDate });
 
-    // Build where clause with role-based filtering - only pickup orders
+    // Build where clause with role-based filtering
     const where: any = {
-      orderType: 'RENT',
-      status: {
-        in: ['RESERVED', 'PICKUPED', 'RETURNED']
-      },
-      pickupPlanAt: {
-        gte: startDate,
-        lte: endDate
-      }
+      OR: [
+        {
+          pickupPlanAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        },
+        {
+          returnPlanAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      ]
     };
+
+    // Add optional filters
+    if (orderType) {
+      where.orderType = orderType;
+    } else {
+      // Default to RENT orders if no orderType specified
+      where.orderType = 'RENT';
+    }
+    
+    if (status) {
+      where.status = status;
+    } else {
+      // Default to active rental orders if no status specified
+      where.status = {
+        in: ['RESERVED', 'PICKUPED', 'RETURNED']
+      };
+    }
 
     // Role-based filtering
     if (user.role === 'ADMIN') {
-      // ADMIN: Can see all orders, optionally filter by outletId
+      // ADMIN: Can see all orders, optionally filter by outletId or merchantId
       if (outletId) {
         where.outletId = outletId;
       }
-      // No merchantId filter for ADMIN - they can see all merchants
+      if (merchantId) {
+        where.merchantId = merchantId;
+      }
+      // No restrictions for ADMIN - they can see all merchants and outlets
     } else if (user.role === 'MERCHANT') {
       // MERCHANT: Can see orders from all their outlets
       where.merchantId = userScope.merchantId;
@@ -163,8 +192,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         success: true,
         data: calendarData,
         meta: {
-          month,
-          year,
           totalDays: Object.keys(calendarData).length,
           stats: {
             totalPickups,
@@ -175,7 +202,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
             end: endDate.toISOString().split('T')[0]
           }
         },
-        code: 'CALENDAR_DATA_SUCCESS', message: `Calendar data for ${year}-${String(month).padStart(2, '0')}`
+        code: 'CALENDAR_DATA_SUCCESS', message: `Calendar data for ${startDateStr} to ${endDateStr}`
       });
     }
 
@@ -184,8 +211,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       success: true,
       data: {},
       meta: {
-        month,
-        year,
         totalDays: 0,
         stats: {
           totalPickups: 0,
@@ -196,7 +221,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           end: endDate.toISOString().split('T')[0]
         }
       },
-      code: 'NO_CALENDAR_DATA', message: `No calendar data for ${year}-${String(month).padStart(2, '0')}`
+      code: 'NO_CALENDAR_DATA', message: `No calendar data for ${startDateStr} to ${endDateStr}`
     });
 
   } catch (error) {
