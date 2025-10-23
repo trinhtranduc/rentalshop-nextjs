@@ -106,7 +106,22 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           totalAmount: order.totalAmount,
           outletName: order.outlet?.name,
           pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
-          returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined
+          returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
+          // Include order items with flattened product data
+          orderItems: (order as any).orderItems?.map((item: any) => ({
+            id: item.id,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            notes: item.notes,
+            // Flattened product data
+            productId: item.product?.id,
+            productName: item.product?.name,
+            productBarcode: item.product?.barcode,
+            productImages: item.product?.images,
+            productRentPrice: item.product?.rentPrice,
+            productDeposit: item.product?.deposit
+          })) || []
         };
 
         // Add to pickup dates

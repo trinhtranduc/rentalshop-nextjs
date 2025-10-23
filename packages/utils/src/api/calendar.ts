@@ -2,6 +2,21 @@ import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 
 // Types for calendar API
+export interface CalendarOrderItem {
+  id: number;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  notes?: string;
+  // Flattened product data
+  productId?: number;
+  productName?: string;
+  productBarcode?: string;
+  productImages?: string[];
+  productRentPrice?: number;
+  productDeposit?: number;
+}
+
 export interface CalendarOrderSummary {
   id: number;
   orderNumber: string;
@@ -15,6 +30,8 @@ export interface CalendarOrderSummary {
   returnPlanAt?: string;
   isOverdue?: boolean;
   duration?: number;
+  // Order items with product details
+  orderItems: CalendarOrderItem[];
 }
 
 export interface DayOrders {
