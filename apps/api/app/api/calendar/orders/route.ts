@@ -92,19 +92,24 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         where.outletId = outletId;
       }
       if (merchantId) {
-        where.merchantId = merchantId;
+        where.outlet = {
+          merchantId: merchantId
+        };
       }
       // No restrictions for ADMIN - they can see all merchants and outlets
     } else if (user.role === 'MERCHANT') {
       // MERCHANT: Can see orders from all their outlets
-      where.merchantId = userScope.merchantId;
+      where.outlet = {
+        merchantId: userScope.merchantId
+      };
       if (outletId) {
         where.outletId = outletId;
+        // Remove outlet filter if outletId is specified
+        delete where.outlet;
       }
       // If no outletId specified, they see all outlets within their merchant
     } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
       // OUTLET users: Can only see orders from their assigned outlet
-      where.merchantId = userScope.merchantId;
       where.outletId = userScope.outletId;
     }
 
