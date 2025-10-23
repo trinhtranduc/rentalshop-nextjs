@@ -11,27 +11,25 @@ export const calendarSwaggerConfig = {
         security: [{ bearerAuth: [] }],
         parameters: [
           {
-            name: 'month',
+            name: 'startDate',
             in: 'query',
-            description: 'Month (1-12)',
+            description: 'Start date for calendar range (ISO 8601 format)',
             required: true,
             schema: { 
-              type: 'integer', 
-              minimum: 1,
-              maximum: 12,
-              example: 1
+              type: 'string', 
+              format: 'date',
+              example: '2025-01-01'
             }
           },
           {
-            name: 'year',
+            name: 'endDate',
             in: 'query',
-            description: 'Year (2020-2030)',
+            description: 'End date for calendar range (ISO 8601 format)',
             required: true,
             schema: { 
-              type: 'integer', 
-              minimum: 2020,
-              maximum: 2030,
-              example: 2025
+              type: 'string', 
+              format: 'date',
+              example: '2025-01-31'
             }
           },
           {

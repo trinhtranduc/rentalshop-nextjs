@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
-import type { CalendarOrderSummary, DayOrders, CalendarResponse } from '@rentalshop/utils';
+import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
 import { handleApiError } from '@rentalshop/utils';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
-  month: z.coerce.number().int().min(1).max(12),
-  year: z.coerce.number().int().min(2020).max(2030),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
   outletId: z.coerce.number().int().positive().optional(),
   merchantId: z.coerce.number().int().positive().optional(),
   status: z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']).optional(),
@@ -42,11 +42,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     console.log('📅 Calendar query:', validatedQuery);
 
-    const { month, year, outletId, merchantId, status, orderType, limit } = validatedQuery;
+    const { startDate: startDateStr, endDate: endDateStr, outletId, merchantId, status, orderType, limit } = validatedQuery;
 
-    // Build date range for the requested month
-    const startDate = new Date(year, month - 1, 1); // month is 1-based
-    const endDate = new Date(year, month, 0); // Last day of the month
+    // Parse date strings
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
 
     console.log('📅 Date range:', { startDate, endDate });
 
@@ -120,10 +120,14 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     console.log('📦 Found orders:', orders.data?.length || 0);
 
     // Group orders by date
-    const calendarData: CalendarResponse = {};
+    const calendarMap: { [dateKey: string]: CalendarOrderSummary[] } = {};
 
     if (orders.data && Array.isArray(orders.data)) {
       for (const order of orders.data) {
+        const orderItems = (order as any).orderItems || [];
+        const totalProductCount = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+        const firstProduct = orderItems[0]?.product;
+        
         const orderSummary: CalendarOrderSummary = {
           id: order.id,
           orderNumber: order.orderNumber,
@@ -136,8 +140,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           outletName: order.outlet?.name,
           pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
           returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
+          // Product summary for calendar display
+          productName: firstProduct?.name || 'Multiple Products',
+          productCount: totalProductCount,
           // Include order items with flattened product data
-          orderItems: (order as any).orderItems?.map((item: any) => ({
+          orderItems: orderItems.map((item: any) => ({
             id: item.id,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
@@ -150,7 +157,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
             productImages: item.product?.images,
             productRentPrice: item.product?.rentPrice,
             productDeposit: item.product?.deposit
-          })) || []
+          }))
         };
 
         // Add to pickup dates
@@ -158,74 +165,115 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           const pickupDate = new Date(order.pickupPlanAt);
           const dateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, '0')}-${String(pickupDate.getDate()).padStart(2, '0')}`;
           
-          if (!calendarData[dateKey]) {
-            calendarData[dateKey] = { pickups: [], total: 0 };
+          if (!calendarMap[dateKey]) {
+            calendarMap[dateKey] = [];
           }
           
-          if (calendarData[dateKey].pickups.length < limit) {
-            calendarData[dateKey].pickups.push(orderSummary);
-            calendarData[dateKey].total++;
+          if (calendarMap[dateKey].length < limit) {
+            calendarMap[dateKey].push(orderSummary);
           }
         }
-
-        // Only process pickup orders - skip return dates
       }
 
-      // Total is already calculated when adding orders
-
-      // Calculate monthly statistics (only pickup orders)
-      let totalPickups = 0;
+      // Convert to calendar array format
+      const calendar: CalendarDay[] = [];
       let totalOrders = 0;
+      let totalRevenue = 0;
+      let totalPickups = 0;
+      let totalReturns = 0;
 
-      for (const dateKey in calendarData) {
-        totalPickups += calendarData[dateKey].pickups.length;
-        totalOrders += calendarData[dateKey].total;
+      for (const [dateKey, dayOrders] of Object.entries(calendarMap)) {
+        const dayRevenue = dayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+        const dayPickups = dayOrders.filter(order => order.status === 'RESERVED' || order.status === 'PICKUPED').length;
+        const dayReturns = dayOrders.filter(order => order.status === 'RETURNED').length;
+        
+        calendar.push({
+          date: dateKey,
+          orders: dayOrders,
+          summary: {
+            totalOrders: dayOrders.length,
+            totalRevenue: dayRevenue,
+            totalPickups: dayPickups,
+            totalReturns: dayReturns,
+            averageOrderValue: dayOrders.length > 0 ? dayRevenue / dayOrders.length : 0
+          }
+        });
+
+        totalOrders += dayOrders.length;
+        totalRevenue += dayRevenue;
+        totalPickups += dayPickups;
+        totalReturns += dayReturns;
       }
+
+      const calendarData: CalendarResponse = {
+        calendar,
+        summary: {
+          totalOrders,
+          totalRevenue,
+          totalPickups,
+          totalReturns,
+          averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0
+        }
+      };
 
       console.log('📅 Calendar data prepared:', {
-        daysWithOrders: Object.keys(calendarData).length,
+        daysWithOrders: calendar.length,
         totalPickups,
-        totalOrders
+        totalOrders,
+        totalRevenue
       });
 
       return NextResponse.json({
         success: true,
         data: calendarData,
         meta: {
-          month,
-          year,
-          totalDays: Object.keys(calendarData).length,
+          totalDays: calendar.length,
           stats: {
             totalPickups,
-            totalOrders
+            totalOrders,
+            totalRevenue,
+            totalReturns,
+            averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0
           },
           dateRange: {
             start: startDate.toISOString().split('T')[0],
             end: endDate.toISOString().split('T')[0]
           }
         },
-        code: 'CALENDAR_DATA_SUCCESS', message: `Calendar data for ${year}-${String(month).padStart(2, '0')}`
+        code: 'CALENDAR_DATA_SUCCESS', message: `Calendar data for ${startDateStr} to ${endDateStr}`
       });
     }
 
     // Return empty calendar data if orders.data is not an array
+    const emptyCalendarData: CalendarResponse = {
+      calendar: [],
+      summary: {
+        totalOrders: 0,
+        totalRevenue: 0,
+        totalPickups: 0,
+        totalReturns: 0,
+        averageOrderValue: 0
+      }
+    };
+
     return NextResponse.json({
       success: true,
-      data: {},
+      data: emptyCalendarData,
       meta: {
-        month,
-        year,
         totalDays: 0,
         stats: {
           totalPickups: 0,
-          totalOrders: 0
+          totalOrders: 0,
+          totalRevenue: 0,
+          totalReturns: 0,
+          averageOrderValue: 0
         },
         dateRange: {
           start: startDate.toISOString().split('T')[0],
           end: endDate.toISOString().split('T')[0]
         }
       },
-      code: 'NO_CALENDAR_DATA', message: `No calendar data for ${year}-${String(month).padStart(2, '0')}`
+      code: 'NO_CALENDAR_DATA', message: `No calendar data for ${startDateStr} to ${endDateStr}`
     });
 
   } catch (error) {
