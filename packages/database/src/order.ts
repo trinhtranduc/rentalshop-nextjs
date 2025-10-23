@@ -1043,6 +1043,15 @@ export const simplifiedOrders = {
     if (status) where.status = status;
     if (orderType) where.orderType = orderType;
 
+    // Filter by product (through order items)
+    if (productId) {
+      where.orderItems = {
+        some: {
+          productId: productId
+        }
+      };
+    }
+
     // Date range
     if (startDate || endDate) {
       where.createdAt = {};
