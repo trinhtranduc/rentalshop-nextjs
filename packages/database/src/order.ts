@@ -1301,6 +1301,7 @@ export const simplifiedOrders = {
     outletId?: number;
     status?: string;
     orderType?: string;
+    productId?: number;
     startDate?: Date;
     endDate?: Date;
     page?: number;
@@ -1313,6 +1314,7 @@ export const simplifiedOrders = {
       outletId,
       status,
       orderType,
+      productId,
       startDate,
       endDate,
       page = 1,
@@ -1335,6 +1337,16 @@ export const simplifiedOrders = {
     if (orderType) {
       where.orderType = orderType;
     }
+    
+    // Filter by product (through order items)
+    if (productId) {
+      where.orderItems = {
+        some: {
+          productId: productId
+        }
+      };
+    }
+    
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;
