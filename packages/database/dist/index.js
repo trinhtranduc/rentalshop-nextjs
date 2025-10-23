@@ -1336,11 +1336,14 @@ var simplifiedOrders = {
       where: whereClause
     } = filters;
     const where = whereClause || {};
+    console.log("\u{1F50D} searchWithItems - Original whereClause:", JSON.stringify(whereClause, null, 2));
     if (where.merchantId) {
+      console.log("\u{1F50D} Found merchantId in whereClause, converting to outlet.merchantId");
       where.outlet = {
         merchantId: where.merchantId
       };
       delete where.merchantId;
+      console.log("\u{1F50D} After conversion:", JSON.stringify(where, null, 2));
     }
     if (merchantId) {
       where.outlet = {
