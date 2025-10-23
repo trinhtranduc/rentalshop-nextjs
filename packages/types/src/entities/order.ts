@@ -344,28 +344,46 @@ export interface OrderListItem {
   createdAt: Date | string;
   updatedAt: Date | string;
   
-  // Flattened customer data
+  // Flattened customer data (simplified)
   customerId?: number;
   customerName?: string;
   customerPhone?: string;
-  customerEmail?: string;
   
-  // Flattened outlet data
+  // Flattened outlet data (simplified)
   outletId: number;
   outletName?: string;
-  outletAddress?: string;
-  merchantId?: number;
   merchantName?: string;
   
   // Flattened createdBy data
   createdById: number;
   createdByName?: string;
-  createdByEmail?: string;
+  
+  // Order items with flattened product data
+  orderItems: OrderItem[];
   
   // Calculated fields
   itemCount: number;
   paymentCount: number;
   totalPaid: number;
+}
+
+/**
+ * Order item with flattened product data
+ * Used for order list views with simplified structure
+ */
+export interface OrderItem {
+  id: number;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  notes?: string;
+  // Flattened product data
+  productId?: number;
+  productName?: string;
+  productBarcode?: string;
+  productImages?: string[];
+  productRentPrice?: number;
+  productDeposit?: number;
 }
 
 /**
