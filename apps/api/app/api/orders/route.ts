@@ -76,6 +76,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     let searchFilters: any = {
       merchantId: userScope.merchantId,
       customerId,
+      productId,
       orderType,
       status,
       startDate: startDate ? new Date(startDate) : undefined,
