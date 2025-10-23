@@ -987,6 +987,7 @@ export const simplifiedOrders = {
     outletId?: number;
     status?: string;
     orderType?: string;
+    productId?: number;
     startDate?: Date;
     endDate?: Date;
     search?: string;
@@ -1001,6 +1002,7 @@ export const simplifiedOrders = {
       outletId,
       status,
       orderType,
+      productId,
       startDate,
       endDate,
       search,
