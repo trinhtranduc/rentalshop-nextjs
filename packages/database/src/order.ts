@@ -1021,9 +1021,11 @@ export const simplifiedOrders = {
       };
     }
 
-    // Handle outlet-level filtering
+    // Handle outlet-level filtering (overrides merchant filter if both are present)
     if (outletId) {
       where.outletId = outletId;
+      // Remove outlet filter if outletId is specified
+      delete where.outlet;
     }
 
     if (status) where.status = status;
