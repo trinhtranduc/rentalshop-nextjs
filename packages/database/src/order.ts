@@ -1326,9 +1326,37 @@ export const simplifiedOrders = {
     const paymentCountMap = new Map(paymentCounts.map(payment => [payment.orderId, payment._count.id]));
     const totalPaidMap = new Map(paymentCounts.map(payment => [payment.orderId, payment._sum.amount || 0]));
 
-    // Enhance orders with calculated fields
+    // Enhance orders with calculated fields and flattened structure
     const enhancedOrders = orders.map(order => ({
-      ...order,
+      id: order.id,
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      depositAmount: order.depositAmount,
+      notes: order.notes,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      
+      // Flatten customer data
+      customerId: order.customerId,
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
+      customerPhone: order.customer?.phone || null,
+      customerEmail: order.customer?.email || null,
+      
+      // Flatten outlet data
+      outletId: order.outletId,
+      outletName: order.outlet?.name || null,
+      outletAddress: order.outlet?.address || null,
+      merchantId: order.outlet?.merchant?.id || null,
+      merchantName: order.outlet?.merchant?.name || null,
+      
+      // Flatten createdBy data
+      createdById: order.createdById,
+      createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
+      createdByEmail: order.createdBy?.email || null,
+      
+      // Calculated fields
       itemCount: itemCountMap.get(order.id) || 0,
       paymentCount: paymentCountMap.get(order.id) || 0,
       totalPaid: totalPaidMap.get(order.id) || 0
