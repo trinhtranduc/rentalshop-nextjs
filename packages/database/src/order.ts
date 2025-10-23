@@ -1334,7 +1334,24 @@ export const simplifiedOrders = {
       status: order.status,
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
+      securityDeposit: order.securityDeposit,
+      damageFee: order.damageFee,
+      lateFee: order.lateFee,
+      discountType: order.discountType,
+      discountValue: order.discountValue,
+      discountAmount: order.discountAmount,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      rentalDuration: order.rentalDuration,
+      isReadyToDeliver: order.isReadyToDeliver,
+      collateralType: order.collateralType,
+      collateralDetails: order.collateralDetails,
       notes: order.notes,
+      pickupNotes: order.pickupNotes,
+      returnNotes: order.returnNotes,
+      damageNotes: order.damageNotes,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       
@@ -1343,11 +1360,21 @@ export const simplifiedOrders = {
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
       customerPhone: order.customer?.phone || null,
       customerEmail: order.customer?.email || null,
+      customerAddress: order.customer?.address || null,
+      customerCity: order.customer?.city || null,
+      customerState: order.customer?.state || null,
+      customerZipCode: order.customer?.zipCode || null,
+      customerCountry: order.customer?.country || null,
       
       // Flatten outlet data
       outletId: order.outletId,
       outletName: order.outlet?.name || null,
       outletAddress: order.outlet?.address || null,
+      outletPhone: order.outlet?.phone || null,
+      outletCity: order.outlet?.city || null,
+      outletState: order.outlet?.state || null,
+      outletZipCode: order.outlet?.zipCode || null,
+      outletCountry: order.outlet?.country || null,
       merchantId: order.outlet?.merchant?.id || null,
       merchantName: order.outlet?.merchant?.name || null,
       
@@ -1355,6 +1382,23 @@ export const simplifiedOrders = {
       createdById: order.createdById,
       createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
       createdByEmail: order.createdBy?.email || null,
+      
+      // Order items (products)
+      orderItems: order.orderItems?.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        notes: item.notes,
+        product: {
+          id: item.product?.id,
+          name: item.product?.name,
+          barcode: item.product?.barcode,
+          images: item.product?.images,
+          rentPrice: item.product?.rentPrice,
+          deposit: item.product?.deposit
+        }
+      })) || [],
       
       // Calculated fields
       itemCount: itemCountMap.get(order.id) || 0,
