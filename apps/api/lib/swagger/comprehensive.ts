@@ -10,6 +10,7 @@ import { planSwaggerConfig } from './plans';
 import { merchantSwaggerConfig } from './merchants';
 import { outletSwaggerConfig } from './outlets';
 import { subscriptionSwaggerConfig } from './subscriptions';
+import { calendarSwaggerConfig } from './calendar';
 
 const environment = getCurrentEnvironment();
 const apiUrl = getApiUrl();
@@ -76,6 +77,7 @@ export const comprehensiveSwaggerConfig = {
     { name: 'Merchants', description: 'Merchant management operations' },
     { name: 'Outlets', description: 'Outlet management operations' },
     { name: 'Subscriptions', description: 'Subscription management operations' },
+    { name: 'Calendar', description: 'Calendar and scheduling endpoints' },
     { name: 'Analytics', description: 'Analytics and reporting endpoints' },
     { name: 'Mobile', description: 'Mobile-optimized endpoints' },
     { name: 'System', description: 'System and utility endpoints' }
@@ -1582,7 +1584,10 @@ export const comprehensiveSwaggerConfig = {
     ...outletSwaggerConfig.paths,
 
     // Subscription Management Endpoints - Merge from subscriptionSwaggerConfig
-    ...subscriptionSwaggerConfig.paths
+    ...subscriptionSwaggerConfig.paths,
+
+    // Calendar Management Endpoints - Merge from calendarSwaggerConfig
+    ...calendarSwaggerConfig.paths
   },
   components: {
     securitySchemes: {
@@ -1917,7 +1922,8 @@ export const comprehensiveSwaggerConfig = {
       ...planSwaggerConfig.components?.schemas,
       ...merchantSwaggerConfig.components?.schemas,
       ...outletSwaggerConfig.components?.schemas,
-      ...subscriptionSwaggerConfig.components?.schemas
+      ...subscriptionSwaggerConfig.components?.schemas,
+      ...calendarSwaggerConfig.components?.schemas
     }
   }
 }; 

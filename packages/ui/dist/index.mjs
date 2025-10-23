@@ -17521,8 +17521,8 @@ var OrderTable = React51.memo(function OrderTable2({
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3 whitespace-nowrap", children: getOrderTypeBadge(order.orderType) }),
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3 whitespace-nowrap", children: getStatusBadge(order.status) }),
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3", children: /* @__PURE__ */ jsxs75("div", { className: "text-sm", children: [
-        /* @__PURE__ */ jsx90("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName }),
-        /* @__PURE__ */ jsx90("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone })
+        /* @__PURE__ */ jsx90("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName || "N/A" }),
+        /* @__PURE__ */ jsx90("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone || "N/A" })
       ] }) }),
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3 whitespace-nowrap", children: /* @__PURE__ */ jsxs75("div", { className: "text-sm", children: [
         /* @__PURE__ */ jsx90("div", { className: "font-medium text-gray-900 dark:text-white", children: formatMoney(order.totalAmount) }),
@@ -37739,21 +37739,21 @@ var OrderInformation = ({ order }) => {
               t2("customer.name"),
               ":"
             ] }),
-            /* @__PURE__ */ jsx242("span", { className: "text-sm font-medium", children: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : t2("customer.noCustomer") })
+            /* @__PURE__ */ jsx242("span", { className: "text-sm font-medium", children: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : order.customerName || t2("customer.noCustomer") })
           ] }),
           /* @__PURE__ */ jsxs217("div", { className: "flex justify-between", children: [
             /* @__PURE__ */ jsxs217("span", { className: "text-sm text-gray-600", children: [
               t2("customer.phone"),
               ":"
             ] }),
-            /* @__PURE__ */ jsx242("span", { className: "text-sm font-medium", children: order.customer?.phone || "N/A" })
+            /* @__PURE__ */ jsx242("span", { className: "text-sm font-medium", children: order.customer?.phone || order.customerPhone || "N/A" })
           ] }),
           /* @__PURE__ */ jsxs217("div", { className: "flex justify-between", children: [
             /* @__PURE__ */ jsxs217("span", { className: "text-sm text-gray-600", children: [
               t2("detail.seller"),
               ":"
             ] }),
-            /* @__PURE__ */ jsx242("span", { className: "text-sm font-medium", children: order.outlet?.name || "N/A" })
+            /* @__PURE__ */ jsx242("span", { className: "text-sm font-medium", children: order.outlet?.name || order.outletName || "N/A" })
           ] })
         ] }),
         /* @__PURE__ */ jsxs217("div", { className: "space-y-3", children: [

@@ -17714,8 +17714,8 @@ var OrderTable = import_react45.default.memo(function OrderTable2({
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3 whitespace-nowrap", children: getOrderTypeBadge(order.orderType) }),
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3 whitespace-nowrap", children: getStatusBadge(order.status) }),
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3", children: /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("div", { className: "text-sm", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName }),
-        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone })
+        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName || "N/A" }),
+        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone || "N/A" })
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("div", { className: "text-sm", children: [
         /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: formatMoney(order.totalAmount) }),
@@ -37280,21 +37280,21 @@ var OrderInformation = ({ order }) => {
               t2("customer.name"),
               ":"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : t2("customer.noCustomer") })
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : order.customerName || t2("customer.noCustomer") })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex justify-between", children: [
             /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { className: "text-sm text-gray-600", children: [
               t2("customer.phone"),
               ":"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.customer?.phone || "N/A" })
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.customer?.phone || order.customerPhone || "N/A" })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex justify-between", children: [
             /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { className: "text-sm text-gray-600", children: [
               t2("detail.seller"),
               ":"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.outlet?.name || "N/A" })
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.outlet?.name || order.outletName || "N/A" })
           ] })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "space-y-3", children: [

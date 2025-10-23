@@ -1033,7 +1033,7 @@ async function searchOrders(filters) {
 }
 var simplifiedOrders = {
   /**
-   * Find order by ID (simplified API)
+   * Find order by ID (simplified API) - OPTIMIZED for performance
    */
   findById: async (id) => {
     return await prisma.order.findUnique({
@@ -1043,7 +1043,15 @@ var simplifiedOrders = {
         outlet: { select: { id: true, name: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            productId: true,
+            notes: true,
+            rentalDays: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -1069,7 +1077,15 @@ var simplifiedOrders = {
         },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            productId: true,
+            notes: true,
+            rentalDays: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -1088,7 +1104,15 @@ var simplifiedOrders = {
         outlet: { select: { id: true, name: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            productId: true,
+            notes: true,
+            rentalDays: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -1285,6 +1309,938 @@ var simplifiedOrders = {
    */
   aggregate: async (args) => {
     return await prisma.order.aggregate(args);
+  },
+  // ============================================================================
+  // PERFORMANCE OPTIMIZED METHODS FOR LARGE DATASETS
+  // ============================================================================
+  /**
+   * Get orders list with minimal data for performance (for large datasets)
+   * Only essential fields for list view - no nested objects
+   */
+  findManyMinimal: async (filters = {}) => {
+    const {
+      merchantId,
+      outletId,
+      status,
+      orderType,
+      startDate,
+      endDate,
+      search: search3,
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc"
+    } = filters;
+    const where = {};
+    if (merchantId) where.merchantId = merchantId;
+    if (outletId) where.outletId = outletId;
+    if (status) where.status = status;
+    if (orderType) where.orderType = orderType;
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    if (search3) {
+      where.OR = [
+        { orderNumber: { contains: search3, mode: "insensitive" } },
+        { customer: { firstName: { contains: search3, mode: "insensitive" } } },
+        { customer: { lastName: { contains: search3, mode: "insensitive" } } },
+        { customer: { phone: { contains: search3, mode: "insensitive" } } }
+      ];
+    }
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          depositAmount: true,
+          notes: true,
+          createdAt: true,
+          updatedAt: true,
+          outletId: true,
+          customerId: true,
+          createdById: true,
+          // Minimal customer data
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              email: true
+            }
+          },
+          // Minimal outlet data
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              merchant: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          },
+          // Minimal createdBy data
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          }
+        },
+        orderBy: { [sortBy]: sortOrder },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.order.count({ where })
+    ]);
+    const orderIds = orders.map((order) => order.id);
+    const itemCounts = await prisma.orderItem.groupBy({
+      by: ["orderId"],
+      where: { orderId: { in: orderIds } },
+      _count: { id: true }
+    });
+    const itemCountMap = new Map(itemCounts.map((item) => [item.orderId, item._count.id]));
+    const paymentCounts = await prisma.payment.groupBy({
+      by: ["orderId"],
+      where: { orderId: { in: orderIds } },
+      _count: { id: true },
+      _sum: { amount: true }
+    });
+    const paymentCountMap = new Map(paymentCounts.map((payment) => [payment.orderId, payment._count.id]));
+    const totalPaidMap = new Map(paymentCounts.map((payment) => [payment.orderId, payment._sum.amount || 0]));
+    const enhancedOrders = orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      depositAmount: order.depositAmount,
+      notes: order.notes,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      // Flatten customer data
+      customerId: order.customerId,
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
+      customerPhone: order.customer?.phone || null,
+      customerEmail: order.customer?.email || null,
+      // Flatten outlet data
+      outletId: order.outletId,
+      outletName: order.outlet?.name || null,
+      outletAddress: order.outlet?.address || null,
+      merchantId: order.outlet?.merchant?.id || null,
+      merchantName: order.outlet?.merchant?.name || null,
+      // Flatten createdBy data
+      createdById: order.createdById,
+      createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
+      createdByEmail: order.createdBy?.email || null,
+      // Calculated fields
+      itemCount: itemCountMap.get(order.id) || 0,
+      paymentCount: paymentCountMap.get(order.id) || 0,
+      totalPaid: totalPaidMap.get(order.id) || 0
+    }));
+    return {
+      data: enhancedOrders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  },
+  /**
+   * Get orders list with complete order information for performance (for large datasets)
+   * Includes all order fields, customer, outlet, createdBy, and products
+   */
+  findManyLightweight: async (filters) => {
+    const {
+      merchantId,
+      outletId,
+      status,
+      orderType,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc"
+    } = filters;
+    const where = {};
+    if (merchantId) {
+      where.outlet = { merchantId };
+    }
+    if (outletId) {
+      where.outletId = outletId;
+    }
+    if (status) {
+      where.status = status;
+    }
+    if (orderType) {
+      where.orderType = orderType;
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          depositAmount: true,
+          securityDeposit: true,
+          damageFee: true,
+          lateFee: true,
+          discountType: true,
+          discountValue: true,
+          discountAmount: true,
+          pickupPlanAt: true,
+          returnPlanAt: true,
+          pickedUpAt: true,
+          returnedAt: true,
+          rentalDuration: true,
+          isReadyToDeliver: true,
+          collateralType: true,
+          collateralDetails: true,
+          notes: true,
+          pickupNotes: true,
+          returnNotes: true,
+          damageNotes: true,
+          createdAt: true,
+          updatedAt: true,
+          outletId: true,
+          customerId: true,
+          createdById: true,
+          // Customer data
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              email: true,
+              address: true,
+              city: true,
+              state: true,
+              zipCode: true,
+              country: true
+            }
+          },
+          // Outlet data
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              phone: true,
+              city: true,
+              state: true,
+              zipCode: true,
+              country: true,
+              merchant: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          },
+          // CreatedBy data
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          // Include products for list view
+          orderItems: {
+            select: {
+              id: true,
+              quantity: true,
+              unitPrice: true,
+              totalPrice: true,
+              notes: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  barcode: true,
+                  images: true,
+                  rentPrice: true,
+                  deposit: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { [sortBy]: sortOrder },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.order.count({ where })
+    ]);
+    const orderIds = orders.map((o) => o.id);
+    const [itemCounts, paymentCounts] = await Promise.all([
+      prisma.orderItem.groupBy({
+        by: ["orderId"],
+        where: { orderId: { in: orderIds } },
+        _count: { id: true }
+      }),
+      prisma.payment.groupBy({
+        by: ["orderId"],
+        where: {
+          orderId: { in: orderIds },
+          status: "COMPLETED"
+        },
+        _sum: { amount: true },
+        _count: { id: true }
+      })
+    ]);
+    const itemCountMap = new Map(itemCounts.map((item) => [item.orderId, item._count.id]));
+    const paymentCountMap = new Map(paymentCounts.map((payment) => [payment.orderId, payment._count.id]));
+    const totalPaidMap = new Map(paymentCounts.map((payment) => [payment.orderId, payment._sum.amount || 0]));
+    const enhancedOrders = orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      depositAmount: order.depositAmount,
+      securityDeposit: order.securityDeposit,
+      damageFee: order.damageFee,
+      lateFee: order.lateFee,
+      discountType: order.discountType,
+      discountValue: order.discountValue,
+      discountAmount: order.discountAmount,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      rentalDuration: order.rentalDuration,
+      isReadyToDeliver: order.isReadyToDeliver,
+      collateralType: order.collateralType,
+      collateralDetails: order.collateralDetails,
+      notes: order.notes,
+      pickupNotes: order.pickupNotes,
+      returnNotes: order.returnNotes,
+      damageNotes: order.damageNotes,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      // Flatten customer data (simplified)
+      customerId: order.customerId,
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
+      customerPhone: order.customer?.phone || null,
+      // Flatten outlet data (simplified)
+      outletId: order.outletId,
+      outletName: order.outlet?.name || null,
+      merchantName: order.outlet?.merchant?.name || null,
+      // Flatten createdBy data
+      createdById: order.createdById,
+      createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
+      // Order items with flattened product data
+      orderItems: order.orderItems?.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        notes: item.notes,
+        // Flatten product data
+        productId: item.product?.id,
+        productName: item.product?.name,
+        productBarcode: item.product?.barcode,
+        productImages: item.product?.images,
+        productRentPrice: item.product?.rentPrice,
+        productDeposit: item.product?.deposit
+      })) || [],
+      // Calculated fields
+      itemCount: itemCountMap.get(order.id) || 0,
+      paymentCount: paymentCountMap.get(order.id) || 0,
+      totalPaid: totalPaidMap.get(order.id) || 0
+    }));
+    return {
+      data: enhancedOrders,
+      total,
+      page,
+      limit,
+      hasMore: page * limit < total,
+      totalPages: Math.ceil(total / limit)
+    };
+  },
+  /**
+   * Get order by ID with full detail data
+   * Includes all order fields, customer, outlet, products, payments, and timeline
+   */
+  findByIdDetail: async (id) => {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        orderNumber: true,
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        securityDeposit: true,
+        damageFee: true,
+        lateFee: true,
+        discountType: true,
+        discountValue: true,
+        discountAmount: true,
+        pickupPlanAt: true,
+        returnPlanAt: true,
+        pickedUpAt: true,
+        returnedAt: true,
+        rentalDuration: true,
+        isReadyToDeliver: true,
+        collateralType: true,
+        collateralDetails: true,
+        notes: true,
+        pickupNotes: true,
+        returnNotes: true,
+        damageNotes: true,
+        createdAt: true,
+        updatedAt: true,
+        outletId: true,
+        customerId: true,
+        createdById: true,
+        // Full customer data
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true,
+            address: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true,
+            dateOfBirth: true,
+            notes: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        },
+        // Full outlet data
+        outlet: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            phone: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true,
+            isActive: true,
+            merchant: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                address: true,
+                city: true,
+                state: true,
+                zipCode: true,
+                country: true,
+                businessType: true,
+                pricingType: true,
+                taxId: true,
+                currency: true
+              }
+            }
+          }
+        },
+        // Full createdBy data
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            role: true,
+            isActive: true,
+            createdAt: true
+          }
+        },
+        // Full order items with products
+        orderItems: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            notes: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true,
+                images: true,
+                rentPrice: true,
+                deposit: true,
+                description: true,
+                isActive: true,
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        // Full payments data
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            method: true,
+            status: true,
+            reference: true,
+            notes: true,
+            processedAt: true,
+            createdAt: true,
+            updatedAt: true
+          },
+          orderBy: { createdAt: "desc" }
+        }
+      }
+    });
+    if (!order) return null;
+    let timeline = [];
+    try {
+      timeline = await prisma.orderAuditLog?.findMany({
+        where: { orderId: id },
+        select: {
+          id: true,
+          action: true,
+          description: true,
+          oldValues: true,
+          newValues: true,
+          createdAt: true,
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      }) || [];
+    } catch (error) {
+      console.log("OrderAuditLog table not found, skipping timeline");
+    }
+    const itemCount = order.orderItems?.length || 0;
+    const paymentCount = order.payments?.length || 0;
+    const totalPaid = order.payments?.filter((p) => p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0) || 0;
+    return {
+      ...order,
+      // Calculated fields
+      itemCount,
+      paymentCount,
+      totalPaid,
+      // Timeline
+      timeline
+    };
+  },
+  /**
+   * Get order detail with optimized loading
+   * Loads related data only when needed
+   */
+  findByIdOptimized: async (id, options = {}) => {
+    const {
+      includeItems = true,
+      includePayments = true,
+      includeCustomer = true,
+      includeOutlet = true
+    } = options;
+    const select = {
+      id: true,
+      orderNumber: true,
+      orderType: true,
+      status: true,
+      totalAmount: true,
+      depositAmount: true,
+      securityDeposit: true,
+      damageFee: true,
+      lateFee: true,
+      discountType: true,
+      discountValue: true,
+      discountAmount: true,
+      pickupPlanAt: true,
+      returnPlanAt: true,
+      pickedUpAt: true,
+      returnedAt: true,
+      rentalDuration: true,
+      isReadyToDeliver: true,
+      collateralType: true,
+      collateralDetails: true,
+      notes: true,
+      pickupNotes: true,
+      returnNotes: true,
+      damageNotes: true,
+      createdAt: true,
+      updatedAt: true,
+      outletId: true,
+      customerId: true,
+      createdById: true
+    };
+    if (includeCustomer) {
+      select.customer = {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          email: true,
+          address: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          dateOfBirth: true,
+          idNumber: true,
+          idType: true
+        }
+      };
+    }
+    if (includeOutlet) {
+      select.outlet = {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          phone: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          merchant: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      };
+    }
+    select.createdBy = {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true
+      }
+    };
+    if (includeItems) {
+      select.orderItems = {
+        select: {
+          id: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+          deposit: true,
+          productId: true,
+          notes: true,
+          rentalDays: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              barcode: true,
+              description: true,
+              images: true,
+              category: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      };
+    }
+    if (includePayments) {
+      select.payments = {
+        select: {
+          id: true,
+          amount: true,
+          currency: true,
+          method: true,
+          type: true,
+          status: true,
+          reference: true,
+          transactionId: true,
+          invoiceNumber: true,
+          description: true,
+          notes: true,
+          failureReason: true,
+          processedAt: true,
+          processedBy: true,
+          createdAt: true
+        }
+      };
+    }
+    return await prisma.order.findUnique({
+      where: { id },
+      select
+    });
+  },
+  /**
+   * Search orders with cursor-based pagination for large datasets
+   * More efficient than offset-based pagination for large datasets
+   * Includes complete order information and products
+   */
+  searchWithCursor: async (filters) => {
+    const {
+      merchantId,
+      outletId,
+      status,
+      orderType,
+      startDate,
+      endDate,
+      cursor,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc"
+    } = filters;
+    const where = {};
+    if (merchantId) {
+      where.outlet = { merchantId };
+    }
+    if (outletId) {
+      where.outletId = outletId;
+    }
+    if (status) {
+      where.status = status;
+    }
+    if (orderType) {
+      where.orderType = orderType;
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    if (cursor) {
+      const cursorCondition = sortOrder === "desc" ? { [sortBy]: { lt: new Date(cursor) } } : { [sortBy]: { gt: new Date(cursor) } };
+      where.AND = [cursorCondition];
+    }
+    const orders = await prisma.order.findMany({
+      where,
+      select: {
+        id: true,
+        orderNumber: true,
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        securityDeposit: true,
+        damageFee: true,
+        lateFee: true,
+        discountType: true,
+        discountValue: true,
+        discountAmount: true,
+        pickupPlanAt: true,
+        returnPlanAt: true,
+        pickedUpAt: true,
+        returnedAt: true,
+        rentalDuration: true,
+        isReadyToDeliver: true,
+        collateralType: true,
+        collateralDetails: true,
+        notes: true,
+        pickupNotes: true,
+        returnNotes: true,
+        damageNotes: true,
+        createdAt: true,
+        updatedAt: true,
+        outletId: true,
+        customerId: true,
+        createdById: true,
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true,
+            address: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true
+          }
+        },
+        outlet: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            phone: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true,
+            merchant: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        // Include products for list view
+        orderItems: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            notes: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true,
+                images: true,
+                rentPrice: true,
+                deposit: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { [sortBy]: sortOrder },
+      take: limit + 1
+      // Take one extra to check if there are more
+    });
+    const hasMore = orders.length > limit;
+    if (hasMore) {
+      orders.pop();
+    }
+    const nextCursor = hasMore && orders.length > 0 ? orders[orders.length - 1][sortBy]?.toString() : null;
+    return {
+      data: orders,
+      hasMore,
+      nextCursor
+    };
+  },
+  /**
+   * Get order statistics for dashboard (optimized aggregation)
+   */
+  getStatistics: async (filters) => {
+    const { merchantId, outletId, startDate, endDate } = filters;
+    const where = {};
+    if (merchantId) {
+      where.outlet = { merchantId };
+    }
+    if (outletId) {
+      where.outletId = outletId;
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    const [
+      totalOrders,
+      totalRevenue,
+      statusBreakdown,
+      typeBreakdown,
+      recentOrders
+    ] = await Promise.all([
+      // Total orders count
+      prisma.order.count({ where }),
+      // Total revenue
+      prisma.order.aggregate({
+        where,
+        _sum: { totalAmount: true }
+      }),
+      // Status breakdown
+      prisma.order.groupBy({
+        by: ["status"],
+        where,
+        _count: { id: true }
+      }),
+      // Type breakdown
+      prisma.order.groupBy({
+        by: ["orderType"],
+        where,
+        _count: { id: true }
+      }),
+      // Recent orders (last 10)
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10
+      })
+    ]);
+    return {
+      totalOrders,
+      totalRevenue: totalRevenue._sum.totalAmount || 0,
+      statusBreakdown: statusBreakdown.reduce((acc, item) => {
+        acc[item.status] = item._count.id;
+        return acc;
+      }, {}),
+      typeBreakdown: typeBreakdown.reduce((acc, item) => {
+        acc[item.orderType] = item._count.id;
+        return acc;
+      }, {}),
+      recentOrders
+    };
   }
 };
 
