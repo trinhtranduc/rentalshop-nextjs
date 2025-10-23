@@ -83,6 +83,12 @@ export const orderSwaggerConfig = {
             description: 'Filter by customer ID'
           },
           {
+            name: 'productId',
+            in: 'query',
+            schema: { type: 'number' },
+            description: 'Filter by product ID'
+          },
+          {
             name: 'startDate',
             in: 'query',
             schema: { type: 'string', format: 'date' },
