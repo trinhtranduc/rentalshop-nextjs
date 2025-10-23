@@ -1014,7 +1014,15 @@ export const simplifiedOrders = {
     // Build where clause
     const where: any = whereClause || {};
 
-    // Handle merchant-level filtering
+    // Handle merchant-level filtering from whereClause first
+    if (where.merchantId) {
+      where.outlet = {
+        merchantId: where.merchantId
+      };
+      delete where.merchantId; // Remove direct merchantId
+    }
+
+    // Handle merchant-level filtering from parameters
     if (merchantId) {
       where.outlet = {
         merchantId: merchantId

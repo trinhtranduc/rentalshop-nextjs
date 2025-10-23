@@ -1299,6 +1299,12 @@ var simplifiedOrders = {
       where: whereClause
     } = filters;
     const where = whereClause || {};
+    if (where.merchantId) {
+      where.outlet = {
+        merchantId: where.merchantId
+      };
+      delete where.merchantId;
+    }
     if (merchantId) {
       where.outlet = {
         merchantId
