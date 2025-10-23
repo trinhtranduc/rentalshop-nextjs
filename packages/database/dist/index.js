@@ -1343,6 +1343,7 @@ var simplifiedOrders = {
     }
     if (outletId) {
       where.outletId = outletId;
+      delete where.outlet;
     }
     if (status) where.status = status;
     if (orderType) where.orderType = orderType;
