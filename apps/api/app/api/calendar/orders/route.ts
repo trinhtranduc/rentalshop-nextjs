@@ -51,21 +51,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     console.log('📅 Date range:', { startDate, endDate });
 
     // Build where clause with role-based filtering
+    // Calendar should show orders by pickup date, not return date
     const where: any = {
-      OR: [
-        {
-          pickupPlanAt: {
-            gte: startDate,
-            lte: endDate
-          }
-        },
-        {
-          returnPlanAt: {
-            gte: startDate,
-            lte: endDate
-          }
-        }
-      ]
+      pickupPlanAt: {
+        gte: startDate,
+        lte: endDate
+      }
     };
 
     // Add optional filters
