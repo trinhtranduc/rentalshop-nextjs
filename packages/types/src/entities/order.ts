@@ -359,7 +359,7 @@ export interface OrderListItem {
   createdByName?: string;
   
   // Order items with flattened product data
-  orderItems: OrderItem[];
+  orderItems: OrderItemFlattened[];
   
   // Calculated fields
   itemCount: number;
@@ -371,7 +371,7 @@ export interface OrderListItem {
  * Order item with flattened product data
  * Used for order list views with simplified structure
  */
-export interface OrderItem {
+export interface OrderItemFlattened {
   id: number;
   quantity: number;
   unitPrice: number;
