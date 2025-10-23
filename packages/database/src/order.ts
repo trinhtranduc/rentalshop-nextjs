@@ -1013,13 +1013,17 @@ export const simplifiedOrders = {
 
     // Build where clause
     const where: any = whereClause || {};
+    
+    console.log('🔍 searchWithItems - Original whereClause:', JSON.stringify(whereClause, null, 2));
 
     // Handle merchant-level filtering from whereClause first
     if (where.merchantId) {
+      console.log('🔍 Found merchantId in whereClause, converting to outlet.merchantId');
       where.outlet = {
         merchantId: where.merchantId
       };
       delete where.merchantId; // Remove direct merchantId
+      console.log('🔍 After conversion:', JSON.stringify(where, null, 2));
     }
 
     // Handle merchant-level filtering from parameters
