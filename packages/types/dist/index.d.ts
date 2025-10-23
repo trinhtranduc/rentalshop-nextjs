@@ -1317,8 +1317,52 @@ interface OrderSearchResponse {
     };
 }
 /**
- * Order with details
- * Used for detailed order views
+ * Order list item (minimal data for list views)
+ * Flattened structure for better performance
+ */
+interface OrderListItem {
+    id: number;
+    orderNumber: string;
+    orderType: OrderType;
+    status: OrderStatus;
+    totalAmount: number;
+    depositAmount: number;
+    notes?: string;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    customerId?: number;
+    customerName?: string;
+    customerPhone?: string;
+    outletId: number;
+    outletName?: string;
+    merchantName?: string;
+    createdById: number;
+    createdByName?: string;
+    orderItems: OrderItemFlattened[];
+    itemCount: number;
+    paymentCount: number;
+    totalPaid: number;
+}
+/**
+ * Order item with flattened product data
+ * Used for order list views with simplified structure
+ */
+interface OrderItemFlattened {
+    id: number;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+    notes?: string;
+    productId?: number;
+    productName?: string;
+    productBarcode?: string;
+    productImages?: string[];
+    productRentPrice?: number;
+    productDeposit?: number;
+}
+/**
+ * Order with details (full data for detail views)
+ * Includes nested objects for comprehensive information
  */
 interface OrderWithDetails {
     id: number;
@@ -1330,29 +1374,53 @@ interface OrderWithDetails {
     createdById: number;
     totalAmount: number;
     depositAmount: number;
+    securityDeposit?: number;
+    damageFee?: number;
+    lateFee?: number;
+    discountType?: 'amount' | 'percentage';
+    discountValue?: number;
+    discountAmount?: number;
     pickupPlanAt?: Date | string;
     returnPlanAt?: Date | string;
     pickedUpAt?: Date | string;
     returnedAt?: Date | string;
-    createdAt: Date | string;
-    updatedAt: Date | string;
-    damageFee?: number;
-    bailAmount?: number;
-    material?: string;
-    securityDeposit?: number;
+    rentalDuration?: number;
+    isReadyToDeliver?: boolean;
     collateralType?: string;
     collateralDetails?: string;
     notes?: string;
-    discountType?: 'amount' | 'percentage';
-    discountValue?: number;
-    discountAmount?: number;
-    merchantId: number;
+    pickupNotes?: string;
+    returnNotes?: string;
+    damageNotes?: string;
+    createdAt: Date | string;
+    updatedAt: Date | string;
     customer?: CustomerReference;
     outlet: OutletReference;
     orderItems: OrderItemWithProduct[];
     payments: Payment[];
     createdBy?: UserReference;
     merchant: MerchantReference;
+    timeline?: OrderTimelineItem[];
+    itemCount: number;
+    paymentCount: number;
+    totalPaid: number;
+}
+/**
+ * Order timeline item for audit log
+ */
+interface OrderTimelineItem {
+    id: number;
+    action: string;
+    description: string;
+    oldValues?: any;
+    newValues?: any;
+    createdAt: Date | string;
+    createdBy?: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+    };
 }
 /**
  * Order action type
@@ -1465,11 +1533,12 @@ interface OrderListData {
  * Used for Orders component with statistics
  */
 interface OrdersData {
-    orders: OrderSearchResult[];
+    orders: OrderListItem[];
     total: number;
     currentPage: number;
     totalPages: number;
     limit: number;
+    hasMore?: boolean;
     stats?: OrderStats;
 }
 /**
@@ -4145,4 +4214,4 @@ interface RequestWithPlatform extends Request {
     platformInfo?: PlatformInfo;
 }
 
-export { type Address, type ApiErrorResponse, type ApiResponse, type AuthUser, type BaseEntity, type BaseEntityWithMerchant, type BaseEntityWithOutlet, type BaseFormInput, type BaseSearchParams, type BaseSearchResult, type BaseUpdateInput, type BillingCycle, type BillingCycleOption, type BillingPeriod, type CalendarData, type CalendarDay, type CalendarEvent, type CalendarEventFormData, type CalendarFilters, type CalendarFiltersProps, type CalendarGridProps, type CalendarNavigationProps, type CalendarSidebarProps, type CalendarViewMode, type CalendarViewProps, type Category, type CategoryAction, type CategoryActionItem, type CategoryActionsProps, type CategoryCardProps, type CategoryCreateInput, type CategoryData, type CategoryFilters, type CategoryFiltersProps, type CategoryFormData, type CategoryFormErrors, type CategoryFormProps, type CategoryGridProps, type CategoryPaginationProps, type CategoryPerformance, type CategoryReference, type CategorySearchParams, type CategorySearchResponse, type CategorySearchResult, type CategoryStats, type CategoryTableProps, type CategoryUpdateInput, type ChangePassword, type ClientPlatform, type ContactInfo, type Currency, type CurrencyCode, type CurrencyFormatOptions, type CurrencySettings, type CurrentSubscription, type Customer, type CustomerAction, type CustomerCreateInput, type CustomerData, type CustomerFilters, type CustomerInput, type CustomerManagement, type CustomerPerformance, type CustomerReference, type CustomerSearchFilter, type CustomerSearchParams, type CustomerSearchResponse, type CustomerSearchResult, type CustomerStats, type CustomerUpdateInput, type CustomerWithMerchant, type DashboardData, type DashboardOrderStats, type DashboardPeriod, type DashboardStats, type DeviceType, type EntityAction, type EntityStatus, type IncomeData, type IncomeDataPoint, type Locale, type LoginCredentials, type Merchant, type MerchantAction, type MerchantCreateInput, type MerchantDetailData, type MerchantDetailStats, type MerchantFilters, type MerchantInfoUpdate, type MerchantReference, type MerchantSearchParams, type MerchantSearchResult, type MerchantStats, type MerchantUpdateInput, type Order, type OrderAction, type OrderCreateInput, type OrderData, type OrderDataPoint, type OrderDetailData, type OrderExportData, type OrderFilters, type OrderHistoryInput, type OrderInput, type OrderItem, type OrderItemData, type OrderItemInput, type OrderItemWithProduct, type OrderListData, type OrderSearchFilter, type OrderSearchParams, type OrderSearchResponse, type OrderSearchResult, type OrderStats, type OrderStatsByPeriod, type OrderStatus, type OrderType, type OrderUpdateInput, type OrderWithDetails, type OrdersData, type Outlet, type OutletAction, type OutletCreateInput, type OutletData, type OutletFilters, type OutletInfoUpdate, type OutletInventorySummary, type OutletPerformance, type OutletReference, type OutletSearchFilter, type OutletSearchParams, type OutletSearchResponse, type OutletSearchResult, type OutletStats, type OutletStock, type OutletStockInput, type OutletStockLevel, type OutletUpdateInput, PRICING_CONFIG, type PaginatedResult, type PaginationMeta, type PaginationParams, type PasswordReset, type Payment, type PaymentInput, type PaymentUpdateInput, type Permission, type PermissionAction, type PermissionCheck, type PermissionResource, type PermissionResult, type PersonalProfileUpdate, type PickupOrder, type Plan, type PlanComparison, type PlanCreateInput, type PlanDetails, type PlanFeature, type PlanFilters, type PlanLimits, type PlanPricing, type PlanUpdateInput, type PlanVariant, type PlanVariantCreateInput, type PlanVariantFilters, type PlanVariantUpdateInput, type PlatformHeaders, type PlatformInfo, type PricingCalculation, type Product, type ProductAction, type ProductCreateInput, type ProductFilters, type ProductInput, type ProductInventorySummary, type ProductPerformance, type ProductReference, type ProductSearchFilter, type ProductSearchParams, type ProductSearchResponse, type ProductSearchResult, type ProductUpdateInput, type ProductWithDetails, type ProductWithStock, type ProfileUpdateInput, type RegisterData, type RequestWithPlatform, type SearchFilters, type SearchParams, type SearchResult, type SecurityUpdate, type SoftDelete, type Subscription, type SubscriptionAction, type SubscriptionCreateInput, type SubscriptionFilters, type SubscriptionPeriod, type SubscriptionUpdateInput, type SubscriptionsResponse, type Timestamp, type TodaysFocus, type TopCategory, type TopCustomer, type TopProduct, type User, type UserAction, type UserCreateInput, type UserData, type UserFilters, type UserPermissions, type UserReference, type UserRole$1 as UserRole, type UserSearchFilter, type UserSearchParams, type UserSearchResult, type UserSession, type UserStats, type UserUpdateInput, type ValidationError, type ValidationResult, calculatePricing, defaultLocale, locales };
+export { type Address, type ApiErrorResponse, type ApiResponse, type AuthUser, type BaseEntity, type BaseEntityWithMerchant, type BaseEntityWithOutlet, type BaseFormInput, type BaseSearchParams, type BaseSearchResult, type BaseUpdateInput, type BillingCycle, type BillingCycleOption, type BillingPeriod, type CalendarData, type CalendarDay, type CalendarEvent, type CalendarEventFormData, type CalendarFilters, type CalendarFiltersProps, type CalendarGridProps, type CalendarNavigationProps, type CalendarSidebarProps, type CalendarViewMode, type CalendarViewProps, type Category, type CategoryAction, type CategoryActionItem, type CategoryActionsProps, type CategoryCardProps, type CategoryCreateInput, type CategoryData, type CategoryFilters, type CategoryFiltersProps, type CategoryFormData, type CategoryFormErrors, type CategoryFormProps, type CategoryGridProps, type CategoryPaginationProps, type CategoryPerformance, type CategoryReference, type CategorySearchParams, type CategorySearchResponse, type CategorySearchResult, type CategoryStats, type CategoryTableProps, type CategoryUpdateInput, type ChangePassword, type ClientPlatform, type ContactInfo, type Currency, type CurrencyCode, type CurrencyFormatOptions, type CurrencySettings, type CurrentSubscription, type Customer, type CustomerAction, type CustomerCreateInput, type CustomerData, type CustomerFilters, type CustomerInput, type CustomerManagement, type CustomerPerformance, type CustomerReference, type CustomerSearchFilter, type CustomerSearchParams, type CustomerSearchResponse, type CustomerSearchResult, type CustomerStats, type CustomerUpdateInput, type CustomerWithMerchant, type DashboardData, type DashboardOrderStats, type DashboardPeriod, type DashboardStats, type DeviceType, type EntityAction, type EntityStatus, type IncomeData, type IncomeDataPoint, type Locale, type LoginCredentials, type Merchant, type MerchantAction, type MerchantCreateInput, type MerchantDetailData, type MerchantDetailStats, type MerchantFilters, type MerchantInfoUpdate, type MerchantReference, type MerchantSearchParams, type MerchantSearchResult, type MerchantStats, type MerchantUpdateInput, type Order, type OrderAction, type OrderCreateInput, type OrderData, type OrderDataPoint, type OrderDetailData, type OrderExportData, type OrderFilters, type OrderHistoryInput, type OrderInput, type OrderItem, type OrderItemData, type OrderItemFlattened, type OrderItemInput, type OrderItemWithProduct, type OrderListData, type OrderListItem, type OrderSearchFilter, type OrderSearchParams, type OrderSearchResponse, type OrderSearchResult, type OrderStats, type OrderStatsByPeriod, type OrderStatus, type OrderTimelineItem, type OrderType, type OrderUpdateInput, type OrderWithDetails, type OrdersData, type Outlet, type OutletAction, type OutletCreateInput, type OutletData, type OutletFilters, type OutletInfoUpdate, type OutletInventorySummary, type OutletPerformance, type OutletReference, type OutletSearchFilter, type OutletSearchParams, type OutletSearchResponse, type OutletSearchResult, type OutletStats, type OutletStock, type OutletStockInput, type OutletStockLevel, type OutletUpdateInput, PRICING_CONFIG, type PaginatedResult, type PaginationMeta, type PaginationParams, type PasswordReset, type Payment, type PaymentInput, type PaymentUpdateInput, type Permission, type PermissionAction, type PermissionCheck, type PermissionResource, type PermissionResult, type PersonalProfileUpdate, type PickupOrder, type Plan, type PlanComparison, type PlanCreateInput, type PlanDetails, type PlanFeature, type PlanFilters, type PlanLimits, type PlanPricing, type PlanUpdateInput, type PlanVariant, type PlanVariantCreateInput, type PlanVariantFilters, type PlanVariantUpdateInput, type PlatformHeaders, type PlatformInfo, type PricingCalculation, type Product, type ProductAction, type ProductCreateInput, type ProductFilters, type ProductInput, type ProductInventorySummary, type ProductPerformance, type ProductReference, type ProductSearchFilter, type ProductSearchParams, type ProductSearchResponse, type ProductSearchResult, type ProductUpdateInput, type ProductWithDetails, type ProductWithStock, type ProfileUpdateInput, type RegisterData, type RequestWithPlatform, type SearchFilters, type SearchParams, type SearchResult, type SecurityUpdate, type SoftDelete, type Subscription, type SubscriptionAction, type SubscriptionCreateInput, type SubscriptionFilters, type SubscriptionPeriod, type SubscriptionUpdateInput, type SubscriptionsResponse, type Timestamp, type TodaysFocus, type TopCategory, type TopCustomer, type TopProduct, type User, type UserAction, type UserCreateInput, type UserData, type UserFilters, type UserPermissions, type UserReference, type UserRole$1 as UserRole, type UserSearchFilter, type UserSearchParams, type UserSearchResult, type UserSession, type UserStats, type UserUpdateInput, type ValidationError, type ValidationResult, calculatePricing, defaultLocale, locales };

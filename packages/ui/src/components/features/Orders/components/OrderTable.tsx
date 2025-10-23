@@ -22,20 +22,31 @@ interface OrderListItem {
   customerId?: number;
   customerName?: string;
   customerPhone?: string;
-  customerEmail?: string;
   outletId: number;
   outletName?: string;
-  outletAddress?: string;
-  merchantId?: number;
   merchantName?: string;
   createdById: number;
   createdByName?: string;
-  createdByEmail?: string;
+  orderItems: OrderItemFlattened[];
   itemCount: number;
   paymentCount: number;
   totalPaid: number;
   pickupPlanAt?: Date | string;
   returnPlanAt?: Date | string;
+}
+
+interface OrderItemFlattened {
+  id: number;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  notes?: string;
+  productId?: number;
+  productName?: string;
+  productBarcode?: string;
+  productImages?: string[];
+  productRentPrice?: number;
+  productDeposit?: number;
 }
 
 interface OrderTableProps {
