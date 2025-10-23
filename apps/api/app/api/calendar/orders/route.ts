@@ -7,8 +7,8 @@ import { handleApiError } from '@rentalshop/utils';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format'),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
+  month: z.coerce.number().int().min(1).max(12),
+  year: z.coerce.number().int().min(2020).max(2030),
   outletId: z.coerce.number().int().positive().optional(),
   merchantId: z.coerce.number().int().positive().optional(),
   status: z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']).optional(),
@@ -42,11 +42,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     console.log('📅 Calendar query:', validatedQuery);
 
-    const { startDate: startDateStr, endDate: endDateStr, outletId, merchantId, status, orderType, limit } = validatedQuery;
+    const { month, year, outletId, merchantId, status, orderType, limit } = validatedQuery;
 
-    // Parse date strings
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+    // Build date range for the requested month
+    const startDate = new Date(year, month - 1, 1); // month is 1-based
+    const endDate = new Date(year, month, 0); // Last day of the month
 
     console.log('📅 Date range:', { startDate, endDate });
 
@@ -192,6 +192,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         success: true,
         data: calendarData,
         meta: {
+          month,
+          year,
           totalDays: Object.keys(calendarData).length,
           stats: {
             totalPickups,
@@ -202,7 +204,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
             end: endDate.toISOString().split('T')[0]
           }
         },
-        code: 'CALENDAR_DATA_SUCCESS', message: `Calendar data for ${startDateStr} to ${endDateStr}`
+        code: 'CALENDAR_DATA_SUCCESS', message: `Calendar data for ${year}-${String(month).padStart(2, '0')}`
       });
     }
 
@@ -211,6 +213,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       success: true,
       data: {},
       meta: {
+        month,
+        year,
         totalDays: 0,
         stats: {
           totalPickups: 0,
@@ -221,7 +225,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           end: endDate.toISOString().split('T')[0]
         }
       },
-      code: 'NO_CALENDAR_DATA', message: `No calendar data for ${startDateStr} to ${endDateStr}`
+      code: 'NO_CALENDAR_DATA', message: `No calendar data for ${year}-${String(month).padStart(2, '0')}`
     });
 
   } catch (error) {
