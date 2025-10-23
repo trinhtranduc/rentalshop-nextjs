@@ -18,7 +18,7 @@ export default function CalendarPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [calendarData, setCalendarData] = useState<CalendarResponse>({});
+  const [calendarData, setCalendarData] = useState<CalendarResponse>({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
   const [calendarMeta, setCalendarMeta] = useState<CalendarMeta | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   
@@ -31,7 +31,7 @@ export default function CalendarPage() {
   const fetchCalendarData = useCallback(async () => {
     if (!authenticated) {
       // Don't show error for unauthenticated users - just show empty calendar
-      setCalendarData({});
+      setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
       setLoading(false);
       return;
     }
@@ -56,10 +56,13 @@ export default function CalendarPage() {
         userOutletId: user?.outletId 
       });
       
-      // 🎯 NEW: Use specialized calendar API
+      // 🎯 NEW: Use specialized calendar API with startDate and endDate
+      const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
+      const endOfMonth = new Date(currentYear, currentMonth, 0);
+      
       const result = await calendarApi.getCalendarOrders({
-        month: currentMonth,
-        year: currentYear,
+        startDate: startOfMonth.toISOString().split('T')[0],
+        endDate: endOfMonth.toISOString().split('T')[0],
         outletId: user?.outletId,
         limit: 4 // Max 4 orders per day
       });
@@ -68,24 +71,24 @@ export default function CalendarPage() {
       
       if (result.success) {
         console.log('📅 Calendar data received:', result.data);
-        console.log('📅 Days with orders:', Object.keys(result.data).length);
+        console.log('📅 Days with orders:', result.data.calendar.length);
         
         setCalendarData(result.data);
         setCalendarMeta(result.meta || null);
         
-        if (Object.keys(result.data).length === 0) {
+        if (result.data.calendar.length === 0) {
           console.log('📅 No orders found for the month');
         }
       } else {
         console.error('❌ Failed to fetch calendar data:', result.message);
         setError(result.message || 'Failed to fetch calendar data');
-        setCalendarData({});
+        setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
         setCalendarMeta(null);
       }
     } catch (error) {
       console.error('💥 Error fetching calendar data:', error);
       setError('An error occurred while fetching calendar data');
-      setCalendarData({});
+      setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
       setCalendarMeta(null);
       handleError(error);
     } finally {
@@ -110,20 +113,20 @@ export default function CalendarPage() {
     
     // Convert date to YYYY-MM-DD format (same as CalendarGrid logic)
     const dateKey = date.toISOString().split('T')[0];
-    const dayData: DayOrders | undefined = calendarData[dateKey];
+    const dayData = calendarData.calendar.find(day => day.date === dateKey);
     
     console.log('📅 Looking for dateKey:', dateKey);
-    console.log('📅 Available dateKeys:', Object.keys(calendarData));
+    console.log('📅 Available dates:', calendarData.calendar.map(day => day.date));
     
     if (dayData) {
       // Only show pickup orders
       const allOrders = [
-        ...dayData.pickups.map((order: CalendarOrderSummary) => ({ ...order, type: 'pickup' as const }))
+        ...dayData.orders.map((order: CalendarOrderSummary) => ({ ...order, type: 'pickup' as const }))
       ];
       
       console.log('📅 Orders found for selected date:', {
         dateKey,
-        pickups: dayData.pickups.length,
+        orders: dayData.orders.length,
         allOrders: allOrders.length
       });
       
@@ -141,29 +144,29 @@ export default function CalendarPage() {
   // Convert calendar data to the format expected by Calendars component
   const pickupOrders: PickupOrder[] = React.useMemo(() => {
     console.log('📅 Transforming calendar data:', { 
-      calendarDataKeys: Object.keys(calendarData),
-      calendarDataLength: Object.keys(calendarData).length
+      calendarDays: calendarData.calendar.length,
+      totalOrders: calendarData.summary.totalOrders
     });
     
     const orders: PickupOrder[] = [];
     
     // Flatten calendar data into pickup orders format
-    for (const [dateKey, dayData] of Object.entries(calendarData)) {
-      const date = new Date(dateKey);
+    for (const dayData of calendarData.calendar) {
+      const date = new Date(dayData.date);
       
       // Add pickup orders
-      dayData.pickups.forEach((order: CalendarOrderSummary) => {
+      dayData.orders.forEach((order: CalendarOrderSummary) => {
         orders.push({
           id: order.id,
           orderNumber: order.orderNumber,
           customerName: order.customerName,
           customerPhone: order.customerPhone,
-          productName: order.productName,
-          productCount: 1,
+          productName: order.productName || 'Unknown Product',
+          productCount: order.productCount || 1,
           totalAmount: order.totalAmount,
           // Keep original field names for CalendarGrid compatibility
-          pickupDate: new Date(order.pickupPlanAt || dateKey),
-          returnDate: new Date(order.returnPlanAt || dateKey),
+          pickupDate: new Date(order.pickupPlanAt || dayData.date),
+          returnDate: new Date(order.returnPlanAt || dayData.date),
           status: order.status,
           outletName: order.outletName,
           notes: order.notes || '',
@@ -190,7 +193,10 @@ export default function CalendarPage() {
       {calendarMeta && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {tcal('stats.monthlyStatistics')} - {calendarMeta.year}/{String(calendarMeta.month).padStart(2, '0')}
+            {tcal('stats.monthlyStatistics')} - {currentDate.toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: '2-digit' 
+            })}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 rounded-lg p-4">
@@ -202,7 +208,7 @@ export default function CalendarPage() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-blue-700">{tcal('labels.pickupOrders')}</p>
-                  <p className="text-2xl font-bold text-blue-900">{calendarMeta.stats.totalPickups}</p>
+                  <p className="text-2xl font-bold text-blue-900">{calendarData.summary.totalPickups}</p>
                 </div>
               </div>
             </div>
@@ -216,7 +222,7 @@ export default function CalendarPage() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-green-600">{tcal('labels.returnOrders')}</p>
-                  <p className="text-2xl font-bold text-green-900">0</p>
+                  <p className="text-2xl font-bold text-green-900">{calendarData.summary.totalReturns}</p>
                 </div>
               </div>
             </div>
@@ -230,15 +236,15 @@ export default function CalendarPage() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-purple-600">{tcal('labels.totalOrders')}</p>
-                  <p className="text-2xl font-bold text-purple-900">{calendarMeta.stats.totalOrders}</p>
+                  <p className="text-2xl font-bold text-purple-900">{calendarData.summary.totalOrders}</p>
                 </div>
               </div>
             </div>
           </div>
           
           <div className="mt-4 text-sm text-gray-600">
-            <p>{tcal('stats.activeDays')}: {calendarMeta.totalDays} {tcal('stats.daysWithScheduledOrders')}</p>
-            <p>{tcal('stats.dateRange')}: {calendarMeta.dateRange.start} {tcal('stats.to')} {calendarMeta.dateRange.end}</p>
+            <p>{tcal('stats.activeDays')}: {calendarData.calendar.length} {tcal('stats.daysWithScheduledOrders')}</p>
+            <p>{tcal('stats.dateRange')}: {calendarMeta?.dateRange.start} {tcal('stats.to')} {calendarMeta?.dateRange.end}</p>
           </div>
         </div>
       )}
