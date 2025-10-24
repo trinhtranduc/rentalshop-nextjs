@@ -8,7 +8,7 @@ import { z } from 'zod';
 const productAvailabilitySchema = z.object({
   productId: z.coerce.number().int().positive('Product ID must be a positive integer'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
-  outletId: z.coerce.number().int().positive().optional()
+  outletId: z.coerce.number().int().positive().optional() // Required for merchants, auto-filled for outlet users
 });
 
 /**
@@ -56,25 +56,28 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
       // Role-based outlet filtering
       let finalOutletId = queryOutletId;
+      
       if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+        // Outlet users: use their assigned outlet
         finalOutletId = userScope.outletId;
-      } else if (user.role === 'MERCHANT' && !queryOutletId) {
-        // Merchant can check any outlet, but if not specified, use first outlet
-        const outlets = await db.outlets.findMany({
-          where: { merchantId: userScope.merchantId },
-          select: { id: true },
-          take: 1
-        });
-        if (outlets.length > 0) {
-          finalOutletId = outlets[0].id;
+      } else if (user.role === 'MERCHANT') {
+        // Merchants: outletId is required
+        if (!queryOutletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_REQUIRED', 'Outlet ID is required for merchants'),
+            { status: 400 }
+          );
         }
-      }
-
-      if (!finalOutletId) {
-        return NextResponse.json(
-          ResponseBuilder.error('OUTLET_REQUIRED', 'Outlet ID is required'),
-          { status: 400 }
-        );
+        finalOutletId = queryOutletId;
+      } else if (user.role === 'ADMIN') {
+        // Admins: outletId is required
+        if (!queryOutletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_REQUIRED', 'Outlet ID is required for admins'),
+            { status: 400 }
+          );
+        }
+        finalOutletId = queryOutletId;
       }
 
       // Get product information
@@ -86,11 +89,18 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         );
       }
 
-      // Check if product belongs to the outlet
-      if (product.outletId !== finalOutletId) {
+      // Check if product exists in the outlet
+      const outletStock = await db.prisma.outletStock.findFirst({
+        where: {
+          productId: productId,
+          outletId: finalOutletId
+        }
+      });
+
+      if (!outletStock) {
         return NextResponse.json(
-          ResponseBuilder.error('PRODUCT_OUTLET_MISMATCH', 'Product does not belong to this outlet'),
-          { status: 400 }
+          ResponseBuilder.error('PRODUCT_OUTLET_NOT_FOUND', 'Product not found in specified outlet'),
+          { status: 404 }
         );
       }
 
@@ -161,11 +171,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         include: {
           customer: {
             select: {
-              id: true,
               firstName: true,
               lastName: true,
-              phone: true,
-              email: true
+              phone: true
             }
           },
           orderItems: {
@@ -189,7 +197,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       });
 
       // Calculate product summary
-      const totalStock = product.totalStock || 0;
+      const totalStock = outletStock.stock;
       let totalRented = 0;
       let totalReserved = 0;
 
@@ -213,8 +221,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           id: product.id,
           name: product.name,
           barcode: product.barcode,
-          outletId: product.outletId,
-          outletName: product.outlet?.name || 'Unknown Outlet'
+          outletId: finalOutletId,
+          outletName: 'Outlet' // We'll get this from outletStock if needed
         },
         date: date,
         summary: {
@@ -230,10 +238,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           orderType: order.orderType,
           status: order.status,
           customer: {
-            id: order.customer?.id,
             name: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
-            phone: order.customer?.phone,
-            email: order.customer?.email
+            phone: order.customer?.phone
           },
           pickupPlanAt: order.pickupPlanAt,
           returnPlanAt: order.returnPlanAt,
