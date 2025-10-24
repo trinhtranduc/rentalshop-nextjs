@@ -11,6 +11,7 @@ import { merchantSwaggerConfig } from './merchants';
 import { outletSwaggerConfig } from './outlets';
 import { subscriptionSwaggerConfig } from './subscriptions';
 import { calendarSwaggerConfig } from './calendar';
+import { productAvailabilitySwagger } from './products';
 
 const environment = getCurrentEnvironment();
 const apiUrl = getApiUrl();
@@ -1587,7 +1588,10 @@ export const comprehensiveSwaggerConfig = {
     ...subscriptionSwaggerConfig.paths,
 
     // Calendar Management Endpoints - Merge from calendarSwaggerConfig
-    ...calendarSwaggerConfig.paths
+    ...calendarSwaggerConfig.paths,
+
+    // Product Availability Endpoints - Merge from productAvailabilitySwagger
+    ...productAvailabilitySwagger
   },
   components: {
     securitySchemes: {
