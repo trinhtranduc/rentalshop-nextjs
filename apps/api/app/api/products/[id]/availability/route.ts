@@ -79,12 +79,13 @@ export async function GET(
 
       // Determine outlet ID based on user role
       let finalOutletId;
+      const { outletId } = query;
+      
       if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
-        // Outlet users: use their assigned outlet
-        finalOutletId = userOutletId;
+        // Outlet users: use query outletId if provided, otherwise use their assigned outlet
+        finalOutletId = outletId ? parseInt(outletId) : userOutletId;
       } else if (user.role === 'MERCHANT' || user.role === 'ADMIN') {
         // Merchants/Admins: outletId is required in query
-        const { outletId } = query;
         if (!outletId) {
           return NextResponse.json(
             ResponseBuilder.error('OUTLET_REQUIRED', 'Outlet ID is required for merchants and admins'),

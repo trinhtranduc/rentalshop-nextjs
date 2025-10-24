@@ -58,8 +58,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       let finalOutletId = queryOutletId;
       
       if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
-        // Outlet users: use their assigned outlet
-        finalOutletId = userScope.outletId;
+        // Outlet users: use query outletId if provided, otherwise use their assigned outlet
+        finalOutletId = queryOutletId || userScope.outletId;
       } else if (user.role === 'MERCHANT') {
         // Merchants: outletId is required
         if (!queryOutletId) {
