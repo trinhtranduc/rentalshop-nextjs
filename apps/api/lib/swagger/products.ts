@@ -191,8 +191,8 @@ export const productAvailabilitySwagger = {
   '/api/products/{id}/availability': {
     get: {
       tags: ['Products'],
-      summary: 'Check product availability for specific date or date range',
-      description: 'Get product availability information including stock, rented quantity, and orders for a specific date or date range. Supports both single date (YYYY-MM-DD) and precise datetime range checking.',
+      summary: 'Check product availability with precise time analysis',
+      description: 'Advanced product availability checking with precise time analysis, conflict detection, and timezone support. Ideal for booking systems and detailed scheduling.',
       parameters: [
         {
           name: 'id',
