@@ -181,8 +181,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         outletId: finalOutletId,
         targetDate: date,
         totalStock,
-        ordersFound: orders.length,
-        ordersDetails: orders.map(o => ({
+        ordersFound: allOrders.length,
+        ordersDetails: allOrders.map(o => ({
           orderNumber: o.orderNumber,
           orderType: o.orderType,
           status: o.status,
