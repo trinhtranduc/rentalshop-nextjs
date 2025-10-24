@@ -73,15 +73,8 @@ export const productAvailabilitySwagger = {
                             orderNumber: { type: 'string', example: 'ORD-001-0001' },
                             orderType: { type: 'string', example: 'RENT' },
                             status: { type: 'string', example: 'PICKUPED' },
-                            customer: {
-                              type: 'object',
-                              properties: {
-                                id: { type: 'number', example: 1 },
-                                name: { type: 'string', example: 'John Smith' },
-                                phone: { type: 'string', example: '+1-555-1000' },
-                                email: { type: 'string', example: 'john@example.com' }
-                              }
-                            },
+                            customerName: { type: 'string', example: 'John Smith' },
+                            customerPhone: { type: 'string', example: '+1-555-1000' },
                             pickupPlanAt: { type: 'string', format: 'date-time' },
                             returnPlanAt: { type: 'string', format: 'date-time' },
                             pickedUpAt: { type: 'string', format: 'date-time' },
@@ -295,15 +288,8 @@ export const productAvailabilitySwagger = {
                             orderNumber: { type: 'string', example: 'ORD-001-0001' },
                             orderType: { type: 'string', example: 'RENT' },
                             status: { type: 'string', example: 'PICKUPED' },
-                            customer: {
-                              type: 'object',
-                              properties: {
-                                id: { type: 'number', example: 1 },
-                                name: { type: 'string', example: 'John Smith' },
-                                phone: { type: 'string', example: '+1-555-1000' },
-                                email: { type: 'string', example: 'john@example.com' }
-                              }
-                            },
+                            customerName: { type: 'string', example: 'John Smith' },
+                            customerPhone: { type: 'string', example: '+1-555-1000' },
                             pickupPlanAt: { type: 'string', format: 'date-time' },
                             returnPlanAt: { type: 'string', format: 'date-time' },
                             pickedUpAt: { type: 'string', format: 'date-time' },
