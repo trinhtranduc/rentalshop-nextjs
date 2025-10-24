@@ -229,15 +229,22 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
         order.orderItems.forEach((item: any) => {
           if (item.productId === productId) {
-            // Only RENT orders should be counted for availability
             if (order.orderType === 'RENT') {
+              // RENT orders: only PICKUPED counts as "rented"
               if (order.status === 'PICKUPED') {
                 totalRented += item.quantity;
               } else if (order.status === 'RESERVED') {
                 totalReserved += item.quantity;
               }
+            } else if (order.orderType === 'SALE') {
+              // SALE orders: only PICKUPED counts as "rented" (removes from inventory)
+              if (order.status === 'PICKUPED') {
+                totalRented += item.quantity;
+              } else if (order.status === 'RESERVED') {
+                totalReserved += item.quantity;
+              }
+              // COMPLETED SALE orders don't count for availability (already sold)
             }
-            // SALE orders (COMPLETED, RESERVED) are not counted for rental availability
           }
         });
       });
