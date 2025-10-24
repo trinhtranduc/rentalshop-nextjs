@@ -1,4 +1,4 @@
-import { SwaggerBuilder } from '@rentalshop/utils';
+// Swagger documentation for product availability APIs
 
 export const productAvailabilitySwagger = {
   '/api/products/availability': {
@@ -26,7 +26,7 @@ export const productAvailabilitySwagger = {
           in: 'query',
           required: false,
           schema: { type: 'number' },
-          description: 'Outlet ID (optional for merchants, required for outlet users)'
+          description: 'Outlet ID (required for merchants/admins, auto-filled for outlet users)'
         }
       ],
       responses: {
@@ -242,6 +242,13 @@ export const productAvailabilitySwagger = {
           required: false,
           schema: { type: 'string', default: 'UTC' },
           description: 'Timezone for time calculations (default: UTC)'
+        },
+        {
+          name: 'outletId',
+          in: 'query',
+          required: false,
+          schema: { type: 'number' },
+          description: 'Outlet ID (required for merchants/admins, auto-filled for outlet users)'
         }
       ],
       responses: {

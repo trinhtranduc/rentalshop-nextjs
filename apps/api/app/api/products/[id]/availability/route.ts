@@ -68,12 +68,30 @@ export async function GET(
 
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
+      const userOutletId = userScope.outletId;
       
       if (!userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
+      }
+
+      // Determine outlet ID based on user role
+      let finalOutletId;
+      if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+        // Outlet users: use their assigned outlet
+        finalOutletId = userOutletId;
+      } else if (user.role === 'MERCHANT' || user.role === 'ADMIN') {
+        // Merchants/Admins: outletId is required in query
+        const { outletId } = query;
+        if (!outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_REQUIRED', 'Outlet ID is required for merchants and admins'),
+            { status: 400 }
+          );
+        }
+        finalOutletId = parseInt(outletId);
       }
 
       // 1. Check if product exists and get basic info
@@ -93,10 +111,11 @@ export async function GET(
         );
       }
 
-      // 2. Get current stock availability from OutletStock
-      const outletStocks = await db.prisma.outletStock.findMany({
+      // 2. Get current stock availability from specific outlet
+      const outletStock = await db.prisma.outletStock.findFirst({
         where: {
           productId: productId,
+          outletId: finalOutletId,
         },
         include: {
           outlet: {
@@ -109,10 +128,17 @@ export async function GET(
         },
       });
 
-      // Calculate total available stock across all outlets
-      const totalAvailableStock = outletStocks.reduce((sum, stock) => sum + stock.available, 0);
-      const totalStock = outletStocks.reduce((sum, stock) => sum + stock.stock, 0);
-      const totalRenting = outletStocks.reduce((sum, stock) => sum + stock.renting, 0);
+      if (!outletStock) {
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_OUTLET_NOT_FOUND', 'Product not found in specified outlet'),
+          { status: 404 }
+        );
+      }
+
+      // Get stock info for single outlet
+      const totalAvailableStock = outletStock.available;
+      const totalStock = outletStock.stock;
+      const totalRenting = outletStock.renting;
 
       console.log('🔍 Stock summary:', {
         totalStock,
@@ -135,13 +161,13 @@ export async function GET(
             totalRenting,
             requestedQuantity: quantity,
             isAvailable: stockAvailable,
-            availabilityByOutlet: outletStocks.map(stock => ({
-              outletId: stock.outlet.id,
-              outletName: stock.outlet.name,
-              stock: stock.stock,
-              available: stock.available,
-              renting: stock.renting,
-            })),
+            availabilityByOutlet: [{
+              outletId: outletStock.outlet.id,
+              outletName: outletStock.outlet.name,
+              stock: outletStock.stock,
+              available: outletStock.available,
+              renting: outletStock.renting,
+            }],
             conflicts: [],
             message: stockAvailable 
               ? `Available: ${totalAvailableStock} units` 
@@ -270,12 +296,12 @@ export async function GET(
         }
       });
 
-      // 6. Calculate conflicts by outlet with precise time analysis
-      const conflictsByOutlet = new Map<number, {
-        outletId: number;
-        outletName: string;
-        conflictingQuantity: number;
-        conflicts: Array<{
+      // 6. Calculate conflicts for single outlet with precise time analysis
+      const outletConflicts = {
+        outletId: finalOutletId,
+        outletName: outletStock.outlet.name,
+        conflictingQuantity: 0,
+        conflicts: [] as Array<{
           orderNumber: string;
           customerName: string;
           pickupDate: string;
@@ -286,26 +312,13 @@ export async function GET(
           conflictDuration: number; // in milliseconds
           conflictHours: number;
           conflictType: 'pickup_overlap' | 'return_overlap' | 'period_overlap' | 'complete_overlap';
-        }>;
-      }>();
+        }>
+      };
 
       conflictingOrders.forEach(order => {
-        const outletId = order.outlet.id;
-        const outletName = order.outlet.name;
-        
-        if (!conflictsByOutlet.has(outletId)) {
-          conflictsByOutlet.set(outletId, {
-            outletId,
-            outletName,
-            conflictingQuantity: 0,
-            conflicts: []
-          });
-        }
-
-        const outletConflict = conflictsByOutlet.get(outletId)!;
         
         order.orderItems.forEach(item => {
-          outletConflict.conflictingQuantity += item.quantity;
+          outletConflicts.conflictingQuantity += item.quantity;
           
           // Calculate precise conflict analysis if time precision is enabled
           const orderPickup = order.pickupPlanAt;
@@ -342,7 +355,7 @@ export async function GET(
             const conflictMs = conflictEnd.getTime() - conflictStart.getTime();
             const conflictHours = conflictMs / (1000 * 60 * 60);
             
-            outletConflict.conflicts.push({
+            outletConflicts.conflicts.push({
               orderNumber: order.orderNumber,
               customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
               pickupDate: orderPickup.toISOString(),
@@ -360,7 +373,7 @@ export async function GET(
             });
           } else {
             // Fallback for orders without precise times
-            outletConflict.conflicts.push({
+            outletConflicts.conflicts.push({
               orderNumber: order.orderNumber,
               customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
               pickupDate: orderPickup?.toISOString() || '',
@@ -384,35 +397,27 @@ export async function GET(
         });
       });
 
-      // 7. Determine final availability considering conflicts
-      const availabilityResults = outletStocks.map(stock => {
-        const outletConflicts = conflictsByOutlet.get(stock.outlet.id);
-        const conflictingQuantity = outletConflicts?.conflictingQuantity || 0;
-        
-        // Calculate available quantity considering conflicts during rental period
-        const effectivelyAvailable = Math.max(0, stock.available - conflictingQuantity);
-        const canFulfillRequest = effectivelyAvailable >= quantity;
+      // 7. Determine final availability considering conflicts for single outlet
+      const conflictingQuantity = outletConflicts.conflictingQuantity;
+      
+      // Calculate available quantity considering conflicts during rental period
+      const effectivelyAvailable = Math.max(0, totalAvailableStock - conflictingQuantity);
+      const canFulfillRequest = effectivelyAvailable >= quantity;
 
-        return {
-          outletId: stock.outlet.id,
-          outletName: stock.outlet.name,
-          stock: stock.stock,
-          available: stock.available,
-          renting: stock.renting,
-          conflictingQuantity,
-          effectivelyAvailable,
-          canFulfillRequest,
-          conflicts: outletConflicts?.conflicts || [],
-        };
-      });
+      const availabilityResult = {
+        outletId: outletStock.outlet.id,
+        outletName: outletStock.outlet.name,
+        stock: outletStock.stock,
+        available: outletStock.available,
+        renting: outletStock.renting,
+        conflictingQuantity,
+        effectivelyAvailable,
+        canFulfillRequest,
+        conflicts: outletConflicts.conflicts,
+      };
 
-      // Overall availability (any outlet can fulfill the request)
-      const overallAvailable = availabilityResults.some(result => result.canFulfillRequest);
-
-      // Find the best outlet (most available stock)
-      const bestOutlet = availabilityResults
-        .filter(result => result.canFulfillRequest)
-        .sort((a, b) => b.effectivelyAvailable - a.effectivelyAvailable)[0];
+      // Overall availability
+      const overallAvailable = canFulfillRequest;
 
       return NextResponse.json(
         ResponseBuilder.success('AVAILABILITY_CHECKED', {
@@ -440,13 +445,13 @@ export async function GET(
           isAvailable: overallAvailable && stockAvailable,
           stockAvailable,
           hasNoConflicts: conflictingOrders.length === 0,
-          availabilityByOutlet: availabilityResults,
-          bestOutlet: bestOutlet ? {
-            outletId: bestOutlet.outletId,
-            outletName: bestOutlet.outletName,
-            effectivelyAvailable: bestOutlet.effectivelyAvailable,
-          } : null,
-          totalConflictsFound: conflictingOrders.length,
+          availabilityByOutlet: [availabilityResult],
+          bestOutlet: {
+            outletId: availabilityResult.outletId,
+            outletName: availabilityResult.outletName,
+            effectivelyAvailable: availabilityResult.effectivelyAvailable,
+          },
+          totalConflictsFound: outletConflicts.conflicts.length,
           // Enhanced message with time precision
           message: overallAvailable && stockAvailable
             ? includeTimePrecision
