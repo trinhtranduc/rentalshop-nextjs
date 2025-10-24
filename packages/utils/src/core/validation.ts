@@ -247,6 +247,52 @@ export const orderUpdateSchema = baseOrderSchema.partial().extend({
   status: orderStatusEnum.optional(),
   pickedUpAt: z.coerce.date().optional(),
   returnedAt: z.coerce.date().optional(),
+  
+  // Additional fields from Order model for comprehensive updates
+  id: z.coerce.number().int().positive().optional(), // Order ID (read-only, for validation)
+  orderNumber: z.string().optional(), // Order number (read-only, for validation)
+  
+  // Financial fields
+  totalAmount: z.coerce.number().nonnegative().optional(),
+  depositAmount: z.coerce.number().nonnegative().optional(),
+  securityDeposit: z.coerce.number().nonnegative().optional(),
+  damageFee: z.coerce.number().nonnegative().optional(),
+  lateFee: z.coerce.number().nonnegative().optional(),
+  discountType: z.enum(['amount', 'percentage']).optional(),
+  discountValue: z.coerce.number().nonnegative().optional(),
+  discountAmount: z.coerce.number().nonnegative().optional(),
+  
+  // Date fields
+  pickupPlanAt: z.coerce.date().optional(),
+  returnPlanAt: z.coerce.date().optional(),
+  pickedUpAt: z.coerce.date().optional(),
+  returnedAt: z.coerce.date().optional(),
+  
+  // Rental info
+  rentalDuration: z.coerce.number().int().nonnegative().optional(),
+  isReadyToDeliver: z.boolean().optional(),
+  
+  // Collateral info
+  collateralType: z.enum(['CASH', 'CREDIT_CARD', 'ID_CARD', 'DOCUMENT', 'OTHER']).optional(),
+  collateralDetails: z.string().optional(),
+  
+  // Notes
+  notes: z.string().optional(),
+  pickupNotes: z.string().optional(),
+  returnNotes: z.string().optional(),
+  damageNotes: z.string().optional(),
+  
+  // Customer info (for quick updates)
+  customerId: z.coerce.number().int().positive().optional(),
+  customerName: z.string().optional(),
+  customerPhone: z.string().optional(),
+  customerEmail: z.string().email().optional(),
+  
+  // Outlet info
+  outletId: z.coerce.number().int().positive().optional(),
+  
+  // Order items (for complex updates)
+  orderItems: z.array(orderItemSchema).optional(),
 });
 
 export type OrdersQuery = z.infer<typeof ordersQuerySchema>;
