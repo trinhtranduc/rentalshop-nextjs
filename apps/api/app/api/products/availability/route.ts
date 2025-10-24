@@ -113,60 +113,16 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
       // Get orders that have this product and overlap with the target date
       // CRITICAL FIX: Ensure we only get orders from the specific outlet
-      const orders = await db.prisma.order.findMany({
+      // Get ALL orders for this product in the specific outlet (no date filtering)
+      const allOrders = await db.prisma.order.findMany({
         where: {
-          outletId: finalOutletId, // Filter by specific outlet
-          orderType: 'RENT', // Only get RENT orders for availability calculation
+          outletId: finalOutletId,
+          orderType: 'RENT',
           orderItems: {
             some: {
               productId: productId
             }
-          },
-          OR: [
-            // Orders that start on this date
-            {
-              pickupPlanAt: {
-                gte: startOfDay,
-                lte: endOfDay
-              }
-            },
-            // Orders that end on this date
-            {
-              returnPlanAt: {
-                gte: startOfDay,
-                lte: endOfDay
-              }
-            },
-            // Orders that span across this date
-            {
-              AND: [
-                {
-                  pickupPlanAt: {
-                    lte: startOfDay
-                  }
-                },
-                {
-                  OR: [
-                    {
-                      returnPlanAt: {
-                        gte: endOfDay
-                      }
-                    },
-                    {
-                      AND: [
-                        {
-                          returnPlanAt: null
-                        },
-                        {
-                          status: 'PICKUPED'
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
+          }
         },
         include: {
           customer: {
@@ -196,6 +152,22 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         }
       });
 
+      // Filter orders that are active on the specific date for availability calculation
+      const activeOrders = allOrders.filter(order => {
+        const orderPickup = order.pickupPlanAt ? new Date(order.pickupPlanAt) : null;
+        const orderReturn = order.returnPlanAt ? new Date(order.returnPlanAt) : null;
+        
+        if (!orderPickup) return false;
+        
+        // Order is active if:
+        // 1. Pickup date is on or before the check date
+        // 2. Return date is on or after the check date (or no return date for PICKUPED orders)
+        const isPickupOnOrBefore = orderPickup <= endOfDay;
+        const isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : (order.status === 'PICKUPED');
+        
+        return isPickupOnOrBefore && isReturnOnOrAfter;
+      });
+
       // Calculate product summary
       const totalStock = outletStock.stock;
       let totalRented = 0;
@@ -220,7 +192,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         }))
       });
 
-      orders.forEach((order: any) => {
+      activeOrders.forEach((order: any) => {
         // Double-check that order belongs to the correct outlet
         if (order.outletId !== finalOutletId) {
           console.warn(`Order ${order.orderNumber} belongs to outlet ${order.outletId}, expected ${finalOutletId}`);
@@ -279,7 +251,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           totalAvailable: Math.max(0, totalAvailable),
           isAvailable: totalAvailable > 0
         },
-        orders: orders.map((order: any) => ({
+        orders: allOrders.map((order: any) => ({
           id: order.id,
           orderNumber: order.orderNumber,
           orderType: order.orderType,
@@ -303,7 +275,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           }))
         })),
         meta: {
-          totalOrders: orders.length,
+          totalOrders: allOrders.length,
           date: date,
           checkedAt: new Date().toISOString()
         }
