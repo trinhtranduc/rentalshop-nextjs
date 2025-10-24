@@ -129,9 +129,30 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         include: {
           customer: {
             select: {
+              id: true,
               firstName: true,
               lastName: true,
-              phone: true
+              phone: true,
+              email: true
+            }
+          },
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+              merchant: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          },
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
             }
           },
           orderItems: {
@@ -143,9 +164,17 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
                 select: {
                   id: true,
                   name: true,
-                  barcode: true
+                  barcode: true,
+                  images: true,
+                  rentPrice: true,
+                  deposit: true
                 }
               }
+            }
+          },
+          _count: {
+            select: {
+              payments: true
             }
           }
         },
@@ -253,54 +282,85 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           totalAvailable: Math.max(0, totalAvailable),
           isAvailable: totalAvailable > 0
         },
-        orders: allOrders.map((order: any) => {
-          // Filter order items for this specific product
-          const productItems = order.orderItems.filter((item: any) => item.productId === productId);
+      orders: allOrders.map((order: any) => {
+        // Filter order items for this specific product
+        const productItems = order.orderItems.filter((item: any) => item.productId === productId);
+        
+        return {
+          // Basic order info
+          id: order.id,
+          orderNumber: order.orderNumber,
+          orderType: order.orderType,
+          status: order.status,
+          totalAmount: order.totalAmount,
+          depositAmount: order.depositAmount,
+          securityDeposit: order.securityDeposit || 0,
+          damageFee: order.damageFee || 0,
+          lateFee: order.lateFee || 0,
+          discountType: order.discountType || null,
+          discountValue: order.discountValue || 0,
+          discountAmount: order.discountAmount || 0,
           
-          return {
-            // Basic order info
-            id: order.id,
-            orderNumber: order.orderNumber,
-            orderType: order.orderType,
-            status: order.status,
-            totalAmount: order.totalAmount,
-            depositAmount: order.depositAmount,
-            
-            // Flatten dates
-            pickupPlanAt: order.pickupPlanAt,
-            returnPlanAt: order.returnPlanAt,
-            pickedUpAt: order.pickedUpAt,
-            returnedAt: order.returnedAt,
-            createdAt: order.createdAt,
-            updatedAt: order.updatedAt,
-            
-            // Flatten outlet info
-            outletId: order.outletId,
-            outletName: order.outlet?.name || 'Unknown Outlet',
-            
-            // Flatten customer info
-            customerId: order.customerId,
-            customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
-            customerPhone: order.customer?.phone || null,
-            customerEmail: order.customer?.email || null,
-            
-            // Flatten merchant info
-            merchantId: order.merchantId,
-            merchantName: order.merchant?.name || 'Unknown Merchant',
-            
-            // Order items (only for this product)
-            orderItems: productItems.map((item: any) => ({
-              id: item.id,
-              productId: item.productId,
-              productName: item.product?.name || 'Unknown Product',
-              productBarcode: item.product?.barcode || null,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              totalPrice: item.totalPrice,
-              deposit: item.deposit || 0
-            }))
-          };
-        }),
+          // Flatten dates
+          pickupPlanAt: order.pickupPlanAt,
+          returnPlanAt: order.returnPlanAt,
+          pickedUpAt: order.pickedUpAt,
+          returnedAt: order.returnedAt,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          
+          // Rental info
+          rentalDuration: order.rentalDuration || null,
+          isReadyToDeliver: order.isReadyToDeliver || false,
+          collateralType: order.collateralType || null,
+          collateralDetails: order.collateralDetails || null,
+          
+          // Notes
+          notes: order.notes || '',
+          pickupNotes: order.pickupNotes || null,
+          returnNotes: order.returnNotes || null,
+          damageNotes: order.damageNotes || '',
+          
+          // Flatten outlet info
+          outletId: order.outletId,
+          outletName: order.outlet?.name || 'Unknown Outlet',
+          
+          // Flatten customer info
+          customerId: order.customerId,
+          customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
+          customerPhone: order.customer?.phone || null,
+          customerEmail: order.customer?.email || null,
+          
+          // Flatten merchant info
+          merchantId: order.outlet?.merchant?.id || null,
+          merchantName: order.outlet?.merchant?.name || 'Unknown Merchant',
+          
+          // Created by info
+          createdById: order.createdById || null,
+          createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
+          
+          // Order items (only for this product)
+          orderItems: productItems.map((item: any) => ({
+            id: item.id,
+            productId: item.productId,
+            productName: item.product?.name || 'Unknown Product',
+            productBarcode: item.product?.barcode || null,
+            productImages: item.product?.images || null,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            deposit: item.deposit || 0,
+            productRentPrice: item.product?.rentPrice || 0,
+            productDeposit: item.product?.deposit || 0,
+            notes: item.notes || ''
+          })),
+          
+          // Summary counts
+          itemCount: productItems.length,
+          paymentCount: order._count?.payments || 0,
+          totalPaid: order.totalPaid || 0
+        };
+      }),
         meta: {
           totalOrders: allOrders.length,
           date: date,
