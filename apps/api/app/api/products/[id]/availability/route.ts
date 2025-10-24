@@ -78,12 +78,12 @@ export async function GET(
       }
 
       // Determine outlet ID based on user role
-      let finalOutletId;
+      let finalOutletId: number;
       const { outletId } = query;
       
       if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
-        finalOutletId = outletId ? parseInt(outletId) : userOutletId;
+        finalOutletId = outletId ? parseInt(outletId) : (userOutletId || 0);
       } else if (user.role === 'MERCHANT' || user.role === 'ADMIN') {
         // Merchants/Admins: outletId is required in query
         if (!outletId) {
@@ -93,6 +93,20 @@ export async function GET(
           );
         }
         finalOutletId = parseInt(outletId);
+      } else {
+        // Fallback for unknown roles
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_USER_ROLE', 'Invalid user role'),
+          { status: 400 }
+        );
+      }
+
+      // Validate finalOutletId
+      if (!finalOutletId || finalOutletId <= 0) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_OUTLET_ID', 'Invalid outlet ID'),
+          { status: 400 }
+        );
       }
 
       // 1. Check if product exists and get basic info
@@ -146,6 +160,8 @@ export async function GET(
         totalAvailableStock,
         totalRenting,
         requestedQuantity: quantity,
+        outletId: finalOutletId,
+        productId: productId,
       });
 
       // 3. Check basic stock availability
@@ -225,6 +241,7 @@ export async function GET(
       // - Order is a RENT type (not SALE)
       // - Order status indicates it's active (RESERVED, PICKUPED)
       // - Rental period overlaps with requested period
+      // - Order belongs to the SPECIFIC outlet (not all merchant outlets)
       
       const conflictingOrders = await db.prisma.order.findMany({
         where: {
@@ -232,6 +249,8 @@ export async function GET(
           status: {
             in: ['RESERVED', 'PICKUPED'] // Active rental orders
           },
+          // CRITICAL FIX: Filter by specific outlet, not all merchant outlets
+          outletId: finalOutletId,
           OR: [
             // Pickup during requested period
             {
@@ -255,12 +274,6 @@ export async function GET(
               ]
             }
           ],
-          // Only check orders from user's merchant scope (except ADMIN)
-          ...(user.role !== 'ADMIN' ? {
-            outlet: {
-              merchantId: userMerchantId
-            }
-          } : {}),
           orderItems: {
             some: {
               productId: productId,
@@ -316,84 +329,99 @@ export async function GET(
         }>
       };
 
+      // CRITICAL FIX: Only count orders from the specific outlet and validate order status
       conflictingOrders.forEach(order => {
+        // Double-check that order belongs to the correct outlet
+        if (order.outletId !== finalOutletId) {
+          console.warn(`Order ${order.orderNumber} belongs to outlet ${order.outletId}, expected ${finalOutletId}`);
+          return; // Skip this order
+        }
         
-        order.orderItems.forEach(item => {
-          outletConflicts.conflictingQuantity += item.quantity;
-          
-          // Calculate precise conflict analysis if time precision is enabled
-          const orderPickup = order.pickupPlanAt;
-          const orderReturn = order.returnPlanAt;
-          
-          if (orderPickup && orderReturn) {
-            // Determine conflict type and duration
-            let conflictType: 'pickup_overlap' | 'return_overlap' | 'period_overlap' | 'complete_overlap';
-            let conflictStart: Date;
-            let conflictEnd: Date;
+        // Only count active rental orders
+        if (order.orderType !== 'RENT' || !['RESERVED', 'PICKUPED'].includes(order.status)) {
+          console.warn(`Order ${order.orderNumber} is not an active rental order (type: ${order.orderType}, status: ${order.status})`);
+          return; // Skip this order
+        }
+        
+        order.orderItems.forEach((item: any) => {
+          // Only count items for the specific product
+          if (item.productId === productId) {
+            outletConflicts.conflictingQuantity += item.quantity;
             
-            if (orderPickup <= rentalStart && orderReturn >= rentalEnd) {
-              // Order completely encompasses requested period
-              conflictType = 'complete_overlap';
-              conflictStart = rentalStart;
-              conflictEnd = rentalEnd;
-            } else if (orderPickup <= rentalStart && orderReturn > rentalStart) {
-              // Order starts before and ends during requested period
-              conflictType = 'period_overlap';
-              conflictStart = rentalStart;
-              conflictEnd = orderReturn;
-            } else if (orderPickup < rentalEnd && orderReturn >= rentalEnd) {
-              // Order starts during and ends after requested period
-              conflictType = 'period_overlap';
-              conflictStart = orderPickup;
-              conflictEnd = rentalEnd;
-            } else {
-              // Order is completely within requested period
-              conflictType = 'complete_overlap';
-              conflictStart = orderPickup;
-              conflictEnd = orderReturn;
-            }
+            // Calculate precise conflict analysis if time precision is enabled
+            const orderPickup = order.pickupPlanAt;
+            const orderReturn = order.returnPlanAt;
             
-            const conflictMs = conflictEnd.getTime() - conflictStart.getTime();
-            const conflictHours = conflictMs / (1000 * 60 * 60);
-            
-            outletConflicts.conflicts.push({
-              orderNumber: order.orderNumber,
-              customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
-              pickupDate: orderPickup.toISOString(),
-              returnDate: orderReturn.toISOString(),
-              pickupDateLocal: includeTimePrecision 
-                ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
-                : orderPickup.toLocaleDateString('en-US'),
-              returnDateLocal: includeTimePrecision 
-                ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
-                : orderReturn.toLocaleDateString('en-US'),
-              quantity: item.quantity,
-              conflictDuration: conflictMs,
-              conflictHours: Math.round(conflictHours * 100) / 100,
-              conflictType,
-            });
-          } else {
-            // Fallback for orders without precise times
-            outletConflicts.conflicts.push({
-              orderNumber: order.orderNumber,
-              customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
-              pickupDate: orderPickup?.toISOString() || '',
-              returnDate: orderReturn?.toISOString() || '',
-              pickupDateLocal: orderPickup ? 
-                (includeTimePrecision 
+            if (orderPickup && orderReturn) {
+              // Determine conflict type and duration
+              let conflictType: 'pickup_overlap' | 'return_overlap' | 'period_overlap' | 'complete_overlap';
+              let conflictStart: Date;
+              let conflictEnd: Date;
+              
+              if (orderPickup <= rentalStart && orderReturn >= rentalEnd) {
+                // Order completely encompasses requested period
+                conflictType = 'complete_overlap';
+                conflictStart = rentalStart;
+                conflictEnd = rentalEnd;
+              } else if (orderPickup <= rentalStart && orderReturn > rentalStart) {
+                // Order starts before and ends during requested period
+                conflictType = 'period_overlap';
+                conflictStart = rentalStart;
+                conflictEnd = orderReturn;
+              } else if (orderPickup < rentalEnd && orderReturn >= rentalEnd) {
+                // Order starts during and ends after requested period
+                conflictType = 'period_overlap';
+                conflictStart = orderPickup;
+                conflictEnd = rentalEnd;
+              } else {
+                // Order is completely within requested period
+                conflictType = 'complete_overlap';
+                conflictStart = orderPickup;
+                conflictEnd = orderReturn;
+              }
+              
+              const conflictMs = conflictEnd.getTime() - conflictStart.getTime();
+              const conflictHours = conflictMs / (1000 * 60 * 60);
+              
+              outletConflicts.conflicts.push({
+                orderNumber: order.orderNumber,
+                customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
+                pickupDate: orderPickup.toISOString(),
+                returnDate: orderReturn.toISOString(),
+                pickupDateLocal: includeTimePrecision 
                   ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
-                  : orderPickup.toLocaleDateString('en-US'))
-                : 'Unknown',
-              returnDateLocal: orderReturn ? 
-                (includeTimePrecision 
+                  : orderPickup.toLocaleDateString('en-US'),
+                returnDateLocal: includeTimePrecision 
                   ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
-                  : orderReturn.toLocaleDateString('en-US'))
-                : 'Unknown',
-              quantity: item.quantity,
-              conflictDuration: 0,
-              conflictHours: 0,
-              conflictType: 'complete_overlap',
-            });
+                  : orderReturn.toLocaleDateString('en-US'),
+                quantity: item.quantity,
+                conflictDuration: conflictMs,
+                conflictHours: Math.round(conflictHours * 100) / 100,
+                conflictType,
+              });
+            } else {
+              // Fallback for orders without precise times
+              outletConflicts.conflicts.push({
+                orderNumber: order.orderNumber,
+                customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
+                pickupDate: orderPickup?.toISOString() || '',
+                returnDate: orderReturn?.toISOString() || '',
+                pickupDateLocal: orderPickup ? 
+                  (includeTimePrecision 
+                    ? orderPickup.toLocaleString('en-US', { timeZone, hour12: false })
+                    : orderPickup.toLocaleDateString('en-US'))
+                  : 'Unknown',
+                returnDateLocal: orderReturn ? 
+                  (includeTimePrecision 
+                    ? orderReturn.toLocaleString('en-US', { timeZone, hour12: false })
+                    : orderReturn.toLocaleDateString('en-US'))
+                  : 'Unknown',
+                quantity: item.quantity,
+                conflictDuration: 0,
+                conflictHours: 0,
+                conflictType: 'complete_overlap',
+              });
+            }
           }
         });
       });
@@ -404,6 +432,25 @@ export async function GET(
       // Calculate available quantity considering conflicts during rental period
       const effectivelyAvailable = Math.max(0, totalAvailableStock - conflictingQuantity);
       const canFulfillRequest = effectivelyAvailable >= quantity;
+
+      // Enhanced logging for debugging rental calculation
+      console.log('🔍 Rental calculation summary:', {
+        outletId: finalOutletId,
+        productId: productId,
+        totalStock,
+        totalAvailableStock,
+        totalRenting,
+        conflictingQuantity,
+        effectivelyAvailable,
+        requestedQuantity: quantity,
+        canFulfillRequest,
+        conflictingOrdersCount: conflictingOrders.length,
+        conflictsDetails: outletConflicts.conflicts.map(c => ({
+          orderNumber: c.orderNumber,
+          quantity: c.quantity,
+          conflictType: c.conflictType
+        }))
+      });
 
       const availabilityResult = {
         outletId: outletStock.outlet.id,

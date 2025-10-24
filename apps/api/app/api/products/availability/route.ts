@@ -112,9 +112,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       endOfDay.setHours(23, 59, 59, 999);
 
       // Get orders that have this product and overlap with the target date
+      // CRITICAL FIX: Ensure we only get orders from the specific outlet
       const orders = await db.prisma.order.findMany({
         where: {
-          outletId: finalOutletId,
+          outletId: finalOutletId, // Filter by specific outlet
           orderType: 'RENT', // Only get RENT orders for availability calculation
           orderItems: {
             some: {
@@ -200,7 +201,32 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       let totalRented = 0;
       let totalReserved = 0;
 
+      // Enhanced logging for debugging
+      console.log('🔍 Product availability calculation:', {
+        productId,
+        outletId: finalOutletId,
+        targetDate: date,
+        totalStock,
+        ordersFound: orders.length,
+        ordersDetails: orders.map(o => ({
+          orderNumber: o.orderNumber,
+          orderType: o.orderType,
+          status: o.status,
+          outletId: o.outletId,
+          items: o.orderItems.map(i => ({
+            productId: i.productId,
+            quantity: i.quantity
+          }))
+        }))
+      });
+
       orders.forEach((order: any) => {
+        // Double-check that order belongs to the correct outlet
+        if (order.outletId !== finalOutletId) {
+          console.warn(`Order ${order.orderNumber} belongs to outlet ${order.outletId}, expected ${finalOutletId}`);
+          return; // Skip this order
+        }
+
         order.orderItems.forEach((item: any) => {
           if (item.productId === productId) {
             // Only RENT orders should be counted for availability
@@ -217,6 +243,17 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       });
 
       const totalAvailable = totalStock - totalRented - totalReserved;
+
+      // Enhanced logging for final calculation
+      console.log('🔍 Final availability calculation:', {
+        productId,
+        outletId: finalOutletId,
+        totalStock,
+        totalRented,
+        totalReserved,
+        totalAvailable,
+        isAvailable: totalAvailable > 0
+      });
 
       // Format response
       const response = {
