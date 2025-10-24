@@ -399,39 +399,68 @@ GET /api/products/availability?productId=12&date=2025-10-24&outletId=1
                 "orderNumber": "ORD-001-0001",
                 "orderType": "RENT",
                 "status": "PICKUPED",
+                "totalAmount": 100.00,
+                "depositAmount": 50.00,
+                "pickupPlanAt": "2025-10-06T10:00:00.000Z",
+                "returnPlanAt": "2025-10-11T18:00:00.000Z",
+                "pickedUpAt": "2025-10-06T10:30:00.000Z",
+                "returnedAt": null,
+                "createdAt": "2025-10-01T08:00:00.000Z",
+                "updatedAt": "2025-10-06T10:30:00.000Z",
+                "outletId": 1,
+                "outletName": "Main Branch",
+                "customerId": 123,
                 "customerName": "John Smith",
-                "pickupPlanDate": "2025-10-06",
-                "returnPlanDate": "2025-10-11",
-                "pickupActualDate": "2025-10-06",
-                "returnActualDate": null,
-                "quantity": 2,
-                "totalAmount": 50.00
+                "customerPhone": "+1-555-1000",
+                "customerEmail": "john@example.com",
+                "merchantId": 1,
+                "merchantName": "ABC Rental Shop",
+                "orderItems": [
+                    {
+                        "id": 1,
+                        "productId": 12,
+                        "productName": "Product 12 - Kitchen Appliances",
+                        "productBarcode": "BAR000012",
+                        "quantity": 2,
+                        "unitPrice": 25.00,
+                        "totalPrice": 50.00,
+                        "deposit": 25.00
+                    }
+                ]
             },
             {
                 "id": 2,
                 "orderNumber": "ORD-001-0002",
                 "orderType": "SALE",
                 "status": "RESERVED",
+                "totalAmount": 150.00,
+                "depositAmount": 0.00,
+                "pickupPlanAt": "2025-10-25T10:00:00.000Z",
+                "returnPlanAt": null,
+                "pickedUpAt": null,
+                "returnedAt": null,
+                "createdAt": "2025-10-20T08:00:00.000Z",
+                "updatedAt": "2025-10-20T08:00:00.000Z",
+                "outletId": 1,
+                "outletName": "Main Branch",
+                "customerId": 124,
                 "customerName": "Jane Doe",
-                "pickupPlanDate": "2025-10-25",
-                "returnPlanDate": null,
-                "pickupActualDate": null,
-                "returnActualDate": null,
-                "quantity": 1,
-                "totalAmount": 150.00
-            },
-            {
-                "id": 3,
-                "orderNumber": "ORD-001-0003",
-                "orderType": "RENT",
-                "status": "COMPLETED",
-                "customerName": "Mike Johnson",
-                "pickupPlanDate": "2025-10-04",
-                "returnPlanDate": "2025-10-10",
-                "pickupActualDate": "2025-10-04",
-                "returnActualDate": "2025-10-10",
-                "quantity": 1,
-                "totalAmount": 25.00
+                "customerPhone": "+1-555-1001",
+                "customerEmail": "jane@example.com",
+                "merchantId": 1,
+                "merchantName": "ABC Rental Shop",
+                "orderItems": [
+                    {
+                        "id": 2,
+                        "productId": 12,
+                        "productName": "Product 12 - Kitchen Appliances",
+                        "productBarcode": "BAR000012",
+                        "quantity": 1,
+                        "unitPrice": 150.00,
+                        "totalPrice": 150.00,
+                        "deposit": 0.00
+                    }
+                ]
             }
         ],
         "meta": {
@@ -477,17 +506,49 @@ struct AvailabilitySummary: Codable {
 }
 
 struct OrderInfo: Codable {
+    // Basic order info
     let id: Int
     let orderNumber: String
     let orderType: String
     let status: String
+    let totalAmount: Double
+    let depositAmount: Double
+    
+    // Dates (ISO format)
+    let pickupPlanAt: String?
+    let returnPlanAt: String?
+    let pickedUpAt: String?
+    let returnedAt: String?
+    let createdAt: String
+    let updatedAt: String
+    
+    // Flattened outlet info
+    let outletId: Int
+    let outletName: String
+    
+    // Flattened customer info
+    let customerId: Int?
     let customerName: String
-    let pickupPlanDate: String?    // Planned pickup date (YYYY-MM-DD)
-    let returnPlanDate: String?    // Planned return date (YYYY-MM-DD, null for SALE)
-    let pickupActualDate: String?  // Actual pickup date (YYYY-MM-DD)
-    let returnActualDate: String?  // Actual return date (YYYY-MM-DD)
-    let quantity: Int              // Total quantity for this product
-    let totalAmount: Double        // Total amount for this product
+    let customerPhone: String?
+    let customerEmail: String?
+    
+    // Flattened merchant info
+    let merchantId: Int
+    let merchantName: String
+    
+    // Order items (only for this product)
+    let orderItems: [OrderItemInfo]
+}
+
+struct OrderItemInfo: Codable {
+    let id: Int
+    let productId: Int
+    let productName: String
+    let productBarcode: String?
+    let quantity: Int
+    let unitPrice: Double
+    let totalPrice: Double
+    let deposit: Double
 }
 ```
 
