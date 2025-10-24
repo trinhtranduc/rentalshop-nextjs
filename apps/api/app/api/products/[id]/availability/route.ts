@@ -8,6 +8,8 @@ import { z } from 'zod';
 const availabilityQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
+  // Support single date format (YYYY-MM-DD) for backward compatibility
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format').optional(),
   quantity: z.coerce.number().min(1).default(1),
   // Support for more granular time-based checking
   includeTimePrecision: z.coerce.boolean().optional().default(true),
@@ -62,7 +64,7 @@ export async function GET(
         );
       }
 
-      const { startDate, endDate, quantity, includeTimePrecision, timeZone } = parsedQuery.data;
+      const { startDate, endDate, date, quantity, includeTimePrecision, timeZone } = parsedQuery.data;
 
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
@@ -123,7 +125,7 @@ export async function GET(
       const stockAvailable = totalAvailableStock >= quantity;
       
       // If no rental dates provided, return basic stock info
-      if (!startDate || !endDate) {
+      if (!date && (!startDate || !endDate)) {
         return NextResponse.json(
           ResponseBuilder.success('AVAILABILITY_CHECKED', {
             productId,
@@ -149,8 +151,22 @@ export async function GET(
       }
 
       // 4. Parse rental dates with timezone support and precise time checking
-      const rentalStart = new Date(startDate);
-      const rentalEnd = new Date(endDate);
+      let rentalStart: Date;
+      let rentalEnd: Date;
+      
+      if (date) {
+        // Single date mode - check availability for entire day
+        rentalStart = new Date(date + 'T00:00:00.000Z');
+        rentalEnd = new Date(date + 'T23:59:59.999Z');
+      } else if (startDate && endDate) {
+        // Date range mode - precise time checking
+        rentalStart = new Date(startDate);
+        rentalEnd = new Date(endDate);
+      } else {
+        // No dates provided - return basic stock info
+        rentalStart = new Date();
+        rentalEnd = new Date();
+      }
 
       // Validate date range
       if (rentalStart >= rentalEnd) {
