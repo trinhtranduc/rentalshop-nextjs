@@ -117,7 +117,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       const allOrders = await db.prisma.order.findMany({
         where: {
           outletId: finalOutletId,
-          orderType: 'RENT',
+          orderType: {
+            in: ['RENT', 'SALE'] // Include both RENT and SALE orders
+          },
           orderItems: {
             some: {
               productId: productId
