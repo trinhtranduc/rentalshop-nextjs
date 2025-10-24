@@ -15,6 +15,17 @@ const productAvailabilitySchema = z.object({
  * GET /api/products/availability
  * Check product availability for a specific date
  * Returns product summary (stock, rented, available) and orders for that date
+ * 
+ * Query parameters:
+ * - productId: Product ID to check availability for
+ * - date: Date to check availability (YYYY-MM-DD format)
+ * - outletId: Optional outlet ID (required for outlet users)
+ * 
+ * Response includes:
+ * - Product information
+ * - Stock summary (total, rented, available)
+ * - Orders for the target date
+ * - Availability status
  */
 export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(
   async (request, { user, userScope }) => {
