@@ -115,6 +115,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       const orders = await db.prisma.order.findMany({
         where: {
           outletId: finalOutletId,
+          orderType: 'RENT', // Only get RENT orders for availability calculation
           orderItems: {
             some: {
               productId: productId
@@ -202,13 +203,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       orders.forEach((order: any) => {
         order.orderItems.forEach((item: any) => {
           if (item.productId === productId) {
-            // Only PICKUPED orders are currently being rented
-            if (order.status === 'PICKUPED') {
-              totalRented += item.quantity;
-            } else if (order.status === 'RESERVED') {
-              totalReserved += item.quantity;
+            // Only RENT orders should be counted for availability
+            if (order.orderType === 'RENT') {
+              if (order.status === 'PICKUPED') {
+                totalRented += item.quantity;
+              } else if (order.status === 'RESERVED') {
+                totalReserved += item.quantity;
+              }
             }
-            // COMPLETED, RETURNED, and CANCELLED orders are not counted as rented
+            // SALE orders (COMPLETED, RESERVED) are not counted for rental availability
           }
         });
       });
