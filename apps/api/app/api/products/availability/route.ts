@@ -237,10 +237,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           orderNumber: order.orderNumber,
           orderType: order.orderType,
           status: order.status,
-          customer: {
-            name: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
-            phone: order.customer?.phone
-          },
+          customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
+          customerPhone: order.customer?.phone,
           pickupPlanAt: order.pickupPlanAt,
           returnPlanAt: order.returnPlanAt,
           pickedUpAt: order.pickedUpAt,
