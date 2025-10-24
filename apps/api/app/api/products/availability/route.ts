@@ -112,7 +112,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       endOfDay.setHours(23, 59, 59, 999);
 
       // Get orders that have this product and overlap with the target date
-      const orders = await db.orders.findMany({
+      const orders = await db.prisma.order.findMany({
         where: {
           outletId: finalOutletId,
           orderItems: {
@@ -156,9 +156,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
                           returnPlanAt: null
                         },
                         {
-                          status: {
-                            in: ['PICKUPED', 'ACTIVE']
-                          }
+                          status: 'PICKUPED'
                         }
                       ]
                     }
@@ -201,14 +199,16 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       let totalRented = 0;
       let totalReserved = 0;
 
-      orders.forEach(order => {
-        order.orderItems.forEach(item => {
+      orders.forEach((order: any) => {
+        order.orderItems.forEach((item: any) => {
           if (item.productId === productId) {
-            if (order.status === 'PICKUPED' || order.status === 'ACTIVE') {
+            // Only PICKUPED orders are currently being rented
+            if (order.status === 'PICKUPED') {
               totalRented += item.quantity;
             } else if (order.status === 'RESERVED') {
               totalReserved += item.quantity;
             }
+            // COMPLETED, RETURNED, and CANCELLED orders are not counted as rented
           }
         });
       });
@@ -232,7 +232,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           totalAvailable: Math.max(0, totalAvailable),
           isAvailable: totalAvailable > 0
         },
-        orders: orders.map(order => ({
+        orders: orders.map((order: any) => ({
           id: order.id,
           orderNumber: order.orderNumber,
           orderType: order.orderType,
@@ -243,7 +243,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           returnPlanAt: order.returnPlanAt,
           pickedUpAt: order.pickedUpAt,
           returnedAt: order.returnedAt,
-          orderItems: order.orderItems.map(item => ({
+          orderItems: order.orderItems.map((item: any) => ({
             id: item.id,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
