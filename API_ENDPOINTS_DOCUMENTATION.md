@@ -355,6 +355,142 @@ let headers = [
 ### 5. Export Products
 **GET** `/api/products/export`
 
+### 6. Product Availability (Mobile App) ✅
+**GET** `/api/products/availability`
+
+**Query Parameters:**
+- `productId`: Product ID to check availability for (required)
+- `date`: Date to check availability in YYYY-MM-DD format (required)
+- `outletId`: Outlet ID (required for merchants, auto-filled for outlet users)
+
+**Description:**
+This API is specifically designed for mobile app product availability screens. It returns all orders for a product while calculating availability based on the specific date. Only PICKUPED and RESERVED orders affect availability calculation.
+
+**Request:**
+```swift
+GET /api/products/availability?productId=12&date=2025-10-24&outletId=1
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "code": "PRODUCT_AVAILABILITY_FOUND",
+    "message": "Product availability information retrieved successfully",
+    "data": {
+        "product": {
+            "id": 12,
+            "name": "Product 12 - Kitchen Appliances",
+            "barcode": "BAR000012",
+            "outletId": 1,
+            "outletName": "Main Branch"
+        },
+        "date": "2025-10-24",
+        "summary": {
+            "totalStock": 50,
+            "totalRented": 2,        // Only PICKUPED orders
+            "totalReserved": 0,      // Only RESERVED orders
+            "totalAvailable": 48,    // totalStock - totalRented - totalReserved
+            "isAvailable": true
+        },
+        "orders": [
+            {
+                "id": 1,
+                "orderNumber": "ORD-001-0001",
+                "orderType": "RENT",
+                "status": "PICKUPED",
+                "customerName": "John Smith",
+                "pickupPlanDate": "2025-10-06",
+                "returnPlanDate": "2025-10-11",
+                "pickupActualDate": "2025-10-06",
+                "returnActualDate": null,
+                "quantity": 2,
+                "totalAmount": 50.00
+            },
+            {
+                "id": 2,
+                "orderNumber": "ORD-001-0002",
+                "orderType": "SALE",
+                "status": "RESERVED",
+                "customerName": "Jane Doe",
+                "pickupPlanDate": "2025-10-25",
+                "returnPlanDate": null,
+                "pickupActualDate": null,
+                "returnActualDate": null,
+                "quantity": 1,
+                "totalAmount": 150.00
+            },
+            {
+                "id": 3,
+                "orderNumber": "ORD-001-0003",
+                "orderType": "RENT",
+                "status": "COMPLETED",
+                "customerName": "Mike Johnson",
+                "pickupPlanDate": "2025-10-04",
+                "returnPlanDate": "2025-10-10",
+                "pickupActualDate": "2025-10-04",
+                "returnActualDate": "2025-10-10",
+                "quantity": 1,
+                "totalAmount": 25.00
+            }
+        ],
+        "meta": {
+            "totalOrders": 2,
+            "date": "2025-10-24",
+            "checkedAt": "2025-10-24T15:48:00.000Z"
+        }
+    }
+}
+```
+
+**Mobile App Integration Notes:**
+- **KHO (Stock)**: `summary.totalStock`
+- **CÓ SẴN (Available)**: `summary.totalAvailable` 
+- **ĐANG THUÊ (Currently Rented)**: `summary.totalRented` (only PICKUPED orders)
+- **ĐANG CỌC (Reserved)**: `summary.totalReserved` (only RESERVED orders)
+- **Orders List**: `orders[]` contains ALL orders (including COMPLETED)
+- **Availability Calculation**: Only considers orders active on the specified date
+
+**Swift Implementation:**
+```swift
+struct ProductAvailabilityResponse: Codable {
+    let success: Bool
+    let code: String
+    let message: String
+    let data: ProductAvailabilityData
+}
+
+struct ProductAvailabilityData: Codable {
+    let product: ProductInfo
+    let date: String
+    let summary: AvailabilitySummary
+    let orders: [OrderInfo]
+    let meta: AvailabilityMeta
+}
+
+struct AvailabilitySummary: Codable {
+    let totalStock: Int
+    let totalRented: Int      // Only PICKUPED orders
+    let totalReserved: Int    // Only RESERVED orders  
+    let totalAvailable: Int   // Calculated: totalStock - totalRented - totalReserved
+    let isAvailable: Bool
+}
+
+struct OrderInfo: Codable {
+    let id: Int
+    let orderNumber: String
+    let orderType: String
+    let status: String
+    let customerName: String
+    let pickupPlanDate: String?    // Planned pickup date (YYYY-MM-DD)
+    let returnPlanDate: String?    // Planned return date (YYYY-MM-DD, null for SALE)
+    let pickupActualDate: String?  // Actual pickup date (YYYY-MM-DD)
+    let returnActualDate: String?  // Actual return date (YYYY-MM-DD)
+    let quantity: Int              // Total quantity for this product
+    let totalAmount: Double        // Total amount for this product
+}
+```
+
 ---
 
 ## 📋 Category Management APIs

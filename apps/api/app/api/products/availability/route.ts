@@ -253,29 +253,32 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           totalAvailable: Math.max(0, totalAvailable),
           isAvailable: totalAvailable > 0
         },
-        orders: allOrders.map((order: any) => ({
-          id: order.id,
-          orderNumber: order.orderNumber,
-          orderType: order.orderType,
-          status: order.status,
-          customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
-          customerPhone: order.customer?.phone,
-          pickupPlanAt: order.pickupPlanAt,
-          returnPlanAt: order.returnPlanAt,
-          pickedUpAt: order.pickedUpAt,
-          returnedAt: order.returnedAt,
-          orderItems: order.orderItems.map((item: any) => ({
-            id: item.id,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice,
-            product: {
-              id: item.product.id,
-              name: item.product.name,
-              barcode: item.product.barcode
-            }
-          }))
-        })),
+        orders: allOrders.map((order: any) => {
+          // Calculate total quantity and amount for this product
+          const productItems = order.orderItems.filter((item: any) => item.productId === productId);
+          const totalQuantity = productItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
+          const totalAmount = productItems.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
+          
+          // Format dates for mobile display
+          const pickupPlanDate = order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString().split('T')[0] : null;
+          const returnPlanDate = order.returnPlanAt ? new Date(order.returnPlanAt).toISOString().split('T')[0] : null;
+          const pickupActualDate = order.pickedUpAt ? new Date(order.pickedUpAt).toISOString().split('T')[0] : null;
+          const returnActualDate = order.returnedAt ? new Date(order.returnedAt).toISOString().split('T')[0] : null;
+          
+          return {
+            id: order.id,
+            orderNumber: order.orderNumber,
+            orderType: order.orderType,
+            status: order.status,
+            customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
+            pickupPlanDate: pickupPlanDate,
+            returnPlanDate: returnPlanDate,
+            pickupActualDate: pickupActualDate,
+            returnActualDate: returnActualDate,
+            quantity: totalQuantity,
+            totalAmount: totalAmount
+          };
+        }),
         meta: {
           totalOrders: allOrders.length,
           date: date,
