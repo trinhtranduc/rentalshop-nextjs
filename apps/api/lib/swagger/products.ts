@@ -26,7 +26,7 @@ export const productAvailabilitySwagger = {
           in: 'query',
           required: false,
           schema: { type: 'number' },
-          description: 'Outlet ID (required for merchants/admins, auto-filled for outlet users)'
+          description: 'Outlet ID (required for merchants/admins, optional for outlet users - uses assigned outlet if not provided)'
         }
       ],
       responses: {
@@ -248,7 +248,7 @@ export const productAvailabilitySwagger = {
           in: 'query',
           required: false,
           schema: { type: 'number' },
-          description: 'Outlet ID (required for merchants/admins, auto-filled for outlet users)'
+          description: 'Outlet ID (required for merchants/admins, optional for outlet users - uses assigned outlet if not provided)'
         }
       ],
       responses: {
