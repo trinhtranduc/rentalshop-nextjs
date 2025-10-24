@@ -612,6 +612,11 @@
   resolved "https://registry.npmjs.org/@babel/runtime/-/runtime-7.28.4.tgz"
   integrity sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==
 
+"@esbuild/darwin-arm64@0.18.20":
+  version "0.18.20"
+  resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.18.20.tgz"
+  integrity sha512-bxRHW5kHU38zS2lPTPOyuyTm+S+eobPUnTNkdJEfAddYgEcll4xkT8DB9d2008DtTbl7uJag2HuE5NZAZgnNEA==
+
 "@esbuild/darwin-arm64@0.19.12":
   version "0.19.12"
   resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.19.12.tgz"
@@ -752,23 +757,6 @@
   version "2.0.3"
   resolved "https://registry.npmjs.org/@humanwhocodes/object-schema/-/object-schema-2.0.3.tgz"
   integrity sha512-93zYdMES/c1D69yZiKDBj0V24vqNzB/koF26KPaagAfd3P/4gUlh3Dys5ogAK+Exi9QyzlD8x/08Zt7wIKcDcA==
-
-"@img/colour@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/@img/colour/-/colour-1.0.0.tgz"
-  integrity sha512-A5P/LfWGFSl6nsckYtjw9da+19jB8hkJ6ACTGcDfEJ0aE+l2n2El7dsVM7UVHZQ9s2lmYMWlrS21YLy2IR1LUw==
-
-"@img/sharp-darwin-arm64@0.34.4":
-  version "0.34.4"
-  resolved "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.34.4.tgz"
-  integrity sha512-sitdlPzDVyvmINUdJle3TNHl+AG9QcwiAMsXmccqsCOMZNIdW2/7S26w0LyU8euiLVzFBL3dXPwVCq/ODnf2vA==
-  optionalDependencies:
-    "@img/sharp-libvips-darwin-arm64" "1.2.3"
-
-"@img/sharp-libvips-darwin-arm64@1.2.3":
-  version "1.2.3"
-  resolved "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.2.3.tgz"
-  integrity sha512-QzWAKo7kpHxbuHqUC28DZ9pIKpSi2ts2OJnoIGI26+HMgq92ZZ4vk8iJd4XsxN+tYfNJxzH6W62X5eTcsBymHw==
 
 "@isaacs/cliui@^8.0.2":
   version "8.0.2"
@@ -1251,16 +1239,9 @@
     swagger-ui-react "^5.29.5"
     zod "^3.22.0"
 
-"@rentalshop/auth@file:../../packages/auth", "@rentalshop/auth@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/auth":
+"@rentalshop/auth@file:../../packages/auth", "@rentalshop/auth@file:../auth", "@rentalshop/auth@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/auth":
   version "1.0.0"
   resolved "file:packages/auth"
-  dependencies:
-    bcryptjs "^3.0.2"
-    jsonwebtoken "^9.0.0"
-    next-auth "^4.24.0"
-
-"@rentalshop/auth@file:../auth":
-  version "1.0.0"
   dependencies:
     bcryptjs "^3.0.2"
     jsonwebtoken "^9.0.0"
@@ -1290,21 +1271,11 @@
     yup "^1.7.0"
     zod "^3.22.0"
 
-"@rentalshop/constants@*", "@rentalshop/constants@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/constants":
+"@rentalshop/constants@*", "@rentalshop/constants@file:../constants", "@rentalshop/constants@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/constants":
   version "1.0.0"
   resolved "file:packages/constants"
 
-"@rentalshop/constants@file:../constants":
-  version "1.0.0"
-  resolved "file:packages/constants"
-
-"@rentalshop/database@file:../../packages/database":
-  version "1.0.0"
-
-"@rentalshop/database@file:../database":
-  version "1.0.0"
-
-"@rentalshop/database@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/database":
+"@rentalshop/database@file:../../packages/database", "@rentalshop/database@file:../database", "@rentalshop/database@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/database":
   version "1.0.0"
   resolved "file:packages/database"
 
@@ -1318,21 +1289,7 @@
   version "1.0.0"
   resolved "file:packages/errors"
 
-"@rentalshop/hooks@file:../../packages/hooks":
-  version "1.0.0"
-  dependencies:
-    "@rentalshop/constants" "file:../constants"
-    "@rentalshop/types" "file:../types"
-    "@rentalshop/utils" "file:../utils"
-
-"@rentalshop/hooks@file:../hooks":
-  version "1.0.0"
-  dependencies:
-    "@rentalshop/constants" "file:../constants"
-    "@rentalshop/types" "file:../types"
-    "@rentalshop/utils" "file:../utils"
-
-"@rentalshop/hooks@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/hooks":
+"@rentalshop/hooks@file:../../packages/hooks", "@rentalshop/hooks@file:../hooks", "@rentalshop/hooks@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/hooks":
   version "1.0.0"
   resolved "file:packages/hooks"
   dependencies:
@@ -1349,40 +1306,13 @@
     "@rentalshop/types" "file:../types"
     "@rentalshop/utils" "file:../utils"
 
-"@rentalshop/types@file:../types":
-  version "1.0.0"
-  dependencies:
-    "@rentalshop/constants" "*"
-
-"@rentalshop/types@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/types":
+"@rentalshop/types@file:../types", "@rentalshop/types@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/types":
   version "1.0.0"
   resolved "file:packages/types"
   dependencies:
     "@rentalshop/constants" "*"
 
-"@rentalshop/ui@file:../../packages/ui":
-  version "1.0.0"
-  dependencies:
-    "@radix-ui/react-dialog" "^1.1.2"
-    "@radix-ui/react-radio-group" "^1.2.2"
-    "@radix-ui/react-select" "^2.2.5"
-    "@radix-ui/react-slot" "^1.1.2"
-    "@radix-ui/react-tabs" "^1.1.2"
-    "@radix-ui/react-toast" "^1.2.5"
-    "@rentalshop/constants" "file:../constants"
-    "@rentalshop/hooks" "file:../hooks"
-    "@rentalshop/types" "file:../types"
-    browser-image-compression "^2.0.2"
-    class-variance-authority "^0.7.1"
-    clsx "^2.1.1"
-    lucide-react "^0.344.0"
-    react "^18.0.0"
-    react-dom "^18.0.0"
-    recharts "^2.12.2"
-    tailwind-merge "^2.3.0"
-    tailwindcss-animate "^1.0.7"
-
-"@rentalshop/ui@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/ui":
+"@rentalshop/ui@file:../../packages/ui", "@rentalshop/ui@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/ui":
   version "1.0.0"
   resolved "file:packages/ui"
   dependencies:
@@ -1405,21 +1335,12 @@
     tailwind-merge "^2.3.0"
     tailwindcss-animate "^1.0.7"
 
-"@rentalshop/utils@file:../../packages/utils", "@rentalshop/utils@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/utils":
+"@rentalshop/utils@file:../../packages/utils", "@rentalshop/utils@file:../utils", "@rentalshop/utils@file:/Users/mac/Source-Code/rentalshop-nextjs/packages/utils":
   version "1.0.0"
   resolved "file:packages/utils"
   dependencies:
     "@aws-sdk/client-s3" "^3.0.0"
     "@aws-sdk/s3-request-presigner" "^3.0.0"
-    "@rentalshop/constants" "file:../constants"
-    browser-image-compression "^2.0.2"
-    date-fns "^2.30.0"
-    stripe "^14.0.0"
-    zod "^3.22.0"
-
-"@rentalshop/utils@file:../utils":
-  version "1.0.0"
-  dependencies:
     "@rentalshop/constants" "file:../constants"
     browser-image-compression "^2.0.2"
     date-fns "^2.30.0"
@@ -3501,11 +3422,6 @@ destr@^2.0.3:
   resolved "https://registry.npmjs.org/destr/-/destr-2.0.5.tgz"
   integrity sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA==
 
-detect-libc@^2.1.0:
-  version "2.1.2"
-  resolved "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz"
-  integrity sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==
-
 detect-node-es@^1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/detect-node-es/-/detect-node-es-1.1.0.tgz"
@@ -3775,6 +3691,34 @@ es-to-primitive@^1.3.0:
     is-callable "^1.2.7"
     is-date-object "^1.0.5"
     is-symbol "^1.0.4"
+
+esbuild@^0.18.2:
+  version "0.18.20"
+  resolved "https://registry.npmjs.org/esbuild/-/esbuild-0.18.20.tgz"
+  integrity sha512-ceqxoedUrcayh7Y7ZX6NdbbDzGROiyVBgC4PriJThBKSVPWnnFHZAkfI1lJT8QFkOwH4qOS2SJkS4wvpGl8BpA==
+  optionalDependencies:
+    "@esbuild/android-arm" "0.18.20"
+    "@esbuild/android-arm64" "0.18.20"
+    "@esbuild/android-x64" "0.18.20"
+    "@esbuild/darwin-arm64" "0.18.20"
+    "@esbuild/darwin-x64" "0.18.20"
+    "@esbuild/freebsd-arm64" "0.18.20"
+    "@esbuild/freebsd-x64" "0.18.20"
+    "@esbuild/linux-arm" "0.18.20"
+    "@esbuild/linux-arm64" "0.18.20"
+    "@esbuild/linux-ia32" "0.18.20"
+    "@esbuild/linux-loong64" "0.18.20"
+    "@esbuild/linux-mips64el" "0.18.20"
+    "@esbuild/linux-ppc64" "0.18.20"
+    "@esbuild/linux-riscv64" "0.18.20"
+    "@esbuild/linux-s390x" "0.18.20"
+    "@esbuild/linux-x64" "0.18.20"
+    "@esbuild/netbsd-x64" "0.18.20"
+    "@esbuild/openbsd-x64" "0.18.20"
+    "@esbuild/sunos-x64" "0.18.20"
+    "@esbuild/win32-arm64" "0.18.20"
+    "@esbuild/win32-ia32" "0.18.20"
+    "@esbuild/win32-x64" "0.18.20"
 
 esbuild@^0.19.2:
   version "0.19.12"
@@ -6197,6 +6141,13 @@ rimraf@^3.0.2:
   dependencies:
     glob "^7.1.3"
 
+rollup@^3.2.5:
+  version "3.29.5"
+  resolved "https://registry.npmjs.org/rollup/-/rollup-3.29.5.tgz"
+  integrity sha512-GVsDdsbJzzy4S/v3dqWPJ7EfvZJfCHiDqe80IyrF59LYuP+e6U1LJoUqeuqRbwAWoMNoXivMNeNAOf5E22VA1w==
+  optionalDependencies:
+    fsevents "~2.3.2"
+
 rollup@^4.0.2, rollup@^4.34.8:
   version "4.52.3"
   resolved "https://registry.npmjs.org/rollup/-/rollup-4.52.3.tgz"
@@ -6284,11 +6235,6 @@ semver@^7.5.4, semver@^7.6.0, semver@^7.7.1:
   version "7.7.2"
   resolved "https://registry.npmjs.org/semver/-/semver-7.7.2.tgz"
   integrity sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==
-
-semver@^7.7.2:
-  version "7.7.3"
-  resolved "https://registry.npmjs.org/semver/-/semver-7.7.3.tgz"
-  integrity sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q==
 
 serialize-error@^8.1.0:
   version "8.1.0"
@@ -6876,7 +6822,47 @@ tslib@^2.0.0, tslib@^2.1.0, tslib@^2.3.0, tslib@^2.4.0, tslib@^2.6.2, tslib@^2.8
   resolved "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
   integrity sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==
 
-tsup@^7.0.0, tsup@^7.3.0, tsup@^8.0.0:
+tsup@^7.0.0:
+  version "7.2.0"
+  resolved "https://registry.npmjs.org/tsup/-/tsup-7.2.0.tgz"
+  integrity sha512-vDHlczXbgUvY3rWvqFEbSqmC1L7woozbzngMqTtL2PGBODTtWlRwGDDawhvWzr5c1QjKe4OAKqJGfE1xeXUvtQ==
+  dependencies:
+    bundle-require "^4.0.0"
+    cac "^6.7.12"
+    chokidar "^3.5.1"
+    debug "^4.3.1"
+    esbuild "^0.18.2"
+    execa "^5.0.0"
+    globby "^11.0.3"
+    joycon "^3.0.1"
+    postcss-load-config "^4.0.1"
+    resolve-from "^5.0.0"
+    rollup "^3.2.5"
+    source-map "0.8.0-beta.0"
+    sucrase "^3.20.3"
+    tree-kill "^1.2.2"
+
+tsup@^7.3.0:
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/tsup/-/tsup-7.3.0.tgz"
+  integrity sha512-Ja1eaSRrE+QarmATlNO5fse2aOACYMBX+IZRKy1T+gpyH+jXgRrl5l4nHIQJQ1DoDgEjHDTw8cpE085UdBZuWQ==
+  dependencies:
+    bundle-require "^4.0.0"
+    cac "^6.7.12"
+    chokidar "^3.5.1"
+    debug "^4.3.1"
+    esbuild "^0.19.2"
+    execa "^5.0.0"
+    globby "^11.0.3"
+    joycon "^3.0.1"
+    postcss-load-config "^4.0.1"
+    resolve-from "^5.0.0"
+    rollup "^4.0.2"
+    source-map "0.8.0-beta.0"
+    sucrase "^3.20.3"
+    tree-kill "^1.2.2"
+
+tsup@^8.0.0:
   version "8.5.0"
   resolved "https://registry.npmjs.org/tsup/-/tsup-8.5.0.tgz"
   integrity sha512-VmBp77lWNQq6PfuMqCHD3xWl22vEoWsKajkF8t+yMBawlUS8JzEI+vOVMeuNZIuMML8qXRizFKi9oD5glKQVcQ==
