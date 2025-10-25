@@ -232,16 +232,38 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       }
       
       // Combine uploaded files with existing images
-      productDataFromRequest.images = [
-        ...(productDataFromRequest.images || []),
+      const existingImages = productDataFromRequest.images || [];
+      const allImages = [
+        ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
         ...uploadedFiles
       ];
+      // Convert array to comma-separated string for database
+      productDataFromRequest.images = allImages.join(',');
       
     } else {
       // Handle regular JSON request
       console.log('🔍 Processing JSON request');
       const body = await request.json();
       productDataFromRequest = body;
+      
+      // Fix images field for JSON requests
+      if (productDataFromRequest.images) {
+        if (Array.isArray(productDataFromRequest.images)) {
+          if (productDataFromRequest.images.length === 0) {
+            // Remove empty array
+            delete productDataFromRequest.images;
+          } else {
+            // Convert array to comma-separated string
+            productDataFromRequest.images = productDataFromRequest.images.join(',');
+          }
+        } else if (typeof productDataFromRequest.images === 'string') {
+          // If it's already a string, keep as is
+          if (productDataFromRequest.images.trim() === '') {
+            // Remove empty string
+            delete productDataFromRequest.images;
+          }
+        }
+      }
     }
 
     // Validate product data
