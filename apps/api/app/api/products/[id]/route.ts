@@ -273,11 +273,13 @@ export async function PUT(
           }
         }
         
-        // Combine uploaded files with existing images
-        productDataFromRequest.images = [
-          ...(productDataFromRequest.images || []),
-          ...uploadedFiles
-        ];
+        // Combine uploaded files with existing images (only if there are files)
+        if (uploadedFiles.length > 0) {
+          productDataFromRequest.images = [
+            ...(productDataFromRequest.images || []),
+            ...uploadedFiles
+          ];
+        }
         
       } else {
         // Handle regular JSON request
