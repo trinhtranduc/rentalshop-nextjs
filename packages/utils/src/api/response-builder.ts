@@ -269,41 +269,6 @@ export class ResponseBuilder {
     };
   }
 
-  /**
-   * Build validation error response
-   * @param validationErrors - Zod validation errors
-   */
-  static validationError(validationErrors: any): ApiResponse {
-    // Convert validation errors to readable string format
-    const errorMessages: string[] = [];
-    
-    if (validationErrors.fieldErrors) {
-      Object.entries(validationErrors.fieldErrors).forEach(([field, errors]) => {
-        if (Array.isArray(errors)) {
-          errors.forEach((error: string) => {
-            errorMessages.push(`${field}: ${error}`);
-          });
-        }
-      });
-    }
-    
-    if (validationErrors.formErrors && Array.isArray(validationErrors.formErrors)) {
-      validationErrors.formErrors.forEach((error: string) => {
-        errorMessages.push(error);
-      });
-    }
-    
-    const errorString = errorMessages.length > 0 
-      ? errorMessages.join('; ') 
-      : 'Input validation failed';
-    
-    return {
-      success: false,
-      code: 'VALIDATION_ERROR',
-      message: 'Input validation failed',
-      error: errorString
-    };
-  }
 }
 
 /**
@@ -324,9 +289,32 @@ export function getErrorCode(error: any): string {
  * Tự động detect error type và tạo appropriate response
  */
 export function createErrorResponse(error: any): ApiResponse {
-  // Zod validation error
+  // Zod validation error - convert to readable string
   if (error?.name === 'ZodError') {
-    return ResponseBuilder.validationError(error.flatten());
+    const validationErrors = error.flatten();
+    const errorMessages: string[] = [];
+    
+    if (validationErrors.fieldErrors) {
+      Object.entries(validationErrors.fieldErrors).forEach(([field, errors]) => {
+        if (Array.isArray(errors)) {
+          errors.forEach((errorMsg: string) => {
+            errorMessages.push(`${field}: ${errorMsg}`);
+          });
+        }
+      });
+    }
+    
+    if (validationErrors.formErrors && Array.isArray(validationErrors.formErrors)) {
+      validationErrors.formErrors.forEach((errorMsg: string) => {
+        errorMessages.push(errorMsg);
+      });
+    }
+    
+    const errorString = errorMessages.length > 0 
+      ? errorMessages.join('; ') 
+      : 'Input validation failed';
+    
+    return ResponseBuilder.error('VALIDATION_ERROR', errorString);
   }
 
   // Custom error with code

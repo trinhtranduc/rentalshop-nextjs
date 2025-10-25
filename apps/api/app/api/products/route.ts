@@ -28,7 +28,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json(
-        ResponseBuilder.validationError(parsed.error.flatten()),
+        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -270,7 +270,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     parsedResult = productCreateSchema.safeParse(productDataFromRequest);
     if (!parsedResult.success) {
       return NextResponse.json(
-        ResponseBuilder.validationError(parsedResult.error.flatten()),
+        ResponseBuilder.error('VALIDATION_ERROR', parsedResult.error.flatten()),
         { status: 400 }
       );
     }
@@ -282,40 +282,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     let outletStock: Array<{ outletId: number; stock: number }>;
     let totalStock: number;
     
-    // Check if outletStock is provided
-    if (parsed.data.outletStock && Array.isArray(parsed.data.outletStock) && parsed.data.outletStock.length > 0) {
-      // Use provided outletStock
-      outletStock = parsed.data.outletStock.map((os: any) => ({
-        outletId: os.outletId,
-        stock: os.stock || 0,
-      }));
-      console.log('🔍 Using provided outletStock:', outletStock);
-    } else {
-      // Auto-create outletStock from default outlet
-      console.log('🔍 No outletStock provided, using default outlet');
-      
-      try {
-        const { getDefaultOutlet } = await import('@rentalshop/database');
-        const defaultOutlet = await getDefaultOutlet(merchant.id);
-        
-        outletStock = [{
-          outletId: defaultOutlet.id,
-          stock: parsed.data.totalStock || 0
-        }];
-        
-        console.log('✅ Using default outlet:', defaultOutlet.name, 'with stock:', outletStock[0].stock);
-      } catch (error) {
-        console.error('❌ Error getting default outlet:', error);
-        return NextResponse.json(
-          ResponseBuilder.error('DEFAULT_OUTLET_NOT_FOUND'),
-          { status: 400 }
-        );
-      }
-    }
-    
-    totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
-    console.log('🔍 Final outletStock:', outletStock);
-    console.log('🔍 Calculated totalStock:', totalStock);
+    // This will be handled after merchant is determined
 
     // Check for duplicate product name within the same merchant
     const existingProduct = await db.products.findFirst({
@@ -371,6 +338,41 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
         { status: 404 }
       );
     }
+
+    // Handle outletStock after merchant is determined
+    if (parsed.data.outletStock && Array.isArray(parsed.data.outletStock) && parsed.data.outletStock.length > 0) {
+      // Use provided outletStock
+      outletStock = parsed.data.outletStock.map((os: any) => ({
+        outletId: os.outletId,
+        stock: os.stock || 0,
+      }));
+      console.log('🔍 Using provided outletStock:', outletStock);
+    } else {
+      // Auto-create outletStock from default outlet
+      console.log('🔍 No outletStock provided, using default outlet');
+      
+      try {
+        const { getDefaultOutlet } = await import('@rentalshop/database');
+        const defaultOutlet = await getDefaultOutlet(merchant.id);
+        
+        outletStock = [{
+          outletId: defaultOutlet.id,
+          stock: parsed.data.totalStock || 0
+        }];
+        
+        console.log('✅ Using default outlet:', defaultOutlet.name, 'with stock:', outletStock[0].stock);
+      } catch (error) {
+        console.error('❌ Error getting default outlet:', error);
+        return NextResponse.json(
+          ResponseBuilder.error('DEFAULT_OUTLET_NOT_FOUND'),
+          { status: 400 }
+        );
+      }
+    }
+    
+    totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
+    console.log('🔍 Final outletStock:', outletStock);
+    console.log('🔍 Calculated totalStock:', totalStock);
 
     // Handle images - Support both uploaded files and staging files
     let imagesValue = parsed.data.images;

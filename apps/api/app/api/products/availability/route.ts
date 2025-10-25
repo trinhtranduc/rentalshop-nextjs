@@ -36,7 +36,7 @@ export const GET = withReadOnlyAuth(
       const parsed = productAvailabilitySchema.safeParse(Object.fromEntries(searchParams.entries()));
       if (!parsed.success) {
         return NextResponse.json(
-          ResponseBuilder.validationError(parsed.error.flatten()),
+          ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
           { status: 400 }
         );
       }

@@ -20,7 +20,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json(
-        ResponseBuilder.validationError(parsed.error.flatten()),
+        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -227,7 +227,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
     const parsed = outletUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.validationError(parsed.error.flatten()),
+        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
         { status: 400 }
       );
     }
