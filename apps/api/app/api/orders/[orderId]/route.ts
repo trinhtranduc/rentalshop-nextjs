@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -14,7 +14,7 @@ export const GET = async (
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) => {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
+  return withReadOnlyAuth(async (request, { user, userScope }) => {
     try {
       const { orderId } = params;
       console.log('🔍 GET /api/orders/[orderId] - Looking for order with ID:', orderId);
@@ -73,7 +73,7 @@ export const PUT = async (
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) => {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withReadOnlyAuth(async (request, { user, userScope }) => {
     try {
       const { orderId } = params;
 

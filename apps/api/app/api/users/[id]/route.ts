@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAnyAuth, withMerchantAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -12,7 +12,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withAnyAuth(async (request, { user, userScope }) => {
     try {
       const { id } = params;
       console.log('🔍 GET /api/users/[id] - Looking for user with ID:', id);
@@ -65,7 +65,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withMerchantAuth(async (request, { user, userScope }) => {
     try {
       const { id } = params;
 
@@ -121,7 +121,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withMerchantAuth(async (request, { user, userScope }) => {
     try {
       const { id } = params;
 
@@ -147,11 +147,7 @@ export async function DELETE(
       // Prevent deleting yourself
       if (userId === user.id) {
         return NextResponse.json(
-          {
-            success: false,
-            code: 'CANNOT_DELETE_SELF',
-            message: 'You cannot delete your own account. Please contact another administrator.'
-          },
+          ResponseBuilder.error('CANNOT_DELETE_SELF', 'You cannot delete your own account. Please contact another administrator.'),
           { status: API.STATUS.CONFLICT }
         );
       }
@@ -167,11 +163,7 @@ export async function DELETE(
 
         if (adminCount <= 1) {
           return NextResponse.json(
-            {
-              success: false,
-              code: 'CANNOT_DELETE_LAST_ADMIN',
-              message: 'Cannot delete the last administrator. Please assign another administrator first.'
-            },
+            ResponseBuilder.error('CANNOT_DELETE_LAST_ADMIN', 'Cannot delete the last administrator. Please assign another administrator first.'),
             { status: API.STATUS.CONFLICT }
           );
         }

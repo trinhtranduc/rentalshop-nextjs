@@ -1,6 +1,6 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAnyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
 import {API} from '@rentalshop/constants';
@@ -19,7 +19,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
+  return withAnyAuth(async (request: NextRequest, { user, userScope }) => {
     try {
       console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', params.id);
       
@@ -95,13 +95,7 @@ export async function PATCH(
         targetUserOutletId: targetUser.outletId
       });
       return NextResponse.json(
-        { 
-          success: false, 
-            code: 'INSUFFICIENT_PERMISSIONS',
-            code: 'INSUFFICIENT_PERMISSIONS', message: 'Insufficient permissions to change password for this user',
-          required: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'],
-          current: currentUser.role
-        },
+        ResponseBuilder.error('INSUFFICIENT_PERMISSIONS', 'Insufficient permissions to change password for this user'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -120,18 +114,13 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-        code: 'PASSWORD_CHANGED_SUCCESS',
         code: 'PASSWORD_CHANGED_SUCCESS', message: 'Password changed successfully'
     });
 
   } catch (error) {
       console.error('❌ Error changing password:', error);
       return NextResponse.json(
-        { 
-          success: false, 
-          code: 'CHANGE_PASSWORD_FAILED',
-          code: 'CHANGE_PASSWORD_FAILED', message: 'Failed to change password' 
-        },
+        ResponseBuilder.error('CHANGE_PASSWORD_FAILED', 'Failed to change password'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }

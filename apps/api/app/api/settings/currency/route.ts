@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withMerchantAuth, withAnyAuth } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { isValidCurrency } from '@rentalshop/constants';
@@ -11,7 +11,7 @@ import type { CurrencyCode } from '@rentalshop/types';
  * Update merchant's currency settings
  * Only accessible by users with MERCHANT role or ADMIN
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withMerchantAuth(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 CURRENCY API: PUT /api/settings/currency called');
     console.log('🔍 CURRENCY API: User:', {
@@ -27,17 +27,14 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     // Validate currency code
     if (!currency) {
       return NextResponse.json(
-        { success: false, error: 'Currency is required' },
+        ResponseBuilder.error('CURRENCY_REQUIRED', 'Currency is required'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
 
     if (!isValidCurrency(currency)) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid currency code. Supported currencies: USD, VND' 
-        },
+        ResponseBuilder.error('INVALID_CURRENCY', 'Invalid currency code. Supported currencies: USD, VND'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
@@ -55,7 +52,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     if (!dbUser || !dbUser.merchant) {
       console.log('🔍 CURRENCY API: User or merchant not found, returning 403');
       return NextResponse.json(
-        { success: false, error: 'User does not have merchant access' },
+        ResponseBuilder.error('NO_MERCHANT_ACCESS', 'User does not have merchant access'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -87,7 +84,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
  * Get merchant's current currency settings
  * Only accessible by users with MERCHANT role or ADMIN
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAnyAuth(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 CURRENCY API: GET /api/settings/currency called');
     console.log('🔍 CURRENCY API: User:', {
@@ -102,7 +99,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     if (!dbUser || !dbUser.merchant) {
       return NextResponse.json(
-        { success: false, error: 'User does not have merchant access' },
+        ResponseBuilder.error('NO_MERCHANT_ACCESS', 'User does not have merchant access'),
         { status: API.STATUS.FORBIDDEN }
       );
     }

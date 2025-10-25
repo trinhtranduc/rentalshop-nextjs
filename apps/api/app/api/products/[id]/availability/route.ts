@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { z } from 'zod';
@@ -37,7 +37,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withReadOnlyAuth(async (request, { user, userScope }) => {
     try {
       console.log('🔍 GET /api/products/[id]/availability - Product ID:', id);
 

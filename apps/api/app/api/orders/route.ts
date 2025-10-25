@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -10,7 +10,7 @@ import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
  * Get orders with filtering, pagination
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/orders - User: ${user.email} (${user.role})`);
   console.log(`🔍 GET /api/orders - UserScope:`, userScope);
   
@@ -22,17 +22,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       outletId: userScope.outletId
     });
     return NextResponse.json(
-      { 
-        success: false, 
-        code: 'MERCHANT_ASSOCIATION_REQUIRED', message: 'User must be associated with a merchant',
-        debug: {
-          role: user.role,
-          merchantId: userScope.merchantId,
-          outletId: userScope.outletId,
-          userMerchantId: user.merchantId,
-          userOutletId: user.outletId
-        }
-      },
+      ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED', 'User must be associated with a merchant'),
       { status: 403 }
     );
   }
@@ -44,11 +34,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const parsed = ordersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
-      return NextResponse.json({ 
-        success: false, 
-        code: 'INVALID_QUERY', message: 'Invalid query', 
-        error: parsed.error.flatten() 
-      }, { status: 400 });
+      return NextResponse.json(
+        ResponseBuilder.validationError(parsed.error.flatten()),
+        { status: 400 }
+      );
     }
 
     const { 
@@ -156,7 +145,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
  * Create a new order using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+export const POST = withManagementAuth(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/orders - User: ${user.email} (${user.role})`);
   
   try {
@@ -164,9 +153,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     const parsed = orderCreateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ 
-        success: false, 
-        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
-        error: parsed.error.flatten() 
+        ResponseBuilder.validationError(parsed.error.flatten()) 
       }, { status: 400 });
     }
 
@@ -195,11 +182,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     } catch (error: any) {
       console.log('❌ Plan limit exceeded for orders:', error.message);
       return NextResponse.json(
-        { 
-          success: false, 
-          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for orders',
-          error: 'PLAN_LIMIT_EXCEEDED'
-        },
+        ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for orders'),
         { status: 403 }
       );
     }
@@ -307,7 +290,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
  * Update an order using simplified database API  
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+export const PUT = withManagementAuth(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/orders - User: ${user.email} (${user.role})`);
   
   try {
@@ -315,9 +298,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ 
-        success: false, 
-        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
-        error: parsed.error.flatten() 
+        ResponseBuilder.validationError(parsed.error.flatten()) 
       }, { status: 400 });
     }
 

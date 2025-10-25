@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withManagementAuth } from '@rentalshop/auth';
 import { productUpdateSchema, handleApiError, ResponseBuilder, processProductImages } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -12,7 +12,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user, userScope }) => {
     try {
       const { id } = params;
       console.log('🔍 GET /api/products/[id] - Looking for product with ID:', id);
@@ -107,7 +107,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user, userScope }) => {
     try {
       const { id } = params;
 
@@ -161,11 +161,7 @@ export async function PUT(
         if (duplicateProduct) {
           console.log('❌ Product name already exists:', productUpdateData.name);
           return NextResponse.json(
-            {
-              success: false,
-              code: 'PRODUCT_NAME_EXISTS',
-              message: `A product with the name "${productUpdateData.name}" already exists. Please choose a different name.`
-            },
+            ResponseBuilder.error('PRODUCT_NAME_EXISTS', `A product with the name "${productUpdateData.name}" already exists. Please choose a different name.`),
             { status: 409 }
           );
         }
@@ -259,7 +255,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user, userScope }) => {
     try {
       const { id } = params;
 

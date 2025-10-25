@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAdminAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -12,7 +12,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  return withAdminAuth(async (request, { user, userScope }) => {
     try {
       const { id } = params;
       console.log('🔍 GET /api/plans/[id] - Looking for plan with ID:', id);
@@ -49,11 +49,7 @@ export async function GET(
     } catch (error) {
       console.error('❌ Error fetching plan:', error);
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Failed to fetch plan',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        },
+        ResponseBuilder.error('FETCH_PLAN_FAILED', error instanceof Error ? error.message : 'Failed to fetch plan'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -68,7 +64,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  return withAdminAuth(async (request, { user, userScope }) => {
     try {
       const { id } = params;
 
@@ -108,11 +104,7 @@ export async function PUT(
     } catch (error) {
       console.error('❌ Error updating plan:', error);
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Failed to update plan',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        },
+        ResponseBuilder.error('UPDATE_PLAN_FAILED', error instanceof Error ? error.message : 'Failed to update plan'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -127,7 +119,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  return withAdminAuth(async (request, { user, userScope }) => {
     try {
       const { id } = params;
 
@@ -159,11 +151,7 @@ export async function DELETE(
       if (activeSubscriptions > 0) {
         console.log('❌ Cannot delete plan with active subscriptions:', activeSubscriptions);
         return NextResponse.json(
-          {
-            success: false,
-            code: 'PLAN_HAS_ACTIVE_SUBSCRIPTIONS',
-            message: `Cannot delete plan with ${activeSubscriptions} active subscription(s). Please wait for subscriptions to expire or cancel them first.`
-          },
+          ResponseBuilder.error('PLAN_HAS_ACTIVE_SUBSCRIPTIONS', `Cannot delete plan with ${activeSubscriptions} active subscription(s). Please wait for subscriptions to expire or cancel them first.`),
           { status: API.STATUS.CONFLICT }
         );
       }

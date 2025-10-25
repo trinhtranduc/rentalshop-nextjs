@@ -1,6 +1,6 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAnyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
@@ -8,7 +8,7 @@ import {API} from '@rentalshop/constants';
  * GET /api/users/profile
  * Get current user's profile
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAnyAuth(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 Profile API called');
     
@@ -133,7 +133,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
  * PUT /api/users/profile
  * Update current user's profile
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, context: any) => {
+export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
   const { user, userScope } = context;
   try {
 
@@ -154,10 +154,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'No valid fields to update' 
-        },
+        ResponseBuilder.error('NO_VALID_FIELDS', 'No valid fields to update'),
         { status: 400 }
       );
     }
@@ -192,10 +189,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           ? 'globally' 
           : 'in your organization';
         return NextResponse.json(
-          { 
-            success: false, 
-            error: `Phone number already exists ${scopeMessage}` 
-          },
+          ResponseBuilder.error('PHONE_ALREADY_EXISTS', `Phone number already exists ${scopeMessage}`),
           { status: 400 }
         );
       }
@@ -249,11 +243,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     });
     
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to update user profile',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      ResponseBuilder.error('UPDATE_PROFILE_FAILED', error instanceof Error ? error.message : 'Failed to update user profile'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }

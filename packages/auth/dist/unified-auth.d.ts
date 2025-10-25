@@ -44,21 +44,33 @@ declare function withAuthRoles(allowedRoles?: UserRole[], options?: {
     requireActiveSubscription?: boolean;
 }): AuthWrapper;
 /**
- * Admin-only routes
+ * Admin-only routes (System-wide access)
  */
 declare const withAdminAuth: AuthWrapper;
 /**
- * Admin and Merchant routes
+ * Admin and Merchant routes (Organization-level access)
  */
 declare const withMerchantAuth: AuthWrapper;
 /**
- * All management roles (excluding OUTLET_STAFF)
+ * All management roles (Admin, Merchant, Outlet Admin - excluding Outlet Staff)
  */
 declare const withManagementAuth: AuthWrapper;
 /**
- * Any authenticated user
+ * Outlet-level access (Outlet Admin + Outlet Staff)
+ */
+declare const withOutletAuth: AuthWrapper;
+/**
+ * Any authenticated user (No role restrictions)
  */
 declare const withAnyAuth: AuthWrapper;
+/**
+ * Read-only access (No subscription required)
+ */
+declare const withReadOnlyAuth: AuthWrapper;
+/**
+ * Admin + Read-only for non-admin users
+ */
+declare const withAdminOrReadOnlyAuth: AuthWrapper;
 /**
  * Main unified auth function - replaces all other auth wrappers
  * Use this instead of withUserManagementAuth, withOrderViewAuth, etc.
@@ -76,4 +88,4 @@ declare const withOrderCreateAuth: AuthWrapper;
 declare const withProductExportAuth: AuthWrapper;
 declare const withCustomerManagementAuth: AuthWrapper;
 
-export { type AuthContext, type AuthOptions, type AuthWrapper, type AuthenticatedHandler, type UserRole, withAdminAuth, withAnyAuth, withAuth, withAuthRoles, withCustomerManagementAuth, withManagementAuth, withMerchantAuth, withOrderCreateAuth, withOrderManagementAuth, withOrderViewAuth, withProductExportAuth, withProductManagementAuth, withUserManagementAuth };
+export { type AuthContext, type AuthOptions, type AuthWrapper, type AuthenticatedHandler, type UserRole, withAdminAuth, withAdminOrReadOnlyAuth, withAnyAuth, withAuth, withAuthRoles, withCustomerManagementAuth, withManagementAuth, withMerchantAuth, withOrderCreateAuth, withOrderManagementAuth, withOrderViewAuth, withOutletAuth, withProductExportAuth, withProductManagementAuth, withReadOnlyAuth, withUserManagementAuth };

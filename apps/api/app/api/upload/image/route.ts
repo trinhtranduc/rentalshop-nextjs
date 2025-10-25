@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAnyAuth } from '@rentalshop/auth';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { uploadToS3, generateAccessUrl } from '@rentalshop/utils';
 
@@ -80,7 +80,7 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  * - `finalFileName`: Actual S3 filename  
  * - `stagingKey`: For cleanup operations
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest) => {
+export const POST = withAnyAuth(async (request: NextRequest) => {
   try {
     const formData = await request.formData();
     const file = formData.get('image') as File;
@@ -193,12 +193,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
   } catch (error) {
     console.error('Error uploading image:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        code: 'UPLOAD_IMAGE_FAILED',
-        message: error instanceof Error ? error.message : 'Failed to upload image',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      },
+      ResponseBuilder.error('UPLOAD_IMAGE_FAILED', error instanceof Error ? error.message : 'Failed to upload image'),
       { status: 500 }
     );
   }

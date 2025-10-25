@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { z } from 'zod';
@@ -27,7 +27,7 @@ const productAvailabilitySchema = z.object({
  * - Orders for the target date
  * - Availability status
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(
+export const GET = withReadOnlyAuth(
   async (request, { user, userScope }) => {
     try {
       const { searchParams } = new URL(request.url);
