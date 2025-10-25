@@ -1,8 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withManagementAuth } from '@rentalshop/auth';
-import { productUpdateSchema, handleApiError, ResponseBuilder, processProductImages } from '@rentalshop/utils';
+import { productUpdateSchema, handleApiError, ResponseBuilder, processProductImages, uploadToS3, generateAccessUrl } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+/**
+ * Helper function to validate image file
+ */
+function validateImage(file: File): { isValid: boolean; error?: string } {
+  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  
+  const fileTypeLower = file.type.toLowerCase().trim();
+  const fileNameLower = file.name.toLowerCase().trim();
+  
+  const isValidMimeType = fileTypeLower ? ALLOWED_TYPES.some(type => 
+    fileTypeLower === type.toLowerCase()
+  ) : false;
+  
+  const isValidExtension = ALLOWED_EXTENSIONS.some(ext => 
+    fileNameLower.endsWith(ext)
+  );
+  
+  if (!isValidMimeType && !isValidExtension) {
+    return {
+      isValid: false,
+      error: `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')} or extensions: ${ALLOWED_EXTENSIONS.join(',')}. File type: "${file.type}", File name: "${file.name}"`
+    };
+  }
+  
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      isValid: false,
+      error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`
+    };
+  }
+  
+  if (file.size < 100) {
+    return {
+      isValid: false,
+      error: 'File size is too small, file may be corrupted'
+    };
+  }
+  
+  return { isValid: true };
+}
 
 /**
  * GET /api/products/[id]
@@ -132,12 +175,92 @@ export async function PUT(
         );
       }
 
-      // Parse and validate request body
-      const body = await request.json();
-      console.log('🔍 PUT /api/products/[id] - Update request body:', body);
+      // Parse and validate request body - handle both JSON and multipart form data
+      const contentType = request.headers.get('content-type') || '';
+      let productDataFromRequest: any = {};
+      let uploadedFiles: string[] = [];
+
+      if (contentType.includes('multipart/form-data')) {
+        console.log('🔍 Processing multipart form data with file uploads');
+        
+        const formData = await request.formData();
+        
+        // Extract JSON data from form fields
+        const jsonDataStr = formData.get('data') as string;
+        if (!jsonDataStr) {
+          return NextResponse.json(
+            ResponseBuilder.error('MISSING_PRODUCT_DATA'),
+            { status: 400 }
+          );
+        }
+        
+        try {
+          productDataFromRequest = JSON.parse(jsonDataStr);
+        } catch (parseError) {
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_JSON_DATA'),
+            { status: 400 }
+          );
+        }
+
+        // Handle file uploads
+        const imageFiles = formData.getAll('images') as File[];
+        console.log(`🔍 Found ${imageFiles.length} image files`);
+        
+        for (const file of imageFiles) {
+          if (file && file.size > 0) {
+            const validation = validateImage(file);
+            if (!validation.isValid) {
+              return NextResponse.json(
+                ResponseBuilder.error('IMAGE_VALIDATION_FAILED', { details: validation.error }),
+                { status: 400 }
+              );
+            }
+            
+            // Convert file to buffer and upload to S3
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            
+            const uploadResult = await uploadToS3(buffer, {
+              folder: 'staging',
+              fileName: file.name,
+              contentType: file.type,
+              preserveOriginalName: false
+            });
+            
+            if (uploadResult.success && uploadResult.data) {
+              // Generate presigned URL for immediate access
+              const presignedUrl = await generateAccessUrl(uploadResult.data.key, 86400);
+              const accessUrl = presignedUrl || uploadResult.data.cdnUrl || uploadResult.data.url;
+              uploadedFiles.push(accessUrl);
+              console.log(`✅ Uploaded image: ${file.name} -> ${accessUrl}`);
+            } else {
+              console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
+              return NextResponse.json(
+                ResponseBuilder.error('IMAGE_UPLOAD_FAILED', { details: uploadResult.error }),
+                { status: 500 }
+              );
+            }
+          }
+        }
+        
+        // Combine uploaded files with existing images
+        productDataFromRequest.images = [
+          ...(productDataFromRequest.images || []),
+          ...uploadedFiles
+        ];
+        
+      } else {
+        // Handle regular JSON request
+        console.log('🔍 Processing JSON request');
+        const body = await request.json();
+        productDataFromRequest = body;
+      }
+
+      console.log('🔍 PUT /api/products/[id] - Update request body:', productDataFromRequest);
 
       // Validate input data
-      const validatedData = productUpdateSchema.parse(body);
+      const validatedData = productUpdateSchema.parse(productDataFromRequest);
       console.log('✅ Validated update data:', validatedData);
       
       // Extract outletStock from validated data
@@ -184,7 +307,7 @@ export async function PUT(
               console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name });
               // For nested write, we need to use outlet's database ID (number)
               validOutletStock.push({
-                outletId: outlet.publicId, // Use publicId (number) for nested write
+                outletId: outlet.id, // Use id (number) for nested write
                 stock: stock.stock,
                 available: stock.stock,
                 renting: 0
