@@ -206,9 +206,18 @@ export async function PUT(
             }
           }
           
-          // Fix images field - remove if it's an empty array (mobile app compatibility)
-          if (productDataFromRequest.images && Array.isArray(productDataFromRequest.images) && productDataFromRequest.images.length === 0) {
-            delete productDataFromRequest.images;
+          // Fix images field - handle empty array or convert to string (mobile app compatibility)
+          if (productDataFromRequest.images) {
+            if (Array.isArray(productDataFromRequest.images)) {
+              if (productDataFromRequest.images.length === 0) {
+                // Remove empty array to avoid Prisma error
+                delete productDataFromRequest.images;
+              } else {
+                // Convert array to comma-separated string for database
+                productDataFromRequest.images = productDataFromRequest.images.join(',');
+              }
+            }
+            // If it's already a string, keep as is
           }
         } catch (parseError) {
           return NextResponse.json(
