@@ -152,9 +152,10 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     const body = await request.json();
     const parsed = orderCreateSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ 
-        ResponseBuilder.validationError(parsed.error.flatten()) 
-      }, { status: 400 });
+      return NextResponse.json(
+        ResponseBuilder.validationError(parsed.error.flatten()),
+        { status: 400 }
+      );
     }
 
     // Get outlet and merchant to check association and plan limits
@@ -297,9 +298,10 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
     const body = await request.json();
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ 
-        ResponseBuilder.validationError(parsed.error.flatten()) 
-      }, { status: 400 });
+      return NextResponse.json(
+        ResponseBuilder.validationError(parsed.error.flatten()),
+        { status: 400 }
+      );
     }
 
     // Extract id from query params
