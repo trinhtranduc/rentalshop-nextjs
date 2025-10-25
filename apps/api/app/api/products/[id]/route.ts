@@ -275,10 +275,13 @@ export async function PUT(
         
         // Combine uploaded files with existing images (only if there are files)
         if (uploadedFiles.length > 0) {
-          productDataFromRequest.images = [
-            ...(productDataFromRequest.images || []),
+          const existingImages = productDataFromRequest.images || [];
+          const allImages = [
+            ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
             ...uploadedFiles
           ];
+          // Convert array to comma-separated string for database
+          productDataFromRequest.images = allImages.join(',');
         }
         
       } else {
