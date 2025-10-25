@@ -952,7 +952,7 @@ var buttonVariants = cva3(
     }
   }
 );
-var Button2 = React2.forwardRef(
+var Button = React2.forwardRef(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     return /* @__PURE__ */ jsx5(
@@ -965,7 +965,7 @@ var Button2 = React2.forwardRef(
     );
   }
 );
-Button2.displayName = "Button";
+Button.displayName = "Button";
 
 // src/components/ui/button-clean.tsx
 import React3 from "react";
@@ -1570,7 +1570,7 @@ var ConfirmationDialog = ({
     ] }) }),
     /* @__PURE__ */ jsxs7(DialogFooter, { className: "flex justify-end space-x-2 mt-6", children: [
       /* @__PURE__ */ jsx14(
-        Button2,
+        Button,
         {
           variant: "outline",
           onClick: handleCancel,
@@ -1579,7 +1579,7 @@ var ConfirmationDialog = ({
         }
       ),
       /* @__PURE__ */ jsx14(
-        Button2,
+        Button,
         {
           variant: config.buttonVariant,
           onClick: handleConfirm,
@@ -1739,7 +1739,7 @@ var ConfirmationDialogWithReason = ({
     ] }) }),
     /* @__PURE__ */ jsxs9(DialogFooter, { className: "flex justify-end space-x-2 mt-6", children: [
       /* @__PURE__ */ jsx17(
-        Button2,
+        Button,
         {
           variant: "outline",
           onClick: handleCancel,
@@ -1748,7 +1748,7 @@ var ConfirmationDialogWithReason = ({
         }
       ),
       /* @__PURE__ */ jsx17(
-        Button2,
+        Button,
         {
           variant: config.buttonVariant,
           onClick: handleConfirm,
@@ -2042,7 +2042,7 @@ var DropdownMenuTrigger = React15.forwardRef(({ className, children, onToggle, a
     });
   }
   return /* @__PURE__ */ jsx24(
-    Button2,
+    Button,
     {
       ref,
       variant: "ghost",
@@ -2764,7 +2764,7 @@ var DateRangePicker = ({
   const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   return /* @__PURE__ */ jsxs16("div", { className: cn2("relative", className), ref: containerRef, children: [
     /* @__PURE__ */ jsxs16(
-      Button2,
+      Button,
       {
         variant: "outline",
         onClick: () => !disabled && setIsOpen(!isOpen),
@@ -2786,7 +2786,7 @@ var DateRangePicker = ({
       /* @__PURE__ */ jsxs16("div", { className: "flex items-center justify-between mb-2", children: [
         /* @__PURE__ */ jsx29("h3", { className: "text-sm font-semibold text-gray-900", children: "Ch\u1ECDn kho\u1EA3ng th\u1EDDi gian" }),
         /* @__PURE__ */ jsx29(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -2799,7 +2799,7 @@ var DateRangePicker = ({
       showPresets && /* @__PURE__ */ jsxs16("div", { className: "mb-4 p-3 bg-gray-50 rounded-lg", children: [
         /* @__PURE__ */ jsx29("h4", { className: "text-xs font-medium text-gray-600 mb-2", children: "G\u1EE3i \xFD nhanh" }),
         /* @__PURE__ */ jsx29("div", { className: "flex flex-wrap gap-2", children: [1, 3, 7, 14, 30].map((days) => /* @__PURE__ */ jsxs16(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -2816,7 +2816,7 @@ var DateRangePicker = ({
       ] }),
       /* @__PURE__ */ jsxs16("div", { className: "flex items-center justify-between mb-2", children: [
         /* @__PURE__ */ jsx29(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -2830,7 +2830,7 @@ var DateRangePicker = ({
           year: "numeric"
         }) }),
         /* @__PURE__ */ jsx29(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -2851,7 +2851,7 @@ var DateRangePicker = ({
             const isInRange = isDateInRange(date2);
             const isHovered = hoveredDate && date2.getTime() === hoveredDate.getTime();
             return /* @__PURE__ */ jsx29(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 onClick: () => handleDateClick(date2),
@@ -2874,7 +2874,7 @@ var DateRangePicker = ({
       ] }),
       /* @__PURE__ */ jsxs16("div", { className: "flex gap-2", children: [
         /* @__PURE__ */ jsx29(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -2884,7 +2884,7 @@ var DateRangePicker = ({
           }
         ),
         /* @__PURE__ */ jsx29(
-          Button2,
+          Button,
           {
             size: "sm",
             onClick: handleApply,
@@ -2965,7 +2965,7 @@ function Pagination({
     ] }),
     /* @__PURE__ */ jsxs17("div", { className: "flex items-center space-x-2", children: [
       /* @__PURE__ */ jsx30(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "sm",
@@ -2975,7 +2975,7 @@ function Pagination({
         }
       ),
       /* @__PURE__ */ jsx30("div", { className: "flex items-center space-x-1", children: getPageNumbers().map((page, index) => /* @__PURE__ */ jsx30(React20.Fragment, { children: page === "..." ? /* @__PURE__ */ jsx30("span", { className: "px-3 py-2 text-gray-500", children: "..." }) : /* @__PURE__ */ jsx30(
-        Button2,
+        Button,
         {
           variant: currentPage === page ? "default" : "outline",
           size: "sm",
@@ -2985,7 +2985,7 @@ function Pagination({
         }
       ) }, index)) }),
       /* @__PURE__ */ jsx30(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "sm",
@@ -3557,7 +3557,7 @@ var SearchableSelect = ({
       ),
       /* @__PURE__ */ jsx36("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
       /* @__PURE__ */ jsx36(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -3572,7 +3572,7 @@ var SearchableSelect = ({
         }
       ),
       query && /* @__PURE__ */ jsx36(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -3591,7 +3591,7 @@ var SearchableSelect = ({
         }
       )
     ] }) : /* @__PURE__ */ jsxs22(
-      Button2,
+      Button,
       {
         variant: "outline",
         type: "button",
@@ -3611,7 +3611,7 @@ var SearchableSelect = ({
       /* @__PURE__ */ jsx36("div", { children: emptyText })
     ] }) : /* @__PURE__ */ jsxs22(Fragment, { children: [
       showAddNew && onAddNew && /* @__PURE__ */ jsxs22(
-        Button2,
+        Button,
         {
           variant: "ghost",
           type: "button",
@@ -3628,7 +3628,7 @@ var SearchableSelect = ({
       ),
       filtered.map((opt) => {
         return /* @__PURE__ */ jsxs22(
-          Button2,
+          Button,
           {
             variant: "ghost",
             type: "button",
@@ -3778,7 +3778,7 @@ var SearchableCountrySelect = ({
       ),
       /* @__PURE__ */ jsx37("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
       /* @__PURE__ */ jsx37(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -3793,7 +3793,7 @@ var SearchableCountrySelect = ({
         }
       ),
       query && /* @__PURE__ */ jsx37(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -3811,7 +3811,7 @@ var SearchableCountrySelect = ({
       /* @__PURE__ */ jsx37("div", { className: "w-8 h-8 mx-auto mb-2 text-gray-300", children: /* @__PURE__ */ jsx37("svg", { className: "w-8 h-8", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx37("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" }) }) }),
       /* @__PURE__ */ jsx37("div", { children: emptyMessage })
     ] }) : /* @__PURE__ */ jsx37(Fragment2, { children: filtered.map((country) => /* @__PURE__ */ jsxs23(
-      Button2,
+      Button,
       {
         variant: "ghost",
         type: "button",
@@ -3899,7 +3899,7 @@ var Toast = ({
               message && /* @__PURE__ */ jsx38("p", { className: "text-sm mt-1 opacity-90", children: message })
             ] }),
             /* @__PURE__ */ jsx38(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "icon",
@@ -4475,7 +4475,7 @@ var ProductForm = ({
                   }
                 ),
                 /* @__PURE__ */ jsx39(
-                  Button2,
+                  Button,
                   {
                     type: "button",
                     variant: "outline",
@@ -4682,7 +4682,7 @@ var ProductForm = ({
                   }
                 ),
                 /* @__PURE__ */ jsx39(
-                  Button2,
+                  Button,
                   {
                     type: "button",
                     variant: "outline",
@@ -4702,7 +4702,7 @@ var ProductForm = ({
               useMultipartUpload ? t2("messages.imagesSelected") : t2("messages.imagesUploaded")
             ] }),
             currentImageCount > 0 && /* @__PURE__ */ jsx39(
-              Button2,
+              Button,
               {
                 type: "button",
                 variant: "outline",
@@ -4725,7 +4725,7 @@ var ProductForm = ({
               /* @__PURE__ */ jsx39("p", { className: "text-xs text-red-600 mt-1", children: error })
             ] }),
             /* @__PURE__ */ jsx39(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "icon",
@@ -4755,7 +4755,7 @@ var ProductForm = ({
                 ),
                 /* @__PURE__ */ jsx39("div", { className: "absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 rounded-b-lg truncate", children: file.name }),
                 /* @__PURE__ */ jsx39(
-                  Button2,
+                  Button,
                   {
                     variant: "ghost",
                     size: "icon",
@@ -4809,7 +4809,7 @@ var ProductForm = ({
                     }
                   ),
                   /* @__PURE__ */ jsx39(
-                    Button2,
+                    Button,
                     {
                       variant: "ghost",
                       size: "icon",
@@ -4827,7 +4827,7 @@ var ProductForm = ({
         ] })
       ] }),
       !hideSubmitButton && /* @__PURE__ */ jsx39("div", { className: "flex justify-end", children: /* @__PURE__ */ jsx39(
-        Button2,
+        Button,
         {
           type: "submit",
           disabled: isSubmitting || !validateForm(),
@@ -4852,7 +4852,7 @@ import {
   CardHeader as CardHeader2,
   CardTitle as CardTitle2,
   CardContent as CardContent2,
-  Button as Button3,
+  Button as Button2,
   Input as Input2,
   Select as Select2,
   SelectContent as SelectContent2,
@@ -5101,7 +5101,7 @@ var OrderForm = ({
   const ProductsCard = /* @__PURE__ */ jsxs26(Card2, { children: [
     /* @__PURE__ */ jsx40(CardHeader2, { children: /* @__PURE__ */ jsxs26("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsx40(CardTitle2, { children: "S\u1EA3n ph\u1EA9m" }),
-      /* @__PURE__ */ jsx40(Button3, { type: "button", onClick: addOrderItem, variant: "outline", size: "sm", children: "Th\xEAm s\u1EA3n ph\u1EA9m" })
+      /* @__PURE__ */ jsx40(Button2, { type: "button", onClick: addOrderItem, variant: "outline", size: "sm", children: "Th\xEAm s\u1EA3n ph\u1EA9m" })
     ] }) }),
     /* @__PURE__ */ jsx40(CardContent2, { children: orderItems.length === 0 ? /* @__PURE__ */ jsx40("div", { className: "text-center py-8 text-gray-500", children: 'Ch\u01B0a c\xF3 s\u1EA3n ph\u1EA9m n\xE0o. Nh\u1EA5n "Th\xEAm s\u1EA3n ph\u1EA9m" \u0111\u1EC3 b\u1EAFt \u0111\u1EA7u.' }) : /* @__PURE__ */ jsx40("div", { className: "space-y-4", children: orderItems.map((item, index) => /* @__PURE__ */ jsxs26("div", { className: "border rounded-lg p-4 space-y-4", children: [
       /* @__PURE__ */ jsxs26("div", { className: "flex items-center justify-between", children: [
@@ -5109,7 +5109,7 @@ var OrderForm = ({
           "S\u1EA3n ph\u1EA9m ",
           index + 1
         ] }),
-        /* @__PURE__ */ jsx40(Button3, { type: "button", variant: "destructive", size: "sm", onClick: () => removeOrderItem(index), children: "X\xF3a" })
+        /* @__PURE__ */ jsx40(Button2, { type: "button", variant: "destructive", size: "sm", onClick: () => removeOrderItem(index), children: "X\xF3a" })
       ] }),
       /* @__PURE__ */ jsxs26("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: [
         /* @__PURE__ */ jsxs26("div", { children: [
@@ -5217,8 +5217,8 @@ var OrderForm = ({
       ] })
     ] }),
     /* @__PURE__ */ jsxs26("div", { className: "flex justify-end space-x-4", children: [
-      /* @__PURE__ */ jsx40(Button3, { type: "button", variant: "outline", onClick: onCancel, children: "H\u1EE7y" }),
-      /* @__PURE__ */ jsx40(Button3, { type: "submit", disabled: loading, children: loading ? "\u0110ang x\u1EED l\xFD..." : "L\u01B0u \u0111\u01A1n h\xE0ng" })
+      /* @__PURE__ */ jsx40(Button2, { type: "button", variant: "outline", onClick: onCancel, children: "H\u1EE7y" }),
+      /* @__PURE__ */ jsx40(Button2, { type: "submit", disabled: loading, children: loading ? "\u0110ang x\u1EED l\xFD..." : "L\u01B0u \u0111\u01A1n h\xE0ng" })
     ] })
   ] }) : /* @__PURE__ */ jsxs26(Fragment4, { children: [
     InfoCard,
@@ -5226,8 +5226,8 @@ var OrderForm = ({
     FinancialCard,
     NotesCard,
     /* @__PURE__ */ jsxs26("div", { className: "flex justify-end space-x-4", children: [
-      /* @__PURE__ */ jsx40(Button3, { type: "button", variant: "outline", onClick: onCancel, children: "H\u1EE7y" }),
-      /* @__PURE__ */ jsx40(Button3, { type: "submit", disabled: loading, children: loading ? "\u0110ang x\u1EED l\xFD..." : "L\u01B0u \u0111\u01A1n h\xE0ng" })
+      /* @__PURE__ */ jsx40(Button2, { type: "button", variant: "outline", onClick: onCancel, children: "H\u1EE7y" }),
+      /* @__PURE__ */ jsx40(Button2, { type: "submit", disabled: loading, children: loading ? "\u0110ang x\u1EED l\xFD..." : "L\u01B0u \u0111\u01A1n h\xE0ng" })
     ] })
   ] }) });
 };
@@ -5853,7 +5853,7 @@ import {
   Input as Input3,
   SearchableSelect as SearchableSelect3,
   Skeleton as Skeleton2,
-  Button as Button4,
+  Button as Button3,
   useFormatCurrency as useFormatCurrency2
 } from "@rentalshop/ui";
 import { useOrderTranslations, useProductTranslations as useProductTranslations2 } from "@rentalshop/hooks";
@@ -6028,7 +6028,7 @@ var OrderItemCard = ({
             /* @__PURE__ */ jsx41("p", { className: "text-xs text-gray-500 mt-1", children: tp("productInformationNotAvailable") })
           ] }),
           /* @__PURE__ */ jsx41(
-            Button4,
+            Button3,
             {
               variant: "ghost",
               size: "icon",
@@ -6138,7 +6138,7 @@ var OrderItemCard = ({
           ] })
         ] }),
         /* @__PURE__ */ jsx41(
-          Button4,
+          Button3,
           {
             type: "button",
             variant: "ghost",
@@ -6241,7 +6241,7 @@ import {
   RentalPeriodSelector,
   Textarea as Textarea3,
   Skeleton as Skeleton3,
-  Button as Button5
+  Button as Button4
 } from "@rentalshop/ui";
 import { useOrderTranslations as useOrderTranslations2 } from "@rentalshop/hooks";
 import {
@@ -6338,7 +6338,7 @@ var OrderInfoSection = ({
         ] }),
         /* @__PURE__ */ jsxs28("div", { className: "grid grid-cols-2 gap-2", children: [
           /* @__PURE__ */ jsx42(
-            Button5,
+            Button4,
             {
               type: "button",
               variant: formData.orderType === "RENT" ? "default" : "outline",
@@ -6353,7 +6353,7 @@ var OrderInfoSection = ({
             }
           ),
           /* @__PURE__ */ jsx42(
-            Button5,
+            Button4,
             {
               type: "button",
               variant: formData.orderType === "SALE" ? "default" : "outline",
@@ -6497,7 +6497,7 @@ var OrderInfoSection = ({
               }
             ),
             selectedCustomer ? /* @__PURE__ */ jsx42(
-              Button5,
+              Button4,
               {
                 variant: "ghost",
                 size: "icon",
@@ -6508,7 +6508,7 @@ var OrderInfoSection = ({
                 children: /* @__PURE__ */ jsx42(X4, { className: "w-4 h-4" })
               }
             ) : /* @__PURE__ */ jsx42(
-              Button5,
+              Button4,
               {
                 variant: "ghost",
                 size: "icon",
@@ -6524,7 +6524,7 @@ var OrderInfoSection = ({
             ),
             !selectedCustomer && (customerSearchResults.length > 0 || searchQuery.trim()) && /* @__PURE__ */ jsxs28("div", { className: "absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto", children: [
               /* @__PURE__ */ jsxs28(
-                Button5,
+                Button4,
                 {
                   variant: "ghost",
                   type: "button",
@@ -6544,7 +6544,7 @@ var OrderInfoSection = ({
                 }
               ),
               customerSearchResults.length > 0 ? /* @__PURE__ */ jsx42(Fragment5, { children: customerSearchResults.map((customer) => /* @__PURE__ */ jsxs28(
-                Button5,
+                Button4,
                 {
                   variant: "ghost",
                   type: "button",
@@ -6647,7 +6647,7 @@ import {
   CardHeader as CardHeader5,
   CardTitle as CardTitle5,
   CardContent as CardContent5,
-  Button as Button6,
+  Button as Button5,
   useFormatCurrency as useFormatCurrency3
 } from "@rentalshop/ui";
 import { useOrderTranslations as useOrderTranslations3 } from "@rentalshop/hooks";
@@ -6777,7 +6777,7 @@ var OrderSummarySection = ({
       ] }),
       /* @__PURE__ */ jsx43("div", { className: "space-y-4 pt-2", children: /* @__PURE__ */ jsxs29("div", { className: "flex gap-3", children: [
         /* @__PURE__ */ jsx43(
-          Button6,
+          Button5,
           {
             type: "button",
             disabled: loading || !isFormValid,
@@ -6787,7 +6787,7 @@ var OrderSummarySection = ({
           }
         ),
         onCancel && /* @__PURE__ */ jsx43(
-          Button6,
+          Button5,
           {
             type: "button",
             variant: "outline",
@@ -7053,7 +7053,7 @@ var AddCustomerForm = ({
     ] }),
     /* @__PURE__ */ jsxs30("div", { className: "flex justify-end space-x-3 border-t pt-4", children: [
       /* @__PURE__ */ jsxs30(
-        Button2,
+        Button,
         {
           type: "button",
           variant: "outline",
@@ -7065,7 +7065,7 @@ var AddCustomerForm = ({
           ]
         }
       ),
-      /* @__PURE__ */ jsxs30(Button2, { type: "submit", disabled: isSubmitting, children: [
+      /* @__PURE__ */ jsxs30(Button, { type: "submit", disabled: isSubmitting, children: [
         /* @__PURE__ */ jsx44(Save, { className: "w-4 h-4 mr-2" }),
         isSubmitting ? tc("buttons.creating") : t2("createCustomer")
       ] })
@@ -7138,7 +7138,7 @@ import {
   TableHead as TableHead2,
   TableRow as TableRow2,
   TableCell as TableCell2,
-  Button as Button7
+  Button as Button6
 } from "@rentalshop/ui";
 import { formatCurrency as formatCurrency4 } from "@rentalshop/utils";
 import { useOrderTranslations as useOrderTranslations4 } from "@rentalshop/hooks";
@@ -7401,7 +7401,7 @@ var OrderPreviewForm = ({
     ] }),
     /* @__PURE__ */ jsxs32("div", { className: "flex justify-end gap-3 pt-6 border-t", children: [
       onCancel && /* @__PURE__ */ jsxs32(
-        Button7,
+        Button6,
         {
           variant: "outline",
           onClick: onCancel,
@@ -7413,7 +7413,7 @@ var OrderPreviewForm = ({
         }
       ),
       /* @__PURE__ */ jsxs32(
-        Button7,
+        Button6,
         {
           variant: "outline",
           onClick: onEdit,
@@ -7425,7 +7425,7 @@ var OrderPreviewForm = ({
         }
       ),
       /* @__PURE__ */ jsx46(
-        Button7,
+        Button6,
         {
           onClick: onConfirm,
           disabled: loading || warnings.length > 0,
@@ -8368,7 +8368,7 @@ var PlanForm = ({
                 onKeyPress: (e2) => e2.key === "Enter" && (e2.preventDefault(), addFeature())
               }
             ),
-            /* @__PURE__ */ jsx49(Button2, { type: "button", onClick: addFeature, disabled: !newFeature.trim(), children: /* @__PURE__ */ jsx49(Plus3, { className: "w-4 h-4" }) })
+            /* @__PURE__ */ jsx49(Button, { type: "button", onClick: addFeature, disabled: !newFeature.trim(), children: /* @__PURE__ */ jsx49(Plus3, { className: "w-4 h-4" }) })
           ] }),
           formData.features.length > 0 && /* @__PURE__ */ jsxs35("div", { className: "space-y-2", children: [
             /* @__PURE__ */ jsx49("div", { className: "text-sm font-medium text-text-primary", children: "Plan Features:" }),
@@ -8378,7 +8378,7 @@ var PlanForm = ({
                 /* @__PURE__ */ jsx49("span", { className: "text-sm text-text-primary", children: feature })
               ] }),
               /* @__PURE__ */ jsx49(
-                Button2,
+                Button,
                 {
                   type: "button",
                   variant: "ghost",
@@ -8393,8 +8393,8 @@ var PlanForm = ({
         ] })
       ] }),
       !hideSubmitButton && /* @__PURE__ */ jsxs35("div", { className: "flex items-center justify-end space-x-4", children: [
-        onCancel && /* @__PURE__ */ jsx49(Button2, { type: "button", variant: "outline", onClick: onCancel, disabled: isSubmitting, children: "Cancel" }),
-        /* @__PURE__ */ jsx49(Button2, { type: "submit", disabled: isSubmitting || loading, children: isSubmitting ? /* @__PURE__ */ jsxs35(Fragment7, { children: [
+        onCancel && /* @__PURE__ */ jsx49(Button, { type: "button", variant: "outline", onClick: onCancel, disabled: isSubmitting, children: "Cancel" }),
+        /* @__PURE__ */ jsx49(Button, { type: "submit", disabled: isSubmitting || loading, children: isSubmitting ? /* @__PURE__ */ jsxs35(Fragment7, { children: [
           /* @__PURE__ */ jsx49("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" }),
           "Saving..."
         ] }) : submitText })
@@ -13404,7 +13404,7 @@ FieldArrayInner.defaultProps = {
 
 // src/components/forms/LoginForm.tsx
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { Button as Button9, Card as Card7, CardContent as CardContent7, Input as Input5 } from "@rentalshop/ui";
+import { Button as Button8, Card as Card7, CardContent as CardContent7, Input as Input5 } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
 
 // src/components/layout/LanguageSwitcher.tsx
@@ -13426,7 +13426,7 @@ function Z() {
 
 // src/components/layout/LanguageSwitcher.tsx
 import { useRouter } from "next/navigation";
-import { Button as Button8 } from "@rentalshop/ui";
+import { Button as Button7 } from "@rentalshop/ui";
 import { Globe } from "lucide-react";
 import { jsx as jsx50, jsxs as jsxs36 } from "react/jsx-runtime";
 var LanguageSwitcher = ({
@@ -13449,7 +13449,7 @@ var LanguageSwitcher = ({
   if (variant === "compact") {
     return /* @__PURE__ */ jsxs36("div", { className: "flex items-center gap-1", children: [
       /* @__PURE__ */ jsx50(
-        Button8,
+        Button7,
         {
           variant: currentLocale === "en" ? "default" : "ghost",
           size: "sm",
@@ -13460,7 +13460,7 @@ var LanguageSwitcher = ({
         }
       ),
       /* @__PURE__ */ jsx50(
-        Button8,
+        Button7,
         {
           variant: currentLocale === "vi" ? "default" : "ghost",
           size: "sm",
@@ -13475,7 +13475,7 @@ var LanguageSwitcher = ({
   return /* @__PURE__ */ jsxs36("div", { className: "flex items-center gap-2", children: [
     /* @__PURE__ */ jsx50(Globe, { className: "w-4 h-4 text-text-tertiary" }),
     /* @__PURE__ */ jsx50(
-      Button8,
+      Button7,
       {
         variant: currentLocale === "en" ? "default" : "ghost",
         size: "sm",
@@ -13486,7 +13486,7 @@ var LanguageSwitcher = ({
       }
     ),
     /* @__PURE__ */ jsx50(
-      Button8,
+      Button7,
       {
         variant: currentLocale === "vi" ? "default" : "ghost",
         size: "sm",
@@ -13647,7 +13647,7 @@ var LoginForm = ({
                 }
               ),
               /* @__PURE__ */ jsx51(
-                Button9,
+                Button8,
                 {
                   variant: "ghost",
                   size: "icon",
@@ -13673,7 +13673,7 @@ var LoginForm = ({
               /* @__PURE__ */ jsx51("label", { htmlFor: "remember", className: "ml-3 text-sm font-medium text-gray-700", children: t2("login.rememberMe") })
             ] }),
             /* @__PURE__ */ jsx51(
-              Button9,
+              Button8,
               {
                 variant: "link",
                 onClick: () => onNavigate?.("/forget-password"),
@@ -13683,7 +13683,7 @@ var LoginForm = ({
             )
           ] }),
           /* @__PURE__ */ jsx51(
-            Button9,
+            Button8,
             {
               type: "submit",
               className: "w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
@@ -13701,7 +13701,7 @@ var LoginForm = ({
         t2("login.noAccount"),
         " ",
         /* @__PURE__ */ jsx51(
-          Button9,
+          Button8,
           {
             variant: "link",
             onClick: () => onNavigate?.("/register"),
@@ -13736,7 +13736,7 @@ import {
   getDefaultCountry
 } from "@rentalshop/constants";
 import {
-  Button as Button10,
+  Button as Button9,
   Card as Card8,
   CardHeader as CardHeader8,
   CardTitle as CardTitle8,
@@ -13930,7 +13930,7 @@ var RegisterForm = ({
                 }
               ),
               /* @__PURE__ */ jsx52(
-                Button10,
+                Button9,
                 {
                   variant: "ghost",
                   size: "icon",
@@ -13961,7 +13961,7 @@ var RegisterForm = ({
                 }
               ),
               /* @__PURE__ */ jsx52(
-                Button10,
+                Button9,
                 {
                   variant: "ghost",
                   size: "icon",
@@ -14037,7 +14037,7 @@ var RegisterForm = ({
             formik.errors.phone && formik.touched.phone && /* @__PURE__ */ jsx52("p", { className: "text-red-500 text-sm", children: formik.errors.phone })
           ] }),
           /* @__PURE__ */ jsx52(
-            Button10,
+            Button9,
             {
               type: "submit",
               className: "w-full bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
@@ -14267,7 +14267,7 @@ var RegisterForm = ({
           ] }),
           /* @__PURE__ */ jsxs38("div", { className: "flex space-x-3", children: [
             /* @__PURE__ */ jsx52(
-              Button10,
+              Button9,
               {
                 type: "button",
                 onClick: () => setCurrentStep(1),
@@ -14276,7 +14276,7 @@ var RegisterForm = ({
               }
             ),
             /* @__PURE__ */ jsx52(
-              Button10,
+              Button9,
               {
                 type: "submit",
                 className: "flex-1 bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
@@ -14291,7 +14291,7 @@ var RegisterForm = ({
           t2("register.hasAccount"),
           " ",
           /* @__PURE__ */ jsx52(
-            Button10,
+            Button9,
             {
               variant: "link",
               type: "button",
@@ -14311,7 +14311,7 @@ var RegisterForm_default = RegisterForm;
 // src/components/forms/ForgetPasswordForm.tsx
 import { useState as useState24 } from "react";
 import { Mail as Mail3, ArrowLeft as ArrowLeft2, CheckCircle as CheckCircle11 } from "lucide-react";
-import { Button as Button11, Card as Card9, CardHeader as CardHeader9, CardTitle as CardTitle9, CardDescription as CardDescription4, CardContent as CardContent9, Input as Input7 } from "@rentalshop/ui";
+import { Button as Button10, Card as Card9, CardHeader as CardHeader9, CardTitle as CardTitle9, CardDescription as CardDescription4, CardContent as CardContent9, Input as Input7 } from "@rentalshop/ui";
 import { useAuthTranslations as useAuthTranslations3 } from "@rentalshop/hooks";
 import { jsx as jsx53, jsxs as jsxs39 } from "react/jsx-runtime";
 var ForgetPasswordForm = ({
@@ -14368,7 +14368,7 @@ var ForgetPasswordForm = ({
         /* @__PURE__ */ jsx53("p", { className: "text-xs text-gray-500 mb-6", children: t2("forgotPassword.checkEmail") }),
         /* @__PURE__ */ jsxs39("div", { className: "space-y-3", children: [
           /* @__PURE__ */ jsx53(
-            Button11,
+            Button10,
             {
               onClick: () => {
                 setEmailSent(false);
@@ -14379,7 +14379,7 @@ var ForgetPasswordForm = ({
             }
           ),
           /* @__PURE__ */ jsx53(
-            Button11,
+            Button10,
             {
               variant: "outline",
               onClick: () => onNavigate?.("/login"),
@@ -14436,7 +14436,7 @@ var ForgetPasswordForm = ({
             validation.touched.email && validation.errors.email && /* @__PURE__ */ jsx53("p", { className: "mt-1 text-sm text-red-600", children: validation.errors.email })
           ] }),
           /* @__PURE__ */ jsx53(
-            Button11,
+            Button10,
             {
               type: "submit",
               className: "w-full",
@@ -14452,7 +14452,7 @@ var ForgetPasswordForm = ({
       ] }) })
     ] }),
     /* @__PURE__ */ jsx53("div", { className: "mt-6 text-center", children: /* @__PURE__ */ jsxs39(
-      Button11,
+      Button10,
       {
         variant: "link",
         onClick: () => onNavigate?.("/login"),
@@ -14491,7 +14491,7 @@ var TimePeriodSelector = ({
   return /* @__PURE__ */ jsx54("div", { className: "mb-6", children: /* @__PURE__ */ jsxs40("div", { className: "flex items-center justify-between", children: [
     /* @__PURE__ */ jsx54("h2", { className: "text-lg font-semibold text-gray-900", children: "Business Overview" }),
     /* @__PURE__ */ jsx54("div", { className: "flex space-x-2", children: periods.map((period) => /* @__PURE__ */ jsxs40(
-      Button2,
+      Button,
       {
         variant: currentPeriod === period.key ? "default" : "outline",
         size: "sm",
@@ -15278,7 +15278,7 @@ function DashboardActions({ onActionClick }) {
       /* @__PURE__ */ jsx67("p", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Common tasks and shortcuts" })
     ] }),
     /* @__PURE__ */ jsx67(CardContent, { children: /* @__PURE__ */ jsx67("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: actions.map((action) => /* @__PURE__ */ jsx67(
-      Button2,
+      Button,
       {
         variant: action.variant,
         className: "h-auto p-4 flex flex-col items-start space-y-2 text-left",
@@ -15308,7 +15308,7 @@ function DashboardNavigation({ activeTab }) {
     { id: "reports", label: "Reports", description: "Detailed business reports" }
   ];
   return /* @__PURE__ */ jsx68(Card, { children: /* @__PURE__ */ jsx68(CardContent, { className: "p-0", children: /* @__PURE__ */ jsx68("div", { className: "flex flex-wrap border-b border-gray-200 dark:border-gray-700", children: tabs.map((tab) => /* @__PURE__ */ jsx68(
-    Button2,
+    Button,
     {
       variant: activeTab === tab.id ? "default" : "ghost",
       className: `flex-1 min-w-0 px-4 py-3 rounded-none border-b-2 ${activeTab === tab.id ? "border-primary bg-primary/5 text-primary" : "border-transparent hover:bg-gray-50 dark:hover:bg-gray-800"}`,
@@ -15390,7 +15390,7 @@ import { useEffect as useEffect15 } from "react";
 import Link2 from "next/link";
 import { useRouter as useRouter2 } from "next/navigation";
 import { cn as cn3 } from "@rentalshop/ui";
-import { Button as Button12, Card as Card10 } from "@rentalshop/ui";
+import { Button as Button11, Card as Card10 } from "@rentalshop/ui";
 import { ChevronLeft as ChevronLeft2, ChevronRight as ChevronRight3, Building2 } from "lucide-react";
 import { useOptimisticNavigation } from "@rentalshop/hooks";
 import { Fragment as Fragment9, jsx as jsx70, jsxs as jsxs56 } from "react/jsx-runtime";
@@ -15485,7 +15485,7 @@ var Sidebar = ({
             ),
             /* @__PURE__ */ jsxs56("div", { className: "flex items-center space-x-2", children: [
               onCollapseToggle && /* @__PURE__ */ jsx70(
-                Button12,
+                Button11,
                 {
                   variant: "ghost",
                   size: "sm",
@@ -15496,7 +15496,7 @@ var Sidebar = ({
                 }
               ),
               /* @__PURE__ */ jsx70(
-                Button12,
+                Button11,
                 {
                   variant: "ghost",
                   size: "icon",
@@ -15569,7 +15569,7 @@ var Sidebar = ({
                 }
               ),
               /* @__PURE__ */ jsxs56(
-                Button12,
+                Button11,
                 {
                   onClick: onLogout,
                   variant: "outline",
@@ -15658,7 +15658,7 @@ function ProductHeader({ totalProducts, viewMode, onViewModeChange }) {
     { value: "table", label: "Table View", icon: "\u229F" }
   ];
   return /* @__PURE__ */ jsx73("div", { className: "flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0", children: /* @__PURE__ */ jsx73("div", { className: "flex items-center space-x-2", children: viewModes.map((mode) => /* @__PURE__ */ jsxs59(
-    Button2,
+    Button,
     {
       variant: viewMode === mode.value ? "default" : "outline",
       size: "sm",
@@ -15691,7 +15691,7 @@ var ProductPageHeader = ({
     }
   };
   return /* @__PURE__ */ jsx74("div", { className: "mb-6", children: (onBack || backUrl) && /* @__PURE__ */ jsxs60(
-    Button2,
+    Button,
     {
       onClick: handleBack,
       variant: "outline",
@@ -15706,7 +15706,7 @@ var ProductPageHeader = ({
 
 // src/components/features/Products/components/ProductFilters.tsx
 import { useCallback as useCallback8 } from "react";
-import { Input as Input8 } from "@rentalshop/ui";
+import { Input as Input8, Button as Button12 } from "@rentalshop/ui";
 import { Select as Select5, SelectContent as SelectContent5, SelectItem as SelectItem5, SelectTrigger as SelectTrigger5, SelectValue as SelectValue5 } from "@rentalshop/ui";
 import { useOutletsData, useCategoriesData, useProductTranslations as useProductTranslations3, useCommonTranslations as useCommonTranslations6 } from "@rentalshop/hooks";
 import { Fragment as Fragment10, jsx as jsx75, jsxs as jsxs61 } from "react/jsx-runtime";
@@ -15797,7 +15797,7 @@ function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilte
       }
     ),
     hasActiveFilters && onClearFilters && /* @__PURE__ */ jsx75(
-      Button,
+      Button12,
       {
         variant: "outline",
         size: "sm",
@@ -15930,7 +15930,7 @@ var ProductCard = ({
       /* @__PURE__ */ jsx76("div", { className: "absolute top-2 left-2", children: /* @__PURE__ */ jsx76("span", { className: "bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium", children: category.name }) }),
       variant === "admin" && /* @__PURE__ */ jsxs62("div", { className: "absolute top-2 right-2 flex gap-1", children: [
         onEdit && /* @__PURE__ */ jsx76(
-          Button2,
+          Button,
           {
             size: "sm",
             variant: "secondary",
@@ -15940,7 +15940,7 @@ var ProductCard = ({
           }
         ),
         onDelete && /* @__PURE__ */ jsx76(
-          Button2,
+          Button,
           {
             size: "sm",
             variant: "destructive",
@@ -15998,7 +15998,7 @@ var ProductCard = ({
       /* @__PURE__ */ jsxs62("div", { className: "flex gap-2", children: [
         variant === "client" && /* @__PURE__ */ jsxs62(Fragment11, { children: [
           onView && /* @__PURE__ */ jsx76(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -16008,7 +16008,7 @@ var ProductCard = ({
             }
           ),
           onRent && isAvailable && /* @__PURE__ */ jsx76(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onRent(id),
@@ -16020,7 +16020,7 @@ var ProductCard = ({
         ] }),
         variant === "mobile" && /* @__PURE__ */ jsxs62(Fragment11, { children: [
           onView && /* @__PURE__ */ jsx76(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -16030,7 +16030,7 @@ var ProductCard = ({
             }
           ),
           onRent && isAvailable && /* @__PURE__ */ jsx76(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onRent(id),
@@ -16042,7 +16042,7 @@ var ProductCard = ({
         ] }),
         variant === "admin" && /* @__PURE__ */ jsxs62(Fragment11, { children: [
           onView && /* @__PURE__ */ jsx76(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -16052,7 +16052,7 @@ var ProductCard = ({
             }
           ),
           onEdit && /* @__PURE__ */ jsx76(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: handleEdit,
@@ -16103,7 +16103,7 @@ function ProductGrid({
       /* @__PURE__ */ jsx77("h3", { className: "text-lg font-medium mb-2", children: "No products found" }),
       /* @__PURE__ */ jsx77("p", { className: "text-sm mb-4", children: "Try adjusting your filters or add some products to get started." }),
       showAddButton && categories.length > 0 && outlets.length > 0 && merchantId && /* @__PURE__ */ jsx77(
-        Button2,
+        Button,
         {
           onClick: handleAddProduct,
           className: "px-4 py-2",
@@ -16272,7 +16272,7 @@ function ProductTable({
       }) : "N/A" }) }),
       /* @__PURE__ */ jsx78("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ jsxs64(DropdownMenu, { children: [
         /* @__PURE__ */ jsx78(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsx78(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -16423,9 +16423,9 @@ var ProductAddForm = ({
         ] })
       ] }) }),
       /* @__PURE__ */ jsxs65("div", { className: "flex justify-end space-x-2", children: [
-        /* @__PURE__ */ jsx79(Button2, { variant: "outline", onClick: handleCancel, disabled: isSubmitting, children: tc("buttons.cancel") }),
+        /* @__PURE__ */ jsx79(Button, { variant: "outline", onClick: handleCancel, disabled: isSubmitting, children: tc("buttons.cancel") }),
         /* @__PURE__ */ jsx79(
-          Button2,
+          Button,
           {
             type: "submit",
             form: "product-form",
@@ -16604,7 +16604,7 @@ function ProductActions({
   ).map(({ roles, ...action }) => action);
   return /* @__PURE__ */ jsxs67(Fragment14, { children: [
     /* @__PURE__ */ jsx81(Card, { children: /* @__PURE__ */ jsx81(CardContent, { className: "p-4", children: /* @__PURE__ */ jsx81("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3", children: actions.map((action) => /* @__PURE__ */ jsx81(
-      Button2,
+      Button,
       {
         variant: action.variant,
         className: "h-auto p-3 flex flex-col items-start space-y-2 text-left",
@@ -17341,7 +17341,7 @@ function OrderQuickFilters({
     /* @__PURE__ */ jsxs73("div", { className: "flex items-center gap-2 flex-wrap", children: [
       /* @__PURE__ */ jsx88("span", { className: "text-sm font-medium text-text-secondary", children: "Quick filters:" }),
       quickFilters.map((filter) => /* @__PURE__ */ jsxs73(
-        Button2,
+        Button,
         {
           variant: activeFilter === filter.id ? "default" : "outline",
           size: "sm",
@@ -17355,7 +17355,7 @@ function OrderQuickFilters({
         filter.id
       )),
       activeFilter && /* @__PURE__ */ jsx88(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "sm",
@@ -17547,7 +17547,7 @@ function OrderDateRangeFilter({
       ] }),
       /* @__PURE__ */ jsxs74(DialogFooter, { children: [
         /* @__PURE__ */ jsx89(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => {
@@ -17559,7 +17559,7 @@ function OrderDateRangeFilter({
           }
         ),
         /* @__PURE__ */ jsx89(
-          Button2,
+          Button,
           {
             variant: "default",
             onClick: handleCustomApply,
@@ -17712,7 +17712,7 @@ var OrderTable = React51.memo(function OrderTable2({
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400", children: formatDate11(order.createdAt) }),
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3 whitespace-nowrap text-right text-sm", children: /* @__PURE__ */ jsxs75("div", { className: "flex items-center justify-end gap-2", children: [
         /* @__PURE__ */ jsxs75(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -17725,7 +17725,7 @@ var OrderTable = React51.memo(function OrderTable2({
           }
         ),
         /* @__PURE__ */ jsxs75(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -18194,7 +18194,7 @@ var ProductOrdersView = ({
       /* @__PURE__ */ jsx95("div", { className: "text-red-500 mb-4", children: /* @__PURE__ */ jsx95(BarChart32, { className: "h-12 w-12 mx-auto" }) }),
       /* @__PURE__ */ jsx95("h3", { className: "text-lg font-semibold mb-2", children: t2("messages.errorLoadingOrders") }),
       /* @__PURE__ */ jsx95("p", { className: "text-gray-600 mb-4", children: error }),
-      /* @__PURE__ */ jsxs79(Button2, { onClick: () => window.location.reload(), children: [
+      /* @__PURE__ */ jsxs79(Button, { onClick: () => window.location.reload(), children: [
         /* @__PURE__ */ jsx95(RefreshCw2, { className: "h-4 w-4 mr-2" }),
         tc("buttons.tryAgain")
       ] })
@@ -18208,15 +18208,15 @@ var ProductOrdersView = ({
           /* @__PURE__ */ jsx95("p", { className: "text-gray-600", children: t2("productOrders.description") })
         ] }),
         /* @__PURE__ */ jsxs79("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ jsxs79(Button2, { variant: "outline", onClick: handleExport, children: [
+          /* @__PURE__ */ jsxs79(Button, { variant: "outline", onClick: handleExport, children: [
             /* @__PURE__ */ jsx95(Download, { className: "h-4 w-4 mr-2" }),
             tc("buttons.export")
           ] }),
-          /* @__PURE__ */ jsxs79(Button2, { onClick: handleRefresh, children: [
+          /* @__PURE__ */ jsxs79(Button, { onClick: handleRefresh, children: [
             /* @__PURE__ */ jsx95(RefreshCw2, { className: "h-4 w-4 mr-2" }),
             tc("buttons.refresh")
           ] }),
-          onClose && /* @__PURE__ */ jsxs79(Button2, { variant: "outline", onClick: onClose, children: [
+          onClose && /* @__PURE__ */ jsxs79(Button, { variant: "outline", onClick: onClose, children: [
             /* @__PURE__ */ jsx95(ArrowLeft6, { className: "h-4 w-4 mr-2" }),
             t2("productOrders.backToProducts")
           ] })
@@ -19006,7 +19006,7 @@ var CustomerDetailDialog = ({
       ] }) }),
       /* @__PURE__ */ jsxs83(DialogFooter, { className: "flex justify-between", children: [
         /* @__PURE__ */ jsx99("div", { children: onDelete && /* @__PURE__ */ jsxs83(
-          Button2,
+          Button,
           {
             variant: "destructive",
             onClick: () => setShowDeleteConfirm(true),
@@ -19019,7 +19019,7 @@ var CustomerDetailDialog = ({
           }
         ) }),
         /* @__PURE__ */ jsx99("div", { className: "flex space-x-2", children: /* @__PURE__ */ jsx99(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => onOpenChange(false),
@@ -19035,7 +19035,7 @@ var CustomerDetailDialog = ({
       ] }),
       /* @__PURE__ */ jsxs83(DialogFooter, { className: "flex justify-end space-x-2", children: [
         /* @__PURE__ */ jsx99(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowDeleteConfirm(false),
@@ -19044,7 +19044,7 @@ var CustomerDetailDialog = ({
           }
         ),
         /* @__PURE__ */ jsxs83(
-          Button2,
+          Button,
           {
             variant: "destructive",
             onClick: handleDelete,
@@ -20084,7 +20084,7 @@ function CustomerActions({
   ];
   return /* @__PURE__ */ jsxs90("div", { className: "space-y-4", children: [
     /* @__PURE__ */ jsx106("div", { className: "flex flex-wrap gap-3", children: actions.map((action) => /* @__PURE__ */ jsxs90(
-      Button2,
+      Button,
       {
         onClick: action.onClick,
         variant: action.variant,
@@ -21265,7 +21265,7 @@ function MerchantFilters({
       ] })
     ] }),
     onClearFilters && (filters.search || filters.status !== "all" || filters.plan !== "all") && /* @__PURE__ */ jsx117(
-      Button2,
+      Button,
       {
         variant: "outline",
         size: "sm",
@@ -21358,7 +21358,7 @@ function MerchantTable({
           }) : "No end date" }) }),
           /* @__PURE__ */ jsx118("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ jsxs102(DropdownMenu, { children: [
             /* @__PURE__ */ jsx118(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsx118(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "sm",
@@ -22555,8 +22555,8 @@ function SubscriptionFormSimple({
       /* @__PURE__ */ jsx122(CardContent, { children: formContent })
     ] }) : formContent,
     showActions && mode !== "view" && /* @__PURE__ */ jsxs106("div", { className: "flex justify-end space-x-2", children: [
-      /* @__PURE__ */ jsx122(Button2, { type: "button", variant: "outline", onClick: onCancel, disabled: loading, children: "Cancel" }),
-      /* @__PURE__ */ jsx122(Button2, { type: "submit", disabled: loading, children: loading ? "Saving..." : submitText || "Save" })
+      /* @__PURE__ */ jsx122(Button, { type: "button", variant: "outline", onClick: onCancel, disabled: loading, children: "Cancel" }),
+      /* @__PURE__ */ jsx122(Button, { type: "submit", disabled: loading, children: loading ? "Saving..." : submitText || "Save" })
     ] })
   ] });
 }
@@ -22897,7 +22897,7 @@ function SubscriptionList({
             /* @__PURE__ */ jsx124("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx124("div", { className: "text-sm text-text-primary", children: formatDate11(subscription.currentPeriodEnd) }) }),
             /* @__PURE__ */ jsx124("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ jsxs108(DropdownMenu, { children: [
               /* @__PURE__ */ jsx124(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsx124(
-                Button2,
+                Button,
                 {
                   variant: "ghost",
                   size: "sm",
@@ -23511,7 +23511,7 @@ function SubscriptionForm({
     ] }),
     /* @__PURE__ */ jsxs109("div", { className: "flex items-center justify-end space-x-2", children: [
       /* @__PURE__ */ jsx125(
-        Button2,
+        Button,
         {
           type: "button",
           variant: "outline",
@@ -23521,7 +23521,7 @@ function SubscriptionForm({
         }
       ),
       mode !== "view" && /* @__PURE__ */ jsx125(
-        Button2,
+        Button,
         {
           type: "submit",
           disabled: loading,
@@ -24311,15 +24311,15 @@ function SubscriptionStatusBanner({
       ] })
     ] }),
     showActions && /* @__PURE__ */ jsxs112("div", { className: "flex items-center space-x-2 ml-4", children: [
-      upgradeRequired && onUpgrade && /* @__PURE__ */ jsxs112(Button2, { size: "sm", onClick: onUpgrade, children: [
+      upgradeRequired && onUpgrade && /* @__PURE__ */ jsxs112(Button, { size: "sm", onClick: onUpgrade, children: [
         /* @__PURE__ */ jsx128(CheckCircle14, { className: "w-4 h-4 mr-1" }),
         "Upgrade Now"
       ] }),
-      requiresPayment && onPayment && /* @__PURE__ */ jsxs112(Button2, { size: "sm", variant: "outline", onClick: onPayment, children: [
+      requiresPayment && onPayment && /* @__PURE__ */ jsxs112(Button, { size: "sm", variant: "outline", onClick: onPayment, children: [
         /* @__PURE__ */ jsx128(CreditCard6, { className: "w-4 h-4 mr-1" }),
         "Make Payment"
       ] }),
-      canExportData && onExport && /* @__PURE__ */ jsxs112(Button2, { size: "sm", variant: "outline", onClick: onExport, children: [
+      canExportData && onExport && /* @__PURE__ */ jsxs112(Button, { size: "sm", variant: "outline", onClick: onExport, children: [
         /* @__PURE__ */ jsx128(Download4, { className: "w-4 h-4 mr-1" }),
         "Export Data"
       ] })
@@ -24391,15 +24391,15 @@ function SubscriptionStatusCard({
         gracePeriodEnds.toLocaleDateString()
       ] }),
       showActions && /* @__PURE__ */ jsxs112("div", { className: "flex items-center space-x-3", children: [
-        upgradeRequired && onUpgrade && /* @__PURE__ */ jsxs112(Button2, { size: "sm", onClick: onUpgrade, children: [
+        upgradeRequired && onUpgrade && /* @__PURE__ */ jsxs112(Button, { size: "sm", onClick: onUpgrade, children: [
           /* @__PURE__ */ jsx128(CheckCircle14, { className: "w-4 h-4 mr-1" }),
           "Upgrade Now"
         ] }),
-        requiresPayment && onPayment && /* @__PURE__ */ jsxs112(Button2, { size: "sm", variant: "outline", onClick: onPayment, children: [
+        requiresPayment && onPayment && /* @__PURE__ */ jsxs112(Button, { size: "sm", variant: "outline", onClick: onPayment, children: [
           /* @__PURE__ */ jsx128(CreditCard6, { className: "w-4 h-4 mr-1" }),
           "Make Payment"
         ] }),
-        canExportData && onExport && /* @__PURE__ */ jsxs112(Button2, { size: "sm", variant: "outline", onClick: onExport, children: [
+        canExportData && onExport && /* @__PURE__ */ jsxs112(Button, { size: "sm", variant: "outline", onClick: onExport, children: [
           /* @__PURE__ */ jsx128(Download4, { className: "w-4 h-4 mr-1" }),
           "Export Data"
         ] })
@@ -24549,7 +24549,7 @@ function RestrictedButton({
     }
   };
   return /* @__PURE__ */ jsxs114(
-    Button2,
+    Button,
     {
       ...props,
       disabled: isDisabled,
@@ -25453,7 +25453,7 @@ function SubscriptionActivityTimeline({
   return /* @__PURE__ */ jsxs118(Card, { children: [
     /* @__PURE__ */ jsx134(CardHeader, { children: /* @__PURE__ */ jsxs118("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsx134(CardTitle, { children: "\u{1F4CA} Subscription Activity & Payment History" }),
-      onExport && /* @__PURE__ */ jsxs118(Button2, { variant: "outline", size: "sm", onClick: onExport, children: [
+      onExport && /* @__PURE__ */ jsxs118(Button, { variant: "outline", size: "sm", onClick: onExport, children: [
         /* @__PURE__ */ jsx134(Download6, { className: "w-4 h-4 mr-2" }),
         "Export"
       ] })
@@ -25921,7 +25921,7 @@ function MerchantPlanManagement({
           "Current Subscription"
         ] }),
         currentSubscription && (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsxs119(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -25965,7 +25965,7 @@ function MerchantPlanManagement({
         ] }),
         (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsxs119("div", { className: "flex flex-wrap items-center gap-3 pt-4", children: [
           isTrialPlan && /* @__PURE__ */ jsxs119(
-            Button2,
+            Button,
             {
               variant: "default",
               size: "sm",
@@ -25978,7 +25978,7 @@ function MerchantPlanManagement({
             }
           ),
           !isTrialPlan && /* @__PURE__ */ jsxs119(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -25991,7 +25991,7 @@ function MerchantPlanManagement({
             }
           ),
           currentSubscription && isActiveStatus && !isTrialPlan && /* @__PURE__ */ jsxs119(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -26004,7 +26004,7 @@ function MerchantPlanManagement({
             }
           ),
           currentSubscription && isActivePaidStatus && /* @__PURE__ */ jsxs119(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -26017,7 +26017,7 @@ function MerchantPlanManagement({
             }
           ),
           currentSubscription && isPaused && /* @__PURE__ */ jsxs119(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -26031,7 +26031,7 @@ function MerchantPlanManagement({
             }
           ),
           currentSubscription && (isActiveStatus || isPausedStatus) && /* @__PURE__ */ jsxs119(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -26049,12 +26049,12 @@ function MerchantPlanManagement({
         /* @__PURE__ */ jsx136("h3", { className: "text-lg font-medium text-gray-900 mb-2", children: "No Subscription" }),
         /* @__PURE__ */ jsx136("p", { className: "text-gray-500 mb-4", children: "This merchant doesn't have an active subscription." }),
         (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsxs119("div", { className: "flex flex-wrap items-center justify-center gap-3", children: [
-          /* @__PURE__ */ jsxs119(Button2, { onClick: handleOpenChangeDialog, children: [
+          /* @__PURE__ */ jsxs119(Button, { onClick: handleOpenChangeDialog, children: [
             /* @__PURE__ */ jsx136(CreditCard12, { className: "h-4 w-4 mr-2" }),
             "Create Subscription"
           ] }),
           /* @__PURE__ */ jsxs119(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -26222,7 +26222,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ jsxs119(DialogFooter, { className: "border-t pt-4", children: [
         /* @__PURE__ */ jsx136(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowChangeDialog(false),
@@ -26231,7 +26231,7 @@ function MerchantPlanManagement({
           }
         ),
         /* @__PURE__ */ jsx136(
-          Button2,
+          Button,
           {
             onClick: handleChangePlan,
             disabled: !selectedPlanId || !changeBillingInterval || isSubmitting,
@@ -26284,7 +26284,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ jsxs119(DialogFooter, { children: [
         /* @__PURE__ */ jsx136(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowCancelDialog(false),
@@ -26293,7 +26293,7 @@ function MerchantPlanManagement({
           }
         ),
         /* @__PURE__ */ jsx136(
-          Button2,
+          Button,
           {
             variant: "destructive",
             onClick: handleCancel,
@@ -26336,7 +26336,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ jsxs119(DialogFooter, { children: [
         /* @__PURE__ */ jsx136(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowSuspendDialog(false),
@@ -26345,7 +26345,7 @@ function MerchantPlanManagement({
           }
         ),
         /* @__PURE__ */ jsx136(
-          Button2,
+          Button,
           {
             variant: "destructive",
             onClick: handleSuspend,
@@ -26389,7 +26389,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ jsxs119(DialogFooter, { className: "flex-shrink-0", children: [
         /* @__PURE__ */ jsx136(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowResumeDialog(false),
@@ -26398,7 +26398,7 @@ function MerchantPlanManagement({
           }
         ),
         /* @__PURE__ */ jsx136(
-          Button2,
+          Button,
           {
             variant: "default",
             onClick: handleReactivate,
@@ -26425,7 +26425,7 @@ function MerchantPlanManagement({
         }
       ) }),
       /* @__PURE__ */ jsx136(DialogFooter, { children: /* @__PURE__ */ jsx136(
-        Button2,
+        Button,
         {
           variant: "outline",
           onClick: () => setShowHistoryDialog(false),
@@ -26613,7 +26613,7 @@ function MerchantSubscriptionSection({
       }
     ) }),
     /* @__PURE__ */ jsx138(DialogFooter, { children: /* @__PURE__ */ jsx138(
-      Button2,
+      Button,
       {
         variant: "outline",
         onClick: () => setShowHistoryDialog(false),
@@ -26725,7 +26725,7 @@ function MerchantDetail({
           /* @__PURE__ */ jsx139(Building25, { className: "w-5 h-5 text-blue-700" })
         ] }),
         /* @__PURE__ */ jsx139(CardContent, { children: /* @__PURE__ */ jsx139(
-          Button2,
+          Button,
           {
             variant: "outline",
             className: "w-full",
@@ -26740,7 +26740,7 @@ function MerchantDetail({
           /* @__PURE__ */ jsx139(Package14, { className: "w-5 h-5 text-green-600" })
         ] }),
         /* @__PURE__ */ jsx139(CardContent, { children: /* @__PURE__ */ jsx139(
-          Button2,
+          Button,
           {
             variant: "outline",
             className: "w-full",
@@ -26755,7 +26755,7 @@ function MerchantDetail({
           /* @__PURE__ */ jsx139(Users8, { className: "w-5 h-5 text-purple-600" })
         ] }),
         /* @__PURE__ */ jsx139(CardContent, { children: /* @__PURE__ */ jsx139(
-          Button2,
+          Button,
           {
             variant: "outline",
             className: "w-full",
@@ -26770,7 +26770,7 @@ function MerchantDetail({
           /* @__PURE__ */ jsx139(ShoppingCart7, { className: "w-5 h-5 text-orange-600" })
         ] }),
         /* @__PURE__ */ jsx139(CardContent, { children: /* @__PURE__ */ jsx139(
-          Button2,
+          Button,
           {
             variant: "outline",
             className: "w-full",
@@ -26847,7 +26847,7 @@ function CalendarNavigation({
     ] }),
     /* @__PURE__ */ jsxs124("div", { className: "flex items-center space-x-2", children: [
       /* @__PURE__ */ jsx141(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "icon",
@@ -26857,7 +26857,7 @@ function CalendarNavigation({
         }
       ),
       /* @__PURE__ */ jsx141(
-        Button2,
+        Button,
         {
           variant: "outline",
           onClick: onToday,
@@ -26866,7 +26866,7 @@ function CalendarNavigation({
         }
       ),
       /* @__PURE__ */ jsx141(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "icon",
@@ -27273,7 +27273,7 @@ import { jsx as jsx147, jsxs as jsxs130 } from "react/jsx-runtime";
 function UserHeader({ viewMode, onViewModeChange, onAddUser }) {
   return /* @__PURE__ */ jsxs130("div", { className: "flex justify-between items-center gap-4", children: [
     /* @__PURE__ */ jsx147("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsxs130(
-      Button2,
+      Button,
       {
         onClick: onAddUser,
         className: "bg-blue-700 hover:bg-blue-700 text-white",
@@ -27285,7 +27285,7 @@ function UserHeader({ viewMode, onViewModeChange, onAddUser }) {
     ) }),
     /* @__PURE__ */ jsxs130("div", { className: "flex items-center gap-2", children: [
       /* @__PURE__ */ jsxs130(
-        Button2,
+        Button,
         {
           variant: viewMode === "table" ? "default" : "outline",
           size: "sm",
@@ -27298,7 +27298,7 @@ function UserHeader({ viewMode, onViewModeChange, onAddUser }) {
         }
       ),
       /* @__PURE__ */ jsxs130(
-        Button2,
+        Button,
         {
           variant: viewMode === "grid" ? "default" : "outline",
           size: "sm",
@@ -27587,7 +27587,7 @@ function UserTable({
       /* @__PURE__ */ jsx151("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx151("div", { className: "text-sm text-text-primary", children: formatDate11(user.createdAt) }) }),
       /* @__PURE__ */ jsx151("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ jsxs134(DropdownMenu, { children: [
         /* @__PURE__ */ jsx151(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsx151(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -27875,7 +27875,7 @@ var ChangePasswordDialog = ({
               }
             ),
             /* @__PURE__ */ jsx153(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "icon",
@@ -27904,7 +27904,7 @@ var ChangePasswordDialog = ({
               }
             ),
             /* @__PURE__ */ jsx153(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "icon",
@@ -27920,7 +27920,7 @@ var ChangePasswordDialog = ({
       ] }),
       /* @__PURE__ */ jsxs136(DialogFooter, { className: "flex justify-end space-x-2 mt-6", children: [
         /* @__PURE__ */ jsx153(
-          Button2,
+          Button,
           {
             type: "button",
             variant: "outline",
@@ -27930,7 +27930,7 @@ var ChangePasswordDialog = ({
           }
         ),
         /* @__PURE__ */ jsx153(
-          Button2,
+          Button,
           {
             type: "submit",
             disabled: isLoading,
@@ -28428,7 +28428,7 @@ var FormField = ({
         }
       ),
       showPasswordToggle && type === "password" && /* @__PURE__ */ jsx157(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -29175,7 +29175,7 @@ var UserForm = ({
     ] }) }),
     /* @__PURE__ */ jsxs141("div", { className: "flex justify-end space-x-3 border-t pt-6", children: [
       /* @__PURE__ */ jsxs141(
-        Button2,
+        Button,
         {
           type: "button",
           variant: "outline",
@@ -29188,7 +29188,7 @@ var UserForm = ({
         }
       ),
       /* @__PURE__ */ jsxs141(
-        Button2,
+        Button,
         {
           type: "submit",
           disabled: isSubmitting,
@@ -29487,7 +29487,7 @@ var AccountManagementCard = ({
           /* @__PURE__ */ jsx162("p", { className: "text-sm text-gray-600", children: user.isActive ? "User can currently log in and access the system" : "User is currently disabled and cannot access the system" })
         ] }),
         /* @__PURE__ */ jsx162("div", { className: "flex gap-2", children: user.isActive ? /* @__PURE__ */ jsxs145(
-          Button2,
+          Button,
           {
             onClick: onDeactivate,
             variant: "outline",
@@ -29499,7 +29499,7 @@ var AccountManagementCard = ({
             ]
           }
         ) : /* @__PURE__ */ jsxs145(
-          Button2,
+          Button,
           {
             onClick: onActivate,
             variant: "outline",
@@ -29518,7 +29518,7 @@ var AccountManagementCard = ({
           /* @__PURE__ */ jsx162("p", { className: "text-sm text-red-700", children: "This action cannot be undone. This will permanently delete the user account and remove all associated data." })
         ] }),
         /* @__PURE__ */ jsxs145(
-          Button2,
+          Button,
           {
             onClick: onDelete,
             variant: "destructive",
@@ -30013,7 +30013,7 @@ function OutletTable({
       /* @__PURE__ */ jsx167("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ jsx167("div", { className: "text-sm text-gray-900 dark:text-white", children: formatDate11(outlet.createdAt) }) }),
       /* @__PURE__ */ jsx167("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ jsxs150(DropdownMenu, { children: [
         /* @__PURE__ */ jsx167(DropdownMenuTrigger, { children: /* @__PURE__ */ jsx167(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -30602,7 +30602,7 @@ var CategoryFormContent = ({
     ] }),
     /* @__PURE__ */ jsxs156("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
       /* @__PURE__ */ jsx174(
-        Button2,
+        Button,
         {
           type: "button",
           variant: "outline",
@@ -30612,7 +30612,7 @@ var CategoryFormContent = ({
         }
       ),
       /* @__PURE__ */ jsx174(
-        Button2,
+        Button,
         {
           type: "submit",
           disabled: submitting,
@@ -30734,7 +30734,7 @@ var CategoryActions = ({
   ).map(({ roles, ...action }) => action);
   return /* @__PURE__ */ jsxs158(Fragment39, { children: [
     /* @__PURE__ */ jsx176(Card, { children: /* @__PURE__ */ jsx176(CardContent, { className: "p-4", children: /* @__PURE__ */ jsx176("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3", children: actions.map((action) => /* @__PURE__ */ jsx176(
-      Button2,
+      Button,
       {
         variant: action.variant,
         className: "h-auto p-3 flex flex-col items-start space-y-2 text-left",
@@ -30793,7 +30793,7 @@ var CategoryCard = ({
       ] }),
       /* @__PURE__ */ jsxs159("div", { className: "flex items-center space-x-1", children: [
         /* @__PURE__ */ jsxs159(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -30806,7 +30806,7 @@ var CategoryCard = ({
           }
         ),
         /* @__PURE__ */ jsxs159(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -30982,7 +30982,7 @@ function CategoryTable({
           /* @__PURE__ */ jsx179("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400", children: formatDate11(category.createdAt) }),
           /* @__PURE__ */ jsx179("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ jsxs161(DropdownMenu, { children: [
             /* @__PURE__ */ jsx179(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsx179(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "sm",
@@ -31137,7 +31137,7 @@ var CategoryView = ({
         ] }),
         /* @__PURE__ */ jsxs163("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
           /* @__PURE__ */ jsx181(
-            Button2,
+            Button,
             {
               type: "button",
               variant: "outline",
@@ -31146,7 +31146,7 @@ var CategoryView = ({
             }
           ),
           /* @__PURE__ */ jsx181(
-            Button2,
+            Button,
             {
               type: "button",
               onClick: handleEdit,
@@ -31172,7 +31172,7 @@ var CategoryView = ({
         /* @__PURE__ */ jsx181("p", { className: "text-sm text-gray-500", children: t2("dialog.deleteWarning") }),
         /* @__PURE__ */ jsxs163("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
           /* @__PURE__ */ jsx181(
-            Button2,
+            Button,
             {
               type: "button",
               variant: "outline",
@@ -31181,7 +31181,7 @@ var CategoryView = ({
             }
           ),
           /* @__PURE__ */ jsx181(
-            Button2,
+            Button,
             {
               type: "button",
               variant: "destructive",
@@ -32398,7 +32398,7 @@ var PlanDetailModal = ({
           ] })
         ] }),
         /* @__PURE__ */ jsx193(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -32444,7 +32444,7 @@ var PlanDetailModal = ({
                       formatCurrency17(savings, plan.currency)
                     ] }),
                     /* @__PURE__ */ jsx193(
-                      Button2,
+                      Button,
                       {
                         variant: isSelected ? "default" : "outline",
                         size: "sm",
@@ -32512,7 +32512,7 @@ var PlanDetailModal = ({
       ] }),
       /* @__PURE__ */ jsxs175("div", { className: "flex items-center justify-end gap-3 p-6 border-t bg-gray-50", children: [
         /* @__PURE__ */ jsx193(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => onOpenChange(false),
@@ -32520,7 +32520,7 @@ var PlanDetailModal = ({
           }
         ),
         /* @__PURE__ */ jsxs175(
-          Button2,
+          Button,
           {
             onClick: () => handleSubscribe(plan.billingCycle),
             className: "bg-blue-700 hover:bg-blue-700",
@@ -33728,7 +33728,7 @@ var PaymentDetailDialog = ({
         /* @__PURE__ */ jsx198(DialogDescription, { className: "text-sm text-text-secondary mt-1", children: "View payment information and transaction details" })
       ] }),
       /* @__PURE__ */ jsx198("div", { className: "flex items-center gap-2", children: onDownloadReceipt && /* @__PURE__ */ jsxs180(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "sm",
@@ -33867,7 +33867,7 @@ var PaymentDetailDialog = ({
       ] }) }),
       /* @__PURE__ */ jsxs180("div", { className: "flex items-center justify-end gap-3 pt-4 border-t", children: [
         payment.status === "pending" && onProcessPayment && /* @__PURE__ */ jsxs180(
-          Button2,
+          Button,
           {
             onClick: () => onProcessPayment(payment.id),
             className: "flex items-center gap-2",
@@ -33878,7 +33878,7 @@ var PaymentDetailDialog = ({
           }
         ),
         payment.status === "completed" && onRefundPayment && /* @__PURE__ */ jsxs180(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => onRefundPayment(payment.id),
@@ -33890,7 +33890,7 @@ var PaymentDetailDialog = ({
           }
         ),
         /* @__PURE__ */ jsx198(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => onOpenChange(false),
@@ -33989,7 +33989,7 @@ function PaymentTable({
       /* @__PURE__ */ jsx199("td", { className: "px-6 py-4", children: /* @__PURE__ */ jsx199("div", { className: "text-sm text-text-primary", children: formatDate11(payment.createdAt) }) }),
       /* @__PURE__ */ jsx199("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ jsxs181(DropdownMenu, { children: [
         /* @__PURE__ */ jsx199(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsx199(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -34178,7 +34178,7 @@ function ActionButton({
   className = ""
 }) {
   return /* @__PURE__ */ jsxs184(
-    Button2,
+    Button,
     {
       variant,
       size,
@@ -34207,7 +34207,7 @@ function EmptyState7({
     /* @__PURE__ */ jsx204(Icon2, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
     /* @__PURE__ */ jsx204("h3", { className: "text-lg font-medium text-text-secondary mb-2", children: title }),
     /* @__PURE__ */ jsx204("p", { className: "text-text-tertiary mb-4", children: description }),
-    actionLabel && onAction && /* @__PURE__ */ jsx204(Button2, { onClick: onAction, children: actionLabel })
+    actionLabel && onAction && /* @__PURE__ */ jsx204(Button, { onClick: onAction, children: actionLabel })
   ] }) }) });
 }
 
@@ -34353,7 +34353,7 @@ function AdminPageHeader({
 }) {
   return /* @__PURE__ */ jsx207(PageHeader, { className, children: /* @__PURE__ */ jsxs188("div", { className: "flex justify-between items-start", children: [
     /* @__PURE__ */ jsx207("div", { children: /* @__PURE__ */ jsx207(PageTitle, { subtitle, children: title }) }),
-    actionLabel && onAction && ActionIcon && /* @__PURE__ */ jsxs188(Button2, { onClick: onAction, children: [
+    actionLabel && onAction && ActionIcon && /* @__PURE__ */ jsxs188(Button, { onClick: onAction, children: [
       /* @__PURE__ */ jsx207(ActionIcon, { className: "w-4 h-4 mr-2" }),
       actionLabel
     ] })
@@ -34373,7 +34373,7 @@ function SettingsNavigation({
     /* @__PURE__ */ jsx208(CardContent, { children: /* @__PURE__ */ jsx208("nav", { className: "space-y-2", children: tabs.map((tab) => {
       const Icon2 = tab.icon;
       return /* @__PURE__ */ jsxs189(
-        Button2,
+        Button,
         {
           variant: "ghost",
           onClick: () => onTabChange(tab.id),
@@ -34451,8 +34451,8 @@ function SettingsForm({
     /* @__PURE__ */ jsx209(CardHeader, { children: /* @__PURE__ */ jsxs190("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsx209(CardTitle, { children: title }),
       /* @__PURE__ */ jsxs190("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ jsx209(Button2, { variant: "outline", onClick: onReset, children: "Reset" }),
-        /* @__PURE__ */ jsx209(Button2, { onClick: onSave, disabled: saving, children: saving ? "Saving..." : "Save" })
+        /* @__PURE__ */ jsx209(Button, { variant: "outline", onClick: onReset, children: "Reset" }),
+        /* @__PURE__ */ jsx209(Button, { onClick: onSave, disabled: saving, children: saving ? "Saving..." : "Save" })
       ] })
     ] }) }),
     /* @__PURE__ */ jsx209(CardContent, { children: /* @__PURE__ */ jsx209("div", { className: "space-y-6", children: fields.map((field) => /* @__PURE__ */ jsxs190("div", { children: [
@@ -34799,7 +34799,7 @@ function SecurityCard({
         /* @__PURE__ */ jsx212("div", { className: `p-2 rounded-full ${config.bgColor}`, children: /* @__PURE__ */ jsx212(Icon2, { className: `w-5 h-5 ${config.color}` }) }),
         /* @__PURE__ */ jsx212(CardTitle, { className: "text-lg", children: title })
       ] }),
-      actionLabel && onAction && /* @__PURE__ */ jsx212(Button2, { variant: "outline", size: "sm", onClick: onAction, children: actionLabel })
+      actionLabel && onAction && /* @__PURE__ */ jsx212(Button, { variant: "outline", size: "sm", onClick: onAction, children: actionLabel })
     ] }) }),
     /* @__PURE__ */ jsx212(CardContent, { children: /* @__PURE__ */ jsx212("p", { className: "text-sm text-text-secondary", children: description }) })
   ] });
@@ -34924,7 +34924,7 @@ function QuickActions({
     /* @__PURE__ */ jsx215(CardContent, { children: /* @__PURE__ */ jsx215("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-3", children: actions.map((action) => {
       const Icon2 = action.icon;
       return /* @__PURE__ */ jsxs196(
-        Button2,
+        Button,
         {
           variant: action.variant || "outline",
           onClick: action.onClick,
@@ -35182,7 +35182,7 @@ function PerformanceAlertCard({
         ] }) }),
         /* @__PURE__ */ jsxs199("div", { className: "flex space-x-2", children: [
           onViewDetails && /* @__PURE__ */ jsx218(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35191,7 +35191,7 @@ function PerformanceAlertCard({
             }
           ),
           !alert2.resolved && onResolve && /* @__PURE__ */ jsx218(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onResolve(alert2.id),
@@ -35403,7 +35403,7 @@ function MaintenanceTaskCard({
       ] }),
       /* @__PURE__ */ jsxs201("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx221("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ jsx221(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35413,7 +35413,7 @@ function MaintenanceTaskCard({
         ) }),
         /* @__PURE__ */ jsxs201("div", { className: "flex space-x-2", children: [
           task.status === "PENDING" && onStart && /* @__PURE__ */ jsxs201(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onStart(task.id),
@@ -35425,7 +35425,7 @@ function MaintenanceTaskCard({
             }
           ),
           task.status === "IN_PROGRESS" && onComplete && /* @__PURE__ */ jsxs201(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onComplete(task.id),
@@ -35437,7 +35437,7 @@ function MaintenanceTaskCard({
             }
           ),
           (task.status === "PENDING" || task.status === "IN_PROGRESS") && onCancel && /* @__PURE__ */ jsxs201(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35476,7 +35476,7 @@ function MaintenanceModeToggle({
           /* @__PURE__ */ jsx222("span", { className: "text-sm font-medium", children: isActive ? "Maintenance Mode Active" : "System Normal" })
         ] }),
         /* @__PURE__ */ jsxs202(
-          Button2,
+          Button,
           {
             variant: isActive ? "default" : "outline",
             onClick: onToggle,
@@ -35618,7 +35618,7 @@ function MaintenanceWindowCard({
       ] }),
       /* @__PURE__ */ jsxs203("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx224("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ jsx224(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35628,7 +35628,7 @@ function MaintenanceWindowCard({
         ) }),
         /* @__PURE__ */ jsxs203("div", { className: "flex space-x-2", children: [
           window2.status === "SCHEDULED" && onEdit && /* @__PURE__ */ jsx224(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onEdit(window2),
@@ -35636,7 +35636,7 @@ function MaintenanceWindowCard({
             }
           ),
           (window2.status === "SCHEDULED" || window2.status === "ACTIVE") && onCancel && /* @__PURE__ */ jsx224(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35774,7 +35774,7 @@ function BackupCard({
       ] }) }),
       /* @__PURE__ */ jsxs204("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx225("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ jsx225(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35784,7 +35784,7 @@ function BackupCard({
         ) }),
         /* @__PURE__ */ jsxs204("div", { className: "flex space-x-2", children: [
           backup.status === "COMPLETED" && onDownload && /* @__PURE__ */ jsxs204(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35797,7 +35797,7 @@ function BackupCard({
             }
           ),
           backup.status === "COMPLETED" && onRestore && /* @__PURE__ */ jsxs204(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onRestore(backup.id),
@@ -35809,7 +35809,7 @@ function BackupCard({
             }
           ),
           onDelete && /* @__PURE__ */ jsxs204(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35935,7 +35935,7 @@ function BackupScheduleCard({
       ] }) }),
       /* @__PURE__ */ jsxs205("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx226("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ jsx226(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35945,7 +35945,7 @@ function BackupScheduleCard({
         ) }),
         /* @__PURE__ */ jsxs205("div", { className: "flex space-x-2", children: [
           schedule.status === "ACTIVE" && onPause && /* @__PURE__ */ jsxs205(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35958,7 +35958,7 @@ function BackupScheduleCard({
             }
           ),
           schedule.status === "PAUSED" && onResume && /* @__PURE__ */ jsxs205(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onResume(schedule.id),
@@ -35970,7 +35970,7 @@ function BackupScheduleCard({
             }
           ),
           onEdit && /* @__PURE__ */ jsxs205(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35983,7 +35983,7 @@ function BackupScheduleCard({
             }
           ),
           onDelete && /* @__PURE__ */ jsx226(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -36133,7 +36133,7 @@ function ApiKeyCard({
       /* @__PURE__ */ jsx229("div", { className: "mb-3", children: /* @__PURE__ */ jsxs206("div", { className: "flex items-center space-x-2 mb-2", children: [
         /* @__PURE__ */ jsx229("code", { className: "text-xs bg-bg-secondary px-2 py-1 rounded font-mono flex-1", children: showKey ? apiKey.key : "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" }),
         /* @__PURE__ */ jsx229(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -36143,7 +36143,7 @@ function ApiKeyCard({
           }
         ),
         /* @__PURE__ */ jsx229(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -36192,7 +36192,7 @@ function ApiKeyCard({
       ] }) }),
       /* @__PURE__ */ jsxs206("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx229("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ jsx229(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -36202,7 +36202,7 @@ function ApiKeyCard({
         ) }),
         /* @__PURE__ */ jsxs206("div", { className: "flex space-x-2", children: [
           apiKey.status === "ACTIVE" && onRevoke && /* @__PURE__ */ jsxs206(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -36215,7 +36215,7 @@ function ApiKeyCard({
             }
           ),
           onDelete && /* @__PURE__ */ jsxs206(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -36314,7 +36314,7 @@ function ApiEndpointCard({
       ] }) }),
       /* @__PURE__ */ jsxs207("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx230("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ jsx230(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -36323,7 +36323,7 @@ function ApiEndpointCard({
           }
         ) }),
         /* @__PURE__ */ jsx230("div", { className: "flex space-x-2", children: onEdit && /* @__PURE__ */ jsxs207(
-          Button2,
+          Button,
           {
             size: "sm",
             onClick: () => onEdit(endpoint),
@@ -36514,7 +36514,7 @@ function LogEntryCard({
           ] })
         ] }),
         /* @__PURE__ */ jsx233("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ jsxs208(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -36645,7 +36645,7 @@ function LogFilters({
       ] }),
       /* @__PURE__ */ jsxs210("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx235("div", { className: "flex items-center space-x-2", children: onRefresh && /* @__PURE__ */ jsxs210(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -36659,7 +36659,7 @@ function LogFilters({
           }
         ) }),
         /* @__PURE__ */ jsx235("div", { className: "flex items-center space-x-2", children: onExport && /* @__PURE__ */ jsxs210(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -36821,7 +36821,7 @@ function SecurityEventCard({
         ] }),
         /* @__PURE__ */ jsxs211("div", { className: "flex space-x-2", children: [
           onViewDetails && /* @__PURE__ */ jsxs211(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -36834,7 +36834,7 @@ function SecurityEventCard({
             }
           ),
           !event.resolved && onResolve && /* @__PURE__ */ jsxs211(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onResolve(event.id),
@@ -38424,7 +38424,7 @@ var OrderActionsSection = ({
     /* @__PURE__ */ jsx246("h3", { className: "text-lg font-medium text-gray-900", children: t2("detail.orderActions") }),
     /* @__PURE__ */ jsxs221("div", { className: "flex justify-between items-center", children: [
       /* @__PURE__ */ jsx246("div", { children: canCancel && /* @__PURE__ */ jsxs221(
-        Button2,
+        Button,
         {
           variant: "destructive",
           onClick: onCancel,
@@ -38438,7 +38438,7 @@ var OrderActionsSection = ({
       ) }),
       /* @__PURE__ */ jsxs221("div", { className: "flex gap-3", children: [
         /* @__PURE__ */ jsxs221(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: onEdit,
@@ -38452,7 +38452,7 @@ var OrderActionsSection = ({
           }
         ),
         canPickup && /* @__PURE__ */ jsxs221(
-          Button2,
+          Button,
           {
             variant: "default",
             onClick: onPickup,
@@ -38465,7 +38465,7 @@ var OrderActionsSection = ({
           }
         ),
         canReturn && /* @__PURE__ */ jsxs221(
-          Button2,
+          Button,
           {
             variant: "default",
             onClick: onReturn,
@@ -38478,7 +38478,7 @@ var OrderActionsSection = ({
           }
         ),
         canPrint && /* @__PURE__ */ jsxs221(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: onPrint,
@@ -41102,7 +41102,7 @@ function TopNavigation({
       /* @__PURE__ */ jsxs238("div", { className: "flex items-center space-x-4", children: [
         /* @__PURE__ */ jsxs238("div", { className: "flex items-center space-x-2", children: [
           /* @__PURE__ */ jsx263(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -41111,7 +41111,7 @@ function TopNavigation({
             }
           ),
           variant === "client" && /* @__PURE__ */ jsxs238(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -41125,7 +41125,7 @@ function TopNavigation({
         ] }),
         /* @__PURE__ */ jsxs238("div", { className: "flex items-center space-x-2", children: [
           /* @__PURE__ */ jsxs238(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -41138,7 +41138,7 @@ function TopNavigation({
             }
           ),
           /* @__PURE__ */ jsx263(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -41150,7 +41150,7 @@ function TopNavigation({
           )
         ] }),
         /* @__PURE__ */ jsx263("div", { className: "lg:hidden", children: /* @__PURE__ */ jsx263(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -41287,7 +41287,7 @@ function ServerTopNavigation({
           ] }) }),
           /* @__PURE__ */ jsxs239("div", { className: "flex items-center space-x-2", children: [
             /* @__PURE__ */ jsx264(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "sm",
@@ -41296,7 +41296,7 @@ function ServerTopNavigation({
               }
             ),
             variant === "client" && /* @__PURE__ */ jsxs239(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "sm",
@@ -41310,7 +41310,7 @@ function ServerTopNavigation({
           ] }),
           /* @__PURE__ */ jsxs239("div", { className: "flex items-center space-x-2", children: [
             /* @__PURE__ */ jsx264("form", { action: profileAction, method: "GET", children: /* @__PURE__ */ jsxs239(
-              Button2,
+              Button,
               {
                 type: "submit",
                 variant: "ghost",
@@ -41323,7 +41323,7 @@ function ServerTopNavigation({
               }
             ) }),
             /* @__PURE__ */ jsx264("form", { action: logoutAction, method: "POST", children: /* @__PURE__ */ jsx264(
-              Button2,
+              Button,
               {
                 type: "submit",
                 variant: "ghost",
@@ -41335,7 +41335,7 @@ function ServerTopNavigation({
             ) })
           ] }),
           /* @__PURE__ */ jsx264("div", { className: "lg:hidden", children: /* @__PURE__ */ jsx264(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -41499,28 +41499,28 @@ var TodaysFocus = ({ data }) => {
     /* @__PURE__ */ jsxs242(Card, { children: [
       /* @__PURE__ */ jsx267(CardHeader, { children: /* @__PURE__ */ jsx267(CardTitle, { children: "Quick Actions" }) }),
       /* @__PURE__ */ jsx267(CardContent, { children: /* @__PURE__ */ jsxs242("div", { className: "space-y-3", children: [
-        /* @__PURE__ */ jsxs242(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+        /* @__PURE__ */ jsxs242(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
           /* @__PURE__ */ jsx267("span", { className: "mr-3", children: "\u{1F4E6}" }),
           /* @__PURE__ */ jsxs242("div", { className: "flex-1 text-left", children: [
             /* @__PURE__ */ jsx267("div", { className: "font-medium", children: "Process Pickup" }),
             /* @__PURE__ */ jsx267("div", { className: "text-sm text-gray-500", children: "Mark items as picked up" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs242(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+        /* @__PURE__ */ jsxs242(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
           /* @__PURE__ */ jsx267("span", { className: "mr-3", children: "\u{1F504}" }),
           /* @__PURE__ */ jsxs242("div", { className: "flex-1 text-left", children: [
             /* @__PURE__ */ jsx267("div", { className: "font-medium", children: "Process Return" }),
             /* @__PURE__ */ jsx267("div", { className: "text-sm text-gray-500", children: "Mark items as returned" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs242(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+        /* @__PURE__ */ jsxs242(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
           /* @__PURE__ */ jsx267("span", { className: "mr-3", children: "\u26A0\uFE0F" }),
           /* @__PURE__ */ jsxs242("div", { className: "flex-1 text-left", children: [
             /* @__PURE__ */ jsx267("div", { className: "font-medium", children: "Handle Overdue" }),
             /* @__PURE__ */ jsx267("div", { className: "text-sm text-gray-500", children: "Contact overdue customers" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs242(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+        /* @__PURE__ */ jsxs242(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
           /* @__PURE__ */ jsx267("span", { className: "mr-3", children: "\u{1F4DE}" }),
           /* @__PURE__ */ jsxs242("div", { className: "flex-1 text-left", children: [
             /* @__PURE__ */ jsx267("div", { className: "font-medium", children: "Send Reminders" }),
@@ -41675,7 +41675,7 @@ var ColorfulTodaysFocus = ({ data }) => {
     /* @__PURE__ */ jsxs244(Card, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
       /* @__PURE__ */ jsx269(CardHeader, { className: "pb-4", children: /* @__PURE__ */ jsx269(CardTitle, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
       /* @__PURE__ */ jsx269(CardContent, { children: /* @__PURE__ */ jsx269("div", { className: "space-y-4", children: quickActions.map((action, index) => /* @__PURE__ */ jsxs244(
-        Button2,
+        Button,
         {
           className: "w-full justify-start h-16 text-left group relative overflow-hidden bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg",
           variant: "outline",
@@ -42614,7 +42614,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   }
   if (error || !hasSubscription) {
     return /* @__PURE__ */ jsx276("div", { className, children: (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ jsxs251(
-      Button2,
+      Button,
       {
         variant: "outline",
         size: "sm",
@@ -42713,7 +42713,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
       /* @__PURE__ */ jsxs251("div", { className: "flex items-center space-x-2", children: [
         /* @__PURE__ */ jsx276(StatusBadge, { status, type: "subscription", variant: "solid" }),
         (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ jsxs251(
-          Button2,
+          Button,
           {
             size: "sm",
             onClick: () => window.location.href = "/plans",
@@ -42735,7 +42735,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     ] }),
     /* @__PURE__ */ jsx276(StatusBadge, { status, type: "subscription", variant: "solid", size: "sm" }),
     (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ jsxs251(
-      Button2,
+      Button,
       {
         variant: "outline",
         size: "sm",
@@ -42781,7 +42781,7 @@ export {
   BillingCycleForm,
   BillingCycleTable,
   Breadcrumb,
-  Button2 as Button,
+  Button,
   ButtonClean,
   ButtonColorful,
   CalendarEventLoading,

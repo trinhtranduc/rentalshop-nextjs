@@ -725,7 +725,7 @@ __export(src_exports, {
   BillingCycleForm: () => BillingCycleForm,
   BillingCycleTable: () => BillingCycleTable,
   Breadcrumb: () => Breadcrumb,
-  Button: () => Button2,
+  Button: () => Button,
   ButtonClean: () => ButtonClean,
   ButtonColorful: () => ButtonColorful,
   CalendarEventLoading: () => CalendarEventLoading,
@@ -1328,7 +1328,7 @@ var buttonVariants = (0, import_class_variance_authority3.cva)(
     }
   }
 );
-var Button2 = React2.forwardRef(
+var Button = React2.forwardRef(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? import_react_slot.Slot : "button";
     return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
@@ -1341,7 +1341,7 @@ var Button2 = React2.forwardRef(
     );
   }
 );
-Button2.displayName = "Button";
+Button.displayName = "Button";
 
 // src/components/ui/button-clean.tsx
 var import_react = __toESM(require("react"));
@@ -1946,7 +1946,7 @@ var ConfirmationDialog = ({
     ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(DialogFooter, { className: "flex justify-end space-x-2 mt-6", children: [
       /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-        Button2,
+        Button,
         {
           variant: "outline",
           onClick: handleCancel,
@@ -1955,7 +1955,7 @@ var ConfirmationDialog = ({
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-        Button2,
+        Button,
         {
           variant: config.buttonVariant,
           onClick: handleConfirm,
@@ -2115,7 +2115,7 @@ var ConfirmationDialogWithReason = ({
     ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(DialogFooter, { className: "flex justify-end space-x-2 mt-6", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
-        Button2,
+        Button,
         {
           variant: "outline",
           onClick: handleCancel,
@@ -2124,7 +2124,7 @@ var ConfirmationDialogWithReason = ({
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
-        Button2,
+        Button,
         {
           variant: config.buttonVariant,
           onClick: handleConfirm,
@@ -2418,7 +2418,7 @@ var DropdownMenuTrigger = React15.forwardRef(({ className, children, onToggle, a
     });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
-    Button2,
+    Button,
     {
       ref,
       variant: "ghost",
@@ -3140,7 +3140,7 @@ var DateRangePicker = ({
   const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   return /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { className: cn2("relative", className), ref: containerRef, children: [
     /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)(
-      Button2,
+      Button,
       {
         variant: "outline",
         onClick: () => !disabled && setIsOpen(!isOpen),
@@ -3162,7 +3162,7 @@ var DateRangePicker = ({
       /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("h3", { className: "text-sm font-semibold text-gray-900", children: "Ch\u1ECDn kho\u1EA3ng th\u1EDDi gian" }),
         /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -3175,7 +3175,7 @@ var DateRangePicker = ({
       showPresets && /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { className: "mb-4 p-3 bg-gray-50 rounded-lg", children: [
         /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("h4", { className: "text-xs font-medium text-gray-600 mb-2", children: "G\u1EE3i \xFD nhanh" }),
         /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("div", { className: "flex flex-wrap gap-2", children: [1, 3, 7, 14, 30].map((days) => /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -3192,7 +3192,7 @@ var DateRangePicker = ({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -3206,7 +3206,7 @@ var DateRangePicker = ({
           year: "numeric"
         }) }),
         /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -3227,7 +3227,7 @@ var DateRangePicker = ({
             const isInRange = isDateInRange(date2);
             const isHovered = hoveredDate && date2.getTime() === hoveredDate.getTime();
             return /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 onClick: () => handleDateClick(date2),
@@ -3250,7 +3250,7 @@ var DateRangePicker = ({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { className: "flex gap-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -3260,7 +3260,7 @@ var DateRangePicker = ({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
-          Button2,
+          Button,
           {
             size: "sm",
             onClick: handleApply,
@@ -3341,7 +3341,7 @@ function Pagination({
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)("div", { className: "flex items-center space-x-2", children: [
       /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "sm",
@@ -3351,7 +3351,7 @@ function Pagination({
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime30.jsx)("div", { className: "flex items-center space-x-1", children: getPageNumbers().map((page, index) => /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(import_react10.default.Fragment, { children: page === "..." ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)("span", { className: "px-3 py-2 text-gray-500", children: "..." }) : /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
-        Button2,
+        Button,
         {
           variant: currentPage === page ? "default" : "outline",
           size: "sm",
@@ -3361,7 +3361,7 @@ function Pagination({
         }
       ) }, index)) }),
       /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "sm",
@@ -3933,7 +3933,7 @@ var SearchableSelect = ({
       ),
       /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
       /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -3948,7 +3948,7 @@ var SearchableSelect = ({
         }
       ),
       query && /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -3967,7 +3967,7 @@ var SearchableSelect = ({
         }
       )
     ] }) : /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(
-      Button2,
+      Button,
       {
         variant: "outline",
         type: "button",
@@ -3987,7 +3987,7 @@ var SearchableSelect = ({
       /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("div", { children: emptyText })
     ] }) : /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(import_jsx_runtime36.Fragment, { children: [
       showAddNew && onAddNew && /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(
-        Button2,
+        Button,
         {
           variant: "ghost",
           type: "button",
@@ -4004,7 +4004,7 @@ var SearchableSelect = ({
       ),
       filtered.map((opt) => {
         return /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             type: "button",
@@ -4154,7 +4154,7 @@ var SearchableCountrySelect = ({
       ),
       /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
       /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -4169,7 +4169,7 @@ var SearchableCountrySelect = ({
         }
       ),
       query && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -4187,7 +4187,7 @@ var SearchableCountrySelect = ({
       /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "w-8 h-8 mx-auto mb-2 text-gray-300", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("svg", { className: "w-8 h-8", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" }) }) }),
       /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { children: emptyMessage })
     ] }) : /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(import_jsx_runtime37.Fragment, { children: filtered.map((country) => /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)(
-      Button2,
+      Button,
       {
         variant: "ghost",
         type: "button",
@@ -4275,7 +4275,7 @@ var Toast = ({
               message && /* @__PURE__ */ (0, import_jsx_runtime38.jsx)("p", { className: "text-sm mt-1 opacity-90", children: message })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "icon",
@@ -4840,7 +4840,7 @@ var ProductForm = ({
                   }
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
-                  Button2,
+                  Button,
                   {
                     type: "button",
                     variant: "outline",
@@ -5047,7 +5047,7 @@ var ProductForm = ({
                   }
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
-                  Button2,
+                  Button,
                   {
                     type: "button",
                     variant: "outline",
@@ -5067,7 +5067,7 @@ var ProductForm = ({
               useMultipartUpload ? t2("messages.imagesSelected") : t2("messages.imagesUploaded")
             ] }),
             currentImageCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
-              Button2,
+              Button,
               {
                 type: "button",
                 variant: "outline",
@@ -5090,7 +5090,7 @@ var ProductForm = ({
               /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("p", { className: "text-xs text-red-600 mt-1", children: error })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "icon",
@@ -5120,7 +5120,7 @@ var ProductForm = ({
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("div", { className: "absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 rounded-b-lg truncate", children: file.name }),
                 /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
-                  Button2,
+                  Button,
                   {
                     variant: "ghost",
                     size: "icon",
@@ -5174,7 +5174,7 @@ var ProductForm = ({
                     }
                   ),
                   /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
-                    Button2,
+                    Button,
                     {
                       variant: "ghost",
                       size: "icon",
@@ -5192,7 +5192,7 @@ var ProductForm = ({
         ] })
       ] }),
       !hideSubmitButton && /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("div", { className: "flex justify-end", children: /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
-        Button2,
+        Button,
         {
           type: "submit",
           disabled: isSubmitting || !validateForm(),
@@ -7350,7 +7350,7 @@ var AddCustomerForm = ({
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)("div", { className: "flex justify-end space-x-3 border-t pt-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
-        Button2,
+        Button,
         {
           type: "button",
           variant: "outline",
@@ -7362,7 +7362,7 @@ var AddCustomerForm = ({
           ]
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(Button2, { type: "submit", disabled: isSubmitting, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(Button, { type: "submit", disabled: isSubmitting, children: [
         /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(import_lucide_react19.Save, { className: "w-4 h-4 mr-2" }),
         isSubmitting ? tc("buttons.creating") : t2("createCustomer")
       ] })
@@ -8618,7 +8618,7 @@ var PlanForm = ({
                 onKeyPress: (e2) => e2.key === "Enter" && (e2.preventDefault(), addFeature())
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(Button2, { type: "button", onClick: addFeature, disabled: !newFeature.trim(), children: /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(import_lucide_react22.Plus, { className: "w-4 h-4" }) })
+            /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(Button, { type: "button", onClick: addFeature, disabled: !newFeature.trim(), children: /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(import_lucide_react22.Plus, { className: "w-4 h-4" }) })
           ] }),
           formData.features.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)("div", { className: "space-y-2", children: [
             /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("div", { className: "text-sm font-medium text-text-primary", children: "Plan Features:" }),
@@ -8628,7 +8628,7 @@ var PlanForm = ({
                 /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("span", { className: "text-sm text-text-primary", children: feature })
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(
-                Button2,
+                Button,
                 {
                   type: "button",
                   variant: "ghost",
@@ -8643,8 +8643,8 @@ var PlanForm = ({
         ] })
       ] }),
       !hideSubmitButton && /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)("div", { className: "flex items-center justify-end space-x-4", children: [
-        onCancel && /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(Button2, { type: "button", variant: "outline", onClick: onCancel, disabled: isSubmitting, children: "Cancel" }),
-        /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(Button2, { type: "submit", disabled: isSubmitting || loading, children: isSubmitting ? /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(import_jsx_runtime49.Fragment, { children: [
+        onCancel && /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(Button, { type: "button", variant: "outline", onClick: onCancel, disabled: isSubmitting, children: "Cancel" }),
+        /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(Button, { type: "submit", disabled: isSubmitting || loading, children: isSubmitting ? /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(import_jsx_runtime49.Fragment, { children: [
           /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("div", { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" }),
           "Saving..."
         ] }) : submitText })
@@ -14722,7 +14722,7 @@ var TimePeriodSelector = ({
   return /* @__PURE__ */ (0, import_jsx_runtime55.jsx)("div", { className: "mb-6", children: /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)("div", { className: "flex items-center justify-between", children: [
     /* @__PURE__ */ (0, import_jsx_runtime55.jsx)("h2", { className: "text-lg font-semibold text-gray-900", children: "Business Overview" }),
     /* @__PURE__ */ (0, import_jsx_runtime55.jsx)("div", { className: "flex space-x-2", children: periods.map((period) => /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(
-      Button2,
+      Button,
       {
         variant: currentPeriod === period.key ? "default" : "outline",
         size: "sm",
@@ -15484,7 +15484,7 @@ function DashboardActions({ onActionClick }) {
       /* @__PURE__ */ (0, import_jsx_runtime68.jsx)("p", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Common tasks and shortcuts" })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime68.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime68.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime68.jsx)(
-      Button2,
+      Button,
       {
         variant: action.variant,
         className: "h-auto p-4 flex flex-col items-start space-y-2 text-left",
@@ -15514,7 +15514,7 @@ function DashboardNavigation({ activeTab }) {
     { id: "reports", label: "Reports", description: "Detailed business reports" }
   ];
   return /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(Card, { children: /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(CardContent, { className: "p-0", children: /* @__PURE__ */ (0, import_jsx_runtime69.jsx)("div", { className: "flex flex-wrap border-b border-gray-200 dark:border-gray-700", children: tabs.map((tab) => /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
-    Button2,
+    Button,
     {
       variant: activeTab === tab.id ? "default" : "ghost",
       className: `flex-1 min-w-0 px-4 py-3 rounded-none border-b-2 ${activeTab === tab.id ? "border-primary bg-primary/5 text-primary" : "border-transparent hover:bg-gray-50 dark:hover:bg-gray-800"}`,
@@ -15864,7 +15864,7 @@ function ProductHeader({ totalProducts, viewMode, onViewModeChange }) {
     { value: "table", label: "Table View", icon: "\u229F" }
   ];
   return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)("div", { className: "flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0", children: /* @__PURE__ */ (0, import_jsx_runtime74.jsx)("div", { className: "flex items-center space-x-2", children: viewModes.map((mode) => /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
-    Button2,
+    Button,
     {
       variant: viewMode === mode.value ? "default" : "outline",
       size: "sm",
@@ -15897,7 +15897,7 @@ var ProductPageHeader = ({
     }
   };
   return /* @__PURE__ */ (0, import_jsx_runtime75.jsx)("div", { className: "mb-6", children: (onBack || backUrl) && /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
-    Button2,
+    Button,
     {
       onClick: handleBack,
       variant: "outline",
@@ -16003,7 +16003,7 @@ function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilte
       }
     ),
     hasActiveFilters && onClearFilters && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
-      Button,
+      import_ui19.Button,
       {
         variant: "outline",
         size: "sm",
@@ -16136,7 +16136,7 @@ var ProductCard = ({
       /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("div", { className: "absolute top-2 left-2", children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { className: "bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium", children: category.name }) }),
       variant === "admin" && /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { className: "absolute top-2 right-2 flex gap-1", children: [
         onEdit && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
-          Button2,
+          Button,
           {
             size: "sm",
             variant: "secondary",
@@ -16146,7 +16146,7 @@ var ProductCard = ({
           }
         ),
         onDelete && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
-          Button2,
+          Button,
           {
             size: "sm",
             variant: "destructive",
@@ -16204,7 +16204,7 @@ var ProductCard = ({
       /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { className: "flex gap-2", children: [
         variant === "client" && /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(import_jsx_runtime77.Fragment, { children: [
           onView && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -16214,7 +16214,7 @@ var ProductCard = ({
             }
           ),
           onRent && isAvailable && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onRent(id),
@@ -16226,7 +16226,7 @@ var ProductCard = ({
         ] }),
         variant === "mobile" && /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(import_jsx_runtime77.Fragment, { children: [
           onView && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -16236,7 +16236,7 @@ var ProductCard = ({
             }
           ),
           onRent && isAvailable && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onRent(id),
@@ -16248,7 +16248,7 @@ var ProductCard = ({
         ] }),
         variant === "admin" && /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(import_jsx_runtime77.Fragment, { children: [
           onView && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -16258,7 +16258,7 @@ var ProductCard = ({
             }
           ),
           onEdit && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: handleEdit,
@@ -16309,7 +16309,7 @@ function ProductGrid({
       /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("h3", { className: "text-lg font-medium mb-2", children: "No products found" }),
       /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("p", { className: "text-sm mb-4", children: "Try adjusting your filters or add some products to get started." }),
       showAddButton && categories.length > 0 && outlets.length > 0 && merchantId && /* @__PURE__ */ (0, import_jsx_runtime78.jsx)(
-        Button2,
+        Button,
         {
           onClick: handleAddProduct,
           className: "px-4 py-2",
@@ -16478,7 +16478,7 @@ function ProductTable({
       }) : "N/A" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ (0, import_jsx_runtime79.jsxs)(DropdownMenu, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime79.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime79.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -16629,9 +16629,9 @@ var ProductAddForm = ({
         ] })
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "flex justify-end space-x-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(Button2, { variant: "outline", onClick: handleCancel, disabled: isSubmitting, children: tc("buttons.cancel") }),
+        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(Button, { variant: "outline", onClick: handleCancel, disabled: isSubmitting, children: tc("buttons.cancel") }),
         /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
-          Button2,
+          Button,
           {
             type: "submit",
             form: "product-form",
@@ -16810,7 +16810,7 @@ function ProductActions({
   ).map(({ roles, ...action }) => action);
   return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(import_jsx_runtime82.Fragment, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(Card, { children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
-      Button2,
+      Button,
       {
         variant: action.variant,
         className: "h-auto p-3 flex flex-col items-start space-y-2 text-left",
@@ -17534,7 +17534,7 @@ function OrderQuickFilters({
     /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)("div", { className: "flex items-center gap-2 flex-wrap", children: [
       /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("span", { className: "text-sm font-medium text-text-secondary", children: "Quick filters:" }),
       quickFilters.map((filter) => /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)(
-        Button2,
+        Button,
         {
           variant: activeFilter === filter.id ? "default" : "outline",
           size: "sm",
@@ -17548,7 +17548,7 @@ function OrderQuickFilters({
         filter.id
       )),
       activeFilter && /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "sm",
@@ -17740,7 +17740,7 @@ function OrderDateRangeFilter({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(DialogFooter, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => {
@@ -17752,7 +17752,7 @@ function OrderDateRangeFilter({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
-          Button2,
+          Button,
           {
             variant: "default",
             onClick: handleCustomApply,
@@ -17905,7 +17905,7 @@ var OrderTable = import_react45.default.memo(function OrderTable2({
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400", children: formatDate11(order.createdAt) }),
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3 whitespace-nowrap text-right text-sm", children: /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("div", { className: "flex items-center justify-end gap-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -17918,7 +17918,7 @@ var OrderTable = import_react45.default.memo(function OrderTable2({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -18382,7 +18382,7 @@ var ProductOrdersView = ({
       /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("div", { className: "text-red-500 mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(import_lucide_react36.BarChart3, { className: "h-12 w-12 mx-auto" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("h3", { className: "text-lg font-semibold mb-2", children: t2("messages.errorLoadingOrders") }),
       /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("p", { className: "text-gray-600 mb-4", children: error }),
-      /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(Button2, { onClick: () => window.location.reload(), children: [
+      /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(Button, { onClick: () => window.location.reload(), children: [
         /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(import_lucide_react36.RefreshCw, { className: "h-4 w-4 mr-2" }),
         tc("buttons.tryAgain")
       ] })
@@ -18396,15 +18396,15 @@ var ProductOrdersView = ({
           /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("p", { className: "text-gray-600", children: t2("productOrders.description") })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)("div", { className: "flex items-center space-x-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(Button2, { variant: "outline", onClick: handleExport, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(Button, { variant: "outline", onClick: handleExport, children: [
             /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(import_lucide_react36.Download, { className: "h-4 w-4 mr-2" }),
             tc("buttons.export")
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(Button2, { onClick: handleRefresh, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(Button, { onClick: handleRefresh, children: [
             /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(import_lucide_react36.RefreshCw, { className: "h-4 w-4 mr-2" }),
             tc("buttons.refresh")
           ] }),
-          onClose && /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(Button2, { variant: "outline", onClick: onClose, children: [
+          onClose && /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(Button, { variant: "outline", onClick: onClose, children: [
             /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(import_lucide_react36.ArrowLeft, { className: "h-4 w-4 mr-2" }),
             t2("productOrders.backToProducts")
           ] })
@@ -19153,7 +19153,7 @@ var CustomerDetailDialog = ({
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(DialogFooter, { className: "flex justify-between", children: [
         /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("div", { children: onDelete && /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
-          Button2,
+          Button,
           {
             variant: "destructive",
             onClick: () => setShowDeleteConfirm(true),
@@ -19166,7 +19166,7 @@ var CustomerDetailDialog = ({
           }
         ) }),
         /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("div", { className: "flex space-x-2", children: /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => onOpenChange(false),
@@ -19182,7 +19182,7 @@ var CustomerDetailDialog = ({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(DialogFooter, { className: "flex justify-end space-x-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowDeleteConfirm(false),
@@ -19191,7 +19191,7 @@ var CustomerDetailDialog = ({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
-          Button2,
+          Button,
           {
             variant: "destructive",
             onClick: handleDelete,
@@ -20219,7 +20219,7 @@ function CustomerActions({
   ];
   return /* @__PURE__ */ (0, import_jsx_runtime107.jsxs)("div", { className: "space-y-4", children: [
     /* @__PURE__ */ (0, import_jsx_runtime107.jsx)("div", { className: "flex flex-wrap gap-3", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime107.jsxs)(
-      Button2,
+      Button,
       {
         onClick: action.onClick,
         variant: action.variant,
@@ -21392,7 +21392,7 @@ function MerchantFilters({
       ] })
     ] }),
     onClearFilters && (filters.search || filters.status !== "all" || filters.plan !== "all") && /* @__PURE__ */ (0, import_jsx_runtime118.jsx)(
-      Button2,
+      Button,
       {
         variant: "outline",
         size: "sm",
@@ -21481,7 +21481,7 @@ function MerchantTable({
           }) : "No end date" }) }),
           /* @__PURE__ */ (0, import_jsx_runtime119.jsx)("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ (0, import_jsx_runtime119.jsxs)(DropdownMenu, { children: [
             /* @__PURE__ */ (0, import_jsx_runtime119.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime119.jsx)(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "sm",
@@ -22594,8 +22594,8 @@ function SubscriptionFormSimple({
       /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(CardContent, { children: formContent })
     ] }) : formContent,
     showActions && mode !== "view" && /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "flex justify-end space-x-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(Button2, { type: "button", variant: "outline", onClick: onCancel, disabled: loading, children: "Cancel" }),
-      /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(Button2, { type: "submit", disabled: loading, children: loading ? "Saving..." : submitText || "Save" })
+      /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(Button, { type: "button", variant: "outline", onClick: onCancel, disabled: loading, children: "Cancel" }),
+      /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(Button, { type: "submit", disabled: loading, children: loading ? "Saving..." : submitText || "Save" })
     ] })
   ] });
 }
@@ -22936,7 +22936,7 @@ function SubscriptionList({
             /* @__PURE__ */ (0, import_jsx_runtime125.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime125.jsx)("div", { className: "text-sm text-text-primary", children: formatDate11(subscription.currentPeriodEnd) }) }),
             /* @__PURE__ */ (0, import_jsx_runtime125.jsx)("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ (0, import_jsx_runtime125.jsxs)(DropdownMenu, { children: [
               /* @__PURE__ */ (0, import_jsx_runtime125.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime125.jsx)(
-                Button2,
+                Button,
                 {
                   variant: "ghost",
                   size: "sm",
@@ -23542,7 +23542,7 @@ function SubscriptionForm({
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime126.jsxs)("div", { className: "flex items-center justify-end space-x-2", children: [
       /* @__PURE__ */ (0, import_jsx_runtime126.jsx)(
-        Button2,
+        Button,
         {
           type: "button",
           variant: "outline",
@@ -23552,7 +23552,7 @@ function SubscriptionForm({
         }
       ),
       mode !== "view" && /* @__PURE__ */ (0, import_jsx_runtime126.jsx)(
-        Button2,
+        Button,
         {
           type: "submit",
           disabled: loading,
@@ -24292,15 +24292,15 @@ function SubscriptionStatusBanner({
       ] })
     ] }),
     showActions && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)("div", { className: "flex items-center space-x-2 ml-4", children: [
-      upgradeRequired && onUpgrade && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button2, { size: "sm", onClick: onUpgrade, children: [
+      upgradeRequired && onUpgrade && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button, { size: "sm", onClick: onUpgrade, children: [
         /* @__PURE__ */ (0, import_jsx_runtime129.jsx)(import_lucide_react59.CheckCircle, { className: "w-4 h-4 mr-1" }),
         "Upgrade Now"
       ] }),
-      requiresPayment && onPayment && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button2, { size: "sm", variant: "outline", onClick: onPayment, children: [
+      requiresPayment && onPayment && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button, { size: "sm", variant: "outline", onClick: onPayment, children: [
         /* @__PURE__ */ (0, import_jsx_runtime129.jsx)(import_lucide_react59.CreditCard, { className: "w-4 h-4 mr-1" }),
         "Make Payment"
       ] }),
-      canExportData && onExport && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button2, { size: "sm", variant: "outline", onClick: onExport, children: [
+      canExportData && onExport && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button, { size: "sm", variant: "outline", onClick: onExport, children: [
         /* @__PURE__ */ (0, import_jsx_runtime129.jsx)(import_lucide_react59.Download, { className: "w-4 h-4 mr-1" }),
         "Export Data"
       ] })
@@ -24372,15 +24372,15 @@ function SubscriptionStatusCard({
         gracePeriodEnds.toLocaleDateString()
       ] }),
       showActions && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)("div", { className: "flex items-center space-x-3", children: [
-        upgradeRequired && onUpgrade && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button2, { size: "sm", onClick: onUpgrade, children: [
+        upgradeRequired && onUpgrade && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button, { size: "sm", onClick: onUpgrade, children: [
           /* @__PURE__ */ (0, import_jsx_runtime129.jsx)(import_lucide_react59.CheckCircle, { className: "w-4 h-4 mr-1" }),
           "Upgrade Now"
         ] }),
-        requiresPayment && onPayment && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button2, { size: "sm", variant: "outline", onClick: onPayment, children: [
+        requiresPayment && onPayment && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button, { size: "sm", variant: "outline", onClick: onPayment, children: [
           /* @__PURE__ */ (0, import_jsx_runtime129.jsx)(import_lucide_react59.CreditCard, { className: "w-4 h-4 mr-1" }),
           "Make Payment"
         ] }),
-        canExportData && onExport && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button2, { size: "sm", variant: "outline", onClick: onExport, children: [
+        canExportData && onExport && /* @__PURE__ */ (0, import_jsx_runtime129.jsxs)(Button, { size: "sm", variant: "outline", onClick: onExport, children: [
           /* @__PURE__ */ (0, import_jsx_runtime129.jsx)(import_lucide_react59.Download, { className: "w-4 h-4 mr-1" }),
           "Export Data"
         ] })
@@ -24522,7 +24522,7 @@ function RestrictedButton({
     }
   };
   return /* @__PURE__ */ (0, import_jsx_runtime131.jsxs)(
-    Button2,
+    Button,
     {
       ...props,
       disabled: isDisabled,
@@ -25369,7 +25369,7 @@ function SubscriptionActivityTimeline({
   return /* @__PURE__ */ (0, import_jsx_runtime135.jsxs)(Card, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime135.jsx)(CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime135.jsxs)("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ (0, import_jsx_runtime135.jsx)(CardTitle, { children: "\u{1F4CA} Subscription Activity & Payment History" }),
-      onExport && /* @__PURE__ */ (0, import_jsx_runtime135.jsxs)(Button2, { variant: "outline", size: "sm", onClick: onExport, children: [
+      onExport && /* @__PURE__ */ (0, import_jsx_runtime135.jsxs)(Button, { variant: "outline", size: "sm", onClick: onExport, children: [
         /* @__PURE__ */ (0, import_jsx_runtime135.jsx)(import_lucide_react65.Download, { className: "w-4 h-4 mr-2" }),
         "Export"
       ] })
@@ -25828,7 +25828,7 @@ function MerchantPlanManagement({
           "Current Subscription"
         ] }),
         currentSubscription && (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -25872,7 +25872,7 @@ function MerchantPlanManagement({
         ] }),
         (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)("div", { className: "flex flex-wrap items-center gap-3 pt-4", children: [
           isTrialPlan && /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(
-            Button2,
+            Button,
             {
               variant: "default",
               size: "sm",
@@ -25885,7 +25885,7 @@ function MerchantPlanManagement({
             }
           ),
           !isTrialPlan && /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -25898,7 +25898,7 @@ function MerchantPlanManagement({
             }
           ),
           currentSubscription && isActiveStatus && !isTrialPlan && /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -25911,7 +25911,7 @@ function MerchantPlanManagement({
             }
           ),
           currentSubscription && isActivePaidStatus && /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -25924,7 +25924,7 @@ function MerchantPlanManagement({
             }
           ),
           currentSubscription && isPaused && /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -25938,7 +25938,7 @@ function MerchantPlanManagement({
             }
           ),
           currentSubscription && (isActiveStatus || isPausedStatus) && /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -25956,12 +25956,12 @@ function MerchantPlanManagement({
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)("h3", { className: "text-lg font-medium text-gray-900 mb-2", children: "No Subscription" }),
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)("p", { className: "text-gray-500 mb-4", children: "This merchant doesn't have an active subscription." }),
         (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)("div", { className: "flex flex-wrap items-center justify-center gap-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(Button2, { onClick: handleOpenChangeDialog, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(Button, { onClick: handleOpenChangeDialog, children: [
             /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(import_lucide_react66.CreditCard, { className: "h-4 w-4 mr-2" }),
             "Create Subscription"
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -26129,7 +26129,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(DialogFooter, { className: "border-t pt-4", children: [
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowChangeDialog(false),
@@ -26138,7 +26138,7 @@ function MerchantPlanManagement({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
-          Button2,
+          Button,
           {
             onClick: handleChangePlan,
             disabled: !selectedPlanId || !changeBillingInterval || isSubmitting,
@@ -26191,7 +26191,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(DialogFooter, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowCancelDialog(false),
@@ -26200,7 +26200,7 @@ function MerchantPlanManagement({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
-          Button2,
+          Button,
           {
             variant: "destructive",
             onClick: handleCancel,
@@ -26243,7 +26243,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(DialogFooter, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowSuspendDialog(false),
@@ -26252,7 +26252,7 @@ function MerchantPlanManagement({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
-          Button2,
+          Button,
           {
             variant: "destructive",
             onClick: handleSuspend,
@@ -26296,7 +26296,7 @@ function MerchantPlanManagement({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime137.jsxs)(DialogFooter, { className: "flex-shrink-0", children: [
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => setShowResumeDialog(false),
@@ -26305,7 +26305,7 @@ function MerchantPlanManagement({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
-          Button2,
+          Button,
           {
             variant: "default",
             onClick: handleReactivate,
@@ -26332,7 +26332,7 @@ function MerchantPlanManagement({
         }
       ) }),
       /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(DialogFooter, { children: /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
-        Button2,
+        Button,
         {
           variant: "outline",
           onClick: () => setShowHistoryDialog(false),
@@ -26513,7 +26513,7 @@ function MerchantSubscriptionSection({
       }
     ) }),
     /* @__PURE__ */ (0, import_jsx_runtime139.jsx)(DialogFooter, { children: /* @__PURE__ */ (0, import_jsx_runtime139.jsx)(
-      Button2,
+      Button,
       {
         variant: "outline",
         onClick: () => setShowHistoryDialog(false),
@@ -26625,7 +26625,7 @@ function MerchantDetail({
           /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(import_lucide_react68.Building2, { className: "w-5 h-5 text-blue-700" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             className: "w-full",
@@ -26640,7 +26640,7 @@ function MerchantDetail({
           /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(import_lucide_react68.Package, { className: "w-5 h-5 text-green-600" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             className: "w-full",
@@ -26655,7 +26655,7 @@ function MerchantDetail({
           /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(import_lucide_react68.Users, { className: "w-5 h-5 text-purple-600" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             className: "w-full",
@@ -26670,7 +26670,7 @@ function MerchantDetail({
           /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(import_lucide_react68.ShoppingCart, { className: "w-5 h-5 text-orange-600" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             className: "w-full",
@@ -26747,7 +26747,7 @@ function CalendarNavigation({
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime142.jsxs)("div", { className: "flex items-center space-x-2", children: [
       /* @__PURE__ */ (0, import_jsx_runtime142.jsx)(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "icon",
@@ -26757,7 +26757,7 @@ function CalendarNavigation({
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime142.jsx)(
-        Button2,
+        Button,
         {
           variant: "outline",
           onClick: onToday,
@@ -26766,7 +26766,7 @@ function CalendarNavigation({
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime142.jsx)(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "icon",
@@ -27168,7 +27168,7 @@ var import_jsx_runtime148 = require("react/jsx-runtime");
 function UserHeader({ viewMode, onViewModeChange, onAddUser }) {
   return /* @__PURE__ */ (0, import_jsx_runtime148.jsxs)("div", { className: "flex justify-between items-center gap-4", children: [
     /* @__PURE__ */ (0, import_jsx_runtime148.jsx)("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime148.jsxs)(
-      Button2,
+      Button,
       {
         onClick: onAddUser,
         className: "bg-blue-700 hover:bg-blue-700 text-white",
@@ -27180,7 +27180,7 @@ function UserHeader({ viewMode, onViewModeChange, onAddUser }) {
     ) }),
     /* @__PURE__ */ (0, import_jsx_runtime148.jsxs)("div", { className: "flex items-center gap-2", children: [
       /* @__PURE__ */ (0, import_jsx_runtime148.jsxs)(
-        Button2,
+        Button,
         {
           variant: viewMode === "table" ? "default" : "outline",
           size: "sm",
@@ -27193,7 +27193,7 @@ function UserHeader({ viewMode, onViewModeChange, onAddUser }) {
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime148.jsxs)(
-        Button2,
+        Button,
         {
           variant: viewMode === "grid" ? "default" : "outline",
           size: "sm",
@@ -27474,7 +27474,7 @@ function UserTable({
       /* @__PURE__ */ (0, import_jsx_runtime152.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime152.jsx)("div", { className: "text-sm text-text-primary", children: formatDate11(user.createdAt) }) }),
       /* @__PURE__ */ (0, import_jsx_runtime152.jsx)("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ (0, import_jsx_runtime152.jsxs)(DropdownMenu, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime152.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime152.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -27755,7 +27755,7 @@ var ChangePasswordDialog = ({
               }
             ),
             /* @__PURE__ */ (0, import_jsx_runtime154.jsx)(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "icon",
@@ -27784,7 +27784,7 @@ var ChangePasswordDialog = ({
               }
             ),
             /* @__PURE__ */ (0, import_jsx_runtime154.jsx)(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "icon",
@@ -27800,7 +27800,7 @@ var ChangePasswordDialog = ({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime154.jsxs)(DialogFooter, { className: "flex justify-end space-x-2 mt-6", children: [
         /* @__PURE__ */ (0, import_jsx_runtime154.jsx)(
-          Button2,
+          Button,
           {
             type: "button",
             variant: "outline",
@@ -27810,7 +27810,7 @@ var ChangePasswordDialog = ({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime154.jsx)(
-          Button2,
+          Button,
           {
             type: "submit",
             disabled: isLoading,
@@ -28308,7 +28308,7 @@ var FormField = ({
         }
       ),
       showPasswordToggle && type === "password" && /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(
-        Button2,
+        Button,
         {
           variant: "ghost",
           size: "icon",
@@ -29055,7 +29055,7 @@ var UserForm = ({
     ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("div", { className: "flex justify-end space-x-3 border-t pt-6", children: [
       /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)(
-        Button2,
+        Button,
         {
           type: "button",
           variant: "outline",
@@ -29068,7 +29068,7 @@ var UserForm = ({
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)(
-        Button2,
+        Button,
         {
           type: "submit",
           disabled: isSubmitting,
@@ -29356,7 +29356,7 @@ var AccountManagementCard = ({
           /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("p", { className: "text-sm text-gray-600", children: user.isActive ? "User can currently log in and access the system" : "User is currently disabled and cannot access the system" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("div", { className: "flex gap-2", children: user.isActive ? /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)(
-          Button2,
+          Button,
           {
             onClick: onDeactivate,
             variant: "outline",
@@ -29368,7 +29368,7 @@ var AccountManagementCard = ({
             ]
           }
         ) : /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)(
-          Button2,
+          Button,
           {
             onClick: onActivate,
             variant: "outline",
@@ -29387,7 +29387,7 @@ var AccountManagementCard = ({
           /* @__PURE__ */ (0, import_jsx_runtime163.jsx)("p", { className: "text-sm text-red-700", children: "This action cannot be undone. This will permanently delete the user account and remove all associated data." })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime163.jsxs)(
-          Button2,
+          Button,
           {
             onClick: onDelete,
             variant: "destructive",
@@ -29844,7 +29844,7 @@ function OutletTable({
       /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("div", { className: "text-sm text-gray-900 dark:text-white", children: formatDate11(outlet.createdAt) }) }),
       /* @__PURE__ */ (0, import_jsx_runtime168.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ (0, import_jsx_runtime168.jsxs)(DropdownMenu, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(DropdownMenuTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -30428,7 +30428,7 @@ var CategoryFormContent = ({
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime175.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(
-        Button2,
+        Button,
         {
           type: "button",
           variant: "outline",
@@ -30438,7 +30438,7 @@ var CategoryFormContent = ({
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime175.jsx)(
-        Button2,
+        Button,
         {
           type: "submit",
           disabled: submitting,
@@ -30560,7 +30560,7 @@ var CategoryActions = ({
   ).map(({ roles, ...action }) => action);
   return /* @__PURE__ */ (0, import_jsx_runtime177.jsxs)(import_jsx_runtime177.Fragment, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(Card, { children: /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(CardContent, { className: "p-4", children: /* @__PURE__ */ (0, import_jsx_runtime177.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime177.jsx)(
-      Button2,
+      Button,
       {
         variant: action.variant,
         className: "h-auto p-3 flex flex-col items-start space-y-2 text-left",
@@ -30619,7 +30619,7 @@ var CategoryCard = ({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)("div", { className: "flex items-center space-x-1", children: [
         /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -30632,7 +30632,7 @@ var CategoryCard = ({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime178.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -30808,7 +30808,7 @@ function CategoryTable({
           /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400", children: formatDate11(category.createdAt) }),
           /* @__PURE__ */ (0, import_jsx_runtime180.jsx)("td", { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium", children: /* @__PURE__ */ (0, import_jsx_runtime180.jsxs)(DropdownMenu, { children: [
             /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime180.jsx)(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "sm",
@@ -30963,7 +30963,7 @@ var CategoryView = ({
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
           /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(
-            Button2,
+            Button,
             {
               type: "button",
               variant: "outline",
@@ -30972,7 +30972,7 @@ var CategoryView = ({
             }
           ),
           /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(
-            Button2,
+            Button,
             {
               type: "button",
               onClick: handleEdit,
@@ -30998,7 +30998,7 @@ var CategoryView = ({
         /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("p", { className: "text-sm text-gray-500", children: t2("dialog.deleteWarning") }),
         /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
           /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(
-            Button2,
+            Button,
             {
               type: "button",
               variant: "outline",
@@ -31007,7 +31007,7 @@ var CategoryView = ({
             }
           ),
           /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(
-            Button2,
+            Button,
             {
               type: "button",
               variant: "destructive",
@@ -32136,7 +32136,7 @@ var PlanDetailModal = ({
           ] })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -32182,7 +32182,7 @@ var PlanDetailModal = ({
                       (0, import_utils44.formatCurrency)(savings, plan.currency)
                     ] }),
                     /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(
-                      Button2,
+                      Button,
                       {
                         variant: isSelected ? "default" : "outline",
                         size: "sm",
@@ -32250,7 +32250,7 @@ var PlanDetailModal = ({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)("div", { className: "flex items-center justify-end gap-3 p-6 border-t bg-gray-50", children: [
         /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => onOpenChange(false),
@@ -32258,7 +32258,7 @@ var PlanDetailModal = ({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)(
-          Button2,
+          Button,
           {
             onClick: () => handleSubscribe(plan.billingCycle),
             className: "bg-blue-700 hover:bg-blue-700",
@@ -33397,7 +33397,7 @@ var PaymentDetailDialog = ({
         /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(DialogDescription, { className: "text-sm text-text-secondary mt-1", children: "View payment information and transaction details" })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime199.jsx)("div", { className: "flex items-center gap-2", children: onDownloadReceipt && /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)(
-        Button2,
+        Button,
         {
           variant: "outline",
           size: "sm",
@@ -33536,7 +33536,7 @@ var PaymentDetailDialog = ({
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4 border-t", children: [
         payment.status === "pending" && onProcessPayment && /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)(
-          Button2,
+          Button,
           {
             onClick: () => onProcessPayment(payment.id),
             className: "flex items-center gap-2",
@@ -33547,7 +33547,7 @@ var PaymentDetailDialog = ({
           }
         ),
         payment.status === "completed" && onRefundPayment && /* @__PURE__ */ (0, import_jsx_runtime199.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => onRefundPayment(payment.id),
@@ -33559,7 +33559,7 @@ var PaymentDetailDialog = ({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime199.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: () => onOpenChange(false),
@@ -33652,7 +33652,7 @@ function PaymentTable({
       /* @__PURE__ */ (0, import_jsx_runtime200.jsx)("td", { className: "px-6 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime200.jsx)("div", { className: "text-sm text-text-primary", children: formatDate11(payment.createdAt) }) }),
       /* @__PURE__ */ (0, import_jsx_runtime200.jsx)("td", { className: "px-6 py-4 text-right", children: /* @__PURE__ */ (0, import_jsx_runtime200.jsxs)(DropdownMenu, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime200.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime200.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -33841,7 +33841,7 @@ function ActionButton({
   className = ""
 }) {
   return /* @__PURE__ */ (0, import_jsx_runtime204.jsxs)(
-    Button2,
+    Button,
     {
       variant,
       size,
@@ -33870,7 +33870,7 @@ function EmptyState7({
     /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(Icon2, { className: "w-12 h-12 text-text-tertiary mx-auto mb-4" }),
     /* @__PURE__ */ (0, import_jsx_runtime205.jsx)("h3", { className: "text-lg font-medium text-text-secondary mb-2", children: title }),
     /* @__PURE__ */ (0, import_jsx_runtime205.jsx)("p", { className: "text-text-tertiary mb-4", children: description }),
-    actionLabel && onAction && /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(Button2, { onClick: onAction, children: actionLabel })
+    actionLabel && onAction && /* @__PURE__ */ (0, import_jsx_runtime205.jsx)(Button, { onClick: onAction, children: actionLabel })
   ] }) }) });
 }
 
@@ -34016,7 +34016,7 @@ function AdminPageHeader({
 }) {
   return /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(PageHeader, { className, children: /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)("div", { className: "flex justify-between items-start", children: [
     /* @__PURE__ */ (0, import_jsx_runtime208.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(PageTitle, { subtitle, children: title }) }),
-    actionLabel && onAction && ActionIcon && /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)(Button2, { onClick: onAction, children: [
+    actionLabel && onAction && ActionIcon && /* @__PURE__ */ (0, import_jsx_runtime208.jsxs)(Button, { onClick: onAction, children: [
       /* @__PURE__ */ (0, import_jsx_runtime208.jsx)(ActionIcon, { className: "w-4 h-4 mr-2" }),
       actionLabel
     ] })
@@ -34036,7 +34036,7 @@ function SettingsNavigation({
     /* @__PURE__ */ (0, import_jsx_runtime209.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime209.jsx)("nav", { className: "space-y-2", children: tabs.map((tab) => {
       const Icon2 = tab.icon;
       return /* @__PURE__ */ (0, import_jsx_runtime209.jsxs)(
-        Button2,
+        Button,
         {
           variant: "ghost",
           onClick: () => onTabChange(tab.id),
@@ -34114,8 +34114,8 @@ function SettingsForm({
     /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(CardTitle, { children: title }),
       /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { className: "flex gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(Button2, { variant: "outline", onClick: onReset, children: "Reset" }),
-        /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(Button2, { onClick: onSave, disabled: saving, children: saving ? "Saving..." : "Save" })
+        /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(Button, { variant: "outline", onClick: onReset, children: "Reset" }),
+        /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(Button, { onClick: onSave, disabled: saving, children: saving ? "Saving..." : "Save" })
       ] })
     ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime210.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime210.jsx)("div", { className: "space-y-6", children: fields.map((field) => /* @__PURE__ */ (0, import_jsx_runtime210.jsxs)("div", { children: [
@@ -34462,7 +34462,7 @@ function SecurityCard({
         /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { className: `p-2 rounded-full ${config.bgColor}`, children: /* @__PURE__ */ (0, import_jsx_runtime213.jsx)(Icon2, { className: `w-5 h-5 ${config.color}` }) }),
         /* @__PURE__ */ (0, import_jsx_runtime213.jsx)(CardTitle, { className: "text-lg", children: title })
       ] }),
-      actionLabel && onAction && /* @__PURE__ */ (0, import_jsx_runtime213.jsx)(Button2, { variant: "outline", size: "sm", onClick: onAction, children: actionLabel })
+      actionLabel && onAction && /* @__PURE__ */ (0, import_jsx_runtime213.jsx)(Button, { variant: "outline", size: "sm", onClick: onAction, children: actionLabel })
     ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime213.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("p", { className: "text-sm text-text-secondary", children: description }) })
   ] });
@@ -34587,7 +34587,7 @@ function QuickActions({
     /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-3", children: actions.map((action) => {
       const Icon2 = action.icon;
       return /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
-        Button2,
+        Button,
         {
           variant: action.variant || "outline",
           onClick: action.onClick,
@@ -34845,7 +34845,7 @@ function PerformanceAlertCard({
         ] }) }),
         /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className: "flex space-x-2", children: [
           onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -34854,7 +34854,7 @@ function PerformanceAlertCard({
             }
           ),
           !alert2.resolved && onResolve && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onResolve(alert2.id),
@@ -35058,7 +35058,7 @@ function MaintenanceTaskCard({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35068,7 +35068,7 @@ function MaintenanceTaskCard({
         ) }),
         /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { className: "flex space-x-2", children: [
           task.status === "PENDING" && onStart && /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onStart(task.id),
@@ -35080,7 +35080,7 @@ function MaintenanceTaskCard({
             }
           ),
           task.status === "IN_PROGRESS" && onComplete && /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onComplete(task.id),
@@ -35092,7 +35092,7 @@ function MaintenanceTaskCard({
             }
           ),
           (task.status === "PENDING" || task.status === "IN_PROGRESS") && onCancel && /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35131,7 +35131,7 @@ function MaintenanceModeToggle({
           /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { className: "text-sm font-medium", children: isActive ? "Maintenance Mode Active" : "System Normal" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(
-          Button2,
+          Button,
           {
             variant: isActive ? "default" : "outline",
             onClick: onToggle,
@@ -35273,7 +35273,7 @@ function MaintenanceWindowCard({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35283,7 +35283,7 @@ function MaintenanceWindowCard({
         ) }),
         /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)("div", { className: "flex space-x-2", children: [
           window2.status === "SCHEDULED" && onEdit && /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onEdit(window2),
@@ -35291,7 +35291,7 @@ function MaintenanceWindowCard({
             }
           ),
           (window2.status === "SCHEDULED" || window2.status === "ACTIVE") && onCancel && /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35416,7 +35416,7 @@ function BackupCard({
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35426,7 +35426,7 @@ function BackupCard({
         ) }),
         /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { className: "flex space-x-2", children: [
           backup.status === "COMPLETED" && onDownload && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35439,7 +35439,7 @@ function BackupCard({
             }
           ),
           backup.status === "COMPLETED" && onRestore && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onRestore(backup.id),
@@ -35451,7 +35451,7 @@ function BackupCard({
             }
           ),
           onDelete && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35569,7 +35569,7 @@ function BackupScheduleCard({
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35579,7 +35579,7 @@ function BackupScheduleCard({
         ) }),
         /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { className: "flex space-x-2", children: [
           schedule.status === "ACTIVE" && onPause && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35592,7 +35592,7 @@ function BackupScheduleCard({
             }
           ),
           schedule.status === "PAUSED" && onResume && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onResume(schedule.id),
@@ -35604,7 +35604,7 @@ function BackupScheduleCard({
             }
           ),
           onEdit && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35617,7 +35617,7 @@ function BackupScheduleCard({
             }
           ),
           onDelete && /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35759,7 +35759,7 @@ function ApiKeyCard({
       /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "mb-3", children: /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center space-x-2 mb-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("code", { className: "text-xs bg-bg-secondary px-2 py-1 rounded font-mono flex-1", children: showKey ? apiKey.key : "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" }),
         /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -35769,7 +35769,7 @@ function ApiKeyCard({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -35818,7 +35818,7 @@ function ApiKeyCard({
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ (0, import_jsx_runtime230.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime230.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35828,7 +35828,7 @@ function ApiKeyCard({
         ) }),
         /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)("div", { className: "flex space-x-2", children: [
           apiKey.status === "ACTIVE" && onRevoke && /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35841,7 +35841,7 @@ function ApiKeyCard({
             }
           ),
           onDelete && /* @__PURE__ */ (0, import_jsx_runtime230.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -35936,7 +35936,7 @@ function ApiEndpointCard({
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime231.jsx)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -35945,7 +35945,7 @@ function ApiEndpointCard({
           }
         ) }),
         /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("div", { className: "flex space-x-2", children: onEdit && /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)(
-          Button2,
+          Button,
           {
             size: "sm",
             onClick: () => onEdit(endpoint),
@@ -36127,7 +36127,7 @@ function LogEntryCard({
           ] })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime234.jsx)("div", { className: "flex space-x-2", children: onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime234.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -36258,7 +36258,7 @@ function LogFilters({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("div", { className: "flex items-center space-x-2", children: onRefresh && /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -36272,7 +36272,7 @@ function LogFilters({
           }
         ) }),
         /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("div", { className: "flex items-center space-x-2", children: onExport && /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             size: "sm",
@@ -36425,7 +36425,7 @@ function SecurityEventCard({
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className: "flex space-x-2", children: [
           onViewDetails && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
-            Button2,
+            Button,
             {
               variant: "outline",
               size: "sm",
@@ -36438,7 +36438,7 @@ function SecurityEventCard({
             }
           ),
           !event.resolved && onResolve && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
-            Button2,
+            Button,
             {
               size: "sm",
               onClick: () => onResolve(event.id),
@@ -37951,7 +37951,7 @@ var OrderActionsSection = ({
     /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: t2("detail.orderActions") }),
     /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { className: "flex justify-between items-center", children: [
       /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { children: canCancel && /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
-        Button2,
+        Button,
         {
           variant: "destructive",
           onClick: onCancel,
@@ -37965,7 +37965,7 @@ var OrderActionsSection = ({
       ) }),
       /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { className: "flex gap-3", children: [
         /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: onEdit,
@@ -37979,7 +37979,7 @@ var OrderActionsSection = ({
           }
         ),
         canPickup && /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
-          Button2,
+          Button,
           {
             variant: "default",
             onClick: onPickup,
@@ -37992,7 +37992,7 @@ var OrderActionsSection = ({
           }
         ),
         canReturn && /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
-          Button2,
+          Button,
           {
             variant: "default",
             onClick: onReturn,
@@ -38005,7 +38005,7 @@ var OrderActionsSection = ({
           }
         ),
         canPrint && /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
-          Button2,
+          Button,
           {
             variant: "outline",
             onClick: onPrint,
@@ -40536,7 +40536,7 @@ function TopNavigation({
       /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)("div", { className: "flex items-center space-x-4", children: [
         /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)("div", { className: "flex items-center space-x-2", children: [
           /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -40545,7 +40545,7 @@ function TopNavigation({
             }
           ),
           variant === "client" && /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -40559,7 +40559,7 @@ function TopNavigation({
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)("div", { className: "flex items-center space-x-2", children: [
           /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -40572,7 +40572,7 @@ function TopNavigation({
             }
           ),
           /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -40584,7 +40584,7 @@ function TopNavigation({
           )
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime264.jsx)("div", { className: "lg:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(
-          Button2,
+          Button,
           {
             variant: "ghost",
             size: "sm",
@@ -40705,7 +40705,7 @@ function ServerTopNavigation({
           ] }) }),
           /* @__PURE__ */ (0, import_jsx_runtime265.jsxs)("div", { className: "flex items-center space-x-2", children: [
             /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "sm",
@@ -40714,7 +40714,7 @@ function ServerTopNavigation({
               }
             ),
             variant === "client" && /* @__PURE__ */ (0, import_jsx_runtime265.jsxs)(
-              Button2,
+              Button,
               {
                 variant: "ghost",
                 size: "sm",
@@ -40728,7 +40728,7 @@ function ServerTopNavigation({
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime265.jsxs)("div", { className: "flex items-center space-x-2", children: [
             /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("form", { action: profileAction, method: "GET", children: /* @__PURE__ */ (0, import_jsx_runtime265.jsxs)(
-              Button2,
+              Button,
               {
                 type: "submit",
                 variant: "ghost",
@@ -40741,7 +40741,7 @@ function ServerTopNavigation({
               }
             ) }),
             /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("form", { action: logoutAction, method: "POST", children: /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(
-              Button2,
+              Button,
               {
                 type: "submit",
                 variant: "ghost",
@@ -40753,7 +40753,7 @@ function ServerTopNavigation({
             ) })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime265.jsx)("div", { className: "lg:hidden", children: /* @__PURE__ */ (0, import_jsx_runtime265.jsx)(
-            Button2,
+            Button,
             {
               variant: "ghost",
               size: "sm",
@@ -40917,28 +40917,28 @@ var TodaysFocus = ({ data }) => {
     /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)(Card, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime268.jsx)(CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime268.jsx)(CardTitle, { children: "Quick Actions" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime268.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)("div", { className: "space-y-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
           /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("span", { className: "mr-3", children: "\u{1F4E6}" }),
           /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)("div", { className: "flex-1 text-left", children: [
             /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("div", { className: "font-medium", children: "Process Pickup" }),
             /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("div", { className: "text-sm text-gray-500", children: "Mark items as picked up" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
           /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("span", { className: "mr-3", children: "\u{1F504}" }),
           /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)("div", { className: "flex-1 text-left", children: [
             /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("div", { className: "font-medium", children: "Process Return" }),
             /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("div", { className: "text-sm text-gray-500", children: "Mark items as returned" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
           /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("span", { className: "mr-3", children: "\u26A0\uFE0F" }),
           /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)("div", { className: "flex-1 text-left", children: [
             /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("div", { className: "font-medium", children: "Handle Overdue" }),
             /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("div", { className: "text-sm text-gray-500", children: "Contact overdue customers" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)(Button2, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)(Button, { className: "w-full justify-start h-12 text-left", variant: "outline", children: [
           /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("span", { className: "mr-3", children: "\u{1F4DE}" }),
           /* @__PURE__ */ (0, import_jsx_runtime268.jsxs)("div", { className: "flex-1 text-left", children: [
             /* @__PURE__ */ (0, import_jsx_runtime268.jsx)("div", { className: "font-medium", children: "Send Reminders" }),
@@ -41093,7 +41093,7 @@ var ColorfulTodaysFocus = ({ data }) => {
     /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(Card, { className: "border-0 shadow-lg bg-gradient-to-br from-white to-gray-50", children: [
       /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(CardHeader, { className: "pb-4", children: /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(CardTitle, { className: "text-xl font-bold text-gray-800", children: "Quick Actions" }) }),
       /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("div", { className: "space-y-4", children: quickActions.map((action, index) => /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
-        Button2,
+        Button,
         {
           className: "w-full justify-start h-16 text-left group relative overflow-hidden bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg",
           variant: "outline",
@@ -41980,7 +41980,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
   }
   if (error || !hasSubscription) {
     return /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { className, children: (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
-      Button2,
+      Button,
       {
         variant: "outline",
         size: "sm",
@@ -42079,7 +42079,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
       /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { className: "flex items-center space-x-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(StatusBadge, { status, type: "subscription", variant: "solid" }),
         (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
-          Button2,
+          Button,
           {
             size: "sm",
             onClick: () => window.location.href = "/plans",
@@ -42101,7 +42101,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(StatusBadge, { status, type: "subscription", variant: "solid", size: "sm" }),
     (currentUserRole === "ADMIN" || currentUserRole === "MERCHANT") && shouldShowAction && /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
-      Button2,
+      Button,
       {
         variant: "outline",
         size: "sm",
