@@ -114,7 +114,8 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-        code: 'PASSWORD_CHANGED_SUCCESS', message: 'Password changed successfully'
+        code: 'PASSWORD_CHANGED_SUCCESS',
+        message: 'Password changed successfully'
     });
 
   } catch (error) {

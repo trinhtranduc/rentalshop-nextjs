@@ -128,7 +128,8 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
         hasMore: (result.page || 1) * (result.limit || 20) < (result.total || 0),
         totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
-      code: "ORDERS_FOUND", message: `Found ${result.total || 0} orders`
+      code: "ORDERS_FOUND",
+      message: `Found ${result.total || 0} orders`
     });
 
   } catch (error) {
@@ -274,7 +275,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     return NextResponse.json({
       success: true,
       data: order,
-      code: 'ORDER_CREATED_SUCCESS', message: 'Order created successfully'
+      code: 'ORDER_CREATED_SUCCESS',
+        message: 'Order created successfully'
     });
 
   } catch (error: any) {
@@ -347,7 +349,8 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
     return NextResponse.json({
       success: true,
       data: updatedOrder,
-      code: 'ORDER_UPDATED_SUCCESS', message: 'Order updated successfully'
+      code: 'ORDER_UPDATED_SUCCESS',
+        message: 'Order updated successfully'
     });
 
   } catch (error: any) {

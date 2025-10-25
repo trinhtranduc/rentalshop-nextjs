@@ -141,7 +141,8 @@ export async function POST(request: NextRequest) {
 
     const result = {
       success: true,
-      code: 'LOGIN_SUCCESS', message: 'Login successful',
+      code: 'LOGIN_SUCCESS',
+        message: 'Login successful',
       data: {
         user: {
           id: user.id,

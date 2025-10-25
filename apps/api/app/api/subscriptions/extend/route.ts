@@ -77,7 +77,8 @@ async function handleExtendSubscription(
     return NextResponse.json({
       success: true,
       data: extendedSubscription,
-      code: 'SUBSCRIPTION_EXTENDED_SUCCESS', message: `Subscription extended until ${endDate.toISOString().split('T')[0]}`
+      code: 'SUBSCRIPTION_EXTENDED_SUCCESS',
+      message: `Subscription extended until ${endDate.toISOString().split('T')[0]}`
     });
   } catch (error) {
     console.error('Error extending subscription:', error);

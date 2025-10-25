@@ -76,7 +76,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     return NextResponse.json({
       success: true,
       data: subscription,
-      code: 'SUBSCRIPTION_CREATED_SUCCESS', message: 'Subscription created successfully'
+      code: 'SUBSCRIPTION_CREATED_SUCCESS',
+        message: 'Subscription created successfully'
     });
   } catch (error) {
     console.error('Error creating subscription:', error);

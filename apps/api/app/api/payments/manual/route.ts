@@ -109,7 +109,8 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
     return NextResponse.json({
       success: true,
       code: 'MANUAL_PAYMENT_CREATED_SUCCESS',
-      code: 'MANUAL_PAYMENT_CREATED_SUCCESS', message: 'Manual payment created successfully',
+      code: 'MANUAL_PAYMENT_CREATED_SUCCESS',
+        message: 'Manual payment created successfully',
       data: {
         payment: {
           id: payment.id,

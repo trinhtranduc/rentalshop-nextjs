@@ -279,7 +279,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        code: 'USER_ACCOUNT_CREATED_SUCCESS', message: 'User account created successfully',
+        code: 'USER_ACCOUNT_CREATED_SUCCESS',
+        message: 'User account created successfully',
         data: {
           user: {
             id: user.id,

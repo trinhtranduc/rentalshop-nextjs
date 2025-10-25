@@ -43,7 +43,8 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: plan,
-        code: 'PLAN_RETRIEVED_SUCCESS', message: 'Plan retrieved successfully'
+        code: 'PLAN_RETRIEVED_SUCCESS',
+        message: 'Plan retrieved successfully'
       });
 
     } catch (error) {
@@ -98,7 +99,8 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: updatedPlan,
-        code: 'PLAN_UPDATED_SUCCESS', message: 'Plan updated successfully'
+        code: 'PLAN_UPDATED_SUCCESS',
+        message: 'Plan updated successfully'
       });
 
     } catch (error) {
@@ -163,7 +165,8 @@ export async function DELETE(
       return NextResponse.json({
         success: true,
         data: deletedPlan,
-        code: 'PLAN_DELETED_SUCCESS', message: 'Plan deleted successfully'
+        code: 'PLAN_DELETED_SUCCESS',
+        message: 'Plan deleted successfully'
       });
 
     } catch (error) {

@@ -177,7 +177,8 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: refreshedMerchant,
-        code: 'PLAN_UPDATED_SUCCESS', message: 'Plan updated successfully'
+        code: 'PLAN_UPDATED_SUCCESS',
+        message: 'Plan updated successfully'
       });
 
     } catch (error) {

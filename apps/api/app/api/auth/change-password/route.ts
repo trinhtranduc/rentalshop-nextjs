@@ -66,7 +66,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
 
     return NextResponse.json({
       success: true,
-      code: 'PASSWORD_CHANGED_SUCCESS', message: 'Password changed successfully'
+      code: 'PASSWORD_CHANGED_SUCCESS',
+        message: 'Password changed successfully'
     });
 
   } catch (error) {

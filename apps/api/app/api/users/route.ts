@@ -180,7 +180,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     return NextResponse.json({
       success: true,
       data: newUser,
-      code: 'USER_CREATED_SUCCESS', message: 'User created successfully'
+      code: 'USER_CREATED_SUCCESS',
+        message: 'User created successfully'
     }, { status: 201 });
 
   } catch (error: any) {
@@ -246,7 +247,8 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
     return NextResponse.json({
       success: true,
       data: updatedUser,
-      code: 'USER_UPDATED_SUCCESS', message: 'User updated successfully'
+      code: 'USER_UPDATED_SUCCESS',
+        message: 'User updated successfully'
     });
 
   } catch (error) {
@@ -301,7 +303,8 @@ export const DELETE = withManagementAuth(async (request, { user, userScope }) =>
 
     return NextResponse.json({
       success: true,
-      code: 'USER_DEACTIVATED_SUCCESS', message: 'User deactivated successfully'
+      code: 'USER_DEACTIVATED_SUCCESS',
+        message: 'User deactivated successfully'
     });
 
   } catch (error) {

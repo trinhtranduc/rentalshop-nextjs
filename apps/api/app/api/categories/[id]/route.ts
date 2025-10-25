@@ -268,7 +268,8 @@ export async function DELETE(
       return NextResponse.json(
         { 
           success: false, 
-          code: "BUSINESS_RULE_VIOLATION", message: `Cannot delete category "${existingCategory.name}" because it has ${productCount} product(s) assigned to it. Please reassign or delete these products first.` 
+          code: "BUSINESS_RULE_VIOLATION",
+          message: `Cannot delete category "${existingCategory.name}" because it has ${productCount} product(s) assigned to it. Please reassign or delete these products first.` 
         },
         { status: API.STATUS.CONFLICT }
       );
