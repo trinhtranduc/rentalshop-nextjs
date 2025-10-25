@@ -196,6 +196,15 @@ export async function PUT(
         
         try {
           productDataFromRequest = JSON.parse(jsonDataStr);
+          
+          // Fix outletStock if it's a string (mobile app compatibility)
+          if (productDataFromRequest.outletStock && typeof productDataFromRequest.outletStock === 'string') {
+            try {
+              productDataFromRequest.outletStock = JSON.parse(productDataFromRequest.outletStock);
+            } catch (parseError) {
+              console.log('⚠️ Failed to parse outletStock string:', productDataFromRequest.outletStock);
+            }
+          }
         } catch (parseError) {
           return NextResponse.json(
             ResponseBuilder.error('INVALID_JSON_DATA'),
