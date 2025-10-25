@@ -27,7 +27,7 @@ export default function OrderDetailPage() {
   const orderId = params.id as string;
   
   // Extract numeric part from order ID (e.g., "2110" from "ORD-2110")
-  const numericOrderId = orderId.replace(/^ORD-/, '');
+  const numericOrderId = orderId;//.replace(/^ORD-/, '');
 
   useEffect(() => {
     if (!orderId) return;
@@ -37,7 +37,7 @@ export default function OrderDetailPage() {
         setLoading(true);
         setError(null);
 
-        const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderId}`);
+        const result = await ordersApi.getOrderByNumber(`${numericOrderId}`);
 
         if (result.success && result.data) {
           setOrder(result.data);

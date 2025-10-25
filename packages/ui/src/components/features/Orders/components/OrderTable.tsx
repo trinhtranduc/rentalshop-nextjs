@@ -231,8 +231,15 @@ export const OrderTable = React.memo(function OrderTable({
                 {/* Customer */}
                 <td className="px-6 py-3">
                   <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">{order.customerName || 'N/A'}</div>
-                    <div className="text-gray-500 dark:text-gray-400 text-xs">{order.customerPhone || 'N/A'}</div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {order.customerName || order.customer?.firstName ? 
+                        `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim() || order.customerName : 
+                        'N/A'
+                      }
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400 text-xs">
+                      {order.customerPhone || order.customer?.phone || 'N/A'}
+                    </div>
                   </div>
                 </td>
                 

@@ -266,7 +266,7 @@ export default function OrdersPage() {
   // ============================================================================
   
   const handleOrderAction = useCallback(async (action: string, orderNumber: string) => {
-    const numericOrderNumber = orderNumber.replace(/^ORD-/, '');
+    const numericOrderNumber = orderNumber;
     
     switch (action) {
       case 'view':

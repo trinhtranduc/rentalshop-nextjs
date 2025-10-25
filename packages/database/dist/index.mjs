@@ -1289,6 +1289,7 @@ var simplifiedOrders = {
       outletId,
       status,
       orderType,
+      productId,
       startDate,
       endDate,
       search: search3,
@@ -1319,6 +1320,13 @@ var simplifiedOrders = {
     }
     if (status) where.status = status;
     if (orderType) where.orderType = orderType;
+    if (productId) {
+      where.orderItems = {
+        some: {
+          productId
+        }
+      };
+    }
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;
@@ -1534,6 +1542,7 @@ var simplifiedOrders = {
       outletId,
       status,
       orderType,
+      productId,
       startDate,
       endDate,
       page = 1,
@@ -1553,6 +1562,13 @@ var simplifiedOrders = {
     }
     if (orderType) {
       where.orderType = orderType;
+    }
+    if (productId) {
+      where.orderItems = {
+        some: {
+          productId
+        }
+      };
     }
     if (startDate || endDate) {
       where.createdAt = {};
@@ -2420,6 +2436,32 @@ var simplifiedPayments = {
 };
 
 // src/outlet.ts
+async function getDefaultOutlet(merchantId) {
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { id: true }
+  });
+  if (!merchant) {
+    throw new Error(`Merchant with id ${merchantId} not found`);
+  }
+  const outlet = await prisma.outlet.findFirst({
+    where: {
+      merchantId: merchant.id,
+      // Use CUID
+      isDefault: true,
+      isActive: true
+    },
+    select: {
+      id: true,
+      name: true,
+      merchantId: true
+    }
+  });
+  if (!outlet) {
+    throw new Error(`No default outlet found for merchant ${merchantId}`);
+  }
+  return outlet;
+}
 var simplifiedOutlets = {
   /**
    * Find outlet by ID (simplified API)
@@ -3665,17 +3707,17 @@ function generateRandomString(length, numericOnly = false) {
 }
 function validateOrderNumber(orderNumber) {
   const patterns = [
-    /^ORD-\d{3}-\d{4}$/,
+    /^\d{3}-\d{4}$/,
     // Sequential: ORD-001-0001
-    /^ORD-\d{3}-\d{8}-\d{4}$/,
+    /^\d{3}-\d{8}-\d{4}$/,
     // Date-based: ORD-001-20250115-0001
-    /^ORD-\d{3}-[A-Z0-9]{6}$/,
+    /^\d{3}-[A-Z0-9]{6}$/,
     // Random: ORD-001-A7B9C2
-    /^ORD-\d{3}-\d{6}$/,
+    /^\d{3}-\d{6}$/,
     // Random-numeric: ORD-001-123456
-    /^ORD-\d{3}-\d{8}-[A-Z0-9]{4}$/,
+    /^\d{3}-\d{8}-[A-Z0-9]{4}$/,
     // Hybrid: ORD-001-20250115-A7B9
-    /^ORD\d{3}\d{5}$/
+    /^\d{3}\d{5}$/
     // Compact-numeric: ORD00112345
   ];
   return patterns.some((pattern) => pattern.test(orderNumber));
@@ -4952,7 +4994,7 @@ var generateOrderNumber2 = async (outletId) => {
     where: { outletId }
   });
   const sequence = (orderCount + 1).toString().padStart(4, "0");
-  return `ORD-${outletId.toString().padStart(3, "0")}-${sequence}`;
+  return `${outletId.toString().padStart(3, "0")}-${sequence}`;
 };
 export {
   AuditLogger,
@@ -4963,6 +5005,7 @@ export {
   extractAuditContext,
   generateOrderNumber2 as generateOrderNumber,
   getAuditLogger,
+  getDefaultOutlet,
   getExpiredSubscriptions,
   getOutletOrderStats,
   getSubscriptionById,

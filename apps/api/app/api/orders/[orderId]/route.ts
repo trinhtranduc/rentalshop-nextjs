@@ -111,19 +111,9 @@ export const PUT = async (
       }
 
       // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
-      const { 
-        subtotal, 
-        taxAmount, 
-        id, 
-        orderNumber, // Read-only field
-        createdAt,   // Read-only field
-        updatedAt,   // Read-only field
-        createdById, // Read-only field
-        ...validUpdateData 
-      } = body;
+      const { subtotal, taxAmount, id, ...validUpdateData } = body;
       
       console.log('🔧 Filtered update data keys:', Object.keys(validUpdateData));
-      console.log('🔧 Update data:', validUpdateData);
 
       // Update the order using the simplified database API
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
