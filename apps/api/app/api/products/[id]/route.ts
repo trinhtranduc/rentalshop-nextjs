@@ -206,8 +206,8 @@ export async function PUT(
             }
           }
           
-          // Fix images field - handle empty array or convert to string (mobile app compatibility)
-          if (productDataFromRequest.images) {
+          // Fix images field - handle various formats (mobile app compatibility)
+          if (productDataFromRequest.images !== undefined) {
             if (Array.isArray(productDataFromRequest.images)) {
               if (productDataFromRequest.images.length === 0) {
                 // Remove empty array to avoid Prisma error
@@ -216,9 +216,15 @@ export async function PUT(
                 // Convert array to comma-separated string for database
                 productDataFromRequest.images = productDataFromRequest.images.join(',');
               }
+            } else if (typeof productDataFromRequest.images === 'string') {
+              // If it's already a string, keep as is
+              if (productDataFromRequest.images.trim() === '') {
+                // Remove empty string
+                delete productDataFromRequest.images;
+              }
             }
-            // If it's already a string, keep as is
           }
+          // If images is undefined or null, leave it as is (optional field)
         } catch (parseError) {
           return NextResponse.json(
             ResponseBuilder.error('INVALID_JSON_DATA'),
