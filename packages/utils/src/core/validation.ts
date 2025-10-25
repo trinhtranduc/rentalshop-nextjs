@@ -215,7 +215,7 @@ const baseOrderSchema = z.object({
   pickupPlanAt: z.coerce.date().optional(),
   returnPlanAt: z.coerce.date().optional(),
   rentalDuration: z.coerce.number().int().positive().optional(),
-  subtotal: z.coerce.number().nonnegative(),
+  subtotal: z.coerce.number().nonnegative().optional(),
   taxAmount: z.coerce.number().nonnegative().optional(),
   discountType: z.enum(['amount', 'percentage']).optional(),
   discountValue: z.coerce.number().nonnegative().optional(),

@@ -39,7 +39,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     const parsed = usersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.validationError(parsed.error.flatten()),
+        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -127,7 +127,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.validationError(parsed.error.flatten()),
+        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -207,7 +207,7 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
     
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.validationError(parsed.error.flatten()),
+        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
         { status: 400 }
       );
     }
