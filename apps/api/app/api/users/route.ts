@@ -225,9 +225,10 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
     // Check if user exists and is accessible within scope
     const existingUser = await db.users.findById(id);
     if (!existingUser) {
-      return NextResponse.json({
-        ResponseBuilder.error('USER_NOT_FOUND', 'User not found')
-      }, { status: 404 });
+      return NextResponse.json(
+        ResponseBuilder.error('USER_NOT_FOUND', 'User not found'),
+        { status: 404 }
+      );
     }
 
     // Scope validation
@@ -279,9 +280,10 @@ export const DELETE = withManagementAuth(async (request, { user, userScope }) =>
     // Check if user exists and is accessible within scope
     const existingUser = await db.users.findById(userId);
     if (!existingUser) {
-      return NextResponse.json({
-        ResponseBuilder.error('USER_NOT_FOUND', 'User not found')
-      }, { status: 404 });
+      return NextResponse.json(
+        ResponseBuilder.error('USER_NOT_FOUND', 'User not found'),
+        { status: 404 }
+      );
     }
 
     // Scope validation
