@@ -54,7 +54,7 @@ export default function EditOrderPage() {
   
   // Extract numeric part from order ID (e.g., "123" from "123" or "ORD-123")
   // Add null check to prevent error when orderId is undefined during initial render
-  const numericOrderId = orderId ? orderId.replace(/^ORD-/, '') : '';
+  const numericOrderId = orderId;
   
   // Extract numeric order number from order data for navigation
   const numericOrderNumber = order?.orderNumber ? order.orderNumber.replace(/^ORD-/, '') : numericOrderId;

@@ -258,22 +258,42 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
 
     console.log('🔍 Raw outletStock from request:', parsed.data.outletStock);
     
-    // Validate that outletStock is provided (required)
-    if (!parsed.data.outletStock || !Array.isArray(parsed.data.outletStock) || parsed.data.outletStock.length === 0) {
-      return NextResponse.json(
-        ResponseBuilder.error('PRODUCT_NO_STOCK_ENTRY'),
-        { status: 400 }
-      );
+    let outletStock: Array<{ outletId: number; stock: number }>;
+    let totalStock: number;
+    
+    // Check if outletStock is provided
+    if (parsed.data.outletStock && Array.isArray(parsed.data.outletStock) && parsed.data.outletStock.length > 0) {
+      // Use provided outletStock
+      outletStock = parsed.data.outletStock.map((os: any) => ({
+        outletId: os.outletId,
+        stock: os.stock || 0,
+      }));
+      console.log('🔍 Using provided outletStock:', outletStock);
+    } else {
+      // Auto-create outletStock from default outlet
+      console.log('🔍 No outletStock provided, using default outlet');
+      
+      try {
+        const { getDefaultOutlet } = await import('@rentalshop/database');
+        const defaultOutlet = await getDefaultOutlet(merchant.id);
+        
+        outletStock = [{
+          outletId: defaultOutlet.id,
+          stock: parsed.data.totalStock || 0
+        }];
+        
+        console.log('✅ Using default outlet:', defaultOutlet.name, 'with stock:', outletStock[0].stock);
+      } catch (error) {
+        console.error('❌ Error getting default outlet:', error);
+        return NextResponse.json(
+          ResponseBuilder.error('DEFAULT_OUTLET_NOT_FOUND'),
+          { status: 400 }
+        );
+      }
     }
     
-    const outletStock: Array<{ outletId: number; stock: number }> = parsed.data.outletStock.map((os: any) => ({
-      outletId: os.outletId,
-      stock: os.stock || 0,
-    }));
-    
-    console.log('🔍 Processed outletStock:', outletStock);
-
-    const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
+    totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
+    console.log('🔍 Final outletStock:', outletStock);
     console.log('🔍 Calculated totalStock:', totalStock);
 
     // Check for duplicate product name within the same merchant

@@ -65,9 +65,14 @@ export function OrdersList({
               </div>
               <div>
                 <p className="font-medium text-gray-900">
-                  {order.customerName}
+                  {order.customerName || (order.customer ? 
+                    `${order.customer.firstName} ${order.customer.lastName}` : 
+                    'Unknown Customer'
+                  )}
                 </p>
-                <p className="text-sm text-gray-500">{(order as any).customerPhone || 'No phone'}</p>
+                <p className="text-sm text-gray-500">
+                  {order.customerPhone || order.customer?.phone || 'No phone'}
+                </p>
               </div>
             </div>
 

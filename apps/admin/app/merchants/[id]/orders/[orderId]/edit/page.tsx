@@ -69,10 +69,6 @@ export default function MerchantOrderEditPage() {
 
         // Try to fetch order by order number first (if it starts with ORD-) or by ID
         let orderNumber = orderId;
-        if (!orderId.startsWith('ORD-')) {
-          // If it's just the order number part, construct the full order number
-          orderNumber = `ORD-${orderId}`;
-        }
 
         console.log('🔍 Fetching order details for editing:', orderNumber);
 

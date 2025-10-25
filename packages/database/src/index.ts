@@ -190,7 +190,7 @@ const generateOrderNumber = async (outletId: number): Promise<string> => {
   });
 
   const sequence = (orderCount + 1).toString().padStart(4, '0');
-  return `ORD-${outletId.toString().padStart(3, '0')}-${sequence}`;
+  return `${outletId.toString().padStart(3, '0')}-${sequence}`;
 };
 
 // ============================================================================
@@ -210,6 +210,7 @@ export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscript
 export { AuditLogger, getAuditLogger, extractAuditContext } from './audit';
 export type { AuditContext } from './audit';
 export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number-generator';
+export { getDefaultOutlet } from './outlet';
 export type { OrderNumberFormat } from './order-number-generator';
 export { searchOrders } from './order'; // Legacy order search function
 

@@ -205,7 +205,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     }
 
     // Generate order number using the outlet's ID
-    const orderNumber = `ORD-${parsed.data.outletId.toString().padStart(3, '0')}-${Date.now().toString().slice(-6)}`;
+    const orderNumber = `${parsed.data.outletId.toString().padStart(3, '0')}-${Date.now().toString().slice(-6)}`;
 
     // Determine initial status based on order type
     // SALE orders start as COMPLETED (immediate purchase)

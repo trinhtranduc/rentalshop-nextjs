@@ -19,6 +19,40 @@ import type {
 // ============================================================================
 
 /**
+ * Get default outlet for merchant
+ */
+export async function getDefaultOutlet(merchantId: number): Promise<any> {
+  // First find merchant by public ID to get CUID
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { id: true }
+  });
+  
+  if (!merchant) {
+    throw new Error(`Merchant with id ${merchantId} not found`);
+  }
+
+  const outlet = await prisma.outlet.findFirst({
+    where: {
+      merchantId: merchant.id, // Use CUID
+      isDefault: true,
+      isActive: true
+    },
+    select: {
+      id: true,
+      name: true,
+      merchantId: true
+    }
+  });
+
+  if (!outlet) {
+    throw new Error(`No default outlet found for merchant ${merchantId}`);
+  }
+
+  return outlet;
+}
+
+/**
  * Search outlets - follows dual ID system
  * Input: ids (numbers), Output: ids (numbers)
  */

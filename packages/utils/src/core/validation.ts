@@ -65,7 +65,7 @@ export const productCreateSchema = z.object({
   totalStock: z.number().int().min(0, 'Total stock must be non-negative'),
   images: z.union([z.string(), z.array(z.string())]).optional(), // Allow both string and array for testing
   merchantId: z.coerce.number().int().positive().optional(), // Optional - required for ADMIN users, auto-assigned for others
-  outletStock: z.array(outletStockItemSchema).min(1, 'At least one outlet stock entry is required'), // Required - every product must have outlet stock
+  outletStock: z.array(outletStockItemSchema).optional(), // Optional - will use default outlet if not provided
 });
 
 export const productUpdateSchema = z.object({
@@ -247,52 +247,6 @@ export const orderUpdateSchema = baseOrderSchema.partial().extend({
   status: orderStatusEnum.optional(),
   pickedUpAt: z.coerce.date().optional(),
   returnedAt: z.coerce.date().optional(),
-  
-  // Additional fields from Order model for comprehensive updates
-  id: z.coerce.number().int().positive().optional(), // Order ID (read-only, for validation)
-  orderNumber: z.string().optional(), // Order number (read-only, for validation)
-  
-  // Financial fields
-  totalAmount: z.coerce.number().nonnegative().optional(),
-  depositAmount: z.coerce.number().nonnegative().optional(),
-  securityDeposit: z.coerce.number().nonnegative().optional(),
-  damageFee: z.coerce.number().nonnegative().optional(),
-  lateFee: z.coerce.number().nonnegative().optional(),
-  discountType: z.enum(['amount', 'percentage']).optional(),
-  discountValue: z.coerce.number().nonnegative().optional(),
-  discountAmount: z.coerce.number().nonnegative().optional(),
-  
-  // Date fields
-  pickupPlanAt: z.coerce.date().optional(),
-  returnPlanAt: z.coerce.date().optional(),
-  pickedUpAt: z.coerce.date().optional(),
-  returnedAt: z.coerce.date().optional(),
-  
-  // Rental info
-  rentalDuration: z.coerce.number().int().nonnegative().optional(),
-  isReadyToDeliver: z.boolean().optional(),
-  
-  // Collateral info
-  collateralType: z.enum(['CASH', 'CREDIT_CARD', 'ID_CARD', 'DOCUMENT', 'OTHER']).optional(),
-  collateralDetails: z.string().optional(),
-  
-  // Notes
-  notes: z.string().optional(),
-  pickupNotes: z.string().optional(),
-  returnNotes: z.string().optional(),
-  damageNotes: z.string().optional(),
-  
-  // Customer info (for quick updates)
-  customerId: z.coerce.number().int().positive().optional(),
-  customerName: z.string().optional(),
-  customerPhone: z.string().optional(),
-  customerEmail: z.string().email().optional(),
-  
-  // Outlet info
-  outletId: z.coerce.number().int().positive().optional(),
-  
-  // Order items (for complex updates)
-  orderItems: z.array(orderItemSchema).optional(),
 });
 
 export type OrdersQuery = z.infer<typeof ordersQuerySchema>;

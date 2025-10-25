@@ -251,7 +251,8 @@ function useSubscriptionStatusInfo(options = {}) {
     fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
   useEffect2(() => {
-    if (!user) return;
+    if (!user)
+      return;
     const interval = setInterval(fetchSubscriptionStatus, checkInterval);
     return () => clearInterval(interval);
   }, [user, fetchSubscriptionStatus, checkInterval]);
@@ -459,7 +460,8 @@ function CurrencyProvider({
     return getCurrency(code);
   }, []);
   const convertAmount = useCallback5((amount, from, to) => {
-    if (from === to) return amount;
+    if (from === to)
+      return amount;
     const fromCurrency = getCurrency(from);
     const toCurrency = getCurrency(to);
     if (!fromCurrency || !toCurrency) {
@@ -636,10 +638,12 @@ function useDedupedApi(options) {
     });
   }, [cacheKey, enabled, staleTime, cacheTime, refetchTrigger]);
   useEffect4(() => {
-    if (!refetchOnWindowFocus || !enabled) return;
+    if (!refetchOnWindowFocus || !enabled)
+      return;
     const handleFocus = () => {
       const cached = dataCache.get(cacheKey);
-      if (!cached) return;
+      if (!cached)
+        return;
       const now = Date.now();
       const isCacheStale = now - cached.timestamp > cached.staleTime;
       if (isCacheStale) {
@@ -652,7 +656,8 @@ function useDedupedApi(options) {
     return () => window.removeEventListener("focus", handleFocus);
   }, [refetchOnWindowFocus, enabled, cacheKey, staleTime]);
   const refetch = useCallback6(async () => {
-    if (!enabled) return;
+    if (!enabled)
+      return;
     console.log("\u{1F504} Manual refetch triggered");
     dataCache.delete(cacheKey);
     filtersRef.current = "";
@@ -1069,11 +1074,14 @@ function useProductAvailability() {
       };
     }
     const conflicts = existingOrders.filter((order) => {
-      if (order.orderType !== "RENT") return false;
+      if (order.orderType !== "RENT")
+        return false;
       const activeStatuses = ["RESERVED", "PICKUPED"];
-      if (!activeStatuses.includes(order.status)) return false;
+      if (!activeStatuses.includes(order.status))
+        return false;
       const hasProduct = order.orderItems.some((item) => item.productId === product.id);
-      if (!hasProduct) return false;
+      if (!hasProduct)
+        return false;
       const orderPickup = new Date(order.pickupPlanAt);
       const orderReturn = new Date(order.returnPlanAt);
       return pickup <= orderReturn && return_ >= orderPickup || orderPickup <= return_ && orderReturn >= pickup;
@@ -1498,7 +1506,9 @@ var extendStatics = function(d3, b) {
   extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d4, b2) {
     d4.__proto__ = b2;
   } || function(d4, b2) {
-    for (var p2 in b2) if (Object.prototype.hasOwnProperty.call(b2, p2)) d4[p2] = b2[p2];
+    for (var p2 in b2)
+      if (Object.prototype.hasOwnProperty.call(b2, p2))
+        d4[p2] = b2[p2];
   };
   return extendStatics(d3, b);
 };
@@ -1515,7 +1525,9 @@ var __assign = function() {
   __assign = Object.assign || function __assign2(t3) {
     for (var s2, i2 = 1, n3 = arguments.length; i2 < n3; i2++) {
       s2 = arguments[i2];
-      for (var p2 in s2) if (Object.prototype.hasOwnProperty.call(s2, p2)) t3[p2] = s2[p2];
+      for (var p2 in s2)
+        if (Object.prototype.hasOwnProperty.call(s2, p2))
+          t3[p2] = s2[p2];
     }
     return t3;
   };
@@ -1523,8 +1535,9 @@ var __assign = function() {
 };
 function __rest(s2, e3) {
   var t3 = {};
-  for (var p2 in s2) if (Object.prototype.hasOwnProperty.call(s2, p2) && e3.indexOf(p2) < 0)
-    t3[p2] = s2[p2];
+  for (var p2 in s2)
+    if (Object.prototype.hasOwnProperty.call(s2, p2) && e3.indexOf(p2) < 0)
+      t3[p2] = s2[p2];
   if (s2 != null && typeof Object.getOwnPropertySymbols === "function")
     for (var i2 = 0, p2 = Object.getOwnPropertySymbols(s2); i2 < p2.length; i2++) {
       if (e3.indexOf(p2[i2]) < 0 && Object.prototype.propertyIsEnumerable.call(s2, p2[i2]))
@@ -1533,12 +1546,14 @@ function __rest(s2, e3) {
   return t3;
 }
 function __spreadArray(to, from, pack) {
-  if (pack || arguments.length === 2) for (var i2 = 0, l2 = from.length, ar; i2 < l2; i2++) {
-    if (ar || !(i2 in from)) {
-      if (!ar) ar = Array.prototype.slice.call(from, 0, i2);
-      ar[i2] = from[i2];
+  if (pack || arguments.length === 2)
+    for (var i2 = 0, l2 = from.length, ar; i2 < l2; i2++) {
+      if (ar || !(i2 in from)) {
+        if (!ar)
+          ar = Array.prototype.slice.call(from, 0, i2);
+        ar[i2] = from[i2];
+      }
     }
-  }
   return to.concat(ar || Array.prototype.slice.call(from));
 }
 
@@ -1592,7 +1607,7 @@ var serializerDefault = function() {
 };
 var ObjectWithoutPrototypeCache = (
   /** @class */
-  (function() {
+  function() {
     function ObjectWithoutPrototypeCache2() {
       this.cache = /* @__PURE__ */ Object.create(null);
     }
@@ -1603,7 +1618,7 @@ var ObjectWithoutPrototypeCache = (
       this.cache[key] = value;
     };
     return ObjectWithoutPrototypeCache2;
-  })()
+  }()
 );
 var cacheDefault = {
   create: function create() {
@@ -1708,11 +1723,9 @@ function parseDateTimeSkeleton(skeleton) {
   skeleton.replace(DATE_TIME_REGEX, function(match) {
     var len = match.length;
     switch (match[0]) {
-      // Era
       case "G":
         result.era = len === 4 ? "long" : len === 5 ? "narrow" : "short";
         break;
-      // Year
       case "y":
         result.year = len === 2 ? "2-digit" : "numeric";
         break;
@@ -1721,16 +1734,13 @@ function parseDateTimeSkeleton(skeleton) {
       case "U":
       case "r":
         throw new RangeError("`Y/u/U/r` (year) patterns are not supported, use `y` instead");
-      // Quarter
       case "q":
       case "Q":
         throw new RangeError("`q/Q` (quarter) patterns are not supported");
-      // Month
       case "M":
       case "L":
         result.month = ["numeric", "2-digit", "short", "long", "narrow"][len - 1];
         break;
-      // Week
       case "w":
       case "W":
         throw new RangeError("`w/W` (week) patterns are not supported");
@@ -1741,7 +1751,6 @@ function parseDateTimeSkeleton(skeleton) {
       case "F":
       case "g":
         throw new RangeError("`D/F/g` (day) patterns are not supported, use `d` instead");
-      // Weekday
       case "E":
         result.weekday = len === 4 ? "long" : len === 5 ? "narrow" : "short";
         break;
@@ -1757,15 +1766,12 @@ function parseDateTimeSkeleton(skeleton) {
         }
         result.weekday = ["short", "long", "narrow", "short"][len - 4];
         break;
-      // Period
       case "a":
         result.hour12 = true;
         break;
       case "b":
-      // am, pm, noon, midnight
       case "B":
         throw new RangeError("`b/B` (period) patterns are not supported, use `a` instead");
-      // Hour
       case "h":
         result.hourCycle = "h12";
         result.hour = ["numeric", "2-digit"][len - 1];
@@ -1786,31 +1792,23 @@ function parseDateTimeSkeleton(skeleton) {
       case "J":
       case "C":
         throw new RangeError("`j/J/C` (hour) patterns are not supported, use `h/H/K/k` instead");
-      // Minute
       case "m":
         result.minute = ["numeric", "2-digit"][len - 1];
         break;
-      // Second
       case "s":
         result.second = ["numeric", "2-digit"][len - 1];
         break;
       case "S":
       case "A":
         throw new RangeError("`S/A` (second) patterns are not supported, use `s` instead");
-      // Zone
       case "z":
         result.timeZoneName = len < 4 ? "short" : "long";
         break;
       case "Z":
-      // 1..3, 4, 5: The ISO8601 varios formats
       case "O":
-      // 1, 4: milliseconds in day short, long
       case "v":
-      // 1, 4: generic non-location format
       case "V":
-      // 1, 2, 3, 4: time zone ID or city
       case "X":
-      // 1, 2, 3, 4: The ISO8601 varios formats
       case "x":
         throw new RangeError("`Z/O/v/V/X/x` (timeZone) patterns are not supported, use `z` instead");
     }
@@ -2008,7 +2006,6 @@ function parseNumberSkeleton(tokens) {
       case "notation-simple":
         result.notation = "standard";
         continue;
-      // https://github.com/unicode-org/icu/blob/master/icu4c/source/i18n/unicode/unumberformatter.h
       case "unit-width-narrow":
         result.currencyDisplay = "narrowSymbol";
         result.unitDisplay = "narrow";
@@ -2048,7 +2045,6 @@ function parseNumberSkeleton(tokens) {
       case "rounding-mode-half-up":
         result.roundingMode = "halfExpand";
         continue;
-      // https://unicode-org.github.io/icu/userguide/format_parse/numbers/skeletons.html#integer-width
       case "integer-width":
         if (token.options.length > 1) {
           throw new RangeError("integer-width stems only accept a single optional option");
@@ -3728,7 +3724,7 @@ if (REGEX_SUPPORTS_U_AND_Y) {
 var IDENTIFIER_PREFIX_RE_1;
 var Parser = (
   /** @class */
-  (function() {
+  function() {
     function Parser2(message, options) {
       if (options === void 0) {
         options = {};
@@ -3889,7 +3885,6 @@ var Parser = (
           this.bump();
           this.bump();
           return "'";
-        // '{', '<', '>', '}'
         case 123:
         case 60:
         case 62:
@@ -3955,7 +3950,6 @@ var Parser = (
         return this.error(ErrorKind.EXPECT_ARGUMENT_CLOSING_BRACE, createLocation(openingBracePosition, this.clonePosition()));
       }
       switch (this.char()) {
-        // Simple argument: `{name}`
         case 125: {
           this.bump();
           return {
@@ -3968,7 +3962,6 @@ var Parser = (
             err: null
           };
         }
-        // Argument with options: `{name, format, ...}`
         case 44: {
           this.bump();
           this.bumpSpace();
@@ -4380,7 +4373,7 @@ var Parser = (
       return nextCode !== null && nextCode !== void 0 ? nextCode : null;
     };
     return Parser2;
-  })()
+  }()
 );
 function _isAlpha(codepoint) {
   return codepoint >= 97 && codepoint <= 122 || codepoint >= 65 && codepoint <= 90;
@@ -4443,7 +4436,7 @@ var ErrorCode;
 })(ErrorCode || (ErrorCode = {}));
 var FormatError = (
   /** @class */
-  (function(_super) {
+  function(_super) {
     __extends(FormatError2, _super);
     function FormatError2(msg, code, originalMessage) {
       var _this = _super.call(this, msg) || this;
@@ -4455,37 +4448,37 @@ var FormatError = (
       return "[formatjs Error: ".concat(this.code, "] ").concat(this.message);
     };
     return FormatError2;
-  })(Error)
+  }(Error)
 );
 var InvalidValueError = (
   /** @class */
-  (function(_super) {
+  function(_super) {
     __extends(InvalidValueError2, _super);
     function InvalidValueError2(variableId, value, options, originalMessage) {
       return _super.call(this, 'Invalid values for "'.concat(variableId, '": "').concat(value, '". Options are "').concat(Object.keys(options).join('", "'), '"'), ErrorCode.INVALID_VALUE, originalMessage) || this;
     }
     return InvalidValueError2;
-  })(FormatError)
+  }(FormatError)
 );
 var InvalidValueTypeError = (
   /** @class */
-  (function(_super) {
+  function(_super) {
     __extends(InvalidValueTypeError2, _super);
     function InvalidValueTypeError2(value, type, originalMessage) {
       return _super.call(this, 'Value for "'.concat(value, '" must be of type ').concat(type), ErrorCode.INVALID_VALUE, originalMessage) || this;
     }
     return InvalidValueTypeError2;
-  })(FormatError)
+  }(FormatError)
 );
 var MissingValueError = (
   /** @class */
-  (function(_super) {
+  function(_super) {
     __extends(MissingValueError2, _super);
     function MissingValueError2(variableId, originalMessage) {
       return _super.call(this, 'The intl string context variable "'.concat(variableId, '" was not provided to the string "').concat(originalMessage, '"'), ErrorCode.MISSING_VALUE, originalMessage) || this;
     }
     return MissingValueError2;
-  })(FormatError)
+  }(FormatError)
 );
 
 // ../../node_modules/intl-messageformat/lib/src/formatters.js
@@ -4707,7 +4700,7 @@ function createDefaultFormatters(cache) {
 }
 var IntlMessageFormat = (
   /** @class */
-  (function() {
+  function() {
     function IntlMessageFormat2(message, locales, overrideFormats, opts) {
       if (locales === void 0) {
         locales = IntlMessageFormat2.defaultLocale;
@@ -4848,7 +4841,7 @@ var IntlMessageFormat = (
       }
     };
     return IntlMessageFormat2;
-  })()
+  }()
 );
 
 // ../../node_modules/use-intl/dist/esm/production/initializeConfig-JxT5lzW-.js
@@ -4859,9 +4852,9 @@ var a = class extends Error {
     t3 && (r3 += ": " + t3), super(r3), this.code = e3, t3 && (this.originalMessage = t3);
   }
 };
-var s = (function(e3) {
+var s = function(e3) {
   return e3.MISSING_MESSAGE = "MISSING_MESSAGE", e3.MISSING_FORMAT = "MISSING_FORMAT", e3.ENVIRONMENT_FALLBACK = "ENVIRONMENT_FALLBACK", e3.INSUFFICIENT_PATH = "INSUFFICIENT_PATH", e3.INVALID_MESSAGE = "INVALID_MESSAGE", e3.INVALID_KEY = "INVALID_KEY", e3.FORMATTING_ERROR = "FORMATTING_ERROR", e3;
-})(s || {});
+}(s || {});
 function i(...e3) {
   return e3.filter(Boolean).join(".");
 }
@@ -4881,41 +4874,46 @@ function f(e3, t3) {
   var r3;
 }
 function l(e3, t3) {
-  return f(((...t4) => new e3(...t4)), t3);
+  return f((...t4) => new e3(...t4), t3);
 }
 function g(e3) {
   return { getDateTimeFormat: l(Intl.DateTimeFormat, e3.dateTime), getNumberFormat: l(Intl.NumberFormat, e3.number), getPluralRules: l(Intl.PluralRules, e3.pluralRules), getRelativeTimeFormat: l(Intl.RelativeTimeFormat, e3.relativeTime), getListFormat: l(Intl.ListFormat, e3.list), getDisplayNames: l(Intl.DisplayNames, e3.displayNames) };
 }
 function I(e3, t3, r3, n3) {
   const o3 = i(n3, r3);
-  if (!t3) throw new Error(o3);
+  if (!t3)
+    throw new Error(o3);
   let a2 = t3;
-  return r3.split(".").forEach(((t4) => {
+  return r3.split(".").forEach((t4) => {
     const r4 = a2[t4];
-    if (null == t4 || null == r4) throw new Error(o3 + ` (${e3})`);
+    if (null == t4 || null == r4)
+      throw new Error(o3 + ` (${e3})`);
     a2 = r4;
-  })), a2;
+  }), a2;
 }
 function E(n3) {
-  const o3 = (function(e3, t3, r3, n4 = c) {
+  const o3 = function(e3, t3, r3, n4 = c) {
     try {
-      if (!t3) throw new Error(void 0);
+      if (!t3)
+        throw new Error(void 0);
       const n5 = r3 ? I(e3, t3, r3) : t3;
-      if (!n5) throw new Error(r3);
+      if (!n5)
+        throw new Error(r3);
       return n5;
     } catch (e4) {
       const t4 = new a(s.MISSING_MESSAGE, e4.message);
       return n4(t4), t4;
     }
-  })(n3.locale, n3.messages, n3.namespace, n3.onError);
-  return (function({ cache: n4, formats: o4, formatters: i2, getMessageFallback: c2 = u, locale: m2, messagesOrError: l2, namespace: g3, onError: E3, timeZone: S2 }) {
+  }(n3.locale, n3.messages, n3.namespace, n3.onError);
+  return function({ cache: n4, formats: o4, formatters: i2, getMessageFallback: c2 = u, locale: m2, messagesOrError: l2, namespace: g3, onError: E3, timeZone: S2 }) {
     const T2 = l2 instanceof a;
     function N2(e3, t3, r3) {
       const n5 = new a(t3, r3);
       return E3(n5), c2({ error: n5, key: e3, namespace: g3 });
     }
     function y2(a2, u2, E4) {
-      if (T2) return c2({ error: l2, key: a2, namespace: g3 });
+      if (T2)
+        return c2({ error: l2, key: a2, namespace: g3 });
       const y3 = l2;
       let A3, M3;
       try {
@@ -4927,29 +4925,31 @@ function E(n3) {
         let e3, t3;
         return e3 = Array.isArray(A3) ? s.INVALID_MESSAGE : s.INSUFFICIENT_PATH, N2(a2, e3, t3);
       }
-      const F3 = (function(e3, t3) {
+      const F3 = function(e3, t3) {
         return t3 || /'[{}]/.test(e3) ? void 0 : e3;
-      })(A3, u2);
-      if (F3) return F3;
-      i2.getMessageFormat || (i2.getMessageFormat = (function(t3, r3) {
-        return f(((...t4) => new IntlMessageFormat(t4[0], t4[1], t4[2], { formatters: r3, ...t4[3] })), t3.message);
-      })(n4, i2));
+      }(A3, u2);
+      if (F3)
+        return F3;
+      i2.getMessageFormat || (i2.getMessageFormat = function(t3, r3) {
+        return f((...t4) => new IntlMessageFormat(t4[0], t4[1], t4[2], { formatters: r3, ...t4[3] }), t3.message);
+      }(n4, i2));
       try {
-        M3 = i2.getMessageFormat(A3, m2, (function(t3, r3, n5) {
+        M3 = i2.getMessageFormat(A3, m2, function(t3, r3, n5) {
           const o5 = IntlMessageFormat.formats.date, a3 = IntlMessageFormat.formats.time, s2 = { ...t3?.dateTime, ...r3?.dateTime }, i3 = { date: { ...o5, ...s2 }, time: { ...a3, ...s2 }, number: { ...t3?.number, ...r3?.number } };
-          return n5 && ["date", "time"].forEach(((e3) => {
+          return n5 && ["date", "time"].forEach((e3) => {
             const t4 = i3[e3];
-            for (const [e4, r4] of Object.entries(t4)) t4[e4] = { timeZone: n5, ...r4 };
-          })), i3;
-        })(o4, E4, S2), { formatters: { ...i2, getDateTimeFormat: (e3, t3) => i2.getDateTimeFormat(e3, { timeZone: S2, ...t3 }) } });
+            for (const [e4, r4] of Object.entries(t4))
+              t4[e4] = { timeZone: n5, ...r4 };
+          }), i3;
+        }(o4, E4, S2), { formatters: { ...i2, getDateTimeFormat: (e3, t3) => i2.getDateTimeFormat(e3, { timeZone: S2, ...t3 }) } });
       } catch (e3) {
         const t3 = e3;
         return N2(a2, s.INVALID_MESSAGE, t3.message);
       }
       try {
-        const e3 = M3.format(u2 ? (function(e4) {
+        const e3 = M3.format(u2 ? function(e4) {
           const n5 = {};
-          return Object.keys(e4).forEach(((o5) => {
+          return Object.keys(e4).forEach((o5) => {
             let a3 = 0;
             const s2 = e4[o5];
             let i3;
@@ -4957,9 +4957,10 @@ function E(n3) {
               const n6 = s2(e5);
               return t(n6) ? r(n6, { key: o5 + a3++ }) : n6;
             } : s2, n5[o5] = i3;
-          })), n5;
-        })(u2) : u2);
-        if (null == e3) throw new Error(void 0);
+          }), n5;
+        }(u2) : u2);
+        if (null == e3)
+          throw new Error(void 0);
         return t(e3) || Array.isArray(e3) || "string" == typeof e3 ? e3 : String(e3);
       } catch (e3) {
         return N2(a2, s.FORMATTING_ERROR, e3.message);
@@ -4970,7 +4971,8 @@ function E(n3) {
       return "string" != typeof n5 ? N2(e3, s.INVALID_MESSAGE, void 0) : n5;
     }
     return A2.rich = y2, A2.markup = (e3, t3, r3) => y2(e3, t3, r3), A2.raw = (e3) => {
-      if (T2) return c2({ error: l2, key: e3, namespace: g3 });
+      if (T2)
+        return c2({ error: l2, key: e3, namespace: g3 });
       const t3 = l2;
       try {
         return I(m2, t3, e3, g3);
@@ -4978,14 +4980,15 @@ function E(n3) {
         return N2(e3, s.MISSING_MESSAGE, t4.message);
       }
     }, A2.has = (e3) => {
-      if (T2) return false;
+      if (T2)
+        return false;
       try {
         return I(m2, l2, e3, g3), true;
       } catch {
         return false;
       }
     }, A2;
-  })({ ...n3, messagesOrError: o3 });
+  }({ ...n3, messagesOrError: o3 });
 }
 function S(e3, t3) {
   return e3 === t3 ? void 0 : e3.slice((t3 + ".").length);
@@ -5005,7 +5008,7 @@ function d(e3) {
   function l2(e4, t4, r4, n4, o4) {
     let u3;
     try {
-      u3 = (function(e5, t5, r5) {
+      u3 = function(e5, t5, r5) {
         let n5;
         if ("string" == typeof t5) {
           const r6 = t5;
@@ -5013,9 +5016,10 @@ function d(e3) {
             const e6 = new a(s.MISSING_FORMAT, void 0);
             throw i2(e6), e6;
           }
-        } else n5 = t5;
+        } else
+          n5 = t5;
         return r5 && (n5 = { ...n5, ...r5 }), n5;
-      })(r4, e4, t4);
+      }(r4, e4, t4);
     } catch {
       return o4();
     }
@@ -5026,26 +5030,26 @@ function d(e3) {
     }
   }
   function I3(e4, t4, a2) {
-    return l2(t4, a2, n3?.dateTime, ((t5) => (t5 = f2(t5), r3.getDateTimeFormat(o3, t5).format(e4))), (() => String(e4)));
+    return l2(t4, a2, n3?.dateTime, (t5) => (t5 = f2(t5), r3.getDateTimeFormat(o3, t5).format(e4)), () => String(e4));
   }
   function E3() {
     return e3.now ? e3.now : (i2(new a(s.ENVIRONMENT_FALLBACK, void 0)), /* @__PURE__ */ new Date());
   }
   return { dateTime: I3, number: function(e4, t4, a2) {
-    return l2(t4, a2, n3?.number, ((t5) => r3.getNumberFormat(o3, t5).format(e4)), (() => String(e4)));
+    return l2(t4, a2, n3?.number, (t5) => r3.getNumberFormat(o3, t5).format(e4), () => String(e4));
   }, relativeTime: function(e4, t4) {
     try {
       let n4, a2;
       const s2 = {};
       t4 instanceof Date || "number" == typeof t4 ? n4 = new Date(t4) : t4 && (n4 = null != t4.now ? new Date(t4.now) : E3(), a2 = t4.unit, s2.style = t4.style, s2.numberingSystem = t4.numberingSystem), n4 || (n4 = E3());
       const i3 = (new Date(e4).getTime() - n4.getTime()) / 1e3;
-      a2 || (a2 = (function(e5) {
+      a2 || (a2 = function(e5) {
         const t5 = Math.abs(e5);
         return t5 < 60 ? "second" : t5 < T ? "minute" : t5 < N ? "hour" : t5 < y ? "day" : t5 < A ? "week" : t5 < F ? "month" : "year";
-      })(i3)), s2.numeric = "second" === a2 ? "auto" : "always";
-      const u3 = (function(e5, t5) {
+      }(i3)), s2.numeric = "second" === a2 ? "auto" : "always";
+      const u3 = function(e5, t5) {
         return Math.round(e5 / R[t5]);
-      })(i3, a2);
+      }(i3, a2);
       return r3.getRelativeTimeFormat(o3, s2).format(u3, a2);
     } catch (t5) {
       return i2(new a(s.FORMATTING_ERROR, t5.message)), String(e4);
@@ -5057,12 +5061,12 @@ function d(e3) {
       let e5;
       "object" == typeof t5 ? (e5 = String(u3), i3.set(e5, t5)) : e5 = String(t5), s2.push(e5), u3++;
     }
-    return l2(t4, a2, n3?.list, ((e5) => {
-      const t5 = r3.getListFormat(o3, e5).formatToParts(s2).map(((e6) => "literal" === e6.type ? e6.value : i3.get(e6.value) || e6.value));
+    return l2(t4, a2, n3?.list, (e5) => {
+      const t5 = r3.getListFormat(o3, e5).formatToParts(s2).map((e6) => "literal" === e6.type ? e6.value : i3.get(e6.value) || e6.value);
       return i3.size > 0 ? t5 : t5.join("");
-    }), (() => String(e4)));
+    }, () => String(e4));
   }, dateTimeRange: function(e4, t4, a2, s2) {
-    return l2(a2, s2, n3?.dateTime, ((n4) => (n4 = f2(n4), r3.getDateTimeFormat(o3, n4).formatRange(e4, t4))), (() => [I3(e4), I3(t4)].join("\u2009\u2013\u2009")));
+    return l2(a2, s2, n3?.dateTime, (n4) => (n4 = f2(n4), r3.getDateTimeFormat(o3, n4).formatRange(e4, t4)), () => [I3(e4), I3(t4)].join("\u2009\u2013\u2009"));
   } };
 }
 
@@ -5072,23 +5076,24 @@ import { jsx as g2 } from "react/jsx-runtime";
 var d2 = e(void 0);
 function v() {
   const e3 = r2(d2);
-  if (!e3) throw new Error(void 0);
+  if (!e3)
+    throw new Error(void 0);
   return e3;
 }
 var E2 = false;
 var h2 = "undefined" == typeof window;
 function p(e3) {
-  return (function(e4, r3, t3) {
+  return function(e4, r3, t3) {
     const { cache: n3, formats: a2, formatters: s2, getMessageFallback: c2, locale: u2, onError: g3, timeZone: d3 } = v(), w2 = e4[t3], p2 = S(r3, t3);
-    return d3 || E2 || !h2 || (E2 = true, g3(new a(s.ENVIRONMENT_FALLBACK, void 0))), o((() => E({ cache: n3, formatters: s2, getMessageFallback: c2, messages: w2, namespace: p2, onError: g3, formats: a2, locale: u2, timeZone: d3 })), [n3, s2, c2, w2, p2, g3, a2, u2, d3]);
-  })({ "!": v().messages }, e3 ? `!.${e3}` : "!", "!");
+    return d3 || E2 || !h2 || (E2 = true, g3(new a(s.ENVIRONMENT_FALLBACK, void 0))), o(() => E({ cache: n3, formatters: s2, getMessageFallback: c2, messages: w2, namespace: p2, onError: g3, formats: a2, locale: u2, timeZone: d3 }), [n3, s2, c2, w2, p2, g3, a2, u2, d3]);
+  }({ "!": v().messages }, e3 ? `!.${e3}` : "!", "!");
 }
 function Z() {
   return v().locale;
 }
 function I2() {
   const { formats: e3, formatters: r3, locale: t3, now: n3, onError: a2, timeZone: s2 } = v();
-  return o((() => d({ formats: e3, locale: t3, now: n3, onError: a2, timeZone: s2, _formatters: r3 })), [e3, r3, n3, t3, a2, s2]);
+  return o(() => d({ formats: e3, locale: t3, now: n3, onError: a2, timeZone: s2, _formatters: r3 }), [e3, r3, n3, t3, a2, s2]);
 }
 
 // ../../node_modules/next-intl/dist/esm/production/react-client/index.js
