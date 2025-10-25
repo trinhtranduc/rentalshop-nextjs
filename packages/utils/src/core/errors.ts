@@ -565,7 +565,7 @@ export function handleApiError(error: any): {
     success: false,
     code: apiError.code,
     message: apiError.message,
-    error: apiError.details || apiError.message
+    error: typeof apiError.details === 'string' ? apiError.details : apiError.message
   };
 
   return {

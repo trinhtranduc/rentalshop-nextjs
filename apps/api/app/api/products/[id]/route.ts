@@ -184,7 +184,7 @@ export async function PUT(
               console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name });
               // For nested write, we need to use outlet's database ID (number)
               validOutletStock.push({
-                outletId: outlet.id, // This is the number ID for nested write
+                outletId: outlet.publicId, // Use publicId (number) for nested write
                 stock: stock.stock,
                 available: stock.stock,
                 renting: 0
