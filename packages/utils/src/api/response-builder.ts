@@ -214,11 +214,29 @@ export class ResponseBuilder {
    * @param error - Optional error details
    */
   static error(code: string, error?: any): ApiResponse {
+    // Ensure error is always a string
+    let errorString: string;
+    
+    if (typeof error === 'string') {
+      errorString = error;
+    } else if (error && typeof error === 'object') {
+      // Convert object to readable string
+      if (error.message) {
+        errorString = error.message;
+      } else if (error.details) {
+        errorString = error.details;
+      } else {
+        errorString = JSON.stringify(error);
+      }
+    } else {
+      errorString = getDefaultMessage(code);
+    }
+    
     return {
       success: false,
       code,
-      message: getDefaultMessage(code),
-      error
+      message: errorString,
+      error: errorString
     };
   }
 
@@ -256,11 +274,34 @@ export class ResponseBuilder {
    * @param validationErrors - Zod validation errors
    */
   static validationError(validationErrors: any): ApiResponse {
+    // Convert validation errors to readable string format
+    const errorMessages: string[] = [];
+    
+    if (validationErrors.fieldErrors) {
+      Object.entries(validationErrors.fieldErrors).forEach(([field, errors]) => {
+        if (Array.isArray(errors)) {
+          errors.forEach((error: string) => {
+            errorMessages.push(`${field}: ${error}`);
+          });
+        }
+      });
+    }
+    
+    if (validationErrors.formErrors && Array.isArray(validationErrors.formErrors)) {
+      validationErrors.formErrors.forEach((error: string) => {
+        errorMessages.push(error);
+      });
+    }
+    
+    const errorString = errorMessages.length > 0 
+      ? errorMessages.join('; ') 
+      : 'Input validation failed';
+    
     return {
       success: false,
       code: 'VALIDATION_ERROR',
       message: 'Input validation failed',
-      error: validationErrors
+      error: errorString
     };
   }
 }
