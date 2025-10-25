@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withManagementAuth } from '@rentalshop/auth';
-import { productUpdateSchema, handleApiError, ResponseBuilder, processProductImages, uploadToS3, generateAccessUrl } from '@rentalshop/utils';
+import { productUpdateSchema, handleApiError, ResponseBuilder, processProductImages, uploadToS3, generateAccessUrl, commitStagingFiles } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -275,13 +275,69 @@ export async function PUT(
         
         // Combine uploaded files with existing images (only if there are files)
         if (uploadedFiles.length > 0) {
-          const existingImages = productDataFromRequest.images || [];
-          const allImages = [
-            ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
-            ...uploadedFiles
-          ];
-          // Convert array to comma-separated string for database
-          productDataFromRequest.images = allImages.join(',');
+          // Extract staging keys from uploaded files
+          const stagingKeys = uploadedFiles.map(url => {
+            const urlParts = url.split('amazonaws.com/');
+            if (urlParts.length > 1) {
+              return urlParts[1].split('?')[0];
+            }
+            return null;
+          }).filter(Boolean) as string[];
+          
+          console.log('🔍 Found staging keys to commit:', stagingKeys);
+          
+          // Commit staging files to production
+          if (stagingKeys.length > 0) {
+            const commitResult = await commitStagingFiles(stagingKeys, 'product');
+            
+            if (commitResult.success) {
+              // Generate production URLs with presigned access
+              const productionUrls = await Promise.all(
+                commitResult.committedKeys.map(async (key) => {
+                  const presignedUrl = await generateAccessUrl(key, 86400 * 365); // 1 year expiration
+                  if (presignedUrl) {
+                    return presignedUrl;
+                  }
+                  // Fallback to direct URL if presigned fails
+                  const region = process.env.AWS_REGION || 'ap-southeast-1';
+                  const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
+                  return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+                })
+              );
+              
+              // Map staging URLs to production URLs
+              const updatedUploadedFiles = uploadedFiles.map(url => {
+                const urlParts = url.split('amazonaws.com/');
+                if (urlParts.length > 1) {
+                  const key = urlParts[1].split('?')[0];
+                  const committedKey = commitResult.committedKeys.find(ck => 
+                    ck.replace('product/', '') === key.replace('staging/', '')
+                  );
+                  if (committedKey) {
+                    return productionUrls[commitResult.committedKeys.indexOf(committedKey)];
+                  }
+                }
+                return url; // Fallback to original URL
+              });
+              
+              const existingImages = productDataFromRequest.images || [];
+              const allImages = [
+                ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
+                ...updatedUploadedFiles
+              ];
+              // Convert array to comma-separated string for database
+              productDataFromRequest.images = allImages.join(',');
+            } else {
+              console.error('❌ Failed to commit staging files:', commitResult.errors);
+              // Fallback to staging URLs if commit fails
+              const existingImages = productDataFromRequest.images || [];
+              const allImages = [
+                ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
+                ...uploadedFiles
+              ];
+              productDataFromRequest.images = allImages.join(',');
+            }
+          }
         }
         
       } else {
