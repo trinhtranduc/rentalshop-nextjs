@@ -347,8 +347,8 @@ var createRateLimiter = (config) => {
 var searchRateLimiter = createRateLimiter({
   windowMs: 3e4,
   // 30 seconds
-  maxRequests: 20,
-  // 20 requests per 30 seconds
+  maxRequests: 100,
+  // 100 requests per 30 seconds (increased for development)
   keyGenerator: (req) => {
     const forwarded = req.headers.get("x-forwarded-for");
     const ip = forwarded ? forwarded.split(",")[0] : req.ip || "unknown";
