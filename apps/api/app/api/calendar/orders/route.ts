@@ -233,7 +233,8 @@ export const GET = withReadOnlyAuth(async (
             end: endDate.toISOString().split('T')[0]
           }
         },
-        code: 'CALENDAR_DATA_SUCCESS', message: `Calendar data for ${startDateStr} to ${endDateStr}`
+        code: 'CALENDAR_DATA_SUCCESS',
+        message: `Calendar data for ${startDateStr} to ${endDateStr}`
       });
     }
 
@@ -266,7 +267,8 @@ export const GET = withReadOnlyAuth(async (
           end: endDate.toISOString().split('T')[0]
         }
       },
-      code: 'NO_CALENDAR_DATA', message: `No calendar data for ${startDateStr} to ${endDateStr}`
+      code: 'NO_CALENDAR_DATA',
+      message: `No calendar data for ${startDateStr} to ${endDateStr}`
     });
 
   } catch (error) {

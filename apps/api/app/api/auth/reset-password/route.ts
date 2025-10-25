@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      code: 'PASSWORD_RESET_SUCCESS', message: 'Password has been reset successfully'
+      code: 'PASSWORD_RESET_SUCCESS',
+        message: 'Password has been reset successfully'
     });
     
   } catch (error: any) {

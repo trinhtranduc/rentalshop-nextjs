@@ -43,7 +43,8 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: merchant,
-        code: 'MERCHANT_RETRIEVED_SUCCESS', message: 'Merchant retrieved successfully'
+        code: 'MERCHANT_RETRIEVED_SUCCESS',
+        message: 'Merchant retrieved successfully'
       });
 
     } catch (error) {
@@ -127,7 +128,8 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: updatedMerchant,
-        code: 'MERCHANT_UPDATED_SUCCESS', message: 'Merchant updated successfully'
+        code: 'MERCHANT_UPDATED_SUCCESS',
+        message: 'Merchant updated successfully'
       });
 
     } catch (error) {
@@ -200,7 +202,8 @@ export async function DELETE(
       return NextResponse.json({
         success: true,
         data: deletedMerchant,
-        code: 'MERCHANT_DELETED_SUCCESS', message: 'Merchant deleted successfully'
+        code: 'MERCHANT_DELETED_SUCCESS',
+        message: 'Merchant deleted successfully'
       });
 
     } catch (error) {

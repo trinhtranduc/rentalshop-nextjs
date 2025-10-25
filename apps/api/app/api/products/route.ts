@@ -91,7 +91,8 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
         hasMore: result.hasMore || false,
         totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
-      code: "PRODUCTS_FOUND", message: `Found ${result.total || 0} products`
+      code: "PRODUCTS_FOUND",
+      message: `Found ${result.total || 0} products`
     });
 
   } catch (error) {
@@ -478,7 +479,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     return NextResponse.json({
       success: true,
       data: product,
-      code: 'PRODUCT_CREATED_SUCCESS', message: 'Product created successfully'
+      code: 'PRODUCT_CREATED_SUCCESS',
+        message: 'Product created successfully'
     });
 
   } catch (error: any) {

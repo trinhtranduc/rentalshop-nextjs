@@ -46,7 +46,8 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
     return NextResponse.json({
       success: true,
         code: 'ACCOUNT_DELETED_SUCCESS',
-        code: 'ACCOUNT_DELETED_SUCCESS', message: 'Account deleted successfully',
+        code: 'ACCOUNT_DELETED_SUCCESS',
+        message: 'Account deleted successfully',
       data: {
         id: deletedUser.id,
         email: deletedUser.email,

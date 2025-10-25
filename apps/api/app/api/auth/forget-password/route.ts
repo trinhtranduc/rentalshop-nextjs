@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     // Don't reveal if email exists or not
     return NextResponse.json({
       success: true,
-      code: 'PASSWORD_RESET_LINK_SENT', message: 'If an account with that email exists, a password reset link has been sent.'
+      code: 'PASSWORD_RESET_LINK_SENT',
+        message: 'If an account with that email exists, a password reset link has been sent.'
     });
     
   } catch (error: any) {

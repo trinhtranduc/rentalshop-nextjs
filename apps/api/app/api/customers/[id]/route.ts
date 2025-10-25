@@ -53,7 +53,8 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: customer,
-        code: 'CUSTOMER_RETRIEVED_SUCCESS', message: 'Customer retrieved successfully'
+        code: 'CUSTOMER_RETRIEVED_SUCCESS',
+        message: 'Customer retrieved successfully'
       });
 
     } catch (error) {
@@ -118,7 +119,8 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: updatedCustomer,
-        code: 'CUSTOMER_UPDATED_SUCCESS', message: 'Customer updated successfully'
+        code: 'CUSTOMER_UPDATED_SUCCESS',
+        message: 'Customer updated successfully'
       });
 
     } catch (error) {
@@ -197,7 +199,8 @@ export async function DELETE(
       return NextResponse.json({
         success: true,
         data: deletedCustomer,
-        code: 'CUSTOMER_DELETED_SUCCESS', message: 'Customer deleted successfully'
+        code: 'CUSTOMER_DELETED_SUCCESS',
+        message: 'Customer deleted successfully'
       });
 
     } catch (error) {

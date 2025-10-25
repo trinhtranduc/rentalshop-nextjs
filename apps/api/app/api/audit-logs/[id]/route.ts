@@ -43,7 +43,8 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: auditLog,
-        code: 'AUDIT_LOG_RETRIEVED_SUCCESS', message: 'Audit log retrieved successfully'
+        code: 'AUDIT_LOG_RETRIEVED_SUCCESS',
+        message: 'Audit log retrieved successfully'
       });
 
     } catch (error) {

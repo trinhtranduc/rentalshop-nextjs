@@ -46,7 +46,8 @@ export async function GET(
         success: true,
         data: order,
         code: 'ORDER_RETRIEVED_SUCCESS',
-        code: 'ORDER_RETRIEVED_SUCCESS', message: 'Order retrieved successfully'
+        code: 'ORDER_RETRIEVED_SUCCESS',
+        message: 'Order retrieved successfully'
       });
 
     } catch (error) {

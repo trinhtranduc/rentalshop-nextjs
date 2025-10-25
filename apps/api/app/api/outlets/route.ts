@@ -80,7 +80,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         hasMore: result.hasMore || false,
         totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
-      code: "OUTLETS_FOUND", message: `Found ${result.total || 0} outlets`
+      code: "OUTLETS_FOUND",
+      message: `Found ${result.total || 0} outlets`
     });
 
   } catch (error) {
@@ -106,7 +107,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
+        code: 'INVALID_PAYLOAD',
+        message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }

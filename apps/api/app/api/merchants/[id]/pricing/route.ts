@@ -162,7 +162,8 @@ export async function PUT(
 
       return NextResponse.json({
         success: true,
-        code: 'PRICING_CONFIG_UPDATED_SUCCESS', message: 'Pricing configuration updated successfully',
+        code: 'PRICING_CONFIG_UPDATED_SUCCESS',
+        message: 'Pricing configuration updated successfully',
         data: {
           merchantId: merchant.id,
           merchantName: merchant.name,

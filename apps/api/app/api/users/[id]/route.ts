@@ -44,7 +44,8 @@ export async function GET(
         success: true,
         data: foundUser,
         code: 'USER_RETRIEVED_SUCCESS',
-        code: 'USER_RETRIEVED_SUCCESS', message: 'User retrieved successfully'
+        code: 'USER_RETRIEVED_SUCCESS',
+        message: 'User retrieved successfully'
       });
 
     } catch (error) {
@@ -100,7 +101,8 @@ export async function PUT(
         success: true,
         data: updatedUser,
         code: 'USER_UPDATED_SUCCESS',
-        code: 'USER_UPDATED_SUCCESS', message: 'User updated successfully'
+        code: 'USER_UPDATED_SUCCESS',
+        message: 'User updated successfully'
       });
 
     } catch (error) {
@@ -180,7 +182,8 @@ export async function DELETE(
         success: true,
         data: deletedUser,
         code: 'USER_DELETED_SUCCESS',
-        code: 'USER_DELETED_SUCCESS', message: 'User deleted successfully'
+        code: 'USER_DELETED_SUCCESS',
+        message: 'User deleted successfully'
       });
 
     } catch (error) {

@@ -61,7 +61,8 @@ export async function POST(
       return NextResponse.json({ 
         success: true, 
         data: pausedSubscription,
-        code: 'SUBSCRIPTION_PAUSED_SUCCESS', message: 'Subscription paused successfully'
+        code: 'SUBSCRIPTION_PAUSED_SUCCESS',
+        message: 'Subscription paused successfully'
       });
     } catch (error) {
       console.error('Error pausing subscription:', error);

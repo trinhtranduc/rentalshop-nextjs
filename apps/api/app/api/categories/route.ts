@@ -114,7 +114,8 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
         hasMore: result.hasMore || false,
         totalPages: Math.ceil((result.total || 0) / (result.limit || 25))
       },
-      code: "CATEGORIES_FOUND", message: `Found ${result.total || 0} categories`
+      code: "CATEGORIES_FOUND",
+      message: `Found ${result.total || 0} categories`
     });
 
   } catch (error) {

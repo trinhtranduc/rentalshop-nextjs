@@ -29,7 +29,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json({ 
         success: false, 
-        code: 'INVALID_QUERY', message: 'Invalid query', 
+        code: 'INVALID_QUERY',
+        message: 'Invalid query', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -63,7 +64,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       return NextResponse.json(
         { 
           success: false, 
-          code: 'CROSS_MERCHANT_ACCESS_DENIED', message: 'Access denied: Cannot view customers from other merchants' 
+          code: 'CROSS_MERCHANT_ACCESS_DENIED',
+        message: 'Access denied: Cannot view customers from other merchants' 
         },
         { status: 403 }
       );
@@ -145,7 +147,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
+        code: 'INVALID_PAYLOAD',
+        message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -243,7 +246,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     return NextResponse.json({
       success: true,
       data: customer,
-      code: 'CUSTOMER_CREATED_SUCCESS', message: 'Customer created successfully'
+      code: 'CUSTOMER_CREATED_SUCCESS',
+        message: 'Customer created successfully'
     });
 
   } catch (error: any) {
@@ -278,7 +282,8 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
-        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
+        code: 'INVALID_PAYLOAD',
+        message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
     }
@@ -356,7 +361,8 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json({
       success: true,
       data: updatedCustomer,
-      code: 'CUSTOMER_UPDATED_SUCCESS', message: 'Customer updated successfully'
+      code: 'CUSTOMER_UPDATED_SUCCESS',
+        message: 'Customer updated successfully'
     });
 
   } catch (error: any) {

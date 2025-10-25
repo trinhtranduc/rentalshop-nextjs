@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
     if (!subscription) {
       return NextResponse.json({
         success: false,
-        code: 'SUBSCRIPTION_NOT_FOUND', message: 'Subscription not found',
+        code: 'SUBSCRIPTION_NOT_FOUND',
+        message: 'Subscription not found',
         merchantId
       });
     }
