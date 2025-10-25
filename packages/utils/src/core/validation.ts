@@ -74,7 +74,7 @@ export const productUpdateSchema = z.object({
   rentPrice: z.number().nonnegative().optional(),
   salePrice: z.number().nonnegative().nullable().optional(),
   deposit: z.number().nonnegative().optional(),
-  images: z.string().optional(),
+  images: z.union([z.string(), z.array(z.string())]).optional(), // Support both string and array
   categoryId: z.coerce.number().int().positive().optional(), // Changed from string to number
   totalStock: z.number().int().min(0).optional(),
   outletStock: z.array(outletStockItemSchema).optional(), // Add outletStock field
