@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
@@ -11,7 +11,7 @@ import { z } from 'zod';
  * Get products with filtering and pagination using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/products - User: ${user.email} (${user.role})`);
   
   try {
@@ -27,11 +27,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const parsed = productsQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
-      return NextResponse.json({ 
-        success: false, 
-        code: 'INVALID_QUERY', message: 'Invalid query', 
-        error: parsed.error.flatten() 
-      }, { status: 400 });
+      return NextResponse.json(
+        ResponseBuilder.validationError(parsed.error.flatten()),
+        { status: 400 }
+      );
     }
 
     const { 
@@ -154,7 +153,7 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  * REFACTORED: Now uses unified withAuth pattern
  * Requires active subscription
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+export const POST = withManagementAuth(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/products - User: ${user.email} (${user.role})`);
   
   // Store parsed data for potential cleanup
@@ -247,11 +246,10 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     // Validate product data
     parsedResult = productCreateSchema.safeParse(productDataFromRequest);
     if (!parsedResult.success) {
-      return NextResponse.json({ 
-        success: false, 
-        code: 'INVALID_PAYLOAD', message: 'Invalid payload', 
-        error: parsedResult.error.flatten() 
-      }, { status: 400 });
+      return NextResponse.json(
+        ResponseBuilder.validationError(parsedResult.error.flatten()),
+        { status: 400 }
+      );
     }
     
     const parsed = parsedResult;
@@ -306,11 +304,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     if (existingProduct) {
       console.log('❌ Product name already exists:', parsed.data.name);
       return NextResponse.json(
-        {
-          success: false,
-          code: 'PRODUCT_NAME_EXISTS',
-          message: `A product with the name "${parsed.data.name}" already exists. Please choose a different name.`
-        },
+        ResponseBuilder.error('PRODUCT_NAME_EXISTS', `A product with the name "${parsed.data.name}" already exists. Please choose a different name.`),
         { status: 409 }
       );
     }
@@ -324,13 +318,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       merchantId = parsed.data.merchantId;
     } else if (!merchantId) {
       return NextResponse.json(
-        { 
-          success: false, 
-          code: 'MERCHANT_ID_REQUIRED',
-          message: user.role === 'ADMIN' 
-            ? 'MerchantId is required for ADMIN users when creating products' 
-            : 'User is not associated with any merchant'
-        },
+        ResponseBuilder.error('MERCHANT_ID_REQUIRED', user.role === 'ADMIN' 
+          ? 'MerchantId is required for ADMIN users when creating products' 
+          : 'User is not associated with any merchant'),
         { status: 400 }
       );
     }
@@ -344,11 +334,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     } catch (error: any) {
       console.log('❌ Plan limit exceeded for products:', error.message);
       return NextResponse.json(
-        { 
-          success: false, 
-          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for products',
-          error: 'PLAN_LIMIT_EXCEEDED'
-        },
+        ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for products'),
         { status: 403 }
       );
     }
@@ -358,10 +344,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
 
     if (!merchant) {
       return NextResponse.json(
-        { 
-          success: false, 
-          code: 'MERCHANT_NOT_FOUND', message: `Merchant with ID ${merchantId} not found`
-        },
+        ResponseBuilder.error('MERCHANT_NOT_FOUND', `Merchant with ID ${merchantId} not found`),
         { status: 404 }
       );
     }

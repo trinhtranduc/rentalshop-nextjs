@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserRole } from './unified-auth.js';
-export { AuthContext, AuthOptions, AuthWrapper, AuthenticatedHandler, withAnyAuth, withAuthRoles, withManagementAuth, withMerchantAuth } from './unified-auth.js';
+export { AuthContext, AuthOptions, AuthWrapper, AuthenticatedHandler, withAdminOrReadOnlyAuth, withAnyAuth, withAuthRoles, withManagementAuth, withMerchantAuth, withOutletAuth, withReadOnlyAuth } from './unified-auth.js';
 import './i18n-BOQxA9wU.js';
 export { getCurrentUserClient, isAuthenticatedWithVerification as isAuthenticatedWithVerificationClient, loginUserClient, logoutUserClient, verifyTokenWithServer as verifyTokenWithServerClient } from './client.js';
 export { isAuthenticatedWithVerification as isAuthenticatedWithVerificationAdmin, verifyTokenWithServer as verifyTokenWithServerAdmin } from './admin.js';

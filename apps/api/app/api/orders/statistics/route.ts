@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
@@ -8,7 +8,7 @@ import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
  * GET /api/orders/statistics
  * Get order statistics for dashboard (optimized aggregation)
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withReadOnlyAuth(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/orders/statistics - User: ${user.email} (${user.role})`);
   
   try {

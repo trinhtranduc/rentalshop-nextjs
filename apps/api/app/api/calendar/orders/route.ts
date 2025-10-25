@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withReadOnlyAuth } from '@rentalshop/auth';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
@@ -27,7 +27,7 @@ const calendarOrdersQuerySchema = z.object({
  * - Limits to 3-4 orders per day for performance
  * - Optimized for calendar UI
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (
+export const GET = withReadOnlyAuth(async (
   request: NextRequest,
   { user, userScope }
 ) => {
