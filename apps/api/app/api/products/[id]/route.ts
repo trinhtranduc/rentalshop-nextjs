@@ -205,6 +205,11 @@ export async function PUT(
               console.log('⚠️ Failed to parse outletStock string:', productDataFromRequest.outletStock);
             }
           }
+          
+          // Fix images field - remove if it's an empty array (mobile app compatibility)
+          if (productDataFromRequest.images && Array.isArray(productDataFromRequest.images) && productDataFromRequest.images.length === 0) {
+            delete productDataFromRequest.images;
+          }
         } catch (parseError) {
           return NextResponse.json(
             ResponseBuilder.error('INVALID_JSON_DATA'),
