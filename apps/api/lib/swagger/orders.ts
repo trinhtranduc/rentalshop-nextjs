@@ -280,27 +280,62 @@ export const orderSwaggerConfig = {
                     example: false
                   }
                 },
-                example: {
-                  orderType: 'RENT',
-                  outletId: 1,
-                  customerId: 28,
-                  totalAmount: 222.0,
-                  orderItems: [
-                    {
-                      productId: 78,
-                      quantity: 1,
-                      unitPrice: 222.0,
-                      totalPrice: 222.0,
-                      deposit: 0.0,
-                      notes: ''
+                examples: {
+                  rentOrder: {
+                    summary: 'RENT Order Example',
+                    description: 'Example for creating a rental order (RENT type)',
+                    value: {
+                      orderType: 'RENT',
+                      outletId: 1,
+                      customerId: 28,
+                      totalAmount: 222.0,
+                      orderItems: [
+                        {
+                          productId: 78,
+                          quantity: 1,
+                          unitPrice: 222.0,
+                          totalPrice: 222.0,
+                          deposit: 0.0,
+                          notes: 'Rental for 3 days'
+                        }
+                      ],
+                      pickupPlanAt: '2025-10-27T17:00:00.000Z',
+                      returnPlanAt: '2025-10-30T17:00:00.000Z',
+                      depositAmount: 0.0,
+                      securityDeposit: 55.5,
+                      damageFee: 0.0,
+                      lateFee: 0.0,
+                      notes: 'Customer requested early pickup',
+                      pickupNotes: 'Leave at front desk',
+                      isReadyToDeliver: false
                     }
-                  ],
-                  pickupPlanAt: '2025-10-27T17:00:00.000Z',
-                  returnPlanAt: '2025-10-30T17:00:00.000Z',
-                  depositAmount: 0.0,
-                  securityDeposit: 55.5,
-                  notes: '',
-                  isReadyToDeliver: false
+                  },
+                  saleOrder: {
+                    summary: 'SALE Order Example',
+                    description: 'Example for creating a direct sale order (SALE type)',
+                    value: {
+                      orderType: 'SALE',
+                      outletId: 1,
+                      customerId: 28,
+                      totalAmount: 450.0,
+                      orderItems: [
+                        {
+                          productId: 79,
+                          quantity: 1,
+                          unitPrice: 450.0,
+                          totalPrice: 450.0,
+                          deposit: 0.0,
+                          notes: 'Direct purchase'
+                        }
+                      ],
+                      depositAmount: 0.0,
+                      securityDeposit: 0.0,
+                      damageFee: 0.0,
+                      lateFee: 0.0,
+                      notes: 'Customer paid in full',
+                      isReadyToDeliver: true
+                    }
+                  }
                 }
               }
             }
