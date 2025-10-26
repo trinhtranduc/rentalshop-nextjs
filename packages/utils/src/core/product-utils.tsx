@@ -180,28 +180,12 @@ export const formatProductPrice = (price: number, currency: string = 'USD'): str
  * @returns Primary image URL or placeholder
  */
 export const getProductImageUrl = (product: Product | ProductWithDetails): string => {
-  if (!product.images) {
+  if (!product.images || !Array.isArray(product.images) || product.images.length === 0) {
     return '/images/product-placeholder.png';
   }
 
-  // Handle different image formats (array, string for backward compatibility)
-  let imageUrls: string[] = [];
-  
-  if (Array.isArray(product.images)) {
-    // New format: array of strings
-    imageUrls = product.images.filter(Boolean);
-  } else if (typeof product.images === 'string') {
-    // Legacy format: comma-separated string or JSON string
-    try {
-      const parsed = JSON.parse(product.images);
-      imageUrls = Array.isArray(parsed) ? parsed : product.images.split(',').filter(Boolean);
-    } catch {
-      imageUrls = product.images.split(',').filter(Boolean);
-    }
-  }
-
   // Return first valid image URL or empty string (components will handle placeholder)
-  const firstImage = imageUrls.find(url => url && typeof url === 'string' && url.trim());
+  const firstImage = product.images.find(url => url && typeof url === 'string' && url.trim());
   return firstImage || '';
 };
 
