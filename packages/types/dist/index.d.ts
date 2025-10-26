@@ -832,7 +832,7 @@ interface Product extends BaseEntityWithMerchant {
     renting: number;
     available: number;
     isActive: boolean;
-    images?: string[];
+    images?: string[] | string;
     category?: CategoryReference;
     merchant?: MerchantReference;
     outletStock?: OutletStock[];
@@ -871,7 +871,7 @@ interface ProductCreateInput extends BaseFormInput {
     salePrice?: number;
     deposit: number;
     totalStock: number;
-    images?: string[];
+    images?: string[] | string;
     outletStock: Array<{
         outletId: number;
         stock: number;
@@ -891,7 +891,7 @@ interface ProductUpdateInput extends BaseUpdateInput {
     stock?: number;
     totalStock?: number;
     salePrice?: number;
-    images?: string[];
+    images?: string[] | string;
     isActive?: boolean;
 }
 /**
@@ -981,7 +981,7 @@ interface ProductInput {
     rentPrice: number;
     salePrice?: number;
     deposit: number;
-    images?: string[];
+    images?: string[] | string;
     outletStock: Array<{
         outletId: number;
         stock: number;

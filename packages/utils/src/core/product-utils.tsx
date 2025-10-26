@@ -184,13 +184,14 @@ export const getProductImageUrl = (product: Product | ProductWithDetails): strin
     return '/images/product-placeholder.png';
   }
 
-  // Handle different image formats (string, array, comma-separated)
+  // Handle different image formats (array, string for backward compatibility)
   let imageUrls: string[] = [];
   
   if (Array.isArray(product.images)) {
+    // New format: array of strings
     imageUrls = product.images.filter(Boolean);
   } else if (typeof product.images === 'string') {
-    // Handle comma-separated string or JSON string
+    // Legacy format: comma-separated string or JSON string
     try {
       const parsed = JSON.parse(product.images);
       imageUrls = Array.isArray(parsed) ? parsed : product.images.split(',').filter(Boolean);
