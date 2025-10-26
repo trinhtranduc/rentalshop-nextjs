@@ -299,6 +299,10 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       outletName: order.outlet?.name || null,
       customerId: order.customerId,
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : null,
+      customerPhone: order.customer?.phone || null,
+      customerEmail: order.customer?.email || null,
+      merchantId: null, // Will be populated from outlet if needed
+      merchantName: null, // Will be populated from outlet if needed
       createdById: order.createdById,
       createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}`.trim() : null,
       totalAmount: order.totalAmount,
@@ -336,7 +340,11 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
         deposit: item.deposit,
         notes: item.notes,
         rentalDays: item.rentalDays
-      })) || []
+      })) || [],
+      // Calculated fields
+      itemCount: order.orderItems?.length || 0,
+      paymentCount: order.payments?.length || 0,
+      totalPaid: order.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
     };
 
     return NextResponse.json({

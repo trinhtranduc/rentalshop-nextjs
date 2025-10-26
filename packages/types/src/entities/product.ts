@@ -35,7 +35,7 @@ export interface Product extends BaseEntityWithMerchant {
   renting: number;
   available: number; // Computed field: stock - renting
   isActive: boolean;
-  images?: string;
+  images?: string[];
   
   // Related entities (populated when needed)
   category?: CategoryReference;
@@ -89,7 +89,7 @@ export interface ProductCreateInput extends BaseFormInput {
   salePrice?: number;
   deposit: number;
   totalStock: number;
-  images?: string;
+  images?: string[];
   outletStock: Array<{ // Required - every product must have outlet stock
     outletId: number;
     stock: number;
@@ -110,7 +110,7 @@ export interface ProductUpdateInput extends BaseUpdateInput {
   stock?: number;
   totalStock?: number;
   salePrice?: number;
-  images?: string;
+  images?: string[];
   isActive?: boolean;
 }
 

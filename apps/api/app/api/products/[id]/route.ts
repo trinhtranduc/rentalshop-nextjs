@@ -213,14 +213,16 @@ export async function PUT(
                 // Remove empty array to avoid Prisma error
                 delete productDataFromRequest.images;
               } else {
-                // Convert array to comma-separated string for database
-                productDataFromRequest.images = productDataFromRequest.images.join(',');
+                // Keep as array for JSON storage
               }
             } else if (typeof productDataFromRequest.images === 'string') {
-              // If it's already a string, keep as is
+              // Convert string to array
               if (productDataFromRequest.images.trim() === '') {
                 // Remove empty string
                 delete productDataFromRequest.images;
+              } else {
+                // Convert comma-separated string to array
+                productDataFromRequest.images = productDataFromRequest.images.split(',').filter(Boolean);
               }
             }
           }
@@ -325,8 +327,8 @@ export async function PUT(
                 ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
                 ...updatedUploadedFiles
               ];
-              // Convert array to comma-separated string for database
-              productDataFromRequest.images = allImages.join(',');
+              // Store images as JSON array for database
+              productDataFromRequest.images = allImages;
             } else {
               console.error('❌ Failed to commit staging files:', commitResult.errors);
               // Fallback to staging URLs if commit fails
@@ -335,7 +337,7 @@ export async function PUT(
                 ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
                 ...uploadedFiles
               ];
-              productDataFromRequest.images = allImages.join(',');
+              productDataFromRequest.images = allImages;
             }
           }
         }
