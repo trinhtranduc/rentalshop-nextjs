@@ -78,6 +78,7 @@ export interface S3UploadResponse {
     bucket: string;
     region: string;
     cdnUrl?: string;
+    s3Url?: string;
   };
   error?: string;
 }
