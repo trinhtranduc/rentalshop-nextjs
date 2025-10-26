@@ -266,7 +266,7 @@ model OrderItem {
   // Snapshot fields - preserve product info even if product is deleted
   productName     String?
   productBarcode  String?
-  productImages   String?  // Store as comma-separated URLs
+  productImages   Json?    // Store as JSON array of URLs
   order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product         Product @relation(fields: [productId], references: [id])
 
