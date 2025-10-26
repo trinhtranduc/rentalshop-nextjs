@@ -216,9 +216,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
           });
           
           if (uploadResult.success && uploadResult.data) {
-            // Generate presigned URL for immediate access
-            const presignedUrl = await generateAccessUrl(uploadResult.data.key, 86400);
-            const accessUrl = presignedUrl || uploadResult.data.cdnUrl || uploadResult.data.url;
+            // Use CloudFront URL if available, otherwise fallback to S3 URL
+            const accessUrl = uploadResult.data.url; // Already uses CloudFront if configured
             uploadedFiles.push(accessUrl);
             console.log(`✅ Uploaded image: ${file.name} -> ${accessUrl}`);
           } else {
