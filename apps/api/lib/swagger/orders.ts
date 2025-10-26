@@ -328,12 +328,7 @@ export const orderSwaggerConfig = {
                           notes: 'Direct purchase'
                         }
                       ],
-                      depositAmount: 0.0,
-                      securityDeposit: 0.0,
-                      damageFee: 0.0,
-                      lateFee: 0.0,
-                      notes: 'Customer paid in full',
-                      isReadyToDeliver: true
+                      notes: 'Customer paid in full'
                     }
                   }
                 }
