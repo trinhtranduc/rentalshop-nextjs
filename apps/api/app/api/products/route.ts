@@ -237,8 +237,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
         ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
         ...uploadedFiles
       ];
-      // Convert array to comma-separated string for database
-      productDataFromRequest.images = allImages.join(',');
+      // Store images as JSON array for database
+      productDataFromRequest.images = allImages;
       
     } else {
       // Handle regular JSON request
@@ -252,15 +252,16 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
           if (productDataFromRequest.images.length === 0) {
             // Remove empty array
             delete productDataFromRequest.images;
-          } else {
-            // Convert array to comma-separated string
-            productDataFromRequest.images = productDataFromRequest.images.join(',');
           }
+          // Keep as array for JSON storage
         } else if (typeof productDataFromRequest.images === 'string') {
-          // If it's already a string, keep as is
+          // Convert string to array
           if (productDataFromRequest.images.trim() === '') {
             // Remove empty string
             delete productDataFromRequest.images;
+          } else {
+            // Convert comma-separated string to array
+            productDataFromRequest.images = productDataFromRequest.images.split(',').filter(Boolean);
           }
         }
       }
