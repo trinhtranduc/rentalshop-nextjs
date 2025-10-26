@@ -1747,7 +1747,7 @@ var simplifiedOrders = {
         productId: item.product?.id,
         productName: item.product?.name,
         productBarcode: item.product?.barcode,
-        productImages: item.product?.images ? Array.isArray(item.product.images) ? item.product.images : typeof item.product.images === "string" ? item.product.images.split(",").filter(Boolean) : [] : [],
+        productImages: item.product?.images ? Array.isArray(item.product.images) ? item.product.images : [] : [],
         productRentPrice: item.product?.rentPrice,
         productDeposit: item.product?.deposit
       })) || [],
