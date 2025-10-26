@@ -289,11 +289,61 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     const order = await db.orders.create(orderData);
     console.log('✅ Order created successfully:', order);
 
+    // Flatten order response (consistent with order list response)
+    const flattenedOrder = {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      status: order.status,
+      outletId: order.outletId,
+      outletName: order.outlet?.name || null,
+      customerId: order.customerId,
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : null,
+      createdById: order.createdById,
+      createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}`.trim() : null,
+      totalAmount: order.totalAmount,
+      depositAmount: order.depositAmount,
+      securityDeposit: order.securityDeposit,
+      damageFee: order.damageFee,
+      lateFee: order.lateFee,
+      discountType: order.discountType,
+      discountValue: order.discountValue,
+      discountAmount: order.discountAmount,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      rentalDuration: order.rentalDuration,
+      isReadyToDeliver: order.isReadyToDeliver,
+      collateralType: order.collateralType,
+      collateralDetails: order.collateralDetails,
+      notes: order.notes,
+      pickupNotes: order.pickupNotes,
+      returnNotes: order.returnNotes,
+      damageNotes: order.damageNotes,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      // Flatten order items with product info
+      orderItems: order.orderItems?.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        productName: item.product?.name || null,
+        productBarcode: item.product?.barcode || null,
+        productImages: null, // Will be populated from product relation if needed
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        deposit: item.deposit,
+        notes: item.notes,
+        rentalDays: item.rentalDays
+      })) || []
+    };
+
     return NextResponse.json({
       success: true,
-      data: order,
+      data: flattenedOrder,
       code: 'ORDER_CREATED_SUCCESS',
-        message: 'Order created successfully'
+      message: 'Order created successfully'
     });
 
   } catch (error: any) {
