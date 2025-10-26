@@ -358,8 +358,18 @@ export async function PUT(
                 ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
                 ...updatedUploadedFiles
               ];
-              // Store images as JSON array for database
-              productDataFromRequest.images = allImages;
+              // Ensure allImages is properly normalized (not stringified JSON)
+              productDataFromRequest.images = allImages.map(img => {
+                if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
+                  try {
+                    const parsed = JSON.parse(img);
+                    return Array.isArray(parsed) ? parsed[0] : img;
+                  } catch {
+                    return img;
+                  }
+                }
+                return img;
+              }).flat().filter(Boolean);
             } else {
               console.error('❌ Failed to commit staging files:', commitResult.errors);
               // Fallback to staging URLs if commit fails
@@ -368,7 +378,18 @@ export async function PUT(
                 ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
                 ...uploadedFiles
               ];
-              productDataFromRequest.images = allImages;
+              // Ensure allImages is properly normalized (not stringified JSON)
+              productDataFromRequest.images = allImages.map(img => {
+                if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
+                  try {
+                    const parsed = JSON.parse(img);
+                    return Array.isArray(parsed) ? parsed[0] : img;
+                  } catch {
+                    return img;
+                  }
+                }
+                return img;
+              }).flat().filter(Boolean);
             }
           }
         }
