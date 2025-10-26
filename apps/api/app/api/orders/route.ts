@@ -224,7 +224,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       // Add order items with pricing calculation
       orderItems: {
         create: await Promise.all(parsed.data.orderItems?.map(async item => {
-          // Get product details
+          // Get product details for snapshot
           const product = await db.products.findById(item.productId);
           if (!product) {
             throw new Error(`Product with ID ${item.productId} not found`);
@@ -251,8 +251,14 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
             };
           }
 
+          // Snapshot product info to preserve it even if product is deleted later
           return {
             product: { connect: { id: item.productId } },
+            // Snapshot fields
+            productName: product.name || null,
+            productBarcode: product.barcode || null,
+            productImages: product.images || null,
+            // Order item fields
             quantity: item.quantity,
             unitPrice: pricing.unitPrice,
             totalPrice: pricing.totalPrice,
