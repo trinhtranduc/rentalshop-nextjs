@@ -197,6 +197,16 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     // RENT orders start as RESERVED (scheduled rental)
     const initialStatus = parsed.data.orderType === 'SALE' ? 'COMPLETED' : 'RESERVED';
 
+    // Calculate rentalDuration from pickup and return dates
+    let rentalDuration: number | null = null;
+    if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
+      const pickup = new Date(parsed.data.pickupPlanAt);
+      const returnDate = new Date(parsed.data.returnPlanAt);
+      const diffTime = returnDate.getTime() - pickup.getTime();
+      rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
+      console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
+    }
+
     // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {
       orderNumber,
@@ -215,7 +225,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       discountAmount: parsed.data.discountAmount || 0,
       pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
       returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
-      rentalDuration: parsed.data.rentalDuration,
+      rentalDuration: rentalDuration,
       isReadyToDeliver: parsed.data.isReadyToDeliver || false,
       collateralType: parsed.data.collateralType,
       collateralDetails: parsed.data.collateralDetails,
@@ -251,6 +261,9 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
             };
           }
 
+          // Calculate rentalDays for this item (use order-level rentalDuration)
+          const rentalDays = rentalDuration || 1;
+
           // Snapshot product info to preserve it even if product is deleted later
           return {
             product: { connect: { id: item.productId } },
@@ -264,7 +277,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
             totalPrice: pricing.totalPrice,
             deposit: pricing.deposit,
             notes: item.notes,
-            rentalDays: item.daysRented || 1
+            rentalDays: rentalDays
           };
         }) || [])
       }
