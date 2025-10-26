@@ -550,6 +550,7 @@ export const orderSwaggerConfig = {
     schemas: {
       Order: {
         type: 'object',
+        description: 'Flattened order object (consistent across all endpoints)',
         properties: {
           id: { type: 'number' },
           orderNumber: { type: 'string' },
@@ -562,51 +563,51 @@ export const orderSwaggerConfig = {
             enum: ['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']
           },
           outletId: { type: 'number' },
+          outletName: { type: 'string', nullable: true, description: 'Flattened from outlet.name' },
           customerId: { type: 'number', nullable: true },
+          customerName: { type: 'string', nullable: true, description: 'Flattened full name from customer' },
+          createdById: { type: 'number' },
+          createdByName: { type: 'string', nullable: true, description: 'Flattened full name from createdBy user' },
           totalAmount: { type: 'number' },
           depositAmount: { type: 'number' },
+          securityDeposit: { type: 'number' },
+          damageFee: { type: 'number' },
+          lateFee: { type: 'number' },
+          discountType: { type: 'string', nullable: true },
+          discountValue: { type: 'number' },
+          discountAmount: { type: 'number' },
           pickupPlanAt: { type: 'string', format: 'date-time', nullable: true },
           returnPlanAt: { type: 'string', format: 'date-time', nullable: true },
           pickedUpAt: { type: 'string', format: 'date-time', nullable: true },
           returnedAt: { type: 'string', format: 'date-time', nullable: true },
+          rentalDuration: { type: 'number', nullable: true },
+          isReadyToDeliver: { type: 'boolean' },
+          collateralType: { type: 'string', nullable: true },
+          collateralDetails: { type: 'string', nullable: true },
+          notes: { type: 'string', nullable: true },
+          pickupNotes: { type: 'string', nullable: true },
+          returnNotes: { type: 'string', nullable: true },
+          damageNotes: { type: 'string', nullable: true },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
           orderItems: {
             type: 'array',
+            description: 'Flattened order items with product info inline',
             items: {
               type: 'object',
               properties: {
                 id: { type: 'number' },
                 productId: { type: 'number' },
+                productName: { type: 'string', nullable: true, description: 'Flattened from product.name' },
+                productBarcode: { type: 'string', nullable: true, description: 'Flattened from product.barcode' },
+                productImages: { type: 'string', nullable: true, description: 'Product images (comma-separated URLs)' },
                 quantity: { type: 'number' },
                 unitPrice: { type: 'number' },
                 totalPrice: { type: 'number' },
-                product: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    name: { type: 'string' },
-                    barcode: { type: 'string', nullable: true }
-                  }
-                }
+                deposit: { type: 'number' },
+                notes: { type: 'string', nullable: true },
+                rentalDays: { type: 'number', nullable: true }
               }
-            }
-          },
-          customer: {
-            type: 'object',
-            nullable: true,
-            properties: {
-              id: { type: 'number' },
-              firstName: { type: 'string' },
-              lastName: { type: 'string' },
-              phone: { type: 'string' }
-            }
-          },
-          outlet: {
-            type: 'object',
-            properties: {
-              id: { type: 'number' },
-              name: { type: 'string' }
             }
           }
         }
