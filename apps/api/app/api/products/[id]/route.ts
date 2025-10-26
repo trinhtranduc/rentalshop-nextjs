@@ -343,7 +343,7 @@ export async function PUT(
       } else {
         // Handle regular JSON request
         console.log('🔍 Processing JSON request');
-        const body = await request.json();
+      const body = await request.json();
         productDataFromRequest = body;
       }
 

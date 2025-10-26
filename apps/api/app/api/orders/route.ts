@@ -197,15 +197,6 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     // RENT orders start as RESERVED (scheduled rental)
     const initialStatus = parsed.data.orderType === 'SALE' ? 'COMPLETED' : 'RESERVED';
 
-    // Calculate subtotal from order items if not provided
-    let subtotal = parsed.data.subtotal;
-    if (!subtotal || isNaN(subtotal)) {
-      subtotal = parsed.data.orderItems?.reduce((sum, item) => {
-        return sum + (item.totalPrice || 0);
-      }, 0) || 0;
-      console.log('🔍 Calculated subtotal from order items:', subtotal);
-    }
-
     // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {
       orderNumber,
@@ -214,7 +205,6 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       createdBy: { connect: { id: user.id } },
       orderType: parsed.data.orderType,
       status: initialStatus,
-      subtotal: subtotal,
       totalAmount: parsed.data.totalAmount,
       depositAmount: parsed.data.depositAmount || 0,
       securityDeposit: parsed.data.securityDeposit || 0,
