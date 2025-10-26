@@ -223,11 +223,12 @@ export async function uploadToS3(
     return {
       success: true,
       data: {
-        url: s3Url,
+        url: cdnUrl, // Use CloudFront URL as primary
         key,
         bucket: BUCKET_NAME!,
         region,
-        cdnUrl
+        cdnUrl,
+        s3Url // Keep S3 URL as fallback
       }
     };
 
