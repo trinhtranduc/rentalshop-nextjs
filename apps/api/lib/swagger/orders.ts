@@ -154,47 +154,153 @@ export const orderSwaggerConfig = {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['orderType', 'outletId', 'orderItems'],
+                required: ['orderType', 'outletId', 'totalAmount', 'orderItems'],
                 properties: {
                   orderType: {
                     type: 'string',
                     enum: ['RENT', 'SALE'],
-                    description: 'Type of order'
+                    description: 'Type of order',
+                    example: 'RENT'
                   },
                   outletId: {
                     type: 'number',
-                    description: 'Outlet ID'
+                    description: 'Outlet ID',
+                    example: 1
                   },
                   customerId: {
                     type: 'number',
-                    description: 'Customer ID (optional)'
+                    description: 'Customer ID (REQUIRED - API will fetch customer details)',
+                    example: 28
+                  },
+                  totalAmount: {
+                    type: 'number',
+                    description: 'Total order amount',
+                    example: 222.0
                   },
                   orderItems: {
                     type: 'array',
+                    description: 'Order items (API auto-snapshots product info)',
                     items: {
                       type: 'object',
                       required: ['productId', 'quantity', 'unitPrice'],
                       properties: {
-                        productId: { type: 'number' },
-                        quantity: { type: 'number', minimum: 1 },
-                        unitPrice: { type: 'number', minimum: 0 }
+                        productId: {
+                          type: 'number',
+                          description: 'Product ID (API will snapshot product name, barcode, images)',
+                          example: 78
+                        },
+                        quantity: {
+                          type: 'number',
+                          minimum: 1,
+                          example: 1
+                        },
+                        unitPrice: {
+                          type: 'number',
+                          minimum: 0,
+                          example: 222.0
+                        },
+                        totalPrice: {
+                          type: 'number',
+                          description: 'Total price (optional, API will calculate)',
+                          example: 222.0
+                        },
+                        deposit: {
+                          type: 'number',
+                          description: 'Deposit amount (optional, default 0)',
+                          example: 0.0
+                        },
+                        notes: {
+                          type: 'string',
+                          description: 'Item notes (optional)',
+                          example: ''
+                        }
                       }
                     }
                   },
                   pickupPlanAt: {
                     type: 'string',
                     format: 'date-time',
-                    description: 'Planned pickup date (for RENT orders)'
+                    description: 'Planned pickup date (for RENT orders, API auto-calculates rentalDuration)',
+                    example: '2025-10-27T17:00:00.000Z'
                   },
                   returnPlanAt: {
                     type: 'string',
                     format: 'date-time',
-                    description: 'Planned return date (for RENT orders)'
+                    description: 'Planned return date (for RENT orders, API auto-calculates rentalDuration)',
+                    example: '2025-10-30T17:00:00.000Z'
+                  },
+                  depositAmount: {
+                    type: 'number',
+                    description: 'Order deposit amount (optional)',
+                    example: 0.0
+                  },
+                  securityDeposit: {
+                    type: 'number',
+                    description: 'Security deposit (optional)',
+                    example: 55.5
+                  },
+                  damageFee: {
+                    type: 'number',
+                    description: 'Damage fee (optional)',
+                    example: 0.0
+                  },
+                  lateFee: {
+                    type: 'number',
+                    description: 'Late fee (optional)',
+                    example: 0.0
+                  },
+                  discountType: {
+                    type: 'string',
+                    enum: ['amount', 'percentage'],
+                    description: 'Discount type (optional)'
+                  },
+                  discountValue: {
+                    type: 'number',
+                    description: 'Discount value (optional)',
+                    example: 0.0
+                  },
+                  discountAmount: {
+                    type: 'number',
+                    description: 'Discount amount (optional)',
+                    example: 0.0
                   },
                   notes: {
                     type: 'string',
-                    description: 'Order notes'
+                    description: 'Order notes (optional)',
+                    example: ''
+                  },
+                  pickupNotes: {
+                    type: 'string',
+                    description: 'Pickup notes (optional)',
+                    example: ''
+                  },
+                  isReadyToDeliver: {
+                    type: 'boolean',
+                    description: 'Ready to deliver flag (optional)',
+                    example: false
                   }
+                },
+                example: {
+                  orderType: 'RENT',
+                  outletId: 1,
+                  customerId: 28,
+                  totalAmount: 222.0,
+                  orderItems: [
+                    {
+                      productId: 78,
+                      quantity: 1,
+                      unitPrice: 222.0,
+                      totalPrice: 222.0,
+                      deposit: 0.0,
+                      notes: ''
+                    }
+                  ],
+                  pickupPlanAt: '2025-10-27T17:00:00.000Z',
+                  returnPlanAt: '2025-10-30T17:00:00.000Z',
+                  depositAmount: 0.0,
+                  securityDeposit: 55.5,
+                  notes: '',
+                  isReadyToDeliver: false
                 }
               }
             }
