@@ -245,22 +245,40 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       const body = await request.json();
       productDataFromRequest = body;
       
-      // Fix images field for JSON requests
+      // Fix images field for JSON requests - normalize to array of strings
       if (productDataFromRequest.images) {
         if (Array.isArray(productDataFromRequest.images)) {
+          // Process each item in array - handle string JSON objects
+          productDataFromRequest.images = productDataFromRequest.images.map(img => {
+            // If item is a string that looks like JSON, try to parse it
+            if (typeof img === 'string' && img.startsWith('[')) {
+              try {
+                const parsed = JSON.parse(img);
+                return Array.isArray(parsed) ? parsed : img;
+              } catch {
+                return img;
+              }
+            }
+            return img;
+          }).flat(); // Flatten nested arrays
+          
           if (productDataFromRequest.images.length === 0) {
-            // Remove empty array
             delete productDataFromRequest.images;
           }
-          // Keep as array for JSON storage
         } else if (typeof productDataFromRequest.images === 'string') {
           // Convert string to array
           if (productDataFromRequest.images.trim() === '') {
             // Remove empty string
             delete productDataFromRequest.images;
           } else {
-            // Convert comma-separated string to array
-            productDataFromRequest.images = productDataFromRequest.images.split(',').filter(Boolean);
+            // Check if it's JSON string
+            try {
+              const parsed = JSON.parse(productDataFromRequest.images);
+              productDataFromRequest.images = Array.isArray(parsed) ? parsed : [productDataFromRequest.images];
+            } catch {
+              // Convert comma-separated string to array
+              productDataFromRequest.images = productDataFromRequest.images.split(',').filter(Boolean);
+            }
           }
         }
       }
