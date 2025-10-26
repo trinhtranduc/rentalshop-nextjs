@@ -195,9 +195,7 @@ const orderItemSchema = z.object({
   totalPrice: z.coerce.number().nonnegative().optional(), // Made optional since server calculates it
   deposit: z.coerce.number().nonnegative().default(0),
   notes: z.string().optional(),
-  startDate: z.coerce.date().optional(),
-  endDate: z.coerce.date().optional(),
-  daysRented: z.coerce.number().int().nonnegative().optional(),
+  // daysRented removed - API will calculate from pickupPlanAt and returnPlanAt
 });
 
 
@@ -214,7 +212,7 @@ const baseOrderSchema = z.object({
   outletId: z.coerce.number().int().positive(),
   pickupPlanAt: z.coerce.date().optional(),
   returnPlanAt: z.coerce.date().optional(),
-  rentalDuration: z.coerce.number().int().positive().optional(),
+  // rentalDuration removed - API will calculate from pickupPlanAt and returnPlanAt
   subtotal: z.coerce.number().nonnegative().optional(),
   taxAmount: z.coerce.number().nonnegative().optional(),
   discountType: z.enum(['amount', 'percentage']).optional(),
@@ -231,9 +229,7 @@ const baseOrderSchema = z.object({
   pickupNotes: z.string().optional(),
   returnNotes: z.string().optional(),
   damageNotes: z.string().optional(),
-  customerName: z.string().optional(),
-  customerPhone: z.string().optional(),
-  customerEmail: z.string().email().optional(),
+  // customerName, customerPhone, customerEmail removed - use customerId only
   isReadyToDeliver: z.boolean().optional(),
   
   // Order items management
