@@ -292,26 +292,33 @@ export async function PUT(
             const commitResult = await commitStagingFiles(stagingKeys, 'product');
             
             if (commitResult.success) {
-              // Generate production URLs using CloudFront if available
-              const productionUrls = await Promise.all(
-                commitResult.committedKeys.map(async (key) => {
-                  // Use CloudFront URL if configured, otherwise generate presigned URL
-                  const cloudfrontUrl = await generateAccessUrl(key, 86400 * 365);
-                  if (cloudfrontUrl) {
-                    return cloudfrontUrl;
-                  }
-                  // Fallback to direct URL if CloudFront fails
-                  const region = process.env.AWS_REGION || 'ap-southeast-1';
-                  const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
-                  return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-                })
-              );
+              // Generate production URLs using CloudFront directly
+              const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
+              const productionUrls = commitResult.committedKeys.map(key => {
+                // Always use CloudFront URL if configured, otherwise S3 URL
+                if (cloudfrontDomain) {
+                  return `https://${cloudfrontDomain}/${key}`;
+                }
+                // Fallback to direct URL if CloudFront not configured
+                const region = process.env.AWS_REGION || 'ap-southeast-1';
+                const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
+                return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+              });
               
               // Map staging URLs to production URLs
               const updatedUploadedFiles = uploadedFiles.map(url => {
-                const urlParts = url.split('amazonaws.com/');
-                if (urlParts.length > 1) {
-                  const key = urlParts[1].split('?')[0];
+                // Extract key from CloudFront or S3 URL
+                let key = '';
+                if (url.includes('amazonaws.com/')) {
+                  // S3 URL
+                  const urlParts = url.split('amazonaws.com/');
+                  key = urlParts[1]?.split('?')[0] || '';
+                } else if (cloudfrontDomain && url.includes(cloudfrontDomain)) {
+                  // CloudFront URL
+                  key = url.split(cloudfrontDomain + '/')[1] || '';
+                }
+                
+                if (key) {
                   const committedKey = commitResult.committedKeys.find(ck => 
                     ck.replace('product/', '') === key.replace('staging/', '')
                   );
