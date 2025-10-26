@@ -260,9 +260,8 @@ export async function PUT(
             });
             
             if (uploadResult.success && uploadResult.data) {
-              // Generate presigned URL for immediate access
-              const presignedUrl = await generateAccessUrl(uploadResult.data.key, 86400);
-              const accessUrl = presignedUrl || uploadResult.data.cdnUrl || uploadResult.data.url;
+              // Use CloudFront URL if available, otherwise fallback to S3 URL
+              const accessUrl = uploadResult.data.url; // Already uses CloudFront if configured
               uploadedFiles.push(accessUrl);
               console.log(`✅ Uploaded image: ${file.name} -> ${accessUrl}`);
             } else {
@@ -293,14 +292,15 @@ export async function PUT(
             const commitResult = await commitStagingFiles(stagingKeys, 'product');
             
             if (commitResult.success) {
-              // Generate production URLs with presigned access
+              // Generate production URLs using CloudFront if available
               const productionUrls = await Promise.all(
                 commitResult.committedKeys.map(async (key) => {
-                  const presignedUrl = await generateAccessUrl(key, 86400 * 365); // 1 year expiration
-                  if (presignedUrl) {
-                    return presignedUrl;
+                  // Use CloudFront URL if configured, otherwise generate presigned URL
+                  const cloudfrontUrl = await generateAccessUrl(key, 86400 * 365);
+                  if (cloudfrontUrl) {
+                    return cloudfrontUrl;
                   }
-                  // Fallback to direct URL if presigned fails
+                  // Fallback to direct URL if CloudFront fails
                   const region = process.env.AWS_REGION || 'ap-southeast-1';
                   const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
                   return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
