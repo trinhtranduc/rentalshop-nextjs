@@ -1150,6 +1150,7 @@ function usePlansData(options) {
 
 // src/hooks/useProductAvailability.ts
 var import_react8 = require("react");
+var import_utils9 = require("@rentalshop/utils");
 function useProductAvailability() {
   const calculateAvailability = (0, import_react8.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const pickup = new Date(pickupDate);
@@ -1203,7 +1204,7 @@ function useProductAvailability() {
     const end = new Date(endDate);
     const results = [];
     for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      const dateStr = date.toISOString().split("T")[0];
+      const dateStr = (0, import_utils9.getUTCDateKey)(date);
       const status = calculateAvailability(
         product,
         dateStr,
@@ -1227,14 +1228,14 @@ function useProductAvailability() {
 }
 
 // src/hooks/useProductsData.ts
-var import_utils9 = require("@rentalshop/utils");
+var import_utils10 = require("@rentalshop/utils");
 function useProductsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4E6} useProductsData: Fetching with filters:", filters2);
-      const response = await import_utils9.productsApi.searchProducts(filters2);
+      const response = await import_utils10.productsApi.searchProducts(filters2);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch products");
       }
@@ -1267,14 +1268,14 @@ function useProductsData(options) {
 }
 
 // src/hooks/useSubscriptionsData.ts
-var import_utils10 = require("@rentalshop/utils");
+var import_utils11 = require("@rentalshop/utils");
 function useSubscriptionsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4B3} useSubscriptionsData: Fetching with filters:", filters2);
-      const response = await import_utils10.subscriptionsApi.search({
+      const response = await import_utils11.subscriptionsApi.search({
         limit: filters2.limit || 20,
         offset: filters2.offset || (filters2.page ? (filters2.page - 1) * (filters2.limit || 20) : 0)
       });
@@ -1457,7 +1458,7 @@ function useThrottledSearch(options) {
 
 // src/hooks/useToast.ts
 var import_react11 = require("react");
-var import_utils11 = require("@rentalshop/utils");
+var import_utils12 = require("@rentalshop/utils");
 var import_ui2 = require("@rentalshop/ui");
 var useErrorHandler = (options = {}) => {
   const {
@@ -1469,12 +1470,12 @@ var useErrorHandler = (options = {}) => {
   const [isLoading, setIsLoading] = (0, import_react11.useState)(false);
   const { addToast } = (0, import_ui2.useToasts)();
   const handleError = (0, import_react11.useCallback)((error) => {
-    const errorInfo = (0, import_utils11.analyzeError)(error);
+    const errorInfo = (0, import_utils12.analyzeError)(error);
     return errorInfo;
   }, []);
   const showErrorToast = (0, import_react11.useCallback)((error) => {
-    const errorInfo = (0, import_utils11.analyzeError)(error);
-    const toastType = (0, import_utils11.getToastType)(errorInfo.type);
+    const errorInfo = (0, import_utils12.analyzeError)(error);
+    const toastType = (0, import_utils12.getToastType)(errorInfo.type);
     let toastMessage = errorInfo.message;
     if (errorInfo.showLoginButton) {
       if (errorInfo.type === "auth") {
@@ -1492,7 +1493,7 @@ var useErrorHandler = (options = {}) => {
   const handleApiCall = (0, import_react11.useCallback)(async (apiCall) => {
     setIsLoading(true);
     try {
-      const result = await (0, import_utils11.withErrorHandlingForUI)(apiCall);
+      const result = await (0, import_utils12.withErrorHandlingForUI)(apiCall);
       if (result.error) {
         showErrorToast(result.error);
       }
@@ -1524,8 +1525,8 @@ var useErrorHandler = (options = {}) => {
 var useSimpleErrorHandler = () => {
   const { addToast } = (0, import_ui2.useToasts)();
   const handleError = (0, import_react11.useCallback)((error) => {
-    const errorInfo = (0, import_utils11.analyzeError)(error);
-    const toastType = (0, import_utils11.getToastType)(errorInfo.type);
+    const errorInfo = (0, import_utils12.analyzeError)(error);
+    const toastType = (0, import_utils12.getToastType)(errorInfo.type);
     let toastMessage = errorInfo.message;
     if (errorInfo.showLoginButton) {
       if (errorInfo.type === "auth") {
@@ -1560,8 +1561,8 @@ var useToastHandler = () => {
     addToast("info", title, message, 5e3);
   }, [addToast]);
   const handleError = (0, import_react11.useCallback)((error) => {
-    const errorInfo = (0, import_utils11.analyzeError)(error);
-    const toastType = (0, import_utils11.getToastType)(errorInfo.type);
+    const errorInfo = (0, import_utils12.analyzeError)(error);
+    const toastType = (0, import_utils12.getToastType)(errorInfo.type);
     let toastMessage = errorInfo.message;
     if (errorInfo.showLoginButton) {
       if (errorInfo.type === "auth") {
@@ -5312,14 +5313,14 @@ function useCanExportData() {
 }
 
 // src/hooks/useUsersData.ts
-var import_utils12 = require("@rentalshop/utils");
+var import_utils13 = require("@rentalshop/utils");
 function useUsersData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F464} useUsersData: Fetching with filters:", filters2);
-      const response = await import_utils12.usersApi.searchUsers(filters2);
+      const response = await import_utils13.usersApi.searchUsers(filters2);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch users");
       }
@@ -5508,14 +5509,14 @@ var ErrorCheckers = {
 };
 
 // src/hooks/useFiltersData.ts
-var import_utils13 = require("@rentalshop/utils");
+var import_utils14 = require("@rentalshop/utils");
 function useOutletsData() {
   const { data, loading, error } = useDedupedApi({
     filters: {},
     // No filters needed for outlets
     fetchFn: async () => {
       console.log("\u{1F50D} useOutletsData: Fetching outlets...");
-      const response = await import_utils13.outletsApi.getOutlets();
+      const response = await import_utils14.outletsApi.getOutlets();
       if (response.success && response.data) {
         const outletsData = response.data.outlets || [];
         console.log("\u2705 useOutletsData: Transformed data:", {
@@ -5547,7 +5548,7 @@ function useCategoriesData() {
     // No filters needed for categories
     fetchFn: async () => {
       console.log("\u{1F50D} useCategoriesData: Fetching categories...");
-      const response = await import_utils13.categoriesApi.getCategories();
+      const response = await import_utils14.categoriesApi.getCategories();
       if (response.success && response.data) {
         const categoriesData = response.data;
         console.log("\u2705 useCategoriesData: API response data:", {
@@ -5586,7 +5587,7 @@ function useOutletsWithFilters(options) {
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F50D} useOutletsWithFilters: Fetching with filters:", filters2);
-      const response = await import_utils13.outletsApi.getOutlets(filters2);
+      const response = await import_utils14.outletsApi.getOutlets(filters2);
       if (response.success && response.data) {
         const apiData = response.data;
         return {
@@ -5619,7 +5620,7 @@ function useCategoriesWithFilters(options) {
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F50D} useCategoriesWithFilters: Fetching with filters:", filters2);
-      const response = await import_utils13.categoriesApi.searchCategories(filters2);
+      const response = await import_utils14.categoriesApi.searchCategories(filters2);
       if (response.success && response.data) {
         const apiData = response.data;
         return {

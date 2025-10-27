@@ -1107,6 +1107,11 @@ interface Order extends BaseEntityWithOutlet {
     orderItems?: OrderItem[];
     payments?: Payment[];
     createdBy?: UserReference;
+    customerName?: string;
+    customerPhone?: string;
+    outletName?: string;
+    merchantName?: string;
+    createdByName?: string;
 }
 /**
  * Order item interface
@@ -1342,6 +1347,8 @@ interface OrderListItem {
     itemCount: number;
     paymentCount: number;
     totalPaid: number;
+    pickupPlanAt?: Date | string;
+    returnPlanAt?: Date | string;
 }
 /**
  * Order item with flattened product data

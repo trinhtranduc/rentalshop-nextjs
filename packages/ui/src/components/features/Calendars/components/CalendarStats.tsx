@@ -1,9 +1,11 @@
 import React from 'react';
-import { Package, ArrowUpRight } from 'lucide-react';
+import { Clock, CheckCircle, Package } from 'lucide-react';
 import { useCalendarTranslations } from '@rentalshop/hooks';
 
 interface CalendarStatsProps {
   totalPickups: number;
+  totalReturns: number;
+  totalOrders: number;
   currentMonth: number;
   currentYear: number;
   className?: string;
@@ -11,44 +13,51 @@ interface CalendarStatsProps {
 
 export function CalendarStats({
   totalPickups,
+  totalReturns,
+  totalOrders,
   currentMonth,
   currentYear,
   className = ''
 }: CalendarStatsProps) {
   const t = useCalendarTranslations();
   
-  const monthNames = [
-    t('months.january'), t('months.february'), t('months.march'), t('months.april'), 
-    t('months.may'), t('months.june'), t('months.july'), t('months.august'), 
-    t('months.september'), t('months.october'), t('months.november'), t('months.december')
-  ];
-
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${className}`}>
-      {/* Pickup Stats */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-            <ArrowUpRight className="w-5 h-5 text-green-600" />
+    <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${className}`}>
+      {/* Pickup Orders */}
+      <div className="bg-blue-50 rounded-lg p-4">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <Clock className="w-6 h-6 text-blue-700" />
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-600">{t('labels.pickupOrders')}</p>
-            <p className="text-2xl font-bold text-gray-900">{totalPickups}</p>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-blue-700">{t('labels.pickupOrders')}</p>
+            <p className="text-2xl font-bold text-blue-900">{totalPickups}</p>
           </div>
         </div>
       </div>
-
-      {/* Month Display */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-            <Package className="w-5 h-5 text-purple-600" />
+      
+      {/* Return Orders */}
+      <div className="bg-green-50 rounded-lg p-4">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <CheckCircle className="w-6 h-6 text-green-600" />
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-600">{t('labels.month')}</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {monthNames[currentMonth]} {currentYear}
-            </p>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-green-600">{t('labels.returnOrders')}</p>
+            <p className="text-2xl font-bold text-green-900">{totalReturns}</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Total Orders */}
+      <div className="bg-purple-50 rounded-lg p-4">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <Package className="w-6 h-6 text-purple-600" />
+          </div>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-purple-600">{t('labels.totalOrders')}</p>
+            <p className="text-2xl font-bold text-purple-900">{totalOrders}</p>
           </div>
         </div>
       </div>

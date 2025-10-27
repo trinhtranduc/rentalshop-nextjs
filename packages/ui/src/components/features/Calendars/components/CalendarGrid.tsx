@@ -1,6 +1,7 @@
 import React from 'react';
 import { CalendarDay, PickupOrder } from '@rentalshop/types';
 import { useCalendarTranslations } from '@rentalshop/hooks';
+import { getUTCDateKey } from '@rentalshop/utils';
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -45,33 +46,42 @@ export function CalendarGrid({
       const isToday = tempDate.toDateString() === new Date().toDateString();
       const isSelected = selectedDate?.toDateString() === tempDate.toDateString();
       
-      // Get orders for this date using local date formatting to match local calendar
-      const currentDateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
+      // Get orders for this date using date without time for comparison
+      // Use UTC date key to match backend data (which uses UTC dates)
+      const currentDateKey = getUTCDateKey(tempDate);
       
       const dateOrders = orders.filter(order => {
         const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
         const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
         
-        // Convert to local date for comparison
-        const pickupDateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, '0')}-${String(pickupDate.getDate()).padStart(2, '0')}`;
-        const returnDateKey = `${returnDate.getFullYear()}-${String(returnDate.getMonth() + 1).padStart(2, '0')}-${String(returnDate.getDate()).padStart(2, '0')}`;
+        // Use getUTCDateKey to get UTC date (YYYY-MM-DD) to match backend
+        // Backend returns "date": "2025-10-27" (UTC, no timezone conversion)
+        const pickupDateKey = getUTCDateKey(pickupDate);
+        const returnDateKey = getUTCDateKey(returnDate);
         
         const matches = (
           pickupDateKey === currentDateKey ||
           returnDateKey === currentDateKey
         );
         
+        // Debug logging for first week only
+        if (tempDate.getDate() <= 7) {
+          console.log('📅 CalendarGrid date matching:', {
+            currentDateKey,
+            pickupDateKey,
+            returnDateKey,
+            matches,
+            orderNumber: order.orderNumber
+          });
+        }
+        
         return matches;
       });
       
-      const pickupOrders = dateOrders.filter(order => {
-        const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
-        const pickupDateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, '0')}-${String(pickupDate.getDate()).padStart(2, '0')}`;
-        return pickupDateKey === currentDateKey;
-      });
-      
-      // Only show pickup orders - no return orders
-      const returnOrders: any[] = [];
+      // All orders are pickup orders (RESERVED and PICKUPED status only)
+      // Backend only adds orders to pickup date, so all orders here are pickup
+      const pickupOrders = dateOrders; // All orders are pickup orders
+      const returnOrders: any[] = []; // No return orders displayed in calendar
       
       days.push({
         date: new Date(tempDate),
@@ -162,11 +172,6 @@ export function CalendarGrid({
                       <span className="text-blue-800 font-bold">{(day as any).returnCount}</span>
                     </div>
                   )}
-                  
-                  {/* More indicator */}
-                  <div className="text-xs text-gray-400 text-left">
-                    {t('labels.more')}
-                  </div>
                 </div>
               )}
               

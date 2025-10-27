@@ -1907,10 +1907,17 @@ var simplifiedOrders = {
         orderItems: {
           select: {
             id: true,
+            orderId: true,
+            productId: true,
+            productName: true,
+            productBarcode: true,
+            productImages: true,
             quantity: true,
             unitPrice: true,
             totalPrice: true,
+            deposit: true,
             notes: true,
+            rentalDays: true,
             product: {
               select: {
                 id: true,
@@ -3691,7 +3698,7 @@ async function generateCompactNumericNumber(outletIdStr, prefix) {
   let retryCount = 0;
   while (retryCount < maxRetries) {
     try {
-      const randomStr = generateRandomString(5, true);
+      const randomStr = generateRandomString(8, true);
       const orderNumber = `${prefix}${outletIdStr}${randomStr}`;
       const existingOrder = await prisma.order.findUnique({
         where: { orderNumber },
@@ -5028,11 +5035,21 @@ var generateOrderNumber2 = async (outletId) => {
   if (!outlet) {
     throw new Error(`Outlet with id ${outletId} not found`);
   }
-  const orderCount = await prisma.order.count({
-    where: { outletId }
-  });
-  const sequence = (orderCount + 1).toString().padStart(4, "0");
-  return `${outletId.toString().padStart(3, "0")}-${sequence}`;
+  const generateRandom8Digits = () => {
+    return Math.floor(1e7 + Math.random() * 9e7).toString();
+  };
+  const maxRetries = 10;
+  for (let i = 0; i < maxRetries; i++) {
+    const randomSequence = generateRandom8Digits();
+    const orderNumber = randomSequence;
+    const existingOrder = await prisma.order.findUnique({
+      where: { orderNumber }
+    });
+    if (!existingOrder) {
+      return orderNumber;
+    }
+  }
+  throw new Error("Failed to generate unique order number after maximum retries");
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

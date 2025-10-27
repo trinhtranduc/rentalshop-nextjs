@@ -7,47 +7,7 @@ import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils';
 import { ORDER_STATUS_COLORS, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit } from 'lucide-react';
-
-// Temporary type definition until TypeScript cache updates
-interface OrderListItem {
-  id: number;
-  orderNumber: string;
-  orderType: string;
-  status: string;
-  totalAmount: number;
-  depositAmount: number;
-  notes?: string;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  customerId?: number;
-  customerName?: string;
-  customerPhone?: string;
-  outletId: number;
-  outletName?: string;
-  merchantName?: string;
-  createdById: number;
-  createdByName?: string;
-  orderItems: OrderItemFlattened[];
-  itemCount: number;
-  paymentCount: number;
-  totalPaid: number;
-  pickupPlanAt?: Date | string;
-  returnPlanAt?: Date | string;
-}
-
-interface OrderItemFlattened {
-  id: number;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  notes?: string;
-  productId?: number;
-  productName?: string;
-  productBarcode?: string;
-  productImages?: string[];
-  productRentPrice?: number;
-  productDeposit?: number;
-}
+import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
 
 interface OrderTableProps {
   orders: OrderListItem[];
@@ -232,13 +192,10 @@ export const OrderTable = React.memo(function OrderTable({
                 <td className="px-6 py-3">
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white">
-                      {order.customerName || order.customer?.firstName ? 
-                        `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim() || order.customerName : 
-                        'N/A'
-                      }
+                      {order.customerName || 'N/A'}
                     </div>
                     <div className="text-gray-500 dark:text-gray-400 text-xs">
-                      {order.customerPhone || order.customer?.phone || 'N/A'}
+                      {order.customerPhone || 'N/A'}
                     </div>
                   </div>
                 </td>

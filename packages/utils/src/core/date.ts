@@ -419,4 +419,90 @@ export function useFormattedMonthOnly(date: string | Date): string {
 export function useFormattedDaily(date: string | Date): string {
   const locale = useNextIntlLocale() as 'en' | 'vi';
   return formatDailyByLocale(date, locale);
+}
+
+// ============================================================================
+// TIMEZONE UTILITIES
+// ============================================================================
+
+/**
+ * Get local date key from UTC datetime string
+ * Converts UTC database datetime to local date (YYYY-MM-DD)
+ * 
+ * @param date - UTC datetime string or Date object from database
+ * @returns Local date in YYYY-MM-DD format
+ * 
+ * @example
+ * // Database stores UTC: "2025-10-28T17:00:00Z"
+ * // User in UTC+7 timezone sees it as: "2025-10-29T00:00:00+07:00"
+ * // This function returns: "2025-10-29"
+ * getLocalDateKey("2025-10-28T17:00:00Z") // "2025-10-29"
+ */
+export function getLocalDateKey(date: Date | string | null | undefined): string {
+  if (!date) return '';
+  
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return '';
+    
+    // Use local date components (getFullYear, getMonth, getDate)
+    // These automatically convert UTC to local timezone
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Get local date from UTC datetime string
+ * Useful when database stores UTC but UI needs to display in local time
+ * 
+ * @param date - UTC datetime string or Date object
+ * @returns Date object in local timezone
+ */
+export function getLocalDate(date: Date | string | null | undefined): Date | null {
+  if (!date) return null;
+  
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return isValid(dateObj) ? dateObj : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get UTC date key from UTC datetime string
+ * Converts UTC datetime to UTC date (YYYY-MM-DD)
+ * This preserves the original UTC date without timezone conversion
+ * 
+ * @param date - UTC datetime string or Date object from database
+ * @returns UTC date in YYYY-MM-DD format
+ * 
+ * @example
+ * // Database stores UTC: "2025-10-27T17:00:00Z"
+ * // This function returns: "2025-10-27" (no timezone conversion)
+ * getUTCDateKey("2025-10-27T17:00:00Z") // "2025-10-27"
+ */
+export function getUTCDateKey(date: Date | string | null | undefined): string {
+  if (!date) return '';
+  
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return '';
+    
+    // Use UTC date components (getUTCFullYear, getUTCMonth, getUTCDate)
+    // These return the UTC date without timezone conversion
+    const year = dateObj.getUTCFullYear();
+    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getUTCDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch {
+    return '';
+  }
 } 

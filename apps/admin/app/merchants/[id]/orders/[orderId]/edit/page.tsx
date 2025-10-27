@@ -67,8 +67,9 @@ export default function MerchantOrderEditPage() {
           return;
         }
 
-        // Try to fetch order by order number first (if it starts with ORD-) or by ID
-        let orderNumber = orderId;
+        // Remove ORD- prefix if present (database stores order numbers without ORD- prefix)
+        // Order numbers in database are like "001-757513" but URLs may have "ORD-001-757513"
+        let orderNumber = orderId.replace(/^ORD-/, '');
 
         console.log('🔍 Fetching order details for editing:', orderNumber);
 
@@ -78,11 +79,16 @@ export default function MerchantOrderEditPage() {
         if (result.success && result.data) {
           setOrder(result.data);
         } else {
-          // If by-number fails, try the direct order ID endpoint
-          const fallbackResult = await ordersApi.getOrderById(orderId);
-          
-          if (fallbackResult.success && fallbackResult.data) {
-            setOrder(fallbackResult.data);
+          // If by-number fails, try to parse as numeric ID
+          const numericId = parseInt(orderId);
+          if (!isNaN(numericId)) {
+            const fallbackResult = await ordersApi.getOrder(numericId);
+            
+            if (fallbackResult.success && fallbackResult.data) {
+              setOrder(fallbackResult.data);
+            } else {
+              setError('Failed to fetch order details');
+            }
           } else {
             setError('Failed to fetch order details');
           }

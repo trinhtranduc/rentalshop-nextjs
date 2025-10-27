@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Calendars, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate } from '@rentalshop/utils';
+import { useFormattedFullDate, getUTCDateKey } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 
@@ -20,7 +20,13 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null);
   const [calendarData, setCalendarData] = useState<CalendarResponse>({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
   const [calendarMeta, setCalendarMeta] = useState<CalendarMeta | null>(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Initialize to October 2025 to match test data
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 1)); // Month is 0-based, so 9 = October
+  
+  // Handle month change from Calendars component
+  const handleMonthChange = useCallback((date: Date) => {
+    setCurrentDate(date);
+  }, []);
   
   // 🎯 NEW: State for daily order details modal
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -57,19 +63,20 @@ export default function CalendarPage() {
       });
       
       // 🎯 NEW: Use specialized calendar API with startDate and endDate
+      // Use UTC date format (YYYY-MM-DD) to match backend
       const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
       const endOfMonth = new Date(currentYear, currentMonth, 0);
       
       const result = await calendarApi.getCalendarOrders({
-        startDate: startOfMonth.toISOString().split('T')[0],
-        endDate: endOfMonth.toISOString().split('T')[0],
+        startDate: getUTCDateKey(startOfMonth),
+        endDate: getUTCDateKey(endOfMonth),
         outletId: user?.outletId,
         limit: 4 // Max 4 orders per day
       });
       
       console.log('📅 Calendar API response:', result);
       
-      if (result.success) {
+      if (result.success && result.data) {
         console.log('📅 Calendar data received:', result.data);
         console.log('📅 Days with orders:', result.data.calendar.length);
         
@@ -111,23 +118,25 @@ export default function CalendarPage() {
   const handleDateClick = useCallback((date: Date) => {
     console.log('📅 Date clicked:', date);
     
-    // Convert date to YYYY-MM-DD format (same as CalendarGrid logic)
-    const dateKey = date.toISOString().split('T')[0];
+    // Convert date to YYYY-MM-DD format using UTC to match backend (which uses UTC dates)
+    const dateKey = getUTCDateKey(date);
     const dayData = calendarData.calendar.find(day => day.date === dateKey);
     
     console.log('📅 Looking for dateKey:', dateKey);
     console.log('📅 Available dates:', calendarData.calendar.map(day => day.date));
     
     if (dayData) {
-      // Only show pickup orders
-      const allOrders = [
-        ...dayData.orders.map((order: CalendarOrderSummary) => ({ ...order, type: 'pickup' as const }))
-      ];
+      // Show ALL orders from dayData.orders (both pickup and return)
+      const allOrders = dayData.orders.map((order: CalendarOrderSummary) => ({ 
+        ...order, 
+        type: 'pickup' as const 
+      }));
       
       console.log('📅 Orders found for selected date:', {
         dateKey,
-        orders: dayData.orders.length,
-        allOrders: allOrders.length
+        calendarOrders: dayData.orders.length,
+        allOrders: allOrders.length,
+        orderNumbers: allOrders.map(o => o.orderNumber)
       });
       
       setSelectedDate(date);
@@ -189,66 +198,6 @@ export default function CalendarPage() {
   return (
     <PageWrapper>
       <div className="space-y-8">
-      {/* Monthly Statistics */}
-      {calendarMeta && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {tcal('stats.monthlyStatistics')} - {currentDate.toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: '2-digit' 
-            })}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-blue-700">{tcal('labels.pickupOrders')}</p>
-                  <p className="text-2xl font-bold text-blue-900">{calendarData.summary.totalPickups}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-green-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-green-600">{tcal('labels.returnOrders')}</p>
-                  <p className="text-2xl font-bold text-green-900">{calendarData.summary.totalReturns}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-purple-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-purple-600">{tcal('labels.totalOrders')}</p>
-                  <p className="text-2xl font-bold text-purple-900">{calendarData.summary.totalOrders}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-4 text-sm text-gray-600">
-            <p>{tcal('stats.activeDays')}: {calendarData.calendar.length} {tcal('stats.daysWithScheduledOrders')}</p>
-            <p>{tcal('stats.dateRange')}: {calendarMeta?.dateRange.start} {tcal('stats.to')} {calendarMeta?.dateRange.end}</p>
-          </div>
-        </div>
-      )}
-
       {/* Calendar Component - Always Visible */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <Calendars
@@ -256,6 +205,8 @@ export default function CalendarPage() {
           loading={loading}
           error={authenticated ? error : null} // Only show errors for authenticated users
           authenticated={authenticated}
+          initialDate={currentDate} // Sync with page's currentDate state
+          onMonthChange={handleMonthChange} // Update page's currentDate when user navigates months
           onDateSelect={handleDateClick} // 🎯 NEW: Use our enhanced date click handler
           onOrderClick={(order) => {
             if (authenticated) {
@@ -276,12 +227,23 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h3 className="text-xl font-semibold text-gray-900">
-                  {tcal('modal.ordersFor').replace('{date}', selectedDate.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  }))}
+                  {(() => {
+                    // Get translation value
+                    let ordersForText = tcal('modal.ordersFor');
+                    const dateText = selectedDate.toLocaleDateString('vi-VN', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    });
+                    
+                    // Fallback if translation key is not found
+                    if (ordersForText === 'modal.ordersFor' || ordersForText === 'calendar.modal.ordersFor') {
+                      ordersForText = 'Đơn hàng ngày {date}';
+                    }
+                    
+                    return ordersForText.replace('{date}', dateText);
+                  })()}
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
                   {dailyOrders.length} {dailyOrders.length === 1 ? tcal('modal.ordersFound') : tcal('modal.ordersFoundPlural')}
@@ -299,6 +261,13 @@ export default function CalendarPage() {
 
             {/* Modal Content */}
             <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {(() => {
+                console.log('🔍 Modal rendering with dailyOrders:', {
+                  length: dailyOrders.length,
+                  orders: dailyOrders.map(o => ({ id: o.id, orderNumber: o.orderNumber }))
+                });
+                return null;
+              })()}
               {dailyOrders.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

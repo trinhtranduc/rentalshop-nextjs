@@ -3,7 +3,7 @@ import { withReadOnlyAuth } from '@rentalshop/auth';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, getUTCDateKey } from '@rentalshop/utils';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
@@ -70,9 +70,9 @@ export const GET = withReadOnlyAuth(async (
     if (status) {
       where.status = status;
     } else {
-      // Default to active rental orders if no status specified
+      // Default to only active pickup orders (not returned)
       where.status = {
-        in: ['RESERVED', 'PICKUPED', 'RETURNED']
+        in: ['RESERVED', 'PICKUPED']
       };
     }
 
@@ -153,32 +153,35 @@ export const GET = withReadOnlyAuth(async (
           }))
         };
 
-        // Add to pickup dates
+        // Add order only to pickup date (RESERVED and PICKUPED orders only)
         if (order.pickupPlanAt) {
           const pickupDate = new Date(order.pickupPlanAt);
-          const dateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, '0')}-${String(pickupDate.getDate()).padStart(2, '0')}`;
+          const pickupDateKey = getUTCDateKey(pickupDate);
           
-          if (!calendarMap[dateKey]) {
-            calendarMap[dateKey] = [];
+          if (!calendarMap[pickupDateKey]) {
+            calendarMap[pickupDateKey] = [];
           }
           
-          if (calendarMap[dateKey].length < limit) {
-            calendarMap[dateKey].push(orderSummary);
+          // Check if already added to avoid duplicates
+          const alreadyInMap = calendarMap[pickupDateKey].some(o => o.id === order.id);
+          if (!alreadyInMap && calendarMap[pickupDateKey].length < limit) {
+            calendarMap[pickupDateKey].push(orderSummary);
           }
         }
       }
 
       // Convert to calendar array format
       const calendar: CalendarDay[] = [];
-      let totalOrders = 0;
-      let totalRevenue = 0;
       let totalPickups = 0;
       let totalReturns = 0;
 
       for (const [dateKey, dayOrders] of Object.entries(calendarMap)) {
         const dayRevenue = dayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-        const dayPickups = dayOrders.filter(order => order.status === 'RESERVED' || order.status === 'PICKUPED').length;
-        const dayReturns = dayOrders.filter(order => order.status === 'RETURNED').length;
+        
+        // All orders in calendarMap are pickup orders only (RESERVED and PICKUPED)
+        // Orders are only added to their pickup date
+        const dayPickups = dayOrders.length;
+        const dayReturns = 0; // No return orders displayed
         
         calendar.push({
           date: dateKey,
@@ -192,11 +195,23 @@ export const GET = withReadOnlyAuth(async (
           }
         });
 
-        totalOrders += dayOrders.length;
-        totalRevenue += dayRevenue;
         totalPickups += dayPickups;
         totalReturns += dayReturns;
       }
+
+      // Calculate unique orders and total revenue to avoid double counting
+      const allUniqueOrders = new Map();
+      calendar.forEach(day => {
+        day.orders.forEach(order => {
+          // Store order with its revenue only once
+          if (!allUniqueOrders.has(order.id)) {
+            allUniqueOrders.set(order.id, order.totalAmount);
+          }
+        });
+      });
+
+      const totalOrders = allUniqueOrders.size;
+      const totalRevenue = Array.from(allUniqueOrders.values()).reduce((sum, revenue) => sum + revenue, 0);
 
       const calendarData: CalendarResponse = {
         calendar,
