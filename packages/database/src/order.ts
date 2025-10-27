@@ -1304,6 +1304,7 @@ export const simplifiedOrders = {
     productId?: number;
     startDate?: Date;
     endDate?: Date;
+    search?: string;
     page?: number;
     limit?: number;
     sortBy?: string;
@@ -1317,6 +1318,7 @@ export const simplifiedOrders = {
       productId,
       startDate,
       endDate,
+      search,
       page = 1,
       limit = 20,
       sortBy = 'createdAt',
@@ -1351,6 +1353,17 @@ export const simplifiedOrders = {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;
       if (endDate) where.createdAt.lte = endDate;
+    }
+
+    // Search functionality: search in order number, customer name, and customer phone
+    if (search) {
+      const searchTerm = search.trim();
+      where.OR = [
+        { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
+        { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
+        { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
+        { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } }
+      ];
     }
 
     const [orders, total] = await Promise.all([
