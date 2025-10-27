@@ -30,7 +30,7 @@ export async function GET(
       }
       
       // Get order by order number using the simplified database API
-      const order = await db.orders.findByNumber(orderNumber);
+      const order: any = await db.orders.findByNumber(orderNumber);
 
       if (!order) {
         console.log('❌ Order not found in database for orderNumber:', orderNumber);
@@ -42,10 +42,33 @@ export async function GET(
 
       console.log('✅ Order found:', order);
 
+      // Helper function to parse productImages (handle both JSON string and array)
+      const parseProductImages = (images: any): string[] => {
+        if (!images) return [];
+        if (Array.isArray(images)) return images;
+        if (typeof images === 'string') {
+          try {
+            const parsed = JSON.parse(images);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      // Flatten order items with parsed productImages
+      const flattenedOrder = {
+        ...order,
+        orderItems: order.orderItems?.map((item: any) => ({
+          ...item,
+          productImages: parseProductImages(item.productImages || item.product?.images)
+        })) || order.orderItems
+      };
+
       return NextResponse.json({
         success: true,
-        data: order,
-        code: 'ORDER_RETRIEVED_SUCCESS',
+        data: flattenedOrder,
         code: 'ORDER_RETRIEVED_SUCCESS',
         message: 'Order retrieved successfully'
       });

@@ -328,19 +328,39 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       // Flatten order items with product info
-      orderItems: order.orderItems?.map(item => ({
-        id: item.id,
-        productId: item.productId,
-        productName: item.product?.name || null,
-        productBarcode: item.product?.barcode || null,
-        productImages: null, // Will be populated from product relation if needed
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
-        deposit: item.deposit,
-        notes: item.notes,
-        rentalDays: item.rentalDays
-      })) || [],
+      orderItems: order.orderItems?.map((item: any) => {
+        // Helper function to parse productImages (handle both JSON string and array)
+        const parseProductImages = (images: any): string[] => {
+          if (!images) return [];
+          if (Array.isArray(images)) return images;
+          if (typeof images === 'string') {
+            try {
+              const parsed = JSON.parse(images);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          }
+          return [];
+        };
+
+        // Use productImages snapshot field (already saved during order creation)
+        const productImages = parseProductImages(item.productImages);
+
+        return {
+          id: item.id,
+          productId: item.productId,
+          productName: item.productName || item.product?.name || null,
+          productBarcode: item.productBarcode || item.product?.barcode || null,
+          productImages: productImages,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          deposit: item.deposit,
+          notes: item.notes,
+          rentalDays: item.rentalDays
+        };
+      }) || [],
       // Calculated fields
       itemCount: order.orderItems?.length || 0,
       paymentCount: order.payments?.length || 0,

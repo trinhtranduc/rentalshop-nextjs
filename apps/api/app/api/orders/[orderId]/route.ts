@@ -40,7 +40,7 @@ export const GET = async (
       }
       
       // Get order using the optimized database API
-    const order = await db.orders.findByIdDetail(orderIdNum);
+      const order: any = await db.orders.findByIdDetail(orderIdNum);
 
       if (!order) {
         console.log('❌ Order not found in database for orderId:', orderIdNum);
@@ -49,9 +49,33 @@ export const GET = async (
 
       console.log('✅ Order found:', order);
 
+      // Helper function to parse productImages (handle both JSON string and array)
+      const parseProductImages = (images: any): string[] => {
+        if (!images) return [];
+        if (Array.isArray(images)) return images;
+        if (typeof images === 'string') {
+          try {
+            const parsed = JSON.parse(images);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      // Flatten order items with parsed productImages
+      const flattenedOrder = {
+        ...order,
+        orderItems: order.orderItems?.map((item: any) => ({
+          ...item,
+          productImages: parseProductImages(item.productImages || item.product?.images)
+        })) || order.orderItems
+      };
+
       return NextResponse.json({
         success: true,
-        data: order,
+        data: flattenedOrder,
         code: 'ORDER_RETRIEVED_SUCCESS',
         message: 'Order retrieved successfully'
       });
@@ -169,19 +193,38 @@ export const PUT = async (
         createdAt: fullOrder.createdAt,
         updatedAt: fullOrder.updatedAt,
         // Flatten order items with product info
-        orderItems: fullOrder.orderItems?.map((item: any) => ({
-          id: item.id,
-          productId: item.productId,
-          productName: item.product?.name || item.productName || null,
-          productBarcode: item.product?.barcode || item.productBarcode || null,
-          productImages: item.product?.images || item.productImages || null,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
-          deposit: item.deposit,
-          notes: item.notes,
-          rentalDays: item.rentalDays
-        })) || [],
+        orderItems: fullOrder.orderItems?.map((item: any) => {
+          // Helper function to parse productImages (handle both JSON string and array)
+          const parseProductImages = (images: any): string[] => {
+            if (!images) return [];
+            if (Array.isArray(images)) return images;
+            if (typeof images === 'string') {
+              try {
+                const parsed = JSON.parse(images);
+                return Array.isArray(parsed) ? parsed : [];
+              } catch {
+                return [];
+              }
+            }
+            return [];
+          };
+
+          const productImages = parseProductImages(item.productImages || item.product?.images);
+
+          return {
+            id: item.id,
+            productId: item.productId,
+            productName: item.product?.name || item.productName || null,
+            productBarcode: item.product?.barcode || item.productBarcode || null,
+            productImages: productImages,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            deposit: item.deposit,
+            notes: item.notes,
+            rentalDays: item.rentalDays
+          };
+        }) || [],
         // Calculated fields
         itemCount: fullOrder.orderItems?.length || 0,
         paymentCount: fullOrder.payments?.length || 0,
