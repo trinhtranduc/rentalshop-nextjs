@@ -538,24 +538,25 @@ export const simplifiedCustomers = {
       where.isActive = true; // Default: only show active customers
     }
     
-    // Text search across multiple fields
+    // Text search across multiple fields (case-insensitive)
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { firstName: { contains: whereFilters.search } },
-        { lastName: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } },
-        { phone: { contains: whereFilters.search } }
+        { firstName: { contains: searchTerm, mode: 'insensitive' } },
+        { lastName: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+        { phone: { contains: searchTerm, mode: 'insensitive' } }
       ];
     }
 
-    // Specific field filters
-    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName };
-    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName };
-    if (whereFilters.email) where.email = { contains: whereFilters.email };
-    if (whereFilters.phone) where.phone = { contains: whereFilters.phone };
-    if (whereFilters.city) where.city = { contains: whereFilters.city };
-    if (whereFilters.state) where.state = { contains: whereFilters.state };
-    if (whereFilters.country) where.country = { contains: whereFilters.country };
+    // Specific field filters (case-insensitive)
+    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName, mode: 'insensitive' };
+    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName, mode: 'insensitive' };
+    if (whereFilters.email) where.email = { contains: whereFilters.email, mode: 'insensitive' };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: 'insensitive' };
+    if (whereFilters.city) where.city = { contains: whereFilters.city, mode: 'insensitive' };
+    if (whereFilters.state) where.state = { contains: whereFilters.state, mode: 'insensitive' };
+    if (whereFilters.country) where.country = { contains: whereFilters.country, mode: 'insensitive' };
 
     // ✅ Build dynamic orderBy clause
     const orderBy: any = {};
