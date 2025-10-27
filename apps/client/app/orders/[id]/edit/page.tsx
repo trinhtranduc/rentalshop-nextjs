@@ -52,9 +52,9 @@ export default function EditOrderPage() {
 
   const orderId = params.id as string;
   
-  // Extract numeric part from order ID (e.g., "123" from "123" or "ORD-123")
+  // Extract numeric part from order ID (e.g., "001-757513" from "001-757513" or "ORD-001-757513")
   // Add null check to prevent error when orderId is undefined during initial render
-  const numericOrderId = orderId;
+  const numericOrderId = orderId.replace(/^ORD-/, ''); // Remove ORD- prefix if present
   
   // Extract numeric order number from order data for navigation
   const numericOrderNumber = order?.orderNumber ? order.orderNumber.replace(/^ORD-/, '') : numericOrderId;
@@ -67,7 +67,8 @@ export default function EditOrderPage() {
         setLoading(true);
         setError(null);
 
-        const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderId}`);
+        // Use orderNumber without ORD- prefix (database stores it without prefix)
+        const result = await ordersApi.getOrderByNumber(numericOrderId);
 
         if (result.success && result.data) {
           setOrder(result.data as OrderWithDetails);

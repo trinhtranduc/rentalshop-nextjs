@@ -13977,6 +13977,7 @@ var LoginForm_default = LoginForm;
 
 // src/components/forms/RegisterForm.tsx
 var import_react30 = require("react");
+var import_navigation2 = require("next/navigation");
 var import_lucide_react25 = require("lucide-react");
 var import_utils17 = require("@rentalshop/utils");
 var import_constants8 = require("@rentalshop/constants");
@@ -13989,6 +13990,7 @@ var RegisterForm = ({
   user,
   registrationError
 }) => {
+  const router = (0, import_navigation2.useRouter)();
   const [viewPass, setViewPass] = (0, import_react30.useState)(false);
   const [viewConfirmPass, setViewConfirmPass] = (0, import_react30.useState)(false);
   const [currentStep, setCurrentStep] = (0, import_react30.useState)(1);
@@ -14088,7 +14090,11 @@ var RegisterForm = ({
         setCurrentStep(1);
         setAccountData({});
         setTimeout(() => {
-          window.location.href = "/login";
+          if (onNavigate) {
+            onNavigate("/login");
+          } else {
+            router.push("/login");
+          }
         }, 2e3);
       } catch (error) {
         toastError(
@@ -15594,7 +15600,7 @@ var import_react33 = require("react");
 // src/components/layout/sidebar.tsx
 var import_react32 = require("react");
 var import_link2 = __toESM(require("next/link"));
-var import_navigation2 = require("next/navigation");
+var import_navigation3 = require("next/navigation");
 var import_ui17 = require("@rentalshop/ui");
 var import_ui18 = require("@rentalshop/ui");
 var import_lucide_react27 = require("lucide-react");
@@ -15653,7 +15659,7 @@ var Sidebar = ({
   isCollapsed = false,
   onCollapseToggle
 }) => {
-  const router = (0, import_navigation2.useRouter)();
+  const router = (0, import_navigation3.useRouter)();
   const { navigate, navigatingTo } = (0, import_hooks16.useOptimisticNavigation)();
   (0, import_react32.useEffect)(() => {
     menuItems.forEach((item) => {
@@ -16879,7 +16885,7 @@ function ProductDetailLoading() {
 }
 
 // src/components/features/Products/components/ProductDetailList.tsx
-var import_navigation3 = require("next/navigation");
+var import_navigation4 = require("next/navigation");
 var import_hooks21 = require("@rentalshop/hooks");
 var import_lucide_react31 = require("lucide-react");
 
@@ -16896,7 +16902,7 @@ var ProductDetailList = ({
   isMerchantAccount = false,
   className = ""
 }) => {
-  const router = (0, import_navigation3.useRouter)();
+  const router = (0, import_navigation4.useRouter)();
   const t2 = (0, import_hooks21.useProductTranslations)();
   const tc = (0, import_hooks21.useCommonTranslations)();
   const normalizeImages = (images) => {
@@ -17883,8 +17889,8 @@ var OrderTable = import_react45.default.memo(function OrderTable2({
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3 whitespace-nowrap", children: getOrderTypeBadge(order.orderType) }),
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3 whitespace-nowrap", children: getStatusBadge(order.status) }),
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3", children: /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("div", { className: "text-sm", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName || order.customer?.firstName ? `${order.customer?.firstName || ""} ${order.customer?.lastName || ""}`.trim() || order.customerName : "N/A" }),
-        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone || order.customer?.phone || "N/A" })
+        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName || "N/A" }),
+        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone || "N/A" })
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("td", { className: "px-6 py-3 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("div", { className: "text-sm", children: [
         /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: formatMoney(order.totalAmount) }),
@@ -20146,7 +20152,7 @@ var CustomerForm = ({
 
 // src/components/features/Customers/components/CustomerActions.tsx
 var import_react54 = require("react");
-var import_navigation4 = require("next/navigation");
+var import_navigation5 = require("next/navigation");
 var import_lucide_react44 = require("lucide-react");
 var import_jsx_runtime107 = require("react/jsx-runtime");
 function CustomerActions({
@@ -20158,7 +20164,7 @@ function CustomerActions({
   onViewOrders
 }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = (0, import_react54.useState)(false);
-  const router = (0, import_navigation4.useRouter)();
+  const router = (0, import_navigation5.useRouter)();
   (0, import_react54.useEffect)(() => {
     const handleCustomerAction = (event) => {
       const { action, customer } = event.detail;
@@ -26410,7 +26416,7 @@ function Merchants({
 var Merchants_default = Merchants;
 
 // src/components/features/Merchants/components/MerchantDetail.tsx
-var import_navigation5 = require("next/navigation");
+var import_navigation6 = require("next/navigation");
 
 // src/components/features/Merchants/components/MerchantSubscriptionSection.tsx
 var import_react75 = require("react");
@@ -26541,7 +26547,7 @@ function MerchantDetail({
   onSuspend,
   onReactivate
 }) {
-  const router = (0, import_navigation5.useRouter)();
+  const router = (0, import_navigation6.useRouter)();
   const navigateToPage = (page, id) => {
     const url = id ? `/${page}/${id}` : `/${page}`;
     router.push(url);
@@ -26785,42 +26791,33 @@ var import_hooks43 = require("@rentalshop/hooks");
 var import_jsx_runtime143 = require("react/jsx-runtime");
 function CalendarStats({
   totalPickups,
+  totalReturns,
+  totalOrders,
   currentMonth,
   currentYear,
   className = ""
 }) {
   const t2 = (0, import_hooks43.useCalendarTranslations)();
-  const monthNames = [
-    t2("months.january"),
-    t2("months.february"),
-    t2("months.march"),
-    t2("months.april"),
-    t2("months.may"),
-    t2("months.june"),
-    t2("months.july"),
-    t2("months.august"),
-    t2("months.september"),
-    t2("months.october"),
-    t2("months.november"),
-    t2("months.december")
-  ];
-  return /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: `grid grid-cols-1 md:grid-cols-2 gap-4 ${className}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "bg-white rounded-lg border border-gray-200 p-4", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsx)(import_lucide_react71.ArrowUpRight, { className: "w-5 h-5 text-green-600" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("p", { className: "text-sm font-medium text-gray-600", children: t2("labels.pickupOrders") }),
-        /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("p", { className: "text-2xl font-bold text-gray-900", children: totalPickups })
+  return /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: `grid grid-cols-1 md:grid-cols-3 gap-4 ${className}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "bg-blue-50 rounded-lg p-4", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: "flex items-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsx)(import_lucide_react71.Clock, { className: "w-6 h-6 text-blue-700" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: "ml-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("p", { className: "text-sm font-medium text-blue-700", children: t2("labels.pickupOrders") }),
+        /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("p", { className: "text-2xl font-bold text-blue-900", children: totalPickups })
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "bg-white rounded-lg border border-gray-200 p-4", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsx)(import_lucide_react71.Package, { className: "w-5 h-5 text-purple-600" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("p", { className: "text-sm font-medium text-gray-600", children: t2("labels.month") }),
-        /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("p", { className: "text-lg font-semibold text-gray-900", children: [
-          monthNames[currentMonth],
-          " ",
-          currentYear
-        ] })
+    /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "bg-green-50 rounded-lg p-4", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: "flex items-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsx)(import_lucide_react71.CheckCircle, { className: "w-6 h-6 text-green-600" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: "ml-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("p", { className: "text-sm font-medium text-green-600", children: t2("labels.returnOrders") }),
+        /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("p", { className: "text-2xl font-bold text-green-900", children: totalReturns })
+      ] })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "bg-purple-50 rounded-lg p-4", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: "flex items-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime143.jsx)(import_lucide_react71.Package, { className: "w-6 h-6 text-purple-600" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime143.jsxs)("div", { className: "ml-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("p", { className: "text-sm font-medium text-purple-600", children: t2("labels.totalOrders") }),
+        /* @__PURE__ */ (0, import_jsx_runtime143.jsx)("p", { className: "text-2xl font-bold text-purple-900", children: totalOrders })
       ] })
     ] }) })
   ] });
@@ -26829,6 +26826,7 @@ function CalendarStats({
 // src/components/features/Calendars/components/CalendarGrid.tsx
 var import_react76 = __toESM(require("react"));
 var import_hooks44 = require("@rentalshop/hooks");
+var import_utils39 = require("@rentalshop/utils");
 var import_jsx_runtime144 = require("react/jsx-runtime");
 function CalendarGrid({
   currentDate,
@@ -26854,20 +26852,25 @@ function CalendarGrid({
       const isCurrentMonth = tempDate.getMonth() === month;
       const isToday = tempDate.toDateString() === (/* @__PURE__ */ new Date()).toDateString();
       const isSelected = selectedDate?.toDateString() === tempDate.toDateString();
-      const currentDateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, "0")}-${String(tempDate.getDate()).padStart(2, "0")}`;
+      const currentDateKey = (0, import_utils39.getUTCDateKey)(tempDate);
       const dateOrders = orders.filter((order) => {
         const pickupDate = new Date(order.pickupPlanAt || order.pickupDate);
         const returnDate = new Date(order.returnPlanAt || order.returnDate);
-        const pickupDateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, "0")}-${String(pickupDate.getDate()).padStart(2, "0")}`;
-        const returnDateKey = `${returnDate.getFullYear()}-${String(returnDate.getMonth() + 1).padStart(2, "0")}-${String(returnDate.getDate()).padStart(2, "0")}`;
+        const pickupDateKey = (0, import_utils39.getUTCDateKey)(pickupDate);
+        const returnDateKey = (0, import_utils39.getUTCDateKey)(returnDate);
         const matches = pickupDateKey === currentDateKey || returnDateKey === currentDateKey;
+        if (tempDate.getDate() <= 7) {
+          console.log("\u{1F4C5} CalendarGrid date matching:", {
+            currentDateKey,
+            pickupDateKey,
+            returnDateKey,
+            matches,
+            orderNumber: order.orderNumber
+          });
+        }
         return matches;
       });
-      const pickupOrders = dateOrders.filter((order) => {
-        const pickupDate = new Date(order.pickupPlanAt || order.pickupDate);
-        const pickupDateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, "0")}-${String(pickupDate.getDate()).padStart(2, "0")}`;
-        return pickupDateKey === currentDateKey;
-      });
+      const pickupOrders = dateOrders;
       const returnOrders = [];
       days.push({
         date: new Date(tempDate),
@@ -26939,8 +26942,7 @@ function CalendarGrid({
               day.returnCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime144.jsxs)("div", { className: "flex items-center justify-between px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime144.jsx)("span", { className: "text-blue-700 font-medium", children: t2("labels.return") }),
                 /* @__PURE__ */ (0, import_jsx_runtime144.jsx)("span", { className: "text-blue-800 font-bold", children: day.returnCount })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime144.jsx)("div", { className: "text-xs text-gray-400 text-left", children: t2("labels.more") })
+              ] })
             ] }),
             !day.hasEvents && day.isCurrentMonth && /* @__PURE__ */ (0, import_jsx_runtime144.jsx)("div", { className: "text-xs text-gray-400 text-center py-2", children: t2("labels.noOrders") })
           ] })
@@ -27034,10 +27036,20 @@ function Calendars({
   onLoginClick,
   onDevLogin,
   onRetry,
+  initialDate,
+  onMonthChange,
   className = ""
 }) {
-  const [currentDate, setCurrentDate] = (0, import_react77.useState)(/* @__PURE__ */ new Date());
+  const [currentDate, setCurrentDate] = (0, import_react77.useState)(initialDate || /* @__PURE__ */ new Date());
+  (0, import_react77.useEffect)(() => {
+    if (initialDate) {
+      setCurrentDate(initialDate);
+    }
+  }, [initialDate]);
   const [selectedDate, setSelectedDate] = (0, import_react77.useState)(null);
+  (0, import_react77.useEffect)(() => {
+    onMonthChange?.(currentDate);
+  }, [currentDate, onMonthChange]);
   const goToPreviousMonth = (0, import_react77.useCallback)(() => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   }, []);
@@ -27061,6 +27073,7 @@ function Calendars({
   });
   const totalPickups = monthOrders.length;
   const totalReturns = 0;
+  const totalOrders = monthOrders.length;
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime146.jsxs)("div", { className, children: [
       /* @__PURE__ */ (0, import_jsx_runtime146.jsx)(CalendarHeader, {}),
@@ -27081,6 +27094,8 @@ function Calendars({
       CalendarStats,
       {
         totalPickups,
+        totalReturns,
+        totalOrders,
         currentMonth,
         currentYear
       }
@@ -27546,7 +27561,7 @@ function UsersLoading() {
 
 // src/components/features/Users/components/UserActions.tsx
 var import_react81 = require("react");
-var import_navigation6 = require("next/navigation");
+var import_navigation7 = require("next/navigation");
 var import_ui102 = require("@rentalshop/ui");
 
 // src/components/features/Users/components/UserDetailDialog.tsx
@@ -27559,14 +27574,14 @@ var import_ui101 = require("@rentalshop/ui");
 var import_react79 = require("react");
 
 // src/components/features/Users/lib/UserApiClient.ts
-var import_utils39 = require("@rentalshop/utils");
+var import_utils40 = require("@rentalshop/utils");
 var UserApiClient = class {
   constructor(baseUrl = "/api") {
     this.baseUrl = baseUrl;
   }
   async request(endpoint, options = {}) {
     const url = `${this.baseUrl}${endpoint}`;
-    const token = (0, import_utils39.getAuthToken)() || "";
+    const token = (0, import_utils40.getAuthToken)() || "";
     const config = {
       headers: {
         "Content-Type": "application/json",
@@ -27993,7 +28008,7 @@ var UserDisplayInfo = ({
 };
 
 // src/components/features/Users/components/UserDetailDialog.tsx
-var import_utils40 = require("@rentalshop/utils");
+var import_utils41 = require("@rentalshop/utils");
 var import_hooks49 = require("@rentalshop/hooks");
 var import_jsx_runtime156 = require("react/jsx-runtime");
 var UserDetailDialog = ({
@@ -28015,7 +28030,7 @@ var UserDetailDialog = ({
   const handleDeactivateUser = async () => {
     setIsLoading(true);
     try {
-      const response = await import_utils40.usersApi.updateUserStatus(user.id, "inactive");
+      const response = await import_utils41.usersApi.updateUserStatus(user.id, "inactive");
       if (response.success) {
         const updatedUser = { ...user, isActive: false };
         onUserUpdated?.(updatedUser);
@@ -28033,7 +28048,7 @@ var UserDetailDialog = ({
   const handleActivateUser = async () => {
     setIsLoading(true);
     try {
-      const response = await import_utils40.usersApi.updateUserStatus(user.id, "active");
+      const response = await import_utils41.usersApi.updateUserStatus(user.id, "active");
       if (response.success) {
         const updatedUser = { ...user, isActive: true };
         onUserUpdated?.(updatedUser);
@@ -28057,7 +28072,7 @@ var UserDetailDialog = ({
   const handleDeleteUser = async () => {
     setIsLoading(true);
     try {
-      const response = await import_utils40.usersApi.deleteUserByPublicId(user.id);
+      const response = await import_utils41.usersApi.deleteUserByPublicId(user.id);
       if (response.success) {
         onOpenChange(false);
         onUserUpdated?.(user);
@@ -28160,7 +28175,7 @@ function UserActions({
   onError,
   onSuccess
 }) {
-  const router = (0, import_navigation6.useRouter)();
+  const router = (0, import_navigation7.useRouter)();
   const [isViewDialogOpen, setIsViewDialogOpen] = (0, import_react81.useState)(false);
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = (0, import_react81.useState)(false);
   const [selectedUser, setSelectedUser] = (0, import_react81.useState)(null);
@@ -28587,7 +28602,7 @@ var validateUserUpdateInput = (data) => {
 };
 
 // src/components/features/Users/components/UserForm.tsx
-var import_utils41 = require("@rentalshop/utils");
+var import_utils42 = require("@rentalshop/utils");
 var import_hooks50 = require("@rentalshop/hooks");
 var import_jsx_runtime159 = require("react/jsx-runtime");
 var UserForm = ({
@@ -28689,7 +28704,7 @@ var UserForm = ({
   (0, import_react83.useEffect)(() => {
     if (!isEditMode && canSelectMerchant) {
       setLoadingMerchants(true);
-      import_utils41.merchantsApi.getMerchants().then((response) => {
+      import_utils42.merchantsApi.getMerchants().then((response) => {
         if (response.success && response.data) {
           setMerchants(response.data.merchants || []);
         }
@@ -28713,7 +28728,7 @@ var UserForm = ({
       const merchantId = canSelectMerchant ? formData.merchantId : currentUser?.merchantId || currentUser?.merchant?.id;
       console.log("\u{1F50D} UserForm: Loading outlets for merchantId:", merchantId, "canSelectMerchant:", canSelectMerchant);
       if (merchantId) {
-        import_utils41.outletsApi.getOutletsByMerchant(Number(merchantId)).then((response) => {
+        import_utils42.outletsApi.getOutletsByMerchant(Number(merchantId)).then((response) => {
           console.log("\u{1F50D} UserForm: Outlets API response:", response);
           if (response.success && response.data) {
             const outletsData = response.data.outlets || response.data || [];
@@ -28748,7 +28763,7 @@ var UserForm = ({
       console.log("\u{1F50D} UserForm: Merchant changed, resetting outlet and reloading outlets");
       setFormData((prev) => ({ ...prev, outletId: "" }));
       setLoadingOutlets(true);
-      import_utils41.outletsApi.getOutletsByMerchant(Number(formData.merchantId)).then((response) => {
+      import_utils42.outletsApi.getOutletsByMerchant(Number(formData.merchantId)).then((response) => {
         console.log("\u{1F50D} UserForm: Reloading outlets for new merchant:", response);
         if (response.success && response.data) {
           const outletsData = response.data.outlets || response.data || [];
@@ -30907,7 +30922,7 @@ var CategoryForm = ({
 // src/components/features/Categories/components/CategoryView.tsx
 var import_react94 = require("react");
 var import_hooks66 = require("@rentalshop/hooks");
-var import_utils42 = require("@rentalshop/utils");
+var import_utils43 = require("@rentalshop/utils");
 var import_jsx_runtime182 = require("react/jsx-runtime");
 var CategoryView = ({
   category,
@@ -30954,11 +30969,11 @@ var CategoryView = ({
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: tc("labels.createdAt") }),
-            /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("p", { className: "text-gray-900", children: category.createdAt ? (0, import_utils42.formatDateWithLocale)(category.createdAt, locale2) : tc("labels.unknown") }) })
+            /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("p", { className: "text-gray-900", children: category.createdAt ? (0, import_utils43.formatDateWithLocale)(category.createdAt, locale2) : tc("labels.unknown") }) })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime182.jsx)(Label2, { className: "text-sm font-medium text-gray-700", children: tc("labels.updatedAt") }),
-            /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("p", { className: "text-gray-900", children: category.updatedAt && category.updatedAt !== category.createdAt ? (0, import_utils42.formatDateWithLocale)(category.updatedAt, locale2) : t2("dialog.neverUpdated") }) })
+            /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("div", { className: "mt-1 p-3 bg-gray-50 rounded-md border", children: /* @__PURE__ */ (0, import_jsx_runtime182.jsx)("p", { className: "text-gray-900", children: category.updatedAt && category.updatedAt !== category.createdAt ? (0, import_utils43.formatDateWithLocale)(category.updatedAt, locale2) : t2("dialog.neverUpdated") }) })
           ] })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime182.jsxs)("div", { className: "flex items-center justify-end gap-3 pt-4", children: [
@@ -31362,7 +31377,7 @@ var import_react96 = require("react");
 var import_ui127 = require("@rentalshop/ui");
 var import_lucide_react94 = require("lucide-react");
 var import_constants14 = require("@rentalshop/constants");
-var import_utils43 = require("@rentalshop/utils");
+var import_utils44 = require("@rentalshop/utils");
 var import_jsx_runtime189 = require("react/jsx-runtime");
 var PlanSelection = ({
   plans,
@@ -31415,7 +31430,7 @@ var PlanSelection = ({
     if (!cycleOption)
       return plan.price;
     const totalPrice = plan.price * cycleOption.months;
-    const discount = (0, import_utils43.getBillingCycleDiscount)(cycle);
+    const discount = (0, import_utils44.getBillingCycleDiscount)(cycle);
     const discountAmount = totalPrice * (discount / 100);
     return totalPrice - discountAmount;
   };
@@ -31460,8 +31475,8 @@ var PlanSelection = ({
                 children: /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "text-center", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("div", { className: "font-medium text-text-primary", children: cycle.label }),
                   /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("div", { className: "text-sm text-text-secondary", children: cycle.description }),
-                  (0, import_utils43.getBillingCycleDiscount)(cycle.value) > 0 && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(import_ui127.Badge, { variant: "default", className: "mt-2", children: [
-                    (0, import_utils43.getBillingCycleDiscount)(cycle.value),
+                  (0, import_utils44.getBillingCycleDiscount)(cycle.value) > 0 && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)(import_ui127.Badge, { variant: "default", className: "mt-2", children: [
+                    (0, import_utils44.getBillingCycleDiscount)(cycle.value),
                     "% OFF"
                   ] })
                 ] })
@@ -31495,14 +31510,14 @@ var PlanSelection = ({
                 /* @__PURE__ */ (0, import_jsx_runtime189.jsx)("div", { className: "text-4xl font-bold text-text-primary", children: formatCurrency22(getBillingCyclePrice(plan, selectedCycle), plan.currency) }),
                 /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "text-lg text-text-secondary", children: [
                   "per ",
-                  (0, import_utils43.formatBillingCycle)(selectedCycle).toLowerCase()
+                  (0, import_utils44.formatBillingCycle)(selectedCycle).toLowerCase()
                 ] }),
                 /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "text-sm text-text-tertiary mt-1", children: [
                   formatCurrency22(getBillingCycleMonthlyPrice(plan, selectedCycle), plan.currency),
                   "/month"
                 ] }),
-                (0, import_utils43.getBillingCycleDiscount)(selectedCycle) > 0 && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "text-sm text-action-success mt-1", children: [
-                  (0, import_utils43.getBillingCycleDiscount)(selectedCycle),
+                (0, import_utils44.getBillingCycleDiscount)(selectedCycle) > 0 && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "text-sm text-action-success mt-1", children: [
+                  (0, import_utils44.getBillingCycleDiscount)(selectedCycle),
                   "% discount applied"
                 ] }),
                 plan.trialDays > 0 && /* @__PURE__ */ (0, import_jsx_runtime189.jsxs)("div", { className: "text-sm text-action-primary mt-1", children: [
@@ -32077,7 +32092,7 @@ var PlanStats = ({
 
 // src/components/features/Plans/components/PlanDetailModal.tsx
 var import_lucide_react97 = require("lucide-react");
-var import_utils44 = require("@rentalshop/utils");
+var import_utils45 = require("@rentalshop/utils");
 var import_jsx_runtime194 = require("react/jsx-runtime");
 var BILLING_CYCLES4 = [
   { value: "monthly", label: "Monthly", months: 1, discount: 0 },
@@ -32166,7 +32181,7 @@ var PlanDetailModal = ({
                   ] }) }),
                   /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(CardContent, { className: "pt-0", children: /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)("div", { className: "space-y-2", children: [
                     /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)("div", { className: "text-2xl font-bold text-gray-900", children: [
-                      (0, import_utils44.formatCurrency)(plan.price, plan.currency),
+                      (0, import_utils45.formatCurrency)(plan.price, plan.currency),
                       "/month"
                     ] }),
                     cycle.discount > 0 && /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)("div", { className: "text-sm text-green-600 font-medium", children: [
@@ -32175,11 +32190,11 @@ var PlanDetailModal = ({
                     ] }),
                     /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)("div", { className: "text-sm text-gray-600", children: [
                       "Total: ",
-                      (0, import_utils44.formatCurrency)(discountedPrice, plan.currency)
+                      (0, import_utils45.formatCurrency)(discountedPrice, plan.currency)
                     ] }),
                     savings > 0 && /* @__PURE__ */ (0, import_jsx_runtime194.jsxs)("div", { className: "text-xs text-green-600", children: [
                       "Save: ",
-                      (0, import_utils44.formatCurrency)(savings, plan.currency)
+                      (0, import_utils45.formatCurrency)(savings, plan.currency)
                     ] }),
                     /* @__PURE__ */ (0, import_jsx_runtime194.jsx)(
                       Button,
@@ -32905,7 +32920,7 @@ var BillingCycleDetailDialog = ({
 // src/components/features/Payments/components/PaymentForm.tsx
 var import_react100 = __toESM(require("react"));
 var import_ui135 = require("@rentalshop/ui");
-var import_utils45 = require("@rentalshop/utils");
+var import_utils46 = require("@rentalshop/utils");
 var import_lucide_react100 = require("lucide-react");
 var import_jsx_runtime198 = require("react/jsx-runtime");
 var PAYMENT_METHODS2 = [
@@ -32975,7 +32990,7 @@ var PaymentForm = ({
     setIsSearchingMerchants(true);
     console.log("\u{1F50D} PaymentForm: Starting API call for query:", query);
     try {
-      const response = await import_utils45.merchantsApi.searchMerchants({
+      const response = await import_utils46.merchantsApi.searchMerchants({
         q: query,
         limit: 20,
         sortBy: "name",
@@ -37548,7 +37563,7 @@ var CollectionReturnModal = ({
 // src/components/features/OrderDetail/components/OrderInformation.tsx
 var import_lucide_react122 = require("lucide-react");
 var import_hooks70 = require("@rentalshop/hooks");
-var import_utils47 = require("@rentalshop/utils");
+var import_utils48 = require("@rentalshop/utils");
 var import_jsx_runtime243 = require("react/jsx-runtime");
 var OrderInformation = ({ order }) => {
   const t2 = (0, import_hooks70.useOrderTranslations)();
@@ -37565,7 +37580,7 @@ var OrderInformation = ({ order }) => {
               t2("customer.name"),
               ":"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : order.customerName || t2("customer.noCustomer") })
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.customer?.firstName ? `${order.customer.firstName} ${order.customer.lastName || ""}`.trim() : order.customerName || t2("customer.noCustomer") })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex justify-between", children: [
             /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { className: "text-sm text-gray-600", children: [
@@ -37589,14 +37604,14 @@ var OrderInformation = ({ order }) => {
                 t2("dates.pickupDate"),
                 ":"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.pickupPlanAt ? (0, import_utils47.useFormattedFullDate)(order.pickupPlanAt) : "N/A" })
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.pickupPlanAt ? (0, import_utils48.useFormattedFullDate)(order.pickupPlanAt) : "N/A" })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex justify-between", children: [
               /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { className: "text-sm text-gray-600", children: [
                 t2("dates.returnDate"),
                 ":"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.returnPlanAt ? (0, import_utils47.useFormattedFullDate)(order.returnPlanAt) : "N/A" })
+              /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.returnPlanAt ? (0, import_utils48.useFormattedFullDate)(order.returnPlanAt) : "N/A" })
             ] })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { className: "flex justify-between", children: [
@@ -37604,7 +37619,7 @@ var OrderInformation = ({ order }) => {
               t2("detail.orderDate"),
               ":"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.createdAt ? (0, import_utils47.useFormattedFullDate)(order.createdAt) : "N/A" })
+            /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { className: "text-sm font-medium", children: order.createdAt ? (0, import_utils48.useFormattedFullDate)(order.createdAt) : "N/A" })
           ] })
         ] })
       ] }),
@@ -38045,7 +38060,7 @@ var OrderActionsSection = ({
 };
 
 // src/components/features/OrderDetail/OrderDetail.tsx
-var import_utils49 = require("@rentalshop/utils");
+var import_utils50 = require("@rentalshop/utils");
 var import_jsx_runtime248 = require("react/jsx-runtime");
 var OrderDetailSkeleton = () => {
   return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { className: "space-y-4", children: [
@@ -38298,7 +38313,7 @@ var OrderDetail = ({
   const handlePickupOrder = async () => {
     try {
       setIsPickupLoading(true);
-      await import_utils49.ordersApi.pickupOrder(order.id);
+      await import_utils50.ordersApi.pickupOrder(order.id);
       toastSuccess("Pickup Successful", "Order pickup has been processed.");
       onStatusChange && onStatusChange(order.id, "PICKUPED");
       setIsCollectionModalOpen(false);
@@ -38314,7 +38329,7 @@ var OrderDetail = ({
   const handleReturnOrder = async () => {
     try {
       setIsReturnLoading(true);
-      await import_utils49.ordersApi.returnOrder(order.id);
+      await import_utils50.ordersApi.returnOrder(order.id);
       toastSuccess("Return Successful", "Order return has been processed.");
       onStatusChange && onStatusChange(order.id, "RETURNED");
       setIsReturnModalOpen(false);
@@ -38333,7 +38348,7 @@ var OrderDetail = ({
   const handleCancelOrder = async () => {
     try {
       setIsCancelLoading(true);
-      await import_utils49.ordersApi.cancelOrder(order.id);
+      await import_utils50.ordersApi.cancelOrder(order.id);
       toastSuccess("Cancellation Successful", "Order has been cancelled.");
       onStatusChange && onStatusChange(order.id, "CANCELLED");
       if (typeof window !== "undefined") {
@@ -38651,10 +38666,10 @@ function OutletDetailLoading() {
 
 // src/components/features/Settings/Settings.tsx
 var import_react110 = require("react");
-var import_navigation8 = require("next/navigation");
+var import_navigation9 = require("next/navigation");
 var import_lucide_react134 = require("lucide-react");
 var import_hooks85 = require("@rentalshop/hooks");
-var import_utils52 = require("@rentalshop/utils");
+var import_utils53 = require("@rentalshop/utils");
 var import_ui156 = require("@rentalshop/ui");
 
 // src/components/features/Settings/components/SettingsLayout.tsx
@@ -38825,7 +38840,7 @@ var ProfileSection = ({
 var import_react107 = require("react");
 var import_ui150 = require("@rentalshop/ui");
 var import_lucide_react129 = require("lucide-react");
-var import_utils51 = require("@rentalshop/utils");
+var import_utils52 = require("@rentalshop/utils");
 var import_constants17 = require("@rentalshop/constants");
 var import_hooks78 = require("@rentalshop/hooks");
 var import_jsx_runtime254 = require("react/jsx-runtime");
@@ -38864,7 +38879,7 @@ var MerchantSection = ({
         fetchingRef.current = true;
         setLoadingMerchant(true);
         try {
-          const result = await import_utils51.merchantsApi.getMerchantById(user.merchantId);
+          const result = await import_utils52.merchantsApi.getMerchantById(user.merchantId);
           console.log("\u{1F50D} Merchant API response:", result);
           if (result.success && result.data) {
             const merchantInfo = result.data.merchant || result.data;
@@ -39114,7 +39129,7 @@ var MerchantSection = ({
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("p", { className: "text-sm text-gray-600 mb-4", children: t2("merchant.currencyDesc") }),
       /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: CURRENCY_OPTIONS2.map((option) => {
-        const config = (0, import_utils51.getCurrency)(option.value);
+        const config = (0, import_utils52.getCurrency)(option.value);
         const isSelected = selectedCurrency === option.value;
         const isCurrent = currentCurrency === option.value;
         return /* @__PURE__ */ (0, import_jsx_runtime254.jsxs)(
@@ -39147,8 +39162,8 @@ var MerchantSection = ({
                   ":"
                 ] }),
                 /* @__PURE__ */ (0, import_jsx_runtime254.jsxs)("div", { className: "flex gap-4 text-sm text-gray-700", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("span", { children: (0, import_utils51.formatCurrency)(100, option.value) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("span", { children: (0, import_utils51.formatCurrency)(1e4, option.value) })
+                  /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("span", { children: (0, import_utils52.formatCurrency)(100, option.value) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime254.jsx)("span", { children: (0, import_utils52.formatCurrency)(1e4, option.value) })
                 ] })
               ] })
             ]
@@ -39416,7 +39431,7 @@ var AccountSection = ({
 // src/components/features/Settings/components/LanguageSection.tsx
 var import_react108 = require("react");
 var import_lucide_react132 = require("lucide-react");
-var import_navigation7 = require("next/navigation");
+var import_navigation8 = require("next/navigation");
 var import_hooks82 = require("@rentalshop/hooks");
 var import_jsx_runtime258 = require("react/jsx-runtime");
 var languages = [
@@ -39426,7 +39441,7 @@ var languages = [
 function LanguageSection() {
   const t2 = (0, import_hooks82.useSettingsTranslations)();
   const currentLocale = Z();
-  const router = (0, import_navigation7.useRouter)();
+  const router = (0, import_navigation8.useRouter)();
   const [isPending, startTransition] = (0, import_react108.useTransition)();
   const [selectedLanguage, setSelectedLanguage] = (0, import_react108.useState)(currentLocale);
   const handleLanguageChange = (newLocale) => {
@@ -39724,8 +39739,8 @@ var SettingsComponent = () => {
   const { user, logout, loading } = (0, import_hooks85.useAuth)();
   const { toastSuccess, toastError } = (0, import_ui156.useToast)();
   const { currency, setCurrency } = useCurrency2();
-  const router = (0, import_navigation8.useRouter)();
-  const searchParams = (0, import_navigation8.useSearchParams)();
+  const router = (0, import_navigation9.useRouter)();
+  const searchParams = (0, import_navigation9.useSearchParams)();
   const tabFromUrl = searchParams.get("tab") || "profile";
   const [activeSection, setActiveSection] = (0, import_react110.useState)(tabFromUrl);
   const [isEditingPersonal, setIsEditingPersonal] = (0, import_react110.useState)(false);
@@ -39789,7 +39804,7 @@ var SettingsComponent = () => {
     const fetchSubscriptionData = async () => {
       try {
         setSubscriptionLoading(true);
-        const response = await import_utils52.subscriptionsApi.getCurrentUserSubscriptionStatus();
+        const response = await import_utils53.subscriptionsApi.getCurrentUserSubscriptionStatus();
         console.log("\u{1F50D} Settings - Subscription API response:", response);
         if (response.success && response.data) {
           const data = response.data;
@@ -39910,7 +39925,7 @@ var SettingsComponent = () => {
   const handleUpdatePersonalProfile = async () => {
     try {
       setIsUpdating(true);
-      const response = await import_utils52.settingsApi.updateUserProfile(personalFormData);
+      const response = await import_utils53.settingsApi.updateUserProfile(personalFormData);
       if (response.success) {
         const storedAuth = localStorage.getItem("authData");
         if (storedAuth) {
@@ -39949,7 +39964,7 @@ var SettingsComponent = () => {
       console.log("\u{1F527} handleUpdateMerchantInfo called");
       console.log("\u{1F527} merchantFormData:", merchantFormData);
       setIsUpdating(true);
-      const response = await import_utils52.settingsApi.updateMerchantInfo(merchantFormData);
+      const response = await import_utils53.settingsApi.updateMerchantInfo(merchantFormData);
       console.log("\u{1F527} API response:", response);
       if (response.success) {
         console.log("\u{1F527} API success, updating localStorage...");
@@ -39991,7 +40006,7 @@ var SettingsComponent = () => {
   const handleUpdateOutletInfo = async () => {
     try {
       setIsUpdating(true);
-      const response = await import_utils52.settingsApi.updateOutletInfo(outletFormData);
+      const response = await import_utils53.settingsApi.updateOutletInfo(outletFormData);
       if (response.success) {
         setIsEditingOutlet(false);
         toastSuccess("Success", t2("messages.outletInfoUpdated"));
@@ -40018,7 +40033,7 @@ var SettingsComponent = () => {
       if (!user?.id) {
         throw new Error("User ID not found");
       }
-      const response = await import_utils52.usersApi.deleteUser(user.id);
+      const response = await import_utils53.usersApi.deleteUser(user.id);
       if (response.success) {
         toastSuccess("Account Deleted", t2("messages.accountDeleted"));
         await logout();
@@ -40041,7 +40056,7 @@ var SettingsComponent = () => {
       if (passwordData.newPassword.length < 6) {
         throw new Error(t2("messages.passwordTooShort"));
       }
-      const response = await import_utils52.authApi.changePassword(passwordData.currentPassword, passwordData.newPassword);
+      const response = await import_utils53.authApi.changePassword(passwordData.currentPassword, passwordData.newPassword);
       if (response.success) {
         setShowChangePassword(false);
         setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -40058,7 +40073,7 @@ var SettingsComponent = () => {
   const handleCurrencyChange = async (newCurrency) => {
     try {
       setIsUpdating(true);
-      const response = await import_utils52.settingsApi.updateMerchantCurrency({ currency: newCurrency });
+      const response = await import_utils53.settingsApi.updateMerchantCurrency({ currency: newCurrency });
       if (response.success) {
         setCurrency(newCurrency);
         const storedAuth = localStorage.getItem("authData");
@@ -40233,7 +40248,7 @@ var SecuritySection = ({
 // src/components/features/Settings/components/CurrencySection.tsx
 var import_react111 = require("react");
 var import_lucide_react136 = require("lucide-react");
-var import_utils53 = require("@rentalshop/utils");
+var import_utils54 = require("@rentalshop/utils");
 var import_ui158 = require("@rentalshop/ui");
 var import_jsx_runtime263 = require("react/jsx-runtime");
 var CURRENCY_OPTIONS = [
@@ -40287,9 +40302,9 @@ var CurrencySection = ({
         /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_ui158.CardDescription, { children: "Your currently active currency for all price displays" })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_ui158.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-3xl", children: (0, import_utils53.getCurrency)(currentCurrency)?.symbol || "$" }),
+        /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-3xl", children: (0, import_utils54.getCurrency)(currentCurrency)?.symbol || "$" }),
         /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "flex-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold text-gray-900", children: (0, import_utils53.getCurrency)(currentCurrency)?.name || "US Dollar" }),
+          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold text-gray-900", children: (0, import_utils54.getCurrency)(currentCurrency)?.name || "US Dollar" }),
           /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "text-sm text-gray-600", children: [
             "Code: ",
             currentCurrency
@@ -40307,7 +40322,7 @@ var CurrencySection = ({
         /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_ui158.CardDescription, { children: "Choose from our supported currencies" })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_ui158.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: CURRENCY_OPTIONS.map((option) => {
-        const config = (0, import_utils53.getCurrency)(option.value);
+        const config = (0, import_utils54.getCurrency)(option.value);
         if (!config)
           return null;
         const isSelected = selectedCurrency === option.value;
@@ -40338,15 +40353,15 @@ var CurrencySection = ({
                 /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "space-y-1", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "text-sm text-gray-700", children: [
                     /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("span", { className: "text-gray-500", children: "Small: " }),
-                    /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("span", { className: "font-medium", children: (0, import_utils53.formatCurrency)(10, option.value) })
+                    /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("span", { className: "font-medium", children: (0, import_utils54.formatCurrency)(10, option.value) })
                   ] }),
                   /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "text-sm text-gray-700", children: [
                     /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("span", { className: "text-gray-500", children: "Medium: " }),
-                    /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("span", { className: "font-medium", children: (0, import_utils53.formatCurrency)(1e3, option.value) })
+                    /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("span", { className: "font-medium", children: (0, import_utils54.formatCurrency)(1e3, option.value) })
                   ] }),
                   /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "text-sm text-gray-700", children: [
                     /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("span", { className: "text-gray-500", children: "Large: " }),
-                    /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("span", { className: "font-medium", children: (0, import_utils53.formatCurrency)(1e6, option.value) })
+                    /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("span", { className: "font-medium", children: (0, import_utils54.formatCurrency)(1e6, option.value) })
                   ] })
                 ] })
               ] }),
@@ -40362,13 +40377,13 @@ var CurrencySection = ({
         /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_ui158.CardTitle, { className: "text-lg", children: "Currency Details" }),
         /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)(import_ui158.CardDescription, { children: [
           "Technical information about ",
-          (0, import_utils53.getCurrency)(selectedCurrency)?.name || "Selected Currency"
+          (0, import_utils54.getCurrency)(selectedCurrency)?.name || "Selected Currency"
         ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime263.jsx)(import_ui158.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [
         /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-sm text-gray-500", children: "Symbol" }),
-          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold", children: (0, import_utils53.getCurrency)(selectedCurrency)?.symbol || "$" })
+          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold", children: (0, import_utils54.getCurrency)(selectedCurrency)?.symbol || "$" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-sm text-gray-500", children: "Code" }),
@@ -40376,15 +40391,15 @@ var CurrencySection = ({
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-sm text-gray-500", children: "Decimal Places" }),
-          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold", children: (0, import_utils53.getCurrency)(selectedCurrency)?.maxFractionDigits || 2 })
+          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold", children: (0, import_utils54.getCurrency)(selectedCurrency)?.maxFractionDigits || 2 })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-sm text-gray-500", children: "Symbol Position" }),
-          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold capitalize", children: (0, import_utils53.getCurrency)(selectedCurrency)?.symbolBefore ? "before" : "after" })
+          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold capitalize", children: (0, import_utils54.getCurrency)(selectedCurrency)?.symbolBefore ? "before" : "after" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime263.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-sm text-gray-500", children: "Locale" }),
-          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold", children: (0, import_utils53.getCurrency)(selectedCurrency)?.locale || "en-US" })
+          /* @__PURE__ */ (0, import_jsx_runtime263.jsx)("div", { className: "text-lg font-semibold", children: (0, import_utils54.getCurrency)(selectedCurrency)?.locale || "en-US" })
         ] })
       ] }) })
     ] }),
@@ -41354,7 +41369,7 @@ function Navigation({
 // src/components/layout/AdminSidebar.tsx
 var import_react117 = require("react");
 var import_link3 = __toESM(require("next/link"));
-var import_navigation9 = require("next/navigation");
+var import_navigation10 = require("next/navigation");
 var import_ui162 = require("@rentalshop/ui");
 var import_ui163 = require("@rentalshop/ui");
 var import_lucide_react141 = require("lucide-react");
@@ -41424,7 +41439,7 @@ var AdminSidebar = ({
   notificationsCount = 0
 }) => {
   const [expandedItems, setExpandedItems] = (0, import_react117.useState)([]);
-  const pathname = (0, import_navigation9.usePathname)();
+  const pathname = (0, import_navigation10.usePathname)();
   const toggleExpanded = (href) => {
     setExpandedItems(
       (prev) => prev.includes(href) ? prev.filter((item) => item !== href) : [...prev, href]
@@ -41562,7 +41577,7 @@ var AdminSidebar = ({
 // src/components/layout/ClientSidebar.tsx
 var import_react118 = require("react");
 var import_link4 = __toESM(require("next/link"));
-var import_navigation10 = require("next/navigation");
+var import_navigation11 = require("next/navigation");
 var import_ui164 = require("@rentalshop/ui");
 var import_ui165 = require("@rentalshop/ui");
 var import_hooks87 = require("@rentalshop/hooks");
@@ -41640,7 +41655,7 @@ var ClientSidebar = ({
   const [clickedTab, setClickedTab] = (0, import_react118.useState)(null);
   const [localCurrentPage, setLocalCurrentPage] = (0, import_react118.useState)(currentPath);
   const [isNavigating, setIsNavigating] = (0, import_react118.useState)(null);
-  const pathname = (0, import_navigation10.usePathname)();
+  const pathname = (0, import_navigation11.usePathname)();
   const t2 = (0, import_hooks87.useCommonTranslations)();
   const filterMenuItemsByRole = (items, userRole) => {
     if (!userRole)

@@ -76,6 +76,13 @@ export interface Order extends BaseEntityWithOutlet {
   orderItems?: OrderItem[];
   payments?: Payment[];
   createdBy?: UserReference;
+  
+  // Flattened fields for API responses (when customer object is not included)
+  customerName?: string;
+  customerPhone?: string;
+  outletName?: string;
+  merchantName?: string;
+  createdByName?: string;
 }
 
 // ============================================================================
@@ -365,6 +372,10 @@ export interface OrderListItem {
   itemCount: number;
   paymentCount: number;
   totalPaid: number;
+  
+  // Rental-specific fields for list view
+  pickupPlanAt?: Date | string;
+  returnPlanAt?: Date | string;
 }
 
 /**

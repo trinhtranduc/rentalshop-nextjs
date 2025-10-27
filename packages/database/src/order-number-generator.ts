@@ -437,7 +437,7 @@ async function generateRandomNumber(
 
 /**
  * Generate compact numeric order number: ORD{outletId}{random}
- * Format: ORD00112345 (no hyphens, 5-digit random number)
+ * Format: ORD00112345678 (no hyphens, 8-digit random number)
  */
 async function generateCompactNumericNumber(
   outletIdStr: string,
@@ -448,8 +448,8 @@ async function generateCompactNumericNumber(
 
   while (retryCount < maxRetries) {
     try {
-      // Generate 5-digit random number
-      const randomStr = generateRandomString(5, true); // 5 digits, numeric only
+      // Generate 8-digit random number
+      const randomStr = generateRandomString(8, true); // 8 digits, numeric only
       const orderNumber = `${prefix}${outletIdStr}${randomStr}`;
 
       // Check for uniqueness

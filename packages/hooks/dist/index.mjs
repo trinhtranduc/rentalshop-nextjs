@@ -1061,6 +1061,7 @@ function usePlansData(options) {
 
 // src/hooks/useProductAvailability.ts
 import { useCallback as useCallback8 } from "react";
+import { getUTCDateKey } from "@rentalshop/utils";
 function useProductAvailability() {
   const calculateAvailability = useCallback8((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const pickup = new Date(pickupDate);
@@ -1114,7 +1115,7 @@ function useProductAvailability() {
     const end = new Date(endDate);
     const results = [];
     for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      const dateStr = date.toISOString().split("T")[0];
+      const dateStr = getUTCDateKey(date);
       const status = calculateAvailability(
         product,
         dateStr,

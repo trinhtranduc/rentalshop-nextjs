@@ -13727,6 +13727,7 @@ var LoginForm_default = LoginForm;
 
 // src/components/forms/RegisterForm.tsx
 import { useState as useState23 } from "react";
+import { useRouter as useRouter2 } from "next/navigation";
 import { Eye as Eye2, EyeOff as EyeOff2, Mail as Mail2, Lock as Lock2, User as User3, Store, Phone, CheckCircle as CheckCircle10, MapPin } from "lucide-react";
 import { authApi } from "@rentalshop/utils";
 import {
@@ -13758,6 +13759,7 @@ var RegisterForm = ({
   user,
   registrationError
 }) => {
+  const router = useRouter2();
   const [viewPass, setViewPass] = useState23(false);
   const [viewConfirmPass, setViewConfirmPass] = useState23(false);
   const [currentStep, setCurrentStep] = useState23(1);
@@ -13857,7 +13859,11 @@ var RegisterForm = ({
         setCurrentStep(1);
         setAccountData({});
         setTimeout(() => {
-          window.location.href = "/login";
+          if (onNavigate) {
+            onNavigate("/login");
+          } else {
+            router.push("/login");
+          }
         }, 2e3);
       } catch (error) {
         toastError(
@@ -15388,7 +15394,7 @@ import { useState as useState25 } from "react";
 // src/components/layout/sidebar.tsx
 import { useEffect as useEffect15 } from "react";
 import Link2 from "next/link";
-import { useRouter as useRouter2 } from "next/navigation";
+import { useRouter as useRouter3 } from "next/navigation";
 import { cn as cn3 } from "@rentalshop/ui";
 import { Button as Button11, Card as Card10 } from "@rentalshop/ui";
 import { ChevronLeft as ChevronLeft2, ChevronRight as ChevronRight3, Building2 } from "lucide-react";
@@ -15447,7 +15453,7 @@ var Sidebar = ({
   isCollapsed = false,
   onCollapseToggle
 }) => {
-  const router = useRouter2();
+  const router = useRouter3();
   const { navigate, navigatingTo } = useOptimisticNavigation();
   useEffect15(() => {
     menuItems.forEach((item) => {
@@ -16673,7 +16679,7 @@ function ProductDetailLoading() {
 }
 
 // src/components/features/Products/components/ProductDetailList.tsx
-import { useRouter as useRouter3 } from "next/navigation";
+import { useRouter as useRouter4 } from "next/navigation";
 import { useProductTranslations as useProductTranslations6, useCommonTranslations as useCommonTranslations9 } from "@rentalshop/hooks";
 import {
   Package as Package9
@@ -16692,7 +16698,7 @@ var ProductDetailList = ({
   isMerchantAccount = false,
   className = ""
 }) => {
-  const router = useRouter3();
+  const router = useRouter4();
   const t2 = useProductTranslations6();
   const tc = useCommonTranslations9();
   const normalizeImages = (images) => {
@@ -17690,8 +17696,8 @@ var OrderTable = React51.memo(function OrderTable2({
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3 whitespace-nowrap", children: getOrderTypeBadge(order.orderType) }),
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3 whitespace-nowrap", children: getStatusBadge(order.status) }),
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3", children: /* @__PURE__ */ jsxs75("div", { className: "text-sm", children: [
-        /* @__PURE__ */ jsx90("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName || order.customer?.firstName ? `${order.customer?.firstName || ""} ${order.customer?.lastName || ""}`.trim() || order.customerName : "N/A" }),
-        /* @__PURE__ */ jsx90("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone || order.customer?.phone || "N/A" })
+        /* @__PURE__ */ jsx90("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName || "N/A" }),
+        /* @__PURE__ */ jsx90("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone || "N/A" })
       ] }) }),
       /* @__PURE__ */ jsx90("td", { className: "px-6 py-3 whitespace-nowrap", children: /* @__PURE__ */ jsxs75("div", { className: "text-sm", children: [
         /* @__PURE__ */ jsx90("div", { className: "font-medium text-gray-900 dark:text-white", children: formatMoney(order.totalAmount) }),
@@ -20011,7 +20017,7 @@ var CustomerForm = ({
 
 // src/components/features/Customers/components/CustomerActions.tsx
 import { useState as useState41, useEffect as useEffect23 } from "react";
-import { useRouter as useRouter4 } from "next/navigation";
+import { useRouter as useRouter5 } from "next/navigation";
 import { Plus as Plus5, Filter as Filter2 } from "lucide-react";
 import { jsx as jsx106, jsxs as jsxs90 } from "react/jsx-runtime";
 function CustomerActions({
@@ -20023,7 +20029,7 @@ function CustomerActions({
   onViewOrders
 }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState41(false);
-  const router = useRouter4();
+  const router = useRouter5();
   useEffect23(() => {
     const handleCustomerAction = (event) => {
       const { action, customer } = event.detail;
@@ -26503,7 +26509,7 @@ function Merchants({
 var Merchants_default = Merchants;
 
 // src/components/features/Merchants/components/MerchantDetail.tsx
-import { useRouter as useRouter5 } from "next/navigation";
+import { useRouter as useRouter6 } from "next/navigation";
 
 // src/components/features/Merchants/components/MerchantSubscriptionSection.tsx
 import { useState as useState58, useEffect as useEffect34 } from "react";
@@ -26641,7 +26647,7 @@ function MerchantDetail({
   onSuspend,
   onReactivate
 }) {
-  const router = useRouter5();
+  const router = useRouter6();
   const navigateToPage = (page, id) => {
     const url = id ? `/${page}/${id}` : `/${page}`;
     router.push(url);
@@ -26784,7 +26790,7 @@ function MerchantDetail({
 }
 
 // src/components/features/Calendars/Calendars.tsx
-import { useState as useState59, useCallback as useCallback9 } from "react";
+import { useState as useState59, useEffect as useEffect35, useCallback as useCallback9 } from "react";
 
 // src/components/features/Calendars/components/CalendarHeader.tsx
 import { Calendar as Calendar17 } from "lucide-react";
@@ -26880,47 +26886,38 @@ function CalendarNavigation({
 }
 
 // src/components/features/Calendars/components/CalendarStats.tsx
-import { Package as Package15, ArrowUpRight } from "lucide-react";
+import { Clock as Clock17, CheckCircle as CheckCircle17, Package as Package15 } from "lucide-react";
 import { useCalendarTranslations as useCalendarTranslations3 } from "@rentalshop/hooks";
 import { jsx as jsx142, jsxs as jsxs125 } from "react/jsx-runtime";
 function CalendarStats({
   totalPickups,
+  totalReturns,
+  totalOrders,
   currentMonth,
   currentYear,
   className = ""
 }) {
   const t2 = useCalendarTranslations3();
-  const monthNames = [
-    t2("months.january"),
-    t2("months.february"),
-    t2("months.march"),
-    t2("months.april"),
-    t2("months.may"),
-    t2("months.june"),
-    t2("months.july"),
-    t2("months.august"),
-    t2("months.september"),
-    t2("months.october"),
-    t2("months.november"),
-    t2("months.december")
-  ];
-  return /* @__PURE__ */ jsxs125("div", { className: `grid grid-cols-1 md:grid-cols-2 gap-4 ${className}`, children: [
-    /* @__PURE__ */ jsx142("div", { className: "bg-white rounded-lg border border-gray-200 p-4", children: /* @__PURE__ */ jsxs125("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ jsx142("div", { className: "w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx142(ArrowUpRight, { className: "w-5 h-5 text-green-600" }) }),
-      /* @__PURE__ */ jsxs125("div", { children: [
-        /* @__PURE__ */ jsx142("p", { className: "text-sm font-medium text-gray-600", children: t2("labels.pickupOrders") }),
-        /* @__PURE__ */ jsx142("p", { className: "text-2xl font-bold text-gray-900", children: totalPickups })
+  return /* @__PURE__ */ jsxs125("div", { className: `grid grid-cols-1 md:grid-cols-3 gap-4 ${className}`, children: [
+    /* @__PURE__ */ jsx142("div", { className: "bg-blue-50 rounded-lg p-4", children: /* @__PURE__ */ jsxs125("div", { className: "flex items-center", children: [
+      /* @__PURE__ */ jsx142("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx142(Clock17, { className: "w-6 h-6 text-blue-700" }) }),
+      /* @__PURE__ */ jsxs125("div", { className: "ml-3", children: [
+        /* @__PURE__ */ jsx142("p", { className: "text-sm font-medium text-blue-700", children: t2("labels.pickupOrders") }),
+        /* @__PURE__ */ jsx142("p", { className: "text-2xl font-bold text-blue-900", children: totalPickups })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsx142("div", { className: "bg-white rounded-lg border border-gray-200 p-4", children: /* @__PURE__ */ jsxs125("div", { className: "flex items-center space-x-3", children: [
-      /* @__PURE__ */ jsx142("div", { className: "w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx142(Package15, { className: "w-5 h-5 text-purple-600" }) }),
-      /* @__PURE__ */ jsxs125("div", { children: [
-        /* @__PURE__ */ jsx142("p", { className: "text-sm font-medium text-gray-600", children: t2("labels.month") }),
-        /* @__PURE__ */ jsxs125("p", { className: "text-lg font-semibold text-gray-900", children: [
-          monthNames[currentMonth],
-          " ",
-          currentYear
-        ] })
+    /* @__PURE__ */ jsx142("div", { className: "bg-green-50 rounded-lg p-4", children: /* @__PURE__ */ jsxs125("div", { className: "flex items-center", children: [
+      /* @__PURE__ */ jsx142("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx142(CheckCircle17, { className: "w-6 h-6 text-green-600" }) }),
+      /* @__PURE__ */ jsxs125("div", { className: "ml-3", children: [
+        /* @__PURE__ */ jsx142("p", { className: "text-sm font-medium text-green-600", children: t2("labels.returnOrders") }),
+        /* @__PURE__ */ jsx142("p", { className: "text-2xl font-bold text-green-900", children: totalReturns })
+      ] })
+    ] }) }),
+    /* @__PURE__ */ jsx142("div", { className: "bg-purple-50 rounded-lg p-4", children: /* @__PURE__ */ jsxs125("div", { className: "flex items-center", children: [
+      /* @__PURE__ */ jsx142("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx142(Package15, { className: "w-6 h-6 text-purple-600" }) }),
+      /* @__PURE__ */ jsxs125("div", { className: "ml-3", children: [
+        /* @__PURE__ */ jsx142("p", { className: "text-sm font-medium text-purple-600", children: t2("labels.totalOrders") }),
+        /* @__PURE__ */ jsx142("p", { className: "text-2xl font-bold text-purple-900", children: totalOrders })
       ] })
     ] }) })
   ] });
@@ -26929,6 +26926,7 @@ function CalendarStats({
 // src/components/features/Calendars/components/CalendarGrid.tsx
 import React82 from "react";
 import { useCalendarTranslations as useCalendarTranslations4 } from "@rentalshop/hooks";
+import { getUTCDateKey } from "@rentalshop/utils";
 import { jsx as jsx143, jsxs as jsxs126 } from "react/jsx-runtime";
 function CalendarGrid({
   currentDate,
@@ -26954,20 +26952,25 @@ function CalendarGrid({
       const isCurrentMonth = tempDate.getMonth() === month;
       const isToday = tempDate.toDateString() === (/* @__PURE__ */ new Date()).toDateString();
       const isSelected = selectedDate?.toDateString() === tempDate.toDateString();
-      const currentDateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, "0")}-${String(tempDate.getDate()).padStart(2, "0")}`;
+      const currentDateKey = getUTCDateKey(tempDate);
       const dateOrders = orders.filter((order) => {
         const pickupDate = new Date(order.pickupPlanAt || order.pickupDate);
         const returnDate = new Date(order.returnPlanAt || order.returnDate);
-        const pickupDateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, "0")}-${String(pickupDate.getDate()).padStart(2, "0")}`;
-        const returnDateKey = `${returnDate.getFullYear()}-${String(returnDate.getMonth() + 1).padStart(2, "0")}-${String(returnDate.getDate()).padStart(2, "0")}`;
+        const pickupDateKey = getUTCDateKey(pickupDate);
+        const returnDateKey = getUTCDateKey(returnDate);
         const matches = pickupDateKey === currentDateKey || returnDateKey === currentDateKey;
+        if (tempDate.getDate() <= 7) {
+          console.log("\u{1F4C5} CalendarGrid date matching:", {
+            currentDateKey,
+            pickupDateKey,
+            returnDateKey,
+            matches,
+            orderNumber: order.orderNumber
+          });
+        }
         return matches;
       });
-      const pickupOrders = dateOrders.filter((order) => {
-        const pickupDate = new Date(order.pickupPlanAt || order.pickupDate);
-        const pickupDateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, "0")}-${String(pickupDate.getDate()).padStart(2, "0")}`;
-        return pickupDateKey === currentDateKey;
-      });
+      const pickupOrders = dateOrders;
       const returnOrders = [];
       days.push({
         date: new Date(tempDate),
@@ -27039,8 +27042,7 @@ function CalendarGrid({
               day.returnCount > 0 && /* @__PURE__ */ jsxs126("div", { className: "flex items-center justify-between px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs", children: [
                 /* @__PURE__ */ jsx143("span", { className: "text-blue-700 font-medium", children: t2("labels.return") }),
                 /* @__PURE__ */ jsx143("span", { className: "text-blue-800 font-bold", children: day.returnCount })
-              ] }),
-              /* @__PURE__ */ jsx143("div", { className: "text-xs text-gray-400 text-left", children: t2("labels.more") })
+              ] })
             ] }),
             !day.hasEvents && day.isCurrentMonth && /* @__PURE__ */ jsx143("div", { className: "text-xs text-gray-400 text-center py-2", children: t2("labels.noOrders") })
           ] })
@@ -27134,10 +27136,20 @@ function Calendars({
   onLoginClick,
   onDevLogin,
   onRetry,
+  initialDate,
+  onMonthChange,
   className = ""
 }) {
-  const [currentDate, setCurrentDate] = useState59(/* @__PURE__ */ new Date());
+  const [currentDate, setCurrentDate] = useState59(initialDate || /* @__PURE__ */ new Date());
+  useEffect35(() => {
+    if (initialDate) {
+      setCurrentDate(initialDate);
+    }
+  }, [initialDate]);
   const [selectedDate, setSelectedDate] = useState59(null);
+  useEffect35(() => {
+    onMonthChange?.(currentDate);
+  }, [currentDate, onMonthChange]);
   const goToPreviousMonth = useCallback9(() => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   }, []);
@@ -27161,6 +27173,7 @@ function Calendars({
   });
   const totalPickups = monthOrders.length;
   const totalReturns = 0;
+  const totalOrders = monthOrders.length;
   if (loading) {
     return /* @__PURE__ */ jsxs128("div", { className, children: [
       /* @__PURE__ */ jsx145(CalendarHeader, {}),
@@ -27181,6 +27194,8 @@ function Calendars({
       CalendarStats,
       {
         totalPickups,
+        totalReturns,
+        totalOrders,
         currentMonth,
         currentYear
       }
@@ -27198,7 +27213,7 @@ function Calendars({
 }
 
 // src/components/features/Calendars/components/OrdersList.tsx
-import { Package as Package16, User as User10, Clock as Clock17 } from "lucide-react";
+import { Package as Package16, User as User10, Clock as Clock18 } from "lucide-react";
 import { useOrderTranslations as useOrderTranslations14 } from "@rentalshop/hooks";
 import { jsx as jsx146, jsxs as jsxs129 } from "react/jsx-runtime";
 function OrdersList({
@@ -27248,7 +27263,7 @@ function OrdersList({
             /* @__PURE__ */ jsx146("span", { className: "text-sm text-gray-700", children: order.productName })
           ] }),
           /* @__PURE__ */ jsxs129("div", { className: "flex items-center text-sm text-gray-600", children: [
-            /* @__PURE__ */ jsx146(Clock17, { className: "w-4 h-4 mr-2" }),
+            /* @__PURE__ */ jsx146(Clock18, { className: "w-4 h-4 mr-2" }),
             /* @__PURE__ */ jsx146("span", { className: "capitalize", children: order.status })
           ] })
         ]
@@ -27659,7 +27674,7 @@ function UsersLoading() {
 
 // src/components/features/Users/components/UserActions.tsx
 import { useState as useState62, useEffect as useEffect36 } from "react";
-import { useRouter as useRouter6 } from "next/navigation";
+import { useRouter as useRouter7 } from "next/navigation";
 import { ConfirmationDialog as ConfirmationDialog3 } from "@rentalshop/ui";
 
 // src/components/features/Users/components/UserDetailDialog.tsx
@@ -28280,7 +28295,7 @@ function UserActions({
   onError,
   onSuccess
 }) {
-  const router = useRouter6();
+  const router = useRouter7();
   const [isViewDialogOpen, setIsViewDialogOpen] = useState62(false);
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState62(false);
   const [selectedUser, setSelectedUser] = useState62(null);
@@ -29920,7 +29935,7 @@ function OutletGrid({
 
 // src/components/features/Outlets/components/OutletTable.tsx
 import React92 from "react";
-import { Eye as Eye18, Edit as Edit14, XCircle as XCircle13, CheckCircle as CheckCircle18, MoreVertical as MoreVertical6, Building2 as Building211 } from "lucide-react";
+import { Eye as Eye18, Edit as Edit14, XCircle as XCircle13, CheckCircle as CheckCircle19, MoreVertical as MoreVertical6, Building2 as Building211 } from "lucide-react";
 import { useOutletsTranslations as useOutletsTranslations2, useCommonTranslations as useCommonTranslations18 } from "@rentalshop/hooks";
 import { Fragment as Fragment36, jsx as jsx167, jsxs as jsxs150 } from "react/jsx-runtime";
 function OutletTable({
@@ -30054,7 +30069,7 @@ function OutletTable({
                     },
                     className: outlet.isActive ? "text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300" : "text-green-600 dark:text-green-400 focus:text-green-700 dark:focus:text-green-300",
                     children: [
-                      outlet.isActive ? /* @__PURE__ */ jsx167(XCircle13, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ jsx167(CheckCircle18, { className: "h-4 w-4 mr-2" }),
+                      outlet.isActive ? /* @__PURE__ */ jsx167(XCircle13, { className: "h-4 w-4 mr-2" }) : /* @__PURE__ */ jsx167(CheckCircle19, { className: "h-4 w-4 mr-2" }),
                       outlet.isActive ? t2("actions.disableOutlet") : t2("actions.enableOutlet")
                     ]
                   }
@@ -31567,7 +31582,7 @@ import {
   Label as Label11
 } from "@rentalshop/ui";
 import {
-  CheckCircle as CheckCircle20,
+  CheckCircle as CheckCircle21,
   Star as Star4,
   Package as Package17,
   Users as Users10,
@@ -31757,7 +31772,7 @@ var PlanSelection = ({
               ] }),
               /* @__PURE__ */ jsxs170("div", { className: "space-y-2 mb-6", children: [
                 plan.features.slice(0, 4).map((feature, index) => /* @__PURE__ */ jsxs170("div", { className: "flex items-center gap-2 text-sm", children: [
-                  /* @__PURE__ */ jsx188(CheckCircle20, { className: "w-4 h-4 text-action-success flex-shrink-0" }),
+                  /* @__PURE__ */ jsx188(CheckCircle21, { className: "w-4 h-4 text-action-success flex-shrink-0" }),
                   /* @__PURE__ */ jsx188("span", { className: "text-text-secondary", children: feature })
                 ] }, index)),
                 plan.features.length > 4 && /* @__PURE__ */ jsxs170("div", { className: "text-sm text-text-tertiary", children: [
@@ -31767,7 +31782,7 @@ var PlanSelection = ({
                 ] })
               ] }),
               /* @__PURE__ */ jsx188("div", { className: "text-center", children: selectedPlan === plan.id ? /* @__PURE__ */ jsxs170("div", { className: "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-action-success text-white", children: [
-                /* @__PURE__ */ jsx188(CheckCircle20, { className: "w-3 h-3 mr-1" }),
+                /* @__PURE__ */ jsx188(CheckCircle21, { className: "w-3 h-3 mr-1" }),
                 "Selected"
               ] }) : /* @__PURE__ */ jsx188(
                 Button52,
@@ -32980,7 +32995,7 @@ import {
 import {
   Calendar as Calendar23,
   Percent as Percent3,
-  Clock as Clock18,
+  Clock as Clock19,
   Edit as Edit21,
   Save as Save8,
   X as X16,
@@ -33128,7 +33143,7 @@ var BillingCycleDetailDialog = ({
       ] }) }),
       /* @__PURE__ */ jsx196(Card53, { children: /* @__PURE__ */ jsxs178(CardContent52, { className: "p-6", children: [
         /* @__PURE__ */ jsxs178("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx196(Clock18, { className: "w-5 h-5 text-text-tertiary" }),
+          /* @__PURE__ */ jsx196(Clock19, { className: "w-5 h-5 text-text-tertiary" }),
           "Status Management"
         ] }),
         /* @__PURE__ */ jsx196("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs178("div", { className: "flex items-center justify-between", children: [
@@ -33187,7 +33202,7 @@ var BillingCycleDetailDialog = ({
       ] }) }),
       /* @__PURE__ */ jsx196(Card53, { children: /* @__PURE__ */ jsxs178(CardContent52, { className: "p-6", children: [
         /* @__PURE__ */ jsxs178("h3", { className: "text-lg font-medium text-text-primary mb-4 flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx196(Clock18, { className: "w-5 h-5 text-text-tertiary" }),
+          /* @__PURE__ */ jsx196(Clock19, { className: "w-5 h-5 text-text-tertiary" }),
           "Timestamps"
         ] }),
         /* @__PURE__ */ jsxs178("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
@@ -33652,8 +33667,8 @@ var PaymentForm = ({
 import {
   CreditCard as CreditCard18,
   DollarSign as DollarSign18,
-  Clock as Clock19,
-  CheckCircle as CheckCircle21,
+  Clock as Clock20,
+  CheckCircle as CheckCircle22,
   XCircle as XCircle15,
   AlertCircle as AlertCircle15,
   Building as Building6,
@@ -33675,8 +33690,8 @@ var PaymentDetailDialog = ({
     return null;
   const getStatusBadge = (status) => {
     const statusConfig = {
-      "completed": { color: "bg-action-success/10 text-action-success", icon: CheckCircle21, text: "Completed" },
-      "pending": { color: "bg-action-warning/10 text-action-warning", icon: Clock19, text: "Pending" },
+      "completed": { color: "bg-action-success/10 text-action-success", icon: CheckCircle22, text: "Completed" },
+      "pending": { color: "bg-action-warning/10 text-action-warning", icon: Clock20, text: "Pending" },
       "failed": { color: "bg-action-danger/10 text-action-danger", icon: XCircle15, text: "Failed" },
       "refunded": { color: "bg-text-tertiary/10 text-text-tertiary", icon: AlertCircle15, text: "Refunded" }
     };
@@ -33872,7 +33887,7 @@ var PaymentDetailDialog = ({
             onClick: () => onProcessPayment(payment.id),
             className: "flex items-center gap-2",
             children: [
-              /* @__PURE__ */ jsx198(CheckCircle21, { className: "w-4 h-4" }),
+              /* @__PURE__ */ jsx198(CheckCircle22, { className: "w-4 h-4" }),
               "Process Payment"
             ]
           }
@@ -34837,7 +34852,7 @@ function MetricCard({
 }
 
 // src/components/features/Admin/components/ActivityFeed.tsx
-import { User as User13, Settings as Settings6, Database, CreditCard as CreditCard20, ShoppingCart as ShoppingCart8, Building2 as Building213, AlertCircle as AlertCircle16, CheckCircle as CheckCircle22, Info as Info9 } from "lucide-react";
+import { User as User13, Settings as Settings6, Database, CreditCard as CreditCard20, ShoppingCart as ShoppingCart8, Building2 as Building213, AlertCircle as AlertCircle16, CheckCircle as CheckCircle23, Info as Info9 } from "lucide-react";
 import { jsx as jsx214, jsxs as jsxs195 } from "react/jsx-runtime";
 function ActivityFeed({
   title,
@@ -34878,11 +34893,11 @@ function ActivityFeed({
     } else if (actionLower.includes("error") || actionLower.includes("fail")) {
       return AlertCircle16;
     } else if (actionLower.includes("success") || actionLower.includes("complete")) {
-      return CheckCircle22;
+      return CheckCircle23;
     }
     switch (type) {
       case "success":
-        return CheckCircle22;
+        return CheckCircle23;
       case "warning":
         return AlertCircle16;
       case "error":
@@ -35113,7 +35128,7 @@ function PerformanceMetricCard({ metric, onClick }) {
 var PerformanceMetricCard_default = PerformanceMetricCard;
 
 // src/components/features/Performance/components/PerformanceAlertCard.tsx
-import { AlertTriangle as AlertTriangle12, CheckCircle as CheckCircle23, Clock as Clock20, User as User14 } from "lucide-react";
+import { AlertTriangle as AlertTriangle12, CheckCircle as CheckCircle24, Clock as Clock21, User as User14 } from "lucide-react";
 import { jsx as jsx218, jsxs as jsxs199 } from "react/jsx-runtime";
 var getSeverityColor = (severity) => {
   switch (severity) {
@@ -35161,7 +35176,7 @@ function PerformanceAlertCard({
       /* @__PURE__ */ jsx218("p", { className: "text-sm text-text-secondary mb-3", children: alert2.message }),
       /* @__PURE__ */ jsxs199("div", { className: "flex items-center space-x-4 text-xs text-text-tertiary mb-3", children: [
         /* @__PURE__ */ jsxs199("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ jsx218(Clock20, { className: "h-3 w-3" }),
+          /* @__PURE__ */ jsx218(Clock21, { className: "h-3 w-3" }),
           /* @__PURE__ */ jsx218("span", { children: new Date(alert2.timestamp).toLocaleString() })
         ] }),
         alert2.resolved && alert2.resolvedBy && /* @__PURE__ */ jsxs199("div", { className: "flex items-center space-x-1", children: [
@@ -35174,7 +35189,7 @@ function PerformanceAlertCard({
       ] }),
       /* @__PURE__ */ jsxs199("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx218("div", { className: "flex items-center space-x-2", children: alert2.resolved ? /* @__PURE__ */ jsxs199("div", { className: "flex items-center space-x-1 text-green-600", children: [
-          /* @__PURE__ */ jsx218(CheckCircle23, { className: "h-4 w-4" }),
+          /* @__PURE__ */ jsx218(CheckCircle24, { className: "h-4 w-4" }),
           /* @__PURE__ */ jsx218("span", { className: "text-sm", children: "Resolved" })
         ] }) : /* @__PURE__ */ jsxs199("div", { className: "flex items-center space-x-1 text-orange-600", children: [
           /* @__PURE__ */ jsx218(AlertTriangle12, { className: "h-4 w-4" }),
@@ -35285,9 +35300,9 @@ function PerformanceAlertsList({
 import {
   Wrench,
   Play as Play5,
-  CheckCircle as CheckCircle24,
+  CheckCircle as CheckCircle25,
   XCircle as XCircle16,
-  Clock as Clock21,
+  Clock as Clock22,
   Calendar as Calendar26,
   User as User15
 } from "lucide-react";
@@ -35339,17 +35354,17 @@ var getPriorityColor = (priority) => {
 var getStatusIcon = (status) => {
   switch (status) {
     case "PENDING":
-      return Clock21;
+      return Clock22;
     case "IN_PROGRESS":
       return Play5;
     case "COMPLETED":
-      return CheckCircle24;
+      return CheckCircle25;
     case "FAILED":
       return XCircle16;
     case "CANCELLED":
       return XCircle16;
     default:
-      return Clock21;
+      return Clock22;
   }
 };
 function MaintenanceTaskCard({
@@ -35379,7 +35394,7 @@ function MaintenanceTaskCard({
           /* @__PURE__ */ jsx221("span", { children: new Date(task.scheduledAt).toLocaleDateString() })
         ] }),
         /* @__PURE__ */ jsxs201("div", { className: "flex items-center space-x-1", children: [
-          /* @__PURE__ */ jsx221(Clock21, { className: "h-3 w-3" }),
+          /* @__PURE__ */ jsx221(Clock22, { className: "h-3 w-3" }),
           /* @__PURE__ */ jsx221("span", { children: task.estimatedDuration })
         ] }),
         /* @__PURE__ */ jsxs201("div", { className: "flex items-center space-x-1", children: [
@@ -35431,7 +35446,7 @@ function MaintenanceTaskCard({
               onClick: () => onComplete(task.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ jsx221(CheckCircle24, { className: "h-3 w-3" }),
+                /* @__PURE__ */ jsx221(CheckCircle25, { className: "h-3 w-3" }),
                 /* @__PURE__ */ jsx221("span", { children: "Complete" })
               ]
             }
@@ -35528,7 +35543,7 @@ function MaintenanceTasksGrid({
 }
 
 // src/components/features/Maintenance/components/MaintenanceWindowCard.tsx
-import { Calendar as Calendar27, Clock as Clock22, Bell as Bell3, BellOff } from "lucide-react";
+import { Calendar as Calendar27, Clock as Clock23, Bell as Bell3, BellOff } from "lucide-react";
 import { jsx as jsx224, jsxs as jsxs203 } from "react/jsx-runtime";
 var getStatusColor6 = (status) => {
   switch (status) {
@@ -35547,7 +35562,7 @@ var getStatusColor6 = (status) => {
 var getStatusIcon2 = (status) => {
   switch (status) {
     case "ACTIVE":
-      return Clock22;
+      return Clock23;
     case "SCHEDULED":
       return Calendar27;
     case "COMPLETED":
@@ -35656,12 +35671,12 @@ import {
   Download as Download11,
   Play as Play6,
   Trash2 as Trash216,
-  Clock as Clock23,
+  Clock as Clock24,
   User as User16,
   HardDrive as HardDrive2,
   Cloud,
   Archive as Archive2,
-  CheckCircle as CheckCircle25,
+  CheckCircle as CheckCircle26,
   XCircle as XCircle17,
   AlertTriangle as AlertTriangle14
 } from "lucide-react";
@@ -35695,15 +35710,15 @@ var getStatusColor7 = (status) => {
 var getStatusIcon3 = (status) => {
   switch (status) {
     case "COMPLETED":
-      return CheckCircle25;
+      return CheckCircle26;
     case "IN_PROGRESS":
-      return Clock23;
+      return Clock24;
     case "FAILED":
       return XCircle17;
     case "SCHEDULED":
       return AlertTriangle14;
     default:
-      return Clock23;
+      return Clock24;
   }
 };
 var getLocationIcon = (location) => {
@@ -35830,11 +35845,11 @@ var BackupCard_default = BackupCard;
 
 // src/components/features/Backup/components/BackupScheduleCard.tsx
 import {
-  Clock as Clock24,
+  Clock as Clock25,
   Play as Play7,
   Pause as Pause7,
   Settings as Settings7,
-  CheckCircle as CheckCircle26,
+  CheckCircle as CheckCircle27,
   XCircle as XCircle18,
   AlertTriangle as AlertTriangle15
 } from "lucide-react";
@@ -35880,7 +35895,7 @@ var getTypeColor3 = (type) => {
 var getStatusIcon4 = (status) => {
   switch (status) {
     case "ACTIVE":
-      return CheckCircle26;
+      return CheckCircle27;
     case "PAUSED":
       return Pause7;
     case "DISABLED":
@@ -35903,7 +35918,7 @@ function BackupScheduleCard({
   return /* @__PURE__ */ jsxs205(Card, { className: "hover:shadow-md transition-shadow", children: [
     /* @__PURE__ */ jsxs205(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
       /* @__PURE__ */ jsxs205("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ jsx226(Clock24, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ jsx226(Clock25, { className: "h-4 w-4 text-text-tertiary" }),
         /* @__PURE__ */ jsx226(CardTitle, { className: "text-sm font-medium text-text-primary", children: schedule.name })
       ] }),
       /* @__PURE__ */ jsxs205("div", { className: "flex items-center space-x-2", children: [
@@ -36400,7 +36415,7 @@ import {
   User as User19,
   Globe as Globe5,
   Info as Info10,
-  CheckCircle as CheckCircle27,
+  CheckCircle as CheckCircle28,
   AlertTriangle as AlertTriangle16,
   XCircle as XCircle20,
   AlertCircle as AlertCircle17
@@ -36445,7 +36460,7 @@ var getLevelIcon = (level) => {
     case "DEBUG":
       return Info10;
     case "INFO":
-      return CheckCircle27;
+      return CheckCircle28;
     case "WARN":
       return AlertTriangle16;
     case "ERROR":
@@ -36683,7 +36698,7 @@ import {
   User as User20,
   Globe as Globe6,
   AlertTriangle as AlertTriangle17,
-  CheckCircle as CheckCircle28,
+  CheckCircle as CheckCircle29,
   XCircle as XCircle21,
   Info as Info11
 } from "lucide-react";
@@ -36735,7 +36750,7 @@ var getSeverityIcon2 = (severity) => {
 var getTypeIcon = (type) => {
   switch (type) {
     case "LOGIN_ATTEMPT":
-      return CheckCircle28;
+      return CheckCircle29;
     case "FAILED_LOGIN":
       return XCircle21;
     case "SUSPICIOUS_ACTIVITY":
@@ -36796,7 +36811,7 @@ function SecurityEventCard({
         /* @__PURE__ */ jsxs211("div", { className: "flex items-center space-x-2", children: [
           /* @__PURE__ */ jsx236(SeverityIcon, { className: "h-4 w-4 text-text-tertiary" }),
           event.resolved ? /* @__PURE__ */ jsxs211("div", { className: "flex items-center space-x-1 text-green-600", children: [
-            /* @__PURE__ */ jsx236(CheckCircle28, { className: "h-3 w-3" }),
+            /* @__PURE__ */ jsx236(CheckCircle29, { className: "h-3 w-3" }),
             /* @__PURE__ */ jsx236("span", { className: "text-xs", children: "Resolved" })
           ] }) : /* @__PURE__ */ jsxs211("div", { className: "flex items-center space-x-1 text-orange-600", children: [
             /* @__PURE__ */ jsx236(AlertTriangle17, { className: "h-3 w-3" }),
@@ -36840,7 +36855,7 @@ function SecurityEventCard({
               onClick: () => onResolve(event.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ jsx236(CheckCircle28, { className: "h-3 w-3" }),
+                /* @__PURE__ */ jsx236(CheckCircle29, { className: "h-3 w-3" }),
                 /* @__PURE__ */ jsx236("span", { children: "Resolve" })
               ]
             }
@@ -36986,7 +37001,7 @@ import {
   Monitor as Monitor2,
   Activity as Activity6,
   AlertTriangle as AlertTriangle19,
-  CheckCircle as CheckCircle30,
+  CheckCircle as CheckCircle31,
   XCircle as XCircle23,
   Info as Info12,
   Eye as Eye30,
@@ -37127,7 +37142,7 @@ function AuditLogDetail({ log, isOpen, onClose }) {
       case "SYSTEM":
         return /* @__PURE__ */ jsx239(Monitor2, { className: "w-4 h-4" });
       case "COMPLIANCE":
-        return /* @__PURE__ */ jsx239(CheckCircle30, { className: "w-4 h-4" });
+        return /* @__PURE__ */ jsx239(CheckCircle31, { className: "w-4 h-4" });
       default:
         return /* @__PURE__ */ jsx239(Info12, { className: "w-4 h-4" });
     }
@@ -37315,7 +37330,7 @@ import {
   AlertTriangle as AlertTriangle20,
   XCircle as XCircle24,
   Info as Info13,
-  Clock as Clock30
+  Clock as Clock31
 } from "lucide-react";
 import { jsx as jsx240, jsxs as jsxs215 } from "react/jsx-runtime";
 function SeverityBadge2({ severity }) {
@@ -37684,7 +37699,7 @@ function AuditLogViewer({
             /* @__PURE__ */ jsx240("p", { className: "text-2xl font-bold text-text-primary", children: stats.recentActivity }),
             /* @__PURE__ */ jsx240("p", { className: "text-xs text-text-tertiary", children: "Last 24 hours" })
           ] }),
-          /* @__PURE__ */ jsx240(Clock30, { className: "w-8 h-8 text-green-500" })
+          /* @__PURE__ */ jsx240(Clock31, { className: "w-8 h-8 text-green-500" })
         ] }) }) }),
         /* @__PURE__ */ jsx240(Card56, { children: /* @__PURE__ */ jsx240(CardContent55, { className: "p-6", children: /* @__PURE__ */ jsxs215("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs215("div", { children: [
@@ -38024,7 +38039,7 @@ var OrderInformation = ({ order }) => {
               t2("customer.name"),
               ":"
             ] }),
-            /* @__PURE__ */ jsx242("span", { className: "text-sm font-medium", children: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : order.customerName || t2("customer.noCustomer") })
+            /* @__PURE__ */ jsx242("span", { className: "text-sm font-medium", children: order.customer?.firstName ? `${order.customer.firstName} ${order.customer.lastName || ""}`.trim() : order.customerName || t2("customer.noCustomer") })
           ] }),
           /* @__PURE__ */ jsxs217("div", { className: "flex justify-between", children: [
             /* @__PURE__ */ jsxs217("span", { className: "text-sm text-gray-600", children: [
@@ -39124,7 +39139,7 @@ function OutletDetailLoading() {
 
 // src/components/features/Settings/Settings.tsx
 import { useState as useState86, useEffect as useEffect45 } from "react";
-import { useRouter as useRouter8, useSearchParams } from "next/navigation";
+import { useRouter as useRouter9, useSearchParams } from "next/navigation";
 import {
   User as User23,
   CreditCard as CreditCard22,
@@ -39769,7 +39784,7 @@ import {
 } from "@rentalshop/ui";
 import {
   CreditCard as CreditCard21,
-  CheckCircle as CheckCircle32,
+  CheckCircle as CheckCircle33,
   AlertTriangle as AlertTriangle21,
   Calendar as Calendar32,
   DollarSign as DollarSign23
@@ -39837,7 +39852,7 @@ var SubscriptionSection = ({
         ] }),
         /* @__PURE__ */ jsxs230("div", { className: "bg-gray-50 rounded-lg p-4", children: [
           /* @__PURE__ */ jsxs230("div", { className: "flex items-center space-x-2 mb-2", children: [
-            /* @__PURE__ */ jsx255(CheckCircle32, { className: "h-4 w-4 text-gray-600" }),
+            /* @__PURE__ */ jsx255(CheckCircle33, { className: "h-4 w-4 text-gray-600" }),
             /* @__PURE__ */ jsx255("span", { className: "text-sm font-medium text-gray-700", children: t2("subscription.status") })
           ] }),
           /* @__PURE__ */ jsx255("p", { className: "text-base font-semibold text-gray-900 capitalize", children: subscriptionData.subscription.status || t2("subscription.active") }),
@@ -39947,7 +39962,7 @@ var AccountSection = ({
 // src/components/features/Settings/components/LanguageSection.tsx
 import { useState as useState84, useTransition as useTransition2 } from "react";
 import { Languages, Check as Check8 } from "lucide-react";
-import { useRouter as useRouter7 } from "next/navigation";
+import { useRouter as useRouter8 } from "next/navigation";
 import { useSettingsTranslations as useSettingsTranslations7 } from "@rentalshop/hooks";
 import { jsx as jsx257, jsxs as jsxs232 } from "react/jsx-runtime";
 var languages = [
@@ -39957,7 +39972,7 @@ var languages = [
 function LanguageSection() {
   const t2 = useSettingsTranslations7();
   const currentLocale = Z();
-  const router = useRouter7();
+  const router = useRouter8();
   const [isPending, startTransition] = useTransition2();
   const [selectedLanguage, setSelectedLanguage] = useState84(currentLocale);
   const handleLanguageChange = (newLocale) => {
@@ -40259,7 +40274,7 @@ var SettingsComponent = () => {
   const { user, logout, loading } = useAuth2();
   const { toastSuccess, toastError } = useToast10();
   const { currency, setCurrency } = useCurrency2();
-  const router = useRouter8();
+  const router = useRouter9();
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get("tab") || "profile";
   const [activeSection, setActiveSection] = useState86(tabFromUrl);
@@ -40980,7 +40995,7 @@ import {
   X as X18,
   Menu,
   CreditCard as CreditCard23,
-  Clock as Clock31,
+  Clock as Clock32,
   ChevronDown as ChevronDown8,
   ShieldCheck,
   FileText as FileText5,
@@ -41012,7 +41027,7 @@ function TopNavigation({
       label: "Plans",
       icon: Package25
     },
-    { href: "/subscriptions", label: "Subscriptions", icon: Clock31 },
+    { href: "/subscriptions", label: "Subscriptions", icon: Clock32 },
     { href: "/payments", label: "Payments", icon: CreditCard23 },
     { href: "/users", label: "Users", icon: Users13 },
     {
@@ -41216,7 +41231,7 @@ import {
   CreditCard as CreditCard24,
   BarChart3 as BarChart34,
   Shield as Shield9,
-  Clock as Clock32
+  Clock as Clock33
 } from "lucide-react";
 import { jsx as jsx264, jsxs as jsxs239 } from "react/jsx-runtime";
 function ServerTopNavigation({
@@ -41239,7 +41254,7 @@ function ServerTopNavigation({
     { href: "/dashboard", label: "Dashboard", icon: Home4 },
     { href: "/merchants", label: "Merchants", icon: Store9 },
     { href: "/plans", label: "Plans", icon: Package26 },
-    { href: "/subscriptions", label: "Subscriptions", icon: Clock32 },
+    { href: "/subscriptions", label: "Subscriptions", icon: Clock33 },
     { href: "/payments", label: "Payments", icon: CreditCard24 },
     { href: "/settings", label: "Settings", icon: Settings11 },
     { href: "/analytics", label: "Analytics", icon: BarChart34 },
@@ -41962,7 +41977,7 @@ import {
   Building2 as Building217,
   Settings as Settings13,
   CreditCard as CreditCard25,
-  Clock as Clock33,
+  Clock as Clock34,
   Database as Database5,
   ShieldCheck as ShieldCheck2,
   FileText as FileText6,
@@ -41990,7 +42005,7 @@ var adminMenuItems = [
   {
     label: "Subscriptions",
     href: "/subscriptions",
-    icon: Clock33
+    icon: Clock34
   },
   {
     label: "Payments",
@@ -42585,8 +42600,8 @@ function Layout({
 // src/components/layout/SubscriptionStatus.tsx
 import {
   AlertTriangle as AlertTriangle23,
-  CheckCircle as CheckCircle33,
-  Clock as Clock34,
+  CheckCircle as CheckCircle34,
+  Clock as Clock35,
   CreditCard as CreditCard26,
   TrendingUp as TrendingUp11,
   Zap as Zap4
@@ -42631,7 +42646,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
       case "TRIAL":
         return /* @__PURE__ */ jsx276(Zap4, { className: "h-4 w-4" });
       case "ACTIVE":
-        return /* @__PURE__ */ jsx276(CheckCircle33, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx276(CheckCircle34, { className: "h-4 w-4" });
       case "EXPIRED":
         return /* @__PURE__ */ jsx276(AlertTriangle23, { className: "h-4 w-4" });
       case "CANCELED":
@@ -42639,9 +42654,9 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
       case "PAST_DUE":
         return /* @__PURE__ */ jsx276(CreditCard26, { className: "h-4 w-4" });
       case "PAUSED":
-        return /* @__PURE__ */ jsx276(Clock34, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx276(Clock35, { className: "h-4 w-4" });
       default:
-        return /* @__PURE__ */ jsx276(Clock34, { className: "h-4 w-4" });
+        return /* @__PURE__ */ jsx276(Clock35, { className: "h-4 w-4" });
     }
   };
   const getStatusVariant = () => {

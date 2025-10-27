@@ -12,7 +12,7 @@ export interface CalendarOrderItem {
   productId?: number;
   productName?: string;
   productBarcode?: string;
-  productImages?: string[];
+  productImages?: string[] | string | null; // Can be array, JSON string, or null
   productRentPrice?: number;
   productDeposit?: number;
 }
@@ -82,9 +82,10 @@ export interface CalendarMeta {
 
 export interface CalendarApiResponse {
   success: boolean;
-  data: CalendarResponse;
-  meta: CalendarMeta;
-  message: string;
+  data?: CalendarResponse;
+  meta?: CalendarMeta;
+  code?: string; // API response code
+  message?: string;
 }
 
 export interface CalendarQuery {
@@ -124,29 +125,37 @@ export const calendarApi = {
     });
 
     const response = await authenticatedFetch(`${apiUrls.calendar.orders}?${searchParams}`);
-    const result = await parseApiResponse<CalendarApiResponse>(response);
+    const result = await parseApiResponse<CalendarResponse>(response);
     
-    // Return the calendar response data directly
+    // parseApiResponse unwraps the data, so result.data is CalendarResponse
+    const defaultMeta: CalendarMeta = {
+      totalDays: 0,
+      stats: { 
+        totalPickups: 0, 
+        totalOrders: 0, 
+        totalRevenue: 0, 
+        totalReturns: 0, 
+        averageOrderValue: 0 
+      },
+      dateRange: { start: query.startDate, end: query.endDate }
+    };
+
     if (result.success && result.data) {
-      return result.data;
+      return {
+        success: true,
+        data: result.data,
+        meta: defaultMeta,
+        code: 'CALENDAR_DATA_SUCCESS',
+        message: 'Calendar data loaded'
+      };
     }
     
     // Fallback structure if backend returns different format
     return {
-      success: result.success,
-      data: {} as CalendarResponse,
-      meta: {
-        totalDays: 0,
-        stats: { 
-          totalPickups: 0, 
-          totalOrders: 0, 
-          totalRevenue: 0, 
-          totalReturns: 0, 
-          averageOrderValue: 0 
-        },
-        dateRange: { start: query.startDate, end: query.endDate }
-      },
-      message: result.message || 'Calendar data loaded'
+      success: false,
+      data: { calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } },
+      meta: defaultMeta,
+      message: result.message || 'Failed to load calendar data'
     };
   },
 

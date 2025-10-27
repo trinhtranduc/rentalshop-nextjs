@@ -172,7 +172,7 @@ const checkDatabaseConnection = async () => {
 };
 
 /**
- * Generate next order number (simplified)
+ * Generate next order number (simplified) - Random 8 digits
  */
 const generateOrderNumber = async (outletId: number): Promise<string> => {
   const outlet = await prisma.outlet.findUnique({
@@ -184,13 +184,27 @@ const generateOrderNumber = async (outletId: number): Promise<string> => {
     throw new Error(`Outlet with id ${outletId} not found`);
   }
 
-  // Get the count of orders for this outlet
-  const orderCount = await prisma.order.count({
-    where: { outletId }
-  });
+  // Generate random 8-digit number
+  const generateRandom8Digits = (): string => {
+    return Math.floor(10000000 + Math.random() * 90000000).toString();
+  };
 
-  const sequence = (orderCount + 1).toString().padStart(4, '0');
-  return `${outletId.toString().padStart(3, '0')}-${sequence}`;
+  const maxRetries = 10;
+  for (let i = 0; i < maxRetries; i++) {
+    const randomSequence = generateRandom8Digits();
+    const orderNumber = randomSequence; // Just 8 random digits, no prefix
+    
+    // Check if order number already exists
+    const existingOrder = await prisma.order.findUnique({
+      where: { orderNumber }
+    });
+
+    if (!existingOrder) {
+      return orderNumber;
+    }
+  }
+
+  throw new Error('Failed to generate unique order number after maximum retries');
 };
 
 // ============================================================================

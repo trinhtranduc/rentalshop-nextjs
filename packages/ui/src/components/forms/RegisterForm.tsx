@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin } from "lucide-react";
@@ -64,6 +65,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   user,
   registrationError
 }) => {
+  const router = useRouter();
   const [viewPass, setViewPass] = useState(false);
   const [viewConfirmPass, setViewConfirmPass] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -221,7 +223,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         
         // Navigate to login after a short delay
         setTimeout(() => {
-          window.location.href = "/login";
+          // Use router.push instead of window.location for proper SPA navigation
+          if (onNavigate) {
+            onNavigate('/login');
+          } else {
+            router.push('/login');
+          }
         }, 2000);
       } catch (error: any) {
         toastError(

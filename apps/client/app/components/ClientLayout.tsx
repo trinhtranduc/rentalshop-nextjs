@@ -53,11 +53,43 @@ export default function ClientLayout({
   const isFullWidthPage = pathname === '/orders/create' || pathname?.includes('/edit');
   
   // Redirect to login if not authenticated (except on auth pages)
-  if (!user && !isAuthPage) {
+  // But only redirect if we're not currently on a page that might be setting up auth
+  if (!user && !isAuthPage && !loading) {
     if (typeof window !== 'undefined') {
+      // Check if there's a token in localStorage
+      const token = localStorage.getItem('authToken');
+      
+      // If there's a token, wait a bit for auth state to sync
+      if (token) {
+        // Don't redirect immediately - wait for auth state to sync
+        return (
+          <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
+            <LoadingIndicator 
+              variant="circular" 
+              size="lg"
+              message={`${t('labels.loading')}...`}
+            />
+          </div>
+        );
+      }
+      
+      // No token and not loading - redirect to login
       window.location.href = '/login';
     }
     return null;
+  }
+
+  // If user is logged in but on auth page, show loading while redirecting
+  if (user && isAuthPage) {
+    return (
+      <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
+        <LoadingIndicator 
+          variant="circular" 
+          size="lg"
+          message="Redirecting..."
+        />
+      </div>
+    );
   }
 
   const handleLogout = () => {

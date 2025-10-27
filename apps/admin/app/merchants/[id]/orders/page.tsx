@@ -89,12 +89,18 @@ export default function MerchantOrdersPage() {
           returnPlanAt: order.returnPlanAt,
           createdAt: order.createdAt,
           updatedAt: order.updatedAt,
-          customerName: order.customer?.name || 'Unknown Customer',
-          customerPhone: order.customer?.phone || '',
-          outletName: order.outlet?.name || 'Unknown Outlet',
-          merchantName: merchantName || `Merchant ${merchantId}`,
-          customer: order.customer,
-          outlet: order.outlet
+          customerId: order.customerId,
+          customerName: order.customerName || 'Unknown Customer',
+          customerPhone: order.customerPhone || '',
+          outletId: order.outletId,
+          outletName: order.outletName || 'Unknown Outlet',
+          merchantName: order.merchantName || merchantName || `Merchant ${merchantId}`,
+          createdById: order.createdById,
+          createdByName: order.createdByName,
+          orderItems: order.orderItems || [],
+          itemCount: order.itemCount || 0,
+          paymentCount: order.paymentCount || 0,
+          totalPaid: order.totalPaid || 0
         }));
         
         setOrders(transformedOrders);
@@ -206,16 +212,18 @@ export default function MerchantOrdersPage() {
     updateURL({ sortBy: column, sortOrder: newSortOrder, page: 1 });
   }, [sortBy, sortOrder, updateURL]);
 
-  const handleOrderAction = useCallback((action: string, orderId: number) => {
+  const handleOrderAction = useCallback((action: string, orderNumber: string) => {
+    // Extract the numeric part from order number (e.g., "001-757513" -> ["001", "757513"])
+    // Use the full order number as the route parameter since the API expects the full format
     switch (action) {
       case 'view':
-        router.push(`/merchants/${merchantId}/orders/${orderId}`);
+        router.push(`/merchants/${merchantId}/orders/${orderNumber}`);
         break;
       case 'edit':
-        router.push(`/merchants/${merchantId}/orders/${orderId}/edit`);
+        router.push(`/merchants/${merchantId}/orders/${orderNumber}/edit`);
         break;
       default:
-        console.log('Order action:', action, orderId);
+        console.log('Order action:', action, orderNumber);
     }
   }, [router, merchantId]);
 
