@@ -560,12 +560,16 @@ export function handleApiError(error: any): {
     apiError = handleBusinessError(error);
   }
   
-  // Return response compatible with ResponseBuilder format
+  // Convert code to string to match ResponseBuilder.error format
+  const errorCode = String(apiError.code);
+  const errorMessage = typeof apiError.details === 'string' ? apiError.details : apiError.message;
+  
+  // Return response with same format as ResponseBuilder.error
   const response: ResponseBuilderApiResponse = {
     success: false,
-    code: apiError.code,
-    message: apiError.message,
-    error: typeof apiError.details === 'string' ? apiError.details : apiError.message
+    code: errorCode,
+    message: errorMessage,
+    error: errorMessage
   };
 
   return {
