@@ -867,12 +867,13 @@ export const simplifiedProducts = {
       where.isActive = true; // Default: only show active products
     }
     
-    // Text search
+    // Text search (case-insensitive)
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { name: { contains: whereFilters.search } },
-        { description: { contains: whereFilters.search } },
-        { barcode: { contains: whereFilters.search } }
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { barcode: { contains: searchTerm, mode: 'insensitive' } }
       ];
     }
 

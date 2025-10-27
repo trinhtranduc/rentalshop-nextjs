@@ -819,13 +819,14 @@ export const simplifiedOrders = {
       if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
     }
 
-    // Text search
+    // Text search (case-insensitive)
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { orderNumber: { contains: whereFilters.search } },
-        { customer: { firstName: { contains: whereFilters.search } } },
-        { customer: { lastName: { contains: whereFilters.search } } },
-        { customer: { phone: { contains: whereFilters.search } } }
+        { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
+        { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
+        { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
+        { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } }
       ];
     }
 
