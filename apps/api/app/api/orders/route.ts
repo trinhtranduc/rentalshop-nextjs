@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
 
@@ -377,9 +377,14 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
   } catch (error: any) {
     console.error('Error in POST /api/orders:', error);
     
-    // Use unified error handling system
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
+    // Use ResponseBuilder for consistent error format
+    const errorCode = error?.code || 'INTERNAL_SERVER_ERROR';
+    const errorMessage = error?.message || 'An error occurred';
+    
+    return NextResponse.json(
+      ResponseBuilder.error(errorCode, errorMessage),
+      { status: 500 }
+    );
   }
 });
 
