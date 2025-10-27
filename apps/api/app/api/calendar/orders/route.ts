@@ -112,6 +112,21 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('📦 Found orders:', orders?.length || 0);
 
+    // Helper function to parse productImages (handle both JSON string and array)
+    const parseProductImages = (images: any): string[] => {
+      if (!images) return [];
+      if (Array.isArray(images)) return images;
+      if (typeof images === 'string') {
+        try {
+          const parsed = JSON.parse(images);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
     // Group orders by date
     const calendarMap: { [dateKey: string]: CalendarOrderSummary[] } = {};
 
@@ -137,20 +152,25 @@ export const GET = withReadOnlyAuth(async (
           productName: firstProduct?.name || 'Multiple Products',
           productCount: totalProductCount,
           // Include order items with flattened product data
-          orderItems: orderItems.map((item: any) => ({
-            id: item.id,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice,
-            notes: item.notes,
-            // Flattened product data
-            productId: item.product?.id,
-            productName: item.product?.name,
-            productBarcode: item.product?.barcode,
-            productImages: item.product?.images,
-            productRentPrice: item.product?.rentPrice,
-            productDeposit: item.product?.deposit
-          }))
+          orderItems: orderItems.map((item: any) => {
+            // Parse productImages to ensure it's always an array
+            const productImages = parseProductImages(item.product?.images);
+            
+            return {
+              id: item.id,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice,
+              notes: item.notes,
+              // Flattened product data
+              productId: item.product?.id,
+              productName: item.product?.name,
+              productBarcode: item.product?.barcode,
+              productImages: productImages,
+              productRentPrice: item.product?.rentPrice,
+              productDeposit: item.product?.deposit
+            };
+          })
         };
 
         // Add order only to pickup date (RESERVED and PICKUPED orders only)
