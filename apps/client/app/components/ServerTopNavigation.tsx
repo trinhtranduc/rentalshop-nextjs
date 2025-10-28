@@ -136,7 +136,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                 <Building2 className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">RentalShop</h1>
+                <h1 className="text-xl font-bold text-gray-900">AnyRent</h1>
               </div>
             </div>
           </div>

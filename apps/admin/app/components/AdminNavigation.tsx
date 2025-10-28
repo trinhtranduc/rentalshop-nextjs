@@ -140,7 +140,7 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
             <div className="flex-shrink-0 flex items-center">
               <Building2 className="h-8 w-8 text-action-primary" />
               <span className="ml-2 text-xl font-bold text-text-primary">
-                RentalShop Admin
+                AnyRent Admin
               </span>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

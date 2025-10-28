@@ -4,11 +4,11 @@ export async function GET(request: NextRequest) {
   const specs = {
     openapi: '3.0.0',
     info: {
-      title: 'Rental Shop API',
+      title: 'AnyRent API',
       version: '1.0.0',
       description: 'REST API for rental shop management system',
       contact: {
-        name: 'RentalShop Support',
+        name: 'AnyRent Support',
         email: 'support@rentalshop.com',
       },
     },

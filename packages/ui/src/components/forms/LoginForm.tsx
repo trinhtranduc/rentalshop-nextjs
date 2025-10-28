@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input } from "@rentalshop/ui";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Logo } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
 import { LanguageSwitcher } from "../layout/LanguageSwitcher";
 
@@ -141,9 +141,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
         {/* Logo & Welcome */}
         <div className="text-center mb-8">
           <div className="inline-block">
-            <div className="h-16 w-16 mx-auto bg-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-2xl">R</span>
-            </div>
+            <Logo 
+              size="2xl" 
+              variant="custom" 
+              src="/anyrent-logo-light.svg" 
+              showBackground={false}
+              blueStroke={true}
+            />
           </div>
           <h1 className="mt-6 text-3xl font-bold text-gray-900">
             {isAdmin ? "Admin Portal" : t('login.title')}
@@ -288,8 +292,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-gray-500">
-            © {new Date().getFullYear()} {isAdmin ? "RentalShop Admin" : "RentalShop"}. Crafted with{" "}
-            <span className="text-red-500">❤</span> by RentalShop
+            © {new Date().getFullYear()} {isAdmin ? "AnyRent Admin" : "AnyRent"}. Crafted with{" "}
+            <span className="text-red-500">❤</span> by AnyRent
           </p>
         </div>
       </div>

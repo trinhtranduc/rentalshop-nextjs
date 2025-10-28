@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
+import { Button, Logo } from '@rentalshop/ui';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useCommonTranslations } from '@rentalshop/hooks';
 import { 
@@ -402,19 +402,27 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
+            <Logo 
+              size="sm" 
+              variant="custom" 
+              src="/anyrent-logo-light.svg" 
+              showBackground={false}
+              blueStroke={true}
+            />
             <div>
-              <h1 className="text-lg font-semibold text-text-primary">RentalShop</h1>
+              <h1 className="text-lg font-semibold text-text-primary">AnyRent</h1>
             </div>
           </div>
         )}
         
         {isCollapsed && (
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-500 rounded-lg flex items-center justify-center mx-auto shadow-sm">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
+          <Logo 
+            size="sm" 
+            variant="custom" 
+            src="/anyrent-logo-light.svg" 
+            showBackground={false}
+            blueStroke={true}
+          />
         )}
 
         <Button
