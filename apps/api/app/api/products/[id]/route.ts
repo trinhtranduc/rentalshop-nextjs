@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withManagementAuth } from '@rentalshop/auth';
-import { productUpdateSchema, handleApiError, ResponseBuilder, processProductImages, uploadToS3, generateAccessUrl, commitStagingFiles } from '@rentalshop/utils';
+import { productUpdateSchema, handleApiError, ResponseBuilder, uploadToS3, generateAccessUrl, commitStagingFiles } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -90,16 +90,17 @@ export async function GET(
 
       console.log('✅ Product found, transforming data...');
 
-      // Process images to generate presigned URLs for thumbnail display
       // Parse images from database
-      let imageUrls = product.images;
-      if (typeof imageUrls === 'string') {
+      let imageUrls: string[] = [];
+      if (typeof product.images === 'string') {
         try {
-          const parsed = JSON.parse(imageUrls);
-          imageUrls = Array.isArray(parsed) ? parsed : [];
+          const parsed = JSON.parse(product.images);
+          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
         } catch {
-          imageUrls = imageUrls.split(',').filter(Boolean);
+          imageUrls = product.images.split(',').filter(Boolean);
         }
+      } else if (Array.isArray(product.images)) {
+        imageUrls = product.images;
       }
 
       // Transform the data to match the expected format
@@ -113,7 +114,7 @@ export async function GET(
         salePrice: product.salePrice,
         deposit: product.deposit,
         totalStock: product.totalStock,
-        images: processedImages,
+        images: imageUrls,
         isActive: product.isActive,
         category: product.category,
         merchant: product.merchant,

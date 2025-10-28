@@ -72,28 +72,29 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     const result = await db.products.search(searchFilters);
     console.log('✅ Search completed, found:', result.data?.length || 0, 'products');
 
-    // Process product images - parse JSON strings first
-    const processedProducts = await Promise.all(
-      (result.data || []).map(async (product) => {
-        let imageUrls = product.images;
-        
-        // Parse if it's a JSON string
-        if (typeof imageUrls === 'string') {
-          try {
-            const parsed = JSON.parse(imageUrls);
-            imageUrls = Array.isArray(parsed) ? parsed : [];
-          } catch {
-            // Not JSON, treat as comma-separated
-            imageUrls = imageUrls.split(',').filter(Boolean);
-          }
+    // Process product images - parse from database format
+    const processedProducts = result.data?.map((product: any) => {
+      let imageUrls: string[] = [];
+      
+      // Images are stored as JSON string in database
+      if (typeof product.images === 'string') {
+        try {
+          const parsed = JSON.parse(product.images);
+          // Handle both cases: JSON array string or already parsed
+          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          // Not JSON, treat as comma-separated
+          imageUrls = product.images.split(',').filter(Boolean);
         }
-        
-        return {
-          ...product,
-          images: imageUrls
-        };
-      })
-    );
+      } else if (Array.isArray(product.images)) {
+        imageUrls = product.images;
+      }
+      
+      return {
+        ...product,
+        images: imageUrls
+      };
+    }) || [];
 
     return NextResponse.json({
       success: true,
