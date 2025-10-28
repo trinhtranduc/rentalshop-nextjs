@@ -837,7 +837,7 @@ export default function DashboardPage() {
                   {loadingCharts ? (
                     <div className="space-y-2">
                       {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg animate-pulse">
+                        <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg animate-pulse">
                           <div className="flex items-center space-x-3">
                             <div className="w-4 h-4 bg-gray-200 rounded"></div>
                             <div>
