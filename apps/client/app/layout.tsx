@@ -45,8 +45,25 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Rental Shop - Client',
-  description: 'Rental shop management system for shop owners',
+  title: 'AnyRent - Client',
+  description: 'AnyRent management system for shop owners',
+  icons: {
+    icon: [
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/manifest.json',
+  themeColor: '#3b82f6',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'AnyRent Client',
+  },
 }
 
 // Combine all messages by locale

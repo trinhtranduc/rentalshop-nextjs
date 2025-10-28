@@ -79,8 +79,12 @@ export default function ClientLayout({
     return null;
   }
 
-  // If user is logged in but on auth page, show loading while redirecting
+  // If user is logged in but on auth page, redirect to dashboard
   if (user && isAuthPage) {
+    if (typeof window !== 'undefined') {
+      // Redirect to dashboard
+      window.location.href = '/dashboard';
+    }
     return (
       <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
         <LoadingIndicator 
@@ -162,7 +166,7 @@ export default function ClientLayout({
             <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-700 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">RS</span>
             </div>
-            <span className="font-semibold text-text-primary">RentalShop</span>
+            <span className="font-semibold text-text-primary">AnyRent</span>
           </div>
 
           <div className="w-8" /> {/* Spacer for centering */}

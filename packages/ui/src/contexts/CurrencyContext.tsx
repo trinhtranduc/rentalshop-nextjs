@@ -70,27 +70,9 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({
   initialCurrency = 'USD',
   merchantCurrency,
 }) => {
-  // Initialize currency from localStorage, merchantCurrency, or language preference
-  const getInitialCurrency = (): CurrencyCode => {
-    // First, check localStorage for saved preference
-    if (typeof window !== 'undefined') {
-      const savedCurrency = localStorage.getItem('rentalshop-currency') as CurrencyCode;
-      if (savedCurrency && (savedCurrency === 'USD' || savedCurrency === 'VND')) {
-        return savedCurrency;
-      }
-      
-      // If no saved currency, check language preference
-      const languagePreference = localStorage.getItem('user_language_preference');
-      if (languagePreference === 'vi') {
-        return 'VND';
-      }
-    }
-    
-    // Fall back to merchant currency or initial currency
-    return merchantCurrency || initialCurrency;
-  };
-
-  const [currency, setCurrency] = useState<CurrencyCode>(getInitialCurrency());
+  const [currency, setCurrency] = useState<CurrencyCode>(
+    merchantCurrency || initialCurrency
+  );
 
   // Update currency when merchant currency changes
   useEffect(() => {
@@ -98,13 +80,6 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({
       setCurrency(merchantCurrency);
     }
   }, [merchantCurrency]);
-  
-  // Save currency to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('rentalshop-currency', currency);
-    }
-  }, [currency]);
 
   // Get currency configuration
   const config = CURRENCY_CONFIG[currency] || CURRENCY_CONFIG.USD;

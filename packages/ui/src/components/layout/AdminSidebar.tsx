@@ -230,7 +230,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <Store className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-text-primary">RentalShop</h1>
+              <h1 className="text-lg font-semibold text-text-primary">AnyRent</h1>
               <p className="text-xs text-text-secondary">Admin</p>
             </div>
           </div>

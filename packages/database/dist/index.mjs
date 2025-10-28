@@ -366,20 +366,21 @@ var simplifiedCustomers = {
       where.isActive = true;
     }
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { firstName: { contains: whereFilters.search } },
-        { lastName: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } },
-        { phone: { contains: whereFilters.search } }
+        { firstName: { contains: searchTerm, mode: "insensitive" } },
+        { lastName: { contains: searchTerm, mode: "insensitive" } },
+        { email: { contains: searchTerm, mode: "insensitive" } },
+        { phone: { contains: searchTerm, mode: "insensitive" } }
       ];
     }
-    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName };
-    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName };
-    if (whereFilters.email) where.email = { contains: whereFilters.email };
-    if (whereFilters.phone) where.phone = { contains: whereFilters.phone };
-    if (whereFilters.city) where.city = { contains: whereFilters.city };
-    if (whereFilters.state) where.state = { contains: whereFilters.state };
-    if (whereFilters.country) where.country = { contains: whereFilters.country };
+    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName, mode: "insensitive" };
+    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName, mode: "insensitive" };
+    if (whereFilters.email) where.email = { contains: whereFilters.email, mode: "insensitive" };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: "insensitive" };
+    if (whereFilters.city) where.city = { contains: whereFilters.city, mode: "insensitive" };
+    if (whereFilters.state) where.state = { contains: whereFilters.state, mode: "insensitive" };
+    if (whereFilters.country) where.country = { contains: whereFilters.country, mode: "insensitive" };
     const orderBy = {};
     if (sortBy === "firstName" || sortBy === "lastName" || sortBy === "email" || sortBy === "phone") {
       orderBy[sortBy] = sortOrder;
@@ -628,10 +629,11 @@ var simplifiedProducts = {
       where.isActive = true;
     }
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { name: { contains: whereFilters.search } },
-        { description: { contains: whereFilters.search } },
-        { barcode: { contains: whereFilters.search } }
+        { name: { contains: searchTerm, mode: "insensitive" } },
+        { description: { contains: searchTerm, mode: "insensitive" } },
+        { barcode: { contains: searchTerm, mode: "insensitive" } }
       ];
     }
     if (whereFilters.minPrice !== void 0 || whereFilters.maxPrice !== void 0) {
@@ -1135,11 +1137,12 @@ var simplifiedOrders = {
       if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
     }
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { orderNumber: { contains: whereFilters.search } },
-        { customer: { firstName: { contains: whereFilters.search } } },
-        { customer: { lastName: { contains: whereFilters.search } } },
-        { customer: { phone: { contains: whereFilters.search } } }
+        { orderNumber: { contains: searchTerm, mode: "insensitive" } },
+        { customer: { firstName: { contains: searchTerm, mode: "insensitive" } } },
+        { customer: { lastName: { contains: searchTerm, mode: "insensitive" } } },
+        { customer: { phone: { contains: searchTerm, mode: "insensitive" } } }
       ];
     }
     const orderBy = {};
@@ -1545,6 +1548,7 @@ var simplifiedOrders = {
       productId,
       startDate,
       endDate,
+      search: search3,
       page = 1,
       limit = 20,
       sortBy = "createdAt",
@@ -1574,6 +1578,15 @@ var simplifiedOrders = {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;
       if (endDate) where.createdAt.lte = endDate;
+    }
+    if (search3) {
+      const searchTerm = search3.trim();
+      where.OR = [
+        { orderNumber: { contains: searchTerm, mode: "insensitive" } },
+        { customer: { firstName: { contains: searchTerm, mode: "insensitive" } } },
+        { customer: { lastName: { contains: searchTerm, mode: "insensitive" } } },
+        { customer: { phone: { contains: searchTerm, mode: "insensitive" } } }
+      ];
     }
     const [orders, total] = await Promise.all([
       prisma.order.findMany({

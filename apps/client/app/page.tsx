@@ -39,7 +39,7 @@ const LandingPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
-                <span className="text-xl font-bold text-text-primary">RentalShop</span>
+                <span className="text-xl font-bold text-text-primary">AnyRent</span>
               </div>
               <div className="hidden md:flex items-center space-x-8">
                 <a href="#features" className="text-text-secondary hover:text-action-primary transition-colors">Features</a>
@@ -240,7 +240,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-text-primary mb-4">
-              Why Choose RentalShop?
+              Why Choose AnyRent?
             </h2>
             <p className="text-xl text-text-secondary">
               Join hundreds of rental businesses that trust our platform
@@ -379,7 +379,7 @@ const Testimonials = () => {
               ))}
             </div>
             <p className="text-text-secondary mb-4">
-              "RentalShop has helped me manage my rental business efficiently. The interface is easy to use and features are comprehensive."
+              "AnyRent has helped me manage my rental business efficiently. The interface is easy to use and features are comprehensive."
             </p>
             <div className="flex items-center">
               <div className="w-10 h-10 bg-brand-primary rounded-full flex items-center justify-center text-text-inverted font-bold">
@@ -485,12 +485,12 @@ const FAQ = () => {
   
   const faqItems = [
     {
-      question: "Is RentalShop free to use?",
-      answer: "RentalShop offers a free trial version. You can sign up and use basic features without any cost."
+      question: "Is AnyRent free to use?",
+      answer: "AnyRent offers a free trial version. You can sign up and use basic features without any cost."
     },
     {
       question: "Can I use it on multiple devices?",
-      answer: "Yes, RentalShop supports multiple platforms. You can use it on iOS, Android, and web browsers."
+      answer: "Yes, AnyRent supports multiple platforms. You can use it on iOS, Android, and web browsers."
     },
     {
       question: "Is my data secure?",
@@ -510,7 +510,7 @@ const FAQ = () => {
             Frequently Asked Questions
           </h2>
           <p className="text-xl text-text-secondary">
-            Everything you need to know about RentalShop
+            Everything you need to know about AnyRent
           </p>
         </div>
         
@@ -780,7 +780,7 @@ const Footer = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <span className="text-xl font-bold">RentalShop</span>
+              <span className="text-xl font-bold">AnyRent</span>
             </div>
             <p className="text-gray-400 mb-4">
               Leading rental management software in Vietnam
@@ -825,7 +825,7 @@ const Footer = () => {
         
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400">
-            © 2024 RentalShop. All rights reserved.
+            © 2024 AnyRent. All rights reserved.
           </p>
         </div>
       </div>

@@ -18,6 +18,7 @@ export { ConfirmationDialog } from './confirmation-dialog';
 export { ConfirmationDialogWithReason } from './confirmation-dialog-with-reason';
 export { Input } from './input';
 export { Label } from './label';
+export { Logo } from './logo';
 export { LoadingIndicator, LoadingInline } from './loading-indicator';
 export { Money, MoneyBold, MoneyLarge } from './Money';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';

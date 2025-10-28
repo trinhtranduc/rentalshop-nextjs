@@ -119,8 +119,13 @@ export function CurrencyProvider({
   // Load saved settings from localStorage on mount
   useEffect(() => {
     try {
+      const savedCurrency = localStorage.getItem('rentalshop-currency') as CurrencyCode;
       const savedShowSymbol = localStorage.getItem('rentalshop-show-symbol');
       const savedShowCode = localStorage.getItem('rentalshop-show-code');
+      
+      if (savedCurrency && isValidCurrencyCode(savedCurrency)) {
+        setSettings(prev => ({ ...prev, currentCurrency: savedCurrency }));
+      }
       
       if (savedShowSymbol !== null) {
         setSettings(prev => ({ ...prev, showSymbol: savedShowSymbol === 'true' }));
@@ -128,20 +133,6 @@ export function CurrencyProvider({
       
       if (savedShowCode !== null) {
         setSettings(prev => ({ ...prev, showCode: savedShowCode === 'true' }));
-      }
-      
-      // Auto-set currency based on language preference
-      const languagePreference = localStorage.getItem('user_language_preference') || 'en';
-      const savedCurrency = localStorage.getItem('rentalshop-currency') as CurrencyCode;
-      
-      // Only use saved currency if it exists, otherwise auto-set based on language
-      if (savedCurrency && isValidCurrencyCode(savedCurrency)) {
-        setSettings(prev => ({ ...prev, currentCurrency: savedCurrency }));
-      } else {
-        // Auto-set currency based on language
-        const autoCurrency = languagePreference === 'vi' ? 'VND' : 'USD';
-        setSettings(prev => ({ ...prev, currentCurrency: autoCurrency }));
-        localStorage.setItem('rentalshop-currency', autoCurrency);
       }
     } catch (error) {
       console.warn('Failed to load currency settings from localStorage:', error);

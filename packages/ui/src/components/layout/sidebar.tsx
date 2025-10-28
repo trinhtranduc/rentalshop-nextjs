@@ -141,10 +141,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
               <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">R</span>
+                <span className="text-white font-bold text-sm">A</span>
               </div>
               {!isCollapsed && (
-                <span className="font-bold text-2xl text-gray-900 leading-none">RentalShop</span>
+                <span className="font-bold text-2xl text-gray-900 leading-none">AnyRent</span>
               )}
             </button>
             
