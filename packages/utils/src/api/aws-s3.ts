@@ -518,12 +518,10 @@ export async function processProductImages(
 ): Promise<string[]> {
   if (!images) return [];
   
-  // Normalize images to array
-  const imageUrls = Array.isArray(images) 
-    ? images 
-    : typeof images === 'string' 
-      ? images.split(',').filter(Boolean)
-      : [];
+  // Normalize to array
+  const imageUrls: string[] = Array.isArray(images) 
+    ? images.filter(Boolean)
+    : images.split(',').filter(Boolean);
 
   if (imageUrls.length === 0) return [];
 
