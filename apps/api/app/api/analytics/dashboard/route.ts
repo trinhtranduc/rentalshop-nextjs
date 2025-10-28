@@ -13,10 +13,24 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   console.log(`📊 GET /api/analytics/dashboard - User: ${user.email}`);
   
   try {
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || 'today'; // Get period from query params
+    
     // Build where clause based on user role and scope
     const orderWhereClause: any = {
       status: { in: ['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED'] }
     };
+    
+    // Add date filter if period is 'today'
+    if (period === 'today') {
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+      orderWhereClause.createdAt = {
+        gte: startOfDay,
+        lte: endOfDay
+      };
+    }
     
     const paymentWhereClause: any = {
       status: 'COMPLETED'

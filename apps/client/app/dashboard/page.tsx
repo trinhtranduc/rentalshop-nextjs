@@ -403,7 +403,7 @@ export default function DashboardPage() {
           console.log('👥 Top Customers API:', response);
           return response;
         }),
-        analyticsApi.getDashboardSummary().then(response => {
+        analyticsApi.getDashboardSummary(timePeriod).then(response => {
           console.log('📋 Dashboard Summary API:', response);
           return response;
         })
@@ -828,7 +828,7 @@ export default function DashboardPage() {
 
             {/* Today's Operations - 2 Columns */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* New Orders */}
+              {/* Recent Activity - Simple Design */}
               <CardClean size="md">
                 <CardHeaderClean>
                   <CardTitleClean size="md">{t('recentActivity.title')}</CardTitleClean>
@@ -883,29 +883,28 @@ export default function DashboardPage() {
                 </CardContentClean>
               </CardClean>
 
-              {/* Rental Status */}
+              {/* Order Status - Simple & Clean Design */}
               <CardClean size="md">
                 <CardHeaderClean>
                   <CardTitleClean size="md">{tc('labels.status')}</CardTitleClean>
                 </CardHeaderClean>
                 <CardContentClean>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {[
-                      { statusKey: 'reserved', count: orderStatusCounts.reserved || 0, color: 'bg-blue-500' },
-                      { statusKey: 'pickup', count: orderStatusCounts.pickup || 0, color: 'bg-green-500' },
-                      { statusKey: 'return', count: orderStatusCounts.returned || 0, color: 'bg-yellow-500' },
-                      { statusKey: 'completed', count: orderStatusCounts.completed || 0, color: 'bg-gray-500' },
-                      { statusKey: 'cancelled', count: orderStatusCounts.cancelled || 0, color: 'bg-red-500' }
+                      { statusKey: 'reserved', count: orderStatusCounts.reserved || 0, dotColor: 'bg-blue-500' },
+                      { statusKey: 'pickup', count: orderStatusCounts.pickup || 0, dotColor: 'bg-green-500' },
+                      { statusKey: 'return', count: orderStatusCounts.returned || 0, dotColor: 'bg-yellow-500' },
+                      { statusKey: 'completed', count: orderStatusCounts.completed || 0, dotColor: 'bg-gray-500' },
+                      { statusKey: 'cancelled', count: orderStatusCounts.cancelled || 0, dotColor: 'bg-red-500' }
                     ].map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${item.color.replace('bg-', 'bg-').replace('-500', '-100')}`}>
-                            <span className="text-sm font-medium capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
-                          </div>
-                          <span className="text-sm text-gray-600">{item.count} {t('orderStatuses.ordersCount')}</span>
+                          <div className={`w-3 h-3 rounded-full ${item.dotColor}`}></div>
+                          <span className="text-sm font-medium text-gray-700 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
                         </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-gray-800">{item.count}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">{item.count}</span>
+                          <span className="text-xs text-gray-500">{t('orderStatuses.ordersCount')}</span>
                         </div>
                       </div>
                     ))}
