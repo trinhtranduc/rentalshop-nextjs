@@ -498,7 +498,7 @@ var require_react_is_development = __commonJS({
         var ContextProvider = REACT_PROVIDER_TYPE;
         var Element2 = REACT_ELEMENT_TYPE2;
         var ForwardRef = REACT_FORWARD_REF_TYPE;
-        var Fragment53 = REACT_FRAGMENT_TYPE;
+        var Fragment54 = REACT_FRAGMENT_TYPE;
         var Lazy = REACT_LAZY_TYPE;
         var Memo = REACT_MEMO_TYPE;
         var Portal3 = REACT_PORTAL_TYPE;
@@ -557,7 +557,7 @@ var require_react_is_development = __commonJS({
         exports2.ContextProvider = ContextProvider;
         exports2.Element = Element2;
         exports2.ForwardRef = ForwardRef;
-        exports2.Fragment = Fragment53;
+        exports2.Fragment = Fragment54;
         exports2.Lazy = Lazy;
         exports2.Memo = Memo;
         exports2.Portal = Portal3;
@@ -42280,7 +42280,7 @@ import {
   Bell as Bell7,
   ChevronDown as ChevronDown9
 } from "lucide-react";
-import { jsx as jsx275, jsxs as jsxs250 } from "react/jsx-runtime";
+import { Fragment as Fragment53, jsx as jsx275, jsxs as jsxs250 } from "react/jsx-runtime";
 var getClientMenuItems = (t2) => [
   {
     label: t2("navigation.dashboard"),
@@ -42352,7 +42352,6 @@ var ClientSidebar = ({
   const [hoveredTab, setHoveredTab] = useState93(null);
   const [clickedTab, setClickedTab] = useState93(null);
   const [localCurrentPage, setLocalCurrentPage] = useState93(currentPath);
-  const [isNavigating, setIsNavigating] = useState93(null);
   const pathname = usePathname2();
   const t2 = useCommonTranslations25();
   const filterMenuItemsByRole = (items, userRole) => {
@@ -42373,10 +42372,7 @@ var ClientSidebar = ({
   useEffect48(() => {
     const actualPath = pathname || currentPath;
     setLocalCurrentPage(actualPath);
-    if (isNavigating && actualPath !== isNavigating) {
-      setIsNavigating(null);
-    }
-  }, [pathname, currentPath, isNavigating]);
+  }, [pathname, currentPath]);
   useEffect48(() => {
     if (onPrefetch) {
       menuItems2.forEach((item) => {
@@ -42402,22 +42398,11 @@ var ClientSidebar = ({
     );
   };
   const isActive = (href) => {
-    const currentPathToCheck = pathname || localCurrentPage;
+    const currentPathToCheck = localCurrentPage || pathname || currentPath;
     if (href === "/dashboard") {
       return currentPathToCheck === "/dashboard";
     }
     return currentPathToCheck.startsWith(href);
-  };
-  const handleTabClick = (href) => {
-    setIsNavigating(href);
-    setLocalCurrentPage(href);
-    setClickedTab(href);
-    setTimeout(() => setClickedTab(null), 150);
-    if (onNavigate) {
-      requestAnimationFrame(() => {
-        onNavigate(href);
-      });
-    }
   };
   const handleTabHover = (href) => {
     setHoveredTab(href);
@@ -42430,29 +42415,31 @@ var ClientSidebar = ({
     const isExpanded = expandedItems.includes(item.href);
     const active = isActive(item.href);
     const isHovered = hoveredTab === item.href;
-    const isNavigatingTo = isNavigating === item.href;
     const isClicked = clickedTab === item.href;
     const Icon2 = item.icon;
-    const shouldHighlight = active || isNavigatingTo;
+    const shouldHighlight = active;
     return /* @__PURE__ */ jsxs250("div", { className: "relative", children: [
-      hasSubItems ? /* @__PURE__ */ jsxs250(
-        Button78,
+      hasSubItems ? /* @__PURE__ */ jsx275(Fragment53, { children: /* @__PURE__ */ jsxs250(
+        Link4,
         {
-          variant: "ghost",
-          onClick: (e2) => {
-            e2.preventDefault();
-            e2.stopPropagation();
-            toggleExpanded(item.href);
-          },
-          onMouseEnter: () => handleTabHover(item.href),
-          onMouseLeave: () => setHoveredTab(null),
+          href: item.href,
           className: cn8(
-            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative",
+            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative no-underline",
             shouldHighlight ? "nav-item-active text-blue-700 font-medium bg-blue-50/80" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
             isHovered && !shouldHighlight ? "hover:shadow-sm" : "",
-            isClicked ? "scale-[0.98] transform" : "",
-            isNavigatingTo ? "nav-item-loading ring-1 ring-blue-200/50" : ""
+            isClicked ? "scale-[0.98] transform" : ""
           ),
+          onClick: (e2) => {
+            e2.preventDefault();
+            toggleExpanded(item.href);
+            setClickedTab(item.href);
+            setTimeout(() => setClickedTab(null), 150);
+          },
+          onMouseEnter: () => {
+            handleTabHover(item.href);
+            setHoveredTab(item.href);
+          },
+          onMouseLeave: () => setHoveredTab(null),
           children: [
             /* @__PURE__ */ jsxs250("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx275(Icon2, { className: cn8(
@@ -42465,28 +42452,28 @@ var ClientSidebar = ({
               "w-4 h-4 transition-transform duration-200",
               isExpanded ? "rotate-180" : ""
             ) }),
-            isHovered && !shouldHighlight && /* @__PURE__ */ jsx275("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100" }),
-            isNavigatingTo && /* @__PURE__ */ jsx275("div", { className: "absolute inset-0 bg-blue-50/30 rounded-lg animate-pulse transition-all duration-100" })
+            isHovered && !shouldHighlight && /* @__PURE__ */ jsx275("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100 pointer-events-none" })
           ]
         }
-      ) : /* @__PURE__ */ jsxs250(
-        Button78,
+      ) }) : /* @__PURE__ */ jsxs250(
+        Link4,
         {
-          variant: "ghost",
-          onClick: (e2) => {
-            e2.preventDefault();
-            e2.stopPropagation();
-            handleTabClick(item.href);
-          },
-          onMouseEnter: () => handleTabHover(item.href),
-          onMouseLeave: () => setHoveredTab(null),
+          href: item.href,
           className: cn8(
-            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative",
+            "nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative no-underline",
             shouldHighlight ? "nav-item-active text-blue-700 font-medium bg-blue-50/80" : "text-text-primary hover:text-blue-700 hover:bg-bg-secondary",
             isHovered && !shouldHighlight ? "hover:shadow-sm" : "",
-            isClicked ? "scale-[0.98] transform" : "",
-            isNavigatingTo ? "nav-item-loading ring-1 ring-blue-200/50" : ""
+            isClicked ? "scale-[0.98] transform" : ""
           ),
+          onClick: (e2) => {
+            setClickedTab(item.href);
+            setTimeout(() => setClickedTab(null), 150);
+          },
+          onMouseEnter: () => {
+            handleTabHover(item.href);
+            setHoveredTab(item.href);
+          },
+          onMouseLeave: () => setHoveredTab(null),
           children: [
             /* @__PURE__ */ jsxs250("div", { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx275(Icon2, { className: cn8(
@@ -42496,39 +42483,34 @@ var ClientSidebar = ({
               !isCollapsed && /* @__PURE__ */ jsx275("span", { children: item.label })
             ] }),
             !isCollapsed && item.badge && /* @__PURE__ */ jsx275("span", { className: "inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full", children: item.badge }),
-            isHovered && !shouldHighlight && /* @__PURE__ */ jsx275("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100" }),
-            isNavigatingTo && /* @__PURE__ */ jsx275("div", { className: "absolute inset-0 bg-blue-50/30 rounded-lg animate-pulse transition-all duration-100" })
+            isHovered && !shouldHighlight && /* @__PURE__ */ jsx275("div", { className: "absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100 pointer-events-none" })
           ]
         }
       ),
       hasSubItems && isExpanded && !isCollapsed && /* @__PURE__ */ jsx275("div", { className: "ml-6 mt-1 space-y-1", "data-submenu": "true", children: item.subItems?.map((subItem) => {
         const SubIcon = subItem.icon;
         const subActive = isActive(subItem.href);
-        const subNavigating = isNavigating === subItem.href;
         const subClicked = clickedTab === subItem.href;
-        const subShouldHighlight = subActive || subNavigating;
+        const subShouldHighlight = subActive;
         return /* @__PURE__ */ jsxs250(
-          Button78,
+          Link4,
           {
-            variant: "ghost",
-            onClick: (e2) => {
-              e2.preventDefault();
-              e2.stopPropagation();
-              handleTabClick(subItem.href);
-            },
+            href: subItem.href,
             className: cn8(
-              "w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-all duration-100 rounded-lg justify-start h-auto will-change-transform",
+              "w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-all duration-100 rounded-lg justify-start h-auto will-change-transform no-underline",
               subShouldHighlight ? "text-blue-700 font-medium bg-blue-50/80" : "text-text-primary hover:text-blue-700",
-              subClicked ? "scale-[0.99] transform" : "",
-              subNavigating ? "ring-1 ring-blue-200/50" : ""
+              subClicked ? "scale-[0.99] transform" : ""
             ),
+            onClick: (e2) => {
+              setClickedTab(subItem.href);
+              setTimeout(() => setClickedTab(null), 150);
+            },
             children: [
               /* @__PURE__ */ jsx275(SubIcon, { className: cn8(
                 "w-4 h-4 transition-colors duration-100",
                 subShouldHighlight ? "text-blue-700" : "text-text-secondary"
               ) }),
-              subItem.label,
-              subNavigating && /* @__PURE__ */ jsx275("div", { className: "absolute inset-0 bg-blue-50/20 rounded-lg transition-all duration-100" })
+              subItem.label
             ]
           },
           subItem.href
