@@ -509,12 +509,11 @@ export async function generateAccessUrl(
 }
 
 /**
- * Process product images to ensure they have valid presigned URLs
- * This utility helps display thumbnails properly from S3
+ * Process product images - return CloudFront URLs as-is
  */
 export async function processProductImages(
   images: string | string[] | null | undefined,
-  expiresIn: number = 86400 * 7 // 7 days default
+  expiresIn: number = 86400 * 7 // Not used anymore, kept for compatibility
 ): Promise<string[]> {
   if (!images) return [];
   
@@ -523,50 +522,8 @@ export async function processProductImages(
     ? images.filter(Boolean)
     : images.split(',').filter(Boolean);
 
-  if (imageUrls.length === 0) return [];
-
-  // Process each image URL - optimize for CloudFront when available
-  const processedImages = await Promise.all(
-    imageUrls.map(async (url) => {
-      if (!url || typeof url !== 'string') return null;
-      
-      try {
-        // If it's already a CloudFront URL, return as is (already standardized)
-        if (CLOUDFRONT_DOMAIN && url.includes(CLOUDFRONT_DOMAIN)) {
-          return url;
-        }
-        
-        // If it's already a presigned URL or external URL, return as is
-        if (url.includes('?') || !url.includes('amazonaws.com')) {
-          return url;
-        }
-        
-        // If it's a direct S3 URL, extract key and generate clean URL
-        if (url.includes('amazonaws.com/')) {
-          const urlParts = url.split('amazonaws.com/');
-          if (urlParts.length > 1) {
-            const key = urlParts[1].split('?')[0]; // Remove any existing query params
-            const cleanUrl = await generateAccessUrl(key, expiresIn);
-            return cleanUrl || url; // Fallback to original if processing fails
-          }
-        }
-        
-        // If it's just a key (without full URL), generate clean URL directly
-        if (!url.startsWith('http')) {
-          const cleanUrl = await generateAccessUrl(url, expiresIn);
-          return cleanUrl || url;
-        }
-        
-        return url;
-      } catch (error) {
-        console.warn('Failed to process image URL:', url, error);
-        return url; // Return original on error
-      }
-    })
-  );
-
-  // Filter out null values and return
-  return processedImages.filter(Boolean) as string[];
+  // Return as-is since CloudFront URLs are already public and fast
+  return imageUrls;
 }
 
 /**
