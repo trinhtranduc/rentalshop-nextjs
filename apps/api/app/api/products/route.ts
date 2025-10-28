@@ -72,12 +72,27 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     const result = await db.products.search(searchFilters);
     console.log('✅ Search completed, found:', result.data?.length || 0, 'products');
 
-    // Process product images to generate presigned URLs for thumbnail display
+    // Process product images - parse JSON strings first
     const processedProducts = await Promise.all(
-      (result.data || []).map(async (product) => ({
-        ...product,
-        images: await processProductImages(product.images, 86400 * 7) // 7 days expiration
-      }))
+      (result.data || []).map(async (product) => {
+        let imageUrls = product.images;
+        
+        // Parse if it's a JSON string
+        if (typeof imageUrls === 'string') {
+          try {
+            const parsed = JSON.parse(imageUrls);
+            imageUrls = Array.isArray(parsed) ? parsed : [];
+          } catch {
+            // Not JSON, treat as comma-separated
+            imageUrls = imageUrls.split(',').filter(Boolean);
+          }
+        }
+        
+        return {
+          ...product,
+          images: imageUrls
+        };
+      })
     );
 
     return NextResponse.json({

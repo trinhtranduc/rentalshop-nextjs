@@ -91,7 +91,16 @@ export async function GET(
       console.log('✅ Product found, transforming data...');
 
       // Process images to generate presigned URLs for thumbnail display
-      const processedImages = await processProductImages(product.images, 86400 * 7); // 7 days expiration
+      // Parse images from database
+      let imageUrls = product.images;
+      if (typeof imageUrls === 'string') {
+        try {
+          const parsed = JSON.parse(imageUrls);
+          imageUrls = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          imageUrls = imageUrls.split(',').filter(Boolean);
+        }
+      }
 
       // Transform the data to match the expected format
       const transformedProduct = {
