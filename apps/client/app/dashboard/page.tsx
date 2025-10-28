@@ -1127,7 +1127,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
               onClick={() => router.push('/orders/create')}
             >
               <Package className="w-6 h-6 text-gray-700" />
@@ -1140,7 +1140,7 @@ export default function DashboardPage() {
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
               onClick={() => setShowAddCustomerDialog(true)}
             >
               <Users className="w-6 h-6 text-gray-700" />
@@ -1153,7 +1153,7 @@ export default function DashboardPage() {
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
               onClick={() => setShowAddProductDialog(true)}
             >
               <PackageCheck className="w-6 h-6 text-gray-700" />
@@ -1166,7 +1166,7 @@ export default function DashboardPage() {
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
               onClick={() => router.push('/orders')}
             >
               <TrendingUp className="w-6 h-6 text-gray-700" />
