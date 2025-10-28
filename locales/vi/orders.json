@@ -264,7 +264,7 @@
   "stats": {
     "totalOrders": "Tổng đơn hàng",
     "allTimeOrders": "Tất cả đơn hàng",
-    "activeRentals": "Đơn thuê đang hoạt động",
+    "activeRentals": "Đơn đang thuê",
     "currentlyPickuped": "Đang được thuê",
     "totalRevenue": "Tổng doanh thu",
     "lifetimeRevenue": "Doanh thu toàn bộ",

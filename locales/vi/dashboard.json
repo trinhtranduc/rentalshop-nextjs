@@ -5,7 +5,7 @@
   "stats": {
     "totalOrders": "Tổng đơn hàng",
     "todayRentals": "Đơn thuê hôm nay",
-    "activeRentals": "Đơn thuê đang hoạt động",
+    "activeRentals": "Đơn đang thuê",
     "totalRevenue": "Tổng doanh thu",
     "totalCustomers": "Tổng khách hàng",
     "totalProducts": "Tổng sản phẩm",
@@ -96,7 +96,7 @@
   "stats": {
     "totalOrders": "Tổng đơn hàng",
     "todayRentals": "Đơn thuê hôm nay",
-    "activeRentals": "Đơn thuê đang hoạt động",
+    "activeRentals": "Đơn đang thuê",
     "totalRevenue": "Tổng doanh thu",
     "totalCustomers": "Tổng khách hàng",
     "totalProducts": "Tổng sản phẩm",
