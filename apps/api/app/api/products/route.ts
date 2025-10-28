@@ -255,48 +255,19 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       const body = await request.json();
       productDataFromRequest = body;
       
-      // Fix images field for JSON requests - normalize to array of strings
+      // Normalize images to array of strings
       if (productDataFromRequest.images !== undefined) {
-        console.log('🔍 Original images value:', JSON.stringify(productDataFromRequest.images));
-        
         if (Array.isArray(productDataFromRequest.images)) {
-          // Process each item in array - handle string JSON objects
-          productDataFromRequest.images = productDataFromRequest.images
-            .map(img => {
-              // If item is a string that looks like JSON, parse it
-              if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
-                try {
-                  const parsed = JSON.parse(img);
-                  console.log('🔍 Parsed JSON string:', parsed);
-                  return Array.isArray(parsed) ? parsed : [img];
-                } catch (e) {
-                  console.log('⚠️ Failed to parse JSON:', e);
-                  return [img];
-                }
-              }
-              // Return as single-item array if it's already a string URL
-              return typeof img === 'string' ? [img] : img;
-            })
-            .flat(); // Flatten nested arrays
-          
-          console.log('✅ Normalized images:', JSON.stringify(productDataFromRequest.images));
-          
-          if (productDataFromRequest.images.length === 0) {
-            delete productDataFromRequest.images;
-          }
+          productDataFromRequest.images = productDataFromRequest.images.filter(Boolean);
         } else if (typeof productDataFromRequest.images === 'string') {
-          // Convert string to array
-          if (productDataFromRequest.images.trim() === '') {
-            delete productDataFromRequest.images;
-          } else {
-            try {
-              const parsed = JSON.parse(productDataFromRequest.images);
-              productDataFromRequest.images = Array.isArray(parsed) ? parsed : [productDataFromRequest.images];
-              console.log('✅ Parsed images string:', productDataFromRequest.images);
-            } catch {
-              productDataFromRequest.images = productDataFromRequest.images.split(',').filter(Boolean);
-            }
-          }
+          productDataFromRequest.images = productDataFromRequest.images
+            .split(',')
+            .filter(Boolean)
+            .map(url => url.trim());
+        }
+        
+        if (productDataFromRequest.images.length === 0) {
+          delete productDataFromRequest.images;
         }
       }
     }
