@@ -136,11 +136,27 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       limit: 1000
     });
 
-    // Get active rentals
+    // Get active rentals - Orders that are currently being rented out
+    // This includes ALL orders with status PICKUPED (regardless of when they were picked up)
+    // This makes business sense because:
+    // - User wants to know total active rentals across all time
+    // - Not just rentals that started today
     const activeRentals = await db.orders.search({
       where: {
         ...orderWhereClause,
         status: 'PICKUPED'
+      },
+      limit: 1000
+    });
+    
+    // Get today's pickups - Orders that were picked up TODAY
+    const todayPickups = await db.orders.search({
+      where: {
+        ...orderWhereClause,
+        status: 'PICKUPED',
+        pickedUpAt: {
+          gte: new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        }
       },
       limit: 1000
     });
@@ -183,7 +199,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         orders: thisMonthOrders.total || 0,
         revenue: thisMonthRevenue
       },
-      activeRentals: activeRentals.total || 0,
+      activeRentals: activeRentals.total || 0,  // Total active rentals (all time)
+      todayPickups: todayPickups.total || 0,    // Rentals picked up today
       stock: {
         total: stockMetrics._sum?.stock || 0,
         available: stockMetrics._sum?.available || 0,
