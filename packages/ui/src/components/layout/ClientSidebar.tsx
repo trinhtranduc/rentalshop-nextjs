@@ -120,7 +120,6 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPath);
-  const [isNavigating, setIsNavigating] = useState<string | null>(null);
   const pathname = usePathname();
   
   // Get translations
@@ -159,11 +158,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   useEffect(() => {
     const actualPath = pathname || currentPath;
     setLocalCurrentPage(actualPath);
-    // Clear navigation state when path actually changes
-    if (isNavigating && actualPath !== isNavigating) {
-      setIsNavigating(null);
-    }
-  }, [pathname, currentPath, isNavigating]);
+  }, [pathname, currentPath]);
 
   // AGGRESSIVE PREFETCHING: Prefetch all pages on mount for instant navigation
   useEffect(() => {
@@ -199,32 +194,13 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   };
 
   const isActive = (href: string) => {
-    // Use pathname as primary source for immediate feedback, fallback to localCurrentPage
-    const currentPathToCheck = pathname || localCurrentPage;
+    // Priority: 1. localCurrentPage (optimistic), 2. pathname (actual), 3. currentPath (fallback)
+    // This ensures immediate visual feedback on click before navigation completes
+    const currentPathToCheck = localCurrentPage || pathname || currentPath;
     if (href === '/dashboard') {
       return currentPathToCheck === '/dashboard';
     }
     return currentPathToCheck.startsWith(href);
-  };
-
-  const handleTabClick = (href: string) => {
-    // OPTIMISTIC UI UPDATE: Immediately set navigation state for instant visual feedback
-    setIsNavigating(href);
-    setLocalCurrentPage(href);
-    
-    // Set clicked state for immediate visual feedback
-    setClickedTab(href);
-    
-    // Clear clicked state quickly for responsive feel
-    setTimeout(() => setClickedTab(null), 150);
-    
-    // Navigate asynchronously - don't block UI updates
-    if (onNavigate) {
-      // Use requestAnimationFrame to ensure state updates render first
-      requestAnimationFrame(() => {
-        onNavigate(href);
-      });
-    }
   };
 
   const handleTabHover = (href: string) => {
@@ -240,80 +216,81 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
     const isExpanded = expandedItems.includes(item.href);
     const active = isActive(item.href);
     const isHovered = hoveredTab === item.href;
-    const isNavigatingTo = isNavigating === item.href;
     const isClicked = clickedTab === item.href;
     const Icon = item.icon;
     
     // Combined state for immediate visual feedback
-    const shouldHighlight = active || isNavigatingTo;
+    const shouldHighlight = active;
 
     return (
       <div key={item.href} className="relative">
         {hasSubItems ? (
-          <Button
-            variant="ghost"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleExpanded(item.href);
-            }}
-            onMouseEnter={() => handleTabHover(item.href)}
-            onMouseLeave={() => setHoveredTab(null)}
-            className={cn(
-              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative',
-              shouldHighlight
-                ? 'nav-item-active text-blue-700 font-medium bg-blue-50/80' 
-                : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary',
-              isHovered && !shouldHighlight ? 'hover:shadow-sm' : '',
-              isClicked ? 'scale-[0.98] transform' : '',
-              isNavigatingTo ? 'nav-item-loading ring-1 ring-blue-200/50' : ''
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <Icon className={cn(
-                'w-4 h-4 transition-colors duration-100',
-                shouldHighlight ? 'text-blue-700' : 'text-text-secondary'
-              )} />
-              {!isCollapsed && (
-                <span>{item.label}</span>
+          <>
+            <Link
+              href={item.href}
+              className={cn(
+                'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative no-underline',
+                shouldHighlight
+                  ? 'nav-item-active text-blue-700 font-medium bg-blue-50/80' 
+                  : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary',
+                isHovered && !shouldHighlight ? 'hover:shadow-sm' : '',
+                isClicked ? 'scale-[0.98] transform' : ''
               )}
-            </div>
-            {!isCollapsed && (
-              <ChevronDown className={cn(
-                'w-4 h-4 transition-transform duration-200',
-                isExpanded ? 'rotate-180' : ''
-              )} />
-            )}
-            
-            {/* Hover effect - only show when not currently active/navigating */}
-            {isHovered && !shouldHighlight && (
-              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100"></div>
-            )}
-            
-            {/* Navigation indicator */}
-            {isNavigatingTo && (
-              <div className="absolute inset-0 bg-blue-50/30 rounded-lg animate-pulse transition-all duration-100"></div>
-            )}
-          </Button>
+              onClick={(e) => {
+                // Toggle submenu instead of navigating to parent href
+                e.preventDefault();
+                toggleExpanded(item.href);
+                setClickedTab(item.href);
+                setTimeout(() => setClickedTab(null), 150);
+              }}
+              onMouseEnter={() => {
+                handleTabHover(item.href);
+                setHoveredTab(item.href);
+              }}
+              onMouseLeave={() => setHoveredTab(null)}
+            >
+              <div className="flex items-center gap-2">
+                <Icon className={cn(
+                  'w-4 h-4 transition-colors duration-100',
+                  shouldHighlight ? 'text-blue-700' : 'text-text-secondary'
+                )} />
+                {!isCollapsed && (
+                  <span>{item.label}</span>
+                )}
+              </div>
+              {!isCollapsed && (
+                <ChevronDown className={cn(
+                  'w-4 h-4 transition-transform duration-200',
+                  isExpanded ? 'rotate-180' : ''
+                )} />
+              )}
+              
+              {/* Hover effect - only show when not currently active */}
+              {isHovered && !shouldHighlight && (
+                <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100 pointer-events-none"></div>
+              )}
+            </Link>
+          </>
         ) : (
-          <Button
-            variant="ghost"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTabClick(item.href);
-            }}
-            onMouseEnter={() => handleTabHover(item.href)}
-            onMouseLeave={() => setHoveredTab(null)}
+          <Link
+            href={item.href}
             className={cn(
-              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative',
+              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative no-underline',
               shouldHighlight
                 ? 'nav-item-active text-blue-700 font-medium bg-blue-50/80' 
                 : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary',
               isHovered && !shouldHighlight ? 'hover:shadow-sm' : '',
-              isClicked ? 'scale-[0.98] transform' : '',
-              isNavigatingTo ? 'nav-item-loading ring-1 ring-blue-200/50' : ''
+              isClicked ? 'scale-[0.98] transform' : ''
             )}
+            onClick={(e) => {
+              setClickedTab(item.href);
+              setTimeout(() => setClickedTab(null), 150);
+            }}
+            onMouseEnter={() => {
+              handleTabHover(item.href);
+              setHoveredTab(item.href);
+            }}
+            onMouseLeave={() => setHoveredTab(null)}
           >
             <div className="flex items-center gap-2">
               <Icon className={cn(
@@ -330,16 +307,11 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
               </span>
             )}
             
-            {/* Hover effect - only show when not currently active/navigating */}
+            {/* Hover effect - only show when not currently active */}
             {isHovered && !shouldHighlight && (
-              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100"></div>
+              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100 pointer-events-none"></div>
             )}
-            
-            {/* Navigation indicator */}
-            {isNavigatingTo && (
-              <div className="absolute inset-0 bg-blue-50/30 rounded-lg animate-pulse transition-all duration-100"></div>
-            )}
-          </Button>
+          </Link>
         )}
 
         {/* Sub Items */}
@@ -348,36 +320,29 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             {item.subItems?.map((subItem) => {
               const SubIcon = subItem.icon;
               const subActive = isActive(subItem.href);
-              const subNavigating = isNavigating === subItem.href;
               const subClicked = clickedTab === subItem.href;
-              const subShouldHighlight = subActive || subNavigating;
+              const subShouldHighlight = subActive;
               
               return (
-                <Button
-                  variant="ghost"
+                <Link
                   key={subItem.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleTabClick(subItem.href);
-                    // Don't collapse submenu - keep it open
-                  }}
+                  href={subItem.href}
                   className={cn(
-                    'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-all duration-100 rounded-lg justify-start h-auto will-change-transform',
+                    'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-all duration-100 rounded-lg justify-start h-auto will-change-transform no-underline',
                     subShouldHighlight ? 'text-blue-700 font-medium bg-blue-50/80' : 'text-text-primary hover:text-blue-700',
-                    subClicked ? 'scale-[0.99] transform' : '',
-                    subNavigating ? 'ring-1 ring-blue-200/50' : ''
+                    subClicked ? 'scale-[0.99] transform' : ''
                   )}
+                  onClick={(e) => {
+                    setClickedTab(subItem.href);
+                    setTimeout(() => setClickedTab(null), 150);
+                  }}
                 >
                   <SubIcon className={cn(
                     'w-4 h-4 transition-colors duration-100',
                     subShouldHighlight ? 'text-blue-700' : 'text-text-secondary'
                   )} />
                   {subItem.label}
-                  {subNavigating && (
-                    <div className="absolute inset-0 bg-blue-50/20 rounded-lg transition-all duration-100"></div>
-                  )}
-                </Button>
+                </Link>
               );
             })}
           </div>

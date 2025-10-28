@@ -1,5 +1,14 @@
 'use client'
-import { useToast, Button } from '@rentalshop/ui';
+import { 
+  useToast, 
+  Button,
+  PageWrapper,
+  PageHeader,
+  PageContent,
+  ProductsLoading,
+  CustomerPageHeader,
+  AddCustomerForm
+} from '@rentalshop/ui';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,6 +21,7 @@ export default function AddCustomerPage() {
   const { user, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, removeToast } = useToast();
+  const tc = useCommonTranslations();
 
   // Get merchantId from current user
   const merchantId = user?.merchant?.id ? Number(user.merchant.id) : undefined;

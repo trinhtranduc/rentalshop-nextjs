@@ -16,7 +16,9 @@ import {
   SubscriptionStatusBanner,
   DashboardLoading,
   useToast,
-  Button } from '@rentalshop/ui';
+  Button,
+  AddCustomerDialog,
+  ProductAddDialog } from '@rentalshop/ui';
 import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
@@ -29,8 +31,9 @@ import {
   Minus
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { analyticsApi, ordersApi, useFormattedFullDate, useFormattedMonthOnly } from '@rentalshop/utils';
+import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi, useFormattedFullDate, useFormattedMonthOnly } from '@rentalshop/utils';
 import { useLocale as useNextIntlLocale } from 'next-intl';
+import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
 
 // ============================================================================
 // TYPES
@@ -219,6 +222,51 @@ export default function DashboardPage() {
   const [todayOrders, setTodayOrders] = useState<any[]>([]);
   const [orderStatusCounts, setOrderStatusCounts] = useState<any>({});
   const [currentDateRange, setCurrentDateRange] = useState<{startDate: string, endDate: string}>({startDate: '', endDate: ''});
+  
+  // Dialog states
+  const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
+  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
+  
+  // Data for product dialog
+  const [categories, setCategories] = useState<any[]>([]);
+  const [outlets, setOutlets] = useState<any[]>([]);
+
+  // Fetch categories and outlets for product dialog
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Wait for user to be loaded
+        if (!user) return;
+        
+        const merchantId = user?.merchant?.id || user?.merchantId;
+        if (!merchantId) {
+          console.log('No merchant ID available');
+          return;
+        }
+
+        const [categoriesRes, outletsRes] = await Promise.all([
+          categoriesApi.getCategories(),
+          outletsApi.getOutletsByMerchant(Number(merchantId))
+        ]);
+        
+        if (categoriesRes.success && categoriesRes.data) {
+          setCategories(categoriesRes.data);
+        }
+        if (outletsRes.success && outletsRes.data) {
+          // Handle both direct array and wrapped object formats
+          const outletsList = Array.isArray(outletsRes.data) 
+            ? outletsRes.data 
+            : outletsRes.data?.outlets || [];
+          setOutlets(outletsList);
+          console.log('Loaded outlets for product dialog:', outletsList.length);
+        }
+      } catch (error) {
+        console.error('Error fetching categories/outlets:', error);
+      }
+    };
+    
+    fetchData();
+  }, [user]);
 
   // Function to update URL when time period changes
   const updateTimePeriod = (newPeriod: 'today' | 'month' | 'year') => {
@@ -592,6 +640,60 @@ export default function DashboardPage() {
   // Debug popular data
   console.log('🔍 Current Top Products:', currentTopProducts);
   console.log('🔍 Current Top Customers:', currentTopCustomers);
+
+  // Handler for customer creation
+  const handleCustomerCreated = async (customerData: any) => {
+    try {
+      const merchantId = user?.merchant?.id || user?.merchantId;
+      if (!merchantId) {
+        toastError(tc('labels.error'), tc('messages.sessionExpired'));
+        return;
+      }
+
+      const response = await customersApi.createCustomer({
+        ...customerData,
+        phone: customerData.phone || '',
+        merchantId: Number(merchantId)
+      });
+      
+      if (response.success) {
+        toastSuccess(tc('labels.success'), tc('messages.createSuccess'));
+        // Refresh dashboard data
+        fetchDashboardData();
+      } else {
+        throw new Error(response.error || tc('messages.createFailed'));
+      }
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      toastError(tc('labels.error'), error instanceof Error ? error.message : tc('messages.createFailed'));
+      throw error;
+    }
+  };
+
+  // Handler for product creation
+  const handleProductCreated = async (productData: any) => {
+    try {
+      const merchantId = user?.merchant?.id || user?.merchantId;
+      if (!merchantId) {
+        toastError(tc('labels.error'), tc('messages.sessionExpired'));
+        return;
+      }
+
+      const response = await productsApi.createProduct(productData);
+      
+      if (response.success) {
+        toastSuccess(tc('labels.success'), tc('messages.createSuccess'));
+        // Refresh dashboard data
+        fetchDashboardData();
+      } else {
+        throw new Error(response.error || tc('messages.createFailed'));
+      }
+    } catch (error) {
+      console.error('Error creating product:', error);
+      toastError(tc('labels.error'), error instanceof Error ? error.message : tc('messages.createFailed'));
+      throw error;
+    }
+  };
 
   // Show loading skeleton on initial load
   if (initialLoading) {
@@ -1026,53 +1128,80 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-colors group justify-start"
+              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
               onClick={() => router.push('/orders/create')}
             >
               <Package className="w-6 h-6 text-blue-700" />
-              <div className="text-left">
+              <div className="text-left flex-1">
                 <p className="font-medium text-blue-900">{t('quickActions.createOrder')}</p>
                 <p className="text-sm text-blue-700">{tc('labels.create')}</p>
               </div>
+              <ArrowUpRight className="w-5 h-5 text-blue-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-colors group justify-start"
-              onClick={() => router.push('/customers/add')}
+              className="flex items-center gap-3 p-4 h-auto bg-green-50 hover:bg-green-100 text-green-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              onClick={() => setShowAddCustomerDialog(true)}
             >
-              <Users className="w-6 h-6 text-blue-700" />
-              <div className="text-left">
-                <p className="font-medium text-blue-900">{t('quickActions.addCustomer')}</p>
-                <p className="text-sm text-blue-700">{tc('buttons.add')}</p>
+              <Users className="w-6 h-6 text-green-700" />
+              <div className="text-left flex-1">
+                <p className="font-medium text-green-900">{t('quickActions.addCustomer')}</p>
+                <p className="text-sm text-green-700">{tc('labels.create')}</p>
               </div>
+              <ArrowUpRight className="w-5 h-5 text-green-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-colors group justify-start"
-              onClick={() => router.push('/products/add')}
+              className="flex items-center gap-3 p-4 h-auto bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              onClick={() => setShowAddProductDialog(true)}
             >
-              <PackageCheck className="w-6 h-6 text-blue-700" />
-              <div className="text-left">
-                <p className="font-medium text-blue-900">{t('quickActions.addProduct')}</p>
-                <p className="text-sm text-blue-700">{tc('buttons.add')}</p>
+              <PackageCheck className="w-6 h-6 text-purple-700" />
+              <div className="text-left flex-1">
+                <p className="font-medium text-purple-900">{t('quickActions.addProduct')}</p>
+                <p className="text-sm text-purple-700">{tc('labels.create')}</p>
               </div>
+              <ArrowUpRight className="w-5 h-5 text-purple-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-colors group justify-start"
+              className="flex items-center gap-3 p-4 h-auto bg-orange-50 hover:bg-orange-100 text-orange-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
               onClick={() => router.push('/orders')}
             >
-              <TrendingUp className="w-6 h-6 text-blue-700" />
-              <div className="text-left">
-                <p className="font-medium text-blue-900">{t('quickActions.viewReports')}</p>
-                <p className="text-sm text-blue-700">{tc('navigation.analytics')}</p>
+              <TrendingUp className="w-6 h-6 text-orange-700" />
+              <div className="text-left flex-1">
+                <p className="font-medium text-orange-900">{t('quickActions.viewReports')}</p>
+                <p className="text-sm text-orange-700">{tc('navigation.analytics')}</p>
               </div>
+              <ArrowUpRight className="w-5 h-5 text-orange-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
           </div>
         </div>
+
+        {/* Add Customer Dialog */}
+        <AddCustomerDialog
+          open={showAddCustomerDialog}
+          onOpenChange={setShowAddCustomerDialog}
+          onCustomerCreated={handleCustomerCreated}
+          onError={(error) => {
+            toastError(tc('labels.error'), error);
+          }}
+        />
+
+        {/* Add Product Dialog */}
+        <ProductAddDialog
+          open={showAddProductDialog}
+          onOpenChange={setShowAddProductDialog}
+          categories={categories}
+          outlets={outlets}
+          merchantId={String(user?.merchantId || user?.merchant?.id || 0)}
+          onProductCreated={handleProductCreated}
+          onError={(error) => {
+            toastError(tc('labels.error'), error);
+          }}
+        />
       </PageContent>
     </PageWrapper>
     </div>
