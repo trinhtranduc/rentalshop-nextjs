@@ -360,10 +360,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
                     e.preventDefault();
                     e.stopPropagation();
                     handleTabClick(subItem.href);
-                    // Add small delay before closing submenu to ensure navigation processes
-                    setTimeout(() => {
-                      setExpandedItems([]);
-                    }, 50); // Reduced delay for faster response
+                    // Don't collapse submenu - keep it open
                   }}
                   className={cn(
                     'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-all duration-100 rounded-lg justify-start h-auto will-change-transform',
