@@ -718,10 +718,10 @@ export default function DashboardPage() {
           <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2 text-gray-800">
+                <h1 className="text-2xl font-semibold mb-1.5 text-gray-900">
                   {t('welcome')}, {user?.name || tc('roles.owner')}! 👋
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm text-gray-600 font-normal">
                   {timePeriod === 'today' 
                     ? t('overview')
                     : timePeriod === 'month'
@@ -859,17 +859,17 @@ export default function DashboardPage() {
                           <div className="flex items-center space-x-3">
                             <Package className="w-4 h-4 text-blue-700" />
                             <div>
-                              <div className="font-medium text-sm">{order.orderNumber}</div>
-                              <div className="text-xs text-gray-600">
+                              <div className="font-semibold text-sm text-gray-900">{order.orderNumber}</div>
+                              <div className="text-xs text-gray-600 font-normal mt-0.5">
                                 {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'} • 
                                 {order.returnPlanAt ? useFormattedFullDate(order.returnPlanAt) : 'N/A'}
                               </div>
-                              <div className="text-xs text-gray-500">{order.productNames || 'N/A'}</div>
+                              <div className="text-xs text-gray-500 font-normal">{order.productNames || 'N/A'}</div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold text-blue-700">${(order.totalAmount || 0).toLocaleString()}</div>
-                            <div className="text-xs text-gray-500">{order.status}</div>
+                            <div className="font-bold text-sm text-blue-700">${(order.totalAmount || 0).toLocaleString()}</div>
+                            <div className="text-xs text-gray-500 font-normal mt-0.5">{order.status}</div>
                           </div>
                         </div>
                       ))}
@@ -900,11 +900,11 @@ export default function DashboardPage() {
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full ${item.dotColor}`}></div>
-                          <span className="text-sm font-medium text-gray-700 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
+                          <span className="text-sm font-semibold text-gray-800 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">{item.count}</span>
-                          <span className="text-xs text-gray-500">{t('orderStatuses.ordersCount')}</span>
+                          <span className="text-sm font-bold text-gray-900">{item.count}</span>
+                          <span className="text-xs text-gray-500 font-normal">{t('orderStatuses.ordersCount')}</span>
                         </div>
                       </div>
                     ))}
@@ -1130,12 +1130,12 @@ export default function DashboardPage() {
               className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
               onClick={() => router.push('/orders/create')}
             >
-              <Package className="w-6 h-6 text-gray-700" />
+              <Package className="w-5 h-5 text-gray-700" />
               <div className="text-left flex-1">
-                <p className="font-medium text-gray-900">{t('quickActions.createOrder')}</p>
-                <p className="text-sm text-gray-600">{tc('labels.create')}</p>
+                <p className="font-semibold text-sm text-gray-900">{t('quickActions.createOrder')}</p>
+                <p className="text-xs text-gray-600 font-normal">{tc('labels.create')}</p>
               </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
             
             <Button
@@ -1143,12 +1143,12 @@ export default function DashboardPage() {
               className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
               onClick={() => setShowAddCustomerDialog(true)}
             >
-              <Users className="w-6 h-6 text-gray-700" />
+              <Users className="w-5 h-5 text-gray-700" />
               <div className="text-left flex-1">
-                <p className="font-medium text-gray-900">{t('quickActions.addCustomer')}</p>
-                <p className="text-sm text-gray-600">{tc('labels.create')}</p>
+                <p className="font-semibold text-sm text-gray-900">{t('quickActions.addCustomer')}</p>
+                <p className="text-xs text-gray-600 font-normal">{tc('labels.create')}</p>
               </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
             
             <Button
@@ -1156,12 +1156,12 @@ export default function DashboardPage() {
               className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
               onClick={() => setShowAddProductDialog(true)}
             >
-              <PackageCheck className="w-6 h-6 text-gray-700" />
+              <PackageCheck className="w-5 h-5 text-gray-700" />
               <div className="text-left flex-1">
-                <p className="font-medium text-gray-900">{t('quickActions.addProduct')}</p>
-                <p className="text-sm text-gray-600">{tc('labels.create')}</p>
+                <p className="font-semibold text-sm text-gray-900">{t('quickActions.addProduct')}</p>
+                <p className="text-xs text-gray-600 font-normal">{tc('labels.create')}</p>
               </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
             
             <Button
@@ -1169,12 +1169,12 @@ export default function DashboardPage() {
               className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
               onClick={() => router.push('/orders')}
             >
-              <TrendingUp className="w-6 h-6 text-gray-700" />
+              <TrendingUp className="w-5 h-5 text-gray-700" />
               <div className="text-left flex-1">
-                <p className="font-medium text-gray-900">{t('quickActions.viewReports')}</p>
-                <p className="text-sm text-gray-600">{tc('navigation.analytics')}</p>
+                <p className="font-semibold text-sm text-gray-900">{t('quickActions.viewReports')}</p>
+                <p className="text-xs text-gray-600 font-normal">{tc('navigation.analytics')}</p>
               </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
           </div>
         </div>
