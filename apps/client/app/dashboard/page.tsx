@@ -1127,54 +1127,54 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
               onClick={() => router.push('/orders/create')}
             >
-              <Package className="w-6 h-6 text-blue-700" />
+              <Package className="w-6 h-6 text-gray-700" />
               <div className="text-left flex-1">
-                <p className="font-medium text-blue-900">{t('quickActions.createOrder')}</p>
-                <p className="text-sm text-blue-700">{tc('labels.create')}</p>
+                <p className="font-medium text-gray-900">{t('quickActions.createOrder')}</p>
+                <p className="text-sm text-gray-600">{tc('labels.create')}</p>
               </div>
-              <ArrowUpRight className="w-5 h-5 text-blue-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowUpRight className="w-5 h-5 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-green-50 hover:bg-green-100 text-green-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
               onClick={() => setShowAddCustomerDialog(true)}
             >
-              <Users className="w-6 h-6 text-green-700" />
+              <Users className="w-6 h-6 text-gray-700" />
               <div className="text-left flex-1">
-                <p className="font-medium text-green-900">{t('quickActions.addCustomer')}</p>
-                <p className="text-sm text-green-700">{tc('labels.create')}</p>
+                <p className="font-medium text-gray-900">{t('quickActions.addCustomer')}</p>
+                <p className="text-sm text-gray-600">{tc('labels.create')}</p>
               </div>
-              <ArrowUpRight className="w-5 h-5 text-green-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowUpRight className="w-5 h-5 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
               onClick={() => setShowAddProductDialog(true)}
             >
-              <PackageCheck className="w-6 h-6 text-purple-700" />
+              <PackageCheck className="w-6 h-6 text-gray-700" />
               <div className="text-left flex-1">
-                <p className="font-medium text-purple-900">{t('quickActions.addProduct')}</p>
-                <p className="text-sm text-purple-700">{tc('labels.create')}</p>
+                <p className="font-medium text-gray-900">{t('quickActions.addProduct')}</p>
+                <p className="text-sm text-gray-600">{tc('labels.create')}</p>
               </div>
-              <ArrowUpRight className="w-5 h-5 text-purple-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowUpRight className="w-5 h-5 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-orange-50 hover:bg-orange-100 text-orange-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
+              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-all duration-200 group justify-start transform hover:scale-105 hover:shadow-md"
               onClick={() => router.push('/orders')}
             >
-              <TrendingUp className="w-6 h-6 text-orange-700" />
+              <TrendingUp className="w-6 h-6 text-gray-700" />
               <div className="text-left flex-1">
-                <p className="font-medium text-orange-900">{t('quickActions.viewReports')}</p>
-                <p className="text-sm text-orange-700">{tc('navigation.analytics')}</p>
+                <p className="font-medium text-gray-900">{t('quickActions.viewReports')}</p>
+                <p className="text-sm text-gray-600">{tc('navigation.analytics')}</p>
               </div>
-              <ArrowUpRight className="w-5 h-5 text-orange-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowUpRight className="w-5 h-5 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
           </div>
         </div>
