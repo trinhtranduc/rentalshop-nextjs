@@ -560,7 +560,6 @@ export const SettingsComponent: React.FC = () => {
             onSave={handleUpdateMerchantInfo}
             onCancel={handleCancelMerchant}
             onInputChange={handleMerchantInputChange}
-            onCurrencyChange={handleCurrencyChange}
           />
         );
       case 'outlet':
