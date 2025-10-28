@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from '../../../ui/button';
 import { Languages, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useSettingsTranslations } from '@rentalshop/hooks';
+import { useSettingsTranslations, useCurrency } from '@rentalshop/hooks';
 
 // Language options with flags
 const languages = [
@@ -25,6 +25,7 @@ export function LanguageSection() {
   const t = useSettingsTranslations();
   const currentLocale = useLocale();
   const router = useRouter();
+  const { setCurrency } = useCurrency();
   const [isPending, startTransition] = useTransition();
   const [selectedLanguage, setSelectedLanguage] = useState(currentLocale);
 
@@ -38,6 +39,13 @@ export function LanguageSection() {
         
         // Set cookie for server-side access
         document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+        
+        // Auto-set currency based on language
+        if (newLocale === 'vi') {
+          setCurrency('VND');
+        } else {
+          setCurrency('USD');
+        }
       }
       
       // Refresh the page to apply new locale
