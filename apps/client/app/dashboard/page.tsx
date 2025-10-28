@@ -721,7 +721,7 @@ export default function DashboardPage() {
                 <h1 className="text-2xl font-semibold mb-1.5 text-gray-900">
                   {t('welcome')}, {user?.name || tc('roles.owner')}! 👋
                 </h1>
-                <p className="text-sm text-gray-600 font-normal">
+                <p className="text-base text-gray-700 font-medium">
                   {timePeriod === 'today' 
                     ? t('overview')
                     : timePeriod === 'month'
@@ -900,11 +900,11 @@ export default function DashboardPage() {
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full ${item.dotColor}`}></div>
-                          <span className="text-sm font-semibold text-gray-800 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
+                          <span className="text-sm font-semibold text-gray-900 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-gray-900">{item.count}</span>
-                          <span className="text-xs text-gray-500 font-normal">{t('orderStatuses.ordersCount')}</span>
+                          <span className="text-base font-bold text-gray-900">{item.count}</span>
+                          <span className="text-xs text-gray-400 font-normal">{t('orderStatuses.ordersCount')}</span>
                         </div>
                       </div>
                     ))}
@@ -1123,7 +1123,7 @@ export default function DashboardPage() {
 
         {/* Admin Quick Actions */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">{t('quickActions.title')}</h2>
+          <h2 className="text-lg font-semibold mb-4 text-gray-900">{t('quickActions.title')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button
               variant="ghost"
