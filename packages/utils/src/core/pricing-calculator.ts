@@ -22,16 +22,16 @@ export interface PricingBreakdown {
 
 export interface PricingConfig {
   discounts: {
-    month: number;
-    quarter: number;
-    semiAnnual: number;
-    year: number;
+    monthly: number;
+    quarterly: number;
+    sixMonths: number;
+    yearly: number;
   };
   intervals: {
-    month: { interval: BillingInterval; intervalCount: number };
-    quarter: { interval: BillingInterval; intervalCount: number };
-    semiAnnual: { interval: BillingInterval; intervalCount: number };
-    year: { interval: BillingInterval; intervalCount: number };
+    monthly: { interval: BillingInterval; intervalCount: number };
+    quarterly: { interval: BillingInterval; intervalCount: number };
+    sixMonths: { interval: BillingInterval; intervalCount: number };
+    yearly: { interval: BillingInterval; intervalCount: number };
   };
 }
 
@@ -125,11 +125,11 @@ export class BillingIntervalCalculator {
    * Get total months for billing interval
    */
   getTotalMonths(billingInterval: BillingInterval): number {
-    const intervalMap = {
-      month: 1,
-      quarter: 3,
-      semiAnnual: 6,
-      year: 12
+    const intervalMap: Record<BillingInterval, number> = {
+      monthly: 1,
+      quarterly: 3,
+      sixMonths: 6,
+      yearly: 12
     };
 
     return intervalMap[billingInterval] || 1;
@@ -139,7 +139,7 @@ export class BillingIntervalCalculator {
    * Get all available billing intervals
    */
   getAllIntervals(): BillingInterval[] {
-    return ['month', 'quarter', 'semiAnnual', 'year'];
+    return ['monthly', 'quarterly', 'sixMonths', 'yearly'];
   }
 }
 
@@ -223,11 +223,11 @@ export class PriceFormatter {
    * Format billing interval for display
    */
   static formatBillingInterval(interval: BillingInterval): string {
-    const intervalMap = {
-      month: 'Monthly',
-      quarter: 'Quarterly',
-      semiAnnual: 'Semi-Annual',
-      year: 'Yearly'
+    const intervalMap: Record<BillingInterval, string> = {
+      monthly: 'Monthly',
+      quarterly: 'Quarterly',
+      sixMonths: 'Six Months',
+      yearly: 'Yearly'
     };
 
     return intervalMap[interval] || interval;
@@ -429,16 +429,16 @@ export function createPricingComparisonEngine(config: PricingConfig): PricingCom
 
 export const DEFAULT_PRICING_CONFIG: PricingConfig = {
   discounts: {
-    month: 0,        // 0% discount
-    quarter: 10,     // 10% discount
-    semiAnnual: 15,  // 15% discount
-    year: 20         // 20% discount
+    monthly: 0,        // 0% discount
+    quarterly: 10,     // 10% discount
+    sixMonths: 15,     // 15% discount
+    yearly: 20         // 20% discount
   },
   intervals: {
-    month: { interval: 'month' as const, intervalCount: 1 },
-    quarter: { interval: 'month' as const, intervalCount: 3 },
-    semiAnnual: { interval: 'month' as const, intervalCount: 6 },
-    year: { interval: 'year' as const, intervalCount: 1 }
+    monthly: { interval: 'monthly' as const, intervalCount: 1 },
+    quarterly: { interval: 'quarterly' as const, intervalCount: 3 },
+    sixMonths: { interval: 'sixMonths' as const, intervalCount: 6 },
+    yearly: { interval: 'yearly' as const, intervalCount: 1 }
   }
 };
 
@@ -478,13 +478,13 @@ export const calculateProratedAmount = (
  */
 export const formatBillingCycle = (billingInterval: BillingInterval): string => {
   switch (billingInterval) {
-    case 'month':
+    case 'monthly':
       return 'Monthly';
-    case 'quarter':
+    case 'quarterly':
       return 'Quarterly';
-    case 'semiAnnual':
-      return 'Semi-Annual';
-    case 'year':
+    case 'sixMonths':
+      return 'Six Months';
+    case 'yearly':
       return 'Yearly';
     default:
       return billingInterval;

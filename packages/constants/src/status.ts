@@ -123,10 +123,10 @@ export type ProductAvailabilityStatus = typeof PRODUCT_AVAILABILITY_STATUS[keyof
 // BILLING INTERVALS
 // ============================================================================
 export const BILLING_INTERVAL = {
-  MONTH: 'month',
-  QUARTER: 'quarter',
-  SEMI_ANNUAL: 'semiAnnual',
-  YEAR: 'year'
+  MONTHLY: 'monthly',
+  QUARTERLY: 'quarterly',
+  SIX_MONTHS: 'sixMonths',
+  YEARLY: 'yearly'
 } as const;
 
 export type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];

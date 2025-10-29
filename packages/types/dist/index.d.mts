@@ -2112,6 +2112,7 @@ interface Plan {
     pricing: {
         monthly: PlanPricing;
         quarterly: PlanPricing;
+        sixMonths: PlanPricing;
         yearly: PlanPricing;
     };
     createdAt: Date;
@@ -2148,6 +2149,7 @@ interface PlanUpdateInput {
     pricing?: {
         monthly?: PlanPricing;
         quarterly?: PlanPricing;
+        sixMonths?: PlanPricing;
         yearly?: PlanPricing;
     };
     isActive?: boolean;
@@ -2306,19 +2308,24 @@ declare const PRICING_CONFIG: {
     readonly DISCOUNTS: {
         readonly monthly: 0;
         readonly quarterly: 10;
+        readonly sixMonths: 15;
         readonly yearly: 20;
     };
     readonly INTERVALS: {
         readonly monthly: {
-            readonly interval: "month";
+            readonly interval: "monthly";
             readonly intervalCount: 1;
         };
         readonly quarterly: {
-            readonly interval: "month";
+            readonly interval: "quarterly";
             readonly intervalCount: 3;
         };
+        readonly sixMonths: {
+            readonly interval: "sixMonths";
+            readonly intervalCount: 6;
+        };
         readonly yearly: {
-            readonly interval: "year";
+            readonly interval: "yearly";
             readonly intervalCount: 1;
         };
     };

@@ -16,6 +16,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const filters = {
+      search: searchParams.get('q') || searchParams.get('search') || undefined,
       merchantId: searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : undefined,
       planId: searchParams.get('planId') ? parseInt(searchParams.get('planId')!) : undefined,
       status: searchParams.get('status') || undefined,

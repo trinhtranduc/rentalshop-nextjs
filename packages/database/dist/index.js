@@ -2833,6 +2833,7 @@ var import_utils = require("@rentalshop/utils");
 function generatePricingFromBasePrice(basePrice) {
   const monthlyPrice = basePrice;
   const quarterlyPrice = monthlyPrice * 3;
+  const sixMonthsPrice = monthlyPrice * 6;
   const yearlyPrice = monthlyPrice * 12;
   return {
     monthly: {
@@ -2845,6 +2846,12 @@ function generatePricingFromBasePrice(basePrice) {
       discount: 5,
       // 5% discount for quarterly
       savings: quarterlyPrice * 0.05
+    },
+    sixMonths: {
+      price: sixMonthsPrice,
+      discount: 10,
+      // 10% discount for 6 months
+      savings: sixMonthsPrice * 0.1
     },
     yearly: {
       price: yearlyPrice,
@@ -3126,6 +3133,14 @@ var simplifiedSubscriptions = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
+    if (whereFilters.search) {
+      where.merchant = {
+        name: {
+          contains: whereFilters.search,
+          mode: "insensitive"
+        }
+      };
+    }
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.planId) where.planId = whereFilters.planId;
     if (whereFilters.isActive !== void 0) {

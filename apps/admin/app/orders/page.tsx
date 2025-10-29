@@ -357,6 +357,7 @@ export default function AdminOrdersPage() {
           filterStyle="dropdown"
           showStats={false}
           showMerchant={true}
+          userRole="ADMIN"
         />
       </div>
     </PageWrapper>
