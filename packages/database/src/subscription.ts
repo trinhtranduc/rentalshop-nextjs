@@ -128,7 +128,7 @@ function transformPlanFromDb(plan: any): Plan {
 export function calculatePlanPricing(plan: Plan): Record<BillingInterval, number> {
   const pricing: Record<BillingInterval, number> = {} as any;
   
-  const intervals: BillingInterval[] = ['month', 'quarter', 'semiAnnual', 'year'];
+  const intervals: BillingInterval[] = ['monthly', 'quarterly', 'sixMonths', 'yearly'];
   
   for (const interval of intervals) {
     pricing[interval] = calculateSubscriptionPrice(plan, interval);
@@ -141,16 +141,16 @@ export function calculatePeriodEnd(startDate: Date, billingInterval: BillingInte
   const endDate = new Date(startDate);
   
   switch (billingInterval) {
-    case 'month':
+    case 'monthly':
       endDate.setMonth(endDate.getMonth() + 1);
       break;
-    case 'quarter':
+    case 'quarterly':
       endDate.setMonth(endDate.getMonth() + 3);
       break;
-    case 'semiAnnual':
+    case 'sixMonths':
       endDate.setMonth(endDate.getMonth() + 6);
       break;
-    case 'year':
+    case 'yearly':
       endDate.setFullYear(endDate.getFullYear() + 1);
       break;
     default:
@@ -374,7 +374,7 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
   }
 
   // Calculate pricing based on billing interval
-  const billingInterval = data.billingInterval || 'month';
+  const billingInterval = data.billingInterval || 'monthly';
   const convertedPlan = convertPrismaPlanToPlan(plan);
   const amount = calculateSubscriptionPrice(convertedPlan, billingInterval);
   
@@ -474,7 +474,7 @@ export async function getPlanById(planId: number): Promise<Plan | null> {
 export async function changePlan(
   subscriptionId: number, 
   newPlanId: number, 
-  billingInterval: BillingInterval = 'month'
+  billingInterval: BillingInterval = 'monthly'
 ): Promise<Subscription> {
   const subscription = await prisma.subscription.findUnique({
     where: { id: subscriptionId }
@@ -502,10 +502,10 @@ export async function changePlan(
   // Calculate period duration in days based on billing interval
   const getPeriodDays = (interval: BillingInterval): number => {
     switch (interval) {
-      case 'month': return 30;
-      case 'quarter': return 90;
-      case 'semiAnnual': return 180;
-      case 'year': return 365;
+      case 'monthly': return 30;
+      case 'quarterly': return 90;
+      case 'sixMonths': return 180;
+      case 'yearly': return 365;
       default: return 30;
     }
   };
@@ -1009,7 +1009,7 @@ export async function renewSubscription(
 
   // 3. Calculate new period (extend by 1 month)
   const newPeriodStart = subscription.currentPeriodEnd;
-  const newPeriodEnd = calculatePeriodEnd(newPeriodStart, 'month');
+  const newPeriodEnd = calculatePeriodEnd(newPeriodStart, 'monthly');
 
   // 4. Use database transaction to ensure atomicity
   const result = await prisma.$transaction(async (tx) => {
