@@ -423,7 +423,9 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 
       // Commit staging files to production (including newly uploaded files)
       if (stagingKeys.length > 0) {
-        const commitResult = await commitStagingFiles(stagingKeys, 'product');
+        // Use product/merchantId/ structure for better organization
+        const targetFolder = `product/${merchantId}`;
+        const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
         
         if (commitResult.success) {
           // Generate production URLs with presigned access
