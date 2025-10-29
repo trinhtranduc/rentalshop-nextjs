@@ -522,11 +522,30 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     const product = await db.products.create(finalProductData);
     console.log('✅ Product created successfully:', product);
 
+    // Parse images from database response to return array
+    let imageUrls: string[] = [];
+    if (typeof product.images === 'string') {
+      try {
+        const parsed = JSON.parse(product.images);
+        imageUrls = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        imageUrls = product.images.split(',').filter(Boolean);
+      }
+    } else if (Array.isArray(product.images)) {
+      imageUrls = product.images;
+    }
+
+    // Return product with parsed images
+    const responseProduct = {
+      ...product,
+      images: imageUrls
+    };
+
     return NextResponse.json({
       success: true,
-      data: product,
+      data: responseProduct,
       code: 'PRODUCT_CREATED_SUCCESS',
-        message: 'Product created successfully'
+      message: 'Product created successfully'
     });
 
   } catch (error: any) {

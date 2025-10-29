@@ -538,9 +538,28 @@ export async function DELETE(
       const deletedProduct = await db.products.update(productId, { isActive: false });
       console.log('✅ Product soft deleted successfully:', deletedProduct);
 
+      // Parse images from database response to return array
+      let imageUrls: string[] = [];
+      if (typeof deletedProduct.images === 'string') {
+        try {
+          const parsed = JSON.parse(deletedProduct.images);
+          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          imageUrls = deletedProduct.images.split(',').filter(Boolean);
+        }
+      } else if (Array.isArray(deletedProduct.images)) {
+        imageUrls = deletedProduct.images;
+      }
+
+      // Return product with parsed images
+      const responseProduct = {
+        ...deletedProduct,
+        images: imageUrls
+      };
+
       return NextResponse.json({
         success: true,
-        data: deletedProduct,
+        data: responseProduct,
         code: 'PRODUCT_DELETED_SUCCESS',
         message: 'Product deleted successfully'
       });
