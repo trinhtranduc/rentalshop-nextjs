@@ -75,7 +75,7 @@ export async function middleware(request: NextRequest) {
     .map(s => s.trim())
     .filter(Boolean);
   
-  // Add localhost and Railway domains
+  // Add localhost, Railway domains, and custom domains
   const allowedOrigins = [
     ...corsOrigins,
     // Local development
@@ -86,7 +86,15 @@ export async function middleware(request: NextRequest) {
     'https://rental-client.up.railway.app',
     'https://rental-admin.up.railway.app',
     'https://dev-apis-development.up.railway.app',
-    'https://apis-development.up.railway.app'
+    'https://apis-development.up.railway.app',
+    // Custom domains - anyrent.shop (production)
+    'https://anyrent.shop',
+    'https://api.anyrent.shop', // Production API
+    'https://admin.anyrent.shop',
+    // Custom domains - anyrent.shop (development)
+    'https://dev.anyrent.shop',
+    'https://dev-api.anyrent.shop', // Development API
+    'https://dev-admin.anyrent.shop'
   ];
   
   // Get request origin

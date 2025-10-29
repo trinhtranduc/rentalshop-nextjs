@@ -18,6 +18,112 @@ const { SUBSCRIPTION_PLANS } = require('../packages/constants/src/subscription.t
 
 const prisma = new PrismaClient();
 
+// Helper function to mask sensitive information in DATABASE_URL
+function maskDatabaseUrl(url) {
+  if (!url) return 'Not set';
+  try {
+    const urlObj = new URL(url);
+    if (urlObj.password) {
+      urlObj.password = '***';
+    }
+    return urlObj.toString();
+  } catch (e) {
+    return url.substring(0, 20) + '...';
+  }
+}
+
+// Check if database schema exists
+async function checkDatabaseSchema() {
+  try {
+    // Check if User table exists (one of the main tables)
+    const result = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'User'
+      );
+    `;
+    
+    const tableExists = result[0]?.exists;
+    
+    if (!tableExists) {
+      console.warn('\n⚠️  Database schema does not exist!');
+      console.warn('   Tables not found in the database.\n');
+      console.warn('💡 Script will skip reset operations and only create new data.\n');
+      console.warn('   To push schema first, run:\n');
+      console.warn('   Option 1: Using Prisma CLI');
+      console.warn('     npx prisma db push --accept-data-loss\n');
+      console.warn('   Option 2: On Railway');
+      console.warn('     railway run --service apis npx prisma db push --accept-data-loss\n');
+      console.warn('   Option 3: Using migrations');
+      console.warn('     npx prisma migrate deploy\n');
+      return false; // Return false instead of throwing - script can continue
+    }
+    
+    return true;
+  } catch (error) {
+    // If query fails for other reasons, schema might not exist
+    console.warn('\n⚠️  Could not verify database schema. Script will continue with graceful handling...\n');
+    return false;
+  }
+}
+
+// Test database connection
+async function testDatabaseConnection() {
+  console.log('\n🔍 Checking database connection...');
+  
+  const dbUrl = process.env.DATABASE_URL;
+  const maskedUrl = maskDatabaseUrl(dbUrl);
+  console.log(`📊 DATABASE_URL: ${maskedUrl}`);
+  
+  if (!dbUrl) {
+    throw new Error('DATABASE_URL environment variable is not set!\n' +
+      'Please ensure DATABASE_URL is configured:\n' +
+      '  - On Railway: railway variables --service apis\n' +
+      '  - Locally: Set DATABASE_URL in .env file');
+  }
+  
+  try {
+    // Test connection with a simple query
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('✅ Database connection successful');
+    
+    // Check if schema exists
+    const schemaExists = await checkDatabaseSchema();
+    
+    if (schemaExists) {
+      console.log('✅ Database schema exists\n');
+    } else {
+      console.log('⚠️  Database schema not found - script will handle gracefully\n');
+    }
+    
+    return schemaExists;
+  } catch (error) {
+    console.error('\n❌ Database connection or schema check failed!');
+    console.error(`Error: ${error.message}\n`);
+    
+    if (error.message.includes('Can\'t reach database server')) {
+      console.error('💡 Possible solutions:');
+      console.error('  1. Ensure PostgreSQL service is running on Railway');
+      console.error('  2. Check if DATABASE_URL is correct');
+      console.error('  3. Verify network connectivity to database');
+      console.error('  4. If running locally, ensure DATABASE_URL uses public URL, not internal Railway URL');
+      console.error('');
+      console.error('   For Railway, ensure you use:');
+      console.error('   railway run --service apis yarn db:regenerate-system');
+    } else if (error.message.includes('schema does not exist')) {
+      // Error message already shown by checkDatabaseSchema
+      throw error;
+    } else if (error.message.includes('authentication failed')) {
+      console.error('💡 Authentication failed - check database credentials in DATABASE_URL');
+    } else if (error.message.includes('database')) {
+      console.error('💡 Database may not exist - run: npx prisma db push');
+    }
+    
+    throw error;
+  }
+}
+
 // System configuration
 const SYSTEM_CONFIG = {
   MERCHANTS: 2,
@@ -86,50 +192,117 @@ async function resetDatabase() {
     // Delete in correct order due to foreign key constraints
     // Note: subscriptionPayment model was removed, using unified Payment model
     
-    await prisma.payment.deleteMany({});
-    console.log('✅ Deleted all payments');
+    // Check if Payment table exists before trying to delete
+    const paymentTableExists = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'Payment'
+      );
+    `;
     
-    await prisma.subscription.deleteMany({});
-    console.log('✅ Deleted all subscriptions');
+    if (paymentTableExists[0]?.exists) {
+      await prisma.payment.deleteMany({});
+      console.log('✅ Deleted all payments');
+    } else {
+      console.log('⚠️  Payment table does not exist, skipping');
+    }
     
-    await prisma.plan.deleteMany({});
-    console.log('✅ Deleted all plans');
-    
-    // Reset merchant plans and subscription status
-    await prisma.merchant.updateMany({
-      data: {
-        planId: null,
-        subscriptionStatus: 'trial'
+    // Helper function to safely delete from table
+    async function safeDeleteTable(tableName, deleteFunction, logMessage) {
+      try {
+        // Try to delete - if table doesn't exist, it will throw an error
+        await deleteFunction();
+        console.log(logMessage);
+      } catch (error) {
+        // Check if error is because table doesn't exist
+        if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+          console.log(`⚠️  ${tableName} table does not exist, skipping`);
+        } else {
+          // Re-throw other errors
+          throw error;
+        }
       }
-    });
-    console.log('✅ Reset merchant plans and subscription status');
+    }
     
-    await prisma.orderItem.deleteMany({});
-    console.log('✅ Deleted all order items');
+    await safeDeleteTable('Subscription', 
+      () => prisma.subscription.deleteMany({}),
+      '✅ Deleted all subscriptions'
+    );
     
-    await prisma.order.deleteMany({});
-    console.log('✅ Deleted all orders');
+    await safeDeleteTable('Plan',
+      () => prisma.plan.deleteMany({}),
+      '✅ Deleted all plans'
+    );
     
-    await prisma.outletStock.deleteMany({});
-    console.log('✅ Deleted all outlet stock');
+    // Reset merchant plans and subscription status (only if Merchant table exists)
+    const merchantTableExists = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'Merchant'
+      );
+    `;
     
-    await prisma.product.deleteMany({});
-    console.log('✅ Deleted all products');
+    if (merchantTableExists[0]?.exists) {
+      try {
+        await prisma.merchant.updateMany({
+          data: {
+            planId: null,
+            subscriptionStatus: 'trial'
+          }
+        });
+        console.log('✅ Reset merchant plans and subscription status');
+      } catch (error) {
+        // Ignore if columns don't exist yet
+        console.log('⚠️  Could not reset merchant plans (columns may not exist)');
+      }
+    }
     
-    await prisma.category.deleteMany({});
-    console.log('✅ Deleted all categories');
+    await safeDeleteTable('OrderItem',
+      () => prisma.orderItem.deleteMany({}),
+      '✅ Deleted all order items'
+    );
     
-    await prisma.customer.deleteMany({});
-    console.log('✅ Deleted all customers');
+    await safeDeleteTable('Order',
+      () => prisma.order.deleteMany({}),
+      '✅ Deleted all orders'
+    );
     
-    await prisma.user.deleteMany({});
-    console.log('✅ Deleted all users');
+    await safeDeleteTable('OutletStock',
+      () => prisma.outletStock.deleteMany({}),
+      '✅ Deleted all outlet stock'
+    );
     
-    await prisma.outlet.deleteMany({});
-    console.log('✅ Deleted all outlets');
+    await safeDeleteTable('Product',
+      () => prisma.product.deleteMany({}),
+      '✅ Deleted all products'
+    );
     
-    await prisma.merchant.deleteMany({});
-    console.log('✅ Deleted all merchants');
+    await safeDeleteTable('Category',
+      () => prisma.category.deleteMany({}),
+      '✅ Deleted all categories'
+    );
+    
+    await safeDeleteTable('Customer',
+      () => prisma.customer.deleteMany({}),
+      '✅ Deleted all customers'
+    );
+    
+    await safeDeleteTable('User',
+      () => prisma.user.deleteMany({}),
+      '✅ Deleted all users'
+    );
+    
+    await safeDeleteTable('Outlet',
+      () => prisma.outlet.deleteMany({}),
+      '✅ Deleted all outlets'
+    );
+    
+    await safeDeleteTable('Merchant',
+      () => prisma.merchant.deleteMany({}),
+      '✅ Deleted all merchants'
+    );
     
     console.log('🎉 Database reset completed successfully!');
   } catch (error) {
@@ -942,8 +1115,17 @@ async function main() {
     console.log(`  • ${SYSTEM_CONFIG.SUBSCRIPTIONS} merchant subscriptions`);
     console.log('');
     
-    // Step 1: Reset database
-    await resetDatabase();
+    // Step 0: Test database connection
+    const schemaExists = await testDatabaseConnection();
+    
+    // Step 1: Reset database (only if schema exists)
+    if (schemaExists) {
+      await resetDatabase();
+    } else {
+      console.log('\n⚠️  Skipping database reset - schema does not exist');
+      console.log('   Will proceed to create new data only\n');
+      console.log('💡 To push schema first, run: npx prisma db push --accept-data-loss\n');
+    }
     
     // Step 2: Create subscription plans FIRST
     console.log('📋 Creating subscription plans...');

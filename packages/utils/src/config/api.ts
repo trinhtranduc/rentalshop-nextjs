@@ -312,16 +312,16 @@ function getApiBaseUrlInternal(): string {
   
   switch (env) {
     case 'local':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-apis-development.up.railway.app';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
     
     case 'development':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-apis-development.up.railway.app';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
     
     case 'production':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://apis-development.up.railway.app';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://api.anyrent.shop';
     
     default:
-      return 'https://dev-apis-development.up.railway.app';
+      return 'https://api.anyrent.shop';
   }
 }
 
@@ -380,7 +380,7 @@ function getApiConfig(): ApiConfig {
         urls: {
           client: process.env.CLIENT_URL || 'http://localhost:3000',
           admin: process.env.ADMIN_URL || 'http://localhost:3001',
-          api: process.env.API_URL || 'https://dev-apis-development.up.railway.app',
+          api: process.env.API_URL || 'https://dev-api.anyrent.shop',
           mobile: process.env.MOBILE_URL || 'http://localhost:3003'
         },
         logging: {
@@ -406,9 +406,9 @@ function getApiConfig(): ApiConfig {
         },
         cors: {
           origins: [
-            'https://dev.rentalshop.com',
-            'https://admin.dev.rentalshop.com',
-            'https://mobile.dev.rentalshop.com'
+            'https://dev.anyrent.shop',
+            'https://dev-admin.anyrent.shop',
+            'https://dev-api.anyrent.shop'
           ]
         },
         features: {
@@ -417,10 +417,10 @@ function getApiConfig(): ApiConfig {
           rateLimiting: true
         },
         urls: {
-          client: process.env.CLIENT_URL || 'https://dev.rentalshop.com',
-          admin: process.env.ADMIN_URL || 'https://admin.dev.rentalshop.com',
-          api: process.env.API_URL || 'https://dev-apis-development.up.railway.app',
-          mobile: process.env.MOBILE_URL || 'https://mobile.dev.rentalshop.com'
+          client: process.env.CLIENT_URL || 'https://dev.anyrent.shop',
+          admin: process.env.ADMIN_URL || 'https://dev-admin.anyrent.shop',
+          api: process.env.API_URL || 'https://dev-api.anyrent.shop',
+          mobile: process.env.MOBILE_URL || 'http://localhost:3003'
         },
         logging: {
           level: process.env.LOG_LEVEL || 'info',
@@ -445,9 +445,9 @@ function getApiConfig(): ApiConfig {
         },
         cors: {
           origins: [
-            'https://rentalshop.com',
-            'https://admin.rentalshop.com',
-            'https://mobile.rentalshop.com'
+            'https://anyrent.shop',
+            'https://admin.anyrent.shop',
+            'https://api.anyrent.shop'
           ]
         },
         features: {
@@ -456,10 +456,10 @@ function getApiConfig(): ApiConfig {
           rateLimiting: true
         },
         urls: {
-          client: process.env.CLIENT_URL || 'https://client-production-d10a.up.railway.app',
-          admin: process.env.ADMIN_URL || 'https://admin-production-89d0.up.railway.app',
-          api: process.env.API_URL || 'https://apis-development.up.railway.app',
-          mobile: process.env.MOBILE_URL || 'https://mobile.rentalshop.com'
+          client: process.env.CLIENT_URL || 'https://anyrent.shop',
+          admin: process.env.ADMIN_URL || 'https://admin.anyrent.shop',
+          api: process.env.API_URL || 'https://api.anyrent.shop',
+          mobile: process.env.MOBILE_URL || 'http://localhost:3003'
         },
         logging: {
           level: process.env.LOG_LEVEL || 'warn',
