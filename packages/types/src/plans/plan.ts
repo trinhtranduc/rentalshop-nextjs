@@ -33,6 +33,7 @@ export interface Plan {
   pricing: {
     monthly: PlanPricing;
     quarterly: PlanPricing;
+    sixMonths: PlanPricing;
     yearly: PlanPricing;
   };
   createdAt: Date;
@@ -75,6 +76,7 @@ export interface PlanUpdateInput {
   pricing?: {
     monthly?: PlanPricing;
     quarterly?: PlanPricing;
+    sixMonths?: PlanPricing;
     yearly?: PlanPricing;
   };
   isActive?: boolean;

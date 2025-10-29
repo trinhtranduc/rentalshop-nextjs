@@ -64,10 +64,10 @@ declare const PRODUCT_AVAILABILITY_STATUS: {
 };
 type ProductAvailabilityStatus = typeof PRODUCT_AVAILABILITY_STATUS[keyof typeof PRODUCT_AVAILABILITY_STATUS];
 declare const BILLING_INTERVAL: {
-    readonly MONTH: "month";
-    readonly QUARTER: "quarter";
-    readonly SEMI_ANNUAL: "semiAnnual";
-    readonly YEAR: "year";
+    readonly MONTHLY: "monthly";
+    readonly QUARTERLY: "quarterly";
+    readonly SIX_MONTHS: "sixMonths";
+    readonly YEARLY: "yearly";
 };
 type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];
 declare const AUDIT_ACTION: {

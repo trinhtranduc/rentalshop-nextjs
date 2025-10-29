@@ -3491,7 +3491,8 @@ var SearchableSelect = ({
   displayMode = "input",
   showAddNew = false,
   addNewText = "Add New",
-  onAddNew
+  onAddNew,
+  disabled = false
 }) => {
   const [open, setOpen] = React23.useState(false);
   const [query, setQuery] = React23.useState("");
@@ -3595,7 +3596,10 @@ var SearchableSelect = ({
     };
   }, [open]);
   const handleSelect = (option) => {
-    onChange?.(parseInt(option.value));
+    console.log("\u{1F3AF} SearchableSelect: Selecting option:", option);
+    const numericValue = parseInt(option.value);
+    console.log("\u{1F3AF} SearchableSelect: Parsed value:", numericValue);
+    onChange?.(numericValue);
     setOpen(false);
     if (onSearch) {
       setInternalOptions([option]);
@@ -3609,23 +3613,31 @@ var SearchableSelect = ({
       "input",
       {
         value: displayValue,
+        disabled,
         onFocus: () => {
-          setOpen(true);
+          if (!disabled)
+            setOpen(true);
         },
         onChange: (e2) => {
+          if (disabled)
+            return;
           setQuery(e2.target.value);
           setOpen(true);
+          if (e2.target.value && selected) {
+            onChange?.(void 0);
+          }
         },
         onBlur: () => {
           setTimeout(() => {
             setOpen(false);
           }, 300);
         },
-        placeholder: selected ? selected.label : placeholder,
+        placeholder,
         className: cn2(
           "h-10 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200",
           "focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0",
-          "hover:border-gray-400"
+          "hover:border-gray-400",
+          disabled && "bg-gray-100 text-gray-500 cursor-not-allowed"
         )
       }
     ),
@@ -3636,9 +3648,12 @@ var SearchableSelect = ({
         variant: "ghost",
         size: "icon",
         type: "button",
+        disabled,
         "aria-label": "Toggle options",
         className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
         onMouseDown: (e2) => {
+          if (disabled)
+            return;
           e2.preventDefault();
           setOpen((o2) => !o2);
         },
@@ -3716,7 +3731,7 @@ var SearchableSelect = ({
                       }
                     }
                   ),
-                  /* @__PURE__ */ jsx37("div", { className: "hidden w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ jsx37("svg", { className: "w-6 h-6 text-gray-400", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx37("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" }) }) })
+                  /* @__PURE__ */ jsx37("div", { className: "w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ jsx37("svg", { className: "w-6 h-6 text-gray-400", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx37("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" }) }) })
                 ] })
               ) : opt.type === "product" ? (
                 // Product without image - use package icon
@@ -17183,7 +17198,9 @@ var OrderFilters = React49.memo(function OrderFilters2({
   filters,
   onFiltersChange,
   onSearchChange,
-  onClearFilters
+  onClearFilters,
+  userRole = "ADMIN"
+  // Default to ADMIN for backward compatibility
 }) {
   const t2 = useOrderTranslations7();
   const tc = useCommonTranslations11();
@@ -17201,12 +17218,30 @@ var OrderFilters = React49.memo(function OrderFilters2({
       setLocalSearch(externalSearch);
     }
   }, [filters.search]);
+  const isOutletFilterEnabled = React49.useMemo(() => {
+    if (userRole === "MERCHANT") {
+      return true;
+    }
+    if (userRole === "ADMIN") {
+      return "merchantId" in filters && filters.merchantId;
+    }
+    return false;
+  }, [userRole, filters]);
   useEffect17(() => {
+    if (!isOutletFilterEnabled) {
+      setOutlets([]);
+      return;
+    }
     const fetchOutlets = async () => {
       try {
         setLoadingOutlets(true);
         setOutletError(null);
-        const result = await outletsApi.getOutlets();
+        let result;
+        if (userRole === "ADMIN" && "merchantId" in filters && filters.merchantId) {
+          result = await outletsApi.getOutletsByMerchant(filters.merchantId);
+        } else {
+          result = await outletsApi.getOutlets();
+        }
         if (result.success && result.data?.outlets) {
           setOutlets(result.data.outlets);
         } else {
@@ -17222,7 +17257,7 @@ var OrderFilters = React49.memo(function OrderFilters2({
       }
     };
     fetchOutlets();
-  }, []);
+  }, [isOutletFilterEnabled, userRole, filters]);
   useEffect17(() => {
     const hasMerchantFilter = "merchantId" in filters;
     if (hasMerchantFilter) {
@@ -17255,6 +17290,8 @@ var OrderFilters = React49.memo(function OrderFilters2({
     onSearchChange(value);
   };
   const handleFilterChange = (key, value) => {
+    console.log(`\u{1F527} OrderFilters: handleFilterChange - ${key}:`, value);
+    console.log(`\u{1F527} OrderFilters: current filters:`, filters);
     onFiltersChange({
       ...filters,
       [key]: value
@@ -17336,25 +17373,24 @@ var OrderFilters = React49.memo(function OrderFilters2({
         placeholder: loadingMerchants ? t2("filters.loading") : merchantError ? t2("filters.error") : "All Merchants",
         searchPlaceholder: "Search merchants...",
         className: "w-[200px]",
-        emptyText: "No merchants found",
-        displayMode: "button"
+        emptyText: "No merchants found"
       }
     ),
     /* @__PURE__ */ jsx88(
       SearchableSelect4,
       {
-        value: filters.outletId,
+        value: filters.outletId ? Number(filters.outletId) : void 0,
         onChange: (value) => handleFilterChange("outletId", value || void 0),
         options: outlets.map((outlet) => ({
           value: outlet.id.toString(),
           label: outlet.name,
           subtitle: outlet.name
         })),
-        placeholder: loadingOutlets ? t2("filters.loading") : outletError ? t2("filters.error") : t2("filters.allOutlets"),
+        placeholder: !isOutletFilterEnabled ? userRole === "ADMIN" ? "Select merchant first" : "All Outlets" : loadingOutlets ? t2("filters.loading") : outletError ? t2("filters.error") : t2("filters.allOutlets"),
         searchPlaceholder: "Search outlets...",
         className: "w-[200px]",
         emptyText: "No outlets found",
-        displayMode: "button"
+        disabled: !isOutletFilterEnabled
       }
     ),
     onClearFilters && (filters.status || filters.orderType || filters.outletId || filters.merchantId || localSearch) && /* @__PURE__ */ jsx88(
@@ -20887,8 +20923,10 @@ var Orders = React63.memo(function Orders2({
   showQuickFilters = true,
   filterStyle = "dropdown",
   // ⭐ Default to dropdown (modern pattern)
-  showMerchant = false
+  showMerchant = false,
   // ⭐ Default to false (client view)
+  userRole = "ADMIN"
+  // ⭐ Default to ADMIN for backward compatibility
 }) {
   const t2 = useOrderTranslations12();
   React63.useEffect(() => {
@@ -20939,7 +20977,8 @@ var Orders = React63.memo(function Orders2({
             filters,
             onFiltersChange: memoizedOnFiltersChange,
             onSearchChange: memoizedOnSearchChange,
-            onClearFilters: memoizedOnClearFilters
+            onClearFilters: memoizedOnClearFilters,
+            userRole
           }
         )
       ] }) }) }),
@@ -21549,7 +21588,7 @@ import { useState as useState57, useEffect as useEffect33 } from "react";
 import { useState as useState49 } from "react";
 import {
   Eye as Eye10,
-  Edit as Edit10,
+  Edit as Edit9,
   Building as Building3,
   MoreVertical as MoreVertical4,
   Ban
@@ -21565,15 +21604,12 @@ import {
   DialogFooter as DialogFooter2,
   Button as Button27,
   Card as Card29,
-  CardHeader as CardHeader22,
-  CardTitle as CardTitle22,
   CardContent as CardContent28,
   Badge as Badge10,
   Separator as Separator4
 } from "@rentalshop/ui";
 import { formatDate as formatDate4, formatCurrency as formatCurrency8 } from "@rentalshop/ui";
 import {
-  Edit as Edit9,
   Pause,
   Play,
   Clock as Clock6,
@@ -21650,208 +21686,98 @@ function SubscriptionViewDialog({
         subscription.merchant?.name || "Unknown Merchant"
       ] })
     ] }),
-    /* @__PURE__ */ jsxs104("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ jsxs104(Card29, { children: [
-        /* @__PURE__ */ jsx120(CardHeader22, { children: /* @__PURE__ */ jsx120(CardTitle22, { children: "Basic Information" }) }),
-        /* @__PURE__ */ jsx120(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs104("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Subscription ID" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.id })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Status" }),
-            /* @__PURE__ */ jsx120("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx120(Badge10, { variant: getStatusColor11(subscription.status), children: subscription.status }) })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Plan" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm font-medium", children: subscription.plan?.name || "Unknown Plan" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Amount" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm font-medium", children: formatCurrency8(subscription.amount, subscription.plan?.currency || "USD") })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Billing Interval" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.billingInterval || "month" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Currency" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.plan?.currency || "USD" })
-          ] })
-        ] }) })
+    /* @__PURE__ */ jsx120("div", { className: "space-y-4", children: /* @__PURE__ */ jsx120(Card29, { children: /* @__PURE__ */ jsxs104(CardContent28, { className: "grid grid-cols-1 md:grid-cols-2 gap-4 pt-6", children: [
+      /* @__PURE__ */ jsxs104("div", { children: [
+        /* @__PURE__ */ jsx120("label", { className: "text-sm text-gray-500", children: "Merchant" }),
+        /* @__PURE__ */ jsx120("p", { className: "font-medium", children: subscription.merchant?.name || "Unknown Merchant" })
       ] }),
-      /* @__PURE__ */ jsxs104(Card29, { children: [
-        /* @__PURE__ */ jsx120(CardHeader22, { children: /* @__PURE__ */ jsx120(CardTitle22, { children: "Merchant Information" }) }),
-        /* @__PURE__ */ jsx120(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs104("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Merchant ID" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.merchantId })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Merchant Name" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm font-medium", children: subscription.merchant?.name || "Unknown" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Email" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.merchant?.email || "Unknown" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Subscription Status" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.status || "Unknown" })
-          ] })
-        ] }) })
+      /* @__PURE__ */ jsxs104("div", { children: [
+        /* @__PURE__ */ jsx120("label", { className: "text-sm text-gray-500", children: "Plan" }),
+        /* @__PURE__ */ jsx120("p", { className: "font-medium", children: subscription.plan?.name || "Unknown Plan" })
       ] }),
-      /* @__PURE__ */ jsxs104(Card29, { children: [
-        /* @__PURE__ */ jsx120(CardHeader22, { children: /* @__PURE__ */ jsx120(CardTitle22, { children: "Plan Details" }) }),
-        /* @__PURE__ */ jsx120(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs104("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Plan ID" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.planId })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Plan Name" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm font-medium", children: subscription.plan?.name || "Unknown" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Plan Price" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm font-medium", children: subscription.plan ? formatCurrency8(subscription.plan.basePrice, subscription.plan.currency) : "Unknown" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Billing Interval" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.billingInterval || "month" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Status" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.status || "Unknown" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Plan ID" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.planId || "Unknown" })
-          ] })
-        ] }) })
+      /* @__PURE__ */ jsxs104("div", { children: [
+        /* @__PURE__ */ jsx120("label", { className: "text-sm text-gray-500", children: "Billing Interval" }),
+        /* @__PURE__ */ jsx120("p", { className: "font-medium", children: subscription.billingInterval })
       ] }),
-      /* @__PURE__ */ jsxs104(Card29, { children: [
-        /* @__PURE__ */ jsx120(CardHeader22, { children: /* @__PURE__ */ jsx120(CardTitle22, { children: "Important Dates" }) }),
-        /* @__PURE__ */ jsx120(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs104("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Current Period Start" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: formatDate4(subscription.currentPeriodStart) })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Current Period End" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: subscription.currentPeriodEnd ? formatDate4(subscription.currentPeriodEnd) : "No end date" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Trial Start" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: "No trial data available" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Trial End" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: "No trial data available" })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Created At" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: formatDate4(subscription.createdAt) })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Updated At" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: formatDate4(subscription.updatedAt) })
-          ] })
-        ] }) })
+      /* @__PURE__ */ jsxs104("div", { children: [
+        /* @__PURE__ */ jsx120("label", { className: "text-sm text-gray-500", children: "Amount" }),
+        /* @__PURE__ */ jsx120("p", { className: "font-medium", children: formatCurrency8(subscription.amount, subscription.plan?.currency || "USD") })
       ] }),
-      subscription.status === "cancelled" && /* @__PURE__ */ jsxs104(Card29, { children: [
-        /* @__PURE__ */ jsx120(CardHeader22, { children: /* @__PURE__ */ jsx120(CardTitle22, { children: "Cancellation Information" }) }),
-        /* @__PURE__ */ jsx120(CardContent28, { className: "space-y-4", children: /* @__PURE__ */ jsxs104("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Cancelled At" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: formatDate4(subscription.updatedAt) })
-          ] }),
-          /* @__PURE__ */ jsxs104("div", { children: [
-            /* @__PURE__ */ jsx120("label", { className: "text-sm font-medium text-gray-500", children: "Cancellation Reason" }),
-            /* @__PURE__ */ jsx120("p", { className: "text-sm", children: "No reason provided" })
-          ] })
-        ] }) })
+      /* @__PURE__ */ jsxs104("div", { children: [
+        /* @__PURE__ */ jsx120("label", { className: "text-sm text-gray-500", children: "Current Period" }),
+        /* @__PURE__ */ jsxs104("p", { className: "font-medium", children: [
+          formatDate4(subscription.currentPeriodStart),
+          /* @__PURE__ */ jsx120("span", { className: "mx-2", children: "\u2192" }),
+          subscription.currentPeriodEnd ? formatDate4(subscription.currentPeriodEnd) : "N/A"
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs104("div", { children: [
+        /* @__PURE__ */ jsx120("label", { className: "text-sm text-gray-500", children: "Status" }),
+        /* @__PURE__ */ jsx120("div", { className: "mt-1", children: /* @__PURE__ */ jsx120(Badge10, { variant: getStatusColor11(subscription.status), children: subscription.status }) })
       ] })
-    ] }),
+    ] }) }) }),
     /* @__PURE__ */ jsx120(Separator4, {}),
-    /* @__PURE__ */ jsxs104(DialogFooter2, { className: "flex justify-between", children: [
-      /* @__PURE__ */ jsxs104("div", { className: "flex gap-2 flex-wrap", children: [
-        canExtend && onExtend && /* @__PURE__ */ jsxs104(
-          Button27,
-          {
-            variant: "outline",
-            onClick: () => onExtend(subscription),
-            className: "flex items-center gap-2",
-            children: [
-              /* @__PURE__ */ jsx120(Clock6, { className: "h-4 w-4" }),
-              "Extend Subscription"
-            ]
-          }
-        ),
-        canChangePlan && onChangePlan && /* @__PURE__ */ jsxs104(
-          Button27,
-          {
-            variant: "outline",
-            onClick: () => onChangePlan(subscription),
-            className: "flex items-center gap-2",
-            children: [
-              /* @__PURE__ */ jsx120(ArrowRight2, { className: "h-4 w-4" }),
-              "Change Plan"
-            ]
-          }
-        ),
-        isActiveStatus && onSuspend && /* @__PURE__ */ jsxs104(
-          Button27,
-          {
-            variant: "outline",
-            onClick: () => onSuspend(subscription, "Paused from subscription view"),
-            className: "flex items-center gap-2 text-orange-600 hover:text-orange-700",
-            children: [
-              /* @__PURE__ */ jsx120(Pause, { className: "h-4 w-4" }),
-              "Pause Subscription"
-            ]
-          }
-        ),
-        subscription.status === "paused" && onReactivate && /* @__PURE__ */ jsxs104(
-          Button27,
-          {
-            variant: "outline",
-            onClick: () => onReactivate(subscription),
-            className: "flex items-center gap-2 text-green-600 hover:text-green-700",
-            children: [
-              /* @__PURE__ */ jsx120(Play, { className: "h-4 w-4" }),
-              "Resume Subscription"
-            ]
-          }
-        ),
-        canCancel && onCancel && /* @__PURE__ */ jsxs104(
-          Button27,
-          {
-            variant: "destructive",
-            onClick: () => onCancel(subscription),
-            className: "flex items-center gap-2",
-            children: [
-              /* @__PURE__ */ jsx120(X10, { className: "h-4 w-4" }),
-              "Cancel Subscription"
-            ]
-          }
-        )
-      ] }),
-      /* @__PURE__ */ jsxs104("div", { className: "flex gap-2", children: [
-        onEdit && /* @__PURE__ */ jsxs104(
-          Button27,
-          {
-            variant: "outline",
-            onClick: () => onEdit(subscription),
-            className: "flex items-center gap-2",
-            children: [
-              /* @__PURE__ */ jsx120(Edit9, { className: "h-4 w-4" }),
-              "Edit"
-            ]
-          }
-        ),
-        /* @__PURE__ */ jsx120(Button27, { variant: "outline", onClick: onClose, children: "Close" })
-      ] })
+    /* @__PURE__ */ jsxs104(DialogFooter2, { className: "flex flex-wrap gap-2", children: [
+      canExtend && onExtend && /* @__PURE__ */ jsxs104(
+        Button27,
+        {
+          variant: "outline",
+          onClick: () => onExtend(subscription),
+          className: "flex items-center gap-2",
+          children: [
+            /* @__PURE__ */ jsx120(Clock6, { className: "h-4 w-4" }),
+            "Extend Subscription"
+          ]
+        }
+      ),
+      canChangePlan && onChangePlan && /* @__PURE__ */ jsxs104(
+        Button27,
+        {
+          variant: "outline",
+          onClick: () => onChangePlan(subscription),
+          className: "flex items-center gap-2",
+          children: [
+            /* @__PURE__ */ jsx120(ArrowRight2, { className: "h-4 w-4" }),
+            "Change Plan"
+          ]
+        }
+      ),
+      isActiveStatus && onSuspend && /* @__PURE__ */ jsxs104(
+        Button27,
+        {
+          variant: "outline",
+          onClick: () => onSuspend(subscription, "Paused from subscription view"),
+          className: "flex items-center gap-2 text-orange-600 hover:text-orange-700",
+          children: [
+            /* @__PURE__ */ jsx120(Pause, { className: "h-4 w-4" }),
+            "Pause Subscription"
+          ]
+        }
+      ),
+      subscription.status === "PAUSED" && onReactivate && /* @__PURE__ */ jsxs104(
+        Button27,
+        {
+          variant: "outline",
+          onClick: () => onReactivate(subscription),
+          className: "flex items-center gap-2 text-green-600 hover:text-green-700",
+          children: [
+            /* @__PURE__ */ jsx120(Play, { className: "h-4 w-4" }),
+            "Resume Subscription"
+          ]
+        }
+      ),
+      canCancel && onCancel && /* @__PURE__ */ jsxs104(
+        Button27,
+        {
+          variant: "destructive",
+          onClick: () => onCancel(subscription),
+          className: "flex items-center gap-2",
+          children: [
+            /* @__PURE__ */ jsx120(X10, { className: "h-4 w-4" }),
+            "Cancel Subscription"
+          ]
+        }
+      )
     ] })
   ] }) });
 }
@@ -21866,24 +21792,17 @@ import {
   DialogDescription as DialogDescription5,
   DialogFooter as DialogFooter3,
   Button as Button28,
-  Card as Card30,
-  CardHeader as CardHeader23,
-  CardTitle as CardTitle23,
-  CardContent as CardContent29,
   Input as Input15,
-  Label as Label6,
-  Alert as Alert3,
-  AlertDescription as AlertDescription3
+  Label as Label6
 } from "@rentalshop/ui";
-import { formatDate as formatDate5, formatCurrency as formatCurrency9 } from "@rentalshop/ui";
-import { Calendar as Calendar10, DollarSign as DollarSign8, Clock as Clock7 } from "lucide-react";
+import { formatCurrency as formatCurrency9 } from "@rentalshop/ui";
+import { Calendar as Calendar10, DollarSign as DollarSign8 } from "lucide-react";
 import { jsx as jsx121, jsxs as jsxs105 } from "react/jsx-runtime";
 var EXTENSION_METHODS = [
-  "MANUAL_EXTENSION",
-  "PAYMENT_RECEIVED",
-  "ADMIN_EXTENSION",
-  "COMPENSATION",
-  "OTHER"
+  { value: "MANUAL_EXTENSION", label: "Manual Extension" },
+  { value: "PAYMENT_RECEIVED", label: "Payment Received" },
+  { value: "ADMIN_EXTENSION", label: "Admin Extension" },
+  { value: "COMPENSATION", label: "Compensation" }
 ];
 function SubscriptionExtendDialog({
   subscription,
@@ -21916,7 +21835,7 @@ function SubscriptionExtendDialog({
   };
   if (!subscription)
     return null;
-  const currentEndDate = subscription.endDate ? new Date(subscription.endDate) : /* @__PURE__ */ new Date();
+  const currentEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : /* @__PURE__ */ new Date();
   const minDate = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const suggestedEndDate = new Date(currentEndDate.getTime() + 30 * 24 * 60 * 60 * 1e3).toISOString().split("T")[0];
   return /* @__PURE__ */ jsx121(Dialog7, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ jsxs105(DialogContent7, { className: "max-w-2xl", children: [
@@ -21931,130 +21850,79 @@ function SubscriptionExtendDialog({
         ". This will update the end date and create a payment record."
       ] })
     ] }),
-    /* @__PURE__ */ jsxs105("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ jsxs105(Card30, { children: [
-        /* @__PURE__ */ jsx121(CardHeader23, { children: /* @__PURE__ */ jsx121(CardTitle23, { children: "Current Subscription" }) }),
-        /* @__PURE__ */ jsx121(CardContent29, { className: "space-y-4", children: /* @__PURE__ */ jsxs105("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ jsxs105("div", { children: [
-            /* @__PURE__ */ jsx121(Label6, { className: "text-sm font-medium text-gray-500", children: "Plan" }),
-            /* @__PURE__ */ jsx121("p", { className: "text-sm font-medium", children: subscription.plan?.name || "Unknown Plan" })
-          ] }),
-          /* @__PURE__ */ jsxs105("div", { children: [
-            /* @__PURE__ */ jsx121(Label6, { className: "text-sm font-medium text-gray-500", children: "Current Amount" }),
-            /* @__PURE__ */ jsx121("p", { className: "text-sm font-medium", children: formatCurrency9(subscription.amount, subscription.currency) })
-          ] }),
-          /* @__PURE__ */ jsxs105("div", { children: [
-            /* @__PURE__ */ jsx121(Label6, { className: "text-sm font-medium text-gray-500", children: "Current End Date" }),
-            /* @__PURE__ */ jsx121("p", { className: "text-sm", children: formatDate5(subscription.endDate) })
-          ] }),
-          /* @__PURE__ */ jsxs105("div", { children: [
-            /* @__PURE__ */ jsx121(Label6, { className: "text-sm font-medium text-gray-500", children: "Status" }),
-            /* @__PURE__ */ jsx121("p", { className: "text-sm", children: subscription.status })
-          ] })
-        ] }) })
-      ] }),
-      /* @__PURE__ */ jsxs105("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ jsxs105("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ jsxs105("div", { children: [
-            /* @__PURE__ */ jsx121(Label6, { htmlFor: "newEndDate", children: "New End Date *" }),
-            /* @__PURE__ */ jsx121(
-              Input15,
-              {
-                id: "newEndDate",
-                type: "date",
-                value: newEndDate,
-                onChange: (e2) => setNewEndDate(e2.target.value),
-                min: minDate,
-                placeholder: suggestedEndDate,
-                className: "mt-1"
-              }
-            ),
-            /* @__PURE__ */ jsxs105("p", { className: "text-xs text-gray-500 mt-1", children: [
-              "Suggested: ",
-              suggestedEndDate,
-              " (30 days from current end date)"
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs105("div", { children: [
-            /* @__PURE__ */ jsx121(Label6, { htmlFor: "amount", children: "Extension Amount *" }),
-            /* @__PURE__ */ jsxs105("div", { className: "relative mt-1", children: [
-              /* @__PURE__ */ jsx121(DollarSign8, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
-              /* @__PURE__ */ jsx121(
-                Input15,
-                {
-                  id: "amount",
-                  type: "number",
-                  value: amount,
-                  onChange: (e2) => setAmount(e2.target.value),
-                  placeholder: subscription.amount.toString(),
-                  className: "pl-10",
-                  step: "0.01",
-                  min: "0"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxs105("p", { className: "text-xs text-gray-500 mt-1", children: [
-              "Current amount: ",
-              formatCurrency9(subscription.amount, subscription.currency)
-            ] })
-          ] })
-        ] }),
+    /* @__PURE__ */ jsx121("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs105("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs105("div", { className: "grid grid-cols-2 gap-4", children: [
         /* @__PURE__ */ jsxs105("div", { children: [
-          /* @__PURE__ */ jsx121(Label6, { htmlFor: "method", children: "Extension Method *" }),
-          /* @__PURE__ */ jsx121(
-            "select",
-            {
-              id: "method",
-              value: method,
-              onChange: (e2) => setMethod(e2.target.value),
-              className: "w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-              children: EXTENSION_METHODS.map((m) => /* @__PURE__ */ jsx121("option", { value: m, children: m.replace("_", " ") }, m))
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxs105("div", { children: [
-          /* @__PURE__ */ jsx121(Label6, { htmlFor: "description", children: "Description (Optional)" }),
+          /* @__PURE__ */ jsx121(Label6, { htmlFor: "newEndDate", children: "New End Date *" }),
           /* @__PURE__ */ jsx121(
             Input15,
             {
-              id: "description",
-              value: description,
-              onChange: (e2) => setDescription(e2.target.value),
-              placeholder: "Reason for extension...",
+              id: "newEndDate",
+              type: "date",
+              value: newEndDate,
+              onChange: (e2) => setNewEndDate(e2.target.value),
+              min: minDate,
+              placeholder: suggestedEndDate,
               className: "mt-1"
             }
-          )
+          ),
+          /* @__PURE__ */ jsxs105("p", { className: "text-xs text-gray-500 mt-1", children: [
+            "Suggested: ",
+            suggestedEndDate,
+            " (30 days from current end date)"
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs105("div", { children: [
+          /* @__PURE__ */ jsx121(Label6, { htmlFor: "amount", children: "Extension Amount *" }),
+          /* @__PURE__ */ jsxs105("div", { className: "relative mt-1", children: [
+            /* @__PURE__ */ jsx121(DollarSign8, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
+            /* @__PURE__ */ jsx121(
+              Input15,
+              {
+                id: "amount",
+                type: "number",
+                value: amount,
+                onChange: (e2) => setAmount(e2.target.value),
+                placeholder: subscription.amount.toString(),
+                className: "pl-10",
+                step: "0.01",
+                min: "0"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxs105("p", { className: "text-xs text-gray-500 mt-1", children: [
+            "Current amount: ",
+            formatCurrency9(subscription.amount, subscription.plan?.currency || "USD")
+          ] })
         ] })
       ] }),
-      newEndDate && amount && /* @__PURE__ */ jsxs105(Alert3, { children: [
-        /* @__PURE__ */ jsx121(Clock7, { className: "h-4 w-4" }),
-        /* @__PURE__ */ jsx121(AlertDescription3, { children: /* @__PURE__ */ jsxs105("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ jsx121("p", { className: "font-medium", children: "Extension Preview:" }),
-          /* @__PURE__ */ jsxs105("div", { className: "grid grid-cols-2 gap-4 text-sm", children: [
-            /* @__PURE__ */ jsxs105("div", { children: [
-              /* @__PURE__ */ jsx121("span", { className: "font-medium", children: "Current End:" }),
-              " ",
-              formatDate5(subscription.endDate)
-            ] }),
-            /* @__PURE__ */ jsxs105("div", { children: [
-              /* @__PURE__ */ jsx121("span", { className: "font-medium", children: "New End:" }),
-              " ",
-              formatDate5(new Date(newEndDate))
-            ] }),
-            /* @__PURE__ */ jsxs105("div", { children: [
-              /* @__PURE__ */ jsx121("span", { className: "font-medium", children: "Extension Amount:" }),
-              " ",
-              formatCurrency9(parseFloat(amount) || 0, subscription.currency)
-            ] }),
-            /* @__PURE__ */ jsxs105("div", { children: [
-              /* @__PURE__ */ jsx121("span", { className: "font-medium", children: "Method:" }),
-              " ",
-              method.replace("_", " ")
-            ] })
-          ] })
-        ] }) })
+      /* @__PURE__ */ jsxs105("div", { children: [
+        /* @__PURE__ */ jsx121(Label6, { htmlFor: "method", children: "Extension Method" }),
+        /* @__PURE__ */ jsx121(
+          "select",
+          {
+            id: "method",
+            value: method,
+            onChange: (e2) => setMethod(e2.target.value),
+            className: "w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            children: EXTENSION_METHODS.map((m) => /* @__PURE__ */ jsx121("option", { value: m.value, children: m.label }, m.value))
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxs105("div", { children: [
+        /* @__PURE__ */ jsx121(Label6, { htmlFor: "description", children: "Description (Optional)" }),
+        /* @__PURE__ */ jsx121(
+          Input15,
+          {
+            id: "description",
+            value: description,
+            onChange: (e2) => setDescription(e2.target.value),
+            placeholder: "Reason for extension...",
+            className: "mt-1"
+          }
+        )
       ] })
-    ] }),
+    ] }) }),
     /* @__PURE__ */ jsxs105(DialogFooter3, { children: [
       /* @__PURE__ */ jsx121(Button28, { variant: "outline", onClick: handleClose, disabled: loading, children: "Cancel" }),
       /* @__PURE__ */ jsx121(
@@ -22094,7 +21962,7 @@ import {
   Badge as Badge11
 } from "@rentalshop/ui";
 import { formatCurrency as formatCurrency10 } from "@rentalshop/ui";
-import { ArrowRight as ArrowRight3, Check as Check3, X as X11 } from "lucide-react";
+import { ArrowRight as ArrowRight3, Check as Check3 } from "lucide-react";
 import { jsx as jsx122, jsxs as jsxs106 } from "react/jsx-runtime";
 function SubscriptionChangePlanDialog({
   subscription,
@@ -22132,7 +22000,7 @@ function SubscriptionChangePlanDialog({
     }));
   };
   const features = getFeatureComparison(currentPlan, selectedPlan);
-  return /* @__PURE__ */ jsx122(Dialog8, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ jsxs106(DialogContent8, { className: "max-w-4xl", children: [
+  return /* @__PURE__ */ jsx122(Dialog8, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ jsxs106(DialogContent8, { className: "max-w-4xl max-h-[90vh] flex flex-col overflow-hidden", children: [
     /* @__PURE__ */ jsxs106(DialogHeader8, { children: [
       /* @__PURE__ */ jsxs106(DialogTitle8, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx122(ArrowRight3, { className: "h-5 w-5 text-blue-700" }),
@@ -22144,20 +22012,7 @@ function SubscriptionChangePlanDialog({
         ". This will update the plan and pricing immediately."
       ] })
     ] }),
-    /* @__PURE__ */ jsxs106("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ jsxs106(Card31, { children: [
-        /* @__PURE__ */ jsx122(CardHeader24, { children: /* @__PURE__ */ jsx122(CardTitle24, { children: "Current Plan" }) }),
-        /* @__PURE__ */ jsx122(CardContent30, { children: /* @__PURE__ */ jsxs106("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ jsxs106("div", { children: [
-            /* @__PURE__ */ jsx122("h3", { className: "text-lg font-semibold", children: currentPlan?.name || "Unknown Plan" }),
-            /* @__PURE__ */ jsx122("p", { className: "text-sm text-gray-600", children: currentPlan?.description || "No description" })
-          ] }),
-          /* @__PURE__ */ jsxs106("div", { className: "text-right", children: [
-            /* @__PURE__ */ jsx122("p", { className: "text-2xl font-bold", children: currentPlan ? formatCurrency10(currentPlan.basePrice, currentPlan.currency) : "Unknown" }),
-            /* @__PURE__ */ jsx122("p", { className: "text-sm text-gray-600", children: "per month" })
-          ] })
-        ] }) })
-      ] }),
+    /* @__PURE__ */ jsxs106("div", { className: "flex-1 overflow-y-auto space-y-6 pr-1", children: [
       /* @__PURE__ */ jsxs106("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsx122(Label7, { className: "text-lg font-semibold", children: "Billing Period" }),
         /* @__PURE__ */ jsxs106(Select9, { value: selectedPeriod.toString(), onValueChange: (value) => setSelectedPeriod(parseInt(value)), children: [
@@ -22165,6 +22020,7 @@ function SubscriptionChangePlanDialog({
           /* @__PURE__ */ jsxs106(SelectContent9, { children: [
             /* @__PURE__ */ jsx122(SelectItem9, { value: "1", children: "Monthly (0% discount)" }),
             /* @__PURE__ */ jsx122(SelectItem9, { value: "3", children: "Quarterly (10% discount)" }),
+            /* @__PURE__ */ jsx122(SelectItem9, { value: "6", children: "6 Months (15% discount)" }),
             /* @__PURE__ */ jsx122(SelectItem9, { value: "12", children: "Yearly (20% discount)" })
           ] })
         ] })
@@ -22173,7 +22029,15 @@ function SubscriptionChangePlanDialog({
         /* @__PURE__ */ jsx122(Label7, { className: "text-lg font-semibold", children: "Select New Plan" }),
         /* @__PURE__ */ jsx122("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: plans.map((plan) => {
           const pricing = plan.pricing || {};
-          const periodKey = selectedPeriod === 1 ? "monthly" : selectedPeriod === 3 ? "quarterly" : "yearly";
+          let periodKey;
+          if (selectedPeriod === 1)
+            periodKey = "monthly";
+          else if (selectedPeriod === 3)
+            periodKey = "quarterly";
+          else if (selectedPeriod === 6)
+            periodKey = "sixMonths";
+          else
+            periodKey = "yearly";
           const periodPricing = pricing[periodKey] || { price: plan.basePrice, discount: 0, discountedPrice: plan.basePrice, savings: 0 };
           return /* @__PURE__ */ jsxs106(
             Card31,
@@ -22191,7 +22055,7 @@ function SubscriptionChangePlanDialog({
                 /* @__PURE__ */ jsx122(CardContent30, { children: /* @__PURE__ */ jsxs106("div", { className: "space-y-3", children: [
                   /* @__PURE__ */ jsxs106("div", { className: "text-center", children: [
                     /* @__PURE__ */ jsx122("div", { className: "text-2xl font-bold", children: formatCurrency10(periodPricing.price, plan.currency) }),
-                    /* @__PURE__ */ jsx122("div", { className: "text-sm text-gray-600", children: selectedPeriod === 1 ? "per month" : selectedPeriod === 3 ? "per quarter" : "per year" }),
+                    /* @__PURE__ */ jsx122("div", { className: "text-sm text-gray-600", children: selectedPeriod === 1 ? "per month" : selectedPeriod === 3 ? "per quarter" : selectedPeriod === 6 ? "every 6 months" : "per year" }),
                     periodPricing.discount > 0 && /* @__PURE__ */ jsxs106("div", { className: "flex items-center justify-center gap-2 mt-1", children: [
                       /* @__PURE__ */ jsxs106(Badge11, { variant: "outline", className: "text-green-600 border-green-200", children: [
                         periodPricing.discount,
@@ -22228,25 +22092,6 @@ function SubscriptionChangePlanDialog({
           );
         }) })
       ] }),
-      selectedPlan && /* @__PURE__ */ jsxs106(Card31, { children: [
-        /* @__PURE__ */ jsx122(CardHeader24, { children: /* @__PURE__ */ jsx122(CardTitle24, { children: "Plan Comparison" }) }),
-        /* @__PURE__ */ jsx122(CardContent30, { children: /* @__PURE__ */ jsxs106("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ jsxs106("div", { className: "grid grid-cols-3 gap-4 text-sm", children: [
-            /* @__PURE__ */ jsx122("div", { className: "font-medium", children: "Feature" }),
-            /* @__PURE__ */ jsx122("div", { className: "font-medium text-center", children: "Current" }),
-            /* @__PURE__ */ jsx122("div", { className: "font-medium text-center", children: "New Plan" })
-          ] }),
-          features.map((feature) => /* @__PURE__ */ jsxs106("div", { className: "grid grid-cols-3 gap-4 text-sm", children: [
-            /* @__PURE__ */ jsx122("div", { children: feature.label }),
-            /* @__PURE__ */ jsx122("div", { className: "text-center", children: feature.current === -1 ? "Unlimited" : feature.current }),
-            /* @__PURE__ */ jsxs106("div", { className: "text-center flex items-center justify-center gap-1", children: [
-              feature.selected === -1 ? "Unlimited" : feature.selected,
-              feature.change === "upgrade" && /* @__PURE__ */ jsx122(ArrowRight3, { className: "h-4 w-4 text-green-600" }),
-              feature.change === "downgrade" && /* @__PURE__ */ jsx122(X11, { className: "h-4 w-4 text-red-600" })
-            ] })
-          ] }, feature.key))
-        ] }) })
-      ] }),
       selectedPlan && currentPlan && /* @__PURE__ */ jsx122(Alert4, { children: /* @__PURE__ */ jsx122(AlertDescription4, { children: /* @__PURE__ */ jsxs106("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx122("p", { className: "font-medium", children: "Pricing Change:" }),
         /* @__PURE__ */ jsxs106("div", { className: "flex items-center gap-4", children: [
@@ -22265,7 +22110,7 @@ function SubscriptionChangePlanDialog({
         /* @__PURE__ */ jsx122("p", { className: "text-sm text-gray-600", children: "The plan change will take effect immediately and billing will be updated accordingly." })
       ] }) }) })
     ] }),
-    /* @__PURE__ */ jsxs106(DialogFooter4, { children: [
+    /* @__PURE__ */ jsxs106(DialogFooter4, { className: "flex-shrink-0 mt-4 border-t pt-4", children: [
       /* @__PURE__ */ jsx122(Button29, { variant: "outline", onClick: handleClose, disabled: loading, children: "Cancel" }),
       /* @__PURE__ */ jsx122(
         Button29,
@@ -23065,7 +22910,7 @@ function SubscriptionList({
                           setOpenMenuId(null);
                         },
                         children: [
-                          /* @__PURE__ */ jsx125(Edit10, { className: "h-4 w-4 mr-2" }),
+                          /* @__PURE__ */ jsx125(Edit9, { className: "h-4 w-4 mr-2" }),
                           "Edit"
                         ]
                       }
@@ -27646,7 +27491,7 @@ function UserGrid({ users, onUserAction }) {
 
 // src/components/features/Users/components/UserTable.tsx
 import React84 from "react";
-import { Eye as Eye12, Edit as Edit11, Trash2 as Trash29, MoreVertical as MoreVertical5, UserCheck as UserCheck2, UserX } from "lucide-react";
+import { Eye as Eye12, Edit as Edit10, Trash2 as Trash28, MoreVertical as MoreVertical5, UserCheck as UserCheck2, UserX } from "lucide-react";
 import { useUsersTranslations as useUsersTranslations2 } from "@rentalshop/hooks";
 import { jsx as jsx152, jsxs as jsxs135 } from "react/jsx-runtime";
 function UserTable({
@@ -27753,7 +27598,7 @@ function UserTable({
                 onUserAction("edit", user.id);
                 setOpenDropdownId(null);
               }, children: [
-                /* @__PURE__ */ jsx152(Edit11, { className: "h-4 w-4 mr-2" }),
+                /* @__PURE__ */ jsx152(Edit10, { className: "h-4 w-4 mr-2" }),
                 t2("actions.editUser")
               ] }),
               /* @__PURE__ */ jsxs135(DropdownMenuItem, { onClick: () => {
@@ -27773,7 +27618,7 @@ function UserTable({
                   },
                   className: "text-action-danger focus:text-action-danger",
                   children: [
-                    /* @__PURE__ */ jsx152(Trash29, { className: "h-4 w-4 mr-2" }),
+                    /* @__PURE__ */ jsx152(Trash28, { className: "h-4 w-4 mr-2" }),
                     t2("actions.delete")
                   ]
                 }
@@ -29399,7 +29244,7 @@ import {
 } from "@rentalshop/ui";
 import {
   Eye as Eye16,
-  Edit as Edit12,
+  Edit as Edit11,
   Store as Store6,
   Mail as Mail7,
   Phone as Phone4,
@@ -29485,7 +29330,7 @@ function UserRow({
             size: "sm",
             onClick: () => handleUserAction("edit", user.id),
             children: [
-              /* @__PURE__ */ jsx161(Edit12, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ jsx161(Edit11, { className: "w-4 h-4 mr-2" }),
               "Edit"
             ]
           }
@@ -29609,7 +29454,7 @@ function UserPageHeader({
 }
 
 // src/components/features/Users/components/AccountManagementCard.tsx
-import { UserCheck as UserCheck3, UserX as UserX2, Trash2 as Trash210 } from "lucide-react";
+import { UserCheck as UserCheck3, UserX as UserX2, Trash2 as Trash29 } from "lucide-react";
 import { jsx as jsx163, jsxs as jsxs146 } from "react/jsx-runtime";
 var AccountManagementCard = ({
   user,
@@ -29664,7 +29509,7 @@ var AccountManagementCard = ({
             variant: "destructive",
             className: "bg-red-600 hover:bg-red-700",
             children: [
-              /* @__PURE__ */ jsx163(Trash210, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ jsx163(Trash29, { className: "w-4 h-4 mr-2" }),
               "Delete Account"
             ]
           }
@@ -29965,7 +29810,7 @@ import {
   Building2 as Building211,
   MapPin as MapPin6,
   Phone as Phone5,
-  Edit as Edit13,
+  Edit as Edit12,
   Eye as Eye17
 } from "lucide-react";
 import { jsx as jsx167, jsxs as jsxs150 } from "react/jsx-runtime";
@@ -30038,7 +29883,7 @@ function OutletGrid({
             onClick: () => onOutletAction("edit", outlet.id),
             className: "flex-1",
             children: [
-              /* @__PURE__ */ jsx167(Edit13, { className: "w-4 h-4 mr-1" }),
+              /* @__PURE__ */ jsx167(Edit12, { className: "w-4 h-4 mr-1" }),
               "Edit"
             ]
           }
@@ -30060,7 +29905,7 @@ function OutletGrid({
 
 // src/components/features/Outlets/components/OutletTable.tsx
 import React92 from "react";
-import { Eye as Eye18, Edit as Edit14, XCircle as XCircle13, CheckCircle as CheckCircle19, MoreVertical as MoreVertical6, Building2 as Building212 } from "lucide-react";
+import { Eye as Eye18, Edit as Edit13, XCircle as XCircle13, CheckCircle as CheckCircle19, MoreVertical as MoreVertical6, Building2 as Building212 } from "lucide-react";
 import { useOutletsTranslations as useOutletsTranslations2, useCommonTranslations as useCommonTranslations18 } from "@rentalshop/hooks";
 import { Fragment as Fragment36, jsx as jsx168, jsxs as jsxs151 } from "react/jsx-runtime";
 function OutletTable({
@@ -30180,7 +30025,7 @@ function OutletTable({
                 onOutletAction("edit", outlet.id);
                 setOpenDropdownId(null);
               }, children: [
-                /* @__PURE__ */ jsx168(Edit14, { className: "h-4 w-4 mr-2" }),
+                /* @__PURE__ */ jsx168(Edit13, { className: "h-4 w-4 mr-2" }),
                 t2("actions.editOutlet")
               ] }),
               !outlet.isDefault && /* @__PURE__ */ jsxs151(Fragment36, { children: [
@@ -30902,7 +30747,7 @@ var CategoryActions = ({
 };
 
 // src/components/features/Categories/components/CategoryCard.tsx
-import { Edit as Edit15, Tag as Tag3, Calendar as Calendar20, Eye as Eye19 } from "lucide-react";
+import { Edit as Edit14, Tag as Tag3, Calendar as Calendar20, Eye as Eye19 } from "lucide-react";
 import { jsx as jsx178, jsxs as jsxs160 } from "react/jsx-runtime";
 var CategoryCard = ({
   category,
@@ -30953,7 +30798,7 @@ var CategoryCard = ({
             onClick: handleEdit,
             className: "h-8 px-3 text-blue-700 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300",
             children: [
-              /* @__PURE__ */ jsx178(Edit15, { className: "h-4 w-4 mr-1" }),
+              /* @__PURE__ */ jsx178(Edit14, { className: "h-4 w-4 mr-1" }),
               "Edit"
             ]
           }
@@ -31030,7 +30875,7 @@ var CategoryGrid = ({
 // src/components/features/Categories/components/CategoryTable.tsx
 import React99 from "react";
 import { useCategoriesTranslations as useCategoriesTranslations4, useCommonTranslations as useCommonTranslations22 } from "@rentalshop/hooks";
-import { Eye as Eye20, Edit as Edit16, Trash2 as Trash211, MoreVertical as MoreVertical7, FolderOpen } from "lucide-react";
+import { Eye as Eye20, Edit as Edit15, Trash2 as Trash210, MoreVertical as MoreVertical7, FolderOpen } from "lucide-react";
 import { Fragment as Fragment40, jsx as jsx180, jsxs as jsxs162 } from "react/jsx-runtime";
 function CategoryTable({
   categories,
@@ -31161,7 +31006,7 @@ function CategoryTable({
                       },
                       className: "cursor-pointer",
                       children: [
-                        /* @__PURE__ */ jsx180(Edit16, { className: "mr-2 h-4 w-4" }),
+                        /* @__PURE__ */ jsx180(Edit15, { className: "mr-2 h-4 w-4" }),
                         t2("actions.edit")
                       ]
                     }
@@ -31177,7 +31022,7 @@ function CategoryTable({
                         },
                         className: "cursor-pointer text-red-600 dark:text-red-400",
                         children: [
-                          /* @__PURE__ */ jsx180(Trash211, { className: "mr-2 h-4 w-4" }),
+                          /* @__PURE__ */ jsx180(Trash210, { className: "mr-2 h-4 w-4" }),
                           t2("actions.delete")
                         ]
                       }
@@ -31606,8 +31451,8 @@ import {
 } from "@rentalshop/ui";
 import {
   Eye as Eye21,
-  Edit as Edit17,
-  Trash2 as Trash212,
+  Edit as Edit16,
+  Trash2 as Trash211,
   Settings as Settings3,
   MoreHorizontal as MoreHorizontal2,
   Copy as Copy2,
@@ -31645,7 +31490,7 @@ var PlanActions = ({
         onClick: () => onEdit(plan),
         className: "h-8 w-8 p-0",
         title: "Edit plan",
-        children: /* @__PURE__ */ jsx188(Edit17, { className: "w-4 h-4" })
+        children: /* @__PURE__ */ jsx188(Edit16, { className: "w-4 h-4" })
       }
     ),
     /* @__PURE__ */ jsxs170(DropdownMenu3, { children: [
@@ -31683,7 +31528,7 @@ var PlanActions = ({
             onClick: () => onDelete(plan),
             className: "text-red-600 focus:text-red-600",
             children: [
-              /* @__PURE__ */ jsx188(Trash212, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ jsx188(Trash211, { className: "w-4 h-4 mr-2" }),
               "Delete Plan"
             ]
           }
@@ -31942,7 +31787,7 @@ import {
   CreditCard as CreditCard15,
   Star as Star5,
   Eye as Eye22,
-  Edit as Edit18,
+  Edit as Edit17,
   Settings as Settings4
 } from "lucide-react";
 import { jsx as jsx190, jsxs as jsxs172 } from "react/jsx-runtime";
@@ -32075,7 +31920,7 @@ var PlanCard = ({
               size: "sm",
               onClick: () => onEdit(plan),
               className: "h-8 w-8 p-0",
-              children: /* @__PURE__ */ jsx190(Edit18, { className: "w-4 h-4" })
+              children: /* @__PURE__ */ jsx190(Edit17, { className: "w-4 h-4" })
             }
           ),
           onToggleStatus && /* @__PURE__ */ jsx190(
@@ -32145,7 +31990,7 @@ var PlanCard = ({
             size: "sm",
             onClick: () => onEdit(plan),
             className: "h-8 w-8 p-0",
-            children: /* @__PURE__ */ jsx190(Edit18, { className: "w-4 h-4" })
+            children: /* @__PURE__ */ jsx190(Edit17, { className: "w-4 h-4" })
           }
         ),
         onToggleStatus && /* @__PURE__ */ jsx190(
@@ -32181,11 +32026,11 @@ import {
   Package as Package19,
   Star as Star6,
   Eye as Eye23,
-  Edit as Edit19,
+  Edit as Edit18,
   Settings as Settings5,
   ChevronUp as ChevronUp2,
   ChevronDown as ChevronDown6,
-  Trash2 as Trash213,
+  Trash2 as Trash212,
   MoreVertical as MoreVertical8
 } from "lucide-react";
 import { Fragment as Fragment44, jsx as jsx191, jsxs as jsxs173 } from "react/jsx-runtime";
@@ -32328,7 +32173,7 @@ var PlanTable = ({
                     setOpenMenuId(null);
                   },
                   children: [
-                    /* @__PURE__ */ jsx191(Edit19, { className: "h-4 w-4 mr-2" }),
+                    /* @__PURE__ */ jsx191(Edit18, { className: "h-4 w-4 mr-2" }),
                     "Edit Plan"
                   ]
                 }
@@ -32357,7 +32202,7 @@ var PlanTable = ({
                     },
                     className: "text-action-danger focus:text-action-danger",
                     children: [
-                      /* @__PURE__ */ jsx191(Trash213, { className: "h-4 w-4 mr-2" }),
+                      /* @__PURE__ */ jsx191(Trash212, { className: "h-4 w-4 mr-2" }),
                       "Delete Plan"
                     ]
                   }
@@ -32684,7 +32529,7 @@ import {
 } from "@rentalshop/ui";
 import {
   Calendar as Calendar22,
-  Edit as Edit20,
+  Edit as Edit19,
   ChevronUp as ChevronUp3,
   ChevronDown as ChevronDown7,
   Eye as Eye24
@@ -32824,7 +32669,7 @@ var BillingCycleTable = ({
               onClick: () => onEdit(cycle),
               className: "h-8 w-8 p-0",
               title: "Edit billing cycle",
-              children: /* @__PURE__ */ jsx195(Edit20, { className: "w-4 h-4" })
+              children: /* @__PURE__ */ jsx195(Edit19, { className: "w-4 h-4" })
             }
           )
         ] }) })
@@ -33119,12 +32964,12 @@ import {
   Calendar as Calendar23,
   Percent as Percent3,
   Clock as Clock19,
-  Edit as Edit21,
+  Edit as Edit20,
   Save as Save8,
   X as X16,
   Info as Info8,
   DollarSign as DollarSign16,
-  Trash2 as Trash215
+  Trash2 as Trash214
 } from "lucide-react";
 import { Fragment as Fragment46, jsx as jsx197, jsxs as jsxs179 } from "react/jsx-runtime";
 var BillingCycleDetailDialog = ({
@@ -33193,7 +33038,7 @@ var BillingCycleDetailDialog = ({
             onClick: handleEdit,
             className: "flex items-center gap-2",
             children: [
-              /* @__PURE__ */ jsx197(Edit21, { className: "w-4 h-4" }),
+              /* @__PURE__ */ jsx197(Edit20, { className: "w-4 h-4" }),
               "Edit"
             ]
           }
@@ -33206,7 +33051,7 @@ var BillingCycleDetailDialog = ({
             onClick: handleDelete,
             className: "flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50",
             children: [
-              /* @__PURE__ */ jsx197(Trash215, { className: "w-4 h-4" }),
+              /* @__PURE__ */ jsx197(Trash214, { className: "w-4 h-4" }),
               "Delete"
             ]
           }
@@ -35793,7 +35638,7 @@ import {
   Database as Database3,
   Download as Download11,
   Play as Play6,
-  Trash2 as Trash216,
+  Trash2 as Trash215,
   Clock as Clock24,
   User as User16,
   HardDrive as HardDrive2,
@@ -35954,7 +35799,7 @@ function BackupCard({
               onClick: () => onDelete(backup.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ jsx226(Trash216, { className: "h-3 w-3" }),
+                /* @__PURE__ */ jsx226(Trash215, { className: "h-3 w-3" }),
                 /* @__PURE__ */ jsx226("span", { children: "Delete" })
               ]
             }
@@ -36203,7 +36048,7 @@ import {
   Copy as Copy3,
   Eye as Eye27,
   EyeOff as EyeOff7,
-  Trash2 as Trash217,
+  Trash2 as Trash216,
   XCircle as XCircle19,
   User as User17
 } from "lucide-react";
@@ -36360,7 +36205,7 @@ function ApiKeyCard({
               onClick: () => onDelete(apiKey.id),
               className: "flex items-center space-x-1",
               children: [
-                /* @__PURE__ */ jsx230(Trash217, { className: "h-3 w-3" }),
+                /* @__PURE__ */ jsx230(Trash216, { className: "h-3 w-3" }),
                 /* @__PURE__ */ jsx230("span", { children: "Delete" })
               ]
             }
@@ -38338,7 +38183,7 @@ import {
   SelectTrigger as SelectTrigger18,
   SelectValue as SelectValue18
 } from "@rentalshop/ui";
-import { Settings as Settings9, Save as Save9, Edit as Edit23 } from "lucide-react";
+import { Settings as Settings9, Save as Save9, Edit as Edit22 } from "lucide-react";
 import { useOrderTranslations as useOrderTranslations18 } from "@rentalshop/hooks";
 import { useFormatCurrency as useFormatCurrency8 } from "@rentalshop/ui";
 import { Fragment as Fragment50, jsx as jsx246, jsxs as jsxs221 } from "react/jsx-runtime";
@@ -38525,7 +38370,7 @@ var OrderSettingsCard = ({
           onClick: onStartEdit,
           className: "w-full flex items-center gap-2 mt-4",
           children: [
-            /* @__PURE__ */ jsx246(Edit23, { className: "w-4 h-4" }),
+            /* @__PURE__ */ jsx246(Edit22, { className: "w-4 h-4" }),
             t2("detail.editSettings")
           ]
         }
@@ -38535,7 +38380,7 @@ var OrderSettingsCard = ({
 };
 
 // src/components/features/OrderDetail/components/OrderActionsSection.tsx
-import { Edit as Edit24, X as X17, Package as Package24, RotateCcw as RotateCcw4, Printer, Info as Info16 } from "lucide-react";
+import { Edit as Edit23, X as X17, Package as Package24, RotateCcw as RotateCcw4, Printer, Info as Info16 } from "lucide-react";
 import { useOrderTranslations as useOrderTranslations19 } from "@rentalshop/hooks";
 import { ORDER_STATUSES } from "@rentalshop/constants";
 import { jsx as jsx247, jsxs as jsxs222 } from "react/jsx-runtime";
@@ -38584,7 +38429,7 @@ var OrderActionsSection = ({
             disabled: !canEdit,
             title: !canEdit ? isRentOrder ? "RENT orders can only be edited when status is RESERVED" : "SALE orders can only be edited when status is COMPLETED" : t2("detail.editOrder"),
             children: [
-              /* @__PURE__ */ jsx247(Edit24, { className: "w-4 h-4 mr-2" }),
+              /* @__PURE__ */ jsx247(Edit23, { className: "w-4 h-4 mr-2" }),
               t2("detail.editOrder")
             ]
           }
@@ -40013,7 +39858,7 @@ import {
   Button as Button70,
   Separator as Separator6
 } from "@rentalshop/ui";
-import { LogOut, Trash2 as Trash218, Key as Key2 } from "lucide-react";
+import { LogOut, Trash2 as Trash217, Key as Key2 } from "lucide-react";
 import { useSettingsTranslations as useSettingsTranslations6 } from "@rentalshop/hooks";
 import { jsx as jsx257, jsxs as jsxs232 } from "react/jsx-runtime";
 var AccountSection = ({
@@ -40063,7 +39908,7 @@ var AccountSection = ({
     /* @__PURE__ */ jsx257(Separator6, {}),
     /* @__PURE__ */ jsxs232("div", { className: "flex items-center justify-between p-4 bg-red-50 rounded-lg", children: [
       /* @__PURE__ */ jsxs232("div", { className: "flex items-center space-x-3", children: [
-        /* @__PURE__ */ jsx257(Trash218, { className: "h-5 w-5 text-red-600" }),
+        /* @__PURE__ */ jsx257(Trash217, { className: "h-5 w-5 text-red-600" }),
         /* @__PURE__ */ jsxs232("div", { children: [
           /* @__PURE__ */ jsx257("h3", { className: "text-base font-semibold text-red-900", children: t2("account.deleteAccountTitle") }),
           /* @__PURE__ */ jsx257("p", { className: "text-sm text-red-700", children: t2("account.deleteAccountDesc") })

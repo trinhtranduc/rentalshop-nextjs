@@ -14,6 +14,7 @@ interface OrderFiltersProps {
   onFiltersChange: (filters: OrderFiltersType) => void;
   onSearchChange: (searchValue: string) => void;
   onClearFilters?: () => void;
+  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'; // Add user role for conditional logic
 }
 
 interface Outlet {
@@ -33,11 +34,12 @@ interface Merchant {
  * - Parent handles all filter logic
  * - Simple and predictable
  */
-export const OrderFilters = React.memo(function OrderFilters({ 
-  filters, 
-  onFiltersChange, 
-  onSearchChange, 
-  onClearFilters 
+export const OrderFilters = React.memo(function OrderFilters({
+  filters,
+  onFiltersChange,
+  onSearchChange,
+  onClearFilters,
+  userRole = 'ADMIN' // Default to ADMIN for backward compatibility
 }: OrderFiltersProps) {
   // Get translations
   const t = useOrderTranslations();
@@ -74,15 +76,41 @@ export const OrderFilters = React.memo(function OrderFilters({
   }, [filters.search]); // Only watch filters.search, not localSearch
 
   // ============================================================================
-  // FETCH OUTLETS (one-time)
+  // OUTLET FILTERING - Fetch outlets for dropdown
   // ============================================================================
   
+  // Determine if outlet filter should be enabled
+  const isOutletFilterEnabled = React.useMemo(() => {
+    if (userRole === 'MERCHANT') {
+      return true; // Merchants can always filter by outlet
+    }
+    if (userRole === 'ADMIN') {
+      return 'merchantId' in filters && (filters as any).merchantId; // Admin needs merchant selected first
+    }
+    return false; // Other roles don't need outlet filter
+  }, [userRole, filters]);
+
+  // Fetch outlets based on user role and selected merchant
   useEffect(() => {
+    if (!isOutletFilterEnabled) {
+      setOutlets([]);
+      return;
+    }
+
     const fetchOutlets = async () => {
       try {
         setLoadingOutlets(true);
         setOutletError(null);
-        const result = await outletsApi.getOutlets();
+        
+        let result;
+        if (userRole === 'ADMIN' && 'merchantId' in filters && (filters as any).merchantId) {
+          // Admin: fetch outlets for selected merchant
+          result = await outletsApi.getOutletsByMerchant((filters as any).merchantId);
+        } else {
+          // Merchant: fetch all outlets (they can only see their own)
+          result = await outletsApi.getOutlets();
+        }
+        
         if (result.success && result.data?.outlets) {
           setOutlets(result.data.outlets);
         } else {
@@ -99,7 +127,7 @@ export const OrderFilters = React.memo(function OrderFilters({
     };
 
     fetchOutlets();
-  }, []); // Only run once
+  }, [isOutletFilterEnabled, userRole, filters]);
 
   // ============================================================================
   // FETCH MERCHANTS (admin only, one-time)
@@ -148,6 +176,8 @@ export const OrderFilters = React.memo(function OrderFilters({
   };
 
   const handleFilterChange = (key: keyof OrderFiltersType, value: any) => {
+    console.log(`🔧 OrderFilters: handleFilterChange - ${key}:`, value);
+    console.log(`🔧 OrderFilters: current filters:`, filters);
     onFiltersChange({
       ...filters,
       [key]: value
@@ -233,24 +263,31 @@ export const OrderFilters = React.memo(function OrderFilters({
               searchPlaceholder="Search merchants..."
               className="w-[200px]"
               emptyText="No merchants found"
-              displayMode="button"
             />
           )}
           
           {/* Outlet Filter - SearchableSelect */}
           <SearchableSelect
-            value={filters.outletId}
+            value={filters.outletId ? Number(filters.outletId) : undefined}
             onChange={(value) => handleFilterChange('outletId', value || undefined)}
             options={outlets.map(outlet => ({
               value: outlet.id.toString(),
               label: outlet.name,
               subtitle: outlet.name
             }))}
-            placeholder={loadingOutlets ? t('filters.loading') : outletError ? t('filters.error') : t('filters.allOutlets')}
+            placeholder={
+              !isOutletFilterEnabled 
+                ? (userRole === 'ADMIN' ? 'Select merchant first' : 'All Outlets')
+                : loadingOutlets 
+                  ? t('filters.loading') 
+                  : outletError 
+                    ? t('filters.error') 
+                    : t('filters.allOutlets')
+            }
             searchPlaceholder="Search outlets..."
             className="w-[200px]"
             emptyText="No outlets found"
-            displayMode="button"
+            disabled={!isOutletFilterEnabled}
           />
           
       {/* Clear Filters Button */}

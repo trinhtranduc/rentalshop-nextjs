@@ -30,6 +30,7 @@ interface OrdersProps {
   showQuickFilters?: boolean;
   filterStyle?: 'buttons' | 'dropdown'; // ⭐ Choose UI style
   showMerchant?: boolean; // ⭐ Show merchant column for admin view
+  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'; // Add user role
 }
 
 export const Orders = React.memo(function Orders({ 
@@ -47,7 +48,8 @@ export const Orders = React.memo(function Orders({
   showStats = true,
   showQuickFilters = true,
   filterStyle = 'dropdown', // ⭐ Default to dropdown (modern pattern)
-  showMerchant = false // ⭐ Default to false (client view)
+  showMerchant = false, // ⭐ Default to false (client view)
+  userRole = 'ADMIN' // ⭐ Default to ADMIN for backward compatibility
 }: OrdersProps) {
   const t = useOrderTranslations();
   
@@ -106,6 +108,7 @@ export const Orders = React.memo(function Orders({
                 onFiltersChange={memoizedOnFiltersChange}
                 onSearchChange={memoizedOnSearchChange}
                 onClearFilters={memoizedOnClearFilters}
+                userRole={userRole}
               />
             </div>
           </CardContent>

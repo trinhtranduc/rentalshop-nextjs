@@ -3868,7 +3868,8 @@ var SearchableSelect = ({
   displayMode = "input",
   showAddNew = false,
   addNewText = "Add New",
-  onAddNew
+  onAddNew,
+  disabled = false
 }) => {
   const [open, setOpen] = React23.useState(false);
   const [query, setQuery] = React23.useState("");
@@ -3972,7 +3973,10 @@ var SearchableSelect = ({
     };
   }, [open]);
   const handleSelect = (option) => {
-    onChange?.(parseInt(option.value));
+    console.log("\u{1F3AF} SearchableSelect: Selecting option:", option);
+    const numericValue = parseInt(option.value);
+    console.log("\u{1F3AF} SearchableSelect: Parsed value:", numericValue);
+    onChange?.(numericValue);
     setOpen(false);
     if (onSearch) {
       setInternalOptions([option]);
@@ -3986,23 +3990,31 @@ var SearchableSelect = ({
       "input",
       {
         value: displayValue,
+        disabled,
         onFocus: () => {
-          setOpen(true);
+          if (!disabled)
+            setOpen(true);
         },
         onChange: (e2) => {
+          if (disabled)
+            return;
           setQuery(e2.target.value);
           setOpen(true);
+          if (e2.target.value && selected) {
+            onChange?.(void 0);
+          }
         },
         onBlur: () => {
           setTimeout(() => {
             setOpen(false);
           }, 300);
         },
-        placeholder: selected ? selected.label : placeholder,
+        placeholder,
         className: cn2(
           "h-10 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200",
           "focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0",
-          "hover:border-gray-400"
+          "hover:border-gray-400",
+          disabled && "bg-gray-100 text-gray-500 cursor-not-allowed"
         )
       }
     ),
@@ -4013,9 +4025,12 @@ var SearchableSelect = ({
         variant: "ghost",
         size: "icon",
         type: "button",
+        disabled,
         "aria-label": "Toggle options",
         className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
         onMouseDown: (e2) => {
+          if (disabled)
+            return;
           e2.preventDefault();
           setOpen((o2) => !o2);
         },
@@ -4093,7 +4108,7 @@ var SearchableSelect = ({
                       }
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "hidden w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("svg", { className: "w-6 h-6 text-gray-400", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" }) }) })
+                  /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "w-full h-full bg-gray-100 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("svg", { className: "w-6 h-6 text-gray-400", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" }) }) })
                 ] })
               ) : opt.type === "product" ? (
                 // Product without image - use package icon
@@ -17377,7 +17392,9 @@ var OrderFilters = import_react43.default.memo(function OrderFilters2({
   filters,
   onFiltersChange,
   onSearchChange,
-  onClearFilters
+  onClearFilters,
+  userRole = "ADMIN"
+  // Default to ADMIN for backward compatibility
 }) {
   const t2 = (0, import_hooks24.useOrderTranslations)();
   const tc = (0, import_hooks24.useCommonTranslations)();
@@ -17395,12 +17412,30 @@ var OrderFilters = import_react43.default.memo(function OrderFilters2({
       setLocalSearch(externalSearch);
     }
   }, [filters.search]);
+  const isOutletFilterEnabled = import_react43.default.useMemo(() => {
+    if (userRole === "MERCHANT") {
+      return true;
+    }
+    if (userRole === "ADMIN") {
+      return "merchantId" in filters && filters.merchantId;
+    }
+    return false;
+  }, [userRole, filters]);
   (0, import_react43.useEffect)(() => {
+    if (!isOutletFilterEnabled) {
+      setOutlets([]);
+      return;
+    }
     const fetchOutlets = async () => {
       try {
         setLoadingOutlets(true);
         setOutletError(null);
-        const result = await import_utils24.outletsApi.getOutlets();
+        let result;
+        if (userRole === "ADMIN" && "merchantId" in filters && filters.merchantId) {
+          result = await import_utils24.outletsApi.getOutletsByMerchant(filters.merchantId);
+        } else {
+          result = await import_utils24.outletsApi.getOutlets();
+        }
         if (result.success && result.data?.outlets) {
           setOutlets(result.data.outlets);
         } else {
@@ -17416,7 +17451,7 @@ var OrderFilters = import_react43.default.memo(function OrderFilters2({
       }
     };
     fetchOutlets();
-  }, []);
+  }, [isOutletFilterEnabled, userRole, filters]);
   (0, import_react43.useEffect)(() => {
     const hasMerchantFilter = "merchantId" in filters;
     if (hasMerchantFilter) {
@@ -17449,6 +17484,8 @@ var OrderFilters = import_react43.default.memo(function OrderFilters2({
     onSearchChange(value);
   };
   const handleFilterChange = (key, value) => {
+    console.log(`\u{1F527} OrderFilters: handleFilterChange - ${key}:`, value);
+    console.log(`\u{1F527} OrderFilters: current filters:`, filters);
     onFiltersChange({
       ...filters,
       [key]: value
@@ -17530,25 +17567,24 @@ var OrderFilters = import_react43.default.memo(function OrderFilters2({
         placeholder: loadingMerchants ? t2("filters.loading") : merchantError ? t2("filters.error") : "All Merchants",
         searchPlaceholder: "Search merchants...",
         className: "w-[200px]",
-        emptyText: "No merchants found",
-        displayMode: "button"
+        emptyText: "No merchants found"
       }
     ),
     /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
       import_ui28.SearchableSelect,
       {
-        value: filters.outletId,
+        value: filters.outletId ? Number(filters.outletId) : void 0,
         onChange: (value) => handleFilterChange("outletId", value || void 0),
         options: outlets.map((outlet) => ({
           value: outlet.id.toString(),
           label: outlet.name,
           subtitle: outlet.name
         })),
-        placeholder: loadingOutlets ? t2("filters.loading") : outletError ? t2("filters.error") : t2("filters.allOutlets"),
+        placeholder: !isOutletFilterEnabled ? userRole === "ADMIN" ? "Select merchant first" : "All Outlets" : loadingOutlets ? t2("filters.loading") : outletError ? t2("filters.error") : t2("filters.allOutlets"),
         searchPlaceholder: "Search outlets...",
         className: "w-[200px]",
         emptyText: "No outlets found",
-        displayMode: "button"
+        disabled: !isOutletFilterEnabled
       }
     ),
     onClearFilters && (filters.status || filters.orderType || filters.outletId || filters.merchantId || localSearch) && /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
@@ -21015,8 +21051,10 @@ var Orders = import_react57.default.memo(function Orders2({
   showQuickFilters = true,
   filterStyle = "dropdown",
   // ⭐ Default to dropdown (modern pattern)
-  showMerchant = false
+  showMerchant = false,
   // ⭐ Default to false (client view)
+  userRole = "ADMIN"
+  // ⭐ Default to ADMIN for backward compatibility
 }) {
   const t2 = (0, import_hooks37.useOrderTranslations)();
   import_react57.default.useEffect(() => {
@@ -21067,7 +21105,8 @@ var Orders = import_react57.default.memo(function Orders2({
             filters,
             onFiltersChange: memoizedOnFiltersChange,
             onSearchChange: memoizedOnSearchChange,
-            onClearFilters: memoizedOnClearFilters
+            onClearFilters: memoizedOnClearFilters,
+            userRole
           }
         )
       ] }) }) }),
@@ -21747,208 +21786,98 @@ function SubscriptionViewDialog({
         subscription.merchant?.name || "Unknown Merchant"
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(import_ui75.Card, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardTitle, { children: "Basic Information" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardContent, { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Subscription ID" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.id })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Status" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.Badge, { variant: getStatusColor11(subscription.status), children: subscription.status }) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Plan" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm font-medium", children: subscription.plan?.name || "Unknown Plan" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Amount" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm font-medium", children: (0, import_ui76.formatCurrency)(subscription.amount, subscription.plan?.currency || "USD") })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Billing Interval" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.billingInterval || "month" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Currency" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.plan?.currency || "USD" })
-          ] })
-        ] }) })
+    /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(import_ui75.CardContent, { className: "grid grid-cols-1 md:grid-cols-2 gap-4 pt-6", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm text-gray-500", children: "Merchant" }),
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "font-medium", children: subscription.merchant?.name || "Unknown Merchant" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(import_ui75.Card, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardTitle, { children: "Merchant Information" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardContent, { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Merchant ID" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.merchantId })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Merchant Name" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm font-medium", children: subscription.merchant?.name || "Unknown" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Email" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.merchant?.email || "Unknown" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Subscription Status" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.status || "Unknown" })
-          ] })
-        ] }) })
+      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm text-gray-500", children: "Plan" }),
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "font-medium", children: subscription.plan?.name || "Unknown Plan" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(import_ui75.Card, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardTitle, { children: "Plan Details" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardContent, { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Plan ID" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.planId })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Plan Name" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm font-medium", children: subscription.plan?.name || "Unknown" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Plan Price" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm font-medium", children: subscription.plan ? (0, import_ui76.formatCurrency)(subscription.plan.basePrice, subscription.plan.currency) : "Unknown" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Billing Interval" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.billingInterval || "month" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Status" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.status || "Unknown" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Plan ID" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.planId || "Unknown" })
-          ] })
-        ] }) })
+      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm text-gray-500", children: "Billing Interval" }),
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "font-medium", children: subscription.billingInterval })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(import_ui75.Card, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardTitle, { children: "Important Dates" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardContent, { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Current Period Start" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: (0, import_ui76.formatDate)(subscription.currentPeriodStart) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Current Period End" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: subscription.currentPeriodEnd ? (0, import_ui76.formatDate)(subscription.currentPeriodEnd) : "No end date" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Trial Start" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: "No trial data available" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Trial End" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: "No trial data available" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Created At" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: (0, import_ui76.formatDate)(subscription.createdAt) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Updated At" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: (0, import_ui76.formatDate)(subscription.updatedAt) })
-          ] })
-        ] }) })
+      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm text-gray-500", children: "Amount" }),
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "font-medium", children: (0, import_ui76.formatCurrency)(subscription.amount, subscription.plan?.currency || "USD") })
       ] }),
-      subscription.status === "cancelled" && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(import_ui75.Card, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardTitle, { children: "Cancellation Information" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.CardContent, { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Cancelled At" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: (0, import_ui76.formatDate)(subscription.updatedAt) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm font-medium text-gray-500", children: "Cancellation Reason" }),
-            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("p", { className: "text-sm", children: "No reason provided" })
-          ] })
-        ] }) })
+      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm text-gray-500", children: "Current Period" }),
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("p", { className: "font-medium", children: [
+          (0, import_ui76.formatDate)(subscription.currentPeriodStart),
+          /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("span", { className: "mx-2", children: "\u2192" }),
+          subscription.currentPeriodEnd ? (0, import_ui76.formatDate)(subscription.currentPeriodEnd) : "N/A"
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("label", { className: "text-sm text-gray-500", children: "Status" }),
+        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)("div", { className: "mt-1", children: /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.Badge, { variant: getStatusColor11(subscription.status), children: subscription.status }) })
       ] })
-    ] }),
+    ] }) }) }),
     /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.Separator, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(import_ui75.DialogFooter, { className: "flex justify-between", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { className: "flex gap-2 flex-wrap", children: [
-        canExtend && onExtend && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
-          import_ui75.Button,
-          {
-            variant: "outline",
-            onClick: () => onExtend(subscription),
-            className: "flex items-center gap-2",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.Clock, { className: "h-4 w-4" }),
-              "Extend Subscription"
-            ]
-          }
-        ),
-        canChangePlan && onChangePlan && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
-          import_ui75.Button,
-          {
-            variant: "outline",
-            onClick: () => onChangePlan(subscription),
-            className: "flex items-center gap-2",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.ArrowRight, { className: "h-4 w-4" }),
-              "Change Plan"
-            ]
-          }
-        ),
-        isActiveStatus && onSuspend && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
-          import_ui75.Button,
-          {
-            variant: "outline",
-            onClick: () => onSuspend(subscription, "Paused from subscription view"),
-            className: "flex items-center gap-2 text-orange-600 hover:text-orange-700",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.Pause, { className: "h-4 w-4" }),
-              "Pause Subscription"
-            ]
-          }
-        ),
-        subscription.status === "paused" && onReactivate && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
-          import_ui75.Button,
-          {
-            variant: "outline",
-            onClick: () => onReactivate(subscription),
-            className: "flex items-center gap-2 text-green-600 hover:text-green-700",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.Play, { className: "h-4 w-4" }),
-              "Resume Subscription"
-            ]
-          }
-        ),
-        canCancel && onCancel && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
-          import_ui75.Button,
-          {
-            variant: "destructive",
-            onClick: () => onCancel(subscription),
-            className: "flex items-center gap-2",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.X, { className: "h-4 w-4" }),
-              "Cancel Subscription"
-            ]
-          }
-        )
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)("div", { className: "flex gap-2", children: [
-        onEdit && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
-          import_ui75.Button,
-          {
-            variant: "outline",
-            onClick: () => onEdit(subscription),
-            className: "flex items-center gap-2",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.Edit, { className: "h-4 w-4" }),
-              "Edit"
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_ui75.Button, { variant: "outline", onClick: onClose, children: "Close" })
-      ] })
+    /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(import_ui75.DialogFooter, { className: "flex flex-wrap gap-2", children: [
+      canExtend && onExtend && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
+        import_ui75.Button,
+        {
+          variant: "outline",
+          onClick: () => onExtend(subscription),
+          className: "flex items-center gap-2",
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.Clock, { className: "h-4 w-4" }),
+            "Extend Subscription"
+          ]
+        }
+      ),
+      canChangePlan && onChangePlan && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
+        import_ui75.Button,
+        {
+          variant: "outline",
+          onClick: () => onChangePlan(subscription),
+          className: "flex items-center gap-2",
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.ArrowRight, { className: "h-4 w-4" }),
+            "Change Plan"
+          ]
+        }
+      ),
+      isActiveStatus && onSuspend && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
+        import_ui75.Button,
+        {
+          variant: "outline",
+          onClick: () => onSuspend(subscription, "Paused from subscription view"),
+          className: "flex items-center gap-2 text-orange-600 hover:text-orange-700",
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.Pause, { className: "h-4 w-4" }),
+            "Pause Subscription"
+          ]
+        }
+      ),
+      subscription.status === "PAUSED" && onReactivate && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
+        import_ui75.Button,
+        {
+          variant: "outline",
+          onClick: () => onReactivate(subscription),
+          className: "flex items-center gap-2 text-green-600 hover:text-green-700",
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.Play, { className: "h-4 w-4" }),
+            "Resume Subscription"
+          ]
+        }
+      ),
+      canCancel && onCancel && /* @__PURE__ */ (0, import_jsx_runtime121.jsxs)(
+        import_ui75.Button,
+        {
+          variant: "destructive",
+          onClick: () => onCancel(subscription),
+          className: "flex items-center gap-2",
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime121.jsx)(import_lucide_react51.X, { className: "h-4 w-4" }),
+            "Cancel Subscription"
+          ]
+        }
+      )
     ] })
   ] }) });
 }
@@ -21960,11 +21889,10 @@ var import_ui78 = require("@rentalshop/ui");
 var import_lucide_react52 = require("lucide-react");
 var import_jsx_runtime122 = require("react/jsx-runtime");
 var EXTENSION_METHODS = [
-  "MANUAL_EXTENSION",
-  "PAYMENT_RECEIVED",
-  "ADMIN_EXTENSION",
-  "COMPENSATION",
-  "OTHER"
+  { value: "MANUAL_EXTENSION", label: "Manual Extension" },
+  { value: "PAYMENT_RECEIVED", label: "Payment Received" },
+  { value: "ADMIN_EXTENSION", label: "Admin Extension" },
+  { value: "COMPENSATION", label: "Compensation" }
 ];
 function SubscriptionExtendDialog({
   subscription,
@@ -21997,7 +21925,7 @@ function SubscriptionExtendDialog({
   };
   if (!subscription)
     return null;
-  const currentEndDate = subscription.endDate ? new Date(subscription.endDate) : /* @__PURE__ */ new Date();
+  const currentEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : /* @__PURE__ */ new Date();
   const minDate = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const suggestedEndDate = new Date(currentEndDate.getTime() + 30 * 24 * 60 * 60 * 1e3).toISOString().split("T")[0];
   return /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Dialog, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)(import_ui77.DialogContent, { className: "max-w-2xl", children: [
@@ -22012,130 +21940,79 @@ function SubscriptionExtendDialog({
         ". This will update the end date and create a payment record."
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)(import_ui77.Card, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.CardTitle, { children: "Current Subscription" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.CardContent, { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { className: "text-sm font-medium text-gray-500", children: "Plan" }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("p", { className: "text-sm font-medium", children: subscription.plan?.name || "Unknown Plan" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { className: "text-sm font-medium text-gray-500", children: "Current Amount" }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("p", { className: "text-sm font-medium", children: (0, import_ui78.formatCurrency)(subscription.amount, subscription.currency) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { className: "text-sm font-medium text-gray-500", children: "Current End Date" }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("p", { className: "text-sm", children: (0, import_ui78.formatDate)(subscription.endDate) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { className: "text-sm font-medium text-gray-500", children: "Status" }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("p", { className: "text-sm", children: subscription.status })
-          ] })
-        ] }) })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { htmlFor: "newEndDate", children: "New End Date *" }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(
-              import_ui77.Input,
-              {
-                id: "newEndDate",
-                type: "date",
-                value: newEndDate,
-                onChange: (e2) => setNewEndDate(e2.target.value),
-                min: minDate,
-                placeholder: suggestedEndDate,
-                className: "mt-1"
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("p", { className: "text-xs text-gray-500 mt-1", children: [
-              "Suggested: ",
-              suggestedEndDate,
-              " (30 days from current end date)"
-            ] })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { htmlFor: "amount", children: "Extension Amount *" }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "relative mt-1", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_lucide_react52.DollarSign, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
-              /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(
-                import_ui77.Input,
-                {
-                  id: "amount",
-                  type: "number",
-                  value: amount,
-                  onChange: (e2) => setAmount(e2.target.value),
-                  placeholder: subscription.amount.toString(),
-                  className: "pl-10",
-                  step: "0.01",
-                  min: "0"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("p", { className: "text-xs text-gray-500 mt-1", children: [
-              "Current amount: ",
-              (0, import_ui78.formatCurrency)(subscription.amount, subscription.currency)
-            ] })
-          ] })
-        ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [
         /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { htmlFor: "method", children: "Extension Method *" }),
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(
-            "select",
-            {
-              id: "method",
-              value: method,
-              onChange: (e2) => setMethod(e2.target.value),
-              className: "w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-              children: EXTENSION_METHODS.map((m) => /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("option", { value: m, children: m.replace("_", " ") }, m))
-            }
-          )
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { htmlFor: "description", children: "Description (Optional)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { htmlFor: "newEndDate", children: "New End Date *" }),
           /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(
             import_ui77.Input,
             {
-              id: "description",
-              value: description,
-              onChange: (e2) => setDescription(e2.target.value),
-              placeholder: "Reason for extension...",
+              id: "newEndDate",
+              type: "date",
+              value: newEndDate,
+              onChange: (e2) => setNewEndDate(e2.target.value),
+              min: minDate,
+              placeholder: suggestedEndDate,
               className: "mt-1"
             }
-          )
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("p", { className: "text-xs text-gray-500 mt-1", children: [
+            "Suggested: ",
+            suggestedEndDate,
+            " (30 days from current end date)"
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { htmlFor: "amount", children: "Extension Amount *" }),
+          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "relative mt-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_lucide_react52.DollarSign, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" }),
+            /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(
+              import_ui77.Input,
+              {
+                id: "amount",
+                type: "number",
+                value: amount,
+                onChange: (e2) => setAmount(e2.target.value),
+                placeholder: subscription.amount.toString(),
+                className: "pl-10",
+                step: "0.01",
+                min: "0"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("p", { className: "text-xs text-gray-500 mt-1", children: [
+            "Current amount: ",
+            (0, import_ui78.formatCurrency)(subscription.amount, subscription.plan?.currency || "USD")
+          ] })
         ] })
       ] }),
-      newEndDate && amount && /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)(import_ui77.Alert, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_lucide_react52.Clock, { className: "h-4 w-4" }),
-        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.AlertDescription, { children: /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("p", { className: "font-medium", children: "Extension Preview:" }),
-          /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { className: "grid grid-cols-2 gap-4 text-sm", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("span", { className: "font-medium", children: "Current End:" }),
-              " ",
-              (0, import_ui78.formatDate)(subscription.endDate)
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("span", { className: "font-medium", children: "New End:" }),
-              " ",
-              (0, import_ui78.formatDate)(new Date(newEndDate))
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("span", { className: "font-medium", children: "Extension Amount:" }),
-              " ",
-              (0, import_ui78.formatCurrency)(parseFloat(amount) || 0, subscription.currency)
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("span", { className: "font-medium", children: "Method:" }),
-              " ",
-              method.replace("_", " ")
-            ] })
-          ] })
-        ] }) })
+      /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { htmlFor: "method", children: "Extension Method" }),
+        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(
+          "select",
+          {
+            id: "method",
+            value: method,
+            onChange: (e2) => setMethod(e2.target.value),
+            className: "w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            children: EXTENSION_METHODS.map((m) => /* @__PURE__ */ (0, import_jsx_runtime122.jsx)("option", { value: m.value, children: m.label }, m.value))
+          }
+        )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Label, { htmlFor: "description", children: "Description (Optional)" }),
+        /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(
+          import_ui77.Input,
+          {
+            id: "description",
+            value: description,
+            onChange: (e2) => setDescription(e2.target.value),
+            placeholder: "Reason for extension...",
+            className: "mt-1"
+          }
+        )
       ] })
-    ] }),
+    ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime122.jsxs)(import_ui77.DialogFooter, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(import_ui77.Button, { variant: "outline", onClick: handleClose, disabled: loading, children: "Cancel" }),
       /* @__PURE__ */ (0, import_jsx_runtime122.jsx)(
@@ -22192,7 +22069,7 @@ function SubscriptionChangePlanDialog({
     }));
   };
   const features = getFeatureComparison(currentPlan, selectedPlan);
-  return /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.Dialog, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.DialogContent, { className: "max-w-4xl", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.Dialog, { open: isOpen, onOpenChange: handleClose, children: /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.DialogContent, { className: "max-w-4xl max-h-[90vh] flex flex-col overflow-hidden", children: [
     /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.DialogHeader, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.DialogTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_lucide_react53.ArrowRight, { className: "h-5 w-5 text-blue-700" }),
@@ -22204,20 +22081,7 @@ function SubscriptionChangePlanDialog({
         ". This will update the plan and pricing immediately."
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "space-y-6", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.Card, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.CardTitle, { children: "Current Plan" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("h3", { className: "text-lg font-semibold", children: currentPlan?.name || "Unknown Plan" }),
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("p", { className: "text-sm text-gray-600", children: currentPlan?.description || "No description" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "text-right", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("p", { className: "text-2xl font-bold", children: currentPlan ? (0, import_ui80.formatCurrency)(currentPlan.basePrice, currentPlan.currency) : "Unknown" }),
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("p", { className: "text-sm text-gray-600", children: "per month" })
-          ] })
-        ] }) })
-      ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "flex-1 overflow-y-auto space-y-6 pr-1", children: [
       /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "space-y-4", children: [
         /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.Label, { className: "text-lg font-semibold", children: "Billing Period" }),
         /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.Select, { value: selectedPeriod.toString(), onValueChange: (value) => setSelectedPeriod(parseInt(value)), children: [
@@ -22225,6 +22089,7 @@ function SubscriptionChangePlanDialog({
           /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.SelectContent, { children: [
             /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.SelectItem, { value: "1", children: "Monthly (0% discount)" }),
             /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.SelectItem, { value: "3", children: "Quarterly (10% discount)" }),
+            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.SelectItem, { value: "6", children: "6 Months (15% discount)" }),
             /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.SelectItem, { value: "12", children: "Yearly (20% discount)" })
           ] })
         ] })
@@ -22233,7 +22098,15 @@ function SubscriptionChangePlanDialog({
         /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.Label, { className: "text-lg font-semibold", children: "Select New Plan" }),
         /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: plans.map((plan) => {
           const pricing = plan.pricing || {};
-          const periodKey = selectedPeriod === 1 ? "monthly" : selectedPeriod === 3 ? "quarterly" : "yearly";
+          let periodKey;
+          if (selectedPeriod === 1)
+            periodKey = "monthly";
+          else if (selectedPeriod === 3)
+            periodKey = "quarterly";
+          else if (selectedPeriod === 6)
+            periodKey = "sixMonths";
+          else
+            periodKey = "yearly";
           const periodPricing = pricing[periodKey] || { price: plan.basePrice, discount: 0, discountedPrice: plan.basePrice, savings: 0 };
           return /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(
             import_ui79.Card,
@@ -22251,7 +22124,7 @@ function SubscriptionChangePlanDialog({
                 /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "space-y-3", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "text-center", children: [
                     /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("div", { className: "text-2xl font-bold", children: (0, import_ui80.formatCurrency)(periodPricing.price, plan.currency) }),
-                    /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("div", { className: "text-sm text-gray-600", children: selectedPeriod === 1 ? "per month" : selectedPeriod === 3 ? "per quarter" : "per year" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("div", { className: "text-sm text-gray-600", children: selectedPeriod === 1 ? "per month" : selectedPeriod === 3 ? "per quarter" : selectedPeriod === 6 ? "every 6 months" : "per year" }),
                     periodPricing.discount > 0 && /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "flex items-center justify-center gap-2 mt-1", children: [
                       /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.Badge, { variant: "outline", className: "text-green-600 border-green-200", children: [
                         periodPricing.discount,
@@ -22288,25 +22161,6 @@ function SubscriptionChangePlanDialog({
           );
         }) })
       ] }),
-      selectedPlan && /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.Card, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.CardTitle, { children: "Plan Comparison" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "grid grid-cols-3 gap-4 text-sm", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("div", { className: "font-medium", children: "Feature" }),
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("div", { className: "font-medium text-center", children: "Current" }),
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("div", { className: "font-medium text-center", children: "New Plan" })
-          ] }),
-          features.map((feature) => /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "grid grid-cols-3 gap-4 text-sm", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("div", { children: feature.label }),
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("div", { className: "text-center", children: feature.current === -1 ? "Unlimited" : feature.current }),
-            /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "text-center flex items-center justify-center gap-1", children: [
-              feature.selected === -1 ? "Unlimited" : feature.selected,
-              feature.change === "upgrade" && /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_lucide_react53.ArrowRight, { className: "h-4 w-4 text-green-600" }),
-              feature.change === "downgrade" && /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_lucide_react53.X, { className: "h-4 w-4 text-red-600" })
-            ] })
-          ] }, feature.key))
-        ] }) })
-      ] }),
       selectedPlan && currentPlan && /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.Alert, { children: /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.AlertDescription, { children: /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "space-y-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("p", { className: "font-medium", children: "Pricing Change:" }),
         /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)("div", { className: "flex items-center gap-4", children: [
@@ -22325,7 +22179,7 @@ function SubscriptionChangePlanDialog({
         /* @__PURE__ */ (0, import_jsx_runtime123.jsx)("p", { className: "text-sm text-gray-600", children: "The plan change will take effect immediately and billing will be updated accordingly." })
       ] }) }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.DialogFooter, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime123.jsxs)(import_ui79.DialogFooter, { className: "flex-shrink-0 mt-4 border-t pt-4", children: [
       /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(import_ui79.Button, { variant: "outline", onClick: handleClose, disabled: loading, children: "Cancel" }),
       /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(
         import_ui79.Button,

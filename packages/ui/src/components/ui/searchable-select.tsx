@@ -29,6 +29,7 @@ export interface SearchableSelectProps {
   showAddNew?: boolean; // Show "Add New" option at top
   addNewText?: string; // Text for "Add New" option
   onAddNew?: () => void; // Callback when "Add New" is clicked
+  disabled?: boolean; // Add disabled prop
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -44,6 +45,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   showAddNew = false,
   addNewText = 'Add New',
   onAddNew,
+  disabled = false,
 }) => {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
@@ -180,7 +182,10 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   }, [open]);
 
   const handleSelect = (option: SearchableOption) => {
-    onChange?.(parseInt(option.value));
+    console.log('🎯 SearchableSelect: Selecting option:', option);
+    const numericValue = parseInt(option.value);
+    console.log('🎯 SearchableSelect: Parsed value:', numericValue);
+    onChange?.(numericValue);
     setOpen(false);
     // Keep the selected option in the internal options so it remains visible
     if (onSearch) {
@@ -197,12 +202,18 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       {/* Always use input mode for searchability (like SearchableCountrySelect) */}
       <input
         value={displayValue}
+        disabled={disabled}
         onFocus={() => {
-          setOpen(true);
+          if (!disabled) setOpen(true);
         }}
         onChange={(e) => {
+          if (disabled) return;
           setQuery(e.target.value);
           setOpen(true);
+          // Clear selected value when user starts typing
+          if (e.target.value && selected) {
+            onChange?.(undefined as any);
+          }
         }}
         onBlur={() => {
           // Only close dropdown after a longer delay
@@ -211,11 +222,12 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             // Don't clear query here - let it persist for search
           }, 300);
         }}
-        placeholder={selected ? selected.label : placeholder}
+        placeholder={placeholder}
         className={cn(
           'h-10 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200',
           'focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0',
-          'hover:border-gray-400'
+          'hover:border-gray-400',
+          disabled && 'bg-gray-100 text-gray-500 cursor-not-allowed'
         )}
       />
       <span className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" />
@@ -223,9 +235,11 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         variant="ghost"
         size="icon"
         type="button"
+        disabled={disabled}
         aria-label="Toggle options"
         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
         onMouseDown={(e) => {
+          if (disabled) return;
           e.preventDefault();
           setOpen((o) => !o);
         }}
@@ -326,7 +340,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             e.currentTarget.nextElementSibling?.classList.remove('hidden');
                           }}
                         />
-                        <div className="hidden w-full h-full bg-gray-100 flex items-center justify-center">
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                           <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                           </svg>

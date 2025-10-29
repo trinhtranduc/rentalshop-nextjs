@@ -57,6 +57,8 @@ export default function SubscriptionsPage() {
   
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
+  const search = searchParams.get('q') || '';
+  const planId = searchParams.get('planId') || '';
 
   // ============================================================================
   // DIALOG STATES
@@ -86,8 +88,10 @@ export default function SubscriptionsPage() {
   const filters = useMemo(() => ({
     page,
     limit,
-    offset: (page - 1) * limit
-  }), [page, limit]);
+    offset: (page - 1) * limit,
+    ...(search && { search }),
+    ...(planId && { planId: parseInt(planId) })
+  }), [page, limit, search, planId]);
 
   const { data, loading, error, refetch } = useSubscriptionsData({ filters });
   
@@ -370,7 +374,7 @@ export default function SubscriptionsPage() {
       </PageHeader>
 
       {/* Fixed Stats Section */}
-      <div className="flex-shrink-0 space-y-4">
+      <div className="flex-shrink-0 space-y-4 mt-4">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
@@ -429,6 +433,50 @@ export default function SubscriptionsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Search and Filters - In Card */}
+      <Card className="shadow-sm border-border mt-4">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search Merchant Name */}
+            <div className="flex-1 min-w-[200px]">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => updateURL({ q: e.target.value, page: 1 })}
+                placeholder="Search by merchant name..."
+                className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            
+            {/* Filter by Plan */}
+            <div className="w-64">
+              <select
+                value={planId}
+                onChange={(e) => updateURL({ planId: e.target.value, page: 1 })}
+                className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              >
+                <option value="">All Plans</option>
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Clear Filters Button */}
+            {(search || planId) && (
+              <Button
+                variant="outline"
+                onClick={() => updateURL({ q: '', planId: '', page: 1 })}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Scrollable Table Section */}
       <div className="flex-1 min-h-0 overflow-auto mt-4">

@@ -24,6 +24,7 @@ import type {
 function generatePricingFromBasePrice(basePrice: number) {
   const monthlyPrice = basePrice;
   const quarterlyPrice = monthlyPrice * 3;
+  const sixMonthsPrice = monthlyPrice * 6;
   const yearlyPrice = monthlyPrice * 12;
   
   return {
@@ -36,6 +37,11 @@ function generatePricingFromBasePrice(basePrice: number) {
       price: quarterlyPrice,
       discount: 5, // 5% discount for quarterly
       savings: quarterlyPrice * 0.05
+    },
+    sixMonths: {
+      price: sixMonthsPrice,
+      discount: 10, // 10% discount for 6 months
+      savings: sixMonthsPrice * 0.10
     },
     yearly: {
       price: yearlyPrice,
@@ -82,6 +88,11 @@ function generatePlanPricing(basePrice: number) {
       price: basePrice * 3 * 0.95, // 5% discount for quarterly
       discount: 5,
       savings: basePrice * 3 * 0.05
+    },
+    sixMonths: {
+      price: basePrice * 6 * 0.90, // 10% discount for 6 months
+      discount: 10,
+      savings: basePrice * 6 * 0.10
     },
     yearly: {
       price: basePrice * 12 * 0.85, // 15% discount for yearly
@@ -232,6 +243,7 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
 // ============================================================================
 
 export async function searchSubscriptions(filters: {
+  search?: string;
   merchantId?: number;
   planId?: number;
   status?: string;
@@ -241,6 +253,16 @@ export async function searchSubscriptions(filters: {
   offset?: number;
 }): Promise<{ subscriptions: Subscription[]; total: number; hasMore: boolean }> {
   const where: any = {};
+
+  // Apply search filter (merchant name)
+  if (filters.search) {
+    where.merchant = {
+      name: {
+        contains: filters.search,
+        mode: 'insensitive'
+      }
+    };
+  }
 
   // Apply filters
   if (filters.merchantId) {
@@ -1163,6 +1185,16 @@ export const simplifiedSubscriptions = {
 
     // Build where clause
     const where: any = {};
+    
+    // Apply search filter (merchant name)
+    if (whereFilters.search) {
+      where.merchant = {
+        name: {
+          contains: whereFilters.search,
+          mode: 'insensitive'
+        }
+      };
+    }
     
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.planId) where.planId = whereFilters.planId;
