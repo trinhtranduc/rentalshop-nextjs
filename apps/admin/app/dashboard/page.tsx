@@ -25,7 +25,7 @@ import {
   MetricCard,
   ActivityFeed
 } from '@rentalshop/ui';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { analyticsApi } from '@rentalshop/utils';
 import { useAuth } from '@rentalshop/hooks';
 import { 
@@ -207,7 +207,6 @@ const MerchantsRegistrationChart: React.FC<MerchantsRegistrationChartProps> = ({
 };
 
 export default function AdminDashboard() {
-  const pathname = usePathname();
   const { toastError } = useToast();
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<SystemMetrics>({
@@ -242,7 +241,23 @@ export default function AdminDashboard() {
     customerBase: 0
   });
   const [loading, setLoading] = useState(true);
-  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>('month');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const currentPathname = usePathname();
+  
+  // Get timePeriod from URL or default to 'month'
+  const timePeriodFromUrl = searchParams.get('period') as 'today' | 'month' | 'year' | null;
+  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(
+    (timePeriodFromUrl && ['today', 'month', 'year'].includes(timePeriodFromUrl)) ? timePeriodFromUrl : 'month'
+  );
+
+  // Update URL when timePeriod changes
+  const updateTimePeriod = (period: 'today' | 'month' | 'year') => {
+    setTimePeriod(period);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('period', period);
+    router.push(`${currentPathname}?${params.toString()}`, { scroll: false });
+  };
 
   // Calculate subscription revenue data for chart based on subscription creation/success date
   const calculateSubscriptionRevenueData = (subscriptions: any[], timePeriod: string, startDate: Date, endDate: Date) => {
@@ -428,6 +443,14 @@ export default function AdminDashboard() {
     return [];
   };
 
+  // Sync URL param with state on mount and when URL changes
+  useEffect(() => {
+    const periodFromUrl = searchParams.get('period') as 'today' | 'month' | 'year' | null;
+    if (periodFromUrl && ['today', 'month', 'year'].includes(periodFromUrl) && periodFromUrl !== timePeriod) {
+      setTimePeriod(periodFromUrl);
+    }
+  }, [searchParams, timePeriod]);
+
   useEffect(() => {
     fetchSystemMetrics();
   }, [timePeriod]);
@@ -479,7 +502,8 @@ export default function AdminDashboard() {
       const filters = {
         startDate: startDate.toISOString().split('T')[0],
         endDate: endDate.toISOString().split('T')[0],
-        groupBy: groupBy
+        groupBy: groupBy,
+        period: timePeriod // Add period to filters for API
       };
 
       console.log(`📊 Fetching admin dashboard data for ${timePeriod} period:`, {
@@ -785,21 +809,21 @@ export default function AdminDashboard() {
           <div className="flex space-x-2">
             <Button
               variant={timePeriod === 'today' ? 'default' : 'outline'}
-              onClick={() => setTimePeriod('today')}
+              onClick={() => updateTimePeriod('today')}
               className="px-4 py-2 text-sm"
             >
               Today
             </Button>
             <Button
               variant={timePeriod === 'month' ? 'default' : 'outline'}
-              onClick={() => setTimePeriod('month')}
+              onClick={() => updateTimePeriod('month')}
               className="px-4 py-2 text-sm"
             >
               This Month
             </Button>
             <Button
               variant={timePeriod === 'year' ? 'default' : 'outline'}
-              onClick={() => setTimePeriod('year')}
+              onClick={() => updateTimePeriod('year')}
               className="px-4 py-2 text-sm"
             >
               This Year
