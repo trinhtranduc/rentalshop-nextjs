@@ -293,7 +293,9 @@ export async function PUT(
           
           // Commit staging files to production
           if (stagingKeys.length > 0) {
-            const commitResult = await commitStagingFiles(stagingKeys, 'product');
+            // Use product/merchantId/ structure for better organization
+            const targetFolder = `product/${userMerchantId}`;
+            const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
             
             if (commitResult.success) {
               // Generate production URLs using CloudFront directly
