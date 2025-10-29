@@ -57,19 +57,26 @@ const adminMenuItems: MenuItem[] = [
     icon: Building2,
   },
   {
-    label: 'Plans',
-    href: '/plans',
-    icon: Package,
-  },
-  {
-    label: 'Subscriptions',
+    label: 'Subscription',
     href: '/subscriptions',
     icon: Clock,
+    subItems: [
+      { 
+        label: 'Subscriptions', 
+        href: '/subscriptions', 
+        icon: Clock 
+      },
+      { 
+        label: 'Payments', 
+        href: '/payments', 
+        icon: CreditCard 
+      }
+    ]
   },
   {
-    label: 'Payments',
-    href: '/payments',
-    icon: CreditCard,
+    label: 'Orders',
+    href: '/orders',
+    icon: ShoppingCart,
   },
   {
     label: 'Users',
@@ -77,24 +84,19 @@ const adminMenuItems: MenuItem[] = [
     icon: Users,
   },
   {
-    label: 'System',
-    href: '/system',
+    label: 'Settings',
+    href: '/settings',
     icon: Settings,
     subItems: [
       { 
-        label: 'Backup Management', 
-        href: '/system/backup', 
-        icon: Database 
+        label: 'Admin Info', 
+        href: '/settings/admin', 
+        icon: User 
       },
       { 
-        label: 'Data Integrity', 
-        href: '/system/integrity', 
-        icon: ShieldCheck 
-      },
-      { 
-        label: 'Audit Logs', 
-        href: '/system/audit-logs', 
-        icon: FileText 
+        label: 'Plans', 
+        href: '/plans', 
+        icon: Package 
       }
     ]
   }

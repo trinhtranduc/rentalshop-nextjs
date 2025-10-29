@@ -48,14 +48,38 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     
     // Use simplified database API
     const searchFilters: any = {
-      merchantId: userScope.merchantId,
-      outletId: userScope.outletId,
       role: q.role,
       isActive: q.isActive,
       search: q.search,
       page: q.page || 1,
       limit: q.limit || 20
     };
+
+    // Role-based merchant filtering:
+    // - ADMIN role: Can see users from all merchants (unless queryMerchantId is specified)
+    // - MERCHANT role: Can only see users from their own merchant
+    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see users from their merchant
+    if (user.role === 'ADMIN') {
+      // Admins can see all merchants unless specifically filtering by merchant
+      searchFilters.merchantId = q.merchantId;
+    } else {
+      // Non-admin users restricted to their merchant
+      searchFilters.merchantId = userScope.merchantId;
+    }
+
+    // Role-based outlet filtering:
+    // - MERCHANT role: Can see users from all outlets of their merchant (unless queryOutletId is specified)
+    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see users from their assigned outlet
+    if (user.role === 'MERCHANT') {
+      // Merchants can see all outlets unless specifically filtering by outlet
+      searchFilters.outletId = q.outletId;
+    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      // Outlet users can only see users from their assigned outlet
+      searchFilters.outletId = userScope.outletId;
+    } else if (user.role === 'ADMIN') {
+      // Admins can see all users (no outlet filtering unless specified)
+      searchFilters.outletId = q.outletId;
+    }
 
     // If user is MERCHANT, only return OUTLET_ADMIN and OUTLET_STAFF users
     // Do not return other MERCHANT users

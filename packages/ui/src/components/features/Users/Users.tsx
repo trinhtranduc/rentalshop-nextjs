@@ -88,7 +88,7 @@ export const Users: React.FC<UsersProps> = ({
   // User role check for permissions
   const { canManageUsers } = useUserRole(currentUser);
   
-  // Get translations
+  // Get translations (hook provides fallback to English for admin)
   const t = useUsersTranslations();
   
   // Debug: Log received data

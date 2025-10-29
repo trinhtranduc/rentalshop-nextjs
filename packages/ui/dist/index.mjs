@@ -3548,7 +3548,14 @@ var SearchableSelect = ({
     if (onSearch) {
       if (query.trim()) {
         console.log("\u{1F50D} SearchableSelect: Search mode - returning internalOptions:", internalOptions.length);
-        return internalOptions;
+        const result = [...internalOptions];
+        if (value && options) {
+          const selectedOpt = options.find((o2) => o2.value === String(value));
+          if (selectedOpt && !result.find((o2) => o2.value === selectedOpt.value)) {
+            result.unshift(selectedOpt);
+          }
+        }
+        return result;
       } else {
         console.log("\u{1F50D} SearchableSelect: Search mode - returning empty array");
         return [];
@@ -3560,10 +3567,16 @@ var SearchableSelect = ({
       return options || [];
     }
     const filtered2 = options?.filter((o2) => o2.label.toLowerCase().includes(q));
+    if (value && options) {
+      const selectedOpt = options.find((o2) => o2.value === String(value));
+      if (selectedOpt && !filtered2?.find((o2) => o2.value === selectedOpt.value)) {
+        filtered2?.unshift(selectedOpt);
+      }
+    }
     console.log("\u{1F50D} SearchableSelect: Filtered results:", filtered2?.length || 0, "for query:", q);
     return filtered2 || [];
-  }, [query, internalOptions, onSearch, options]);
-  const selected = internalOptions.find((o2) => o2.value === String(value));
+  }, [query, internalOptions, onSearch, options, value]);
+  const selected = options?.find((o2) => o2.value === String(value)) || internalOptions.find((o2) => o2.value === String(value));
   const displayValue = selected?.label || query;
   React23.useEffect(() => {
     const handler = (e2) => {
@@ -3592,80 +3605,63 @@ var SearchableSelect = ({
     }, 100);
   };
   return /* @__PURE__ */ jsxs23("div", { className: cn2("relative", className), ref: rootRef, children: [
-    displayMode === "input" ? /* @__PURE__ */ jsxs23(Fragment, { children: [
-      /* @__PURE__ */ jsx37(
-        "input",
-        {
-          value: displayValue,
-          onFocus: () => {
-            setOpen(true);
-          },
-          onChange: (e2) => {
-            setQuery(e2.target.value);
-            setOpen(true);
-          },
-          onBlur: () => {
-            setTimeout(() => {
-              setOpen(false);
-            }, 300);
-          },
-          placeholder: selected ? selected.label : placeholder,
-          className: cn2(
-            "h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200",
-            "focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0",
-            "hover:border-gray-400"
-          )
-        }
-      ),
-      /* @__PURE__ */ jsx37("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
-      /* @__PURE__ */ jsx37(
-        Button,
-        {
-          variant: "ghost",
-          size: "icon",
-          type: "button",
-          "aria-label": "Toggle options",
-          className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
-          onMouseDown: (e2) => {
-            e2.preventDefault();
-            setOpen((o2) => !o2);
-          },
-          children: /* @__PURE__ */ jsx37(ChevronDown3, { className: "h-5 w-5" })
-        }
-      ),
-      query && /* @__PURE__ */ jsx37(
-        Button,
-        {
-          variant: "ghost",
-          size: "icon",
-          type: "button",
-          onClick: () => {
-            setQuery("");
-            if (onSearch) {
-              setInternalOptions([]);
-            } else {
-              setInternalOptions(options || []);
-            }
+    /* @__PURE__ */ jsx37(
+      "input",
+      {
+        value: displayValue,
+        onFocus: () => {
+          setOpen(true);
+        },
+        onChange: (e2) => {
+          setQuery(e2.target.value);
+          setOpen(true);
+        },
+        onBlur: () => {
+          setTimeout(() => {
             setOpen(false);
-          },
-          className: "absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
-          children: "\u2715"
-        }
-      )
-    ] }) : /* @__PURE__ */ jsxs23(
+          }, 300);
+        },
+        placeholder: selected ? selected.label : placeholder,
+        className: cn2(
+          "h-10 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200",
+          "focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0",
+          "hover:border-gray-400"
+        )
+      }
+    ),
+    /* @__PURE__ */ jsx37("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
+    /* @__PURE__ */ jsx37(
       Button,
       {
-        variant: "outline",
+        variant: "ghost",
+        size: "icon",
         type: "button",
-        onClick: () => setOpen((v2) => !v2),
-        className: cn2(
-          "h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-left text-sm flex items-center justify-between transition-all duration-200",
-          "hover:bg-gray-50 hover:border-gray-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0"
-        ),
-        children: [
-          /* @__PURE__ */ jsx37("span", { className: cn2(!selected && "text-gray-400"), children: selected ? selected.label : placeholder }),
-          /* @__PURE__ */ jsx37(ChevronDown3, { className: "h-5 w-5 text-gray-500" })
-        ]
+        "aria-label": "Toggle options",
+        className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
+        onMouseDown: (e2) => {
+          e2.preventDefault();
+          setOpen((o2) => !o2);
+        },
+        children: /* @__PURE__ */ jsx37(ChevronDown3, { className: "h-5 w-5" })
+      }
+    ),
+    query && /* @__PURE__ */ jsx37(
+      Button,
+      {
+        variant: "ghost",
+        size: "icon",
+        type: "button",
+        onClick: () => {
+          setQuery("");
+          if (onSearch) {
+            setInternalOptions([]);
+          } else {
+            setInternalOptions(options || []);
+          }
+          setOpen(false);
+        },
+        className: "absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
+        children: "\u2715"
       }
     ),
     open && /* @__PURE__ */ jsx37("div", { className: "absolute z-[9999] mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg ring-1 ring-black ring-opacity-5", children: /* @__PURE__ */ jsx37("div", { className: "max-h-64 overflow-auto py-2", children: filtered.length === 0 ? /* @__PURE__ */ jsxs23("div", { className: "px-4 py-6 text-center text-sm text-gray-500", children: [
@@ -3677,7 +3673,8 @@ var SearchableSelect = ({
         {
           variant: "ghost",
           type: "button",
-          onClick: () => {
+          onMouseDown: (e2) => {
+            e2.preventDefault();
             onAddNew();
             setOpen(false);
           },
@@ -3694,12 +3691,14 @@ var SearchableSelect = ({
           {
             variant: "ghost",
             type: "button",
-            onClick: () => {
+            onMouseDown: (e2) => {
+              e2.preventDefault();
+              console.log("\u{1F5B1}\uFE0F Selecting option:", opt.label);
               handleSelect(opt);
             },
             className: cn2(
               "flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out h-auto justify-start rounded-none",
-              value === parseInt(opt.value) && "bg-blue-50 text-blue-700 hover:bg-blue-100"
+              value !== void 0 && value !== null && String(value) === opt.value && "bg-blue-50 text-blue-700 hover:bg-blue-100"
             ),
             children: [
               opt.type === "product" && opt.image ? (
@@ -3747,7 +3746,7 @@ var SearchableSelect = ({
                   opt.description && /* @__PURE__ */ jsx37("div", { className: "text-sm text-gray-600 whitespace-pre-line", children: opt.description })
                 ] })
               ) }),
-              value === parseInt(opt.value) && /* @__PURE__ */ jsx37("div", { className: "flex-shrink-0 w-5 h-5 text-blue-700", children: /* @__PURE__ */ jsx37("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx37("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
+              value !== void 0 && value !== null && String(value) === opt.value && /* @__PURE__ */ jsx37("div", { className: "flex-shrink-0 w-5 h-5 text-blue-700", children: /* @__PURE__ */ jsx37("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx37("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
             ]
           },
           opt.value
@@ -17174,7 +17173,7 @@ var OrderHeader = React48.memo(function OrderHeader2({ totalOrders, stats, showS
 
 // src/components/features/Orders/components/OrderFilters.tsx
 import React49, { useState as useState33, useEffect as useEffect17 } from "react";
-import { Input as Input9, Button as Button15 } from "@rentalshop/ui";
+import { Input as Input9, Button as Button15, SearchableSelect as SearchableSelect4 } from "@rentalshop/ui";
 import { Select as Select6, SelectContent as SelectContent6, SelectItem as SelectItem6, SelectTrigger as SelectTrigger6, SelectValue as SelectValue6 } from "@rentalshop/ui";
 import { outletsApi } from "@rentalshop/utils";
 import { ORDER_STATUS, ORDER_TYPE } from "@rentalshop/constants";
@@ -17192,6 +17191,9 @@ var OrderFilters = React49.memo(function OrderFilters2({
   const [outlets, setOutlets] = useState33([]);
   const [loadingOutlets, setLoadingOutlets] = useState33(false);
   const [outletError, setOutletError] = useState33(null);
+  const [merchants, setMerchants] = useState33([]);
+  const [loadingMerchants, setLoadingMerchants] = useState33(false);
+  const [merchantError, setMerchantError] = useState33(null);
   useEffect17(() => {
     const externalSearch = filters.search || "";
     if (externalSearch !== localSearch) {
@@ -17220,6 +17222,32 @@ var OrderFilters = React49.memo(function OrderFilters2({
       }
     };
     fetchOutlets();
+  }, []);
+  useEffect17(() => {
+    const hasMerchantFilter = "merchantId" in filters;
+    if (hasMerchantFilter) {
+      const fetchMerchants = async () => {
+        try {
+          setLoadingMerchants(true);
+          setMerchantError(null);
+          const { merchantsApi: merchantsApi4 } = await import("@rentalshop/utils");
+          const result = await merchantsApi4.getMerchants();
+          if (result.success && result.data?.merchants) {
+            setMerchants(result.data.merchants);
+          } else {
+            setMerchantError("Failed to load merchants");
+            setMerchants([]);
+          }
+        } catch (error) {
+          console.error("Error fetching merchants:", error);
+          setMerchantError("Failed to load merchants");
+          setMerchants([]);
+        } finally {
+          setLoadingMerchants(false);
+        }
+      };
+      fetchMerchants();
+    }
   }, []);
   const handleSearchInput = (value) => {
     console.log("\u2328\uFE0F OrderFilters: Search input changed:", value);
@@ -17295,24 +17323,41 @@ var OrderFilters = React49.memo(function OrderFilters2({
         ]
       }
     ),
-    /* @__PURE__ */ jsxs73(
-      Select6,
+    "merchantId" in filters && /* @__PURE__ */ jsx88(
+      SearchableSelect4,
       {
-        value: filters.outletId ? filters.outletId.toString() : "all",
-        onValueChange: (value) => {
-          const newValue = value === "all" ? void 0 : parseInt(value);
-          handleFilterChange("outletId", newValue);
-        },
-        children: [
-          /* @__PURE__ */ jsx88(SelectTrigger6, { className: "w-[160px] h-10", children: /* @__PURE__ */ jsx88(SelectValue6, { placeholder: t2("filters.outletLabel") }) }),
-          /* @__PURE__ */ jsxs73(SelectContent6, { children: [
-            /* @__PURE__ */ jsx88(SelectItem6, { value: "all", children: t2("filters.allOutlets") }),
-            loadingOutlets ? /* @__PURE__ */ jsx88(SelectItem6, { value: "loading", disabled: true, children: t2("filters.loading") }) : outletError ? /* @__PURE__ */ jsx88(SelectItem6, { value: "error", disabled: true, children: t2("filters.error") }) : outlets.length === 0 ? /* @__PURE__ */ jsx88(SelectItem6, { value: "empty", disabled: true, children: t2("filters.noOutlets") }) : outlets.map((outlet) => /* @__PURE__ */ jsx88(SelectItem6, { value: outlet.id.toString(), children: outlet.name }, outlet.id))
-          ] })
-        ]
+        value: filters.merchantId,
+        onChange: (value) => handleFilterChange("merchantId", value || void 0),
+        options: merchants.map((merchant) => ({
+          value: merchant.id.toString(),
+          label: merchant.name,
+          subtitle: merchant.name
+        })),
+        placeholder: loadingMerchants ? t2("filters.loading") : merchantError ? t2("filters.error") : "All Merchants",
+        searchPlaceholder: "Search merchants...",
+        className: "w-[200px]",
+        emptyText: "No merchants found",
+        displayMode: "button"
       }
     ),
-    onClearFilters && (filters.status || filters.orderType || filters.outletId || localSearch) && /* @__PURE__ */ jsx88(
+    /* @__PURE__ */ jsx88(
+      SearchableSelect4,
+      {
+        value: filters.outletId,
+        onChange: (value) => handleFilterChange("outletId", value || void 0),
+        options: outlets.map((outlet) => ({
+          value: outlet.id.toString(),
+          label: outlet.name,
+          subtitle: outlet.name
+        })),
+        placeholder: loadingOutlets ? t2("filters.loading") : outletError ? t2("filters.error") : t2("filters.allOutlets"),
+        searchPlaceholder: "Search outlets...",
+        className: "w-[200px]",
+        emptyText: "No outlets found",
+        displayMode: "button"
+      }
+    ),
+    onClearFilters && (filters.status || filters.orderType || filters.outletId || filters.merchantId || localSearch) && /* @__PURE__ */ jsx88(
       Button15,
       {
         variant: "outline",
@@ -17662,7 +17707,8 @@ var OrderTable = React51.memo(function OrderTable2({
   onOrderAction,
   sortBy = "createdAt",
   sortOrder = "desc",
-  onSort
+  onSort,
+  showMerchant = false
 }) {
   const formatMoney = useFormatCurrency5();
   const t2 = useOrderTranslations8();
@@ -17727,6 +17773,7 @@ var OrderTable = React51.memo(function OrderTable2({
         }
       ),
       /* @__PURE__ */ jsx91("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: t2("customer.label") }),
+      showMerchant && /* @__PURE__ */ jsx91("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Merchant" }),
       /* @__PURE__ */ jsx91(
         "th",
         {
@@ -17769,6 +17816,10 @@ var OrderTable = React51.memo(function OrderTable2({
       /* @__PURE__ */ jsx91("td", { className: "px-6 py-3", children: /* @__PURE__ */ jsxs76("div", { className: "text-sm", children: [
         /* @__PURE__ */ jsx91("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName || "N/A" }),
         /* @__PURE__ */ jsx91("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone || "N/A" })
+      ] }) }),
+      showMerchant && /* @__PURE__ */ jsx91("td", { className: "px-6 py-3 whitespace-nowrap", children: /* @__PURE__ */ jsxs76("div", { className: "text-sm", children: [
+        /* @__PURE__ */ jsx91("div", { className: "font-medium text-gray-900 dark:text-white", children: order.merchantName || "N/A" }),
+        /* @__PURE__ */ jsx91("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.outletName || "N/A" })
       ] }) }),
       /* @__PURE__ */ jsx91("td", { className: "px-6 py-3 whitespace-nowrap", children: /* @__PURE__ */ jsxs76("div", { className: "text-sm", children: [
         /* @__PURE__ */ jsx91("div", { className: "font-medium text-gray-900 dark:text-white", children: formatMoney(order.totalAmount) }),
@@ -20834,8 +20885,10 @@ var Orders = React63.memo(function Orders2({
   activeQuickFilter,
   showStats = true,
   showQuickFilters = true,
-  filterStyle = "dropdown"
+  filterStyle = "dropdown",
   // ⭐ Default to dropdown (modern pattern)
+  showMerchant = false
+  // ⭐ Default to false (client view)
 }) {
   const t2 = useOrderTranslations12();
   React63.useEffect(() => {
@@ -20908,7 +20961,8 @@ var Orders = React63.memo(function Orders2({
         onOrderAction: memoizedOnOrderAction,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
-        onSort: memoizedOnSort
+        onSort: memoizedOnSort,
+        showMerchant
       }
     ) }),
     data.total > 0 && data.total > (data.limit || 20) && /* @__PURE__ */ jsx114("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ jsx114(
@@ -32134,7 +32188,6 @@ import {
   Trash2 as Trash213,
   MoreVertical as MoreVertical8
 } from "lucide-react";
-import { usePlansTranslations } from "@rentalshop/hooks";
 import { Fragment as Fragment44, jsx as jsx191, jsxs as jsxs173 } from "react/jsx-runtime";
 var PlanTable = ({
   plans,
@@ -32147,7 +32200,6 @@ var PlanTable = ({
   onSort,
   loading = false
 }) => {
-  const t2 = usePlansTranslations();
   const [openMenuId, setOpenMenuId] = useState73(null);
   const formatCurrency22 = (price, currency) => {
     return new Intl.NumberFormat("en-US", {
@@ -32184,8 +32236,8 @@ var PlanTable = ({
   if (plans.length === 0) {
     return /* @__PURE__ */ jsx191(Card50, { className: "shadow-sm border-border", children: /* @__PURE__ */ jsx191(CardContent49, { className: "text-center py-12", children: /* @__PURE__ */ jsxs173("div", { className: "text-text-tertiary", children: [
       /* @__PURE__ */ jsx191("div", { className: "text-4xl mb-4", children: "\u{1F4CB}" }),
-      /* @__PURE__ */ jsx191("h3", { className: "text-lg font-medium mb-2", children: t2("messages.noPlans") }),
-      /* @__PURE__ */ jsx191("p", { className: "text-sm", children: t2("messages.getStarted") })
+      /* @__PURE__ */ jsx191("h3", { className: "text-lg font-medium mb-2", children: "No plans found" }),
+      /* @__PURE__ */ jsx191("p", { className: "text-sm", children: "Get started by creating your first subscription plan" })
     ] }) }) });
   }
   return /* @__PURE__ */ jsx191(Card50, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ jsx191(CardContent49, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ jsx191("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ jsxs173("table", { className: "w-full", children: [
@@ -33308,7 +33360,7 @@ import {
   CardHeader as CardHeader36,
   CardTitle as CardTitle36,
   Switch as Switch4,
-  SearchableSelect as SearchableSelect4
+  SearchableSelect as SearchableSelect5
 } from "@rentalshop/ui";
 import { merchantsApi as merchantsApi2 } from "@rentalshop/utils";
 import { DollarSign as DollarSign17, CreditCard as CreditCard17 } from "lucide-react";
@@ -33509,7 +33561,7 @@ var PaymentForm = ({
       /* @__PURE__ */ jsxs180("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx198(Label14, { htmlFor: "merchant", children: "Merchant *" }),
         /* @__PURE__ */ jsx198(
-          SearchableSelect4,
+          SearchableSelect5,
           {
             value: formData.merchantId,
             onChange: (merchantId) => handleInputChange("merchantId", merchantId),
@@ -33526,7 +33578,7 @@ var PaymentForm = ({
       /* @__PURE__ */ jsxs180("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx198(Label14, { htmlFor: "plan", children: "Plan *" }),
         /* @__PURE__ */ jsx198(
-          SearchableSelect4,
+          SearchableSelect5,
           {
             value: formData.planId,
             onChange: (planId) => handlePlanChange(planId),
@@ -33552,7 +33604,7 @@ var PaymentForm = ({
       selectedPlan && /* @__PURE__ */ jsxs180("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx198(Label14, { htmlFor: "planVariant", children: "Plan Variant *" }),
         /* @__PURE__ */ jsx198(
-          SearchableSelect4,
+          SearchableSelect5,
           {
             value: formData.planVariantId,
             onChange: (planVariantId) => handlePlanVariantChange(planVariantId),
@@ -42045,13 +42097,11 @@ import {
   Home as Home6,
   Users as Users16,
   Package as Package27,
+  ShoppingCart as ShoppingCart12,
   Building2 as Building218,
   Settings as Settings13,
   CreditCard as CreditCard25,
   Clock as Clock34,
-  Database as Database5,
-  ShieldCheck as ShieldCheck2,
-  FileText as FileText6,
   Store as Store11,
   LogOut as LogOut5,
   User as User27
@@ -42069,19 +42119,26 @@ var adminMenuItems = [
     icon: Building218
   },
   {
-    label: "Plans",
-    href: "/plans",
-    icon: Package27
-  },
-  {
-    label: "Subscriptions",
+    label: "Subscription",
     href: "/subscriptions",
-    icon: Clock34
+    icon: Clock34,
+    subItems: [
+      {
+        label: "Subscriptions",
+        href: "/subscriptions",
+        icon: Clock34
+      },
+      {
+        label: "Payments",
+        href: "/payments",
+        icon: CreditCard25
+      }
+    ]
   },
   {
-    label: "Payments",
-    href: "/payments",
-    icon: CreditCard25
+    label: "Orders",
+    href: "/orders",
+    icon: ShoppingCart12
   },
   {
     label: "Users",
@@ -42089,24 +42146,19 @@ var adminMenuItems = [
     icon: Users16
   },
   {
-    label: "System",
-    href: "/system",
+    label: "Settings",
+    href: "/settings",
     icon: Settings13,
     subItems: [
       {
-        label: "Backup Management",
-        href: "/system/backup",
-        icon: Database5
+        label: "Admin Info",
+        href: "/settings/admin",
+        icon: User27
       },
       {
-        label: "Data Integrity",
-        href: "/system/integrity",
-        icon: ShieldCheck2
-      },
-      {
-        label: "Audit Logs",
-        href: "/system/audit-logs",
-        icon: FileText6
+        label: "Plans",
+        href: "/plans",
+        icon: Package27
       }
     ]
   }

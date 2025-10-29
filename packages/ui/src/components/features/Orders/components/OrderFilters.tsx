@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Input, Button } from '@rentalshop/ui';
+import { Input, Button, SearchableSelect } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardContent } from '@rentalshop/ui';
 import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
@@ -17,6 +17,11 @@ interface OrderFiltersProps {
 }
 
 interface Outlet {
+  id: number;
+  name: string;
+}
+
+interface Merchant {
   id: number;
   name: string;
 }
@@ -49,6 +54,11 @@ export const OrderFilters = React.memo(function OrderFilters({
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loadingOutlets, setLoadingOutlets] = useState(false);
   const [outletError, setOutletError] = useState<string | null>(null);
+  
+  // Merchants for dropdown (admin only)
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [loadingMerchants, setLoadingMerchants] = useState(false);
+  const [merchantError, setMerchantError] = useState<string | null>(null);
 
   // ============================================================================
   // SYNC LOCAL SEARCH WITH FILTERS (for clear button, etc)
@@ -89,6 +99,40 @@ export const OrderFilters = React.memo(function OrderFilters({
     };
 
     fetchOutlets();
+  }, []); // Only run once
+
+  // ============================================================================
+  // FETCH MERCHANTS (admin only, one-time)
+  // ===========================================================================-
+  
+  useEffect(() => {
+    // Check if merchantId filter is present in filters (admin view)
+    const hasMerchantFilter = 'merchantId' in filters;
+    
+    if (hasMerchantFilter) {
+      const fetchMerchants = async () => {
+        try {
+          setLoadingMerchants(true);
+          setMerchantError(null);
+          const { merchantsApi } = await import('@rentalshop/utils');
+          const result = await merchantsApi.getMerchants();
+          if (result.success && result.data?.merchants) {
+            setMerchants(result.data.merchants);
+          } else {
+            setMerchantError('Failed to load merchants');
+            setMerchants([]);
+          }
+        } catch (error) {
+          console.error('Error fetching merchants:', error);
+          setMerchantError('Failed to load merchants');
+          setMerchants([]);
+        } finally {
+          setLoadingMerchants(false);
+        }
+      };
+
+      fetchMerchants();
+    }
   }, []); // Only run once
 
   // ============================================================================
@@ -175,37 +219,42 @@ export const OrderFilters = React.memo(function OrderFilters({
             </SelectContent>
           </Select>
           
-          {/* Outlet Filter */}
-          <Select 
-            value={filters.outletId ? filters.outletId.toString() : 'all'} 
-            onValueChange={(value) => {
-              const newValue = value === 'all' ? undefined : parseInt(value);
-              handleFilterChange('outletId', newValue);
-            }}
-          >
-            <SelectTrigger className="w-[160px] h-10">
-              <SelectValue placeholder={t('filters.outletLabel')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('filters.allOutlets')}</SelectItem>
-              {loadingOutlets ? (
-                <SelectItem value="loading" disabled>{t('filters.loading')}</SelectItem>
-              ) : outletError ? (
-                <SelectItem value="error" disabled>{t('filters.error')}</SelectItem>
-              ) : outlets.length === 0 ? (
-                <SelectItem value="empty" disabled>{t('filters.noOutlets')}</SelectItem>
-              ) : (
-                outlets.map((outlet) => (
-                  <SelectItem key={outlet.id} value={outlet.id.toString()}>
-                    {outlet.name}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+          {/* Merchant Filter - SearchableSelect (Admin only) */}
+          {'merchantId' in filters && (
+            <SearchableSelect
+              value={(filters as any).merchantId as number | undefined}
+              onChange={(value) => handleFilterChange('merchantId' as keyof OrderFiltersType, value || undefined)}
+              options={merchants.map(merchant => ({
+                value: merchant.id.toString(),
+                label: merchant.name,
+                subtitle: merchant.name
+              }))}
+              placeholder={loadingMerchants ? t('filters.loading') : merchantError ? t('filters.error') : 'All Merchants'}
+              searchPlaceholder="Search merchants..."
+              className="w-[200px]"
+              emptyText="No merchants found"
+              displayMode="button"
+            />
+          )}
+          
+          {/* Outlet Filter - SearchableSelect */}
+          <SearchableSelect
+            value={filters.outletId}
+            onChange={(value) => handleFilterChange('outletId', value || undefined)}
+            options={outlets.map(outlet => ({
+              value: outlet.id.toString(),
+              label: outlet.name,
+              subtitle: outlet.name
+            }))}
+            placeholder={loadingOutlets ? t('filters.loading') : outletError ? t('filters.error') : t('filters.allOutlets')}
+            searchPlaceholder="Search outlets..."
+            className="w-[200px]"
+            emptyText="No outlets found"
+            displayMode="button"
+          />
           
       {/* Clear Filters Button */}
-      {onClearFilters && (filters.status || filters.orderType || filters.outletId || localSearch) && (
+      {onClearFilters && (filters.status || filters.orderType || filters.outletId || (filters as any).merchantId || localSearch) && (
         <Button
           variant="outline"
           size="sm"

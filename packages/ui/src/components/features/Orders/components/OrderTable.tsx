@@ -15,6 +15,7 @@ interface OrderTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
+  showMerchant?: boolean; // ⭐ Show merchant column for admin view
 }
 
 export const OrderTable = React.memo(function OrderTable({ 
@@ -22,7 +23,8 @@ export const OrderTable = React.memo(function OrderTable({
   onOrderAction,
   sortBy = 'createdAt',
   sortOrder = 'desc',
-  onSort
+  onSort,
+  showMerchant = false
 }: OrderTableProps) {
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
@@ -128,6 +130,11 @@ export const OrderTable = React.memo(function OrderTable({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t('customer.label')}
               </th>
+              {showMerchant && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Merchant
+                </th>
+              )}
               <th 
                 onClick={() => handleSort('totalAmount')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -199,6 +206,20 @@ export const OrderTable = React.memo(function OrderTable({
                     </div>
                   </div>
                 </td>
+                
+                {/* Merchant */}
+                {showMerchant && (
+                  <td className="px-6 py-3 whitespace-nowrap">
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {order.merchantName || 'N/A'}
+                      </div>
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">
+                        {order.outletName || 'N/A'}
+                      </div>
+                    </div>
+                  </td>
+                )}
                 
                 {/* Amount */}
                 <td className="px-6 py-3 whitespace-nowrap">

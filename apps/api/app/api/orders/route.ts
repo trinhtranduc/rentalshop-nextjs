@@ -46,6 +46,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
       q, 
       orderType,
       status,
+      merchantId: queryMerchantId,
       outletId: queryOutletId,
       customerId,
       productId,
@@ -57,13 +58,12 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
 
     console.log('Parsed filters:', { 
       page, limit, q, orderType, status, 
-      queryOutletId, customerId, productId, startDate, endDate,
+      queryMerchantId, queryOutletId, customerId, productId, startDate, endDate,
       sortBy, sortOrder
     });
     
     // Implement role-based filtering
     let searchFilters: any = {
-      merchantId: userScope.merchantId,
       customerId,
       productId,
       orderType,
@@ -76,6 +76,18 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
       sortBy: sortBy || 'createdAt',
       sortOrder: sortOrder || 'desc'
     };
+
+    // Role-based merchant filtering:
+    // - ADMIN role: Can see orders from all merchants (unless queryMerchantId is specified)
+    // - MERCHANT role: Can only see orders from their own merchant
+    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their merchant
+    if (user.role === 'ADMIN') {
+      // Admins can see all merchants unless specifically filtering by merchant
+      searchFilters.merchantId = queryMerchantId;
+    } else {
+      // Non-admin users restricted to their merchant
+      searchFilters.merchantId = userScope.merchantId;
+    }
 
     // Role-based outlet filtering:
     // - MERCHANT role: Can see orders from all outlets of their merchant (unless queryOutletId is specified)
@@ -99,7 +111,9 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     console.log(`🔍 Role-based filtering for ${user.role}:`, {
       'userScope.merchantId': userScope.merchantId,
       'userScope.outletId': userScope.outletId,
+      'queryMerchantId': queryMerchantId,
       'queryOutletId': queryOutletId,
+      'final merchantId filter': searchFilters.merchantId,
       'final outletId filter': searchFilters.outletId,
       'productId filter': searchFilters.productId
     });

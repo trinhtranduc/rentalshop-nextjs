@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
   ConfirmationDialog,
+  Badge,
   useToast
 } from '@rentalshop/ui';
 import { PlanTable } from '@rentalshop/ui';
@@ -63,6 +64,7 @@ export default function PlansPage() {
   
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [deletingPlan, setDeletingPlan] = useState<Plan | null>(null);
   const [formData, setFormData] = useState<any>({});
@@ -157,10 +159,26 @@ export default function PlansPage() {
     setShowCreateForm(true);
   }, []);
 
+  const handleViewPlan = useCallback((plan: Plan) => {
+    setSelectedPlan(plan);
+    setShowViewDialog(true);
+  }, []);
+
   const handleEditPlan = useCallback((plan: Plan) => {
     setSelectedPlan(plan);
     setFormData(plan);
     setShowEditForm(true);
+  }, []);
+
+  const handleCloseViewDialog = useCallback(() => {
+    setShowViewDialog(false);
+    setSelectedPlan(null);
+  }, []);
+
+  const handleCloseEditDialog = useCallback(() => {
+    setShowEditForm(false);
+    setSelectedPlan(null);
+    setFormData({});
   }, []);
 
   const handleDeletePlan = useCallback((plan: Plan) => {
@@ -302,7 +320,7 @@ export default function PlansPage() {
           <div className="flex-1 min-h-0">
         <PlanTable
               plans={plans}
-              onView={(plan) => router.push(`/plans/${plan.id}`)}
+              onView={handleViewPlan}
               onEdit={handleEditPlan}
               onDelete={handleDeletePlan}
               onToggleStatus={handleToggleStatus}
@@ -381,6 +399,125 @@ export default function PlansPage() {
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingPlan(null)}
       />
+
+      {/* View Plan Dialog */}
+      {selectedPlan && (
+        <Dialog open={showViewDialog} onOpenChange={handleCloseViewDialog}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold">
+                {selectedPlan.name}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="mt-6 space-y-6">
+              {/* Plan Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Description</label>
+                  <p className="mt-1 text-sm">{selectedPlan.description || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <p className="mt-1 text-sm">
+                    <Badge variant={selectedPlan.isActive ? 'default' : 'secondary'} className={selectedPlan.isActive ? 'bg-green-100 text-green-800' : ''}>
+                      {selectedPlan.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Base Price</label>
+                  <p className="mt-1 text-sm font-semibold">
+                    {selectedPlan.currency} {selectedPlan.basePrice}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Trial Days</label>
+                  <p className="mt-1 text-sm">{selectedPlan.trialDays} days</p>
+                </div>
+                {selectedPlan.isPopular && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Popular</label>
+                    <p className="mt-1 text-sm">
+                      <Badge variant="default" className="bg-yellow-100 text-yellow-800">Yes</Badge>
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Limits */}
+              <div>
+                <h4 className="text-lg font-semibold mb-3">Limits</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Outlets</label>
+                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.outlets || 'Unlimited'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Users</label>
+                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.users || 'Unlimited'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Products</label>
+                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.products || 'Unlimited'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Customers</label>
+                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.customers || 'Unlimited'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Orders</label>
+                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.orders || 'Unlimited'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Features */}
+              {(() => {
+                // Handle features - could be array, string (JSON), or missing
+                let features: string[] = [];
+                if (selectedPlan.features) {
+                  if (Array.isArray(selectedPlan.features)) {
+                    features = selectedPlan.features;
+                  } else if (typeof selectedPlan.features === 'string') {
+                    try {
+                      features = JSON.parse(selectedPlan.features);
+                    } catch {
+                      features = [];
+                    }
+                  }
+                }
+                
+                return features.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3">Features</h4>
+                    <ul className="space-y-2">
+                      {features.map((feature, idx) => (
+                        <li key={idx} className="flex items-center text-sm">
+                          <span className="mr-2">✓</span>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="outline" onClick={handleCloseViewDialog}>
+                Close
+              </Button>
+              <Button onClick={() => {
+                handleCloseViewDialog();
+                handleEditPlan(selectedPlan);
+              }}>
+                Edit Plan
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Create/Edit Form Dialogs would go here */}
       {/* Keeping simplified for now - full forms can be added later */}

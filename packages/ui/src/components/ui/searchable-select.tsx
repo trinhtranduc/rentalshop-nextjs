@@ -120,7 +120,15 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       // In search mode, return search results if available, otherwise show empty
       if (query.trim()) {
         console.log('🔍 SearchableSelect: Search mode - returning internalOptions:', internalOptions.length);
-        return internalOptions;
+        // Ensure selected option is included if exists
+        const result = [...internalOptions];
+        if (value && options) {
+          const selectedOpt = options.find((o) => o.value === String(value));
+          if (selectedOpt && !result.find((o) => o.value === selectedOpt.value)) {
+            result.unshift(selectedOpt); // Add selected at top
+          }
+        }
+        return result;
       } else {
         console.log('🔍 SearchableSelect: Search mode - returning empty array');
         return [];
@@ -135,11 +143,19 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
     
     const filtered = options?.filter((o) => o.label.toLowerCase().includes(q));
+    // Ensure selected option is included even if it doesn't match query
+    if (value && options) {
+      const selectedOpt = options.find((o) => o.value === String(value));
+      if (selectedOpt && !filtered?.find((o) => o.value === selectedOpt.value)) {
+        filtered?.unshift(selectedOpt); // Add selected at top
+      }
+    }
     console.log('🔍 SearchableSelect: Filtered results:', filtered?.length || 0, 'for query:', q);
     return filtered || [];
-  }, [query, internalOptions, onSearch, options]);
+  }, [query, internalOptions, onSearch, options, value]);
 
-  const selected = internalOptions.find((o) => o.value === String(value));
+  // Find selected option from all options (not just internalOptions)
+  const selected = options?.find((o) => o.value === String(value)) || internalOptions.find((o) => o.value === String(value));
 
   // Keep selected label in input for better UX
   const displayValue = selected?.label || query;
@@ -178,81 +194,64 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   return (
     <div className={cn('relative', className)} ref={rootRef}>
+      {/* Always use input mode for searchability (like SearchableCountrySelect) */}
+      <input
+        value={displayValue}
+        onFocus={() => {
+          setOpen(true);
+        }}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onBlur={() => {
+          // Only close dropdown after a longer delay
+          setTimeout(() => {
+            setOpen(false);
+            // Don't clear query here - let it persist for search
+          }, 300);
+        }}
+        placeholder={selected ? selected.label : placeholder}
+        className={cn(
+          'h-10 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200',
+          'focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0',
+          'hover:border-gray-400'
+        )}
+      />
+      <span className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" />
+      <Button
+        variant="ghost"
+        size="icon"
+        type="button"
+        aria-label="Toggle options"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setOpen((o) => !o);
+        }}
+      >
+        <ChevronDown className="h-5 w-5" />
+      </Button>
       
-      {displayMode === 'input' ? (
-        <>
-          <input
-            value={displayValue}
-            onFocus={() => {
-              setOpen(true);
-            }}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            }}
-            onBlur={() => {
-              // Only close dropdown after a longer delay
-              setTimeout(() => {
-                setOpen(false);
-                // Don't clear query here - let it persist for search
-              }, 300);
-            }}
-            placeholder={selected ? selected.label : placeholder}
-            className={cn(
-              'h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200',
-              'focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0',
-              'hover:border-gray-400'
-            )}
-          />
-          <span className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" />
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            aria-label="Toggle options"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              setOpen((o) => !o);
-            }}
-          >
-            <ChevronDown className="h-5 w-5" />
-          </Button>
-          
-          {/* Clear button when there's a query */}
-          {query && (
-            <Button
-              variant="ghost"
-              size="icon"
-              type="button"
-              onClick={() => {
-                setQuery('');
-                // Reset to original options when clearing search
-                if (onSearch) {
-                  setInternalOptions([]); // Clear search results
-                } else {
-                  setInternalOptions(options || []); // Restore original options
-                }
-                setOpen(false);
-              }}
-              className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
-            >
-              ✕
-            </Button>
-          )}
-        </>
-      ) : (
+      {/* Clear button when there's a query */}
+      {query && (
         <Button
-          variant="outline"
+          variant="ghost"
+          size="icon"
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          className={cn(
-            'h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-left text-sm flex items-center justify-between transition-all duration-200',
-            'hover:bg-gray-50 hover:border-gray-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0'
-          )}
+          onClick={() => {
+            setQuery('');
+            // Reset to original options when clearing search
+            if (onSearch) {
+              setInternalOptions([]); // Clear search results
+            } else {
+              setInternalOptions(options || []); // Restore original options
+            }
+            setOpen(false);
+          }}
+          className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
         >
-          <span className={cn(!selected && 'text-gray-400')}>{selected ? selected.label : placeholder}</span>
-          <ChevronDown className="h-5 w-5 text-gray-500" />
+          ✕
         </Button>
       )}
 
@@ -275,7 +274,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                   <Button
                     variant="ghost"
                     type="button"
-                    onClick={() => {
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // Prevent input blur
                       onAddNew();
                       setOpen(false);
                     }}
@@ -298,18 +298,20 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 {/* Options with custom rendering based on type */}
                 {filtered.map((opt) => {
                   return (
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      key={opt.value}
-                      onClick={() => {
-                        handleSelect(opt);
-                      }}
-                      className={cn(
-                        'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out h-auto justify-start rounded-none',
-                        value === parseInt(opt.value) && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                      )}
-                    >
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    key={opt.value}
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // Prevent input blur
+                      console.log('🖱️ Selecting option:', opt.label);
+                      handleSelect(opt);
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out h-auto justify-start rounded-none',
+                      value !== undefined && value !== null && String(value) === opt.value && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                    )}
+                  >
                     {/* Icon or Image based on type */}
                     {opt.type === 'product' && opt.image ? (
                       // Product with image
@@ -379,8 +381,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                       )}
                     </div>
                     
-                    {/* Selection indicator */}
-                    {value === parseInt(opt.value) && (
+                    {/* Selection indicator - Show check mark when selected */}
+                    {value !== undefined && value !== null && String(value) === opt.value && (
                       <div className="flex-shrink-0 w-5 h-5 text-blue-700">
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

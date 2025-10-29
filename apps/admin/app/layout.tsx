@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { NextIntlClientProvider } from 'next-intl'
+import { getMessages } from 'next-intl/server'
 import AdminLayout from './components/AdminLayout'
 // AuthProvider removed - using centralized useAuth hook from @rentalshop/hooks
 import { ToastProvider } from './providers/ToastProvider'
@@ -32,19 +34,24 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Get messages and locale from i18n.ts configuration
+  const messages = await getMessages();
+
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans`}>
-        <ToastProvider>
-          <AdminLayout>
-            {children}
-          </AdminLayout>
-        </ToastProvider>
+        <NextIntlClientProvider messages={messages}>
+          <ToastProvider>
+            <AdminLayout>
+              {children}
+            </AdminLayout>
+          </ToastProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

@@ -53,7 +53,6 @@ import {
 
 // Import the PlanVariant type from the types package
 import type { PlanVariant, Plan } from '@rentalshop/types';
-import { useCommonTranslations } from '@rentalshop/hooks';
 import PlanVariantForm from '../components/PlanVariantForm';
 
 export default function PlanVariantsPage() {
@@ -77,9 +76,6 @@ export default function PlanVariantsPage() {
   
   // Toast hook
   const { toastSuccess, showError } = useToast();
-  
-  // Translations
-  const t = useCommonTranslations();
 
   useEffect(() => {
     fetchVariants();
@@ -421,11 +417,11 @@ export default function PlanVariantsPage() {
               sortedVariants.length === 0 ? (
                 <div className="text-center py-12">
                   <Package className="w-12 h-12 text-text-secondary mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-text-primary mb-2">{t('messages.noPlanVariants')}</h3>
+                  <h3 className="text-lg font-medium text-text-primary mb-2">No plan variants found</h3>
                   <p className="text-text-secondary mb-4">
                     {searchTerm || planFilter !== 'all' || statusFilter !== 'all' 
                       ? 'Try adjusting your filters to see more results.'
-                      : t('messages.getStartedPlanVariant')
+                      : 'Get started by creating your first plan variant'
                     }
                   </p>
                   {!searchTerm && planFilter === 'all' && statusFilter === 'all' && (
