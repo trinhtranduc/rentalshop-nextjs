@@ -30,7 +30,8 @@ COPY apps/client/package.json ./apps/client/
 # Set NODE_ENV=development to ensure workspace devDependencies are installed
 # This includes tsup, typescript, etc. needed for package builds
 ENV NODE_ENV=development
-RUN yarn install --frozen-lockfile
+# Retry yarn install up to 3 times to handle network issues
+RUN for i in 1 2 3; do yarn install --frozen-lockfile && break || (echo "Attempt $i failed, retrying..." && sleep 5); done
 
 # ===================================
 # STAGE 2: Builder
