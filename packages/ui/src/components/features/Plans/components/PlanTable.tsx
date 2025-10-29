@@ -29,7 +29,6 @@ import {
   MoreVertical
 } from 'lucide-react';
 import type { Plan } from '@rentalshop/types';
-import { usePlansTranslations } from '@rentalshop/hooks';
 
 interface PlanTableProps {
   plans: Plan[];
@@ -54,7 +53,6 @@ export const PlanTable: React.FC<PlanTableProps> = ({
   onSort,
   loading = false
 }) => {
-  const t = usePlansTranslations();
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const formatCurrency = (price: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -108,9 +106,9 @@ export const PlanTable: React.FC<PlanTableProps> = ({
         <CardContent className="text-center py-12">
           <div className="text-text-tertiary">
             <div className="text-4xl mb-4">📋</div>
-            <h3 className="text-lg font-medium mb-2">{t('messages.noPlans')}</h3>
+            <h3 className="text-lg font-medium mb-2">No plans found</h3>
             <p className="text-sm">
-              {t('messages.getStarted')}
+              Get started by creating your first subscription plan
             </p>
           </div>
         </CardContent>

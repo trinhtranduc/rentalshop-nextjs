@@ -29,6 +29,7 @@ interface OrdersProps {
   showStats?: boolean;
   showQuickFilters?: boolean;
   filterStyle?: 'buttons' | 'dropdown'; // ⭐ Choose UI style
+  showMerchant?: boolean; // ⭐ Show merchant column for admin view
 }
 
 export const Orders = React.memo(function Orders({ 
@@ -45,7 +46,8 @@ export const Orders = React.memo(function Orders({
   activeQuickFilter,
   showStats = true,
   showQuickFilters = true,
-  filterStyle = 'dropdown' // ⭐ Default to dropdown (modern pattern)
+  filterStyle = 'dropdown', // ⭐ Default to dropdown (modern pattern)
+  showMerchant = false // ⭐ Default to false (client view)
 }: OrdersProps) {
   const t = useOrderTranslations();
   
@@ -128,6 +130,7 @@ export const Orders = React.memo(function Orders({
           sortBy={filters.sortBy}
           sortOrder={filters.sortOrder}
           onSort={memoizedOnSort}
+          showMerchant={showMerchant}
         />
       </div>
       

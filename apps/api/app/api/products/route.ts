@@ -38,6 +38,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
       limit,
       q, 
       search, 
+      merchantId: queryMerchantId,
       categoryId, 
       outletId: queryOutletId,
       available,
@@ -48,14 +49,36 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     } = parsed.data;
 
     console.log('Parsed filters:', { 
-      page, limit, q, search, categoryId, queryOutletId, 
+      page, limit, q, search, queryMerchantId, categoryId, queryOutletId, 
       available, minPrice, maxPrice, sortBy, sortOrder 
     });
     
-    // Use simplified database API with userScope
+    // Role-based merchant filtering:
+    // - ADMIN role: Can see products from all merchants (unless queryMerchantId is specified)
+    // - MERCHANT role: Can only see products from their own merchant
+    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their merchant
+    let filterMerchantId = userScope.merchantId;
+    if (user.role === 'ADMIN') {
+      // Admins can see all merchants unless specifically filtering by merchant
+      filterMerchantId = queryMerchantId || userScope.merchantId;
+    }
+
+    // Role-based outlet filtering:
+    // - MERCHANT role: Can see products from all outlets of their merchant (unless queryOutletId is specified)
+    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their assigned outlet
+    let filterOutletId = userScope.outletId;
+    if (user.role === 'MERCHANT') {
+      // Merchants can see all outlets unless specifically filtering by outlet
+      filterOutletId = queryOutletId || userScope.outletId;
+    } else if (user.role === 'ADMIN') {
+      // Admins can see all products (no outlet filtering unless specified)
+      filterOutletId = queryOutletId;
+    }
+
+    // Use simplified database API with role-based filtering
     const searchFilters = {
-      merchantId: userScope.merchantId,
-      outletId: queryOutletId || userScope.outletId,
+      merchantId: filterMerchantId,
+      outletId: filterOutletId,
       categoryId,
       search: q || search,
       available,

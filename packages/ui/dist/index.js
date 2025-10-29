@@ -3925,7 +3925,14 @@ var SearchableSelect = ({
     if (onSearch) {
       if (query.trim()) {
         console.log("\u{1F50D} SearchableSelect: Search mode - returning internalOptions:", internalOptions.length);
-        return internalOptions;
+        const result = [...internalOptions];
+        if (value && options) {
+          const selectedOpt = options.find((o2) => o2.value === String(value));
+          if (selectedOpt && !result.find((o2) => o2.value === selectedOpt.value)) {
+            result.unshift(selectedOpt);
+          }
+        }
+        return result;
       } else {
         console.log("\u{1F50D} SearchableSelect: Search mode - returning empty array");
         return [];
@@ -3937,10 +3944,16 @@ var SearchableSelect = ({
       return options || [];
     }
     const filtered2 = options?.filter((o2) => o2.label.toLowerCase().includes(q));
+    if (value && options) {
+      const selectedOpt = options.find((o2) => o2.value === String(value));
+      if (selectedOpt && !filtered2?.find((o2) => o2.value === selectedOpt.value)) {
+        filtered2?.unshift(selectedOpt);
+      }
+    }
     console.log("\u{1F50D} SearchableSelect: Filtered results:", filtered2?.length || 0, "for query:", q);
     return filtered2 || [];
-  }, [query, internalOptions, onSearch, options]);
-  const selected = internalOptions.find((o2) => o2.value === String(value));
+  }, [query, internalOptions, onSearch, options, value]);
+  const selected = options?.find((o2) => o2.value === String(value)) || internalOptions.find((o2) => o2.value === String(value));
   const displayValue = selected?.label || query;
   React23.useEffect(() => {
     const handler = (e2) => {
@@ -3969,80 +3982,63 @@ var SearchableSelect = ({
     }, 100);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)("div", { className: cn2("relative", className), ref: rootRef, children: [
-    displayMode === "input" ? /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)(import_jsx_runtime37.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
-        "input",
-        {
-          value: displayValue,
-          onFocus: () => {
-            setOpen(true);
-          },
-          onChange: (e2) => {
-            setQuery(e2.target.value);
-            setOpen(true);
-          },
-          onBlur: () => {
-            setTimeout(() => {
-              setOpen(false);
-            }, 300);
-          },
-          placeholder: selected ? selected.label : placeholder,
-          className: cn2(
-            "h-11 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200",
-            "focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0",
-            "hover:border-gray-400"
-          )
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
-      /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
-        Button,
-        {
-          variant: "ghost",
-          size: "icon",
-          type: "button",
-          "aria-label": "Toggle options",
-          className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
-          onMouseDown: (e2) => {
-            e2.preventDefault();
-            setOpen((o2) => !o2);
-          },
-          children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(import_lucide_react13.ChevronDown, { className: "h-5 w-5" })
-        }
-      ),
-      query && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
-        Button,
-        {
-          variant: "ghost",
-          size: "icon",
-          type: "button",
-          onClick: () => {
-            setQuery("");
-            if (onSearch) {
-              setInternalOptions([]);
-            } else {
-              setInternalOptions(options || []);
-            }
+    /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
+      "input",
+      {
+        value: displayValue,
+        onFocus: () => {
+          setOpen(true);
+        },
+        onChange: (e2) => {
+          setQuery(e2.target.value);
+          setOpen(true);
+        },
+        onBlur: () => {
+          setTimeout(() => {
             setOpen(false);
-          },
-          className: "absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
-          children: "\u2715"
-        }
-      )
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)(
+          }, 300);
+        },
+        placeholder: selected ? selected.label : placeholder,
+        className: cn2(
+          "h-10 w-full rounded-lg border border-gray-300 bg-white pl-4 pr-12 text-sm transition-all duration-200",
+          "focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0",
+          "hover:border-gray-400"
+        )
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("span", { className: "pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-300" }),
+    /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
       Button,
       {
-        variant: "outline",
+        variant: "ghost",
+        size: "icon",
         type: "button",
-        onClick: () => setOpen((v2) => !v2),
-        className: cn2(
-          "h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-left text-sm flex items-center justify-between transition-all duration-200",
-          "hover:bg-gray-50 hover:border-gray-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-0"
-        ),
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("span", { className: cn2(!selected && "text-gray-400"), children: selected ? selected.label : placeholder }),
-          /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(import_lucide_react13.ChevronDown, { className: "h-5 w-5 text-gray-500" })
-        ]
+        "aria-label": "Toggle options",
+        className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
+        onMouseDown: (e2) => {
+          e2.preventDefault();
+          setOpen((o2) => !o2);
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(import_lucide_react13.ChevronDown, { className: "h-5 w-5" })
+      }
+    ),
+    query && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
+      Button,
+      {
+        variant: "ghost",
+        size: "icon",
+        type: "button",
+        onClick: () => {
+          setQuery("");
+          if (onSearch) {
+            setInternalOptions([]);
+          } else {
+            setInternalOptions(options || []);
+          }
+          setOpen(false);
+        },
+        className: "absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0",
+        children: "\u2715"
       }
     ),
     open && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "absolute z-[9999] mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg ring-1 ring-black ring-opacity-5", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "max-h-64 overflow-auto py-2", children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)("div", { className: "px-4 py-6 text-center text-sm text-gray-500", children: [
@@ -4054,7 +4050,8 @@ var SearchableSelect = ({
         {
           variant: "ghost",
           type: "button",
-          onClick: () => {
+          onMouseDown: (e2) => {
+            e2.preventDefault();
             onAddNew();
             setOpen(false);
           },
@@ -4071,12 +4068,14 @@ var SearchableSelect = ({
           {
             variant: "ghost",
             type: "button",
-            onClick: () => {
+            onMouseDown: (e2) => {
+              e2.preventDefault();
+              console.log("\u{1F5B1}\uFE0F Selecting option:", opt.label);
               handleSelect(opt);
             },
             className: cn2(
               "flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out h-auto justify-start rounded-none",
-              value === parseInt(opt.value) && "bg-blue-50 text-blue-700 hover:bg-blue-100"
+              value !== void 0 && value !== null && String(value) === opt.value && "bg-blue-50 text-blue-700 hover:bg-blue-100"
             ),
             children: [
               opt.type === "product" && opt.image ? (
@@ -4124,7 +4123,7 @@ var SearchableSelect = ({
                   opt.description && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "text-sm text-gray-600 whitespace-pre-line", children: opt.description })
                 ] })
               ) }),
-              value === parseInt(opt.value) && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "flex-shrink-0 w-5 h-5 text-blue-700", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
+              value !== void 0 && value !== null && String(value) === opt.value && /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { className: "flex-shrink-0 w-5 h-5 text-blue-700", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("svg", { className: "w-5 h-5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }) })
             ]
           },
           opt.value
@@ -17386,6 +17385,9 @@ var OrderFilters = import_react43.default.memo(function OrderFilters2({
   const [outlets, setOutlets] = (0, import_react43.useState)([]);
   const [loadingOutlets, setLoadingOutlets] = (0, import_react43.useState)(false);
   const [outletError, setOutletError] = (0, import_react43.useState)(null);
+  const [merchants, setMerchants] = (0, import_react43.useState)([]);
+  const [loadingMerchants, setLoadingMerchants] = (0, import_react43.useState)(false);
+  const [merchantError, setMerchantError] = (0, import_react43.useState)(null);
   (0, import_react43.useEffect)(() => {
     const externalSearch = filters.search || "";
     if (externalSearch !== localSearch) {
@@ -17414,6 +17416,32 @@ var OrderFilters = import_react43.default.memo(function OrderFilters2({
       }
     };
     fetchOutlets();
+  }, []);
+  (0, import_react43.useEffect)(() => {
+    const hasMerchantFilter = "merchantId" in filters;
+    if (hasMerchantFilter) {
+      const fetchMerchants = async () => {
+        try {
+          setLoadingMerchants(true);
+          setMerchantError(null);
+          const { merchantsApi: merchantsApi4 } = await import("@rentalshop/utils");
+          const result = await merchantsApi4.getMerchants();
+          if (result.success && result.data?.merchants) {
+            setMerchants(result.data.merchants);
+          } else {
+            setMerchantError("Failed to load merchants");
+            setMerchants([]);
+          }
+        } catch (error) {
+          console.error("Error fetching merchants:", error);
+          setMerchantError("Failed to load merchants");
+          setMerchants([]);
+        } finally {
+          setLoadingMerchants(false);
+        }
+      };
+      fetchMerchants();
+    }
   }, []);
   const handleSearchInput = (value) => {
     console.log("\u2328\uFE0F OrderFilters: Search input changed:", value);
@@ -17489,24 +17517,41 @@ var OrderFilters = import_react43.default.memo(function OrderFilters2({
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)(
-      import_ui29.Select,
+    "merchantId" in filters && /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+      import_ui28.SearchableSelect,
       {
-        value: filters.outletId ? filters.outletId.toString() : "all",
-        onValueChange: (value) => {
-          const newValue = value === "all" ? void 0 : parseInt(value);
-          handleFilterChange("outletId", newValue);
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(import_ui29.SelectTrigger, { className: "w-[160px] h-10", children: /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(import_ui29.SelectValue, { placeholder: t2("filters.outletLabel") }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)(import_ui29.SelectContent, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(import_ui29.SelectItem, { value: "all", children: t2("filters.allOutlets") }),
-            loadingOutlets ? /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(import_ui29.SelectItem, { value: "loading", disabled: true, children: t2("filters.loading") }) : outletError ? /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(import_ui29.SelectItem, { value: "error", disabled: true, children: t2("filters.error") }) : outlets.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(import_ui29.SelectItem, { value: "empty", disabled: true, children: t2("filters.noOutlets") }) : outlets.map((outlet) => /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(import_ui29.SelectItem, { value: outlet.id.toString(), children: outlet.name }, outlet.id))
-          ] })
-        ]
+        value: filters.merchantId,
+        onChange: (value) => handleFilterChange("merchantId", value || void 0),
+        options: merchants.map((merchant) => ({
+          value: merchant.id.toString(),
+          label: merchant.name,
+          subtitle: merchant.name
+        })),
+        placeholder: loadingMerchants ? t2("filters.loading") : merchantError ? t2("filters.error") : "All Merchants",
+        searchPlaceholder: "Search merchants...",
+        className: "w-[200px]",
+        emptyText: "No merchants found",
+        displayMode: "button"
       }
     ),
-    onClearFilters && (filters.status || filters.orderType || filters.outletId || localSearch) && /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+      import_ui28.SearchableSelect,
+      {
+        value: filters.outletId,
+        onChange: (value) => handleFilterChange("outletId", value || void 0),
+        options: outlets.map((outlet) => ({
+          value: outlet.id.toString(),
+          label: outlet.name,
+          subtitle: outlet.name
+        })),
+        placeholder: loadingOutlets ? t2("filters.loading") : outletError ? t2("filters.error") : t2("filters.allOutlets"),
+        searchPlaceholder: "Search outlets...",
+        className: "w-[200px]",
+        emptyText: "No outlets found",
+        displayMode: "button"
+      }
+    ),
+    onClearFilters && (filters.status || filters.orderType || filters.outletId || filters.merchantId || localSearch) && /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
       import_ui28.Button,
       {
         variant: "outline",
@@ -17856,7 +17901,8 @@ var OrderTable = import_react45.default.memo(function OrderTable2({
   onOrderAction,
   sortBy = "createdAt",
   sortOrder = "desc",
-  onSort
+  onSort,
+  showMerchant = false
 }) {
   const formatMoney = (0, import_ui32.useFormatCurrency)();
   const t2 = (0, import_hooks25.useOrderTranslations)();
@@ -17921,6 +17967,7 @@ var OrderTable = import_react45.default.memo(function OrderTable2({
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: t2("customer.label") }),
+      showMerchant && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("th", { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Merchant" }),
       /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
         "th",
         {
@@ -17963,6 +18010,10 @@ var OrderTable = import_react45.default.memo(function OrderTable2({
       /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("td", { className: "px-6 py-3", children: /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { className: "text-sm", children: [
         /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: order.customerName || "N/A" }),
         /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.customerPhone || "N/A" })
+      ] }) }),
+      showMerchant && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("td", { className: "px-6 py-3 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { className: "text-sm", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: order.merchantName || "N/A" }),
+        /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { className: "text-gray-500 dark:text-gray-400 text-xs", children: order.outletName || "N/A" })
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("td", { className: "px-6 py-3 whitespace-nowrap", children: /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { className: "text-sm", children: [
         /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { className: "font-medium text-gray-900 dark:text-white", children: formatMoney(order.totalAmount) }),
@@ -20962,8 +21013,10 @@ var Orders = import_react57.default.memo(function Orders2({
   activeQuickFilter,
   showStats = true,
   showQuickFilters = true,
-  filterStyle = "dropdown"
+  filterStyle = "dropdown",
   // ⭐ Default to dropdown (modern pattern)
+  showMerchant = false
+  // ⭐ Default to false (client view)
 }) {
   const t2 = (0, import_hooks37.useOrderTranslations)();
   import_react57.default.useEffect(() => {
@@ -21036,7 +21089,8 @@ var Orders = import_react57.default.memo(function Orders2({
         onOrderAction: memoizedOnOrderAction,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
-        onSort: memoizedOnSort
+        onSort: memoizedOnSort,
+        showMerchant
       }
     ) }),
     data.total > 0 && data.total > (data.limit || 20) && /* @__PURE__ */ (0, import_jsx_runtime115.jsx)("div", { className: "flex-shrink-0 py-4", children: /* @__PURE__ */ (0, import_jsx_runtime115.jsx)(
@@ -31884,7 +31938,6 @@ var PlanCard = ({
 var import_react97 = require("react");
 var import_ui129 = require("@rentalshop/ui");
 var import_lucide_react97 = require("lucide-react");
-var import_hooks68 = require("@rentalshop/hooks");
 var import_jsx_runtime192 = require("react/jsx-runtime");
 var PlanTable = ({
   plans,
@@ -31897,7 +31950,6 @@ var PlanTable = ({
   onSort,
   loading = false
 }) => {
-  const t2 = (0, import_hooks68.usePlansTranslations)();
   const [openMenuId, setOpenMenuId] = (0, import_react97.useState)(null);
   const formatCurrency22 = (price, currency) => {
     return new Intl.NumberFormat("en-US", {
@@ -31934,8 +31986,8 @@ var PlanTable = ({
   if (plans.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_ui129.Card, { className: "shadow-sm border-border", children: /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_ui129.CardContent, { className: "text-center py-12", children: /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("div", { className: "text-text-tertiary", children: [
       /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("div", { className: "text-4xl mb-4", children: "\u{1F4CB}" }),
-      /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("h3", { className: "text-lg font-medium mb-2", children: t2("messages.noPlans") }),
-      /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("p", { className: "text-sm", children: t2("messages.getStarted") })
+      /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("h3", { className: "text-lg font-medium mb-2", children: "No plans found" }),
+      /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("p", { className: "text-sm", children: "Get started by creating your first subscription plan" })
     ] }) }) });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_ui129.Card, { className: "shadow-sm border-border flex flex-col h-full", children: /* @__PURE__ */ (0, import_jsx_runtime192.jsx)(import_ui129.CardContent, { className: "p-0 flex-1 overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime192.jsx)("div", { className: "flex-1 overflow-auto h-full", children: /* @__PURE__ */ (0, import_jsx_runtime192.jsxs)("table", { className: "w-full", children: [
@@ -32364,7 +32416,7 @@ var PlanDetailModal = ({
 // src/components/features/BillingCycles/components/BillingCycleTable.tsx
 var import_ui132 = require("@rentalshop/ui");
 var import_lucide_react99 = require("lucide-react");
-var import_hooks69 = require("@rentalshop/hooks");
+var import_hooks68 = require("@rentalshop/hooks");
 var import_jsx_runtime196 = require("react/jsx-runtime");
 var BillingCycleTable = ({
   billingCycles,
@@ -32376,7 +32428,7 @@ var BillingCycleTable = ({
   onSort,
   loading = false
 }) => {
-  const t2 = (0, import_hooks69.useCommonTranslations)();
+  const t2 = (0, import_hooks68.useCommonTranslations)();
   const formatDate11 = (date2) => {
     return new Date(date2).toLocaleDateString("en-US", {
       year: "numeric",
@@ -37384,7 +37436,7 @@ var import_react105 = require("react");
 var import_ui145 = require("@rentalshop/ui");
 var import_ui146 = require("@rentalshop/ui");
 var import_constants16 = require("@rentalshop/constants");
-var import_hooks75 = require("@rentalshop/hooks");
+var import_hooks74 = require("@rentalshop/hooks");
 
 // src/components/features/OrderDetail/components/CollectionReturnModal.tsx
 var import_ui139 = require("@rentalshop/ui");
@@ -37634,11 +37686,11 @@ var CollectionReturnModal = ({
 
 // src/components/features/OrderDetail/components/OrderInformation.tsx
 var import_lucide_react123 = require("lucide-react");
-var import_hooks70 = require("@rentalshop/hooks");
+var import_hooks69 = require("@rentalshop/hooks");
 var import_utils48 = require("@rentalshop/utils");
 var import_jsx_runtime244 = require("react/jsx-runtime");
 var OrderInformation = ({ order }) => {
-  const t2 = (0, import_hooks70.useOrderTranslations)();
+  const t2 = (0, import_hooks69.useOrderTranslations)();
   return /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)(Card, { className: "flex flex-col", children: [
     /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)(CardTitle, { className: "text-lg flex items-center gap-2", children: [
       /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(import_lucide_react123.Info, { className: "w-5 h-5" }),
@@ -37702,11 +37754,11 @@ var OrderInformation = ({ order }) => {
 
 // src/components/features/OrderDetail/components/OrderProductsList.tsx
 var import_lucide_react124 = require("lucide-react");
-var import_hooks71 = require("@rentalshop/hooks");
+var import_hooks70 = require("@rentalshop/hooks");
 var import_ui141 = require("@rentalshop/ui");
 var import_jsx_runtime245 = require("react/jsx-runtime");
 var OrderProductsList = ({ order }) => {
-  const t2 = (0, import_hooks71.useOrderTranslations)();
+  const t2 = (0, import_hooks70.useOrderTranslations)();
   const formatMoney = (0, import_ui141.useFormatCurrency)();
   return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(Card, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(CardTitle, { className: "text-lg flex items-center gap-2", children: [
@@ -37738,7 +37790,7 @@ var OrderProductsList = ({ order }) => {
 
 // src/components/features/OrderDetail/components/OrderSummaryCard.tsx
 var import_lucide_react125 = require("lucide-react");
-var import_hooks72 = require("@rentalshop/hooks");
+var import_hooks71 = require("@rentalshop/hooks");
 var import_ui142 = require("@rentalshop/ui");
 var import_jsx_runtime246 = require("react/jsx-runtime");
 var OrderSummaryCard = ({
@@ -37746,7 +37798,7 @@ var OrderSummaryCard = ({
   tempSettings,
   calculateCollectionTotal: calculateCollectionTotal2
 }) => {
-  const t2 = (0, import_hooks72.useOrderTranslations)();
+  const t2 = (0, import_hooks71.useOrderTranslations)();
   const formatMoney = (0, import_ui142.useFormatCurrency)();
   return /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(Card, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(CardTitle, { className: "text-lg flex items-center gap-2", children: [
@@ -37815,7 +37867,7 @@ var OrderSummaryCard = ({
 // src/components/features/OrderDetail/components/OrderSettingsCard.tsx
 var import_ui143 = require("@rentalshop/ui");
 var import_lucide_react126 = require("lucide-react");
-var import_hooks73 = require("@rentalshop/hooks");
+var import_hooks72 = require("@rentalshop/hooks");
 var import_ui144 = require("@rentalshop/ui");
 var import_jsx_runtime247 = require("react/jsx-runtime");
 var OrderSettingsCard = ({
@@ -37835,7 +37887,7 @@ var OrderSettingsCard = ({
   onStartEdit,
   collateralTypes
 }) => {
-  const t2 = (0, import_hooks73.useOrderTranslations)();
+  const t2 = (0, import_hooks72.useOrderTranslations)();
   const formatMoney = (0, import_ui144.useFormatCurrency)();
   return /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(import_ui143.Card, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(import_ui143.CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(import_ui143.CardTitle, { className: "text-lg flex items-center gap-2", children: [
@@ -38012,7 +38064,7 @@ var OrderSettingsCard = ({
 
 // src/components/features/OrderDetail/components/OrderActionsSection.tsx
 var import_lucide_react127 = require("lucide-react");
-var import_hooks74 = require("@rentalshop/hooks");
+var import_hooks73 = require("@rentalshop/hooks");
 var import_constants15 = require("@rentalshop/constants");
 var import_jsx_runtime248 = require("react/jsx-runtime");
 var OrderActionsSection = ({
@@ -38033,7 +38085,7 @@ var OrderActionsSection = ({
   onReturn,
   onPrint
 }) => {
-  const t2 = (0, import_hooks74.useOrderTranslations)();
+  const t2 = (0, import_hooks73.useOrderTranslations)();
   return /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { className: "bg-white border border-gray-200 rounded-lg p-6 mt-6", children: /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { className: "space-y-4", children: [
     /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("h3", { className: "text-lg font-medium text-gray-900", children: t2("detail.orderActions") }),
     /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { className: "flex justify-between items-center", children: [
@@ -38239,7 +38291,7 @@ var OrderDetail = ({
 }) => {
   const formatMoney = (0, import_ui146.useFormatCurrency)();
   const { toastSuccess, toastError, toastInfo, removeToast } = (0, import_ui146.useToast)();
-  const t2 = (0, import_hooks75.useOrderTranslations)();
+  const t2 = (0, import_hooks74.useOrderTranslations)();
   const COLLATERAL_TYPES = [
     "ID Card",
     "Driver License",
@@ -38740,7 +38792,7 @@ function OutletDetailLoading() {
 var import_react110 = require("react");
 var import_navigation9 = require("next/navigation");
 var import_lucide_react135 = require("lucide-react");
-var import_hooks85 = require("@rentalshop/hooks");
+var import_hooks84 = require("@rentalshop/hooks");
 var import_utils53 = require("@rentalshop/utils");
 var import_ui156 = require("@rentalshop/ui");
 
@@ -38748,7 +38800,7 @@ var import_ui156 = require("@rentalshop/ui");
 var import_react106 = require("react");
 var import_ui148 = require("@rentalshop/ui");
 var import_lucide_react129 = require("lucide-react");
-var import_hooks76 = require("@rentalshop/hooks");
+var import_hooks75 = require("@rentalshop/hooks");
 var import_jsx_runtime253 = require("react/jsx-runtime");
 var SettingsLayout2 = ({
   user,
@@ -38759,7 +38811,7 @@ var SettingsLayout2 = ({
   onSectionChange
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = (0, import_react106.useState)(false);
-  const t2 = (0, import_hooks76.useSettingsTranslations)();
+  const t2 = (0, import_hooks75.useSettingsTranslations)();
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(import_ui148.PageWrapper, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime253.jsxs)(import_ui148.PageHeader, { children: [
@@ -38812,7 +38864,7 @@ var SettingsLayout2 = ({
 
 // src/components/features/Settings/components/ProfileSection.tsx
 var import_ui149 = require("@rentalshop/ui");
-var import_hooks77 = require("@rentalshop/hooks");
+var import_hooks76 = require("@rentalshop/hooks");
 var import_jsx_runtime254 = require("react/jsx-runtime");
 var ProfileSection = ({
   user,
@@ -38824,7 +38876,7 @@ var ProfileSection = ({
   onCancel,
   onInputChange
 }) => {
-  const t2 = (0, import_hooks77.useSettingsTranslations)();
+  const t2 = (0, import_hooks76.useSettingsTranslations)();
   console.log("\u{1F50D} ProfileSection render - user:", user);
   console.log("\u{1F50D} ProfileSection render - user details:", {
     "user.id": user?.id,
@@ -38914,7 +38966,7 @@ var import_ui150 = require("@rentalshop/ui");
 var import_lucide_react130 = require("lucide-react");
 var import_utils52 = require("@rentalshop/utils");
 var import_constants17 = require("@rentalshop/constants");
-var import_hooks78 = require("@rentalshop/hooks");
+var import_hooks77 = require("@rentalshop/hooks");
 var import_jsx_runtime255 = require("react/jsx-runtime");
 var MerchantSection = ({
   user,
@@ -38928,7 +38980,7 @@ var MerchantSection = ({
   onInputChange,
   onCurrencyChange
 }) => {
-  const t2 = (0, import_hooks78.useSettingsTranslations)();
+  const t2 = (0, import_hooks77.useSettingsTranslations)();
   const [merchantData, setMerchantData] = (0, import_react107.useState)(null);
   const [loadingMerchant, setLoadingMerchant] = (0, import_react107.useState)(false);
   const [selectedCurrency, setSelectedCurrency] = (0, import_react107.useState)(currentCurrency);
@@ -39250,7 +39302,7 @@ var MerchantSection = ({
 
 // src/components/features/Settings/components/OutletSection.tsx
 var import_ui151 = require("@rentalshop/ui");
-var import_hooks79 = require("@rentalshop/hooks");
+var import_hooks78 = require("@rentalshop/hooks");
 var import_jsx_runtime256 = require("react/jsx-runtime");
 var OutletSection = ({
   user,
@@ -39262,7 +39314,7 @@ var OutletSection = ({
   onCancel,
   onInputChange
 }) => {
-  const t2 = (0, import_hooks79.useSettingsTranslations)();
+  const t2 = (0, import_hooks78.useSettingsTranslations)();
   return /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(import_ui151.Card, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(import_ui151.CardHeader, { className: "flex flex-row items-center justify-between py-4 pb-3", children: [
       /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("h3", { className: "text-base font-semibold text-gray-900", children: t2("outlet.outletInformation") }),
@@ -39335,14 +39387,14 @@ var OutletSection = ({
 // src/components/features/Settings/components/SubscriptionSection.tsx
 var import_ui152 = require("@rentalshop/ui");
 var import_lucide_react131 = require("lucide-react");
-var import_hooks80 = require("@rentalshop/hooks");
+var import_hooks79 = require("@rentalshop/hooks");
 var import_jsx_runtime257 = require("react/jsx-runtime");
 var SubscriptionSection = ({
   subscriptionData,
   subscriptionLoading,
   currentUserRole
 }) => {
-  const t2 = (0, import_hooks80.useSettingsTranslations)();
+  const t2 = (0, import_hooks79.useSettingsTranslations)();
   if (subscriptionLoading) {
     return /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_ui152.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime257.jsx)(import_ui152.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime257.jsxs)("div", { className: "flex items-center justify-center py-8", children: [
       /* @__PURE__ */ (0, import_jsx_runtime257.jsx)("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700" }),
@@ -39432,7 +39484,7 @@ var SubscriptionSection = ({
 // src/components/features/Settings/components/AccountSection.tsx
 var import_ui153 = require("@rentalshop/ui");
 var import_lucide_react132 = require("lucide-react");
-var import_hooks81 = require("@rentalshop/hooks");
+var import_hooks80 = require("@rentalshop/hooks");
 var import_jsx_runtime258 = require("react/jsx-runtime");
 var AccountSection = ({
   onSignOut,
@@ -39440,7 +39492,7 @@ var AccountSection = ({
   onChangePassword,
   isDeleting
 }) => {
-  const t2 = (0, import_hooks81.useSettingsTranslations)();
+  const t2 = (0, import_hooks80.useSettingsTranslations)();
   return /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("div", { className: "space-y-6", children: /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(import_ui153.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(import_ui153.CardContent, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "space-y-6", children: [
     /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg", children: [
       /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { className: "flex items-center space-x-3", children: [
@@ -39504,14 +39556,14 @@ var AccountSection = ({
 var import_react108 = require("react");
 var import_lucide_react133 = require("lucide-react");
 var import_navigation8 = require("next/navigation");
-var import_hooks82 = require("@rentalshop/hooks");
+var import_hooks81 = require("@rentalshop/hooks");
 var import_jsx_runtime259 = require("react/jsx-runtime");
 var languages = [
   { value: "en", label: "English", flag: "\u{1F1FA}\u{1F1F8}" },
   { value: "vi", label: "Ti\u1EBFng Vi\u1EC7t", flag: "\u{1F1FB}\u{1F1F3}" }
 ];
 function LanguageSection() {
-  const t2 = (0, import_hooks82.useSettingsTranslations)();
+  const t2 = (0, import_hooks81.useSettingsTranslations)();
   const currentLocale = Z();
   const router = (0, import_navigation8.useRouter)();
   const [isPending, startTransition] = (0, import_react108.useTransition)();
@@ -39579,7 +39631,7 @@ function LanguageSection() {
 var import_react109 = require("react");
 var import_ui154 = require("@rentalshop/ui");
 var import_lucide_react134 = require("lucide-react");
-var import_hooks83 = require("@rentalshop/hooks");
+var import_hooks82 = require("@rentalshop/hooks");
 var import_jsx_runtime260 = require("react/jsx-runtime");
 var ChangePasswordDialog2 = ({
   isOpen,
@@ -39589,7 +39641,7 @@ var ChangePasswordDialog2 = ({
   onChange,
   onSubmit
 }) => {
-  const t2 = (0, import_hooks83.useSettingsTranslations)();
+  const t2 = (0, import_hooks82.useSettingsTranslations)();
   const [showCurrentPassword, setShowCurrentPassword] = (0, import_react109.useState)(false);
   const [showNewPassword, setShowNewPassword] = (0, import_react109.useState)(false);
   const [showConfirmPassword, setShowConfirmPassword] = (0, import_react109.useState)(false);
@@ -39713,7 +39765,7 @@ var ChangePasswordDialog2 = ({
 
 // src/components/features/Settings/components/DeleteAccountDialog.tsx
 var import_ui155 = require("@rentalshop/ui");
-var import_hooks84 = require("@rentalshop/hooks");
+var import_hooks83 = require("@rentalshop/hooks");
 var import_jsx_runtime261 = require("react/jsx-runtime");
 var DeleteAccountDialog = ({
   isOpen,
@@ -39721,7 +39773,7 @@ var DeleteAccountDialog = ({
   onClose,
   onConfirm
 }) => {
-  const t2 = (0, import_hooks84.useSettingsTranslations)();
+  const t2 = (0, import_hooks83.useSettingsTranslations)();
   if (!isOpen)
     return null;
   return /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50", children: /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { className: "bg-white rounded-lg p-6 max-w-md w-full mx-4", children: [
@@ -39807,8 +39859,8 @@ var createSettingsMenuItems = (t2) => [
   }
 ];
 var SettingsComponent = () => {
-  const t2 = (0, import_hooks85.useSettingsTranslations)();
-  const { user, logout, loading } = (0, import_hooks85.useAuth)();
+  const t2 = (0, import_hooks84.useSettingsTranslations)();
+  const { user, logout, loading } = (0, import_hooks84.useAuth)();
   const { toastSuccess, toastError } = (0, import_ui156.useToast)();
   const { currency, setCurrency } = useCurrency2();
   const router = (0, import_navigation9.useRouter)();
@@ -41257,7 +41309,7 @@ var import_react115 = require("react");
 var import_lucide_react140 = require("lucide-react");
 var import_ui159 = require("@rentalshop/ui");
 var import_ui160 = require("@rentalshop/ui");
-var import_hooks86 = require("@rentalshop/hooks");
+var import_hooks85 = require("@rentalshop/hooks");
 var import_jsx_runtime273 = require("react/jsx-runtime");
 var SearchInput = ({
   placeholder = "Search...",
@@ -41274,7 +41326,7 @@ var SearchInput = ({
     handleSearchChange,
     clearSearch,
     cleanup
-  } = (0, import_hooks86.useThrottledSearch)({
+  } = (0, import_hooks85.useThrottledSearch)({
     delay,
     minLength,
     onSearch
@@ -41458,19 +41510,26 @@ var adminMenuItems = [
     icon: import_lucide_react142.Building2
   },
   {
-    label: "Plans",
-    href: "/plans",
-    icon: import_lucide_react142.Package
-  },
-  {
-    label: "Subscriptions",
+    label: "Subscription",
     href: "/subscriptions",
-    icon: import_lucide_react142.Clock
+    icon: import_lucide_react142.Clock,
+    subItems: [
+      {
+        label: "Subscriptions",
+        href: "/subscriptions",
+        icon: import_lucide_react142.Clock
+      },
+      {
+        label: "Payments",
+        href: "/payments",
+        icon: import_lucide_react142.CreditCard
+      }
+    ]
   },
   {
-    label: "Payments",
-    href: "/payments",
-    icon: import_lucide_react142.CreditCard
+    label: "Orders",
+    href: "/orders",
+    icon: import_lucide_react142.ShoppingCart
   },
   {
     label: "Users",
@@ -41478,24 +41537,19 @@ var adminMenuItems = [
     icon: import_lucide_react142.Users
   },
   {
-    label: "System",
-    href: "/system",
+    label: "Settings",
+    href: "/settings",
     icon: import_lucide_react142.Settings,
     subItems: [
       {
-        label: "Backup Management",
-        href: "/system/backup",
-        icon: import_lucide_react142.Database
+        label: "Admin Info",
+        href: "/settings/admin",
+        icon: import_lucide_react142.User
       },
       {
-        label: "Data Integrity",
-        href: "/system/integrity",
-        icon: import_lucide_react142.ShieldCheck
-      },
-      {
-        label: "Audit Logs",
-        href: "/system/audit-logs",
-        icon: import_lucide_react142.FileText
+        label: "Plans",
+        href: "/plans",
+        icon: import_lucide_react142.Package
       }
     ]
   }
@@ -41652,7 +41706,7 @@ var import_link4 = __toESM(require("next/link"));
 var import_navigation11 = require("next/navigation");
 var import_ui164 = require("@rentalshop/ui");
 var import_ui165 = require("@rentalshop/ui");
-var import_hooks87 = require("@rentalshop/hooks");
+var import_hooks86 = require("@rentalshop/hooks");
 var import_lucide_react143 = require("lucide-react");
 var import_jsx_runtime276 = require("react/jsx-runtime");
 var getClientMenuItems = (t2) => [
@@ -41727,7 +41781,7 @@ var ClientSidebar = ({
   const [clickedTab, setClickedTab] = (0, import_react118.useState)(null);
   const [localCurrentPage, setLocalCurrentPage] = (0, import_react118.useState)(currentPath);
   const pathname = (0, import_navigation11.usePathname)();
-  const t2 = (0, import_hooks87.useCommonTranslations)();
+  const t2 = (0, import_hooks86.useCommonTranslations)();
   const filterMenuItemsByRole = (items, userRole) => {
     if (!userRole)
       return items;
@@ -42041,7 +42095,7 @@ function Layout({
 
 // src/components/layout/SubscriptionStatus.tsx
 var import_lucide_react145 = require("lucide-react");
-var import_hooks88 = require("@rentalshop/hooks");
+var import_hooks87 = require("@rentalshop/hooks");
 var import_jsx_runtime278 = require("react/jsx-runtime");
 function SubscriptionStatus({ showDetails = false, className = "", currentUserRole }) {
   const {
@@ -42058,7 +42112,7 @@ function SubscriptionStatus({ showDetails = false, className = "", currentUserRo
     error,
     statusMessage
     // Use statusReason from API
-  } = (0, import_hooks88.useSubscriptionStatusInfo)();
+  } = (0, import_hooks87.useSubscriptionStatusInfo)();
   if (loading) {
     return /* @__PURE__ */ (0, import_jsx_runtime278.jsx)("div", { className: `animate-pulse ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime278.jsx)("div", { className: "h-6 bg-gray-200 rounded w-24" }) });
   }

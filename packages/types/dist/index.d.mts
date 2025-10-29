@@ -1441,6 +1441,7 @@ type OrderAction = 'create' | 'edit' | 'view' | 'delete' | 'pickup' | 'return' |
 interface OrderFilters {
     status?: OrderStatus | OrderStatus[];
     orderType?: OrderType;
+    merchantId?: number;
     outletId?: number;
     customerId?: number;
     productId?: number;

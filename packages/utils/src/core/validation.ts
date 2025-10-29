@@ -83,6 +83,7 @@ export const productUpdateSchema = z.object({
 export const productsQuerySchema = z.object({
   q: z.string().optional(), // Search query parameter (consistent with orders)
   search: z.string().optional(), // Keep for backward compatibility
+  merchantId: z.coerce.number().int().positive().optional(), // Add merchant filtering support
   categoryId: z.coerce.number().int().positive().optional(), // Changed from string to number
   outletId: z.coerce.number().int().positive().optional(), // Add outlet filtering
   available: z.coerce.boolean().optional(), // Add availability filter
@@ -140,6 +141,7 @@ export const customersQuerySchema = z.object({
   q: z.string().optional(), // Search query parameter (consistent with orders)
   search: z.string().optional(), // Keep for backward compatibility
   merchantId: z.coerce.number().int().positive().optional(), // Changed from string to number
+  outletId: z.coerce.number().int().positive().optional(), // Add outlet filtering support
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === 'boolean') return v;
     if (v === undefined) return undefined;
@@ -170,6 +172,7 @@ const orderStatusEnum = z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED',
 
 export const ordersQuerySchema = z.object({
   q: z.string().optional(),
+  merchantId: z.coerce.number().int().positive().optional(), // Add merchant filtering support
   outletId: z.coerce.number().int().positive().optional(), // Changed from string to number
   customerId: z.coerce.number().int().positive().optional(), // Changed from string to number
   userId: z.coerce.number().int().positive().optional(), // Changed from string to number
@@ -256,6 +259,8 @@ export type OrderUpdatePayload = z.infer<typeof orderUpdateSchema>;
 const userRoleEnum = z.enum(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
 
 export const usersQuerySchema = z.object({
+  merchantId: z.coerce.number().int().positive().optional(), // Add merchant filtering support
+  outletId: z.coerce.number().int().positive().optional(), // Add outlet filtering support
   role: userRoleEnum.optional(),
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === 'boolean') return v;

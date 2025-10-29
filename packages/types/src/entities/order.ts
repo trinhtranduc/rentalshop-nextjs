@@ -484,6 +484,7 @@ export type OrderAction = 'create' | 'edit' | 'view' | 'delete' | 'pickup' | 're
 export interface OrderFilters {
   status?: OrderStatus | OrderStatus[];
   orderType?: OrderType;
+  merchantId?: number; // Add merchant filtering support
   outletId?: number;
   customerId?: number;
   productId?: number;

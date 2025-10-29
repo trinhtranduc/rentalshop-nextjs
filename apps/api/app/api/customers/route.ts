@@ -41,6 +41,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       q, 
       search, 
       merchantId,
+      outletId,
       isActive,
       city,
       state,
@@ -48,7 +49,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     } = parsed.data;
 
     console.log('Parsed filters:', { 
-      page, limit, q, search, merchantId, isActive, 
+      page, limit, q, search, merchantId, outletId, isActive, 
       city, state, country 
     });
 
@@ -76,6 +77,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Build search filters for customer search
     const searchFilters = {
       merchantId: filterMerchantId,
+      outletId: outletId, // Add outlet filtering support
       isActive,
       city,
       state,
