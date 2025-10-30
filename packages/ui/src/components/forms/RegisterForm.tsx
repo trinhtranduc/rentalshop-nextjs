@@ -210,28 +210,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           throw new Error(result.message || result.error || 'Registration failed');
         }
         
-        // Store token in localStorage using consolidated function
-        if (result.data?.token) {
-          const { storeAuthData } = await import('@rentalshop/utils');
-          storeAuthData(result.data.token, result.data.user);
-        }
-        
+        // Do not auto-login; show success and redirect to login
         toastSuccess(t('register.registrationComplete'), t('register.accountCreatedSuccessfully'));
-        
+
         // Reset form
         formik.resetForm();
         setCurrentStep(1);
         setAccountData({});
         
-        // Navigate to login after a short delay
-        setTimeout(() => {
-          // Use router.push instead of window.location for proper SPA navigation
-          if (onNavigate) {
-            onNavigate('/login');
-          } else {
-            router.push('/login');
-          }
-        }, 2000);
+        // Navigate to login immediately
+        if (onNavigate) {
+          onNavigate('/login');
+        } else {
+          router.replace('/login');
+        }
       } catch (error: any) {
         toastError(
           t('register.registrationFailed'),
