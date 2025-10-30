@@ -46,15 +46,22 @@ export default function ClientLayout({
       }
 
   // Check if we're on auth pages - hide sidebar on auth pages
-  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forget-password';
+  const isAuthPage = pathname === '/login' 
+    || pathname === '/register' 
+    || pathname === '/forget-password'
+    || pathname?.startsWith('/register');
+  
+  // Check if we're on public pages (landing, auth, legal pages) - no auth required
+  const isLegalPage = pathname === '/terms' || pathname === '/privacy';
+  const isPublicPage = pathname === '/' || isAuthPage || isLegalPage;
   
   // Check if we're on full-width pages - hide sidebar for better space
   // Edit order route: /orders/[id]/edit
   const isFullWidthPage = pathname === '/orders/create' || pathname?.includes('/edit');
   
-  // Redirect to login if not authenticated (except on auth pages)
+  // Redirect to login if not authenticated (except on public pages)
   // But only redirect if we're not currently on a page that might be setting up auth
-  if (!user && !isAuthPage && !loading) {
+  if (!user && !isPublicPage && !loading) {
     if (typeof window !== 'undefined') {
       // Check if there's a token in localStorage
       const token = localStorage.getItem('authToken');
@@ -109,8 +116,8 @@ export default function ClientLayout({
     }
   };
 
-  // Hide sidebar on auth pages and full-width pages
-  const showSidebar = !isAuthPage && !isFullWidthPage;
+  // Hide sidebar on public pages (landing page, auth pages) and full-width pages
+  const showSidebar = !isPublicPage && !isFullWidthPage;
 
   return (
     <CurrencyProvider merchantCurrency={merchantCurrency}>

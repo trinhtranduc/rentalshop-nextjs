@@ -76,7 +76,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
-      <style jsx>{`
+      <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) translateX(0px); }
           25% { transform: translateY(-20px) translateX(10px); }
@@ -245,6 +245,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
                     </label>
                   </div>
                   <Button
+                    type="button"
+                    tabIndex={-1}
                     variant="link"
                     onClick={() => onNavigate?.("/forget-password")}
                     className="text-sm text-blue-700 hover:text-blue-800 p-0 h-auto font-medium"
@@ -276,12 +278,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
         {/* Links */}
         <div className="mt-8 text-center">
           {!isAdmin && (
-            <p className="text-base text-gray-600">
+            <p className="text-sm text-gray-600">
               {t('login.noAccount')}{" "}
               <Button
                 variant="link"
                 onClick={() => onNavigate?.("/register")}
-                className="font-semibold text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto text-base"
+                className="font-semibold text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto text-sm"
               >
                 {t('login.signUp')}
               </Button>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { RegisterForm, LanguageSwitcher } from '@rentalshop/ui';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleRegister = async (data: any) => {
     // Registration is now handled directly by the RegisterForm component
@@ -82,7 +83,12 @@ export default function RegisterPage() {
 
       <div className="relative z-10 w-full">
         <RegisterForm 
-          onNavigate={handleNavigate}
+          initialStep={(searchParams.get('step') === '2' ? 2 : 1) as 1 | 2}
+          onNavigate={(path) => {
+            // Map internal navigation to query param pattern
+            if (path.includes('step-2')) router.push('/register?step=2');
+            else router.push('/register?step=1');
+          }}
           onRegister={handleRegister}
         />
       </div>

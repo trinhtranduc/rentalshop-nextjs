@@ -36,8 +36,9 @@ export default function LoginPage() {
       
       if (success) {
         console.log('✅ Login successful');
-        // Don't redirect here - useAuth will update user state
-        // useEffect will handle the redirect when user state updates
+        // Redirect immediately to avoid accidental extra keypress triggering other links
+        router.replace('/dashboard');
+        return;
       } else {
         console.log('❌ Login failed');
         // Don't set local error - let authError from useAuth handle it
