@@ -8,6 +8,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Business domain enums
+enum BusinessType {
+  GENERAL
+  VEHICLE
+  CLOTHING
+  EQUIPMENT
+}
+
+enum PricingType {
+  FIXED
+  HOURLY
+  DAILY
+}
+
 model User {
   id                     Int                    @id @default(autoincrement())
   email                  String                 @unique
@@ -64,7 +78,7 @@ model Merchant {
   state              String?
   zipCode            String?
   country            String?
-  businessType       String?
+  businessType       BusinessType  @default(GENERAL)
   taxId              String?
   website            String?
   description        String?
@@ -76,7 +90,7 @@ model Merchant {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   pricingConfig      String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
-  pricingType        String?
+  pricingType        PricingType   @default(FIXED)
   currency           String        @default("USD")
   categories         Category[]
   customers          Customer[]
