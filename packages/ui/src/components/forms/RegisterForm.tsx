@@ -151,18 +151,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     },
     validationSchema: currentStep === 1 ? step1ValidationSchema : step2ValidationSchema,
     onSubmit: async (values: RegisterFormData) => {
-      // Prevent double submission
-      if (isSubmitting) {
-        return;
-      }
-      
-      setIsSubmitting(true);
-      
-      // Add timeout to prevent stuck button
-      const timeoutId = setTimeout(() => {
-        setIsSubmitting(false);
-      }, 10000); // 10 second timeout
-      
+      // Step 1 only advances UI; do not toggle submitting state
       if (currentStep === 1) {
         // Step 1: Save account data and move to step 2
         setAccountData({
@@ -183,6 +172,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       const completeData = { ...accountData, ...values };
       
       try {
+        // Prevent double submission
+        if (isSubmitting) {
+          return;
+        }
+        setIsSubmitting(true);
+        // Add timeout to prevent stuck button
+        const timeoutId = setTimeout(() => {
+          setIsSubmitting(false);
+        }, 10000); // 10 second timeout
+        
         // Use centralized API directly
         
         const registrationData = {
@@ -230,7 +229,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           error.message || t('register.somethingWentWrong')
         );
       } finally {
-        clearTimeout(timeoutId);
         setIsSubmitting(false);
       }
     },
