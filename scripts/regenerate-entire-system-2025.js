@@ -322,7 +322,7 @@ async function createMerchants() {
   const businessData = [
     {
       name: 'Rental Shop Demo',
-      businessType: 'Equipment Rental',
+      businessType: 'EQUIPMENT',
       address: '123 Main Street',
       city: 'New York',
       state: 'NY',
@@ -335,7 +335,7 @@ async function createMerchants() {
     },
     {
       name: 'Outdoor Equipment Co.',
-      businessType: 'Outdoor Gear Rental',
+      businessType: 'EQUIPMENT',
       address: '456 Mountain View Drive',
       city: 'Denver',
       state: 'CO',
@@ -351,7 +351,7 @@ async function createMerchants() {
   for (let i = 1; i <= SYSTEM_CONFIG.MERCHANTS; i++) {
     const business = businessData[i - 1] || {
       name: `Merchant ${i}`,
-      businessType: 'General Rental',
+      businessType: 'GENERAL',
       address: `${i * 100} Business Ave`,
       city: 'City',
       state: 'ST',
@@ -365,7 +365,6 @@ async function createMerchants() {
     
     const merchant = await prisma.merchant.create({
       data: {
-        id: i,
         name: business.name,
         email: `merchant${i}@example.com`,
         phone: business.phone,
@@ -374,22 +373,22 @@ async function createMerchants() {
         state: business.state,
         zipCode: business.zipCode,
         country: business.country,
-        businessType: business.businessType,
-        pricingType: business.businessType === 'Equipment Rental' ? 'DAILY' : 'FIXED',
+        businessType: business.businessType, // enum: GENERAL | VEHICLE | CLOTHING | EQUIPMENT
+        pricingType: business.businessType === 'EQUIPMENT' ? 'DAILY' : 'FIXED',
         taxId: business.taxId,
         website: business.website,
         description: business.description,
         pricingConfig: JSON.stringify({
-          businessType: business.businessType === 'Equipment Rental' ? 'EQUIPMENT' : 'GENERAL',
-          defaultPricingType: business.businessType === 'Equipment Rental' ? 'DAILY' : 'FIXED',
+          businessType: business.businessType,
+          defaultPricingType: business.businessType === 'EQUIPMENT' ? 'DAILY' : 'FIXED',
           businessRules: {
-            requireRentalDates: business.businessType === 'Equipment Rental',
-            showPricingOptions: business.businessType === 'Equipment Rental'
+            requireRentalDates: business.businessType === 'EQUIPMENT',
+            showPricingOptions: business.businessType === 'EQUIPMENT'
           },
           durationLimits: {
-            minDuration: business.businessType === 'Equipment Rental' ? 1 : 1,
-            maxDuration: business.businessType === 'Equipment Rental' ? 30 : 1,
-            defaultDuration: business.businessType === 'Equipment Rental' ? 3 : 1
+            minDuration: business.businessType === 'EQUIPMENT' ? 1 : 1,
+            maxDuration: business.businessType === 'EQUIPMENT' ? 30 : 1,
+            defaultDuration: business.businessType === 'EQUIPMENT' ? 3 : 1
           }
         }),
         isActive: true,
@@ -402,7 +401,6 @@ async function createMerchants() {
     // Create default outlet for this merchant immediately with all merchant info
     const defaultOutlet = await prisma.outlet.create({
       data: {
-        id: outletId++,
         name: `${business.name} - Main Branch`,
         address: business.address,
         phone: business.phone,
@@ -491,7 +489,6 @@ async function createAdditionalOutlets(merchants) {
     for (let i = 2; i <= SYSTEM_CONFIG.OUTLETS_PER_MERCHANT; i++) {
       const outlet = await prisma.outlet.create({
         data: {
-          id: outletId++,
           name: `Outlet ${i} - ${merchant.name}`,
           address: `Address for Outlet ${i} of ${merchant.name}`,
           phone: `+1-555-${String(outletId).padStart(4, '0')}`,
@@ -959,7 +956,6 @@ async function createPlans() {
   for (const plan of planData) {
     const subscriptionPlan = await prisma.plan.create({
       data: {
-        id: planId++,
         name: plan.name,
         description: plan.description,
         basePrice: plan.basePrice,
