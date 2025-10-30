@@ -4,6 +4,9 @@
 // Consistent with other simplified database operations
 
 import { prisma } from './client';
+
+type BusinessTypeEnum = 'GENERAL' | 'VEHICLE' | 'CLOTHING' | 'EQUIPMENT';
+type PricingTypeEnum = 'FIXED' | 'HOURLY' | 'DAILY';
 import type { SimpleFilters, SimpleResponse } from './index';
 
 // ============================================================================
@@ -11,7 +14,7 @@ import type { SimpleFilters, SimpleResponse } from './index';
 // ============================================================================
 
 export interface MerchantFilters extends SimpleFilters {
-  businessType?: string;
+  businessType?: BusinessTypeEnum;
   // subscriptionStatus removed - use subscription.status instead
   planId?: number;
   isActive?: boolean;
@@ -26,8 +29,8 @@ export interface MerchantCreateData {
   state?: string;
   zipCode?: string;
   country?: string;
-  businessType?: string;
-  pricingType?: string;
+  businessType?: BusinessTypeEnum;
+  pricingType?: PricingTypeEnum;
   taxId?: string;
   website?: string;
   description?: string;
@@ -113,8 +116,7 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } },
-      { businessType: { contains: search, mode: 'insensitive' } }
+      { email: { contains: search, mode: 'insensitive' } }
     ];
   }
 
@@ -200,9 +202,11 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
  * Create new merchant
  */
 export async function create(data: MerchantCreateData) {
+  const { planId, ...rest } = data;
   return await prisma.merchant.create({
     data: {
-      ...data,
+      ...rest,
+      ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
       createdAt: new Date(),
       updatedAt: new Date()
     },
@@ -217,10 +221,12 @@ export async function create(data: MerchantCreateData) {
  * Update merchant
  */
 export async function update(id: number, data: MerchantUpdateData) {
+  const { planId, ...rest } = data;
   return await prisma.merchant.update({
     where: { id },
     data: {
-      ...data,
+      ...rest,
+      ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
       updatedAt: new Date()
     },
     include: {

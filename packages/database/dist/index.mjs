@@ -3298,8 +3298,7 @@ async function search(filters) {
   if (search3) {
     where.OR = [
       { name: { contains: search3, mode: "insensitive" } },
-      { email: { contains: search3, mode: "insensitive" } },
-      { businessType: { contains: search3, mode: "insensitive" } }
+      { email: { contains: search3, mode: "insensitive" } }
     ];
   }
   if (businessType) {
@@ -3368,9 +3367,11 @@ async function search(filters) {
   };
 }
 async function create(data) {
+  const { planId, ...rest } = data;
   return await prisma.merchant.create({
     data: {
-      ...data,
+      ...rest,
+      ...planId !== void 0 ? { Plan: { connect: { id: planId } } } : {},
       createdAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
     },
@@ -3381,10 +3382,12 @@ async function create(data) {
   });
 }
 async function update(id, data) {
+  const { planId, ...rest } = data;
   return await prisma.merchant.update({
     where: { id },
     data: {
-      ...data,
+      ...rest,
+      ...planId !== void 0 ? { Plan: { connect: { id: planId } } } : {},
       updatedAt: /* @__PURE__ */ new Date()
     },
     include: {
