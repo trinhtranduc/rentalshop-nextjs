@@ -85,6 +85,11 @@ export default function RegisterPage() {
         <RegisterForm 
           initialStep={(searchParams.get('step') === '2' ? 2 : 1) as 1 | 2}
           onNavigate={(path) => {
+            // Allow external navigations to pass through
+            if (path === '/login' || path === '/terms' || path === '/privacy') {
+              router.push(path);
+              return;
+            }
             // Map internal navigation to query param pattern
             if (path.includes('step-2')) router.push('/register?step=2');
             else router.push('/register?step=1');
