@@ -22,6 +22,7 @@ import enCategories from '../../../locales/en/categories.json';
 import enCalendar from '../../../locales/en/calendar.json';
 import enPlans from '../../../locales/en/plans.json';
 import enSubscription from '../../../locales/en/subscription.json';
+import enLanding from '../../../locales/en/landing.json';
 
 import viCommon from '../../../locales/vi/common.json';
 import viAuth from '../../../locales/vi/auth.json';
@@ -38,6 +39,7 @@ import viCategories from '../../../locales/vi/categories.json';
 import viCalendar from '../../../locales/vi/calendar.json';
 import viPlans from '../../../locales/vi/plans.json';
 import viSubscription from '../../../locales/vi/subscription.json';
+import viLanding from '../../../locales/vi/landing.json';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -84,6 +86,7 @@ const messages = {
     calendar: enCalendar,
     plans: enPlans,
     subscription: enSubscription,
+    landing: enLanding,
   },
   vi: {
     common: viCommon,
@@ -101,6 +104,7 @@ const messages = {
     calendar: viCalendar,
     plans: viPlans,
     subscription: viSubscription,
+    landing: viLanding,
   },
 };
 

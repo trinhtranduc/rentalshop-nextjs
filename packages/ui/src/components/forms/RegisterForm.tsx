@@ -57,18 +57,20 @@ interface RegisterFormProps {
   onNavigate?: (path: string) => void;
   user?: any;
   registrationError?: string | null;
+  initialStep?: 1 | 2;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({
   onRegister,
   onNavigate,
   user,
-  registrationError
+  registrationError,
+  initialStep
 }) => {
   const router = useRouter();
   const [viewPass, setViewPass] = useState(false);
   const [viewConfirmPass, setViewConfirmPass] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(initialStep || 1);
   const [accountData, setAccountData] = useState<Partial<RegisterFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, toastError, removeToast } = useToast();
@@ -103,24 +105,23 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     businessName: Yup.string()
       .min(2, t('register.businessNameMinLength'))
       .required(t('register.businessNameRequired')),
-    businessType: Yup.string()
-      .oneOf(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL'], t('register.businessTypeRequired'))
-      .required(t('register.businessTypeRequired')),
-    pricingType: Yup.string()
-      .oneOf(['FIXED', 'HOURLY', 'DAILY'], t('register.pricingTypeRequired'))
-      .required(t('register.pricingTypeRequired')),
+    // businessType and pricingType are hidden and defaulted, no validation required
     address: Yup.string()
       .min(5, t('register.addressMinLength'))
       .required(t('register.addressRequired')),
+    // Ward/Commune is optional
     city: Yup.string()
       .min(2, t('register.cityMinLength'))
-      .required(t('register.cityRequired')),
+      .notRequired(),
     state: Yup.string()
       .min(2, t('register.stateMinLength'))
       .required(t('register.stateRequired')),
+    // zipCode optional but validate format when provided
     zipCode: Yup.string()
-      .matches(/^[0-9]{5}(-[0-9]{4})?$/, t('register.zipCodeInvalid'))
-      .required(t('register.zipCodeRequired')),
+      .test('zip-optional', t('register.zipCodeInvalid'), (val) => {
+        if (!val || val.trim().length === 0) return true;
+        return /^[0-9]{4,10}(-[0-9]{3,4})?$/.test(val);
+      }),
     country: Yup.string()
       .min(2, t('register.countryMinLength'))
       .required(t('register.countryRequired')),
@@ -174,6 +175,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           role: values.role,
         });
         setCurrentStep(2);
+        onNavigate?.('/register/step-2');
         return;
       }
 
@@ -192,8 +194,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           phone: completeData.phone!,
           role: completeData.role!,
           businessName: values.businessName,
-          businessType: values.businessType,
-          pricingType: values.pricingType,
+          businessType: values.businessType || 'GENERAL',
+          pricingType: values.pricingType || 'FIXED',
           address: values.address,
           city: values.city,
           state: values.state,
@@ -483,93 +485,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 </div>
 
 
-                {/* Business Type and Pricing Type */}
-                <div className="space-y-4">
-                  {/* Warning Note */}
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-amber-800">
-                          {t('register.importantNotice')}
-                        </h3>
-                        <div className="mt-1 text-sm text-amber-700">
-                          <p>{t('register.cannotBeChanged')}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Business Type Field */}
-                    <div className="space-y-2">
-                      <label htmlFor="businessType" className="text-sm font-medium text-gray-700">
-                        {t('register.businessType')} *
-                      </label>
-                      <Select
-                        value={formik.values.businessType}
-                        onValueChange={(value) => formik.setFieldValue('businessType', value)}
-                      >
-                        <SelectTrigger className={`w-full ${formik.errors.businessType && formik.touched.businessType ? 'border-red-500' : ''}`}>
-                          <SelectValue placeholder={t('register.selectBusinessType')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {BUSINESS_TYPE_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              <div className="flex flex-col items-start">
-                                <span className="font-medium">
-                                  {t(`register.businessTypes.${option.value.toLowerCase()}.label`)}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {t(`register.businessTypes.${option.value.toLowerCase()}.description`)}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {formik.errors.businessType && formik.touched.businessType && (
-                        <p className="text-red-500 text-sm">{formik.errors.businessType}</p>
-                      )}
-                    </div>
-
-                    {/* Pricing Type Field */}
-                    <div className="space-y-2">
-                      <label htmlFor="pricingType" className="text-sm font-medium text-gray-700">
-                        {t('register.pricingType')} *
-                      </label>
-                      <Select
-                        value={formik.values.pricingType}
-                        onValueChange={(value) => formik.setFieldValue('pricingType', value)}
-                      >
-                        <SelectTrigger className={`w-full ${formik.errors.pricingType && formik.touched.pricingType ? 'border-red-500' : ''}`}>
-                          <SelectValue placeholder={t('register.selectPricingType')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PRICING_TYPE_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              <div className="flex flex-col items-start">
-                                <span className="font-medium">
-                                  {t(`register.pricingTypes.${option.value.toLowerCase()}.label`)}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {t(`register.pricingTypes.${option.value.toLowerCase()}.description`)}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {formik.errors.pricingType && formik.touched.pricingType && (
-                        <p className="text-red-500 text-sm">{formik.errors.pricingType}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {/* Business Type and Pricing Type - Hidden (use defaults) */}
 
                 {/* Address Field */}
                 <div className="space-y-2">
@@ -594,17 +510,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   )}
                 </div>
 
-                {/* City and State Row */}
+                {/* Ward/Commune and Province/City Row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label htmlFor="city" className="text-sm font-medium text-gray-700">
-                      {t('register.city')}
-                    </label>
+                    <label htmlFor="city" className="text-sm font-medium text-gray-700">Phường/Xã</label>
                     <Input
                       id="city"
                       name="city"
                       type="text"
-                      placeholder={t('register.city')}
+                      placeholder="Phường/Xã"
                       value={formik.values.city}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -615,14 +529,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     )}
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="state" className="text-sm font-medium text-gray-700">
-                      {t('register.state')}
-                    </label>
+                    <label htmlFor="state" className="text-sm font-medium text-gray-700">Tỉnh/Thành</label>
                     <Input
                       id="state"
                       name="state"
                       type="text"
-                      placeholder={t('register.state')}
+                      placeholder="Tỉnh/Thành"
                       value={formik.values.state}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -711,15 +623,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 
                 {/* Trial Benefits */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-blue-900 mb-2">{t('register.freeTrialIncludes')}</h3>
+                  <h3 className="text-sm font-medium text-blue-900 mb-1">{t('register.freeTrialIncludes')}</h3>
+                  <div className="text-xs text-blue-700 mb-2">Dùng thử 14 ngày</div>
                   <ul className="text-sm text-blue-800 space-y-1">
                     <li className="flex items-center">
                       <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
                       {t('register.fullAccessToAllFeatures')}
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
-                      {t('register.defaultOutlet')}: "{formik.values.businessName || 'Your Business'}"
                     </li>
                     <li className="flex items-center">
                       <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
@@ -736,7 +645,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 <div className="flex space-x-3">
                   <Button
                     type="button"
-                    onClick={() => setCurrentStep(1)}
+                    onClick={() => { setCurrentStep(1); onNavigate?.('/register/step-1'); }}
                     className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
                   >
                     {t('register.back')}

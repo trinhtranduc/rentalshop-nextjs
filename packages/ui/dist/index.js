@@ -13870,7 +13870,7 @@ var LoginForm = ({
     setViewPass(!viewPass);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("style", { jsx: true, children: `
+    /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("style", { children: `
         @keyframes float {
           0%, 100% { transform: translateY(0px) translateX(0px); }
           25% { transform: translateY(-20px) translateX(10px); }
@@ -14011,6 +14011,8 @@ var LoginForm = ({
             /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(
               import_ui14.Button,
               {
+                type: "button",
+                tabIndex: -1,
                 variant: "link",
                 onClick: () => onNavigate?.("/forget-password"),
                 className: "text-sm text-blue-700 hover:text-blue-800 p-0 h-auto font-medium",
@@ -14033,7 +14035,7 @@ var LoginForm = ({
           )
         ] })
       ] }) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { className: "mt-8 text-center", children: !isAdmin && /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("p", { className: "text-base text-gray-600", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { className: "mt-8 text-center", children: !isAdmin && /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("p", { className: "text-sm text-gray-600", children: [
         t2("login.noAccount"),
         " ",
         /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(
@@ -14041,7 +14043,7 @@ var LoginForm = ({
           {
             variant: "link",
             onClick: () => onNavigate?.("/register"),
-            className: "font-semibold text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto text-base",
+            className: "font-semibold text-blue-700 hover:text-blue-800 hover:underline p-0 h-auto text-sm",
             children: t2("login.signUp")
           }
         )
@@ -14074,12 +14076,13 @@ var RegisterForm = ({
   onRegister,
   onNavigate,
   user,
-  registrationError
+  registrationError,
+  initialStep
 }) => {
   const router = (0, import_navigation2.useRouter)();
   const [viewPass, setViewPass] = (0, import_react30.useState)(false);
   const [viewConfirmPass, setViewConfirmPass] = (0, import_react30.useState)(false);
-  const [currentStep, setCurrentStep] = (0, import_react30.useState)(1);
+  const [currentStep, setCurrentStep] = (0, import_react30.useState)(initialStep || 1);
   const [accountData, setAccountData] = (0, import_react30.useState)({});
   const [isSubmitting, setIsSubmitting] = (0, import_react30.useState)(false);
   const { toastSuccess, toastError, removeToast } = (0, import_ui15.useToast)();
@@ -14094,12 +14097,17 @@ var RegisterForm = ({
   });
   const step2ValidationSchema = create$3({
     businessName: create$6().min(2, t2("register.businessNameMinLength")).required(t2("register.businessNameRequired")),
-    businessType: create$6().oneOf(["CLOTHING", "VEHICLE", "EQUIPMENT", "GENERAL"], t2("register.businessTypeRequired")).required(t2("register.businessTypeRequired")),
-    pricingType: create$6().oneOf(["FIXED", "HOURLY", "DAILY"], t2("register.pricingTypeRequired")).required(t2("register.pricingTypeRequired")),
+    // businessType and pricingType are hidden and defaulted, no validation required
     address: create$6().min(5, t2("register.addressMinLength")).required(t2("register.addressRequired")),
-    city: create$6().min(2, t2("register.cityMinLength")).required(t2("register.cityRequired")),
+    // Ward/Commune is optional
+    city: create$6().min(2, t2("register.cityMinLength")).notRequired(),
     state: create$6().min(2, t2("register.stateMinLength")).required(t2("register.stateRequired")),
-    zipCode: create$6().matches(/^[0-9]{5}(-[0-9]{4})?$/, t2("register.zipCodeInvalid")).required(t2("register.zipCodeRequired")),
+    // zipCode optional but validate format when provided
+    zipCode: create$6().test("zip-optional", t2("register.zipCodeInvalid"), (val) => {
+      if (!val || val.trim().length === 0)
+        return true;
+      return /^[0-9]{4,10}(-[0-9]{3,4})?$/.test(val);
+    }),
     country: create$6().min(2, t2("register.countryMinLength")).required(t2("register.countryRequired")),
     acceptTermsAndPrivacy: create$7().oneOf([true], t2("register.agreeToTerms")).required(t2("register.agreeToTerms"))
   });
@@ -14142,6 +14150,7 @@ var RegisterForm = ({
           role: values.role
         });
         setCurrentStep(2);
+        onNavigate?.("/register/step-2");
         return;
       }
       const completeData = { ...accountData, ...values };
@@ -14155,8 +14164,8 @@ var RegisterForm = ({
           phone: completeData.phone,
           role: completeData.role,
           businessName: values.businessName,
-          businessType: values.businessType,
-          pricingType: values.pricingType,
+          businessType: values.businessType || "GENERAL",
+          pricingType: values.pricingType || "FIXED",
           address: values.address,
           city: values.city,
           state: values.state,
@@ -14390,59 +14399,6 @@ var RegisterForm = ({
             ] }),
             formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.businessName })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "bg-amber-50 border border-amber-200 rounded-lg p-3", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "flex items-start", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "flex-shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("svg", { className: "h-5 w-5 text-amber-400", viewBox: "0 0 20 20", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("path", { fillRule: "evenodd", d: "M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z", clipRule: "evenodd" }) }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "ml-3", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("h3", { className: "text-sm font-medium text-amber-800", children: t2("register.importantNotice") }),
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "mt-1 text-sm text-amber-700", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { children: t2("register.cannotBeChanged") }) })
-              ] })
-            ] }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-4", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "businessType", className: "text-sm font-medium text-gray-700", children: [
-                  t2("register.businessType"),
-                  " *"
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(
-                  import_ui15.Select,
-                  {
-                    value: formik.values.businessType,
-                    onValueChange: (value) => formik.setFieldValue("businessType", value),
-                    children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui15.SelectTrigger, { className: `w-full ${formik.errors.businessType && formik.touched.businessType ? "border-red-500" : ""}`, children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui15.SelectValue, { placeholder: t2("register.selectBusinessType") }) }),
-                      /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui15.SelectContent, { children: import_constants8.BUSINESS_TYPE_OPTIONS.map((option) => /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui15.SelectItem, { value: option.value, children: /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "flex flex-col items-start", children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "font-medium", children: t2(`register.businessTypes.${option.value.toLowerCase()}.label`) }),
-                        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-xs text-gray-500", children: t2(`register.businessTypes.${option.value.toLowerCase()}.description`) })
-                      ] }) }, option.value)) })
-                    ]
-                  }
-                ),
-                formik.errors.businessType && formik.touched.businessType && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.businessType })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "pricingType", className: "text-sm font-medium text-gray-700", children: [
-                  t2("register.pricingType"),
-                  " *"
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(
-                  import_ui15.Select,
-                  {
-                    value: formik.values.pricingType,
-                    onValueChange: (value) => formik.setFieldValue("pricingType", value),
-                    children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui15.SelectTrigger, { className: `w-full ${formik.errors.pricingType && formik.touched.pricingType ? "border-red-500" : ""}`, children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui15.SelectValue, { placeholder: t2("register.selectPricingType") }) }),
-                      /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui15.SelectContent, { children: import_constants8.PRICING_TYPE_OPTIONS.map((option) => /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_ui15.SelectItem, { value: option.value, children: /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "flex flex-col items-start", children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "font-medium", children: t2(`register.pricingTypes.${option.value.toLowerCase()}.label`) }),
-                        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-xs text-gray-500", children: t2(`register.pricingTypes.${option.value.toLowerCase()}.description`) })
-                      ] }) }, option.value)) })
-                    ]
-                  }
-                ),
-                formik.errors.pricingType && formik.touched.pricingType && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.pricingType })
-              ] })
-            ] })
-          ] }),
           /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
             /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("label", { htmlFor: "address", className: "text-sm font-medium text-gray-700", children: t2("register.address") }),
             /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "relative", children: [
@@ -14465,14 +14421,14 @@ var RegisterForm = ({
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "grid grid-cols-2 gap-4", children: [
             /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("label", { htmlFor: "city", className: "text-sm font-medium text-gray-700", children: t2("register.city") }),
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("label", { htmlFor: "city", className: "text-sm font-medium text-gray-700", children: "Ph\u01B0\u1EDDng/X\xE3" }),
               /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
                 import_ui15.Input,
                 {
                   id: "city",
                   name: "city",
                   type: "text",
-                  placeholder: t2("register.city"),
+                  placeholder: "Ph\u01B0\u1EDDng/X\xE3",
                   value: formik.values.city,
                   onChange: formik.handleChange,
                   onBlur: formik.handleBlur,
@@ -14482,14 +14438,14 @@ var RegisterForm = ({
               formik.errors.city && formik.touched.city && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.city })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("label", { htmlFor: "state", className: "text-sm font-medium text-gray-700", children: t2("register.state") }),
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("label", { htmlFor: "state", className: "text-sm font-medium text-gray-700", children: "T\u1EC9nh/Th\xE0nh" }),
               /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
                 import_ui15.Input,
                 {
                   id: "state",
                   name: "state",
                   type: "text",
-                  placeholder: t2("register.state"),
+                  placeholder: "T\u1EC9nh/Th\xE0nh",
                   value: formik.values.state,
                   onChange: formik.handleChange,
                   onBlur: formik.handleBlur,
@@ -14565,18 +14521,12 @@ var RegisterForm = ({
             formik.errors.acceptTermsAndPrivacy && formik.touched.acceptTermsAndPrivacy && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.acceptTermsAndPrivacy })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "bg-blue-50 border border-blue-200 rounded-lg p-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("h3", { className: "text-sm font-medium text-blue-900 mb-2", children: t2("register.freeTrialIncludes") }),
+            /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("h3", { className: "text-sm font-medium text-blue-900 mb-1", children: t2("register.freeTrialIncludes") }),
+            /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "text-xs text-blue-700 mb-2", children: "D\xF9ng th\u1EED 14 ng\xE0y" }),
             /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("ul", { className: "text-sm text-blue-800 space-y-1", children: [
               /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("li", { className: "flex items-center", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.CheckCircle, { className: "h-4 w-4 text-blue-700 mr-2" }),
                 t2("register.fullAccessToAllFeatures")
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("li", { className: "flex items-center", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.CheckCircle, { className: "h-4 w-4 text-blue-700 mr-2" }),
-                t2("register.defaultOutlet"),
-                ': "',
-                formik.values.businessName || "Your Business",
-                '"'
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("li", { className: "flex items-center", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.CheckCircle, { className: "h-4 w-4 text-blue-700 mr-2" }),
@@ -14593,7 +14543,10 @@ var RegisterForm = ({
               import_ui15.Button,
               {
                 type: "button",
-                onClick: () => setCurrentStep(1),
+                onClick: () => {
+                  setCurrentStep(1);
+                  onNavigate?.("/register/step-1");
+                },
                 className: "flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200",
                 children: t2("register.back")
               }
