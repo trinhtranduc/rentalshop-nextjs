@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { registerSchema } from '@rentalshop/utils';
 import { generateToken, hashPassword } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, getDefaultPricingConfig, type BusinessType, type PricingType } from '@rentalshop/constants';
 
 export async function POST(request: NextRequest) {
@@ -11,6 +11,14 @@ export async function POST(request: NextRequest) {
     
     // Validate input
     const validatedData = registerSchema.parse(body);
+    // Prevent duplicate email early with clear error code
+    const existingUser = await db.users.findByEmail(validatedData.email);
+    if (existingUser) {
+      return NextResponse.json(
+        ResponseBuilder.error('EMAIL_ALREADY_EXISTS', 'Email already exists'),
+        { status: 409 }
+      );
+    }
     
     // Process name - support both firstName/lastName and full name
     let firstName = validatedData.firstName || '';
@@ -96,9 +104,9 @@ export async function POST(request: NextRequest) {
                       showPricingOptions: ['VEHICLE'].includes(validatedData.businessType)
                     },
                     durationLimits: {
-                      minDuration: validatedData.pricingType === 'HOURLY' ? 1 : validatedData.pricingType === 'DAILY' ? 1 : validatedData.pricingType === 'WEEKLY' ? 1 : 1,
-                      maxDuration: validatedData.pricingType === 'HOURLY' ? 168 : validatedData.pricingType === 'DAILY' ? 30 : validatedData.pricingType === 'WEEKLY' ? 52 : 1,
-                      defaultDuration: validatedData.pricingType === 'HOURLY' ? 4 : validatedData.pricingType === 'DAILY' ? 3 : validatedData.pricingType === 'WEEKLY' ? 1 : 1
+                      minDuration: validatedData.pricingType === 'HOURLY' ? 1 : 1,
+                      maxDuration: validatedData.pricingType === 'HOURLY' ? 168 : validatedData.pricingType === 'DAILY' ? 30 : 1,
+                      defaultDuration: validatedData.pricingType === 'HOURLY' ? 4 : validatedData.pricingType === 'DAILY' ? 3 : 1
                     }
                   }
                 : getDefaultPricingConfig(validatedData.businessType as BusinessType || 'GENERAL')
