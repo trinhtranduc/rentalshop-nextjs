@@ -26,9 +26,10 @@ var envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
   // Email
-  EMAIL_PROVIDER: z.enum(["console", "resend", "sendgrid"]).default("console"),
+  EMAIL_PROVIDER: z.enum(["console", "ses"]).default("console"),
   EMAIL_FROM: z.string().email("EMAIL_FROM must be a valid email").default("noreply@localhost"),
-  RESEND_API_KEY: z.string().optional(),
+  // AWS SES (uses existing AWS credentials from S3)
+  AWS_SES_REGION: z.string().default("us-east-1"),
   // Redis (optional)
   REDIS_URL: z.string().optional(),
   // Logging
@@ -118,9 +119,9 @@ function printEnvironmentInfo() {
 if (isDevelopment() && env.ENABLE_DEBUG_LOGS) {
   printEnvironmentInfo();
 }
-var index_default = env;
+var src_default = env;
 export {
-  index_default as default,
+  src_default as default,
   env,
   getCorsOrigins,
   getDatabaseUrl,

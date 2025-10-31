@@ -30,6 +30,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if email is verified
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        ResponseBuilder.error('EMAIL_NOT_VERIFIED', 'Email chưa được xác thực. Vui lòng kiểm tra email và xác thực tài khoản của bạn trước khi đăng nhập.'),
+        { status: 403 }
+      );
+    }
+
     // Verify password
     const isPasswordValid = await comparePassword(validatedData.password, user.password);
     if (!isPasswordValid) {
@@ -154,6 +162,8 @@ export async function POST(request: NextRequest) {
           role: user.role,
           merchantId: user.merchantId,
           outletId: user.outletId,
+          emailVerified: (user as any).emailVerified || false,
+          emailVerifiedAt: (user as any).emailVerifiedAt || undefined,
           // ✅ Optional: merchant object (null for ADMIN users without merchant)
           merchant: merchantData,  // MerchantReference | null
           // ✅ Optional: outlet object (null for ADMIN/MERCHANT users without outlet)

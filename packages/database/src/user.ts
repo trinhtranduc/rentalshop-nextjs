@@ -442,7 +442,22 @@ export const simplifiedUsers = {
   findByEmail: async (email: string) => {
     return await prisma.user.findUnique({
       where: { email },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        emailVerified: true,
+        emailVerifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true,
+        outletId: true,
+        deletedAt: true,
         merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }

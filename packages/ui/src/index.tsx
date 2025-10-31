@@ -11,6 +11,7 @@ export * from './components/forms';
 // ============================================================================
 // FEATURE COMPONENTS (Complete Business Features)
 // ============================================================================
+export * from './components/features/Auth';
 export * from './components/features/Dashboard';
 export * from './components/features/Products';
 export * from './components/features/Customers';

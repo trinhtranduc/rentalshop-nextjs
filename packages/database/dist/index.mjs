@@ -1,7 +1,8 @@
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
+  if (typeof require !== "undefined")
+    return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
 
@@ -75,7 +76,22 @@ var simplifiedUsers = {
   findByEmail: async (email) => {
     return await prisma.user.findUnique({
       where: { email },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        emailVerified: true,
+        emailVerifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true,
+        outletId: true,
+        deletedAt: true,
         merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }
@@ -241,9 +257,12 @@ var simplifiedUsers = {
     } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
-    if (whereFilters.outletId) where.outletId = whereFilters.outletId;
-    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+    if (whereFilters.merchantId)
+      where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId)
+      where.outletId = whereFilters.outletId;
+    if (whereFilters.isActive !== void 0)
+      where.isActive = whereFilters.isActive;
     if (whereFilters.roles && Array.isArray(whereFilters.roles)) {
       where.role = { in: whereFilters.roles };
     } else if (whereFilters.role) {
@@ -358,8 +377,10 @@ var simplifiedCustomers = {
     } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
-    if (whereFilters.outletId) where.outletId = whereFilters.outletId;
+    if (whereFilters.merchantId)
+      where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId)
+      where.outletId = whereFilters.outletId;
     if (whereFilters.isActive !== void 0) {
       where.isActive = whereFilters.isActive;
     } else {
@@ -374,13 +395,20 @@ var simplifiedCustomers = {
         { phone: { contains: searchTerm, mode: "insensitive" } }
       ];
     }
-    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName, mode: "insensitive" };
-    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName, mode: "insensitive" };
-    if (whereFilters.email) where.email = { contains: whereFilters.email, mode: "insensitive" };
-    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: "insensitive" };
-    if (whereFilters.city) where.city = { contains: whereFilters.city, mode: "insensitive" };
-    if (whereFilters.state) where.state = { contains: whereFilters.state, mode: "insensitive" };
-    if (whereFilters.country) where.country = { contains: whereFilters.country, mode: "insensitive" };
+    if (whereFilters.firstName)
+      where.firstName = { contains: whereFilters.firstName, mode: "insensitive" };
+    if (whereFilters.lastName)
+      where.lastName = { contains: whereFilters.lastName, mode: "insensitive" };
+    if (whereFilters.email)
+      where.email = { contains: whereFilters.email, mode: "insensitive" };
+    if (whereFilters.phone)
+      where.phone = { contains: whereFilters.phone, mode: "insensitive" };
+    if (whereFilters.city)
+      where.city = { contains: whereFilters.city, mode: "insensitive" };
+    if (whereFilters.state)
+      where.state = { contains: whereFilters.state, mode: "insensitive" };
+    if (whereFilters.country)
+      where.country = { contains: whereFilters.country, mode: "insensitive" };
     const orderBy = {};
     if (sortBy === "firstName" || sortBy === "lastName" || sortBy === "email" || sortBy === "phone") {
       orderBy[sortBy] = sortOrder;
@@ -621,8 +649,10 @@ var simplifiedProducts = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
-    if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
+    if (whereFilters.merchantId)
+      where.merchantId = whereFilters.merchantId;
+    if (whereFilters.categoryId)
+      where.categoryId = whereFilters.categoryId;
     if (whereFilters.isActive !== void 0) {
       where.isActive = whereFilters.isActive;
     } else {
@@ -638,8 +668,10 @@ var simplifiedProducts = {
     }
     if (whereFilters.minPrice !== void 0 || whereFilters.maxPrice !== void 0) {
       where.rentPrice = {};
-      if (whereFilters.minPrice !== void 0) where.rentPrice.gte = whereFilters.minPrice;
-      if (whereFilters.maxPrice !== void 0) where.rentPrice.lte = whereFilters.maxPrice;
+      if (whereFilters.minPrice !== void 0)
+        where.rentPrice.gte = whereFilters.minPrice;
+      if (whereFilters.maxPrice !== void 0)
+        where.rentPrice.lte = whereFilters.maxPrice;
     }
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -1121,9 +1153,12 @@ var simplifiedOrders = {
     if (whereFilters.outletId) {
       where.outletId = whereFilters.outletId;
     }
-    if (whereFilters.customerId) where.customerId = whereFilters.customerId;
-    if (whereFilters.status) where.status = whereFilters.status;
-    if (whereFilters.orderType) where.orderType = whereFilters.orderType;
+    if (whereFilters.customerId)
+      where.customerId = whereFilters.customerId;
+    if (whereFilters.status)
+      where.status = whereFilters.status;
+    if (whereFilters.orderType)
+      where.orderType = whereFilters.orderType;
     if (whereFilters.productId) {
       where.orderItems = {
         some: {
@@ -1133,8 +1168,10 @@ var simplifiedOrders = {
     }
     if (whereFilters.startDate || whereFilters.endDate) {
       where.createdAt = {};
-      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
-      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
+      if (whereFilters.startDate)
+        where.createdAt.gte = whereFilters.startDate;
+      if (whereFilters.endDate)
+        where.createdAt.lte = whereFilters.endDate;
     }
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
@@ -1321,8 +1358,10 @@ var simplifiedOrders = {
       where.outletId = outletId;
       delete where.outlet;
     }
-    if (status) where.status = status;
-    if (orderType) where.orderType = orderType;
+    if (status)
+      where.status = status;
+    if (orderType)
+      where.orderType = orderType;
     if (productId) {
       where.orderItems = {
         some: {
@@ -1332,8 +1371,10 @@ var simplifiedOrders = {
     }
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      if (startDate)
+        where.createdAt.gte = startDate;
+      if (endDate)
+        where.createdAt.lte = endDate;
     }
     if (search3) {
       where.OR = [
@@ -1407,14 +1448,20 @@ var simplifiedOrders = {
       sortOrder = "desc"
     } = filters;
     const where = {};
-    if (merchantId) where.merchantId = merchantId;
-    if (outletId) where.outletId = outletId;
-    if (status) where.status = status;
-    if (orderType) where.orderType = orderType;
+    if (merchantId)
+      where.merchantId = merchantId;
+    if (outletId)
+      where.outletId = outletId;
+    if (status)
+      where.status = status;
+    if (orderType)
+      where.orderType = orderType;
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      if (startDate)
+        where.createdAt.gte = startDate;
+      if (endDate)
+        where.createdAt.lte = endDate;
     }
     if (search3) {
       where.OR = [
@@ -1576,8 +1623,10 @@ var simplifiedOrders = {
     }
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      if (startDate)
+        where.createdAt.gte = startDate;
+      if (endDate)
+        where.createdAt.lte = endDate;
     }
     if (search3) {
       const searchTerm = search3.trim();
@@ -1931,7 +1980,8 @@ var simplifiedOrders = {
         }
       }
     });
-    if (!order) return null;
+    if (!order)
+      return null;
     let timeline = [];
     try {
       timeline = await prisma.orderAuditLog?.findMany({
@@ -2147,8 +2197,10 @@ var simplifiedOrders = {
     }
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      if (startDate)
+        where.createdAt.gte = startDate;
+      if (endDate)
+        where.createdAt.lte = endDate;
     }
     if (cursor) {
       const cursorCondition = sortOrder === "desc" ? { [sortBy]: { lt: new Date(cursor) } } : { [sortBy]: { gt: new Date(cursor) } };
@@ -2276,8 +2328,10 @@ var simplifiedOrders = {
     }
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      if (startDate)
+        where.createdAt.gte = startDate;
+      if (endDate)
+        where.createdAt.lte = endDate;
     }
     const [
       totalOrders,
@@ -2585,10 +2639,14 @@ var simplifiedOutlets = {
     console.log("\u{1F50D} DB outlet.search - Received filters:", filters);
     console.log("\u{1F50D} DB outlet.search - whereFilters:", whereFilters);
     const where = {};
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
-    if (whereFilters.outletId) where.id = whereFilters.outletId;
-    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
-    if (whereFilters.status) where.status = whereFilters.status;
+    if (whereFilters.merchantId)
+      where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId)
+      where.id = whereFilters.outletId;
+    if (whereFilters.isActive !== void 0)
+      where.isActive = whereFilters.isActive;
+    if (whereFilters.status)
+      where.status = whereFilters.status;
     const searchTerm = whereFilters.search?.trim();
     console.log("\u{1F50D} DB outlet.search - searchTerm:", searchTerm, "length:", searchTerm?.length);
     if (searchTerm && searchTerm.length > 0) {
@@ -2601,9 +2659,12 @@ var simplifiedOutlets = {
       console.log("\u26A0\uFE0F DB outlet.search - No search term, will return all outlets for this merchant");
     }
     console.log("\u{1F50D} DB outlet.search - Final where clause:", JSON.stringify(where, null, 2));
-    if (whereFilters.name) where.name = { contains: whereFilters.name, mode: "insensitive" };
-    if (whereFilters.address) where.address = { contains: whereFilters.address, mode: "insensitive" };
-    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: "insensitive" };
+    if (whereFilters.name)
+      where.name = { contains: whereFilters.name, mode: "insensitive" };
+    if (whereFilters.address)
+      where.address = { contains: whereFilters.address, mode: "insensitive" };
+    if (whereFilters.phone)
+      where.phone = { contains: whereFilters.phone, mode: "insensitive" };
     const orderBy = {};
     if (sortBy === "name" || sortBy === "createdAt" || sortBy === "updatedAt") {
       orderBy[sortBy] = sortOrder;
@@ -2676,6 +2737,17 @@ var simplifiedPlans = {
     });
   },
   /**
+   * Find plan by name (simplified API)
+   */
+  findByName: async (name) => {
+    return await prisma.plan.findFirst({
+      where: {
+        name,
+        isActive: true
+      }
+    });
+  },
+  /**
    * Create new plan (simplified API)
    */
   create: async (data) => {
@@ -2707,8 +2779,10 @@ var simplifiedPlans = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
-    if (whereFilters.isPopular !== void 0) where.isPopular = whereFilters.isPopular;
+    if (whereFilters.isActive !== void 0)
+      where.isActive = whereFilters.isActive;
+    if (whereFilters.isPopular !== void 0)
+      where.isPopular = whereFilters.isPopular;
     if (whereFilters.search) {
       where.OR = [
         { name: { contains: whereFilters.search } },
@@ -2717,8 +2791,10 @@ var simplifiedPlans = {
     }
     if (whereFilters.minPrice !== void 0 || whereFilters.maxPrice !== void 0) {
       where.basePrice = {};
-      if (whereFilters.minPrice !== void 0) where.basePrice.gte = whereFilters.minPrice;
-      if (whereFilters.maxPrice !== void 0) where.basePrice.lte = whereFilters.maxPrice;
+      if (whereFilters.minPrice !== void 0)
+        where.basePrice.gte = whereFilters.minPrice;
+      if (whereFilters.maxPrice !== void 0)
+        where.basePrice.lte = whereFilters.maxPrice;
     }
     const [plans, total] = await Promise.all([
       prisma.plan.findMany({
@@ -2754,7 +2830,8 @@ var simplifiedPlans = {
         }
       }
     });
-    if (!plan) return null;
+    if (!plan)
+      return null;
     return {
       id: plan.id,
       name: plan.name,
@@ -2863,7 +2940,8 @@ async function getSubscriptionByMerchantId(merchantId) {
       plan: true
     }
   });
-  if (!subscription) return null;
+  if (!subscription)
+    return null;
   return {
     id: subscription.id,
     merchantId: subscription.merchantId,
@@ -2931,7 +3009,8 @@ async function getSubscriptionById(id) {
       plan: true
     }
   });
-  if (!subscription) return null;
+  if (!subscription)
+    return null;
   return {
     id: subscription.id,
     merchantId: subscription.merchantId,
@@ -3103,8 +3182,10 @@ var simplifiedSubscriptions = {
         }
       };
     }
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
-    if (whereFilters.planId) where.planId = whereFilters.planId;
+    if (whereFilters.merchantId)
+      where.merchantId = whereFilters.merchantId;
+    if (whereFilters.planId)
+      where.planId = whereFilters.planId;
     if (whereFilters.isActive !== void 0) {
       if (whereFilters.isActive) {
         where.status = { not: "CANCELLED" };
@@ -3112,11 +3193,14 @@ var simplifiedSubscriptions = {
         where.status = "CANCELLED";
       }
     }
-    if (whereFilters.status) where.status = whereFilters.status;
+    if (whereFilters.status)
+      where.status = whereFilters.status;
     if (whereFilters.startDate || whereFilters.endDate) {
       where.createdAt = {};
-      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
-      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
+      if (whereFilters.startDate)
+        where.createdAt.gte = whereFilters.startDate;
+      if (whereFilters.endDate)
+        where.createdAt.lte = whereFilters.endDate;
     }
     const [subscriptions, total] = await Promise.all([
       prisma.subscription.findMany({
@@ -3733,15 +3817,15 @@ async function generateHybridNumber(outletIdStr, prefix, sequenceLength, generat
 }
 function generateRandomString(length, numericOnly = false) {
   const chars = numericOnly ? "0123456789" : "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const randomBytes2 = new Uint8Array(length);
+  const randomBytes3 = new Uint8Array(length);
   if (typeof window !== "undefined" && window.crypto) {
-    window.crypto.getRandomValues(randomBytes2);
+    window.crypto.getRandomValues(randomBytes3);
   } else {
     const crypto = __require("crypto");
     const randomBytesNode = crypto.randomBytes(length);
-    randomBytes2.set(randomBytesNode);
+    randomBytes3.set(randomBytesNode);
   }
-  return Array.from(randomBytes2, (byte) => chars[byte % chars.length]).join("");
+  return Array.from(randomBytes3, (byte) => chars[byte % chars.length]).join("");
 }
 function validateOrderNumber(orderNumber) {
   const patterns = [
@@ -3937,7 +4021,8 @@ var search2 = async (filters) => {
   const skip = (page - 1) * limit;
   console.log("\u{1F50D} DB category.search - Received filters:", filters);
   const where = {};
-  if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+  if (whereFilters.merchantId)
+    where.merchantId = whereFilters.merchantId;
   if (whereFilters.isActive !== void 0) {
     where.isActive = whereFilters.isActive;
   } else {
@@ -4312,7 +4397,8 @@ var AuditLogger = class {
   }
   // Validate foreign key IDs to prevent constraint violations
   async validateUserId(userId) {
-    if (!userId) return null;
+    if (!userId)
+      return null;
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -4325,7 +4411,8 @@ var AuditLogger = class {
     }
   }
   async validateMerchantId(merchantId) {
-    if (!merchantId) return null;
+    if (!merchantId)
+      return null;
     try {
       const merchant = await this.prisma.merchant.findUnique({
         where: { id: merchantId },
@@ -4338,7 +4425,8 @@ var AuditLogger = class {
     }
   }
   async validateOutletId(outletId) {
-    if (!outletId) return null;
+    if (!outletId)
+      return null;
     try {
       const outlet = await this.prisma.outlet.findUnique({
         where: { id: outletId },
@@ -4438,18 +4526,28 @@ var AuditLogger = class {
   // Query audit logs
   async getAuditLogs(filter = {}) {
     const where = {};
-    if (filter.action) where.action = filter.action;
-    if (filter.entityType) where.entityType = filter.entityType;
-    if (filter.entityId) where.entityId = filter.entityId;
-    if (filter.userId) where.userId = filter.userId;
-    if (filter.merchantId) where.merchantId = filter.merchantId;
-    if (filter.outletId) where.outletId = filter.outletId;
-    if (filter.severity) where.severity = filter.severity;
-    if (filter.category) where.category = filter.category;
+    if (filter.action)
+      where.action = filter.action;
+    if (filter.entityType)
+      where.entityType = filter.entityType;
+    if (filter.entityId)
+      where.entityId = filter.entityId;
+    if (filter.userId)
+      where.userId = filter.userId;
+    if (filter.merchantId)
+      where.merchantId = filter.merchantId;
+    if (filter.outletId)
+      where.outletId = filter.outletId;
+    if (filter.severity)
+      where.severity = filter.severity;
+    if (filter.category)
+      where.category = filter.category;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
-      if (filter.startDate) where.createdAt.gte = filter.startDate;
-      if (filter.endDate) where.createdAt.lte = filter.endDate;
+      if (filter.startDate)
+        where.createdAt.gte = filter.startDate;
+      if (filter.endDate)
+        where.createdAt.lte = filter.endDate;
     }
     const limit = filter.limit || 50;
     const offset = filter.offset || 0;
@@ -4497,12 +4595,16 @@ var AuditLogger = class {
   // Get audit statistics
   async getAuditStats(filter = {}) {
     const where = {};
-    if (filter.merchantId) where.merchantId = filter.merchantId;
-    if (filter.outletId) where.outletId = filter.outletId;
+    if (filter.merchantId)
+      where.merchantId = filter.merchantId;
+    if (filter.outletId)
+      where.outletId = filter.outletId;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
-      if (filter.startDate) where.createdAt.gte = filter.startDate;
-      if (filter.endDate) where.createdAt.lte = filter.endDate;
+      if (filter.startDate)
+        where.createdAt.gte = filter.startDate;
+      if (filter.endDate)
+        where.createdAt.lte = filter.endDate;
     }
     const totalLogs = 0;
     const actionStats = [];
@@ -4649,13 +4751,8 @@ async function registerMerchant(tx, data) {
     });
     console.log("\u2705 Trial plan created automatically");
   }
-  const lastMerchant = await tx.merchant.findFirst({
-    orderBy: { id: "desc" }
-  });
-  const merchantId = (lastMerchant?.id || 0) + 1;
   const merchant = await tx.merchant.create({
     data: {
-      id: merchantId,
       name: data.businessName || `${data.name}'s Business`,
       email: data.email,
       phone: data.phone,
@@ -4668,13 +4765,8 @@ async function registerMerchant(tx, data) {
       // subscriptionStatus removed - will be set in subscription.status
     }
   });
-  const lastOutlet = await tx.outlet.findFirst({
-    orderBy: { id: "desc" }
-  });
-  const outletId = (lastOutlet?.id || 0) + 1;
   const outlet = await tx.outlet.create({
     data: {
-      id: outletId,
       name: data.outletName || "Main Store",
       // Always use merchant's information as primary source, with user input as fallback
       address: merchant.address || data.address || "Address to be updated",
@@ -4689,13 +4781,8 @@ async function registerMerchant(tx, data) {
       isDefault: true
     }
   });
-  const lastCategory = await tx.category.findFirst({
-    orderBy: { id: "desc" }
-  });
-  const categoryId = (lastCategory?.id || 0) + 1;
   const defaultCategory = await tx.category.create({
     data: {
-      id: categoryId,
       name: "General",
       description: "Default category for general products",
       merchantId: merchant.id,
@@ -4703,13 +4790,8 @@ async function registerMerchant(tx, data) {
     }
   });
   const hashedPassword = await hashPassword(data.password);
-  const lastUser = await tx.user.findFirst({
-    orderBy: { id: "desc" }
-  });
-  const userId = (lastUser?.id || 0) + 1;
   const user = await tx.user.create({
     data: {
-      id: userId,
       email: data.email,
       password: hashedPassword,
       firstName: data.name.split(" ")[0] || "",
@@ -4717,20 +4799,18 @@ async function registerMerchant(tx, data) {
       phone: data.phone,
       role: "MERCHANT",
       merchantId: merchant.id,
-      outletId,
+      outletId: outlet.id,
       // Assign default outlet to merchant user
-      isActive: true
+      isActive: true,
+      emailVerified: false,
+      // Email needs to be verified after registration
+      emailVerifiedAt: null
     }
   });
   const subscriptionStartDate = /* @__PURE__ */ new Date();
   const endDate = new Date(subscriptionStartDate.getTime() + trialPlan.trialDays * 24 * 60 * 60 * 1e3);
-  const lastSubscription = await tx.subscription.findFirst({
-    orderBy: { id: "desc" }
-  });
-  const subscriptionId = (lastSubscription?.id || 0) + 1;
   const subscription = await tx.subscription.create({
     data: {
-      id: subscriptionId,
       merchantId: merchant.id,
       planId: trialPlan.id,
       status: "trial",
@@ -4838,13 +4918,8 @@ async function registerOutletUser(tx, data) {
       }
     });
     if (!outlet) {
-      const lastOutlet = await tx.outlet.findFirst({
-        orderBy: { id: "desc" }
-      });
-      const outletId = (lastOutlet?.id || 0) + 1;
       outlet = await tx.outlet.create({
         data: {
-          id: outletId,
           name: `${merchant.name} - Main Store`,
           address: merchant.address || "Address to be updated",
           phone: merchant.phone,
@@ -4861,13 +4936,8 @@ async function registerOutletUser(tx, data) {
     }
   }
   const hashedPassword = await hashPassword(data.password);
-  const lastUser = await tx.user.findFirst({
-    orderBy: { id: "desc" }
-  });
-  const userId = (lastUser?.id || 0) + 1;
   const user = await tx.user.create({
     data: {
-      id: userId,
       email: data.email,
       password: hashedPassword,
       firstName: data.name.split(" ")[0] || "",
@@ -4903,13 +4973,8 @@ async function registerOutletUser(tx, data) {
 }
 async function registerBasicUser(tx, data) {
   const hashedPassword = await hashPassword(data.password);
-  const lastUser = await tx.user.findFirst({
-    orderBy: { id: "desc" }
-  });
-  const userId = (lastUser?.id || 0) + 1;
   const user = await tx.user.create({
     data: {
-      id: userId,
       email: data.email,
       password: hashedPassword,
       firstName: data.name.split(" ")[0] || "",
@@ -4932,6 +4997,115 @@ async function registerBasicUser(tx, data) {
     // Will be generated by auth service
     message: "User account created successfully"
   };
+}
+
+// src/email-verification.ts
+import { randomBytes as randomBytes2 } from "crypto";
+function generateVerificationToken() {
+  return randomBytes2(32).toString("hex");
+}
+async function createEmailVerification(userId, email, expiresInHours = 24) {
+  const token = generateVerificationToken();
+  const expiresAt = /* @__PURE__ */ new Date();
+  expiresAt.setHours(expiresAt.getHours() + expiresInHours);
+  await prisma.emailVerification.updateMany({
+    where: {
+      userId,
+      verified: false,
+      expiresAt: { gt: /* @__PURE__ */ new Date() }
+      // Not expired yet
+    },
+    data: {
+      verified: true,
+      // Mark as used/invalid
+      verifiedAt: /* @__PURE__ */ new Date()
+    }
+  });
+  const verification = await prisma.emailVerification.create({
+    data: {
+      userId,
+      token,
+      email,
+      expiresAt
+    }
+  });
+  return verification;
+}
+async function verifyEmailByToken(token) {
+  const verification = await prisma.emailVerification.findUnique({
+    where: { token },
+    include: { user: true }
+  });
+  if (!verification) {
+    return {
+      success: false,
+      error: "Token kh\xF4ng h\u1EE3p l\u1EC7 ho\u1EB7c kh\xF4ng t\u1ED3n t\u1EA1i"
+    };
+  }
+  if (verification.verified) {
+    return {
+      success: false,
+      error: "Token \u0111\xE3 \u0111\u01B0\u1EE3c s\u1EED d\u1EE5ng"
+    };
+  }
+  if (/* @__PURE__ */ new Date() > verification.expiresAt) {
+    return {
+      success: false,
+      error: "Token \u0111\xE3 h\u1EBFt h\u1EA1n. Vui l\xF2ng y\xEAu c\u1EA7u g\u1EEDi l\u1EA1i email x\xE1c th\u1EF1c"
+    };
+  }
+  await prisma.emailVerification.update({
+    where: { id: verification.id },
+    data: {
+      verified: true,
+      verifiedAt: /* @__PURE__ */ new Date()
+    }
+  });
+  const user = await prisma.user.update({
+    where: { id: verification.userId },
+    data: {
+      emailVerified: true,
+      emailVerifiedAt: /* @__PURE__ */ new Date()
+    }
+  });
+  return {
+    success: true,
+    user: {
+      id: user.id,
+      email: user.email
+    }
+  };
+}
+async function getVerificationTokenByUserId(userId) {
+  const verification = await prisma.emailVerification.findFirst({
+    where: {
+      userId,
+      verified: false,
+      expiresAt: { gt: /* @__PURE__ */ new Date() }
+      // Not expired
+    },
+    orderBy: { createdAt: "desc" }
+  });
+  return verification;
+}
+async function resendVerificationToken(userId, email) {
+  return await createEmailVerification(userId, email);
+}
+async function isEmailVerified(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { emailVerified: true }
+  });
+  return user?.emailVerified || false;
+}
+async function deleteExpiredTokens() {
+  const result = await prisma.emailVerification.deleteMany({
+    where: {
+      expiresAt: { lt: /* @__PURE__ */ new Date() },
+      verified: false
+    }
+  });
+  return result.count;
 }
 
 // src/index.ts
@@ -5047,23 +5221,30 @@ var generateOrderNumber2 = async (outletId) => {
 export {
   AuditLogger,
   checkDatabaseConnection,
+  createEmailVerification,
   createOrderNumberWithFormat,
   createSubscriptionPayment,
   db,
+  deleteExpiredTokens,
   extractAuditContext,
   generateOrderNumber2 as generateOrderNumber,
+  generateVerificationToken,
   getAuditLogger,
   getDefaultOutlet,
   getExpiredSubscriptions,
   getOutletOrderStats,
   getSubscriptionById,
   getSubscriptionByMerchantId,
+  getVerificationTokenByUserId,
+  isEmailVerified,
   prisma,
   registerMerchantWithTrial,
   registerUser,
+  resendVerificationToken,
   searchOrders,
   simplifiedPayments,
   simplifiedSubscriptionActivities,
-  updateSubscription
+  updateSubscription,
+  verifyEmailByToken
 };
 //# sourceMappingURL=index.mjs.map

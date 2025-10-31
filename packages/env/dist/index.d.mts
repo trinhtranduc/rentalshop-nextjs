@@ -36,9 +36,9 @@ declare const envSchema: z.ZodObject<{
     CLOUDINARY_CLOUD_NAME: z.ZodOptional<z.ZodString>;
     CLOUDINARY_API_KEY: z.ZodOptional<z.ZodString>;
     CLOUDINARY_API_SECRET: z.ZodOptional<z.ZodString>;
-    EMAIL_PROVIDER: z.ZodDefault<z.ZodEnum<["console", "resend", "sendgrid"]>>;
+    EMAIL_PROVIDER: z.ZodDefault<z.ZodEnum<["console", "ses"]>>;
     EMAIL_FROM: z.ZodDefault<z.ZodString>;
-    RESEND_API_KEY: z.ZodOptional<z.ZodString>;
+    AWS_SES_REGION: z.ZodDefault<z.ZodString>;
     REDIS_URL: z.ZodOptional<z.ZodString>;
     LOG_LEVEL: z.ZodDefault<z.ZodEnum<["debug", "info", "warn", "error"]>>;
     LOG_FORMAT: z.ZodDefault<z.ZodEnum<["pretty", "json"]>>;
@@ -65,8 +65,9 @@ declare const envSchema: z.ZodObject<{
     CORS_ORIGINS: string;
     UPLOAD_PROVIDER: "local" | "cloudinary" | "s3";
     MAX_FILE_SIZE: number;
-    EMAIL_PROVIDER: "console" | "resend" | "sendgrid";
+    EMAIL_PROVIDER: "console" | "ses";
     EMAIL_FROM: string;
+    AWS_SES_REGION: string;
     LOG_LEVEL: "debug" | "info" | "warn" | "error";
     LOG_FORMAT: "pretty" | "json";
     ENABLE_EMAIL_VERIFICATION: boolean;
@@ -78,7 +79,6 @@ declare const envSchema: z.ZodObject<{
     CLOUDINARY_CLOUD_NAME?: string | undefined;
     CLOUDINARY_API_KEY?: string | undefined;
     CLOUDINARY_API_SECRET?: string | undefined;
-    RESEND_API_KEY?: string | undefined;
     REDIS_URL?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
@@ -102,9 +102,9 @@ declare const envSchema: z.ZodObject<{
     CLOUDINARY_CLOUD_NAME?: string | undefined;
     CLOUDINARY_API_KEY?: string | undefined;
     CLOUDINARY_API_SECRET?: string | undefined;
-    EMAIL_PROVIDER?: "console" | "resend" | "sendgrid" | undefined;
+    EMAIL_PROVIDER?: "console" | "ses" | undefined;
     EMAIL_FROM?: string | undefined;
-    RESEND_API_KEY?: string | undefined;
+    AWS_SES_REGION?: string | undefined;
     REDIS_URL?: string | undefined;
     LOG_LEVEL?: "debug" | "info" | "warn" | "error" | undefined;
     LOG_FORMAT?: "pretty" | "json" | undefined;
@@ -136,8 +136,9 @@ declare const env: {
     CORS_ORIGINS: string;
     UPLOAD_PROVIDER: "local" | "cloudinary" | "s3";
     MAX_FILE_SIZE: number;
-    EMAIL_PROVIDER: "console" | "resend" | "sendgrid";
+    EMAIL_PROVIDER: "console" | "ses";
     EMAIL_FROM: string;
+    AWS_SES_REGION: string;
     LOG_LEVEL: "debug" | "info" | "warn" | "error";
     LOG_FORMAT: "pretty" | "json";
     ENABLE_EMAIL_VERIFICATION: boolean;
@@ -149,7 +150,6 @@ declare const env: {
     CLOUDINARY_CLOUD_NAME?: string | undefined;
     CLOUDINARY_API_KEY?: string | undefined;
     CLOUDINARY_API_SECRET?: string | undefined;
-    RESEND_API_KEY?: string | undefined;
     REDIS_URL?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;

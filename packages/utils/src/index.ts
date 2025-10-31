@@ -22,3 +22,6 @@ export * from './breadcrumbs';
 // Performance monitoring
 export * from './performance';
 
+// Email service
+export * from './services/email';
+

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
-import { registerSchema } from '@rentalshop/utils';
+import { db, createEmailVerification } from '@rentalshop/database';
+import { registerSchema, sendVerificationEmail } from '@rentalshop/utils';
 import { generateToken, hashPassword } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, getDefaultPricingConfig, type BusinessType, type PricingType } from '@rentalshop/constants';
@@ -163,7 +163,9 @@ export async function POST(request: NextRequest) {
             phone: validatedData.phone,
             role: 'MERCHANT',
             merchantId: merchant.id,
-            outletId: outlet.id
+            outletId: outlet.id,
+            emailVerified: false, // Email needs to be verified after registration
+            emailVerifiedAt: null
           }
         });
 
@@ -225,17 +227,36 @@ export async function POST(request: NextRequest) {
 
       console.log('✅ Registration complete for merchant:', merchant.name);
 
-      // Generate JWT token
-      const token = generateToken({
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      });
+      // 9. Create email verification token and send verification email
+      console.log('📧 Step 5: Creating email verification...');
+      
+      try {
+        const verification = await createEmailVerification(user.id, user.email);
+        const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+        
+        // Send verification email
+        const emailResult = await sendVerificationEmail(
+          user.email,
+          userName,
+          verification.token
+        );
 
+        if (!emailResult.success) {
+          console.warn('⚠️ Failed to send verification email:', emailResult.error);
+          // Don't fail registration if email fails, but log it
+        } else {
+          console.log('✅ Verification email sent successfully');
+        }
+      } catch (error) {
+        console.error('❌ Error sending verification email:', error);
+        // Don't fail registration if email fails
+      }
+
+      // Don't generate JWT token yet - user must verify email first
       return NextResponse.json({
         success: true,
-        code: 'MERCHANT_ACCOUNT_CREATED_SUCCESS', 
-        message: 'Merchant account created successfully with default outlet and trial subscription',
+        code: 'MERCHANT_ACCOUNT_CREATED_PENDING_VERIFICATION', 
+        message: 'Merchant account created successfully. Please check your email to verify your account before logging in.',
         data: {
           user: {
             id: user.id,
@@ -243,6 +264,7 @@ export async function POST(request: NextRequest) {
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
+            emailVerified: false,
             merchant: {
               id: merchant.id,
               name: merchant.name,
@@ -254,12 +276,12 @@ export async function POST(request: NextRequest) {
               name: outlet.name
             }
           },
-          token: token,
           subscription: {
             planName: trialPlan.name,
             trialEnd: trialEndDate,
             daysRemaining: Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-          }
+          },
+          requiresEmailVerification: true
         }
       }, { status: 201 });
 
@@ -278,26 +300,42 @@ export async function POST(request: NextRequest) {
         role: validatedData.role || 'CLIENT'
       });
 
-      // Generate JWT token
-      const token = generateToken({
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      });
+      // Create email verification token and send verification email
+      try {
+        const verification = await createEmailVerification(user.id, user.email);
+        const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+        
+        // Send verification email
+        const emailResult = await sendVerificationEmail(
+          user.email,
+          userName,
+          verification.token
+        );
 
+        if (!emailResult.success) {
+          console.warn('⚠️ Failed to send verification email:', emailResult.error);
+        } else {
+          console.log('✅ Verification email sent successfully');
+        }
+      } catch (error) {
+        console.error('❌ Error sending verification email:', error);
+      }
+
+      // Don't generate JWT token yet - user must verify email first
       return NextResponse.json({
         success: true,
-        code: 'USER_ACCOUNT_CREATED_SUCCESS',
-        message: 'User account created successfully',
+        code: 'USER_ACCOUNT_CREATED_PENDING_VERIFICATION',
+        message: 'User account created successfully. Please check your email to verify your account before logging in.',
         data: {
           user: {
             id: user.id,
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            role: user.role
+            role: user.role,
+            emailVerified: false
           },
-          token: token
+          requiresEmailVerification: true
         }
       }, { status: 201 });
     }
