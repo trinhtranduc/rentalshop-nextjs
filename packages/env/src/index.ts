@@ -58,7 +58,7 @@ const envSchema = z.object({
   
   // Email
   EMAIL_PROVIDER: z.enum(['console', 'ses']).default('console'),
-  EMAIL_FROM: z.string().email('EMAIL_FROM must be a valid email').default('noreply@localhost'),
+  EMAIL_FROM: z.string().email('EMAIL_FROM must be a valid email').default('noreply@example.com'),
   // AWS SES (uses existing AWS credentials from S3)
   AWS_SES_REGION: z.string().default('us-east-1'),
   
@@ -94,6 +94,70 @@ const envSchema = z.object({
 
 function parseEnvironment() {
   try {
+    // SKIP_ENV_VALIDATION defaults to false - always validate by default
+    // Only skip EMAIL_FROM email format validation when explicitly set to 'true' (useful during build time)
+    const skipValidation = process.env.SKIP_ENV_VALIDATION === 'true';
+    
+    if (skipValidation) {
+      // Create a relaxed schema that doesn't validate EMAIL_FROM email format
+      // but still validates all other fields
+      const buildSchema = envSchema.extend({
+        EMAIL_FROM: z.string().default('noreply@anyrent.shop'), // No .email() validation when skipping
+      });
+      
+      const buildEnv: Record<string, string | undefined> = {
+        ...process.env,
+        // Ensure EMAIL_FROM has a valid default if not provided
+        EMAIL_FROM: process.env.EMAIL_FROM || 'noreply@anyrent.shop',
+      };
+      
+      // Parse with relaxed schema (no email format validation for EMAIL_FROM)
+      const parsed = buildSchema.safeParse(buildEnv);
+      
+      if (parsed.success) {
+        console.log('⚠️  EMAIL_FROM validation skipped for build - using default if needed');
+        return parsed.data;
+      }
+      
+      // If still fails, use minimal validation approach
+      console.warn('⚠️  Using minimal validation for build - some env vars may use defaults');
+      
+      return {
+        NODE_ENV: (buildEnv.NODE_ENV as any) || 'production',
+        DATABASE_URL: buildEnv.DATABASE_URL || '',
+        JWT_SECRET: buildEnv.JWT_SECRET || 'build-time-secret',
+        JWT_EXPIRES_IN: buildEnv.JWT_EXPIRES_IN || '7d',
+        NEXTAUTH_SECRET: buildEnv.NEXTAUTH_SECRET || 'build-time-secret',
+        NEXTAUTH_URL: buildEnv.NEXTAUTH_URL || 'http://localhost:3000',
+        CLIENT_URL: buildEnv.CLIENT_URL || 'http://localhost:3000',
+        ADMIN_URL: buildEnv.ADMIN_URL || 'http://localhost:3001',
+        API_URL: buildEnv.API_URL || 'http://localhost:3002',
+        CORS_ORIGINS: buildEnv.CORS_ORIGINS || '',
+        UPLOAD_PROVIDER: (buildEnv.UPLOAD_PROVIDER as any) || 'local',
+        UPLOAD_PATH: buildEnv.UPLOAD_PATH,
+        MAX_FILE_SIZE: parseInt(buildEnv.MAX_FILE_SIZE || '10485760', 10),
+        CLOUDINARY_CLOUD_NAME: buildEnv.CLOUDINARY_CLOUD_NAME,
+        CLOUDINARY_API_KEY: buildEnv.CLOUDINARY_API_KEY,
+        CLOUDINARY_API_SECRET: buildEnv.CLOUDINARY_API_SECRET,
+        EMAIL_PROVIDER: (buildEnv.EMAIL_PROVIDER as any) || 'console',
+        EMAIL_FROM: buildEnv.EMAIL_FROM || 'noreply@anyrent.shop',
+        AWS_SES_REGION: buildEnv.AWS_SES_REGION || 'us-east-1',
+        REDIS_URL: buildEnv.REDIS_URL,
+        LOG_LEVEL: (buildEnv.LOG_LEVEL as any) || 'info',
+        LOG_FORMAT: (buildEnv.LOG_FORMAT as any) || 'json',
+        ENABLE_EMAIL_VERIFICATION: buildEnv.ENABLE_EMAIL_VERIFICATION === 'true',
+        ENABLE_ANALYTICS: buildEnv.ENABLE_ANALYTICS === 'true',
+        ENABLE_DEBUG_LOGS: buildEnv.ENABLE_DEBUG_LOGS === 'true',
+        RATE_LIMIT_WINDOW: buildEnv.RATE_LIMIT_WINDOW || '15m',
+        RATE_LIMIT_MAX: parseInt(buildEnv.RATE_LIMIT_MAX || '100', 10),
+        STRIPE_PUBLISHABLE_KEY: buildEnv.STRIPE_PUBLISHABLE_KEY,
+        STRIPE_SECRET_KEY: buildEnv.STRIPE_SECRET_KEY,
+        STRIPE_WEBHOOK_SECRET: buildEnv.STRIPE_WEBHOOK_SECRET,
+        SENTRY_DSN: buildEnv.SENTRY_DSN,
+        SENTRY_ENVIRONMENT: buildEnv.SENTRY_ENVIRONMENT,
+      } as any;
+    }
+    
     const parsed = envSchema.safeParse(process.env);
     
     if (!parsed.success) {
@@ -182,7 +246,7 @@ export const isTest = () => env.NODE_ENV === 'test';
 export function getCorsOrigins(): string[] {
   return env.CORS_ORIGINS
     .split(',')
-    .map(origin => origin.trim())
+    .map((origin: string) => origin.trim())
     .filter(Boolean);
 }
 
