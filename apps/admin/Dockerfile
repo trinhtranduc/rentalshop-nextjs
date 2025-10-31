@@ -30,7 +30,8 @@ COPY apps/client/package.json ./apps/client/
 # Set NODE_ENV=development to ensure workspace devDependencies are installed
 # This includes tsup, typescript, etc. needed for package builds
 ENV NODE_ENV=development
-RUN yarn install --frozen-lockfile
+# Retry yarn install up to 3 times to handle network issues
+RUN for i in 1 2 3; do yarn install --frozen-lockfile && break || (echo "Attempt $i failed, retrying..." && sleep 5); done
 
 # ===================================
 # STAGE 2: Builder
@@ -38,15 +39,24 @@ RUN yarn install --frozen-lockfile
 FROM node:22-alpine AS builder
 WORKDIR /app
 
+# Declare build arguments for Railway environment variables
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_ENV
+
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy entire source code (needed for monorepo build)
 COPY . .
 
-# Build packages using Turbo (respects dependency order)
+# Set environment variables for Next.js build (BUILD TIME)
+# These will be inlined into the JavaScript bundle
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
+
+# Build packages using Turbo (respects dependency order)
 RUN yarn build
 
 # ===================================

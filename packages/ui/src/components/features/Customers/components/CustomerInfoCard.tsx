@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
-import { Button } from '../../../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui';
 import { 
   User, 
   Mail, 
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { CustomerWithMerchant } from '@rentalshop/types';
 import type { Customer } from '@rentalshop/types';
+import { useCustomerTranslations } from '@rentalshop/hooks';
 
 // Union type to handle both local and database customer types
 type CustomerData = Customer | CustomerWithMerchant;
@@ -36,8 +37,10 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
   showActions = true,
   isLoading = false
 }) => {
+  const t = useCustomerTranslations();
+  
   const formatDate = (date: Date | string) => {
-    if (!date) return 'N/A';
+    if (!date) return t('messages.na');
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -47,7 +50,7 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
   };
 
   const formatAddress = () => {
-    if (!customer) return 'No address provided';
+    if (!customer) return t('fields.noAddress');
     
     const parts = [
       customer.address,
@@ -57,7 +60,7 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
       customer.country
     ].filter(Boolean);
     
-    return parts.length > 0 ? parts.join(', ') : 'No address provided';
+    return parts.length > 0 ? parts.join(', ') : t('fields.noAddress');
   };
 
   // Show loading state
@@ -66,7 +69,7 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-900">
-            Customer Information
+            {t('customerInformation')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -89,12 +92,12 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-900">
-            Customer Information
+            {t('customerInformation')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <p className="text-gray-500">No customer data available</p>
+            <p className="text-gray-500">{t('noDataAvailable')}</p>
           </div>
         </CardContent>
       </Card>
@@ -106,7 +109,7 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-gray-900">
-            Customer Information
+            {t('customerInformation')}
           </CardTitle>
           
           {/* Action Buttons */}
@@ -120,7 +123,7 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
                   className="flex items-center space-x-2"
                 >
                   <Edit className="w-4 h-4" />
-                  <span>Edit</span>
+                  <span>{t('actions.edit')}</span>
                 </Button>
               )}
               
@@ -132,7 +135,7 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
                   className="flex items-center space-x-2"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>Orders</span>
+                  <span>{t('actions.orders')}</span>
                 </Button>
               )}
               
@@ -144,7 +147,7 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
                   className="flex items-center space-x-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span>Delete</span>
+                  <span>{t('actions.delete')}</span>
                 </Button>
               )}
             </div>
@@ -159,17 +162,17 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
           <div className="space-y-4">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-normal text-gray-500 mb-2">Full Name</label>
+                <label className="block text-sm font-normal text-gray-500 mb-2">{t('fields.fullName')}</label>
                 <p className="text-gray-900 text-base font-medium">{customer.firstName} {customer.lastName}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-normal text-gray-500 mb-2">Email</label>
+                <label className="block text-sm font-normal text-gray-500 mb-2">{t('fields.email')}</label>
                 <p className="text-gray-900 text-base">{customer.email}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-normal text-gray-500 mb-2">Phone</label>
+                <label className="block text-sm font-normal text-gray-500 mb-2">{t('fields.phone')}</label>
                 <p className="text-gray-900 text-base">{customer.phone}</p>
               </div>
             </div>
@@ -179,12 +182,12 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
           <div className="space-y-4">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-normal text-gray-500 mb-2">Address</label>
+                <label className="block text-sm font-normal text-gray-500 mb-2">{t('fields.address')}</label>
                 <p className="text-gray-900 text-base">{formatAddress()}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-normal text-gray-500 mb-2">Member Since</label>
+                <label className="block text-sm font-normal text-gray-500 mb-2">{t('stats.memberSince')}</label>
                 <p className="text-gray-900 text-base">{formatDate(customer.createdAt)}</p>
               </div>
             </div>

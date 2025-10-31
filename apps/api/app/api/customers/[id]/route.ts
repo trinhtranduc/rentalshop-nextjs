@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
-import { customerUpdateSchema, handleApiError } from '@rentalshop/utils';
+import { db } from '@rentalshop/database';
+import { customerUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -20,7 +20,7 @@ export async function GET(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid customer ID format' },
+          ResponseBuilder.error('INVALID_CUSTOMER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -32,7 +32,7 @@ export async function GET(
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
@@ -43,7 +43,7 @@ export async function GET(
       if (!customer) {
         console.log('❌ Customer not found in database for customerId:', customerId);
         return NextResponse.json(
-          { success: false, message: 'Customer not found' },
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -53,6 +53,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: customer,
+        code: 'CUSTOMER_RETRIEVED_SUCCESS',
         message: 'Customer retrieved successfully'
       });
 
@@ -81,7 +82,7 @@ export async function PUT(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid customer ID format' },
+          ResponseBuilder.error('INVALID_CUSTOMER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -93,7 +94,7 @@ export async function PUT(
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
@@ -106,7 +107,7 @@ export async function PUT(
       const existingCustomer = await db.customers.findById(customerId);
       if (!existingCustomer) {
         return NextResponse.json(
-          { success: false, message: 'Customer not found' },
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -118,6 +119,7 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: updatedCustomer,
+        code: 'CUSTOMER_UPDATED_SUCCESS',
         message: 'Customer updated successfully'
       });
 
@@ -146,7 +148,7 @@ export async function DELETE(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid customer ID format' },
+          ResponseBuilder.error('INVALID_CUSTOMER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -158,7 +160,7 @@ export async function DELETE(
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
@@ -167,8 +169,26 @@ export async function DELETE(
       const existingCustomer = await db.customers.findById(customerId);
       if (!existingCustomer) {
         return NextResponse.json(
-          { success: false, message: 'Customer not found' },
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Check if customer has active orders (RESERVED or PICKUPED)
+      const activeOrders = await db.orders.getStats({
+        customerId: customerId,
+        status: { in: ['RESERVED', 'PICKUPED'] }
+      });
+
+      if (activeOrders > 0) {
+        console.log('❌ Cannot delete customer with active orders:', activeOrders);
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'CUSTOMER_HAS_ACTIVE_ORDERS',
+            message: `Cannot delete customer with ${activeOrders} active order(s). Please complete or cancel these orders first.`
+          },
+          { status: API.STATUS.CONFLICT }
         );
       }
 
@@ -179,6 +199,7 @@ export async function DELETE(
       return NextResponse.json({
         success: true,
         data: deletedCustomer,
+        code: 'CUSTOMER_DELETED_SUCCESS',
         message: 'Customer deleted successfully'
       });
 

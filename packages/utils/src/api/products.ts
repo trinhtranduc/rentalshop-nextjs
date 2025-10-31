@@ -13,6 +13,66 @@ export interface ProductsResponse {
   totalPages: number;
 }
 
+export interface ProductAvailabilityRequest {
+  startDate?: string;
+  endDate?: string;
+  quantity?: number;
+  includeTimePrecision?: boolean;
+  timeZone?: string;
+}
+
+export interface ProductAvailabilityResponse {
+  productId: number;
+  productName: string;
+  totalStock: number;
+  totalAvailableStock: number;
+  totalRenting: number;
+  requestedQuantity: number;
+  rentalPeriod?: {
+    startDate: string;
+    endDate: string;
+    startDateLocal: string;
+    endDateLocal: string;
+    durationMs: number;
+    durationHours: number;
+    durationDays: number;
+    timeZone: string;
+    includeTimePrecision: boolean;
+  };
+  isAvailable: boolean;
+  stockAvailable: boolean;
+  hasNoConflicts: boolean;
+  availabilityByOutlet: Array<{
+    outletId: number;
+    outletName: string;
+    stock: number;
+    available: number;
+    renting: number;
+    conflictingQuantity: number;
+    effectivelyAvailable: number;
+    canFulfillRequest: boolean;
+    conflicts: Array<{
+      orderNumber: string;
+      customerName: string;
+      pickupDate: string;
+      returnDate: string;
+      pickupDateLocal: string;
+      returnDateLocal: string;
+      quantity: number;
+      conflictDuration: number;
+      conflictHours: number;
+      conflictType: 'pickup_overlap' | 'return_overlap' | 'period_overlap' | 'complete_overlap';
+    }>;
+  }>;
+  bestOutlet?: {
+    outletId: number;
+    outletName: string;
+    effectivelyAvailable: number;
+  };
+  totalConflictsFound: number;
+  message: string;
+}
+
 /**
  * Products API client for product management operations
  */
@@ -118,6 +178,36 @@ export const productsApi = {
   },
 
   /**
+   * Create a new product with multipart form data (includes file uploads)
+   */
+  async createProductWithFiles(productData: ProductCreateInput, files?: File[]): Promise<ApiResponse<Product>> {
+    if (!files || files.length === 0) {
+      // If no files, fall back to regular JSON request
+      return this.createProduct(productData);
+    }
+
+    // Create multipart form data
+    const formData = new FormData();
+    
+    // Add product data as JSON string
+    formData.append('data', JSON.stringify(productData));
+    
+    // Add files
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+
+    // Send multipart request
+    const response = await authenticatedFetch(apiUrls.products.create, {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type header for FormData - browser will set it with boundary
+    });
+    
+    return await parseApiResponse<Product>(response);
+  },
+
+  /**
    * Update an existing product
    */
   async updateProduct(productId: number, productData: ProductUpdateInput): Promise<ApiResponse<Product>> {
@@ -174,7 +264,28 @@ export const productsApi = {
       body: JSON.stringify({ updates }),
     });
     return await parseApiResponse<Product[]>(response);
-  }
+  },
+
+  /**
+   * Check product availability with rental period and booking conflicts
+   */
+  async checkProductAvailability(
+    productId: number, 
+    request: ProductAvailabilityRequest = {}
+  ): Promise<ApiResponse<ProductAvailabilityResponse>> {
+    const params = new URLSearchParams();
+    
+    if (request.startDate) params.append('startDate', request.startDate);
+    if (request.endDate) params.append('endDate', request.endDate);
+    if (request.quantity !== undefined) params.append('quantity', request.quantity.toString());
+    if (request.includeTimePrecision !== undefined) params.append('includeTimePrecision', request.includeTimePrecision.toString());
+    if (request.timeZone) params.append('timeZone', request.timeZone);
+
+    const url = `${apiUrls.products.availability(productId)}?${params.toString()}`;
+    const response = await authenticatedFetch(url);
+    return await parseApiResponse<ProductAvailabilityResponse>(response);
+  },
+
 };
 
 

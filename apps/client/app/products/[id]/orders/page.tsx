@@ -7,8 +7,11 @@ import {
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent
+  PageContent,
+  Breadcrumb,
+  Button
 } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ProductOrdersView } from '@rentalshop/ui';
 import { 
   Skeleton,
@@ -19,7 +22,7 @@ import {
 } from '@rentalshop/ui';
 
 import { ArrowLeft, Package } from 'lucide-react';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi,
@@ -31,6 +34,8 @@ export default function ProductOrdersPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
   
   const [product, setProduct] = useState<ProductWithStock | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +51,9 @@ export default function ProductOrdersPage() {
 
         // Fetch product details
         const productResponse = await productsApi.getProductById(parseInt(productId));
-        setProduct(productResponse.data || null);
+        if (productResponse.success && productResponse.data) {
+          setProduct(productResponse.data);
+        }
 
       } catch (err) {
         console.error('Error fetching product:', err);
@@ -85,12 +92,13 @@ export default function ProductOrdersPage() {
             <p className="text-muted-foreground mb-4">
               {error || 'The product you are looking for could not be found.'}
             </p>
-            <button 
+            <Button 
               onClick={handleBack}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+              variant="default"
+              size="sm"
             >
-              Back to Products
-            </button>
+              {tc('buttons.back')}
+            </Button>
           </div>
         </PageContent>
       </PageWrapper>
@@ -101,24 +109,17 @@ export default function ProductOrdersPage() {
   const totalRenting = product.outletStock.reduce((sum, os) => sum + os.renting, 0);
   const totalStock = product.outletStock.reduce((sum, os) => sum + os.stock, 0);
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Products', href: '/products' },
+    { label: product.name, href: `/products/${productId}` },
+    { label: 'Orders' }
+  ];
+
   return (
     <PageWrapper>
-      <PageHeader>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={handleBack}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5 text-gray-600" />
-          </button>
-          <div>
-            <PageTitle>Orders for {product.name}</PageTitle>
-            <p className="text-sm text-gray-600 mt-1">
-              View and manage all orders for this product
-            </p>
-          </div>
-        </div>
-      </PageHeader>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
       <PageContent>
         <ProductOrdersView
           productId={product.id.toString()}

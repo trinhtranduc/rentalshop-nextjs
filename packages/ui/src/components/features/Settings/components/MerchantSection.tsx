@@ -3,17 +3,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Card, 
+  CardHeader,
   CardContent,
   Button,
   Input,
-  Label
+  Label,
+  Badge,
+  SearchableCountrySelect
 } from '@rentalshop/ui';
-import { merchantsApi } from '@rentalshop/utils';
+import { CheckCircle2, DollarSign } from 'lucide-react';
+import { merchantsApi, formatCurrency, getCurrency } from '@rentalshop/utils';
 import { 
   getBusinessTypeDescription, 
-  getPricingTypeDescription
+  getPricingTypeDescription,
+  COUNTRIES
 } from '@rentalshop/constants';
 import type { BusinessType, PricingType } from '@rentalshop/constants/src/pricing';
+import type { CurrencyCode } from '@rentalshop/types';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -35,10 +42,12 @@ export interface MerchantSectionProps {
     pricingType: string;
     taxId: string;
   };
+  currentCurrency: CurrencyCode;
   onEdit: () => void;
   onSave: () => void;
   onCancel: () => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onCurrencyChange: (currency: CurrencyCode) => Promise<void>;
 }
 
 // ============================================================================
@@ -50,14 +59,25 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   isEditing,
   isUpdating,
   formData,
+  currentCurrency,
   onEdit,
   onSave,
   onCancel,
-  onInputChange
+  onInputChange,
+  onCurrencyChange
 }) => {
+  const t = useSettingsTranslations();
   const [merchantData, setMerchantData] = useState<any>(null);
   const [loadingMerchant, setLoadingMerchant] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(currentCurrency);
+  const [isSavingCurrency, setIsSavingCurrency] = useState(false);
   const fetchingRef = useRef(false);
+  
+  // Currency options
+  const CURRENCY_OPTIONS: Array<{ value: CurrencyCode; label: string; symbol: string }> = [
+    { value: 'USD', label: t('merchant.usDollar'), symbol: '$' },
+    { value: 'VND', label: t('merchant.vietnameseDong'), symbol: 'đ' },
+  ];
   
   // Debug logging
   console.log('🔍 MerchantSection render - user:', user);
@@ -108,6 +128,27 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   // Use merchant data from user object or fetched data
   const merchant = user?.merchant || merchantData;
   
+  // Update selected currency when current currency changes
+  useEffect(() => {
+    setSelectedCurrency(currentCurrency);
+  }, [currentCurrency]);
+  
+  // Handle currency change
+  const handleCurrencySelect = async (currency: CurrencyCode) => {
+    if (currency === currentCurrency) return;
+    
+    setIsSavingCurrency(true);
+    try {
+      await onCurrencyChange(currency);
+      setSelectedCurrency(currency);
+    } catch (error) {
+      console.error('Failed to update currency:', error);
+      setSelectedCurrency(currentCurrency); // Revert on error
+    } finally {
+      setIsSavingCurrency(false);
+    }
+  };
+  
   // Debug merchant data
   console.log('🔍 MerchantSection - Final merchant data:', {
     'user.merchant': user?.merchant,
@@ -121,31 +162,25 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Business Information</h2>
-          <p className="text-gray-600">Manage your business details and settings</p>
-        </div>
-        {!isEditing ? (
-          <div className="flex gap-2">
-            <Button onClick={onEdit}>
-              Edit Business Info
-            </Button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <Button onClick={onSave} variant="default" disabled={isUpdating}>
-              {isUpdating ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button onClick={onCancel} variant="outline" disabled={isUpdating}>
-              Cancel
-            </Button>
-          </div>
-        )}
-      </div>
-
       <Card>
-        <CardContent className="p-6">
+        <CardHeader className="flex flex-row items-center justify-between py-4 pb-3">
+          <h3 className="text-base font-semibold text-gray-900">{t('merchant.businessInformation')}</h3>
+          {!isEditing ? (
+            <Button onClick={onEdit} size="sm">
+              {t('merchant.edit')}
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button onClick={onSave} variant="default" size="sm" disabled={isUpdating}>
+                {isUpdating ? t('merchant.saving') : t('merchant.save')}
+              </Button>
+              <Button onClick={onCancel} variant="outline" size="sm" disabled={isUpdating}>
+                {t('merchant.cancel')}
+              </Button>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="p-6 pt-4">
           {loadingMerchant ? (
             <div className="text-center py-8">
               <p className="text-gray-500">Loading business information...</p>
@@ -164,7 +199,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="merchantName" className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Name
+                  {t('merchant.name')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -173,18 +208,18 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     type="text"
                     value={formData.name}
                     onChange={onInputChange}
-                    placeholder="Enter business name"
+                    placeholder={t('merchant.enterBusinessName')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.name || 'Not provided'}
+                    {merchant?.name || t('merchant.notProvided')}
                   </p>
                 )}
               </div>
 
               <div>
                 <Label htmlFor="merchantEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Email
+                  {t('merchant.email')}
                 </Label>
                 <div className="relative">
                   <Input
@@ -192,7 +227,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     name="email"
                     type="email"
                     value={merchant?.email || ''}
-                    placeholder="Business email address"
+                    placeholder={t('merchant.email')}
                     disabled={true}
                     className="bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
@@ -201,7 +236,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
 
               <div>
                 <Label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-2">
-                  Tax ID
+                  {t('merchant.taxId')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -210,18 +245,18 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     type="text"
                     value={formData.taxId}
                     onChange={onInputChange}
-                    placeholder="Enter tax ID"
+                    placeholder={t('merchant.enterTaxId')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.taxId || 'Not provided'}
+                    {merchant?.taxId || t('merchant.notProvided')}
                   </p>
                 )}
               </div>
 
               <div>
                 <Label htmlFor="merchantPhone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Phone
+                  {t('merchant.phone')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -230,11 +265,11 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     type="tel"
                     value={formData.phone}
                     onChange={onInputChange}
-                    placeholder="Enter business phone"
+                    placeholder={t('merchant.enterPhone')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.phone || 'Not provided'}
+                    {merchant?.phone || t('merchant.notProvided')}
                   </p>
                 )}
               </div>
@@ -243,41 +278,41 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-2">
-                      Business Type
+                      {t('merchant.businessType')}
                     </Label>
                     <div className="relative">
                       <Input
                         id="businessType"
                         name="businessType"
                         type="text"
-                        value={merchant?.businessType || 'Not provided'}
-                        placeholder="Business type"
+                        value={merchant?.businessType || t('merchant.notProvided')}
+                        placeholder={t('merchant.businessType')}
                         disabled={true}
                         className="bg-gray-100 text-gray-600 cursor-not-allowed"
                       />
                     </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {merchant?.businessType ? getBusinessTypeDescription(merchant.businessType as BusinessType) : 'Business type description'}
+                  {merchant?.businessType ? getBusinessTypeDescription(merchant.businessType as BusinessType) : t('merchant.businessType')}
                 </p>
                   </div>
 
                   <div>
                     <Label htmlFor="pricingType" className="block text-sm font-medium text-gray-700 mb-2">
-                      Pricing Type
+                      {t('merchant.pricingType')}
                     </Label>
                     <div className="relative">
                       <Input
                         id="pricingType"
                         name="pricingType"
                         type="text"
-                        value={merchant?.pricingType || 'Not provided'}
-                        placeholder="Pricing type"
+                        value={merchant?.pricingType || t('merchant.notProvided')}
+                        placeholder={t('merchant.pricingType')}
                         disabled={true}
                         className="bg-gray-100 text-gray-600 cursor-not-allowed"
                       />
                     </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {merchant?.pricingType ? getPricingTypeDescription(merchant.pricingType as PricingType) : 'Pricing type description'}
+                  {merchant?.pricingType ? getPricingTypeDescription(merchant.pricingType as PricingType) : t('merchant.pricingType')}
                 </p>
                   </div>
                 </div>
@@ -285,7 +320,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
 
               <div className="md:col-span-2">
                 <Label htmlFor="merchantAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Address
+                  {t('merchant.address')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -294,18 +329,18 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     type="text"
                     value={formData.address}
                     onChange={onInputChange}
-                    placeholder="Enter business address"
+                    placeholder={t('merchant.enterAddress')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.address || 'Not provided'}
+                    {merchant?.address || t('merchant.notProvided')}
                   </p>
                 )}
               </div>
 
               <div>
                 <Label htmlFor="merchantCity" className="block text-sm font-medium text-gray-700 mb-2">
-                  City
+                  {t('merchant.city')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -314,18 +349,18 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     type="text"
                     value={formData.city}
                     onChange={onInputChange}
-                    placeholder="Enter city"
+                    placeholder={t('merchant.enterCity')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.city || 'Not provided'}
+                    {merchant?.city || t('merchant.notProvided')}
                   </p>
                 )}
               </div>
 
               <div>
                 <Label htmlFor="merchantState" className="block text-sm font-medium text-gray-700 mb-2">
-                  State
+                  {t('merchant.state')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -334,18 +369,18 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     type="text"
                     value={formData.state}
                     onChange={onInputChange}
-                    placeholder="Enter state"
+                    placeholder={t('merchant.enterState')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.state || 'Not provided'}
+                    {merchant?.state || t('merchant.notProvided')}
                   </p>
                 )}
               </div>
 
               <div>
                 <Label htmlFor="merchantZipCode" className="block text-sm font-medium text-gray-700 mb-2">
-                  ZIP Code
+                  {t('merchant.zipCode')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -354,35 +389,121 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     type="text"
                     value={formData.zipCode}
                     onChange={onInputChange}
-                    placeholder="Enter ZIP code"
+                    placeholder={t('merchant.enterZipCode')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.zipCode || 'Not provided'}
+                    {merchant?.zipCode || t('merchant.notProvided')}
                   </p>
                 )}
               </div>
 
               <div>
                 <Label htmlFor="merchantCountry" className="block text-sm font-medium text-gray-700 mb-2">
-                  Country
+                  {t('merchant.country')}
                 </Label>
                 {isEditing ? (
-                  <Input
-                    id="merchantCountry"
-                    name="country"
-                    type="text"
+                  <SearchableCountrySelect
+                    options={COUNTRIES}
                     value={formData.country}
-                    onChange={onInputChange}
-                    placeholder="Enter country"
+                    onChange={(countryName) => {
+                      console.log('🌍 MerchantSection: Country onChange called with:', countryName);
+                      console.log('🌍 MerchantSection: Current formData.country:', formData.country);
+                      // Trigger parent's onChange handler with synthetic event
+                      onInputChange({ 
+                        target: { name: 'country', value: countryName } 
+                      } as React.ChangeEvent<HTMLInputElement>);
+                      console.log('🌍 MerchantSection: onInputChange called');
+                    }}
+                    placeholder="Type to search countries..."
+                    emptyMessage="No countries found"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {merchant?.country || 'Not provided'}
+                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md flex items-center gap-2">
+                    {merchant?.country ? (
+                      <>
+                        {COUNTRIES.find(c => c.name === merchant.country)?.flag || ''}
+                        {merchant.country}
+                      </>
+                    ) : (
+                      t('merchant.notProvided')
+                    )}
                   </p>
                 )}
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Currency Settings Card */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="h-5 w-5 text-blue-700" />
+            <h3 className="text-lg font-semibold text-gray-900">{t('merchant.currencySettings')}</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            {t('merchant.currencyDesc')}
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {CURRENCY_OPTIONS.map((option) => {
+              const config = getCurrency(option.value);
+              const isSelected = selectedCurrency === option.value;
+              const isCurrent = currentCurrency === option.value;
+              
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => handleCurrencySelect(option.value)}
+                  disabled={isSavingCurrency || isCurrent}
+                  className={`
+                    relative p-4 border-2 rounded-lg text-left transition-all
+                    ${isCurrent 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
+                    }
+                    ${isSavingCurrency ? 'opacity-50 cursor-wait' : isCurrent ? 'cursor-default' : 'cursor-pointer'}
+                  `}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">{option.symbol}</div>
+                      <div>
+                        <div className="font-semibold text-gray-900">
+                          {option.label}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {option.value}
+                        </div>
+                      </div>
+                    </div>
+                    {isCurrent && (
+                      <Badge variant="default" className="bg-green-100 text-green-800">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        {t('merchant.selected')}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Preview */}
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">{t('merchant.selectCurrency')}:</div>
+                    <div className="flex gap-4 text-sm text-gray-700">
+                      <span>{formatCurrency(100, option.value)}</span>
+                      <span>{formatCurrency(10000, option.value)}</span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {isSavingCurrency && (
+            <p className="text-sm text-blue-700 mt-3">
+              {t('merchant.savingCurrency')}
+            </p>
           )}
         </CardContent>
       </Card>

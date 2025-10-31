@@ -1,0 +1,80 @@
+{
+  "title": "Subscription Plans",
+  "planDetails": "Plan Details",
+  "currentPlan": "Current Plan",
+  "fields": {
+    "name": "Plan Name",
+    "price": "Price",
+    "features": "Features",
+    "billingCycle": "Billing Cycle",
+    "description": "Description"
+  },
+  "types": {
+    "free": "Free",
+    "starter": "Starter",
+    "professional": "Professional",
+    "enterprise": "Enterprise"
+  },
+  "billingCycle": {
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "perMonth": "per month",
+    "perYear": "per year",
+    "billedMonthly": "Billed monthly",
+    "billedYearly": "Billed yearly"
+  },
+  "actions": {
+    "subscribe": "Subscribe",
+    "upgrade": "Upgrade Plan",
+    "downgrade": "Downgrade Plan",
+    "cancel": "Cancel Subscription",
+    "manage": "Manage Subscription",
+    "viewDetails": "View Details",
+    "selectPlan": "Select Plan"
+  },
+  "features": {
+    "outletsLimit": "Outlets",
+    "usersLimit": "Users",
+    "productsLimit": "Products",
+    "ordersLimit": "Orders per month",
+    "storage": "Storage",
+    "support": "Support",
+    "analytics": "Analytics",
+    "customDomain": "Custom Domain",
+    "apiAccess": "API Access",
+    "unlimited": "Unlimited",
+    "limited": "Limited",
+    "basic": "Basic",
+    "advanced": "Advanced",
+    "priority": "Priority"
+  },
+  "messages": {
+    "subscribeSuccess": "Successfully subscribed to plan",
+    "subscribeFailed": "Failed to subscribe to plan",
+    "upgradeSuccess": "Plan upgraded successfully",
+    "upgradeFailed": "Failed to upgrade plan",
+    "downgradeSuccess": "Plan downgraded successfully",
+    "downgradeFailed": "Failed to downgrade plan",
+    "cancelSuccess": "Subscription cancelled successfully",
+    "cancelFailed": "Failed to cancel subscription",
+    "confirmUpgrade": "Are you sure you want to upgrade to this plan?",
+    "confirmDowngrade": "Are you sure you want to downgrade to this plan?",
+    "confirmCancel": "Are you sure you want to cancel your subscription?",
+    "noPlans": "No plans found",
+    "getStarted": "Get started by creating your first subscription plan"
+  },
+  "status": {
+    "active": "Active",
+    "cancelled": "Cancelled",
+    "expired": "Expired",
+    "trial": "Trial",
+    "pending": "Pending"
+  },
+  "buttons": {
+    "choosePlan": "Choose Plan",
+    "currentPlan": "Current Plan",
+    "contactSales": "Contact Sales",
+    "getStarted": "Get Started"
+  }
+}
+

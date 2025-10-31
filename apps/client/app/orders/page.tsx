@@ -1,229 +1,485 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { 
   OrdersLoading,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent,
-  useToast } from '@rentalshop/ui';
-import { Orders } from '../../components/Orders';
-import { useRouter } from 'next/navigation';
-import { useAuth, useOrderManagement, useCanExportData } from '@rentalshop/hooks';
-import { PAGINATION } from '@rentalshop/constants';
+  Orders,
+  useToast,
+  Button,
+  type QuickFilterOption
+} from '@rentalshop/ui';
+import { Plus, Download } from 'lucide-react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useAuth, useOrdersData, useCanExportData, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { ordersApi } from '@rentalshop/utils';
+import type { OrderFilters } from '@rentalshop/types';
 
+/**
+ * ✅ MODERN NEXT.JS 13+ ORDERS PAGE - URL STATE PATTERN
+ * 
+ * Architecture:
+ * ✅ URL params as single source of truth
+ * ✅ Clean data fetching with useOrdersData hook
+ * ✅ No duplicate state management
+ * ✅ Smooth transitions with useTransition
+ * ✅ Shareable URLs (bookmarkable filters)
+ * ✅ Browser back/forward support
+ * ✅ Auto-refresh on URL change (no manual refresh needed)
+ * 
+ * Data Flow:
+ * 1. User interacts (search, filter, pagination)
+ * 2. updateURL() → URL params change
+ * 3. Next.js detects URL change → searchParams update
+ * 4. filters object recalculates (memoized)
+ * 5. useOrdersData detects filter change → fetch data
+ * 6. UI updates with new data
+ * 
+ * Benefits:
+ * - Single API call per action
+ * - Minimal re-renders
+ * - No manual refresh needed
+ * - Clean and maintainable
+ */
 export default function OrdersPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError } = useToast();
+  const { toastSuccess, toastError, toastWarning } = useToast();
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
   const canExport = useCanExportData();
+
+  // ============================================================================
+  // QUICK FILTER STATE - Modern time-based filtering
+  // ============================================================================
   
-  // Use the order management hook
-  const {
-    orders,
-    loading,
-    searchTerm,
-    statusFilter,
-    orderTypeFilter,
-    outletFilter,
-    dateRangeFilter,
+  const [activeQuickFilter, setActiveQuickFilter] = useState<string | undefined>(
+    searchParams.get('quickFilter') || 'month' // ⭐ Default to Last 30 Days
+  );
+
+  // ============================================================================
+  // URL PARAMS - Single Source of Truth
+  // ============================================================================
+  
+  const search = searchParams.get('q') || '';
+  const status = searchParams.get('status') || '';
+  const orderType = searchParams.get('type') || '';
+  const outletId = searchParams.get('outlet') ? parseInt(searchParams.get('outlet')!) : undefined;
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '25');
+  const sortBy = searchParams.get('sortBy') || 'createdAt';
+  const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+  
+  // ============================================================================
+  // DATE FILTERS - Default to Last 30 Days (optimal performance)
+  // ============================================================================
+  
+  const getDefaultDateRange = () => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = new Date();
+    start.setDate(start.getDate() - 30); // ⭐ Last 30 days default
+    start.setHours(0, 0, 0, 0);
+    return { start, end };
+  };
+  
+  // Parse dates from yyyy-mm-dd format
+  const parseDateParam = (dateStr: string | null, isEndDate: boolean = false): Date => {
+    if (!dateStr) {
+      return isEndDate ? getDefaultDateRange().end : getDefaultDateRange().start;
+    }
+    
+    const date = new Date(dateStr);
+    if (isEndDate) {
+      date.setHours(23, 59, 59, 999); // End of day
+    } else {
+      date.setHours(0, 0, 0, 0); // Start of day
+    }
+    return date;
+  };
+  
+  const startDate = parseDateParam(searchParams.get('startDate'), false);
+  const endDate = parseDateParam(searchParams.get('endDate'), true);
+  
+  // Debug: Log URL params
+  console.log('🔗 URL Params:', {
+    search,
+    status,
+    orderType,
+    outletId,
+    page,
+    limit,
     sortBy,
-    sortOrder,
-    pagination,
-    stats,
-    handleSearchChange,
-    handleFiltersChange,
-    handleClearFilters,
-    handlePageChange,
-    handleSort,
-    handlePickupOrder,
-    handleReturnOrder,
-    handleCancelOrder,
-    refreshOrders,
-    refreshStats
-  } = useOrderManagement({
-    initialLimit: PAGINATION.DEFAULT_PAGE_SIZE,
-    useSearchOrders: true,
-    enableStats: true
+    sortOrder
   });
 
-  // Enhanced order action handlers with toast notifications
+  // ============================================================================
+  // DATA FETCHING - Clean & Simple
+  // ============================================================================
+  
+  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
+  const filters: OrderFilters = useMemo(() => ({
+    search: search || undefined,
+    status: (status as any) || undefined,
+    orderType: (orderType as any) || undefined,
+    outletId,
+    startDate, // ⭐ Always include date filters for better performance
+    endDate,   // ⭐ Always include date filters for better performance
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [search, status, orderType, outletId, startDate, endDate, page, limit, sortBy, sortOrder]);
+
+  const { data, loading, error, refetch } = useOrdersData({ filters });
+  
+  // Debug: Log when filters or data changes
+  console.log('📊 Orders Page - Current state:', {
+    page,
+    filters,
+    hasData: !!data,
+    ordersCount: data?.orders?.length || 0,
+    currentPage: data?.currentPage,
+    loading
+  });
+
+  // ============================================================================
+  // URL UPDATE HELPER - Update URL = Update Everything
+  // ============================================================================
+  
+  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== '' && value !== 'all') {
+        params.set(key, value.toString());
+      } else {
+        params.delete(key);
+      }
+    });
+    
+    const newURL = `${pathname}?${params.toString()}`;
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
+
+  // ============================================================================
+  // FILTER HANDLERS - Simple URL Updates
+  // ============================================================================
+  
+  const handleSearchChange = useCallback((searchValue: string) => {
+    console.log('🔍 Page: Search changed to:', searchValue);
+    updateURL({ q: searchValue, page: 1 }); // Reset to page 1
+  }, [updateURL]);
+
+  const handleFiltersChange = useCallback((newFilters: Partial<OrderFilters>) => {
+    console.log('🔧 Page: Filters changed:', newFilters);
+    
+    const updates: Record<string, string | number | undefined> = { page: 1 }; // Reset page
+    
+    if ('status' in newFilters) {
+      updates.status = newFilters.status as any;
+    }
+    if ('orderType' in newFilters) {
+      updates.type = newFilters.orderType as any;
+    }
+    if ('outletId' in newFilters) {
+      updates.outlet = newFilters.outletId as any;
+    }
+    if ('sortBy' in newFilters) {
+      updates.sortBy = newFilters.sortBy;
+    }
+    if ('sortOrder' in newFilters) {
+      updates.sortOrder = newFilters.sortOrder;
+    }
+    
+    updateURL(updates);
+  }, [updateURL]);
+
+  const handleClearFilters = useCallback(() => {
+    console.log('🔧 Page: Clear all filters');
+    // Clear all params except page
+    router.push(pathname, { scroll: false });
+  }, [pathname, router]);
+
+  const handlePageChange = useCallback((newPage: number) => {
+    console.log('📄 handlePageChange called: current page=', page, ', new page=', newPage);
+    console.log('📄 Current filters:', filters);
+    updateURL({ page: newPage });
+  }, [updateURL, page, filters]);
+
+  const handleSort = useCallback((column: string) => {
+    console.log('🔀 Page: Sort changed:', column);
+    const newSortBy = column;
+    const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
+    updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
+  }, [sortBy, sortOrder, updateURL]);
+
+  // ============================================================================
+  // QUICK FILTER HANDLER - Modern time-based filtering
+  // ============================================================================
+  
+  // ============================================================================
+  // DATE RANGE HANDLER - Modern dropdown filter
+  // ============================================================================
+  
+  const handleDateRangeChange = useCallback((rangeId: string, start: Date, end: Date) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    // Format dates as yyyy-mm-dd (clean URL format)
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    // Set date range with simple format
+    params.set('startDate', formatDate(start));
+    params.set('endDate', formatDate(end));
+    params.set('quickFilter', rangeId);
+    params.set('page', '1'); // Reset to page 1
+    
+    setActiveQuickFilter(rangeId);
+    
+    console.log('⚡ Date range applied:', rangeId, {
+      start: formatDate(start),
+      end: formatDate(end)
+    });
+    
+    // Show warning if "All time" selected with large dataset
+    if (rangeId === 'all' && data?.total && data.total > 10000) {
+      toastWarning(
+        'Viewing All Orders',
+        `You are viewing all ${data.total.toLocaleString()} orders. This may be slow. Consider using a shorter date range for better performance.`
+      );
+    }
+    
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, pathname, router, data?.total, toastWarning]);
+
+  // ============================================================================
+  // ORDER ACTION HANDLERS
+  // ============================================================================
+  
   const handleOrderAction = useCallback(async (action: string, orderNumber: string) => {
-    // Extract numeric part for URL (e.g., "2110" from "ORD-2110")
-    const numericOrderNumber = orderNumber.replace(/^ORD-/, '');
+    const numericOrderNumber = orderNumber;
     
     switch (action) {
       case 'view':
         router.push(`/orders/${numericOrderNumber}`);
         break;
+        
       case 'pickup':
-        // Find the order by orderNumber to get the ID for API calls
-        const order = orders.find(o => o.orderNumber === orderNumber);
-        if (order) {
-          const result = await handlePickupOrder(order.id);
-          if (result.success) {
-            toastSuccess('Order Confirmed', 'Order has been confirmed successfully!');
-          } else {
-            toastError('Update Failed', result.error || 'An error occurred while updating the order');
+        const orderForPickup = data?.orders.find(o => o.orderNumber === orderNumber);
+        if (orderForPickup) {
+          try {
+            const response = await ordersApi.pickupOrder(orderForPickup.id);
+            if (response.success) {
+              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
+              // ✅ Force re-fetch by updating URL (trigger data refresh)
+              refetch();
+            } else {
+              throw new Error(response.error || t('messages.updateFailed'));
+            }
+          } catch (error) {
+            toastError('Update Failed', (error as Error).message);
           }
         }
         break;
+        
       case 'return':
-        const orderForReturn = orders.find(o => o.orderNumber === orderNumber);
+        const orderForReturn = data?.orders.find(o => o.orderNumber === orderNumber);
         if (orderForReturn) {
-          const result = await handleReturnOrder(orderForReturn.id);
-          if (result.success) {
-            toastSuccess('Order Returned', 'Order has been returned successfully!');
-          } else {
-            toastError('Update Failed', result.error || 'An error occurred while updating the order');
+          try {
+            const response = await ordersApi.returnOrder(orderForReturn.id);
+            if (response.success) {
+              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
+              // ✅ Force re-fetch by updating URL (trigger data refresh)
+              refetch();
+            } else {
+              throw new Error(response.error || t('messages.updateFailed'));
+            }
+          } catch (error) {
+            toastError('Update Failed', (error as Error).message);
           }
         }
         break;
+        
       case 'cancel':
-        const orderForCancel = orders.find(o => o.orderNumber === orderNumber);
+        const orderForCancel = data?.orders.find(o => o.orderNumber === orderNumber);
         if (orderForCancel) {
-          if (!confirm('Are you sure you want to cancel this order?')) return;
-          const result = await handleCancelOrder(orderForCancel.id);
-          if (result.success) {
-            toastSuccess('Order Cancelled', 'Order has been cancelled successfully!');
-          } else {
-            toastError('Cancellation Failed', result.error || 'An error occurred while cancelling the order');
+          if (!confirm(t('messages.confirmCancel'))) return;
+          try {
+            const response = await ordersApi.cancelOrder(orderForCancel.id);
+            if (response.success) {
+              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
+              // ✅ Force re-fetch by updating URL (trigger data refresh)
+              refetch();
+            } else {
+              throw new Error(response.error || t('messages.updateFailed'));
+            }
+          } catch (error) {
+            toastError(t('messages.updateFailed'), (error as Error).message);
           }
         }
         break;
+        
       case 'edit':
         router.push(`/orders/${numericOrderNumber}/edit`);
         break;
+        
       default:
         console.log('Unknown action:', action);
     }
-  }, [orders, router, handlePickupOrder, handleReturnOrder, handleCancelOrder, toastSuccess, toastError]);
+  }, [data?.orders, router, toastSuccess, toastError, refetch]);
 
+  // ============================================================================
+  // TRANSFORM DATA FOR UI
+  // ============================================================================
+  
+  const orderData = useMemo(() => {
+    if (!data || !data.orders) {
+      return {
+        items: [],
+        orders: [],
+        total: 0,
+        currentPage: 1,
+        totalPages: 1,
+        limit: 25,
+        hasMore: false,
+        stats: {
+          totalOrders: 0,
+          pendingOrders: 0,
+          activeOrders: 0,
+          completedOrders: 0,
+          cancelledOrders: 0,
+          totalRevenue: 0,
+          totalDeposits: 0,
+          averageOrderValue: 0,
+          ordersThisMonth: 0,
+          revenueThisMonth: 0,
+          activeRentals: 0,
+          overdueRentals: 0
+        }
+      };
+    }
 
-  // Debug stats and pagination
-  console.log('Client orders page - stats received:', stats);
-  console.log('Client orders page - orders count:', orders.length);
-  console.log('Client orders page - pagination:', pagination);
-
-  // Transform the data to match the refactored Orders component interface - memoized to prevent unnecessary re-renders
-  const orderData = useMemo(() => ({
-    orders: orders.map(order => ({
+    const mappedOrders = data.orders.map(order => ({
       id: order.id,
       orderNumber: order.orderNumber,
       orderType: order.orderType,
       status: order.status,
-      customerId: order.customer?.id || '',
-      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
-      customerPhone: order.customer?.phone || '',
-      outletId: order.outlet?.id || '',
-      outletName: order.outlet?.name || '',
-      merchantName: order.outlet?.merchant?.name || 'Unknown',
+      customerId: order.customer?.id || (order as any).customerId || '',
+      customerName: (order as any).customerName || 
+                   (order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown'),
+      customerPhone: (order as any).customerPhone || order.customer?.phone || '',
+      outletId: order.outlet?.id || (order as any).outletId || '',
+      outletName: (order as any).outletName || order.outlet?.name || 'Unknown',
+      merchantName: (order as any).merchantName || order.outlet?.merchant?.name || 'Unknown',
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
-      pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : undefined,
-      returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : undefined,
-      pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : undefined,
-      returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : undefined,
+      pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : null,
+      returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : null,
+      pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : null,
+      returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : null,
       createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
       updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
-      orderItems: [], // Not available in OrderSearchResult
-      payments: [] // Not available in OrderSearchResult
-    })),
-    total: pagination.total,
-    currentPage: pagination.currentPage,
-    totalPages: pagination.totalPages,
-    limit: pagination.limit,
-    hasMore: pagination.currentPage < pagination.totalPages,
-    stats: {
-      totalOrders: stats?.stats?.totalOrders || 0,
-      pendingOrders: stats?.stats?.pendingOrders || 0,
-      activeOrders: stats?.stats?.activeRentals || 0, // Map activeRentals to activeOrders
-      completedOrders: stats?.stats?.completedOrders || 0,
-      cancelledOrders: stats?.stats?.cancelledOrders || 0,
-      totalRevenue: stats?.stats?.totalRevenue || 0,
-      totalDeposits: stats?.stats?.totalDeposits || 0,
-      averageOrderValue: stats?.stats?.averageOrderValue || 0,
-      ordersThisMonth: stats?.stats?.ordersThisMonth || 0,
-      revenueThisMonth: stats?.stats?.revenueThisMonth || 0,
-      activeRentals: stats?.stats?.activeRentals || 0,
-      overdueRentals: stats?.stats?.overdueRentals || 0
-    }
-  }), [orders, pagination.total, pagination.currentPage, pagination.totalPages, pagination.limit, stats]);
+      orderItems: [],
+      payments: [],
+      // Additional fields required by OrderSearchResult
+      isReadyToDeliver: false,
+      customer: order.customer ? {
+        id: order.customer.id,
+        firstName: order.customer.firstName,
+        lastName: order.customer.lastName,
+        email: order.customer.email || null,
+        phone: order.customer.phone
+      } : null,
+      outlet: order.outlet || null
+    }));
 
-  // Create filters object for the Orders component
-  const filters = useMemo(() => ({
-    search: searchTerm,
-    status: statusFilter !== 'all' ? statusFilter as any : undefined,
-    orderType: orderTypeFilter !== 'all' ? orderTypeFilter as any : undefined,
-    outletId: outletFilter !== 'all' ? parseInt(outletFilter) : undefined,
-    dateRange: dateRangeFilter,
-    sortBy,
-    sortOrder
-  }), [searchTerm, statusFilter, orderTypeFilter, outletFilter, dateRangeFilter, sortBy, sortOrder]);
+    return {
+      items: mappedOrders, // Required by BaseSearchResult
+      orders: mappedOrders, // Alias for backward compatibility
+      total: data.total,
+      currentPage: data.currentPage,
+      totalPages: data.totalPages,
+      limit: data.limit,
+      hasMore: data.hasMore,
+      stats: {
+        totalOrders: 0,
+        pendingOrders: 0,
+        activeOrders: 0,
+        completedOrders: 0,
+        cancelledOrders: 0,
+        totalRevenue: 0,
+        totalDeposits: 0,
+        averageOrderValue: 0,
+        ordersThisMonth: 0,
+        revenueThisMonth: 0,
+        activeRentals: 0,
+        overdueRentals: 0
+      }
+    };
+  }, [data]);
 
-  if (loading) {
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+
+  if (loading && !data) {
     return (
-      <PageWrapper>
+      <PageWrapper spacing="none">
         <PageHeader>
-          <PageTitle>Order Management</PageTitle>
-          <p className="text-sm text-gray-600">Manage orders and rental/sale transactions</p>
+          <PageTitle>{t('title')}</PageTitle>
+          <p className="text-sm text-gray-600">{t('title')}</p>
         </PageHeader>
-        <PageContent>
-          <OrdersLoading />
-        </PageContent>
+        <OrdersLoading />
       </PageWrapper>
     );
   }
 
   return (
-    <>
-    <PageWrapper>
-      <PageHeader>
+    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
-            <PageTitle>Order Management</PageTitle>
-            <p className="text-sm text-gray-600">Manage orders and rental/sale transactions</p>
+            <PageTitle>{t('title')}</PageTitle>
+            <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {canExport && (
-              <button 
+            {/* Export feature - temporarily hidden, will be enabled in the future */}
+            {/* {canExport && (
+              <Button
                 onClick={() => {
-                  // TODO: Implement export functionality
-                  toastSuccess('Export Feature', 'Export functionality coming soon!');
+                  toastSuccess(tc('labels.info'), tc('messages.comingSoon'));
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
+                variant="default"
+                size="sm"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                Export
-              </button>
-            )}
-            <button 
+                <Download className="w-4 h-4 mr-2" />
+                {tc('buttons.export')}
+              </Button>
+            )} */}
+            <Button 
               onClick={() => router.push('/orders/create')}
-              className="bg-green-600 hover:bg-green-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
+              variant="default"
+              size="sm"
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Create Order
-            </button>
+              <Plus className="w-4 h-4 mr-2" />
+              {t('createOrder')}
+            </Button>
           </div>
         </div>
       </PageHeader>
 
-      <PageContent>
+      <div className="flex-1 min-h-0">
         <Orders
-          data={{ 
-            orders: orderData.orders as any,
-            total: orderData.total,
-            hasMore: orderData.hasMore,
-            page: pagination.currentPage,
-            limit: pagination.limit,
-            totalPages: pagination.totalPages,
-            filters
-          }}
+          data={orderData}
           filters={filters}
           onFiltersChange={handleFiltersChange}
           onSearchChange={handleSearchChange}
@@ -231,9 +487,13 @@ export default function OrdersPage() {
           onOrderAction={handleOrderAction}
           onPageChange={handlePageChange}
           onSort={handleSort}
+          onDateRangeChange={handleDateRangeChange}     // 🆕 Modern dropdown filter
+          activeQuickFilter={activeQuickFilter}          // 🆕 Active filter state
+          showQuickFilters={true}                         // 🆕 Show date range filter
+          filterStyle="dropdown"                          // 🆕 Dropdown style (Shopify/Stripe)
+          showStats={false}
         />
-      </PageContent>
+      </div>
     </PageWrapper>
-  </>
   );
-} 
+}

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
-import { Badge } from '../../../ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
+import { Badge } from '@rentalshop/ui';
 import { CustomerStats as CustomerStatsType, TopCustomer } from '@rentalshop/types';
 
 interface CustomerStatsProps {
@@ -122,7 +122,7 @@ export function CustomerStats({ stats }: CustomerStatsProps) {
                 <div className="flex items-center space-x-2">
                   <div className="w-20 bg-blue-200 dark:bg-blue-700 rounded-full h-2">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full" 
+                      className="bg-blue-700 h-2 rounded-full" 
                       style={{ width: `${(stats.newCustomersThisMonth / stats.totalCustomers) * 100}%` }}
                     />
                   </div>

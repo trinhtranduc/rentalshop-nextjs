@@ -128,17 +128,19 @@ export default function AdminLoginPage() {
                   className="appearance-none relative block w-full pl-10 pr-10 py-2 border border-border rounded-lg placeholder-text-tertiary text-text-primary bg-bg-card focus:outline-none focus:ring-2 focus:ring-action-primary focus:border-transparent focus:z-10 sm:text-sm"
                   placeholder="Enter your password"
                 />
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   onClick={() => setViewPass(!viewPass)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 h-full px-3"
                 >
                   {viewPass ? (
                     <EyeOff className="h-5 w-5 text-text-tertiary hover:text-text-secondary" />
                   ) : (
                     <Eye className="h-5 w-5 text-text-tertiary hover:text-text-secondary" />
                   )}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

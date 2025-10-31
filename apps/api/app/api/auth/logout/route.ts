@@ -1,20 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { verifyTokenSimple } from '@rentalshop/auth';
+import { db } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
+/**
+ * POST /api/auth/logout
+ * Logout user and invalidate their session (implements single session enforcement)
+ */
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Implement logout logic
-    // 1. Invalidate JWT token (add to blacklist)
-    // 2. Clear session data
-    // 3. Log the logout event
+    // Extract token from Authorization header
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     
-    console.log('User logout requested');
+    if (!token) {
+      return NextResponse.json(
+        ResponseBuilder.error('ACCESS_TOKEN_REQUIRED'),
+        { status: 401 }
+      );
+    }
+
+    // Verify token and get user info including sessionId
+    const user = await verifyTokenSimple(token);
     
-    return NextResponse.json({
-      success: true,
-      message: 'Logged out successfully'
-    });
+    if (!user) {
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_TOKEN'),
+        { status: 401 }
+      );
+    }
+
+    // ✅ Invalidate the session (single session enforcement)
+    if (user.sessionId) {
+      await db.sessions.invalidateSession(user.sessionId);
+      console.log(`Session ${user.sessionId} invalidated for user ${user.id}`);
+    }
+    
+    return NextResponse.json(
+      ResponseBuilder.success('LOGOUT_SUCCESS', {
+        message: 'Logged out successfully'
+      })
+    );
     
   } catch (error: any) {
     console.error('Logout error:', error);

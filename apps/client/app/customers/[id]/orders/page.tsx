@@ -6,22 +6,12 @@ import {
   Button, 
   CustomerPageHeader, 
   CustomerOrdersSummaryCard,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  OrderFilters
+  Orders,
+  PageWrapper,
+  Breadcrumb
 } from '@rentalshop/ui';
-import { 
-  ArrowLeft,
-  ShoppingBag,
-  Calendar,
-  DollarSign,
-  Package,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown
-} from 'lucide-react';
+import type { BreadcrumbItem } from '@rentalshop/ui';
+import { ArrowLeft } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
 import { ordersApi } from "@rentalshop/utils";
 import { useAuth } from '@rentalshop/hooks';
@@ -215,15 +205,15 @@ export default function CustomerOrdersPage() {
   };
 
   // Handle order action
-  const handleOrderAction = (action: string, orderId: number) => {
-    console.log('🔍 CustomerOrdersPage: Order action:', action, orderId);
+  const handleOrderAction = (action: string, orderNumber: string) => {
+    console.log('🔍 CustomerOrdersPage: Order action:', action, orderNumber);
     
     switch (action) {
       case 'view':
-        router.push(`/orders/${orderId}`);
+        router.push(`/orders/${orderNumber}`);
         break;
       case 'edit':
-        router.push(`/orders/${orderId}/edit`);
+        router.push(`/orders/${orderNumber}/edit`);
         break;
       default:
         console.log('🔍 CustomerOrdersPage: Unknown order action:', action);
@@ -233,8 +223,7 @@ export default function CustomerOrdersPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <PageWrapper>
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
@@ -244,16 +233,14 @@ export default function CustomerOrdersPage() {
               <div className="h-32 bg-gray-200 rounded"></div>
             </div>
           </div>
-        </div>
-      </div>
+      </PageWrapper>
     );
   }
 
   // Error state
   if (!customer) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <PageWrapper>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Customer Not Found</h1>
             <p className="text-gray-600 mb-6">The customer you're looking for doesn't exist or has been removed.</p>
@@ -262,22 +249,21 @@ export default function CustomerOrdersPage() {
               Back to Customers
             </Button>
           </div>
-        </div>
-      </div>
+      </PageWrapper>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <CustomerPageHeader
-          title={`${customer.firstName} ${customer.lastName} - Orders`}
-          subtitle="View and manage customer orders"
-          onBack={() => router.push('/customers')}
-          backText="Back to Customers"
-        />
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Customers', href: '/customers' },
+    { label: `${customer.firstName} ${customer.lastName}`, href: `/customers/${id}` },
+    { label: 'Orders' }
+  ];
 
+  return (
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
         {/* Customer Summary Card */}
         <div className="mb-8">
           <CustomerOrdersSummaryCard 
@@ -291,193 +277,31 @@ export default function CustomerOrdersPage() {
           />
         </div>
 
-        {/* Order Filters - Use the professional OrderFilters component */}
-        <div className="mb-8">
-          <OrderFilters
+        {/* Orders - Use shared Orders component for consistent UI */}
+        <Orders
+          data={{
+            orders: orders as any,
+            total: totalOrders,
+            hasMore: currentPage < totalPages,
+            page: currentPage,
+            currentPage: currentPage,
+            limit: 20,
+            totalPages: totalPages,
+            filters: filters,
+            stats: undefined
+          }}
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onSearchChange={handleSearchChange}
             onClearFilters={handleClearFilters}
-          />
-        </div>
-
-        {/* Orders Table Card */}
-        <div className="mb-8">
-          <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-                Customer Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {isLoadingOrders ? (
-                <div className="animate-pulse">
-                  <div className="h-64 bg-gray-200 rounded"></div>
-                </div>
-              ) : (
-                <div className="overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-sm">
-                          Order Number
-                        </th>
-                        <th 
-                          className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-sm cursor-pointer hover:bg-gray-100 transition-colors"
-                          onClick={() => {
-                            const newSortBy = 'status';
-                            const newSortOrder = filters.sortBy === newSortBy && filters.sortOrder === 'desc' ? 'asc' : 'desc';
-                            handleFiltersChange({ sortBy: newSortBy, sortOrder: newSortOrder });
-                          }}
-                        >
-                          <div className="flex items-center gap-1">
-                            Status
-                            {filters.sortBy === 'status' && (
-                              filters.sortOrder === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
-                            )}
-                          </div>
-                        </th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-sm">
-                          Amount
-                        </th>
-                        <th 
-                          className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-sm cursor-pointer hover:bg-gray-100 transition-colors"
-                          onClick={() => {
-                            const newSortBy = 'createdAt';
-                            const newSortOrder = filters.sortBy === newSortBy && filters.sortOrder === 'desc' ? 'asc' : 'desc';
-                            handleFiltersChange({ sortBy: newSortBy, sortOrder: newSortOrder });
-                          }}
-                        >
-                          <div className="flex items-center gap-1">
-                            Created
-                            {filters.sortBy === 'createdAt' && (
-                              filters.sortOrder === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-sm cursor-pointer hover:bg-gray-100 transition-colors"
-                          onClick={() => {
-                            const newSortBy = 'pickupPlanAt';
-                            const newSortOrder = filters.sortBy === newSortBy && filters.sortOrder === 'desc' ? 'asc' : 'desc';
-                            handleFiltersChange({ sortBy: newSortBy, sortOrder: newSortOrder });
-                          }}
-                        >
-                          <div className="flex items-center gap-1">
-                            Pickup Date
-                            {filters.sortBy === 'pickupPlanAt' && (
-                              filters.sortOrder === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-sm cursor-pointer hover:bg-gray-100 transition-colors"
-                          onClick={() => {
-                            const newSortBy = 'returnPlanAt';
-                            const newSortOrder = filters.sortBy === newSortBy && filters.sortOrder === 'desc' ? 'asc' : 'desc';
-                            handleFiltersChange({ sortBy: newSortBy, sortOrder: newSortOrder });
-                          }}
-                        >
-                          <div className="flex items-center gap-1">
-                            Return Date
-                            {filters.sortBy === 'returnPlanAt' && (
-                              filters.sortOrder === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
-                            )}
-                          </div>
-                        </th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-sm">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {Array.isArray(orders) && orders.map((order) => (
-                        <tr key={order.id} className="hover:bg-gray-50">
-                          <td className="p-4 align-middle text-sm font-medium text-gray-900">
-                            {order.orderNumber}
-                          </td>
-                          <td className="p-4 align-middle">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              order.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
-                              order.status === 'PICKUPED' ? 'bg-indigo-100 text-indigo-800' :
-                              order.status === 'RETURNED' ? 'bg-[#0F9347] text-white' :
-                              order.status === 'COMPLETED' ? 'bg-purple-100 text-purple-800' :
-                              order.status === 'CANCELLED' ? 'bg-[#b22222] text-white' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {order.status}
-                            </span>
-                          </td>
-                          <td className="p-4 align-middle text-sm text-gray-900">
-                            ${order.totalAmount.toLocaleString()}
-                          </td>
-                          <td className="p-4 align-middle text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="p-4 align-middle text-sm text-gray-500">
-                            {order.pickupPlanAt ? new Date(order.pickupPlanAt).toLocaleDateString() : '-'}
-                          </td>
-                          <td className="p-4 align-middle text-sm text-gray-500">
-                            {order.returnPlanAt ? new Date(order.returnPlanAt).toLocaleDateString() : '-'}
-                          </td>
-                          <td className="p-4 align-middle text-sm font-medium">
-                            <button
-                              onClick={() => handleOrderAction('view', order.id)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-               
-               {/* No Orders State */}
-               {!isLoadingOrders && Array.isArray(orders) && orders.length === 0 && (
-                 <div className="text-center py-12">
-                   <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders Found</h3>
-                   <p className="text-gray-600 mb-6">
-                      {filters.search || filters.status !== undefined || filters.orderType !== undefined || filters.outlet || filters.dateRange?.start || filters.dateRange?.end
-                       ? 'No orders match your current filters. Try adjusting your search criteria.'
-                       : 'This customer hasn\'t placed any orders yet.'
-                     }
-                   </p>
-
-                 </div>
-               )}
-             </CardContent>
-          </Card>
-        </div>
-
-        {/* Orders Pagination - Outside Cards */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between py-4">
-            <div className="text-sm text-gray-700">
-              Showing page {currentPage} of {totalPages} ({totalOrders} total orders)
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+          onOrderAction={handleOrderAction}
+          onPageChange={handlePageChange}
+          onSort={(column: string) => {
+            const newSortOrder = filters.sortBy === column && filters.sortOrder === 'desc' ? 'asc' : 'desc';
+            handleFiltersChange({ sortBy: column, sortOrder: newSortOrder });
+          }}
+          showStats={false}
+        />
+    </PageWrapper>
   );
 }

@@ -24,6 +24,7 @@ import type {
 function generatePricingFromBasePrice(basePrice: number) {
   const monthlyPrice = basePrice;
   const quarterlyPrice = monthlyPrice * 3;
+  const sixMonthsPrice = monthlyPrice * 6;
   const yearlyPrice = monthlyPrice * 12;
   
   return {
@@ -36,6 +37,11 @@ function generatePricingFromBasePrice(basePrice: number) {
       price: quarterlyPrice,
       discount: 5, // 5% discount for quarterly
       savings: quarterlyPrice * 0.05
+    },
+    sixMonths: {
+      price: sixMonthsPrice,
+      discount: 10, // 10% discount for 6 months
+      savings: sixMonthsPrice * 0.10
     },
     yearly: {
       price: yearlyPrice,
@@ -83,6 +89,11 @@ function generatePlanPricing(basePrice: number) {
       discount: 5,
       savings: basePrice * 3 * 0.05
     },
+    sixMonths: {
+      price: basePrice * 6 * 0.90, // 10% discount for 6 months
+      discount: 10,
+      savings: basePrice * 6 * 0.10
+    },
     yearly: {
       price: basePrice * 12 * 0.85, // 15% discount for yearly
       discount: 15,
@@ -117,7 +128,7 @@ function transformPlanFromDb(plan: any): Plan {
 export function calculatePlanPricing(plan: Plan): Record<BillingInterval, number> {
   const pricing: Record<BillingInterval, number> = {} as any;
   
-  const intervals: BillingInterval[] = ['month', 'quarter', 'semiAnnual', 'year'];
+  const intervals: BillingInterval[] = ['monthly', 'quarterly', 'sixMonths', 'yearly'];
   
   for (const interval of intervals) {
     pricing[interval] = calculateSubscriptionPrice(plan, interval);
@@ -130,16 +141,16 @@ export function calculatePeriodEnd(startDate: Date, billingInterval: BillingInte
   const endDate = new Date(startDate);
   
   switch (billingInterval) {
-    case 'month':
+    case 'monthly':
       endDate.setMonth(endDate.getMonth() + 1);
       break;
-    case 'quarter':
+    case 'quarterly':
       endDate.setMonth(endDate.getMonth() + 3);
       break;
-    case 'semiAnnual':
+    case 'sixMonths':
       endDate.setMonth(endDate.getMonth() + 6);
       break;
-    case 'year':
+    case 'yearly':
       endDate.setFullYear(endDate.getFullYear() + 1);
       break;
     default:
@@ -172,7 +183,6 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
@@ -205,7 +215,6 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
@@ -234,6 +243,7 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
 // ============================================================================
 
 export async function searchSubscriptions(filters: {
+  search?: string;
   merchantId?: number;
   planId?: number;
   status?: string;
@@ -243,6 +253,16 @@ export async function searchSubscriptions(filters: {
   offset?: number;
 }): Promise<{ subscriptions: Subscription[]; total: number; hasMore: boolean }> {
   const where: any = {};
+
+  // Apply search filter (merchant name)
+  if (filters.search) {
+    where.merchant = {
+      name: {
+        contains: filters.search,
+        mode: 'insensitive'
+      }
+    };
+  }
 
   // Apply filters
   if (filters.merchantId) {
@@ -275,7 +295,6 @@ export async function searchSubscriptions(filters: {
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
@@ -355,7 +374,7 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
   }
 
   // Calculate pricing based on billing interval
-  const billingInterval = data.billingInterval || 'month';
+  const billingInterval = data.billingInterval || 'monthly';
   const convertedPlan = convertPrismaPlanToPlan(plan);
   const amount = calculateSubscriptionPrice(convertedPlan, billingInterval);
   
@@ -379,7 +398,6 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
@@ -390,7 +408,7 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
   await prisma.merchant.update({
     where: { id: merchant.id },
     data: {
-      subscriptionStatus: subscription.status
+      // // subscriptionStatus: (removed - use subscription.status) (removed - use subscription.status) subscription.status
     }
   });
 
@@ -456,7 +474,7 @@ export async function getPlanById(planId: number): Promise<Plan | null> {
 export async function changePlan(
   subscriptionId: number, 
   newPlanId: number, 
-  billingInterval: BillingInterval = 'month'
+  billingInterval: BillingInterval = 'monthly'
 ): Promise<Subscription> {
   const subscription = await prisma.subscription.findUnique({
     where: { id: subscriptionId }
@@ -484,10 +502,10 @@ export async function changePlan(
   // Calculate period duration in days based on billing interval
   const getPeriodDays = (interval: BillingInterval): number => {
     switch (interval) {
-      case 'month': return 30;
-      case 'quarter': return 90;
-      case 'semiAnnual': return 180;
-      case 'year': return 365;
+      case 'monthly': return 30;
+      case 'quarterly': return 90;
+      case 'sixMonths': return 180;
+      case 'yearly': return 365;
       default: return 30;
     }
   };
@@ -496,7 +514,7 @@ export async function changePlan(
   const newPeriodEnd = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000);
 
   const updatedSubscription = await prisma.subscription.update({
-    where: { id: subscriptionId },
+    where: { merchantId: subscription.merchantId },
     data: {
       planId: plan.id,
       interval: billingInterval,
@@ -511,18 +529,13 @@ export async function changePlan(
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
     }
   });
 
-  // Update merchant's subscription status
-  await prisma.merchant.update({
-    where: { id: subscription.merchantId },
-    data: { subscriptionStatus: updatedSubscription.status }
-  });
+  // No need to update merchant - subscription.status is the single source of truth
 
   return {
     id: updatedSubscription.id,
@@ -562,7 +575,6 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
@@ -598,7 +610,6 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
@@ -635,7 +646,6 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
       id: true,
             name: true,
             email: true,
-            subscriptionStatus: true
           }
         },
         plan: true
@@ -644,7 +654,7 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
 
     const result: Subscription = {
       id: subscription.id,
-      merchantId: subscription.merchantId,
+      merchantId: subscriptionId,
       planId: subscription.planId,
       status: subscription.status as SubscriptionStatus,
       billingInterval: subscription.interval as BillingInterval,
@@ -709,7 +719,6 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
@@ -742,7 +751,6 @@ export async function getSubscriptionById(id: number): Promise<Subscription | nu
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
@@ -788,7 +796,6 @@ export async function updateSubscription(
           id: true,
           name: true,
           email: true,
-          subscriptionStatus: true
         }
       },
       plan: true
@@ -1002,7 +1009,7 @@ export async function renewSubscription(
 
   // 3. Calculate new period (extend by 1 month)
   const newPeriodStart = subscription.currentPeriodEnd;
-  const newPeriodEnd = calculatePeriodEnd(newPeriodStart, 'month');
+  const newPeriodEnd = calculatePeriodEnd(newPeriodStart, 'monthly');
 
   // 4. Use database transaction to ensure atomicity
   const result = await prisma.$transaction(async (tx) => {
@@ -1010,7 +1017,7 @@ export async function renewSubscription(
     const payment = await tx.payment.create({
       data: {
         subscriptionId: subscription.id,
-        merchantId: subscription.merchantId,
+        merchantId: subscriptionId,
         amount: subscription.amount,
         currency: subscription.currency,
         method: paymentData.method,
@@ -1025,7 +1032,7 @@ export async function renewSubscription(
 
     // Update subscription period
     const updatedSubscription = await tx.subscription.update({
-      where: { id: subscriptionId },
+      where: { merchantId: subscription.merchantId },
       data: {
         currentPeriodStart: newPeriodStart,
         currentPeriodEnd: newPeriodEnd,
@@ -1038,7 +1045,6 @@ export async function renewSubscription(
             id: true,
             name: true,
             email: true,
-            subscriptionStatus: true
           }
         },
         plan: true
@@ -1049,7 +1055,7 @@ export async function renewSubscription(
     await tx.merchant.update({
       where: { id: subscription.merchantId },
       data: {
-        subscriptionStatus: 'active',
+        // subscriptionStatus removed - use subscription.status instead
         lastActiveAt: new Date()
       }
     });
@@ -1180,6 +1186,16 @@ export const simplifiedSubscriptions = {
     // Build where clause
     const where: any = {};
     
+    // Apply search filter (merchant name)
+    if (whereFilters.search) {
+      where.merchant = {
+        name: {
+          contains: whereFilters.search,
+          mode: 'insensitive'
+        }
+      };
+    }
+    
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.planId) where.planId = whereFilters.planId;
     if (whereFilters.isActive !== undefined) {
@@ -1223,6 +1239,34 @@ export const simplifiedSubscriptions = {
       limit,
       hasMore: skip + limit < total
     };
+  },
+
+  /**
+   * Find first subscription matching criteria (simplified API)
+   */
+  findFirst: async (whereClause: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.subscription.findFirst({
+      where,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        plan: { select: { id: true, name: true } },
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        }
+      }
+    });
+  },
+
+  /**
+   * Get subscription statistics (simplified API)
+   */
+  getStats: async (whereClause?: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.subscription.count({ where });
   },
 
   /**

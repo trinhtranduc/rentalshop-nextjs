@@ -8,6 +8,12 @@ export interface PageWrapperProps {
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '7xl' | 'full';
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
   spacing?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+  /**
+   * Scroll behavior:
+   * - 'page': Full page scrolls (default) - for detail pages, long content
+   * - 'content': Fixed page with scrollable content inside - for tables, lists
+   */
+  scrollMode?: 'page' | 'content';
 }
 
 const maxWidthClasses = {
@@ -22,10 +28,10 @@ const maxWidthClasses = {
 
 const paddingClasses = {
   none: '',
-  sm: 'px-4 py-6',
-  md: 'px-6 py-8', 
-  lg: 'px-8 py-10',
-  xl: 'px-10 py-12'
+  sm: 'px-4 py-4',
+  md: 'px-6 py-6', 
+  lg: 'px-8 py-8',
+  xl: 'px-10 py-10'
 };
 
 const spacingClasses = {
@@ -41,9 +47,33 @@ export function PageWrapper({
   className,
   container = true,
   maxWidth = '7xl',
-  padding = 'md',
-  spacing = 'md'
+  padding = 'sm',
+  spacing = 'sm',
+  scrollMode = 'page'
 }: PageWrapperProps) {
+  // For 'content' scroll mode, we need a fixed height container with overflow
+  if (scrollMode === 'content') {
+    return (
+      <div className="h-screen overflow-y-auto">
+        <div className={cn(
+          // Base container
+          container && 'mx-auto',
+          // Max width
+          maxWidth !== 'full' && maxWidthClasses[maxWidth],
+          // Padding
+          padding !== 'none' && paddingClasses[padding],
+          // Spacing between children
+          spacing !== 'none' && spacingClasses[spacing],
+          // Custom classes
+          className
+        )}>
+          {children}
+        </div>
+      </div>
+    );
+  }
+  
+  // For 'page' scroll mode (default), just return normal container
   return (
     <div className={cn(
       // Base container
@@ -71,7 +101,7 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div className={cn('mb-8', className)}>
+    <div className={cn('mb-4', className)}>
       {children}
     </div>
   );
@@ -108,7 +138,7 @@ export function PageContent({
   className?: string;
 }) {
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-4', className)}>
       {children}
     </div>
   );

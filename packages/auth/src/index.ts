@@ -7,6 +7,9 @@ export * from './jwt';
 export * from './core';
 export * from './middleware';
 
+// Export platform access control (simple helpers)
+export * from './platform-access';
+
 // NEW: Unified auth wrapper (replaces all scattered auth middleware)
 export * from './unified-auth';
 

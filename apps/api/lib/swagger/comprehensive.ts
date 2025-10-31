@@ -1,17 +1,42 @@
 /**
  * Comprehensive Swagger documentation for all Rental Shop APIs
  */
-import { getApiUrl } from '@rentalshop/utils';
+import { getApiUrl, getCurrentEnvironment } from '@rentalshop/utils';
+// Import individual swagger configs
+import { userSwaggerConfig } from './users';
+import { orderSwaggerConfig } from './orders';
+import { categorySwaggerConfig } from './categories';
+import { planSwaggerConfig } from './plans';
+import { merchantSwaggerConfig } from './merchants';
+import { outletSwaggerConfig } from './outlets';
+import { subscriptionSwaggerConfig } from './subscriptions';
+import { calendarSwaggerConfig } from './calendar';
+import { productAvailabilitySwagger } from './products';
+
+const environment = getCurrentEnvironment();
+const apiUrl = getApiUrl();
+
+const getServerDescription = (env: string) => {
+  switch (env) {
+    case 'production':
+      return 'Production Railway server';
+    case 'development':
+      return 'Development Railway server';
+    default:
+      return 'Railway development server';
+  }
+};
 
 export const comprehensiveSwaggerConfig = {
   openapi: '3.0.0',
   info: {
     title: 'Rental Shop API',
     description: 'Complete API documentation for the Rental Shop system including authentication, products, analytics, and more',
-    version: '1.0.0',
+    version: '2.0.0',
     contact: {
       name: 'Rental Shop API Support',
-      email: 'support@rentalshop.com'
+      email: 'support@rentalshop.com',
+      url: 'https://rentalshop.com/support'
     },
     license: {
       name: 'MIT',
@@ -20,20 +45,50 @@ export const comprehensiveSwaggerConfig = {
   },
   servers: [
     {
-      url: getApiUrl(),
-      description: 'API server'
+      url: 'https://dev-apis-development.up.railway.app',
+      description: 'Development Railway server (Recommended for Local)'
+    },
+    {
+      url: 'https://apis-development.up.railway.app',
+      description: 'Production Railway server'
+    },
+    {
+      url: apiUrl,
+      description: getServerDescription(environment)
+    },
+    {
+      url: 'http://localhost:3002',
+      description: 'Local development server (Fallback)'
     }
   ],
   tags: [
     { name: 'Authentication', description: 'User authentication and authorization endpoints' },
+    { name: 'User Management', description: 'User CRUD operations and management' },
+    { name: 'User Roles', description: 'Role-based access control operations' },
     { name: 'Products', description: 'Product management operations' },
     { name: 'Product Search', description: 'Product search and filtering operations' },
     { name: 'Product Barcode', description: 'Barcode-based product operations' },
+    { name: 'Orders', description: 'Order management operations' },
+    { name: 'Order Status', description: 'Order status management and updates' },
+    { name: 'Order Analytics', description: 'Order analytics and reporting' },
     { name: 'Customers', description: 'Customer management operations' },
     { name: 'Customer Search', description: 'Customer search and filtering operations' },
+    { name: 'Categories', description: 'Category management operations' },
+    { name: 'Plans', description: 'Subscription plan management' },
+    { name: 'Merchants', description: 'Merchant management operations' },
+    { name: 'Outlets', description: 'Outlet management operations' },
+    { name: 'Subscriptions', description: 'Subscription management operations' },
+    { name: 'Calendar', description: 'Calendar and scheduling endpoints' },
     { name: 'Analytics', description: 'Analytics and reporting endpoints' },
     { name: 'Mobile', description: 'Mobile-optimized endpoints' },
     { name: 'System', description: 'System and utility endpoints' }
+  ],
+  security: [
+    { bearerAuth: [] },
+    { clientPlatformHeader: [] },
+    { deviceTypeHeader: [] },
+    { appVersionHeader: [] },
+    { userAgentHeader: [] }
   ],
   paths: {
     // Authentication Endpoints
@@ -1453,7 +1508,90 @@ export const comprehensiveSwaggerConfig = {
           }
         }
       }
-    }
+    },
+
+    // User Management Endpoints
+    '/api/users': {
+      get: {
+        tags: ['User Management'],
+        summary: 'Get users with filtering and pagination',
+        description: 'Retrieve users with various filters including merchant, outlet, role, and status',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'merchantId',
+            in: 'query',
+            description: 'Filter by specific merchant',
+            schema: { type: 'string' }
+          },
+          {
+            name: 'role',
+            in: 'query',
+            description: 'Filter by user role',
+            schema: { 
+              type: 'string',
+              enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']
+            }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Users retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        users: {
+                          type: 'array',
+                          items: { $ref: '#/components/schemas/User' }
+                        },
+                        total: { type: 'integer' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    // Order Management Endpoints - Merge from orderSwaggerConfig
+    ...orderSwaggerConfig.paths,
+
+    // User Management Endpoints - Merge from userSwaggerConfig (excluding duplicates)
+    ...Object.fromEntries(
+      Object.entries(userSwaggerConfig.paths).filter(([path]) => 
+        !['/api/auth/register', '/api/auth/login'].includes(path)
+      )
+    ),
+
+    // Category Management Endpoints - Merge from categorySwaggerConfig
+    ...categorySwaggerConfig.paths,
+
+    // Plan Management Endpoints - Merge from planSwaggerConfig
+    ...planSwaggerConfig.paths,
+
+    // Merchant Management Endpoints - Merge from merchantSwaggerConfig
+    ...merchantSwaggerConfig.paths,
+
+    // Outlet Management Endpoints - Merge from outletSwaggerConfig
+    ...outletSwaggerConfig.paths,
+
+    // Subscription Management Endpoints - Merge from subscriptionSwaggerConfig
+    ...subscriptionSwaggerConfig.paths,
+
+    // Calendar Management Endpoints - Merge from calendarSwaggerConfig
+    ...calendarSwaggerConfig.paths,
+
+    // Product Availability Endpoints - Merge from productAvailabilitySwagger
+    ...productAvailabilitySwagger
   },
   components: {
     securitySchemes: {
@@ -1462,20 +1600,33 @@ export const comprehensiveSwaggerConfig = {
         scheme: 'bearer',
         bearerFormat: 'JWT',
         description: 'JWT token obtained from login endpoint'
+      },
+      clientPlatformHeader: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-Client-Platform',
+        description: 'Client platform (mobile/web)'
+      },
+      deviceTypeHeader: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-Device-Type',
+        description: 'Device type (ios/android/browser)'
+      },
+      appVersionHeader: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-App-Version',
+        description: 'App version (for mobile)'
+      },
+      userAgentHeader: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'User-Agent',
+        description: 'Client user agent'
       }
     },
     schemas: {
-      User: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          email: { type: 'string', format: 'email' },
-          name: { type: 'string' },
-          role: { type: 'string', enum: ['user', 'admin', 'merchant'] },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' }
-        }
-      },
       Product: {
         type: 'object',
         properties: {
@@ -1654,32 +1805,6 @@ export const comprehensiveSwaggerConfig = {
           }
         }
       },
-      ErrorResponse: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean', example: false },
-          error: { type: 'string' },
-          message: { type: 'string' },
-          details: { type: 'string' }
-        }
-      },
-      ValidationError: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean', example: false },
-          message: { type: 'string', example: 'Validation failed' },
-          errors: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                field: { type: 'string' },
-                message: { type: 'string' }
-              }
-            }
-          }
-        }
-      },
              Customer: {
          type: 'object',
          properties: {
@@ -1793,7 +1918,16 @@ export const comprehensiveSwaggerConfig = {
              }
            }
          }
-       }
+       },
+      // Merge schemas from other modules
+      ...orderSwaggerConfig.components?.schemas,
+      ...userSwaggerConfig.components?.schemas,
+      ...categorySwaggerConfig.components?.schemas,
+      ...planSwaggerConfig.components?.schemas,
+      ...merchantSwaggerConfig.components?.schemas,
+      ...outletSwaggerConfig.components?.schemas,
+      ...subscriptionSwaggerConfig.components?.schemas,
+      ...calendarSwaggerConfig.components?.schemas
     }
   }
 }; 

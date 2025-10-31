@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, OrderDetail, useToast } from '@rentalshop/ui';
+import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
+import { orderBreadcrumbs } from '@rentalshop/utils';
 
 import { ArrowLeft } from 'lucide-react';
 import { ordersApi } from '@rentalshop/utils';
+import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 import type { Order } from '@rentalshop/types';
 
@@ -13,6 +16,9 @@ export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toastSuccess, toastError } = useToast();
+  const { user } = useAuth();
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +27,7 @@ export default function OrderDetailPage() {
   const orderId = params.id as string;
   
   // Extract numeric part from order ID (e.g., "2110" from "ORD-2110")
-  const numericOrderId = orderId.replace(/^ORD-/, '');
+  const numericOrderId = orderId;//.replace(/^ORD-/, '');
 
   useEffect(() => {
     if (!orderId) return;
@@ -31,16 +37,16 @@ export default function OrderDetailPage() {
         setLoading(true);
         setError(null);
 
-        const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderId}`);
+        const result = await ordersApi.getOrderByNumber(`${numericOrderId}`);
 
         if (result.success && result.data) {
           setOrder(result.data);
         } else {
-          setError(result.error || 'Failed to fetch order details');
+          setError(result.error || tc('messages.errorLoadingData'));
         }
       } catch (err) {
         console.error('Error fetching order details:', err);
-        setError('An error occurred while fetching order details');
+        setError(tc('messages.errorLoadingData'));
       } finally {
         setLoading(false);
       }
@@ -69,13 +75,13 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        toastSuccess('Order Cancelled', 'Order has been cancelled successfully');
+        toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to cancel order');
       }
     } catch (err) {
       console.error('Error cancelling order:', err);
-      toastError('Cancellation Failed', 'Failed to cancel order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError(t('messages.updateFailed'), (err instanceof Error ? err.message : tc('labels.error')));
     } finally {
       setActionLoading(false);
     }
@@ -92,13 +98,13 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        toastSuccess('Status Updated', `Order status has been updated to ${newStatus}`);
+        toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to update order status');
       }
     } catch (err) {
       console.error('Error updating order status:', err);
-      toastError('Status Update Failed', 'Failed to update order status: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError(t('messages.updateFailed'), (err instanceof Error ? err.message : tc('labels.error')));
     } finally {
       setActionLoading(false);
     }
@@ -118,13 +124,13 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        toastSuccess('Order Pickup', 'Order has been picked up successfully!');
+        toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to pickup order');
       }
     } catch (err) {
       console.error('Error picking up order:', err);
-      toastError('Pickup Failed', 'Failed to pickup order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError(t('messages.updateFailed'), (err instanceof Error ? err.message : tc('labels.error')));
     } finally {
       setActionLoading(false);
     }
@@ -143,13 +149,13 @@ export default function OrderDetailPage() {
       if (result.success) {
         // Refresh the order data
         router.refresh();
-        toastSuccess('Order Return', 'Order has been returned successfully!');
+        toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to return order');
       }
     } catch (err) {
       console.error('Error returning order:', err);
-      toastError('Return Failed', 'Failed to return order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError(t('messages.updateFailed'), (err instanceof Error ? err.message : tc('labels.error')));
     } finally {
       setActionLoading(false);
     }
@@ -163,7 +169,7 @@ export default function OrderDetailPage() {
     notes: string;
   }) => {
     if (!order) {
-      toastError('Save Failed', 'Order not found');
+      toastError(t('messages.updateFailed'), t('messages.noOrders'));
       return;
     }
 
@@ -288,34 +294,29 @@ export default function OrderDetailPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button 
-            variant="outline" 
-            onClick={() => router.back()}
-            className="mb-4 hover:bg-gray-50 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Orders
-          </Button>
-        </div>
+  // Breadcrumb items - temporary fix
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Orders', href: '/orders' },
+    { label: order.orderNumber }
+  ];
 
-        {/* Order Detail Component */}
-        <OrderDetail
-          order={order}
-          onEdit={handleEditOrder}
-          onCancel={handleCancelOrder}
-          onStatusChange={handleStatusChange}
-          onPickup={handlePickupWrapper}
-          onReturn={handleReturnWrapper}
-          onSaveSettings={handleSaveSettings}
-          loading={actionLoading}
-          showActions={true}
-        />
-      </div>
-    </div>
+  return (
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
+
+      {/* Order Detail Component */}
+      <OrderDetail
+        order={order}
+        onEdit={handleEditOrder}
+        onCancel={handleCancelOrder}
+        onStatusChange={handleStatusChange}
+        onPickup={handlePickupWrapper}
+        onReturn={handleReturnWrapper}
+        onSaveSettings={handleSaveSettings}
+        loading={actionLoading}
+        showActions={true}
+      />
+    </PageWrapper>
   );
 }

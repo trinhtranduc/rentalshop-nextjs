@@ -1,0 +1,167 @@
+{
+  "navigation": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "login": "Login"
+  },
+  "hero": {
+    "title": "Modern Rental Shop",
+    "subtitle": "Management System",
+    "description": "Professional rental shop management solution. Manage products, customers, and orders efficiently with our modern, easy-to-use platform.",
+    "downloadApp": "Download App",
+    "tryWebPortal": "Try Web Portal"
+  },
+  "download": {
+    "title": "Available on All Platforms",
+    "description": "Access your rental shop management from anywhere, anytime",
+    "mobileApp": "Mobile App",
+    "mobileAppDesc": "Manage your rental shop on the go with our iOS and Android apps",
+    "webPortal": "Web Portal",
+    "webPortalDesc": "Access full features through any web browser with responsive design",
+    "analytics": "Analytics Dashboard",
+    "analyticsDesc": "Get insights into your business performance with detailed reports",
+    "downloadOnAppStore": "Download on App Store"
+  },
+  "features": {
+    "title": "Powerful Features",
+    "description": "Everything you need to manage your rental business efficiently",
+    "orderManagement": "Order Management",
+    "orderManagementDesc": "Create, track, and manage rental orders with ease. Monitor order status and history.",
+    "customerManagement": "Customer Management",
+    "customerManagementDesc": "Store customer information, track rental history, and manage customer relationships.",
+    "calendarScheduling": "Calendar & Scheduling",
+    "calendarSchedulingDesc": "Visual calendar to track rentals, returns, and availability of products.",
+    "financialReports": "Financial Reports",
+    "financialReportsDesc": "Generate detailed financial reports, track revenue, and analyze business performance.",
+    "duplicatePrevention": "Duplicate Order Prevention",
+    "duplicatePreventionDesc": "Smart system prevents duplicate orders and ensures accurate inventory management.",
+    "multiPlatform": "Multi-Platform Support",
+    "multiPlatformDesc": "Access your data from iOS, Android, and web platforms seamlessly."
+  },
+  "whyChoose": {
+    "title": "Why Choose AnyRent?",
+    "description": "Join hundreds of rental businesses that trust our platform",
+    "easyToUse": "Easy to Use",
+    "easyToUseDesc": "Intuitive interface designed for rental business owners, no technical skills required.",
+    "timeSaving": "Time Saving",
+    "timeSavingDesc": "Automate routine tasks and focus on growing your business instead of paperwork.",
+    "increaseRevenue": "Increase Revenue",
+    "increaseRevenueDesc": "Better inventory management and customer tracking lead to increased sales.",
+    "support": "24/7 Support",
+    "supportDesc": "Get help whenever you need it with our dedicated customer support team.",
+    "activeStores": "Active Stores",
+    "rating": "4.9/5 Rating"
+  },
+  "stats": {
+    "activeStores": "Active Stores",
+    "ordersProcessed": "Orders Processed",
+    "customerRating": "Customer Rating",
+    "supportAvailable": "Support Available"
+  },
+  "testimonials": {
+    "title": "What Our Customers Say",
+    "description": "Join hundreds of satisfied rental business owners"
+  },
+  "cta": {
+    "title": "Ready to Get Started?",
+    "description": "Join thousands of rental businesses that trust our platform"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "description": "Everything you need to know about AnyRent",
+    "items": {
+      "freeUse": {
+        "question": "Is AnyRent free to use?",
+        "answer": "AnyRent offers a free trial version. You can sign up and use basic features without any cost."
+      },
+      "multipleDevices": {
+        "question": "Can I use it on multiple devices?",
+        "answer": "Yes, AnyRent supports multiple platforms. You can use it on iOS, Android, and web browsers."
+      },
+      "dataSecure": {
+        "question": "Is my data secure?",
+        "answer": "We are committed to protecting your data. All information is encrypted and stored securely in the cloud."
+      },
+      "support": {
+        "question": "Do you provide customer support?",
+        "answer": "Yes, we provide 24/7 customer support through chat, email, and phone."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Simple Pricing",
+    "description": "Choose the plan that fits your business needs",
+    "months": {
+      "three": "3 months",
+      "six": "6 months",
+      "twelve": "12 months"
+    },
+    "plans": {
+      "freeTrial": {
+        "name": "Free Trial",
+        "subtitle": "Perfect for getting started",
+        "period": "7 days",
+        "description": "Try all features for free",
+        "buttonText": "Start Free Trial"
+      },
+      "basic": {
+        "name": "Basic Plan",
+        "subtitle": "For small rental businesses",
+        "period": "per month",
+        "description": "Perfect for small rental shops",
+        "buttonText": "Get Started",
+        "mostPopular": "Most Popular"
+      },
+      "premium": {
+        "name": "Premium Plan",
+        "subtitle": "For growing businesses",
+        "period": "per month",
+        "description": "Advanced features for larger operations",
+        "buttonText": "Get Started"
+      }
+    },
+    "features": {
+      "orderManagement": "Order Management",
+      "productManagement": "Product Management",
+      "customerManagement": "Customer Management",
+      "revenueReports": "Revenue Reports",
+      "singleAccount": "Single Account",
+      "twoAccounts": "Two Accounts",
+      "fiveAccounts": "Five Accounts",
+      "webPortal": "Web Portal",
+      "additionalAccounts": "Additional Accounts",
+      "freeUpdates": "Free Updates",
+      "mobileApp": "Mobile App"
+    },
+    "allPlansInclude": "All Plans Include",
+    "support24": "24/7 Support",
+    "dataBackup": "Data Backup",
+    "freeUpdates": "Free Updates",
+    "training": "Training"
+  },
+  "footer": {
+    "description": "Leading rental management software in Vietnam",
+    "product": {
+      "title": "Product",
+      "features": "Features",
+      "pricing": "Pricing",
+      "downloadApp": "Download App"
+    },
+    "support": {
+      "title": "Support",
+      "faq": "FAQ",
+      "documentation": "Documentation",
+      "contact": "Contact"
+    },
+    "company": {
+      "title": "Company",
+      "aboutUs": "About Us",
+      "terms": "Terms",
+      "privacy": "Privacy"
+    },
+    "copyright": "© 2024 AnyRent. All rights reserved."
+  }
+}
+

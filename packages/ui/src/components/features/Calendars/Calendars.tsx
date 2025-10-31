@@ -23,6 +23,8 @@ interface CalendarsProps {
   onLoginClick?: () => void;
   onDevLogin?: () => void;
   onRetry?: () => void;
+  initialDate?: Date; // Allow parent to control the displayed month
+  onMonthChange?: (date: Date) => void; // Notify parent when month changes
   className?: string;
 }
 
@@ -37,10 +39,25 @@ export function Calendars({
   onLoginClick,
   onDevLogin,
   onRetry,
+  initialDate,
+  onMonthChange,
   className = ''
 }: CalendarsProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(initialDate || new Date());
+  
+  // Sync with parent's initialDate changes
+  useEffect(() => {
+    if (initialDate) {
+      setCurrentDate(initialDate);
+    }
+  }, [initialDate]);
+  
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Notify parent when currentDate changes
+  useEffect(() => {
+    onMonthChange?.(currentDate);
+  }, [currentDate, onMonthChange]);
 
   // Navigation functions
   const goToPreviousMonth = useCallback(() => {
@@ -72,16 +89,17 @@ export function Calendars({
     return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
   });
 
+  // All orders are pickup orders (RESERVED and PICKUPED status only)
+  // Backend API only returns active pickup orders
   const totalPickups = monthOrders.length;
-
-  // Only pickup orders - no return orders
-  const totalReturns = 0;
+  const totalReturns = 0; // No return orders displayed
+  const totalOrders = monthOrders.length;
 
   // Loading state
   if (loading) {
     return (
       <div className={className}>
-        <CalendarHeader title="Pickup Calendar" />
+        <CalendarHeader />
         <CalendarLoading />
       </div>
     );
@@ -90,7 +108,7 @@ export function Calendars({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Calendar Header */}
-      <CalendarHeader title="Pickup Calendar">
+      <CalendarHeader>
         <CalendarNavigation
           currentDate={currentDate}
           onPreviousMonth={goToPreviousMonth}
@@ -102,6 +120,8 @@ export function Calendars({
       {/* Calendar Stats */}
       <CalendarStats
         totalPickups={totalPickups}
+        totalReturns={totalReturns}
+        totalOrders={totalOrders}
         currentMonth={currentMonth}
         currentYear={currentYear}
       />

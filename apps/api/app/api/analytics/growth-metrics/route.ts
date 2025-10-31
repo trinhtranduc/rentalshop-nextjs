@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -11,10 +11,44 @@ import { API } from '@rentalshop/constants';
  */
 export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
   try {
+    // Get query parameters for date filtering
+    const { searchParams } = new URL(request.url);
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+    
+    // Use provided dates or default to current month
     const now = new Date();
-    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    let currentMonth: Date;
+    let lastMonth: Date;
+    let lastMonthEnd: Date;
+    
+    if (startDateParam && endDateParam) {
+      // Use provided date range
+      const start = new Date(startDateParam);
+      const end = new Date(endDateParam);
+      
+      // Current period = provided date range
+      currentMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+      
+      // Calculate previous period for comparison
+      if (start.getMonth() === end.getMonth()) {
+        // Same month - compare with last month
+        lastMonth = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+        lastMonthEnd = new Date(start.getFullYear(), start.getMonth(), 0, 23, 59, 59);
+      } else {
+        // Year view - compare with last year same period
+        lastMonth = new Date(start.getFullYear() - 1, start.getMonth(), 1);
+        lastMonthEnd = new Date(end.getFullYear() - 1, end.getMonth() + 1, 0, 23, 59, 59);
+      }
+    } else {
+      // Default to current month vs last month
+      currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    }
+    
+    // Determine the actual end date for current period
+    const currentEnd = endDateParam ? new Date(endDateParam + 'T23:59:59') : now;
 
     // Apply role-based filtering (consistent with other APIs)
     let orderWhereClause: any = {};
@@ -52,22 +86,24 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           orders: { current: 0, previous: 0, growth: 0 },
           revenue: { current: 0, previous: 0, growth: 0 }
         },
+        code: 'NO_DATA_AVAILABLE',
         message: 'No data available - user not assigned to merchant/outlet'
       });
     }
 
-    // Get current month orders
+    // Get current period orders (use provided date range or current month)
     const currentMonthOrders = await db.orders.search({
       where: {
         ...orderWhereClause,
         createdAt: {
-          gte: currentMonth
+          gte: startDateParam ? new Date(startDateParam) : currentMonth,
+          lte: currentEnd
         }
       },
       limit: 1000
     });
 
-    // Get last month orders
+    // Get previous period orders
     const lastMonthOrders = await db.orders.search({
       where: {
         ...orderWhereClause,
@@ -104,7 +140,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json({
       success: true,
       data: growthMetrics,
-      message: 'Growth metrics retrieved successfully'
+      code: 'GROWTH_METRICS_SUCCESS',
+        message: 'Growth metrics retrieved successfully'
     });
 
   } catch (error) {

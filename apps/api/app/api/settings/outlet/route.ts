@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { db } from '@rentalshop/database';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -28,7 +28,7 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
         role: user.role
       });
       return NextResponse.json(
-        { success: false, message: 'User does not have outlet access' },
+        ResponseBuilder.error('NO_OUTLET_ACCESS'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -41,7 +41,7 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
     // Validate required fields
     if (!name || !address) {
       return NextResponse.json(
-        { success: false, message: 'Outlet name and address are required' },
+        ResponseBuilder.error('OUTLET_NAME_ADDRESS_REQUIRED'),
         { status: 400 }
       );
     }
@@ -54,7 +54,7 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
     if (!outletId && user.role === 'ADMIN') {
       console.log('🔍 DEBUG: Admin user without outletId, need to specify outlet');
       return NextResponse.json(
-        { success: false, message: 'Admin users need to specify outlet ID for outlet updates' },
+        ResponseBuilder.error('ADMIN_OUTLET_ID_REQUIRED'),
         { status: 400 }
       );
     }
@@ -79,10 +79,8 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
 
     const updatedOutlet = await db.outlets.update(outletId, updateData);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Outlet information updated successfully',
-      data: {
+    return NextResponse.json(
+      ResponseBuilder.success('OUTLET_INFO_UPDATED_SUCCESS', {
         id: updatedOutlet.id,
         name: updatedOutlet.name,
         address: updatedOutlet.address,
@@ -92,8 +90,8 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
         isDefault: updatedOutlet.isDefault,
         createdAt: updatedOutlet.createdAt,
         updatedAt: updatedOutlet.updatedAt
-      }
-    });
+      })
+    );
 
   } catch (error) {
     console.error('Error updating outlet information:', error);

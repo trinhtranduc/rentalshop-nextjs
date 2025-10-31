@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -42,7 +42,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     // Validate required fields
     if (!name) {
       return NextResponse.json(
-        { success: false, message: 'Business name is required' },
+        ResponseBuilder.error('BUSINESS_NAME_REQUIRED'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
@@ -64,7 +64,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     if (!dbUser || !dbUser.merchant) {
       console.log('🔍 MERCHANT API: User or merchant not found, returning 403');
       return NextResponse.json(
-        { success: false, message: 'User does not have merchant access' },
+        ResponseBuilder.error('NO_MERCHANT_ACCESS'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -86,10 +86,8 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     });
 
     console.log('🔍 MERCHANT API: Update successful, returning response');
-    return NextResponse.json({
-      success: true,
-      message: 'Merchant information updated successfully',
-      data: {
+    return NextResponse.json(
+      ResponseBuilder.success('MERCHANT_INFO_UPDATED_SUCCESS', {
         id: updatedMerchant.id,
         name: updatedMerchant.name,
         email: updatedMerchant.email,
@@ -105,12 +103,12 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
         description: updatedMerchant.description,
         isActive: updatedMerchant.isActive,
         planId: updatedMerchant.planId,
-        subscriptionStatus: updatedMerchant.subscriptionStatus,
+        subscriptionStatus: updatedMerchant.subscription?.status,
         totalRevenue: updatedMerchant.totalRevenue,
         createdAt: updatedMerchant.createdAt,
         lastActiveAt: updatedMerchant.lastActiveAt
-      }
-    });
+      })
+    );
 
   } catch (error) {
     console.error('🔍 MERCHANT API: Error updating merchant information:', error);

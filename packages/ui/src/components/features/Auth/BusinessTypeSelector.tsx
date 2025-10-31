@@ -67,7 +67,7 @@ export const BusinessTypeSelector: React.FC<BusinessTypeSelectorProps> = ({
             onClick={() => onSelect(type)}
           >
             <CardContent className="p-6 text-center">
-              <Icon className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+              <Icon className="w-12 h-12 mx-auto mb-4 text-blue-700" />
               <h4 className="font-semibold text-lg mb-2">{title}</h4>
               <p className="text-gray-600 text-sm mb-3">{description}</p>
               <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -86,7 +86,7 @@ export const BusinessTypeSelector: React.FC<BusinessTypeSelectorProps> = ({
           <p className="text-blue-700 text-sm mb-2">
             Your products will use {BUSINESS_TYPE_DEFAULTS[selectedType].defaultPricingType.toLowerCase()} pricing by default.
           </p>
-          <p className="text-blue-600 text-xs">
+          <p className="text-blue-700 text-xs">
             💡 You can change pricing type and other settings later in your merchant settings.
           </p>
         </div>

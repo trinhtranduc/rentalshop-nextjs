@@ -36,8 +36,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useToast, ToastContainer } from '@rentalshop/ui';
 import { AddCustomerForm } from '../../features/Customers/components/AddCustomerForm';
 
-import { customersApi, handleApiError } from '@rentalshop/utils';
-import { useProductAvailability } from '@rentalshop/hooks';
+import { customersApi, productsApi, handleApiError, formatCurrency, type ProductAvailabilityRequest } from '@rentalshop/utils';
+import { useProductAvailability, useOrderTranslations } from '@rentalshop/hooks';
 import { VALIDATION, BUSINESS } from '@rentalshop/constants';
 
 // Import our custom hooks and components
@@ -45,7 +45,6 @@ import { useCreateOrderForm } from './hooks/useCreateOrderForm';
 import { useOrderValidation } from './hooks/useOrderValidation';
 import { useProductSearch } from './hooks/useProductSearch';
 import { useCustomerSearch } from './hooks/useCustomerSearch';
-import { OrderFormHeader } from './components/OrderFormHeader';
 import { useAuth } from '@rentalshop/hooks';
 import { ProductsSection } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
@@ -71,11 +70,15 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     loading = false,
     layout = 'split',
     merchantId,
+    currency = 'USD', // Default to USD if not provided
     isEditMode = false,
     initialOrder,
     orderNumber,
     onFormReady,
   } = props;
+
+  // Translation hook
+  const t = useOrderTranslations();
 
   // Custom hooks for state management
   const {
@@ -98,7 +101,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   } = useCreateOrderForm(props);
 
   const { validationErrors, validateForm, isFormValid } = useOrderValidation();
-  const { isLoadingProducts, searchProductsForSelect, searchProducts } = useProductSearch();
+  const { isLoadingProducts, searchProductsForSelect, searchProducts } = useProductSearch(currency as any);
   const { 
     isLoadingCustomers, 
     customerSearchResults, 
@@ -178,13 +181,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         value: String(product.id),
         label: product.name,
         image: product.images?.[0],
-        subtitle: product.barcode ? `Barcode: ${product.barcode}` : 'No Barcode',
+        subtitle: product.barcode ? `Barcode: ${product.barcode}` : t('messages.noBarcode'),
         details: [
-          `$${(product.rentPrice || 0).toFixed(2)}`,
-          `Deposit: $${(product.deposit || 0).toFixed(2)}`,
+          formatCurrency(product.rentPrice || 0, currency as any),
+          `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
           `Available: ${product.outletStock?.[0]?.available || 0}`,
           `Total Stock: ${product.outletStock?.[0]?.stock || 0}`,
-          product.category?.name || 'No Category'
+          product.category?.name || t('messages.noCategory')
         ].filter(Boolean),
         type: 'product' as const
       }));
@@ -192,9 +195,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       console.error('Error searching products:', error);
       return [];
     }
-  }, [searchProducts]);
+  }, [searchProducts, currency]);
 
-  // Create a custom getProductAvailabilityStatus function
+  // Create a custom getProductAvailabilityStatus function using new API
   const getProductAvailabilityStatus = useCallback(async (
     product: ProductWithStock, 
     startDate?: string, 
@@ -202,25 +205,103 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     requestedQuantity: number = BUSINESS.DEFAULT_QUANTITY
   ): Promise<ProductAvailabilityStatus> => {
     try {
-      // Get stock information from outletStock array
-      const outletStock = product.outletStock?.[0];
-      const available = outletStock?.available ?? 0;
-      const stock = outletStock?.stock ?? 0;
-      const renting = outletStock?.renting ?? 0;
-      const totalStock = stock;
+      console.log('🔍 Checking availability for product:', {
+        productId: product.id,
+        productName: product.name,
+        startDate,
+        endDate,
+        requestedQuantity
+      });
 
-      if (!startDate || !endDate) {
-        // Return basic availability status
+      // Prepare API request parameters
+      const requestParams: ProductAvailabilityRequest = {
+        quantity: requestedQuantity,
+        includeTimePrecision: true,
+        timeZone: 'UTC'
+      };
+
+      // Add rental dates if provided (for RENT mode)
+      if (startDate && endDate && formData.orderType === 'RENT') {
+        // Convert dates to ISO format for API
+        requestParams.startDate = new Date(startDate).toISOString();
+        requestParams.endDate = new Date(endDate).toISOString();
+      }
+
+      // Call the new availability API
+      const availabilityResponse = await productsApi.checkProductAvailability(product.id, requestParams);
+      
+      if (availabilityResponse.success && availabilityResponse.data) {
+        const availabilityData = availabilityResponse.data;
+        
+        console.log('🔍 Availability API response:', availabilityData);
+
+        // Determine status based on API response
+        if (!availabilityData.stockAvailable) {
+          return {
+            status: 'out-of-stock',
+            text: `Out of Stock (need ${requestedQuantity}, have ${availabilityData.totalAvailableStock})`,
+            color: 'bg-red-100 text-red-600'
+          };
+        }
+
+        if (startDate && endDate && formData.orderType === 'RENT') {
+          // For rental orders with dates, check if available considering conflicts
+          if (!availabilityData.isAvailable || !availabilityData.hasNoConflicts) {
+            const conflictCount = availabilityData.totalConflictsFound;
+            return {
+              status: 'unavailable',
+              text: conflictCount > 0 
+                ? `Conflicts detected (${conflictCount} orders)`
+                : 'Unavailable for selected dates',
+              color: 'bg-orange-100 text-orange-600'
+            };
+          }
+        }
+
+        // Check if any outlet can fulfill the request
+        const canFulfill = availabilityData.availabilityByOutlet?.some((outlet: any) => outlet.canFulfillRequest);
+        const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
+          sum + outlet.effectivelyAvailable, 0) || availabilityData.totalAvailableStock;
+
+        if (canFulfill) {
+          return {
+            status: 'available',
+            text: `Available (${effectivelyAvailable} units)`,
+            color: 'bg-green-100 text-green-600'
+          };
+        } else {
+          return {
+            status: 'low-stock',
+            text: `Low Stock (${effectivelyAvailable}/${requestedQuantity})`,
+            color: 'bg-orange-100 text-orange-600'
+          };
+        }
+      } else {
+        // API call failed, fallback to basic stock check
+        console.warn('Availability API failed, falling back to basic stock check');
+        throw new Error('API call failed');
+      }
+    } catch (error) {
+      console.error('Error checking availability via API:', error);
+      
+      // Fallback to basic stock availability check
+      try {
+        const outletStock = product.outletStock?.[0];
+        const available = outletStock?.available ?? 0;
+        const stock = outletStock?.stock ?? 0;
+
+        console.log('🔍 Fallback to basic stock check:', { available, stock, requestedQuantity });
+
         if (available === 0) {
           return { 
             status: 'out-of-stock', 
-            text: 'Out of Stock', 
+            text: t('messages.outOfStock'), 
             color: 'bg-red-100 text-red-600' 
           };
-        } else if (available <= VALIDATION.LOW_STOCK_THRESHOLD) {
+        } else if (available < requestedQuantity) {
           return { 
             status: 'low-stock', 
-            text: `Low Stock (${available})`, 
+            text: `Low Stock (${available}/${requestedQuantity})`, 
             color: 'bg-orange-100 text-orange-600' 
           };
         } else {
@@ -230,54 +311,16 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
             color: 'bg-green-100 text-green-600' 
           };
         }
-      }
-
-      // Use the hook's calculateAvailability function
-      const availability = calculateAvailability(
-        {
-          id: product.id,
-          name: product.name,
-          stock: stock,
-          renting: renting,
-          available: available
-        },
-        startDate,
-        endDate,
-        requestedQuantity
-      );
-
-      // Ensure we have valid numeric values from the hook response
-      const availableQuantity = availability?.availableQuantity ?? 0;
-      const isAvailable = availability?.available ?? false;
-
-      // Return formatted status for display
-      if (isAvailable) {
+      } catch (fallbackError) {
+        console.error('Fallback availability check also failed:', fallbackError);
         return { 
-          status: 'available', 
-          text: `Available (${availableQuantity})`, 
-          color: 'bg-green-100 text-green-600' 
+          status: 'unknown', 
+          text: 'Check unavailable', 
+          color: 'bg-gray-100 text-gray-600' 
         };
-      } else {
-        return { 
-          status: 'unavailable', 
-          text: `Unavailable (${availableQuantity}/${stock})`, 
-          color: 'bg-red-100 text-red-600' 
-        };
-      }
-    } catch (error) {
-      console.error('Error checking availability:', error);
-      // Fallback to basic status with safe defaults
-      const outletStock = product.outletStock?.[0];
-      const available = outletStock?.available ?? 0;
-      if (available === 0) {
-        return { status: 'unknown', text: 'Out of Stock', color: 'bg-red-100 text-red-600' };
-      } else if (available <= VALIDATION.LOW_STOCK_THRESHOLD) {
-        return { status: 'unknown', text: 'Low Stock', color: 'bg-orange-100 text-orange-600' };
-      } else {
-        return { status: 'unknown', text: 'In Stock', color: 'bg-green-100 text-green-600' };
       }
     }
-  }, [calculateAvailability]);
+  }, [formData.orderType, t]);
 
   // Handle adding new customer
   const handleAddNewCustomer = useCallback(async (customerData: any) => {
@@ -289,7 +332,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       if (!currentMerchantId) {
         const errorMsg = 'Merchant ID is required to create a customer. Please ensure the form has access to merchant information.';
-        toastError("Error", errorMsg);
+        toastError(t('messages.error'), errorMsg);
         throw new Error(errorMsg);
       }
       
@@ -309,7 +352,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       if (localDuplicate) {
         const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName}). Please use a different phone number or search for the existing customer.`;
-        toastError("Duplicate Customer", errorMsg);
+        toastError(t('messages.duplicateCustomer'), errorMsg);
         throw new Error(errorMsg);
       }
       
@@ -327,7 +370,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
             const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
             if (normalizedPhone === existingNormalizedPhone) {
               const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName}). Please use a different phone number or search for the existing customer.`;
-              toastError("Duplicate Customer", errorMsg);
+              toastError(t('messages.duplicateCustomer'), errorMsg);
               throw new Error(errorMsg);
             }
           }
@@ -367,15 +410,15 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         setSearchQuery(`${newCustomer.firstName} ${newCustomer.lastName} - ${newCustomer.phone}`);
         
         // Show success message
-        toastSuccess("Customer Created", `Customer "${newCustomer.firstName} ${newCustomer.lastName}" has been created and selected.`);
+        toastSuccess(t('messages.customerCreated'), `Customer "${newCustomer.firstName} ${newCustomer.lastName}" ${t('messages.customerCreatedMessage')}`);
         
         console.log('🔍 handleAddNewCustomer: Function completed successfully');
       } else {
         // Extract error message from API response
-        const errorMessage = result.message || result.error || 'Failed to create customer';
+        const errorMessage = result.message || result.error || t('messages.failedToCreateCustomer');
         console.error('❌ handleAddNewCustomer: API error:', errorMessage);
         console.error('❌ handleAddNewCustomer: Full result:', result);
-        toastError("Error", errorMessage);
+        toastError(t('messages.error'), errorMessage);
         throw new Error(errorMessage);
       }
     } catch (error) {
@@ -449,15 +492,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   const isFormValidForUI = isFormValid(formData, orderItems);
 
   return (
-    <div className="min-h-screen bg-bg-secondary">
+    <div className="w-full min-h-full bg-bg-secondary">
       <div className="w-full">
-        {/* Header for edit mode */}
-        <OrderFormHeader 
-          orderNumber={orderNumber} 
-          isEditMode={isEditMode} 
-        />
-
-        <div className="flex flex-col lg:flex-row gap-4 p-4">
+        <div className="flex flex-col lg:flex-row gap-4 px-4 py-4">
           {/* Column 1 - Products Section (40%) */}
           <div className="lg:w-[40%] space-y-4">
             <ProductsSection
@@ -472,6 +509,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               pickupDate={formData.pickupPlanAt}
               returnDate={formData.returnPlanAt}
               getProductAvailabilityStatus={getProductAvailabilityStatus}
+              currency={currency}
             />
           </div>
 
@@ -497,20 +535,24 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               onCustomerSearch={searchCustomers}
               onShowAddCustomerDialog={() => setShowAddCustomerDialog(true)}
               onUpdateRentalDates={updateRentalDates}
+              currency={currency}
             />
           </div>
 
-          {/* Column 3 - Order Summary & Actions (30%) */}
+          {/* Column 3 - Order Summary & Actions (30%) - Sticky positioning */}
           <div className="lg:w-[30%] space-y-4">
-            <OrderSummarySection
-              formData={formData}
-              orderItems={orderItems}
-              isEditMode={isEditMode}
-              loading={loading || isSubmitting}
-              isFormValid={isFormValidForUI}
-              onPreviewClick={handlePreviewClick}
-              onCancel={onCancel}
-            />
+            <div className="lg:sticky lg:top-4">
+              <OrderSummarySection
+                formData={formData}
+                orderItems={orderItems}
+                isEditMode={isEditMode}
+                loading={loading || isSubmitting}
+                isFormValid={isFormValidForUI}
+                onPreviewClick={handlePreviewClick}
+                onCancel={onCancel}
+                currency={currency}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -564,10 +606,10 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         onConfirm={handleOrderConfirm}
         onEdit={() => setShowOrderPreview(false)}
         loading={loading || isSubmitting}
-        confirmText={isEditMode ? 'Update Order' : 'Confirm & Create Order'}
-        editText="Back to Edit"
-        title="Order Preview"
-        subtitle="Review your order details before confirming"
+        confirmText={isEditMode ? t('actions.updateOrder') : t('actions.confirmCreate')}
+        editText={t('actions.backToEdit')}
+        title={t('actions.orderPreview')}
+        subtitle={t('actions.reviewBeforeConfirm')}
       />    </div>
   );
 };

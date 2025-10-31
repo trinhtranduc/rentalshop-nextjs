@@ -1,419 +1,218 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useMemo } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Card, 
-  CardHeader, 
-  CardTitle, 
   CardContent,
   PageWrapper,
   PageHeader,
   PageTitle,
-  PageContent,
   Button,
-  StatusBadge,
-  PaymentForm,
-  PaymentDetailDialog,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  
+  PaymentTable,
   useToast } from '@rentalshop/ui';
 import { 
   Search, 
-  Filter, 
   Download, 
-  Eye, 
-  CreditCard, 
   DollarSign,
   TrendingUp,
   TrendingDown,
   Calendar,
-  Store,
-  Package,
-  Users,
-  CheckCircle,
   XCircle,
-  Clock,
-  AlertCircle,
-  Plus
+  Clock
 } from 'lucide-react';
-import { paymentsApi } from '@rentalshop/utils';
+import { usePaymentsData } from '@rentalshop/hooks';
 
-interface Payment {
-  id: number;
-  subscriptionId: string;
-  amount: number;
-  currency: string;
-  method: string;
-  status: string;
-  transactionId?: string;
-  invoiceNumber?: string;
-  description?: string;
-  failureReason?: string;
-  processedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  subscription?: {
-    id: string;
-    merchantId: string;
-    planId: string;
-    status: string;
-    amount: number;
-    currency: string;
-    merchant?: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    plan?: {
-      id: string;
-      name: string;
-      price: number;
-      currency: string;
-    };
-    billingCycle?: {
-      id: string;
-      name: string;
-      months: number;
-      discount: number;
-    };
-  };
-}
-
+/**
+ * ✅ MODERN PAYMENTS PAGE (URL State Pattern)
+ * 
+ * Architecture:
+ * ✅ URL params as single source of truth
+ * ✅ Clean data fetching with usePaymentsData hook
+ * ✅ Request deduplication with useDedupedApi
+ */
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [dateFilter, setDateFilter] = useState<string>('all');
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [merchants, setMerchants] = useState<any[]>([]);
-  const [plans, setPlans] = useState<any[]>([]);
-  const [planVariants, setPlanVariants] = useState<any[]>([]);
-  const [billingCycles, setBillingCycles] = useState<any[]>([]);
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
-  const [showPaymentDetail, setShowPaymentDetail] = useState(false);
-  const { toastInfo } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { toastInfo, toastSuccess, toastError } = useToast();
 
-  useEffect(() => {
-    fetchPayments();
-    fetchFormData(); // Load form data immediately
+  // ============================================================================
+  // URL PARAMS - Single Source of Truth
+  // ============================================================================
+  
+  const search = searchParams.get('q') || '';
+  const status = searchParams.get('status') || 'all';
+  const dateFilter = searchParams.get('dateFilter') || 'all';
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '20');
+
+  // ============================================================================
+  // DATA FETCHING - Clean & Simple with Deduplication
+  // ============================================================================
+  
+  const filters = useMemo(() => ({
+    search: search || undefined,
+    status: status !== 'all' ? status : undefined,
+    dateFilter: dateFilter !== 'all' ? dateFilter : undefined,
+    page,
+    limit
+  }), [search, status, dateFilter, page, limit]);
+
+  const { data, loading, error } = usePaymentsData({ filters });
+  
+  console.log('📊 Payments Page - Data state:', {
+    hasData: !!data,
+    paymentsCount: data?.payments?.length || 0,
+    loading,
+    error: error?.message
+  });
+
+  // ============================================================================
+  // URL UPDATE HELPER
+  // ============================================================================
+  
+  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== '' && value !== 'all') {
+        params.set(key, value.toString());
+      } else {
+        params.delete(key);
+      }
+    });
+    
+    const newURL = `${pathname}?${params.toString()}`;
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
+
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+  
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    updateURL({ q: e.target.value, page: 1 });
+  }, [updateURL]);
+
+  const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    updateURL({ status: e.target.value, page: 1 });
+  }, [updateURL]);
+
+  const handleDateFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    updateURL({ dateFilter: e.target.value, page: 1 });
+  }, [updateURL]);
+
+  const handlePageChange = useCallback((newPage: number) => {
+    updateURL({ page: newPage });
+  }, [updateURL]);
+
+  const handleViewPayment = useCallback((payment: any) => {
+    console.log('View payment:', payment.id);
+    // Could navigate to detail page or show modal
   }, []);
 
-  const fetchFormData = async () => {
+  const handleProcessPayment = useCallback(async (paymentId: number) => {
     try {
-      // TODO: Replace with actual API calls
-      // For now, using mock data to get the form working
-      
-      // Mock merchants data
-      const mockMerchants = [
-        { id: 1, name: "Merchant 1", email: "merchant1@example.com" },
-        { id: 2, name: "Merchant 2", email: "merchant2@example.com" },
-        { id: 3, name: "Merchant 3", email: "merchant3@example.com" }
-      ];
-      setMerchants(mockMerchants);
-      
-      // Mock plans data
-      const mockPlans = [
-        { id: 1, name: "Basic", price: 9.99, currency: "USD" },
-        { id: 2, name: "Professional", price: 19.99, currency: "USD" },
-        { id: 3, name: "Enterprise", price: 49.99, currency: "USD" }
-      ];
-      setPlans(mockPlans);
-      
-      // Mock plan variants data
-      const mockPlanVariants = [
-        // Basic plan variants
-        { id: 1, planId: 1, name: "1 Month", duration: 1, price: 9.99, discount: 0, savings: 0, isActive: true },
-        { id: 2, planId: 1, name: "3 Months", duration: 3, price: 27.99, discount: 10, savings: 2.01, isActive: true },
-        { id: 3, planId: 1, name: "6 Months", duration: 6, price: 53.99, discount: 15, savings: 5.01, isActive: true },
-        { id: 4, planId: 1, name: "12 Months", duration: 12, price: 99.99, discount: 25, savings: 19.99, isActive: true },
-        
-        // Professional plan variants
-        { id: 5, planId: 2, name: "1 Month", duration: 1, price: 19.99, discount: 0, savings: 0, isActive: true },
-        { id: 6, planId: 2, name: "3 Months", duration: 3, price: 56.99, discount: 10, savings: 3.01, isActive: true },
-        { id: 7, planId: 2, name: "6 Months", duration: 6, price: 107.99, discount: 15, savings: 9.01, isActive: true },
-        { id: 8, planId: 2, name: "12 Months", duration: 12, price: 199.99, discount: 25, savings: 39.99, isActive: true },
-        
-        // Enterprise plan variants
-        { id: 9, planId: 3, name: "1 Month", duration: 1, price: 49.99, discount: 0, savings: 0, isActive: true },
-        { id: 10, planId: 3, name: "3 Months", duration: 3, price: 142.99, discount: 10, savings: 7.01, isActive: true },
-        { id: 11, planId: 3, name: "6 Months", duration: 6, price: 269.99, discount: 15, savings: 29.01, isActive: true },
-        { id: 12, planId: 3, name: "12 Months", duration: 12, price: 499.99, discount: 25, savings: 99.99, isActive: true }
-      ];
-      setPlanVariants(mockPlanVariants);
-      
-      // Keep billing cycles for backward compatibility
-      setBillingCycles([
-        { id: 1, name: 'Monthly', months: 1, discount: 0 },
-        { id: 2, name: 'Quarterly', months: 3, discount: 5 },
-        { id: 3, name: 'Semi-Annual', months: 6, discount: 10 },
-        { id: 4, name: 'Annual', months: 12, discount: 20 }
-      ]);
-    } catch (error: unknown) {
-      console.error('Error fetching form data:', error);
-    }
-  };
-
-  const handleCreatePayment = async (formData: any) => {
-    try {
-      setFormLoading(true);
-      
-      const { paymentsApi } = await import('@rentalshop/utils');
-      
-      const result = await paymentsApi.createManualPayment(formData);
-      
-      if (result.success) {
-        toastSuccess('Payment Created', `Successfully created payment for ${formData.amount} ${formData.currency}`);
-        setShowPaymentForm(false);
-        fetchPayments(); // Refresh the payments list
-      } else {
-        throw new Error(result.error || 'Failed to create payment');
-      }
-    } catch (error: unknown) {
-      console.error('Error creating payment:', error);
-      toastError('Error', `Failed to create payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleViewPayment = (payment: Payment) => {
-    setSelectedPayment(payment);
-    setShowPaymentDetail(true);
-  };
-
-  const handleProcessPayment = async (paymentId: number) => {
-    try {
-      // Here you would call your API to process the payment
       console.log('Processing payment:', paymentId);
-      
       toastSuccess('Payment Processed', 'Payment has been successfully processed');
-      
-      setShowPaymentDetail(false);
-      fetchPayments(); // Refresh the payments list
     } catch (error: unknown) {
       console.error('Error processing payment:', error);
       toastError('Error', 'Failed to process payment. Please try again.');
     }
-  };
+  }, [toastSuccess, toastError]);
 
-  const handleRefundPayment = async (paymentId: number) => {
+  const handleRefundPayment = useCallback(async (payment: any) => {
     try {
-      // Here you would call your API to refund the payment
-      console.log('Refunding payment:', paymentId);
-      
+      console.log('Refunding payment:', payment.id);
       toastSuccess('Payment Refunded', 'Payment has been successfully refunded');
-      
-      setShowPaymentDetail(false);
-      fetchPayments(); // Refresh the payments list
     } catch (error: unknown) {
       console.error('Error refunding payment:', error);
       toastError('Error', 'Failed to refund payment. Please try again.');
     }
-  };
+  }, [toastSuccess, toastError]);
 
-  const handleDownloadReceipt = async (paymentId: number) => {
+  const handleDownloadReceipt = useCallback(async (payment: any) => {
     try {
-      // Here you would call your API to download the receipt
-      console.log('Downloading receipt for payment:', paymentId);
-      
+      console.log('Downloading receipt for payment:', payment.id);
       toastInfo('Receipt Downloaded', 'Payment receipt has been downloaded');
     } catch (error: unknown) {
       console.error('Error downloading receipt:', error);
       toastError('Error', 'Failed to download receipt. Please try again.');
     }
-  };
+  }, [toastInfo, toastError]);
 
-  const fetchPayments = async () => {
-    try {
-      setLoading(true);
-      
-      // Use centralized payments API
-      const response = await paymentsApi.getPayments();
-
-      if (response.success && response.data) {
-        // Transform the API response to match our Payment interface
-        // The API returns data directly as an array, not wrapped in a 'payments' property
-        const paymentsArray = Array.isArray(response.data) ? response.data : response.data.payments || [];
-        const transformedPayments = paymentsArray.map((payment: any) => ({
-          ...payment,
-          id: payment.id,
-          // Transform the API response to match our interface
-          method: payment.paymentMethod?.toUpperCase() || 'UNKNOWN',
-          subscription: {
-            id: `sub_${payment.id}`,
-            merchantId: `merchant_${payment.id}`,
-            planId: `plan_${payment.id}`,
-            status: 'ACTIVE',
-            amount: payment.amount,
-            currency: payment.currency,
-            merchant: {
-              id: `merchant_${payment.id}`,
-              name: payment.merchantName,
-              email: `${payment.merchantName.toLowerCase().replace(/\s+/g, '')}@example.com`
-            },
-            plan: {
-              id: `plan_${payment.id}`,
-              name: payment.planName,
-              price: payment.amount,
-              currency: payment.currency
-            },
-            billingCycle: {
-              id: `bc_${payment.id}`,
-              name: payment.billingCycle === 'monthly' ? 'Monthly' : 'Unknown',
-              months: 1,
-              discount: 0
-            }
-          }
-        }));
-        setPayments(transformedPayments);
-      } else {
-        console.error('Failed to fetch payments:', response.message);
-        // No fallback needed - just log the error
-      }
-    } catch (error: unknown) {
-      console.error('Error fetching payments:', error);
-      // No fallback needed - just log the error
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  const filteredPayments = payments.filter(payment => {
-    const merchantName = payment.subscription?.merchant?.name || '';
-    const invoiceNumber = payment.invoiceNumber || '';
-    const transactionId = payment.transactionId || '';
+  // ============================================================================
+  // CALCULATE STATS
+  // ============================================================================
+  
+  const stats = useMemo(() => {
+    const payments = data?.payments || [];
     
-    const matchesSearch = merchantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transactionId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || payment.status.toLowerCase() === statusFilter.toLowerCase();
-    
-    let matchesDate = true;
-    if (dateFilter === 'today') {
-      const today = new Date().toDateString();
-      matchesDate = new Date(payment.createdAt).toDateString() === today;
-    } else if (dateFilter === 'this_month') {
-      const now = new Date();
-      const paymentDate = new Date(payment.createdAt);
-      matchesDate = now.getMonth() === paymentDate.getMonth() && 
-                   now.getFullYear() === paymentDate.getFullYear();
-    } else if (dateFilter === 'this_year') {
-      const now = new Date();
-      const paymentDate = new Date(payment.createdAt);
-      matchesDate = now.getFullYear() === paymentDate.getFullYear();
-    }
-    
-    return matchesSearch && matchesStatus && matchesDate;
-  });
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      'completed': { color: 'bg-action-success/10 text-action-success', icon: CheckCircle, text: 'Completed' },
-      'pending': { color: 'bg-action-warning/10 text-action-warning', icon: Clock, text: 'Pending' },
-      'failed': { color: 'bg-action-danger/10 text-action-danger', icon: XCircle, text: 'Failed' },
-      'refunded': { color: 'bg-text-tertiary/10 text-text-tertiary', icon: AlertCircle, text: 'Refunded' }
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig];
-    const Icon = config.icon;
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-        <Icon className="w-3 h-3 mr-1" />
-        {config.text}
-      </span>
-    );
-  };
-
-  const getPaymentMethodIcon = (method: string) => {
-    const methodConfig = {
-      'credit_card': CreditCard,
-      'bank_transfer': DollarSign,
-      'paypal': DollarSign,
-      'stripe': CreditCard
-    };
-    
-    const Icon = methodConfig[method as keyof typeof methodConfig] || CreditCard;
-    return <Icon className="w-4 h-4" />;
-  };
-
-  const getPaymentMethodText = (method: string) => {
-    const methodConfig = {
-      'credit_card': 'Credit Card',
-      'bank_transfer': 'Bank Transfer',
-      'paypal': 'PayPal',
-      'stripe': 'Stripe'
-    };
-    
-    return methodConfig[method as keyof typeof methodConfig] || method;
-  };
-
-  const getBillingCycleText = (cycle: string) => {
-    const cycleConfig = {
-      'monthly': 'Monthly',
-      'yearly': 'Yearly',
-      'one_time': 'One Time'
-    };
-    
-    return cycleConfig[cycle as keyof typeof cycleConfig] || cycle;
-  };
-
-  const calculateStats = () => {
-    const totalRevenue = payments
-      .filter(p => p.status === 'completed')
-      .reduce((sum, p) => sum + p.amount, 0);
-    
-    const pendingAmount = payments
-      .filter(p => p.status === 'pending')
-      .reduce((sum, p) => sum + p.amount, 0);
-    
-    const failedAmount = payments
-      .filter(p => p.status === 'failed')
-      .reduce((sum, p) => sum + p.amount, 0);
-    
-          const monthlyRevenue = payments
+    return {
+      totalRevenue: payments
+        .filter(p => p.status === 'completed')
+        .reduce((sum, p) => sum + p.amount, 0),
+      pendingAmount: payments
+        .filter(p => p.status === 'pending')
+        .reduce((sum, p) => sum + p.amount, 0),
+      failedAmount: payments
+        .filter(p => p.status === 'failed')
+        .reduce((sum, p) => sum + p.amount, 0),
+      monthlyRevenue: payments
         .filter(p => p.status.toLowerCase() === 'completed' && p.subscription?.billingCycle?.name === 'Monthly')
-        .reduce((sum, p) => sum + p.amount, 0);
-    
-    return { totalRevenue, pendingAmount, failedAmount, monthlyRevenue };
-  };
+        .reduce((sum, p) => sum + p.amount, 0)
+    };
+  }, [data]);
 
-  const stats = calculateStats();
+  // Transform payments for UI
+  const payments = useMemo(() => {
+    return (data?.payments || []).map((payment: any) => ({
+      ...payment,
+      method: payment.paymentMethod?.toUpperCase() || payment.method || 'UNKNOWN',
+      subscription: {
+        id: `sub_${payment.id}`,
+        merchantId: `merchant_${payment.id}`,
+        planId: `plan_${payment.id}`,
+        status: 'ACTIVE',
+        amount: payment.amount,
+        currency: payment.currency,
+        merchant: {
+          id: `merchant_${payment.id}`,
+          name: payment.merchantName || 'Unknown',
+          email: `${(payment.merchantName || 'unknown').toLowerCase().replace(/\s+/g, '')}@example.com`
+        },
+        plan: {
+          id: `plan_${payment.id}`,
+          name: payment.planName || 'Unknown',
+          price: payment.amount,
+          currency: payment.currency
+        },
+        billingCycle: {
+          id: `bc_${payment.id}`,
+          name: payment.billingCycle === 'monthly' ? 'Monthly' : 'Unknown',
+          months: 1,
+          discount: 0
+        }
+      }
+    }));
+  }, [data]);
 
-  if (loading) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <div className="animate-pulse">
-            <div className="h-8 bg-bg-tertiary rounded w-1/4 mb-6"></div>
-            <div className="h-12 bg-bg-tertiary rounded mb-6"></div>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 bg-bg-tertiary rounded"></div>
-              ))}
-            </div>
-          </div>
-        </PageContent>
-      </PageWrapper>
-    );
-  }
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
   return (
-    <PageWrapper>
-      <PageHeader>
+    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageHeader className="flex-shrink-0">
         <PageTitle subtitle="Track platform revenue, payments, and financial metrics">
           Payment Management
         </PageTitle>
       </PageHeader>
 
-      <PageContent>
+      {/* Fixed Stats and Filters Section */}
+      <div className="flex-shrink-0 space-y-4">
         {/* Financial Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -497,8 +296,8 @@ export default function PaymentsPage() {
                   <input
                     type="text"
                     placeholder="Search by merchant, invoice, or transaction ID..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={search}
+                    onChange={handleSearchChange}
                     className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-action-primary focus:border-transparent"
                   />
                 </div>
@@ -507,8 +306,8 @@ export default function PaymentsPage() {
               {/* Filters */}
               <div className="flex gap-2">
                 <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  value={status}
+                  onChange={handleStatusChange}
                   className="px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-action-primary focus:border-transparent"
                 >
                   <option value="all">All Status</option>
@@ -520,7 +319,7 @@ export default function PaymentsPage() {
 
                 <select
                   value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
+                  onChange={handleDateFilterChange}
                   className="px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-action-primary focus:border-transparent"
                 >
                   <option value="all">All Time</option>
@@ -537,152 +336,76 @@ export default function PaymentsPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Payments List */}
-        <div className="space-y-4">
-          {filteredPayments.map((payment) => (
-            <Card 
-              key={payment.id}
-              className="cursor-pointer hover:shadow-md transition-shadow duration-200"
-              onClick={() => handleViewPayment(payment)}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  {/* Payment Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-action-primary to-brand-primary rounded-lg flex items-center justify-center">
-                        {getPaymentMethodIcon(payment.method)}
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-text-primary">{payment.subscription?.merchant?.name || 'Unknown Merchant'}</h3>
-                          {getStatusBadge(payment.status)}
-                        </div>
-                        
-                        <div className="flex items-center gap-6 text-sm text-text-secondary">
-                          <span className="flex items-center gap-1">
-                            <Package className="w-4 h-4" />
-                            {payment.subscription?.plan?.name || 'Unknown Plan'} Plan
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {getBillingCycleText(payment.subscription?.billingCycle?.name || 'Unknown')}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <CreditCard className="w-4 h-4" />
-                            {getPaymentMethodText(payment.method)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-6 text-sm text-text-tertiary mt-1">
-                          <span>Invoice: {payment.invoiceNumber || 'N/A'}</span>
-                          <span>TXN: {payment.transactionId || 'N/A'}</span>
-                          <span>{new Date(payment.createdAt).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Amount and Actions */}
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-text-primary">
-                        ${payment.amount.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-text-tertiary">{payment.currency}</div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleViewPayment(payment)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="w-4 h-4 mr-2" />
-                        Receipt
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Failure Reason */}
-                {payment.status === 'failed' && payment.failureReason && (
-                  <div className="mt-4 p-3 bg-action-danger/10 border border-action-danger/20 rounded-lg">
-                    <div className="flex items-center gap-2 text-action-danger">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="text-sm font-medium">Payment Failed: {payment.failureReason}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Pending Status */}
-                {payment.status === 'pending' && (
-                  <div className="mt-4 p-3 bg-action-warning/10 border border-action-warning/20 rounded-lg">
-                    <div className="flex items-center gap-2 text-action-warning">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-sm font-medium">Payment is being processed</span>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredPayments.length === 0 && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center py-12">
-                <CreditCard className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-text-secondary mb-2">No payments found</h3>
-                <p className="text-text-tertiary mb-4">
-                  {searchTerm || statusFilter !== 'all' || dateFilter !== 'all' 
-                    ? 'Try adjusting your search or filters'
-                    : 'Get started by creating your first payment'}
-                </p>
-                <Button onClick={() => setShowPaymentForm(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Payment
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Payment Form Dialog */}
-        <Dialog open={showPaymentForm} onOpenChange={setShowPaymentForm}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create Manual Payment</DialogTitle>
-            </DialogHeader>
-            <PaymentForm
-              onSubmit={handleCreatePayment}
-              onCancel={() => setShowPaymentForm(false)}
-              loading={formLoading}
-              merchants={merchants}
-              plans={plans}
-              planVariants={planVariants}
+      {/* Scrollable Table Section */}
+      <div className="flex-1 min-h-0 mt-4">
+        <div className="flex flex-col h-full">
+          {/* Table - takes full width */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <PaymentTable
+              payments={payments}
+              onView={handleViewPayment}
+              onDownloadReceipt={handleDownloadReceipt}
+              onRefund={handleRefundPayment}
+              loading={loading}
             />
-          </DialogContent>
-        </Dialog>
+          </div>
 
-        {/* Payment Detail Dialog */}
-        <PaymentDetailDialog
-          open={showPaymentDetail}
-          onOpenChange={setShowPaymentDetail}
-          payment={selectedPayment}
-          onProcessPayment={handleProcessPayment}
-          onRefundPayment={handleRefundPayment}
-          onDownloadReceipt={handleDownloadReceipt}
-        />
-      </PageContent>
+          {/* Pagination at bottom - same width as table */}
+          {data && data.total > 0 && data.total > data.limit && (
+            <div className="flex-shrink-0 py-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  Showing {((data.currentPage - 1) * data.limit) + 1} to {Math.min(data.currentPage * data.limit, data.total)} of {data.total} payments
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(data.currentPage - 1)}
+                    disabled={data.currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: data.totalPages }, (_, i) => i + 1)
+                      .filter(p => {
+                        return p === 1 || p === data.totalPages || 
+                               Math.abs(p - data.currentPage) <= 1;
+                      })
+                      .map((p, i, arr) => (
+                        <React.Fragment key={p}>
+                          {i > 0 && arr[i - 1] !== p - 1 && (
+                            <span className="px-2">...</span>
+                          )}
+                          <Button
+                            variant={data.currentPage === p ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(p)}
+                            className="w-10 h-9"
+                          >
+                            {p}
+                          </Button>
+                        </React.Fragment>
+                      ))}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(data.currentPage + 1)}
+                    disabled={data.currentPage === data.totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </PageWrapper>
   );
 }

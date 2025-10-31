@@ -1,80 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
-import { MerchantRegistrationForm, useToast } from '@rentalshop/ui';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { merchantsApi } from '@rentalshop/utils';
 
-interface MerchantRegistrationData {
-  merchantName: string;
-  merchantEmail: string;
-  merchantPhone: string;
-  merchantDescription: string;
-  userEmail: string;
-  userPassword: string;
-  userFirstName: string;
-  userLastName: string;
-  userPhone: string;
-  outletName: string;
-  outletAddress: string;
-  outletDescription: string;
-}
-
+/**
+ * @deprecated This page has been merged with /register
+ * Redirects to the unified registration page
+ */
 export default function RegisterMerchantPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const { toastSuccess, toastError } = useToast();
 
-  const handleSubmit = async (data: MerchantRegistrationData) => {
-    setLoading(true);
-    
-    try {
-      const result = await merchantsApi.register(data);
-
-      if (result.success) {
-        toastSuccess('Registration Successful!', `Welcome to RentalShop! Your 14-day free trial has started.`);
-
-        // Redirect to login or dashboard
-        router.push('/login?message=registration-success');
-      } else {
-        toastError('Registration Failed', result.message || 'Please try again.');
-      }
-    } catch (err) {
-      console.error('Registration error:', err);
-      toastError('Registration Failed', 'An error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    // Redirect to the unified registration page
+    router.replace('/register');
+  }, [router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Start Your Rental Business
-          </h1>
-          <p className="text-lg text-gray-600">
-            Join thousands of successful rental businesses with our 14-day free trial
-          </p>
-        </div>
-
-        {/* Registration Form */}
-        <MerchantRegistrationForm
-          onSubmit={handleSubmit}
-          loading={loading}
-        />
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <a href="/login" className="text-blue-600 hover:text-blue-500 font-medium">
-              Sign in here
-            </a>
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto mb-4"></div>
+        <p className="text-gray-600">Redirecting to registration...</p>
       </div>
     </div>
   );

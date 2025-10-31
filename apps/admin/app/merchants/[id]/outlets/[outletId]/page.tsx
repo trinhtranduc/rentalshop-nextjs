@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { PageWrapper,
@@ -16,8 +16,10 @@ import { PageWrapper,
   Textarea,
   Label,
   StatusBadge,
+  Breadcrumb,
+  type BreadcrumbItem,
   useToast } from '@rentalshop/ui';
-import { Building2, Edit, ArrowLeft, Users, Package, ShoppingCart } from 'lucide-react';
+import { Building2, Edit, Users, Package, ShoppingCart, Store } from 'lucide-react';
 import type { Outlet } from '@rentalshop/types';
 
 interface OutletDetail {
@@ -45,20 +47,27 @@ export default function OutletDetailPage() {
   const outletId = params.outletId as string;
   
   const [outlet, setOutlet] = useState<OutletDetail | null>(null);
+  const [merchantName, setMerchantName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<OutletDetail>>({});
 
   useEffect(() => {
-    fetchOutletDetail();
+    fetchData();
   }, [outletId]);
 
-  const fetchOutletDetail = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       
-      // Use centralized API client with automatic authentication and error handling
+      // Fetch merchant info
+      const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
+      if (merchantData.success && merchantData.data) {
+        setMerchantName(merchantData.data.name);
+      }
+      
+      // Fetch outlet details
       const response = await merchantsApi.outlets.get(parseInt(merchantId), parseInt(outletId));
       const data = await response.json();
 
@@ -69,8 +78,8 @@ export default function OutletDetailPage() {
         setError(data.message || 'Failed to fetch outlet details');
       }
     } catch (error) {
-      console.error('Error fetching outlet details:', error);
-      setError('Failed to fetch outlet details');
+      console.error('Error fetching data:', error);
+      setError('Failed to fetch data');
     } finally {
       setLoading(false);
     }
@@ -120,11 +129,19 @@ export default function OutletDetailPage() {
     router.push(`/merchants/${merchantId}/outlets/${outletId}/orders`);
   };
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = useMemo(() => [
+    { label: 'Merchants', href: '/merchants' },
+    { label: merchantName || `Merchant ${merchantId}`, href: `/merchants/${merchantId}` },
+    { label: 'Outlets', href: `/merchants/${merchantId}/outlets` },
+    { label: outlet?.name || `Outlet ${outletId}`, icon: <Store className="w-4 h-4" /> }
+  ], [merchantId, merchantName, outlet?.name, outletId]);
+
   if (loading) {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Outlet Details</PageTitle>
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
         <PageContent>
           <div className="text-center py-8">Loading outlet details...</div>
@@ -137,7 +154,7 @@ export default function OutletDetailPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Outlet Details</PageTitle>
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
         <PageContent>
           <div className="text-center py-8 text-red-500">Error: {error}</div>
@@ -150,7 +167,7 @@ export default function OutletDetailPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Outlet Details</PageTitle>
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
         <PageContent>
           <div className="text-center py-8">Outlet not found</div>
@@ -163,16 +180,8 @@ export default function OutletDetailPage() {
     <PageWrapper>
       <PageHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/merchants/${merchantId}/outlets`)}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Outlets
-            </Button>
-            <PageTitle>{outlet.name}</PageTitle>
+          <div className="flex-1">
+            <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           </div>
           <div className="flex space-x-2">
             {!isEditing && (
@@ -285,11 +294,11 @@ export default function OutletDetailPage() {
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   Users
                 </CardTitle>
-                <Users className="w-4 h-4 text-blue-600" />
+                <Users className="w-4 h-4 text-blue-700" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
-                  {outlet.stats.totalUsers}
+                <div className="text-2xl font-bold text-blue-700">
+                  {outlet.stats?.totalUsers || 0}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Total staff members
@@ -314,7 +323,7 @@ export default function OutletDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  {outlet.stats.totalProducts}
+                  {outlet.stats?.totalProducts || 0}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Available items
@@ -339,7 +348,7 @@ export default function OutletDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-purple-600">
-                  {outlet.stats.totalOrders}
+                  {outlet.stats?.totalOrders || 0}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Total orders

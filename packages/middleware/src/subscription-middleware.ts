@@ -135,7 +135,7 @@ export function withSubscriptionValidation<T extends any[]>(
 
     if (!userId || !userEmail || !userRole) {
       return NextResponse.json(
-        { success: false, message: 'User information not found in request' },
+        { success: false, code: 'USER_INFO_NOT_FOUND', message: 'User information not found in request' },
         { status: API.STATUS.UNAUTHORIZED }
       );
     }

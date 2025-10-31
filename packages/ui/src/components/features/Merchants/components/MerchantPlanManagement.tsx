@@ -149,30 +149,28 @@ export function MerchantPlanManagement({
   loading = false,
   currentUserRole
 }: MerchantPlanManagementProps) {
-  // Get current subscription
-  const currentSubscription = (merchant as any).currentSubscription || subscriptions[0];
+  // Get current subscription from merchant.subscription (single source of truth - always exists)
+  const currentSubscription = merchant.subscription || subscriptions[0];
 
   // Debug: Log subscription status values
   console.log('🔍 MerchantPlanManagement Debug:', {
     merchantId: merchant.id,
     merchantName: merchant.name,
-    subscriptionStatus: merchant.subscriptionStatus,
-    currentSubscription: currentSubscription,
-    subscriptionStatusFromSubscription: subscriptions[0]?.status
+    subscription: currentSubscription,
+    subscriptionStatus: currentSubscription?.status
   });
 
   // Normalize subscription status to lowercase for consistent comparison
-  const normalizedStatus = merchant.subscriptionStatus?.toLowerCase() || 'unknown';
-  const isActiveStatus = normalizedStatus === 'trial' || normalizedStatus === 'active';
-  const isPausedStatus = normalizedStatus === 'paused' || normalizedStatus === 'cancelled' || normalizedStatus === 'expired';
-  const isTrialStatus = normalizedStatus === 'trial';
-  const isActivePaidStatus = normalizedStatus === 'active';
-  const isPaused = normalizedStatus === 'paused';
+  const subscriptionStatus = currentSubscription.status.toLowerCase();
+  const isActiveStatus = subscriptionStatus === 'trial' || subscriptionStatus === 'active';
+  const isPausedStatus = subscriptionStatus === 'paused' || subscriptionStatus === 'cancelled' || subscriptionStatus === 'expired';
+  const isTrialStatus = subscriptionStatus === 'trial';
+  const isActivePaidStatus = subscriptionStatus === 'active';
+  const isPaused = subscriptionStatus === 'paused';
   
   // Check if current plan is Trial plan (free)
-  const isTrialPlan = merchant.currentPlan?.name?.toLowerCase() === 'trial' || 
-                      merchant.currentPlan?.price === 0 ||
-                      (currentSubscription?.plan?.name?.toLowerCase() === 'trial');
+  const isTrialPlan = currentSubscription.plan?.name?.toLowerCase() === 'trial' || 
+                      currentSubscription.plan?.basePrice === 0;
   
   const [showChangeDialog, setShowChangeDialog] = useState(false);
   const [showRenewalModal, setShowRenewalModal] = useState(false);
@@ -218,8 +216,8 @@ export function MerchantPlanManagement({
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      month: '2-digit',
+      day: '2-digit'
     });
   };
 
@@ -389,18 +387,16 @@ export function MerchantPlanManagement({
           </div>
         </CardHeader>
         <CardContent>
-          {(merchant.currentPlan || currentSubscription) ? (
+          {currentSubscription ? (
             <div className="space-y-4">
               {/* Plan Name, Price & Status */}
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">
-                    {merchant.currentPlan?.name || currentSubscription?.plan?.name || 'No plan assigned'}
+                    {currentSubscription?.plan?.name || 'No plan assigned'}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {merchant.currentPlan ? 
-                      formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency) + '/month' :
-                      currentSubscription ? 
+                    {currentSubscription ? 
                         formatPrice(currentSubscription.amount, currentSubscription.currency) + '/month' :
                         'No pricing available'
                     }
@@ -416,7 +412,7 @@ export function MerchantPlanManagement({
                     currentSubscription?.status === 'EXPIRED' ? 'bg-gray-100 text-gray-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {currentSubscription?.status || merchant.subscriptionStatus || 'Unknown'}
+                    {currentSubscription?.status || 'Unknown'}
                   </div>
                 </div>
               </div>
@@ -427,7 +423,7 @@ export function MerchantPlanManagement({
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Period:</span>
                     <span className="font-medium">
-                      {formatDateTimeLong((currentSubscription as any).startDate)} - {formatDateTimeLong((currentSubscription as any).endDate)}
+                      {formatDateTimeLong(currentSubscription.currentPeriodStart)} - {formatDateTimeLong(currentSubscription.currentPeriodEnd)}
                     </span>
                   </div>
                   
@@ -464,7 +460,7 @@ export function MerchantPlanManagement({
                       variant="default"
                       size="sm"
                       onClick={handleOpenChangeDialog}
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                      className="flex items-center gap-2 bg-blue-700 hover:bg-blue-700"
                     >
                       <ArrowRight className="h-4 w-4" />
                       Upgrade to Paid Plan
@@ -586,7 +582,7 @@ export function MerchantPlanManagement({
                   <div>
                     <p className="font-medium">{(subscription as any).planName || 'Unknown Plan'}</p>
                     <p className="text-sm text-gray-500">
-                      {formatDate((subscription as any).startDate)} - {(subscription as any).endDate ? formatDate((subscription as any).endDate) : 'N/A'}
+                      {formatDate(subscription.currentPeriodStart)} - {subscription.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : 'N/A'}
                     </p>
                     {(subscription as any).changeReason && (
                       <p className="text-xs text-gray-400 mt-1">
@@ -619,8 +615,8 @@ export function MerchantPlanManagement({
           subscription={{
             id: currentSubscription.id,
             merchantName: merchant.name,
-            planName: merchant.currentPlan?.name || 'Unknown Plan',
-            amount: merchant.currentPlan?.price || currentSubscription.amount || 0,
+            planName: currentSubscription.plan?.name || 'Unknown Plan',
+            amount: currentSubscription.plan?.basePrice || currentSubscription.amount || 0,
             currency: currentSubscription.currency || 'USD',
             currentPeriodEnd: currentSubscription.currentPeriodEnd 
               ? new Date(currentSubscription.currentPeriodEnd)
@@ -646,12 +642,12 @@ export function MerchantPlanManagement({
 
           <div className="space-y-6">
             {/* Current Plan Display */}
-            {merchant.currentPlan && (
+            {currentSubscription?.plan && (
               <div className="p-4 bg-gray-50 border rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Current Plan</p>
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-lg">{merchant.currentPlan.name}</p>
-                  <p className="font-semibold text-lg">{formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency)}/month</p>
+                  <p className="font-semibold text-lg">{currentSubscription.plan.name}</p>
+                  <p className="font-semibold text-lg">{formatPrice(currentSubscription.plan.basePrice, currentSubscription.plan.currency)}/month</p>
                 </div>
               </div>
             )}

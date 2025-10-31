@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   return NextResponse.json({
     success: true,
-    message: 'API Keys endpoint is working!',
+    code: 'API_KEYS_WORKING',
+        message: 'API Keys endpoint is working!',
     data: {
       endpoint: '/api/system/api-keys',
       methods: ['GET', 'POST'],

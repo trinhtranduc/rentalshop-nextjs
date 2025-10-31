@@ -144,7 +144,7 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ data, loading = fals
                   </div>
                   
                   {order.pickupPlanAt && (
-                    <div className="text-xs text-blue-600">
+                    <div className="text-xs text-blue-700">
                       Pickup: {formatDate(order.pickupPlanAt)}
                     </div>
                   )}

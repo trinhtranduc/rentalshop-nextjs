@@ -41,7 +41,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
           return await next();
         }
         return NextResponse.json(
-          { success: false, message: 'Access token required' },
+          { success: false, code: 'ACCESS_TOKEN_REQUIRED', message: 'Access token required' },
           { status: 401 }
         );
       }
@@ -50,7 +50,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
       const user = await verifyTokenSimple(token);
       if (!user) {
         return NextResponse.json(
-          { success: false, message: 'Invalid or expired token' },
+          { success: false, code: 'INVALID_TOKEN', message: 'Invalid or expired token' },
           { status: 401 }
         );
       }
@@ -61,7 +61,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
           assertAnyRole(user as any, requiredRoles as any);
         } catch {
           return NextResponse.json(
-            { success: false, message: 'Insufficient permissions' },
+            { success: false, code: 'INSUFFICIENT_PERMISSIONS', message: 'Insufficient permissions' },
             { status: API.STATUS.FORBIDDEN }
           );
         }
@@ -70,7 +70,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
       // Custom authorization check
       if (customAuth && !customAuth(user, request)) {
         return NextResponse.json(
-          { success: false, message: 'Access denied' },
+          { success: false, code: 'ACCESS_DENIED', message: 'Access denied' },
           { status: API.STATUS.FORBIDDEN }
         );
       }
@@ -89,7 +89,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
     } catch (error) {
       console.error('Auth middleware error:', error);
       return NextResponse.json(
-        { success: false, message: 'Authentication failed' },
+        { success: false, code: 'AUTHENTICATION_FAILED', message: 'Authentication failed' },
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }

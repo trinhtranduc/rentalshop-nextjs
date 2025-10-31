@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { Button } from '@rentalshop/ui';
 import { 
   Home, 
   ShoppingCart, 
@@ -12,9 +13,11 @@ import {
   Tag,
   Settings,
   CreditCard,
-  ChevronDown
+  ChevronDown,
+  Menu
 } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
+import { useCommonTranslations } from '@rentalshop/hooks';
 
 export interface ServerTopNavigationProps {
   currentPage: string;
@@ -23,27 +26,28 @@ export interface ServerTopNavigationProps {
 
 export default function ServerTopNavigation({ currentPage, userRole }: ServerTopNavigationProps) {
   const { navigateTo, prefetchRoute } = useNavigation();
+  const t = useCommonTranslations();
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPage);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const allNavItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/orders', label: 'Orders', icon: ShoppingCart },
+    { href: '/dashboard', label: t('navigation.dashboard'), icon: Home },
+    { href: '/orders', label: t('navigation.orders'), icon: ShoppingCart },
     { 
       href: '/products', 
-      label: 'Products', 
+      label: t('navigation.products'), 
       icon: Package,
       submenu: [
-        { href: '/products', label: 'All Products', icon: Package },
-        { href: '/categories', label: 'Categories', icon: Tag },
+        { href: '/products', label: t('navigation.products'), icon: Package },
+        { href: '/categories', label: t('navigation.categories'), icon: Tag },
       ]
     },
-    { href: '/customers', label: 'Customers', icon: Users },
-    { href: '/users', label: 'Users', icon: User },
-    { href: '/outlets', label: 'Outlets', icon: Building2 },
-    { href: '/calendar', label: 'Calendar', icon: Calendar },
+    { href: '/customers', label: t('navigation.customers'), icon: Users },
+    { href: '/users', label: t('navigation.users'), icon: User },
+    { href: '/outlets', label: t('navigation.outlets'), icon: Building2 },
+    { href: '/calendar', label: t('navigation.calendar'), icon: Calendar },
   ];
 
   // Filter nav items based on user role
@@ -128,11 +132,11 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
                 <Building2 className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">RentalShop</h1>
+                <h1 className="text-xl font-bold text-gray-900">AnyRent</h1>
               </div>
             </div>
           </div>
@@ -148,7 +152,8 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
               
               return (
                 <div key={item.href} className="relative">
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -164,11 +169,11 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                     onMouseLeave={() => setHoveredTab(null)}
                     className={`nav-item text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-150 ease-out relative ${
                       active 
-                        ? 'text-blue-600 bg-blue-50 shadow-sm' 
+                        ? 'text-blue-700 bg-blue-50 shadow-sm' 
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                     } ${isHovered ? 'scale-105' : ''} ${clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
                   >
-                    <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
+                    <Icon className={`w-4 h-4 ${active ? 'text-blue-700' : 'text-gray-500'}`} />
                     {item.label}
                     {hasSubmenu && (
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSubmenuOpen ? 'rotate-180' : ''}`} />
@@ -178,7 +183,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                     {isHovered && !active && (
                       <div className="absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200"></div>
                     )}
-                  </button>
+                  </Button>
                   
                   {/* Submenu Dropdown */}
                   {hasSubmenu && isSubmenuOpen && (
@@ -192,7 +197,8 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                           const isSubActive = currentPage === subItem.href;
                           
                           return (
-                            <button
+                            <Button
+                              variant="ghost"
                               key={subItem.href}
                               onClick={(e) => {
                                 e.preventDefault();
@@ -204,13 +210,13 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
                                   setOpenSubmenu(null);
                                 }, 100);
                               }}
-                              className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors ${
-                                isSubActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                              className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors justify-start h-auto rounded-none ${
+                                isSubActive ? 'text-blue-700 bg-blue-50' : 'text-gray-700'
                               }`}
                             >
                               <SubIcon className="w-4 h-4" />
                               {subItem.label}
-                            </button>
+                            </Button>
                           );
                         })}
                       </div>
@@ -223,29 +229,30 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
 
           {/* Right side - Settings only */}
           <div className="flex items-center space-x-4">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => handleTabClick('/settings')}
               onMouseEnter={() => prefetchRoute('/settings')}
               className={`nav-item text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-50 transition-all duration-150 ${
-                currentPage === '/settings' ? 'text-blue-600 bg-blue-50 shadow-sm' : ''
+                currentPage === '/settings' ? 'text-blue-700 bg-blue-50 shadow-sm' : ''
               } ${clickedTab === '/settings' ? 'scale-95 bg-red-100 shadow-md' : ''}`}
             >
               <Settings className="w-4 h-4" />
-              Settings
-            </button>
+              {t('navigation.settings')}
+            </Button>
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               data-mobile-menu-toggle
-              className="nav-item text-gray-500 hover:text-gray-900 focus:outline-none focus:text-gray-900 transition-colors duration-150"
+              className="nav-item text-gray-500 hover:text-gray-900"
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+              <Menu className="h-6 w-6" />
+            </Button>
           </div>
         </div>
 
@@ -256,29 +263,31 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
               const Icon = item.icon;
               const active = isActive(item.href);
               return (
-                <button
+                <Button
+                  variant="ghost"
                   key={item.href}
                   onClick={() => handleTabClick(item.href)}
-                  className={`nav-item block w-full text-left px-3 py-2 text-base font-medium flex items-center gap-3 transition-all duration-150 ${
+                  className={`nav-item block w-full text-left px-3 py-2 text-base font-medium flex items-center gap-3 transition-all duration-150 justify-start h-auto ${
                     active 
-                      ? 'text-blue-600 bg-blue-50 shadow-sm' 
+                      ? 'text-blue-700 bg-blue-50 shadow-sm' 
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                   } ${clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
                 >
-                  <Icon className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <Icon className={`w-5 h-5 ${active ? 'text-blue-700' : 'text-gray-500'}`} />
                   {item.label}
-                </button>
+                </Button>
               );
             })}
-            <button
+            <Button
+              variant="ghost"
               onClick={() => handleTabClick('/settings')}
-              className={`nav-item block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-all duration-150 ${
-                currentPage === '/settings' ? 'text-blue-600 bg-blue-50 shadow-sm' : ''
+              className={`nav-item block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-all duration-150 justify-start h-auto ${
+                currentPage === '/settings' ? 'text-blue-700 bg-blue-50 shadow-sm' : ''
               } ${clickedTab === '/settings' ? 'scale-95 bg-blue-100 shadow-md' : ''}`}
             >
               <Settings className="w-5 h-5" />
-              Settings
-            </button>
+              {t('navigation.settings')}
+            </Button>
           </div>
         </div>
       </div>

@@ -1,0 +1,42 @@
+{
+  "required": "Trường này là bắt buộc",
+  "email": "Vui lòng nhập địa chỉ email hợp lệ",
+  "phone": "Vui lòng nhập số điện thoại hợp lệ",
+  "min": "Giá trị tối thiểu là {min}",
+  "max": "Giá trị tối đa là {max}",
+  "minLength": "Độ dài tối thiểu là {min} ký tự",
+  "maxLength": "Độ dài tối đa là {max} ký tự",
+  "pattern": "Định dạng không hợp lệ",
+  "url": "Vui lòng nhập URL hợp lệ",
+  "number": "Vui lòng nhập số hợp lệ",
+  "integer": "Vui lòng nhập số nguyên",
+  "positive": "Vui lòng nhập số dương",
+  "negative": "Vui lòng nhập số âm",
+  "date": "Vui lòng nhập ngày hợp lệ",
+  "dateRange": "Khoảng thời gian không hợp lệ",
+  "time": "Vui lòng nhập thời gian hợp lệ",
+  "password": {
+    "minLength": "Mật khẩu phải có ít nhất {min} ký tự",
+    "uppercase": "Mật khẩu phải chứa ít nhất một chữ hoa",
+    "lowercase": "Mật khẩu phải chứa ít nhất một chữ thường",
+    "number": "Mật khẩu phải chứa ít nhất một số",
+    "special": "Mật khẩu phải chứa ít nhất một ký tự đặc biệt",
+    "match": "Mật khẩu không khớp"
+  },
+  "file": {
+    "size": "Kích thước file phải nhỏ hơn {max}",
+    "type": "Loại file không hợp lệ. Các loại được phép: {types}",
+    "required": "Vui lòng chọn file"
+  },
+  "unique": "Giá trị này đã tồn tại",
+  "exists": "Giá trị này không tồn tại",
+  "custom": {
+    "invalidBarcode": "Mã vạch không hợp lệ",
+    "invalidSKU": "Mã SKU không hợp lệ",
+    "stockNotAvailable": "Không đủ hàng trong kho",
+    "invalidDateRange": "Ngày kết thúc phải sau ngày bắt đầu",
+    "priceGreaterThanZero": "Giá phải lớn hơn 0",
+    "quantityGreaterThanZero": "Số lượng phải lớn hơn 0"
+  }
+}
+

@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { cn } from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui';
 import { useThrottledSearch } from '@rentalshop/hooks';
 
 export interface SearchInputProps {
@@ -66,18 +67,20 @@ export const SearchInput: React.FC<SearchInputProps> = ({
           )}
         />
         {query && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={clearSearch}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors"
             type="button"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         )}
       </div>
       {isSearching && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
         </div>
       )}
     </div>

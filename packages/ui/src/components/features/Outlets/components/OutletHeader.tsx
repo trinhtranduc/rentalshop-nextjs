@@ -17,6 +17,7 @@ import {
   List, 
   Plus 
 } from 'lucide-react';
+import { useOutletsTranslations } from '@rentalshop/hooks';
 
 interface OutletHeaderProps {
   viewMode: 'grid' | 'table';
@@ -33,13 +34,15 @@ export function OutletHeader({
   totalOutlets,
   merchantId
 }: OutletHeaderProps) {
+  const t = useOutletsTranslations();
+  
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center space-x-4">
           <CardTitle className="flex items-center gap-2">
             <Building2 className="w-5 h-5" />
-            Outlets ({totalOutlets})
+            {t('title')} ({totalOutlets})
           </CardTitle>
         </div>
         <div className="flex items-center space-x-2">
@@ -66,7 +69,7 @@ export function OutletHeader({
           {/* Add Outlet Button */}
           <Button onClick={onAddOutlet}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Outlet
+            {t('addOutlet')}
           </Button>
         </div>
       </CardHeader>

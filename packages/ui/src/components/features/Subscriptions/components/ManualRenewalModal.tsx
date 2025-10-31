@@ -213,10 +213,11 @@ export function ManualRenewalModal({
           <div>
             <Label>Payment Method *</Label>
             <div className="grid grid-cols-2 gap-3 mt-2">
-              <button
+              <Button
+                variant="outline"
                 type="button"
                 onClick={() => setMethod('TRANSFER')}
-                className={`p-3 border-2 rounded-lg text-left transition-all ${
+                className={`p-3 border-2 rounded-lg text-left transition-all justify-start h-auto ${
                   method === 'TRANSFER' 
                     ? 'border-blue-500 bg-blue-50' 
                     : 'border-gray-200 hover:border-gray-300'
@@ -226,11 +227,12 @@ export function ManualRenewalModal({
                   <Building2 className="w-5 h-5 text-gray-600" />
                   <span className="font-medium">Bank Transfer</span>
                 </div>
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 type="button"
                 onClick={() => setMethod('STRIPE')}
-                className={`p-3 border-2 rounded-lg text-left transition-all ${
+                className={`p-3 border-2 rounded-lg text-left transition-all justify-start h-auto ${
                   method === 'STRIPE' 
                     ? 'border-blue-500 bg-blue-50' 
                     : 'border-gray-200 hover:border-gray-300'
@@ -240,7 +242,7 @@ export function ManualRenewalModal({
                   <CreditCard className="w-5 h-5 text-gray-600" />
                   <span className="font-medium">Stripe</span>
                 </div>
-              </button>
+              </Button>
             </div>
           </div>
 

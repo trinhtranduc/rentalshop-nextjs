@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../../ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
-import { Badge } from '../../../ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
+import { Badge } from '@rentalshop/ui';
 import type { CustomerWithMerchant } from '@rentalshop/types';
 import { Package, Calendar, DollarSign, User, MapPin, Clock } from 'lucide-react';
 import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface CustomerOrdersDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
   onOpenChange,
   customer
 }) => {
+  const t = useOrderTranslations();
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -227,7 +229,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
               <CardContent className="text-center py-12">
                 <div className="text-gray-500">
                   <Package className="w-8 h-8 mx-auto mb-2" />
-                  <p>No orders found for this customer</p>
+                  <p>{t('messages.noOrdersForCustomer')}</p>
                 </div>
               </CardContent>
             </Card>

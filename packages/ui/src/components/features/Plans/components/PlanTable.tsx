@@ -1,14 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
+  Card,
+  CardHeader,
+  CardTitle,
   CardContent,
   Badge,
   Button,
-  StatusBadge
+  StatusBadge,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@rentalshop/ui';
 import { 
   Package, 
@@ -20,7 +25,8 @@ import {
   Settings,
   ChevronUp,
   ChevronDown,
-  Trash2
+  Trash2,
+  MoreVertical
 } from 'lucide-react';
 import type { Plan } from '@rentalshop/types';
 
@@ -47,6 +53,7 @@ export const PlanTable: React.FC<PlanTableProps> = ({
   onSort,
   loading = false
 }) => {
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const formatCurrency = (price: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -54,41 +61,8 @@ export const PlanTable: React.FC<PlanTableProps> = ({
     }).format(price);
   };
 
-  const getBillingCycleText = (cycle: string) => {
-    const cycleMap: Record<string, string> = {
-      'monthly': '/month',
-      'quarterly': '/quarter (3 months)',
-      'semi_annual': '/6 months',
-      'annual': '/year (12 months)'
-    };
-    return cycleMap[cycle] || '/month';
-  };
-
-  const getBillingCycleDiscount = (cycle: string) => {
-    const discountMap: Record<string, number> = {
-      'monthly': 0,
-      'quarterly': 5,
-      'semi_annual': 10,
-      'annual': 20
-    };
-    return discountMap[cycle] || 0;
-  };
-
-  const calculateDiscountedPrice = (price: number, cycle: string) => {
-    const discount = getBillingCycleDiscount(cycle);
-    const monthsMap: Record<string, number> = {
-      'monthly': 1,
-      'quarterly': 3,
-      'semi_annual': 6,
-      'annual': 12
-    };
-    const months = monthsMap[cycle] || 1;
-    const totalPrice = price * months;
-    const discountAmount = totalPrice * (discount / 100);
-    return totalPrice - discountAmount;
-  };
-
-  const getLimitText = (limit: number) => {
+  const getLimitText = (limit: number | undefined) => {
+    if (limit === undefined || limit === null) return 'N/A';
     return limit === -1 ? 'Unlimited' : limit.toString();
   };
 
@@ -114,12 +88,9 @@ export const PlanTable: React.FC<PlanTableProps> = ({
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Subscription Plans</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-4">
+      <Card className="shadow-sm border-border">
+        <CardContent className="p-0">
+          <div className="animate-pulse space-y-4 p-6">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="h-16 bg-bg-tertiary rounded"></div>
             ))}
@@ -129,91 +100,86 @@ export const PlanTable: React.FC<PlanTableProps> = ({
     );
   }
 
+  if (plans.length === 0) {
+    return (
+      <Card className="shadow-sm border-border">
+        <CardContent className="text-center py-12">
+          <div className="text-text-tertiary">
+            <div className="text-4xl mb-4">📋</div>
+            <h3 className="text-lg font-medium mb-2">No plans found</h3>
+            <p className="text-sm">
+              Get started by creating your first subscription plan
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Subscription Plans</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
+    <Card className="shadow-sm border-border flex flex-col h-full">
+      <CardContent className="p-0 flex-1 overflow-hidden">
+        {/* Table with scroll - flex layout */}
+        <div className="flex-1 overflow-auto h-full">
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th 
-                  className="text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center gap-2">
-                    Plan Name
-                    {getSortIcon('name')}
-                  </div>
+            {/* Table Header - Sticky */}
+            <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Plan Name
                 </th>
-                <th 
-                  className="text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary"
-                  onClick={() => handleSort('price')}
-                >
-                  <div className="flex items-center gap-2">
-                    Price
-                    {getSortIcon('price')}
-                  </div>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Price & Billing
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-text-primary">Limits</th>
-                <th className="text-left py-3 px-4 font-medium text-text-primary">Features</th>
-                <th className="text-left py-3 px-4 font-medium text-text-primary">Status</th>
-                <th 
-                  className="text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary"
-                  onClick={() => handleSort('createdAt')}
-                >
-                  <div className="flex items-center gap-2">
-                    Created
-                    {getSortIcon('createdAt')}
-                  </div>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Limits
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-text-primary">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Created At
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody>
+            {/* Table Body */}
+            <tbody className="bg-bg-card divide-y divide-border">
               {plans.map((plan) => (
-                <tr key={plan.id} className="border-b border-border hover:bg-bg-secondary">
-                  <td className="py-4 px-4">
-                    <div>
-                      <div className="font-medium text-text-primary flex items-center gap-2">
-                        {plan.name}
-                        {plan.isPopular && (
-                          <Badge variant="default" className="text-xs">
-                            <Star className="w-3 h-3 mr-1" />
-                            Popular
-                          </Badge>
-                        )}
+                <tr key={plan.id} className="hover:bg-bg-secondary transition-colors">
+                  {/* Plan Name with Icon */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center">
+                        <Package className="w-5 h-5 text-white" />
                       </div>
-                      <div className="text-sm text-text-secondary mt-1 max-w-xs truncate">
-                        {plan.description}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium text-text-primary">
+                            {plan.name}
+                          </div>
+                          {plan.isPopular && (
+                            <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                              <Star className="w-3 h-3 mr-1" />
+                              Popular
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-text-tertiary mt-1">
+                          {plan.description}
+                        </div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-4">
+                  {/* Price */}
+                  <td className="px-6 py-4">
                     <div>
-                      <div className="font-medium text-text-primary">
-                        {formatCurrency(plan.price, plan.currency)}
-                        <span className="text-sm text-text-secondary font-normal">
-                          {getBillingCycleText(plan.billingCycle)}
-                        </span>
+                      <div className="text-sm font-medium text-text-primary">
+                        {formatCurrency(plan.basePrice, plan.currency)}
+                        <span className="text-sm text-text-secondary font-normal">/month</span>
                       </div>
-                      
-                      {/* Show discount if applicable */}
-                      {getBillingCycleDiscount(plan.billingCycle) > 0 && (
-                        <div className="text-xs text-green-600 mt-1">
-                          {getBillingCycleDiscount(plan.billingCycle)}% discount
-                        </div>
-                      )}
-                      
-                      {/* Show total price for longer cycles */}
-                      {plan.billingCycleMonths > 1 && (
-                        <div className="text-xs text-text-tertiary mt-1">
-                          Total: {formatCurrency(calculateDiscountedPrice(plan.price, plan.billingCycle), plan.currency)}
-                        </div>
-                      )}
-                      
                       {plan.trialDays > 0 && (
                         <div className="text-xs text-action-primary mt-1">
                           {plan.trialDays}-day trial
@@ -221,107 +187,102 @@ export const PlanTable: React.FC<PlanTableProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Package className="w-3 h-3 text-text-tertiary" />
-                        <span className="text-text-secondary">Outlets:</span>
-                        <span className="font-medium">{getLimitText(plan.limits.outlets)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-3 h-3 text-text-tertiary" />
-                        <span className="text-text-secondary">Users:</span>
-                        <span className="font-medium">{getLimitText(plan.limits.users)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-3 h-3 text-text-tertiary" />
-                        <span className="text-text-secondary">Products:</span>
-                        <span className="font-medium">{getLimitText(plan.limits.products)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-3 h-3 text-text-tertiary" />
-                        <span className="text-text-secondary">Customers:</span>
-                        <span className="font-medium">{getLimitText(plan.limits.customers)}</span>
-                      </div>
+                  
+                  {/* Limits - Compact */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {getLimitText(plan.limits.outlets)} outlets
                     </div>
-                  </td>
-                  <td className="py-4 px-4">
                     <div className="text-sm text-text-secondary">
-                      {plan.features.length} features
-                    </div>
-                    <div className="text-xs text-text-tertiary mt-1">
-                      {plan.features.slice(0, 2).join(', ')}
-                      {plan.features.length > 2 && '...'}
+                      {getLimitText(plan.limits.users)} users
                     </div>
                   </td>
-                  <td className="py-4 px-4">
+                  
+                  {/* Status */}
+                  <td className="px-6 py-4">
                     <StatusBadge 
                       status={plan.isActive ? 'active' : 'inactive'}
                     />
                   </td>
-                  <td className="py-4 px-4 text-sm text-text-secondary">
-                    {formatDate(plan.createdAt)}
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center justify-end gap-2">
-                      {onView && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onView(plan)}
-                          className="h-8 px-3 text-sm"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View Options
-                        </Button>
-                      )}
-                      {onEdit && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEdit(plan)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {onToggleStatus && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onToggleStatus(plan)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Settings className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDelete(plan)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Delete plan"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
+                  
+                  {/* Created Date */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {formatDate(plan.createdAt)}
                     </div>
+                  </td>
+                  {/* Actions - Dropdown Menu */}
+                  <td className="px-6 py-4 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setOpenMenuId(openMenuId === plan.id ? null : plan.id)}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent 
+                        align="end"
+                        open={openMenuId === plan.id}
+                        onOpenChange={(open: boolean) => setOpenMenuId(open ? plan.id : null)}
+                      >
+                        {onView && (
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              onView(plan);
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                        )}
+                        {onEdit && (
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              onEdit(plan);
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Plan
+                          </DropdownMenuItem>
+                        )}
+                        {onToggleStatus && (
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              onToggleStatus(plan);
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            <Settings className="h-4 w-4 mr-2" />
+                            {plan.isActive ? 'Deactivate' : 'Activate'}
+                          </DropdownMenuItem>
+                        )}
+                        {onDelete && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                onDelete(plan);
+                                setOpenMenuId(null);
+                              }}
+                              className="text-action-danger focus:text-action-danger"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Plan
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          
-          {plans.length === 0 && (
-            <div className="text-center py-12">
-              <Package className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-text-primary mb-2">No plans found</h3>
-              <p className="text-text-secondary">
-                Get started by creating your first subscription plan
-              </p>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

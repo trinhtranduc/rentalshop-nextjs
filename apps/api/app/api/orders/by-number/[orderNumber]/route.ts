@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { db } from '@rentalshop/database';
+import { ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
@@ -24,36 +24,66 @@ export async function GET(
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
       
       // Get order by order number using the simplified database API
-      const order = await db.orders.findByNumber(orderNumber);
+      const order: any = await db.orders.findByNumber(orderNumber);
 
       if (!order) {
         console.log('❌ Order not found in database for orderNumber:', orderNumber);
         return NextResponse.json(
-          { success: false, message: 'Order not found' },
+          ResponseBuilder.error('ORDER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
 
       console.log('✅ Order found:', order);
 
+      // Helper function to parse productImages (handle both JSON string and array)
+      const parseProductImages = (images: any): string[] => {
+        if (!images) return [];
+        if (Array.isArray(images)) return images;
+        if (typeof images === 'string') {
+          try {
+            const parsed = JSON.parse(images);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      // Flatten order items with parsed productImages
+      const flattenedOrder = {
+        ...order,
+        orderItems: order.orderItems?.map((item: any) => ({
+          ...item,
+          productImages: parseProductImages(item.productImages || item.product?.images)
+        })) || order.orderItems
+      };
+
       return NextResponse.json({
         success: true,
-        data: order,
+        data: flattenedOrder,
+        code: 'ORDER_RETRIEVED_SUCCESS',
         message: 'Order retrieved successfully'
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error fetching order:', error);
       
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
+      // Use ResponseBuilder for consistent error format
+      const errorCode = error?.code || 'INTERNAL_SERVER_ERROR';
+      const errorMessage = error?.message || 'An error occurred';
+      
+      return NextResponse.json(
+        ResponseBuilder.error(errorCode, errorMessage),
+        { status: 500 }
+      );
     }
   })(request);
 }

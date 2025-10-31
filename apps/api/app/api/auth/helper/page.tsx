@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@rentalshop/ui';
 
 export default function AuthHelperPage() {
   const [email, setEmail] = useState('test@example.com');
@@ -118,20 +119,21 @@ export default function AuthHelperPage() {
           </div>
 
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={handleLogin}
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 py-2 px-4"
             >
               {loading ? 'Loading...' : 'Login'}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="default"
               onClick={handleRegister}
               disabled={loading}
-              className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50"
+              className="flex-1 py-2 px-4"
             >
               {loading ? 'Loading...' : 'Register'}
-            </button>
+            </Button>
           </div>
 
           {message && (
@@ -149,18 +151,20 @@ export default function AuthHelperPage() {
                 {token}
               </div>
               <div className="flex gap-2 mt-3">
-                <button
+                <Button
+                  variant="secondary"
                   onClick={copyToken}
-                  className="bg-gray-600 text-white py-1 px-3 rounded text-sm hover:bg-gray-700"
+                  className="py-1 px-3 text-sm"
                 >
                   Copy Token
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="destructive"
                   onClick={clearToken}
-                  className="bg-red-600 text-white py-1 px-3 rounded text-sm hover:bg-red-700"
+                  className="py-1 px-3 text-sm"
                 >
                   Clear Token
-                </button>
+                </Button>
               </div>
             </div>
           )}

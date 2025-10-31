@@ -71,6 +71,10 @@ export const publicFetch = async (
   const headers: Record<string, string> = {
     [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
     [API.HEADERS.ACCEPT]: API.CONTENT_TYPES.JSON,
+    // Platform detection headers for web clients
+    'X-Client-Platform': 'web',
+    'X-App-Version': '1.0.0',
+    'X-Device-Type': 'browser',
   };
 
   // Create full URL
@@ -170,6 +174,10 @@ export const authenticatedFetch = async (
   const headers: Record<string, string> = {
     [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
     [API.HEADERS.ACCEPT]: API.CONTENT_TYPES.JSON,
+    // Platform detection headers for web clients
+    'X-Client-Platform': 'web',
+    'X-App-Version': '1.0.0',
+    'X-Device-Type': 'browser',
     ...(options.headers as Record<string, string>),
   };
   
@@ -636,6 +644,9 @@ export const storeAuthData = (token: string, user: User): void => {
       updatedAt: user.updatedAt,
       merchantId: user.merchantId ? Number(user.merchantId) : undefined,
       outletId: user.outletId ? Number(user.outletId) : undefined,
+      // ✅ Store merchant and outlet objects (optional)
+      merchant: user.merchant || undefined,
+      outlet: user.outlet || undefined,
     },
     expiresAt, // Use actual JWT expiration time
   };

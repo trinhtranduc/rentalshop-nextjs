@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
+import { Button } from '../../../ui/button';
 import { LucideIcon } from 'lucide-react';
 
 interface SettingsTab {
@@ -33,10 +34,11 @@ export default function SettingsNavigation({
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
-              <button
+              <Button
+                variant="ghost"
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors justify-start h-auto ${
                   activeTab === tab.id
                     ? 'bg-action-primary text-text-inverted'
                     : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
@@ -44,7 +46,7 @@ export default function SettingsNavigation({
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
-              </button>
+              </Button>
             );
           })}
         </nav>

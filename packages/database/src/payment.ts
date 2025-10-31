@@ -100,6 +100,26 @@ export const simplifiedPayments = {
   search: searchPayments,
 
   /**
+   * Find first payment matching criteria (simplified API)
+   */
+  findFirst: async (whereClause: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.payment.findFirst({
+      where,
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            totalAmount: true
+          }
+        }
+      }
+    });
+  },
+
+  /**
    * Get payment statistics (simplified API)
    */
   getStats: async (whereClause?: any) => {

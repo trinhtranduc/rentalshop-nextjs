@@ -27,8 +27,11 @@ import {
   DialogFooter,
   Input,
   Label,
-  Textarea
+  Textarea,
+  PageWrapper,
+  Breadcrumb
 } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   CreditCard,
   Calendar,
@@ -192,7 +195,7 @@ export default function MerchantSubscriptionPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
       </div>
     );
   }
@@ -214,7 +217,8 @@ export default function MerchantSubscriptionPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageWrapper>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -406,12 +410,13 @@ export default function MerchantSubscriptionPage() {
               <CreditCard className="h-5 w-5" />
               <span>Payment History</span>
             </span>
-            {canExport && (
+            {/* Export feature - temporarily hidden, will be enabled in the future */}
+            {/* {canExport && (
               <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-            )}
+            )} */}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -500,6 +505,7 @@ export default function MerchantSubscriptionPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PageWrapper>
   );
 }

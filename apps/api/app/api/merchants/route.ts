@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 // Force TypeScript refresh - address field added
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 import { getDefaultPricingConfig } from '@rentalshop/constants';
 import type { BusinessType } from '@rentalshop/types';
@@ -45,16 +45,16 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
         where.isActive = true;
       } else if (status === 'inactive') {
         where.isActive = false;
-      } else if (status === 'trial') {
-        where.subscriptionStatus = 'trial';
-      } else if (status === 'expired') {
-        where.subscriptionStatus = 'expired';
       }
+      // trial/expired will be filtered via subscription.status (post-processing)
     }
 
-    // Direct status filtering
+    // Subscription status filtering (stored for post-processing)
+    let subscriptionStatusFilter: string | null = null;
     if (subscriptionStatus && subscriptionStatus !== 'all') {
-      where.subscriptionStatus = subscriptionStatus;
+      subscriptionStatusFilter = subscriptionStatus;
+    } else if (status === 'trial' || status === 'expired') {
+      subscriptionStatusFilter = status;
     }
 
     // Active status filtering
@@ -96,7 +96,8 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
     } else if (sortBy === 'email') {
       orderBy.email = sortOrder;
     } else if (sortBy === 'subscriptionStatus') {
-      orderBy.subscriptionStatus = sortOrder;
+      // Sort by subscription status (will be handled via subscription relation)
+      orderBy.subscription = { status: sortOrder };
     } else if (sortBy === 'planId') {
       orderBy.planId = sortOrder;
           } else if (sortBy === 'createdAt') {
@@ -121,8 +122,16 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
       limit
     });
 
-    const merchants = result.data;
-    const total = result.total;
+    let merchants = result.data;
+    let total = result.total;
+
+    // Apply subscription status filter (post-processing)
+    if (subscriptionStatusFilter) {
+      merchants = merchants.filter((m: any) => 
+        m.subscription?.status?.toLowerCase() === subscriptionStatusFilter.toLowerCase()
+      );
+      total = merchants.length;
+    }
 
     // Get counts for each merchant
     const merchantIds = merchants.map((m: any) => m.id);
@@ -180,7 +189,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
       description: merchant.description,
       isActive: merchant.isActive,
       planId: merchant.planId,
-      subscriptionStatus: merchant.subscriptionStatus,
+      subscription: merchant.subscription, // ✅ subscription.plan contains plan info (single source of truth)
       outletsCount: outletCountMap[merchant.id] || 0,
       usersCount: userCountMap[merchant.id] || 0,
       productsCount: productCountMap[merchant.id] || 0,
@@ -210,7 +219,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
     console.error('Error fetching merchants:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch merchants', error: errorMessage },
+      ResponseBuilder.error('FETCH_MERCHANTS_FAILED', { error: errorMessage }),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
@@ -225,60 +234,73 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
     // Validate required fields
     if (!name || !email || !phone || !planId) {
       return NextResponse.json(
-        { success: false, message: 'Missing required fields' },
+        ResponseBuilder.error('MISSING_REQUIRED_FIELD'),
         { status: 400 }
       );
     }
 
-    // Check if email already exists
-    const existingMerchant = await db.merchants.findByEmail(email);
+    // Check for duplicate email or phone
+    const existingMerchant = await db.merchants.checkDuplicate(email, phone);
 
     if (existingMerchant) {
+      const duplicateField = existingMerchant.email === email ? 'email' : 'phone number';
+      const duplicateValue = existingMerchant.email === email ? email : phone;
+      
+      console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
       return NextResponse.json(
-        { success: false, message: 'Email already exists' },
-        { status: 400 }
+        {
+          success: false,
+          code: 'MERCHANT_DUPLICATE',
+          message: `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+        },
+        { status: 409 }
       );
     }
 
     // Setup pricing configuration based on business type
     const pricingConfig = getDefaultPricingConfig((businessType as BusinessType) || 'GENERAL');
 
-    // Create new merchant
-    const merchant = await db.merchants.create({
-        name,
-        email,
-        phone,
-        address,
-        planId,
-        subscriptionStatus: subscriptionStatus || 'trial',
-        // isActive: true, // TODO: Add isActive field to MerchantCreateData type
-        // totalRevenue: 0, // TODO: Add totalRevenue field to MerchantCreateData type
-        businessType: businessType || 'GENERAL',
-        pricingConfig: JSON.stringify(pricingConfig)
+    // Use transaction for atomic creation
+    const result = await db.prisma.$transaction(async (tx) => {
+      // Create new merchant
+      const merchant = await tx.merchant.create({
+        data: {
+          name,
+          email,
+          phone,
+          address,
+          planId,
+          businessType: businessType || 'GENERAL',
+          pricingConfig: JSON.stringify(pricingConfig)
+        }
       });
 
-    // Create default outlet for the merchant
-    const defaultOutlet = await db.outlets.create({
-      name: `${merchant.name} - Main Store`,
-      address: merchant.address || 'Address to be updated',
-      phone: merchant.phone,
-      description: 'Default outlet created during merchant setup',
-      merchantId: merchant.id,
-      // isActive: true, // TODO: Add isActive field to OutletCreateData type
-      isDefault: true
+      // Create default outlet for the merchant
+      const defaultOutlet = await tx.outlet.create({
+        data: {
+          name: `${merchant.name} - Main Store`,
+          address: merchant.address || 'Address to be updated',
+          phone: merchant.phone,
+          description: 'Default outlet created during merchant setup',
+          merchantId: merchant.id,
+          isDefault: true
+        }
+      });
+
+      return { merchant, defaultOutlet };
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Merchant created successfully with default outlet',
-      data: {
+    const { merchant, defaultOutlet } = result;
+
+    return NextResponse.json(
+      ResponseBuilder.success('MERCHANT_CREATED_SUCCESS', {
         id: merchant.id,
         name: merchant.name,
         email: merchant.email,
         phone: merchant.phone,
         isActive: merchant.isActive,
         planId: merchant.planId,
-        subscriptionStatus: merchant.subscriptionStatus,
+        // subscriptionStatus removed - use subscription.status instead
         outletsCount: 1,
         usersCount: 0,
         productsCount: 0,
@@ -290,8 +312,8 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
           name: defaultOutlet.name,
           address: defaultOutlet.address
         }
-      }
-    });
+      })
+    );
 
   } catch (error) {
     console.error('Error creating merchant:', error);

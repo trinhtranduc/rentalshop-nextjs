@@ -33,6 +33,14 @@ export function useThrottledSearch(options: ThrottledSearchOptions): ThrottledSe
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSearchingRef = useRef(false);
   const isInitialRender = useRef(true); // Track initial render
+  
+  // ✅ FIX: Use ref to store the latest onSearch callback to avoid recreating handleSearchChange
+  const onSearchRef = useRef(onSearch);
+  
+  // Update ref when onSearch changes
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
 
   // ============================================================================
   // SEARCH FUNCTIONS
@@ -56,7 +64,7 @@ export function useThrottledSearch(options: ThrottledSearchOptions): ThrottledSe
       // Set new timeout for debounced search
       timeoutRef.current = setTimeout(() => {
         console.log('🔍 useThrottledSearch: Timeout executing, calling onSearch with:', value);
-        onSearch(value);
+        onSearchRef.current(value); // ✅ Use ref instead of direct callback
         setIsSearching(false);
         isSearchingRef.current = false;
       }, delay);
@@ -66,7 +74,7 @@ export function useThrottledSearch(options: ThrottledSearchOptions): ThrottledSe
       setIsSearching(false);
       isSearchingRef.current = false;
       if (!isInitialRender.current) {
-        onSearch('');
+        onSearchRef.current(''); // ✅ Use ref instead of direct callback
       }
     } else {
       console.log('🔍 useThrottledSearch: Query too short, not searching');
@@ -74,7 +82,7 @@ export function useThrottledSearch(options: ThrottledSearchOptions): ThrottledSe
       setIsSearching(false);
       isSearchingRef.current = false;
     }
-  }, [delay, minLength, onSearch]);
+  }, [delay, minLength]); // ✅ Remove onSearch from dependencies
 
   const clearSearch = useCallback(() => {
     setQuery('');
@@ -86,9 +94,9 @@ export function useThrottledSearch(options: ThrottledSearchOptions): ThrottledSe
     }
     
     if (!isInitialRender.current) {
-        onSearch('');
-      }
-  }, [onSearch]);
+      onSearchRef.current(''); // ✅ Use ref instead of direct callback
+    }
+  }, []); // ✅ Remove onSearch from dependencies
 
   const cleanup = useCallback(() => {
     if (timeoutRef.current) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -18,24 +18,24 @@ export async function GET(
       const userPublicId = parseInt(params.userId);
       
       if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
-        return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
+        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
-        return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       const foundUser = await db.users.findById(userPublicId);
       if (!foundUser) {
-        return NextResponse.json({ success: false, message: 'User not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       return NextResponse.json({ success: true, data: foundUser });
     } catch (error) {
       console.error('Error fetching user:', error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error' },
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -56,17 +56,17 @@ export async function PUT(
       const userPublicId = parseInt(params.userId);
       
       if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
-        return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
+        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
-        return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       const existing = await db.users.findById(userPublicId);
       if (!existing) {
-        return NextResponse.json({ success: false, message: 'User not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       const body = await request.json();
@@ -76,7 +76,7 @@ export async function PUT(
     } catch (error) {
       console.error('Error updating user:', error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error' },
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -97,17 +97,17 @@ export async function DELETE(
       const userPublicId = parseInt(params.userId);
       
       if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
-        return NextResponse.json({ success: false, message: 'Invalid IDs' }, { status: 400 });
+        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
-        return NextResponse.json({ success: false, message: 'Merchant not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       const existing = await db.users.findById(userPublicId);
       if (!existing) {
-        return NextResponse.json({ success: false, message: 'User not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       // Soft delete by setting isActive to false

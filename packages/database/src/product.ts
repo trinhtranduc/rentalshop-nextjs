@@ -174,14 +174,14 @@ export async function searchProducts(filters: ProductSearchFilter) {
     }
   }
 
-  // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
+  // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility (case-insensitive)
   const searchQuery = q || search;
   if (searchQuery) {
-    const searchTerm = searchQuery.toLowerCase().trim();
+    const searchTerm = searchQuery.trim();
     where.OR = [
-      { name: { contains: searchTerm } },
-      { description: { contains: searchTerm } },
-      { barcode: { equals: searchTerm } }
+      { name: { contains: searchTerm, mode: 'insensitive' } },
+      { description: { contains: searchTerm, mode: 'insensitive' } },
+      { barcode: { equals: searchTerm } } // Barcode is usually exact match
     ];
   }
 
@@ -820,9 +820,31 @@ export const simplifiedProducts = {
   },
 
   /**
+   * Find first product matching criteria (simplified API)
+   */
+  findFirst: async (whereClause: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.product.findFirst({
+      where,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+
+  /**
    * Get product statistics (simplified API)
    */
-  getStats: async (where: any = {}) => {
+  getStats: async (whereClause?: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
     return await prisma.product.count({ where });
   },
 
@@ -838,14 +860,20 @@ export const simplifiedProducts = {
     
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
-    if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+    // Default to active products only unless explicitly requesting all
+    if (whereFilters.isActive !== undefined) {
+      where.isActive = whereFilters.isActive;
+    } else {
+      where.isActive = true; // Default: only show active products
+    }
     
-    // Text search
+    // Text search (case-insensitive)
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { name: { contains: whereFilters.search } },
-        { description: { contains: whereFilters.search } },
-        { barcode: { contains: whereFilters.search } }
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { barcode: { contains: searchTerm, mode: 'insensitive' } }
       ];
     }
 

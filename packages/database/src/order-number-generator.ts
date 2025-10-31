@@ -437,7 +437,7 @@ async function generateRandomNumber(
 
 /**
  * Generate compact numeric order number: ORD{outletId}{random}
- * Format: ORD00112345 (no hyphens, 5-digit random number)
+ * Format: ORD00112345678 (no hyphens, 8-digit random number)
  */
 async function generateCompactNumericNumber(
   outletIdStr: string,
@@ -448,8 +448,8 @@ async function generateCompactNumericNumber(
 
   while (retryCount < maxRetries) {
     try {
-      // Generate 5-digit random number
-      const randomStr = generateRandomString(5, true); // 5 digits, numeric only
+      // Generate 8-digit random number
+      const randomStr = generateRandomString(8, true); // 8 digits, numeric only
       const orderNumber = `${prefix}${outletIdStr}${randomStr}`;
 
       // Check for uniqueness
@@ -539,12 +539,12 @@ function generateRandomString(length: number, numericOnly: boolean = false): str
  */
 export function validateOrderNumber(orderNumber: string): boolean {
   const patterns = [
-    /^ORD-\d{3}-\d{4}$/, // Sequential: ORD-001-0001
-    /^ORD-\d{3}-\d{8}-\d{4}$/, // Date-based: ORD-001-20250115-0001
-    /^ORD-\d{3}-[A-Z0-9]{6}$/, // Random: ORD-001-A7B9C2
-    /^ORD-\d{3}-\d{6}$/, // Random-numeric: ORD-001-123456
-    /^ORD-\d{3}-\d{8}-[A-Z0-9]{4}$/, // Hybrid: ORD-001-20250115-A7B9
-    /^ORD\d{3}\d{5}$/ // Compact-numeric: ORD00112345
+    /^\d{3}-\d{4}$/, // Sequential: ORD-001-0001
+    /^\d{3}-\d{8}-\d{4}$/, // Date-based: ORD-001-20250115-0001
+    /^\d{3}-[A-Z0-9]{6}$/, // Random: ORD-001-A7B9C2
+    /^\d{3}-\d{6}$/, // Random-numeric: ORD-001-123456
+    /^\d{3}-\d{8}-[A-Z0-9]{4}$/, // Hybrid: ORD-001-20250115-A7B9
+    /^\d{3}\d{5}$/ // Compact-numeric: ORD00112345
   ];
   
   return patterns.some(pattern => pattern.test(orderNumber));

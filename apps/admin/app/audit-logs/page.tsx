@@ -23,11 +23,13 @@ import { Card,
   SelectValue,
   Badge,
   Pagination,
+  PageWrapper,
+  Breadcrumb,
   useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   Search,
   Filter,
-  Download,
   RefreshCw,
   Eye,
   User,
@@ -380,7 +382,7 @@ export default function AuditLogsPage() {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'logs' | 'stats'>('logs');
-  const { toastInfo } = useToast();
+  const { toastError } = useToast();
 
   // Load audit logs
   const loadAuditLogs = async (newFilter?: AuditLogFilter) => {
@@ -389,13 +391,25 @@ export default function AuditLogsPage() {
       const currentFilter = newFilter || filter;
       const result = await getAuditLogs(currentFilter);
       
-      setLogs(result.data || []);
-      updatePaginationFromResponse({
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false
-      });
+      if (result.success && result.data) {
+        setLogs(result.data);
+        // Update pagination if available in the response
+        const resultWithPagination = result as any;
+        if (resultWithPagination.pagination) {
+          updatePaginationFromResponse(resultWithPagination.pagination);
+        } else {
+          // Use default pagination if not available
+          updatePaginationFromResponse({
+            total: 0,
+            limit: 10,
+            offset: 0,
+            hasMore: false
+          });
+        }
+      } else {
+        setLogs([]);
+        toastError('Failed to load audit logs', result.message || 'Please try again later.');
+      }
     } catch (error: any) {
       toastError('Failed to load audit logs', error.message || 'Please try again later.');
     } finally {
@@ -407,7 +421,11 @@ export default function AuditLogsPage() {
   const loadStats = async () => {
     try {
       const result = await getAuditLogStats();
-      setStats(result.data || null);
+      if (result.success && result.data) {
+        setStats(result.data);
+      } else {
+        setStats(null);
+      }
     } catch (error: any) {
       console.error('Failed to load audit statistics:', error);
     }
@@ -455,7 +473,7 @@ export default function AuditLogsPage() {
   }, []);
 
   return (
-    <div className="container mx-auto p-6">
+    <PageWrapper>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text-primary mb-2">Audit Logs</h1>
         <p className="text-text-secondary">
@@ -500,10 +518,6 @@ export default function AuditLogsPage() {
                     >
                       <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                       Refresh
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
                     </Button>
                   </div>
                 </CardTitle>
@@ -628,6 +642,6 @@ export default function AuditLogsPage() {
           </Card>
         </div>
       )}
-    </div>
+    </PageWrapper>
   );
 }

@@ -15,7 +15,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CreateOrderForm, FormSkeleton, PageWrapper, PageContent, useToast } from '@rentalshop/ui';
+import { CreateOrderForm, Breadcrumb, FormSkeleton, PageWrapper, useToast, Button } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
+import { orderBreadcrumbs } from '@rentalshop/utils';
 import { 
   ordersApi, 
   customersApi, 
@@ -23,7 +25,7 @@ import {
   outletsApi, 
   categoriesApi 
 } from '@rentalshop/utils';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { OrderWithDetails, CustomerSearchResult, ProductWithStock, Category, Customer, Product } from '@rentalshop/types';
 import type { OrderInput } from '@rentalshop/types';
 
@@ -31,6 +33,8 @@ export default function EditOrderPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
   const [order, setOrder] = useState<OrderWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,9 +52,9 @@ export default function EditOrderPage() {
 
   const orderId = params.id as string;
   
-  // Extract numeric part from order ID (e.g., "123" from "123" or "ORD-123")
+  // Extract numeric part from order ID (e.g., "001-757513" from "001-757513" or "ORD-001-757513")
   // Add null check to prevent error when orderId is undefined during initial render
-  const numericOrderId = orderId ? orderId.replace(/^ORD-/, '') : '';
+  const numericOrderId = orderId.replace(/^ORD-/, ''); // Remove ORD- prefix if present
   
   // Extract numeric order number from order data for navigation
   const numericOrderNumber = order?.orderNumber ? order.orderNumber.replace(/^ORD-/, '') : numericOrderId;
@@ -63,7 +67,8 @@ export default function EditOrderPage() {
         setLoading(true);
         setError(null);
 
-        const result = await ordersApi.getOrderByNumber(`ORD-${numericOrderId}`);
+        // Use orderNumber without ORD- prefix (database stores it without prefix)
+        const result = await ordersApi.getOrderByNumber(numericOrderId);
 
         if (result.success && result.data) {
           setOrder(result.data as OrderWithDetails);
@@ -93,11 +98,11 @@ export default function EditOrderPage() {
             setMerchantId('');
           }
         } else {
-          setError('Failed to fetch order details');
+          setError(t('messages.failedToFetchOrder'));
         }
       } catch (err) {
         console.error('Error fetching order details:', err);
-        setError('An error occurred while fetching order details');
+        setError(t('messages.errorFetchingOrder'));
       } finally {
         setLoading(false);
       }
@@ -269,7 +274,7 @@ export default function EditOrderPage() {
       // Ensure we have the order id for the update
       const orderPublicId = order.id;
       if (!orderPublicId) {
-        throw new Error('Order id not found');
+        throw new Error(t('messages.orderIdNotFound'));
       }
 
       // Add the order ID to the update data
@@ -282,15 +287,15 @@ export default function EditOrderPage() {
 
       if (result.success) {
         // Show success message
-        toastSuccess('Order updated successfully!');
+        toastSuccess(t('messages.updateSuccess'));
         // Navigate back to orders list after successful update
         router.push('/orders');
       } else {
-        throw new Error(result.error || 'Failed to update order');
+        throw new Error(result.error || t('messages.failedToUpdateOrder'));
       }
     } catch (err) {
       console.error('Error updating order:', err);
-      toastError('Failed to update order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toastError(t('messages.failedToUpdateOrder') + ': ' + (err instanceof Error ? err.message : t('messages.unknownError')));
     } finally {
       setActionLoading(false);
     }
@@ -307,13 +312,11 @@ export default function EditOrderPage() {
   if (loading) {
     return (
       <PageWrapper>
-        <PageContent>
-          <div className="mb-6">
+        <div className="mb-6">
             <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
             <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
           <FormSkeleton />
-        </PageContent>
       </PageWrapper>
     );
   }
@@ -322,8 +325,7 @@ export default function EditOrderPage() {
   if (!merchantId) {
     return (
       <PageWrapper>
-        <PageContent>
-          <div className="mb-6">
+        <div className="mb-6">
             <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
             <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
@@ -333,7 +335,6 @@ export default function EditOrderPage() {
             <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
           </div>
           <FormSkeleton />
-        </PageContent>
       </PageWrapper>
     );
   }
@@ -345,8 +346,7 @@ export default function EditOrderPage() {
   if (!hasMinimalData) {
     return (
       <PageWrapper>
-        <PageContent>
-          <div className="mb-6">
+        <div className="mb-6">
             <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
             <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
@@ -363,14 +363,14 @@ export default function EditOrderPage() {
           </div>
           <FormSkeleton />
           <div className="mt-6 text-center">
-            <button 
+            <Button 
               onClick={() => window.location.reload()} 
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              variant="default"
+              size="sm"
             >
-              Retry Loading
-            </button>
+              {t('messages.retryLoading')}
+            </Button>
           </div>
-        </PageContent>
       </PageWrapper>
     );
   }
@@ -385,21 +385,23 @@ export default function EditOrderPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Order</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('messages.errorLoadingOrder')}</h1>
             <p className="text-gray-600 mb-6">{error}</p>
             <div className="space-y-3">
-              <button 
+              <Button 
                 onClick={() => router.back()} 
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                variant="default"
+                className="w-full"
               >
-                Go Back
-              </button>
-              <button 
+                {t('messages.goBack')}
+              </Button>
+              <Button 
                 onClick={() => router.push('/orders')} 
-                className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                variant="outline"
+                className="w-full"
               >
-                View All Orders
-              </button>
+                {t('messages.viewAllOrders')}
+              </Button>
             </div>
           </div>
         </div>
@@ -417,21 +419,23 @@ export default function EditOrderPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
-            <p className="text-gray-600 mb-6">The order you're looking for could not be found.</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('messages.orderNotFound')}</h1>
+            <p className="text-gray-600 mb-6">{t('messages.orderNotFoundMessage')}</p>
             <div className="space-y-3">
-              <button 
+              <Button 
                 onClick={() => router.back()} 
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                variant="default"
+                className="w-full"
               >
-                Go Back
-              </button>
-              <button 
+                {t('messages.goBack')}
+              </Button>
+              <Button 
                 onClick={() => router.push('/orders')} 
-                className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                variant="outline"
+                className="w-full"
               >
-                View All Orders
-              </button>
+                {t('messages.viewAllOrders')}
+              </Button>
             </div>
           </div>
         </div>
@@ -439,23 +443,37 @@ export default function EditOrderPage() {
     );
   }
 
+  // Breadcrumb items - inline
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: t('messages.orders'), href: '/orders' },
+    { label: order.orderNumber, href: `/orders/${numericOrderNumber}` },
+    { label: t('messages.edit') }
+  ];
+
   return (
-    <div className="min-h-screen bg-bg-primary">
+    <div className="min-h-screen bg-bg-secondary">
+      {/* Breadcrumb - At top */}
+      <div className="px-6 py-3">
+        <Breadcrumb items={breadcrumbItems} showHome={false} />
+      </div>
       
-      <CreateOrderForm
-        isEditMode={true}
-        initialOrder={order}
-        orderNumber={order.orderNumber}
-        onSubmit={handleSubmit}
-        onCancel={handleCancel}
-        loading={actionLoading}
-        customers={customers}
-        products={products}
-        outlets={outlets}
-        categories={categories}
-        merchantId={Number(merchantId)}
-        onFormReady={handleFormReady}
-      />
+      {/* Main Content */}
+      <div className="w-full">
+        <CreateOrderForm
+          isEditMode={true}
+          initialOrder={order}
+          orderNumber={order.orderNumber}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          loading={actionLoading}
+          customers={customers}
+          products={products}
+          outlets={outlets}
+          categories={categories}
+          merchantId={Number(merchantId)}
+          onFormReady={handleFormReady}
+        />
+      </div>
     </div>
   );
 }

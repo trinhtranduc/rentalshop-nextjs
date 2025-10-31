@@ -347,8 +347,8 @@ var createRateLimiter = (config) => {
 var searchRateLimiter = createRateLimiter({
   windowMs: 3e4,
   // 30 seconds
-  maxRequests: 20,
-  // 20 requests per 30 seconds
+  maxRequests: 100,
+  // 100 requests per 30 seconds (increased for development)
   keyGenerator: (req) => {
     const forwarded = req.headers.get("x-forwarded-for");
     const ip = forwarded ? forwarded.split(",")[0] : req.ip || "unknown";
@@ -518,6 +518,176 @@ var API = {
   }
 };
 
+// ../constants/src/colors.ts
+var ORDER_STATUS_COLORS = {
+  RESERVED: {
+    bg: "#DBEAFE",
+    // Blue 100 - badge background
+    text: "#1E40AF",
+    // Blue 800 - badge text
+    hex: "#3B82F6",
+    // Blue 500 - primary color
+    buttonBg: "#3B82F6",
+    // Blue 500 - button background
+    buttonHover: "#2563EB",
+    // Blue 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  PICKUPED: {
+    bg: "#FEF3C7",
+    // Amber 100 - badge background
+    text: "#92400E",
+    // Amber 900 - badge text
+    hex: "#F59E0B",
+    // Amber 500 - primary color
+    buttonBg: "#F59E0B",
+    // Amber 500 - button background
+    buttonHover: "#D97706",
+    // Amber 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  RETURNED: {
+    bg: "#D1FAE5",
+    // Emerald 100 - badge background
+    text: "#065F46",
+    // Emerald 800 - badge text
+    hex: "#10B981",
+    // Emerald 500 - primary color
+    buttonBg: "#10B981",
+    // Emerald 500 - button background
+    buttonHover: "#059669",
+    // Emerald 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  COMPLETED: {
+    bg: "#E0E7FF",
+    // Indigo 100 - badge background
+    text: "#3730A3",
+    // Indigo 800 - badge text
+    hex: "#6366F1",
+    // Indigo 500 - primary color
+    buttonBg: "#6366F1",
+    // Indigo 500 - button background
+    buttonHover: "#4F46E5",
+    // Indigo 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  CANCELLED: {
+    bg: "#FEE2E2",
+    // Red 100 - badge background
+    text: "#991B1B",
+    // Red 800 - badge text
+    hex: "#EF4444",
+    // Red 500 - primary color
+    buttonBg: "#EF4444",
+    // Red 500 - button background
+    buttonHover: "#DC2626",
+    // Red 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  }
+};
+var ORDER_TYPE_COLORS = {
+  RENT: {
+    bg: "#DBEAFE",
+    // Blue 100 - badge background
+    text: "#1E40AF",
+    // Blue 800 - badge text
+    hex: "#3B82F6",
+    // Blue 500 - primary color
+    buttonBg: "#3B82F6",
+    // Blue 500 - button background
+    buttonHover: "#2563EB",
+    // Blue 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  },
+  SALE: {
+    bg: "#D1FAE5",
+    // Emerald 100 - badge background
+    text: "#065F46",
+    // Emerald 800 - badge text
+    hex: "#10B981",
+    // Emerald 500 - primary color
+    buttonBg: "#10B981",
+    // Emerald 500 - button background
+    buttonHover: "#059669",
+    // Emerald 600 - button hover
+    buttonText: "#FFFFFF"
+    // White - button text
+  }
+};
+
+// ../constants/src/orders.ts
+var ORDER_STATUS_BUTTON_COLORS = {
+  RESERVED: ORDER_STATUS_COLORS.RESERVED,
+  PICKUPED: ORDER_STATUS_COLORS.PICKUPED,
+  RETURNED: ORDER_STATUS_COLORS.RETURNED,
+  COMPLETED: ORDER_STATUS_COLORS.COMPLETED,
+  CANCELLED: ORDER_STATUS_COLORS.CANCELLED
+};
+var ORDER_TYPE_BUTTON_COLORS = {
+  RENT: ORDER_TYPE_COLORS.RENT,
+  SALE: ORDER_TYPE_COLORS.SALE
+};
+
+// ../constants/src/currency.ts
+var SUPPORTED_CURRENCIES = ["USD", "VND"];
+var CURRENCY_SYMBOLS = {
+  USD: "$",
+  VND: "\u0111"
+};
+var CURRENCY_NAMES = {
+  USD: "US Dollar",
+  VND: "Vietnamese Dong"
+};
+var CURRENCY_LOCALES = {
+  USD: "en-US",
+  VND: "vi-VN"
+};
+var CURRENCY_DECIMALS = {
+  USD: 2,
+  VND: 0
+};
+var CURRENCY_SYMBOL_POSITION = {
+  USD: "before",
+  VND: "after"
+};
+var EXCHANGE_RATES = {
+  USD: 1,
+  VND: 24500
+};
+var CURRENCY_CONFIGS = {
+  USD: {
+    code: "USD",
+    symbol: CURRENCY_SYMBOLS.USD,
+    name: CURRENCY_NAMES.USD,
+    locale: CURRENCY_LOCALES.USD,
+    decimals: CURRENCY_DECIMALS.USD,
+    symbolPosition: CURRENCY_SYMBOL_POSITION.USD,
+    exchangeRate: EXCHANGE_RATES.USD
+  },
+  VND: {
+    code: "VND",
+    symbol: CURRENCY_SYMBOLS.VND,
+    name: CURRENCY_NAMES.VND,
+    locale: CURRENCY_LOCALES.VND,
+    decimals: CURRENCY_DECIMALS.VND,
+    symbolPosition: CURRENCY_SYMBOL_POSITION.VND,
+    exchangeRate: EXCHANGE_RATES.VND
+  }
+};
+var CURRENCY_OPTIONS = SUPPORTED_CURRENCIES.map((code) => ({
+  value: code,
+  label: `${CURRENCY_SYMBOLS[code]} ${code} - ${CURRENCY_NAMES[code]}`,
+  symbol: CURRENCY_SYMBOLS[code],
+  name: CURRENCY_NAMES[code]
+}));
+
 // src/auth/auth.ts
 function createAuthMiddleware(config = {}) {
   const {
@@ -533,14 +703,14 @@ function createAuthMiddleware(config = {}) {
           return await next();
         }
         return NextResponse2.json(
-          { success: false, message: "Access token required" },
+          { success: false, code: "ACCESS_TOKEN_REQUIRED", message: "Access token required" },
           { status: 401 }
         );
       }
       const user = await verifyTokenSimple3(token);
       if (!user) {
         return NextResponse2.json(
-          { success: false, message: "Invalid or expired token" },
+          { success: false, code: "INVALID_TOKEN", message: "Invalid or expired token" },
           { status: 401 }
         );
       }
@@ -549,14 +719,14 @@ function createAuthMiddleware(config = {}) {
           assertAnyRole(user, requiredRoles);
         } catch {
           return NextResponse2.json(
-            { success: false, message: "Insufficient permissions" },
+            { success: false, code: "INSUFFICIENT_PERMISSIONS", message: "Insufficient permissions" },
             { status: API.STATUS.FORBIDDEN }
           );
         }
       }
       if (customAuth && !customAuth(user, request)) {
         return NextResponse2.json(
-          { success: false, message: "Access denied" },
+          { success: false, code: "ACCESS_DENIED", message: "Access denied" },
           { status: API.STATUS.FORBIDDEN }
         );
       }
@@ -570,7 +740,7 @@ function createAuthMiddleware(config = {}) {
     } catch (error) {
       console.error("Auth middleware error:", error);
       return NextResponse2.json(
-        { success: false, message: "Authentication failed" },
+        { success: false, code: "AUTHENTICATION_FAILED", message: "Authentication failed" },
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -993,7 +1163,7 @@ function withSubscriptionValidation2(handler) {
     const userRole = request.headers.get("x-user-role");
     if (!userId || !userEmail || !userRole) {
       return NextResponse4.json(
-        { success: false, message: "User information not found in request" },
+        { success: false, code: "USER_INFO_NOT_FOUND", message: "User information not found in request" },
         { status: API.STATUS.UNAUTHORIZED }
       );
     }

@@ -1,8 +1,16 @@
 import React from 'react';
-import { Button } from '../../../ui/button';
-import { Card, CardContent } from '../../../ui/card';
+import { Button } from '@rentalshop/ui';
+import { Card, CardContent } from '@rentalshop/ui';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '@rentalshop/ui';
 import { Customer } from '@rentalshop/types';
-import { Eye, Edit, ShoppingBag } from 'lucide-react';
+import { Eye, Edit, Trash2, ShoppingBag, MoreVertical } from 'lucide-react';
+import { useCustomerTranslations } from '@rentalshop/hooks';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -12,35 +20,27 @@ interface CustomerTableProps {
   onSort?: (column: string) => void;
 }
 
-
-
 export function CustomerTable({ 
   customers, 
   onCustomerAction, 
-  sortBy = 'name', 
-  sortOrder = 'asc',
+  sortBy = 'createdAt', 
+  sortOrder = 'desc',
   onSort
 }: CustomerTableProps) {
-  // Debug logging
-  console.log('🔍 CustomerTable received customers:', customers);
-  console.log('🔍 CustomerTable customers length:', customers?.length);
-  console.log('🔍 CustomerTable first customer:', customers?.[0]);
-
-  const triggerCustomerAction = (action: string, customer: Customer) => {
-    // Directly call the onCustomerAction callback
-    onCustomerAction(action, customer.id);
-  };
-
-
+  const t = useCustomerTranslations();
+  const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
+  
   if (customers.length === 0) {
     return (
       <Card className="shadow-sm border-gray-200 dark:border-gray-700">
         <CardContent className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <div className="text-4xl mb-4">👥</div>
-            <h3 className="text-lg font-medium mb-2">No customers found</h3>
+            <h3 className="text-lg font-medium mb-2">
+              {t('messages.noCustomers')}
+            </h3>
             <p className="text-sm">
-              Try adjusting your filters or add some customers to get started.
+              {t('messages.noCustomersDescription')}
             </p>
           </div>
         </CardContent>
@@ -48,145 +48,183 @@ export function CustomerTable({
     );
   }
 
-
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date | undefined) => {
+    if (!dateString) return t('messages.na');
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header with sorting options */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Customers ({customers.length})
-        </h2>
-        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span>Sort by:</span>
-          <div className="flex items-center gap-1">
-            {[
-              { key: 'name', label: 'Name' },
-              { key: 'createdAt', label: 'Created' }
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => onSort?.(key)}
-                className={`px-2 py-1 rounded text-xs transition-colors ${
-                  sortBy === key
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-              >
-                {label}
-                {sortBy === key && (
-                  <span className="ml-1">
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+  const handleSort = (column: string) => {
+    if (onSort) {
+      onSort(column);
+    }
+  };
 
-      {/* Card-style rows */}
-      <div className="grid gap-4">
-        {customers.map((customer) => (
-          <Card 
-            key={customer.id} 
-            className="hover:shadow-md transition-shadow duration-200 border-gray-200 dark:border-gray-700"
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                {/* Left side - Main info */}
-                <div className="flex items-center gap-3 flex-1">
-                  {/* Customer Details */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                        {customer.firstName} {customer.lastName}
-                      </h3>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        ID: {customer.id}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-                      {/* Contact Info */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Contact</p>
-                        <p className="text-gray-900 dark:text-white">{customer.email}</p>
-                        <p className="text-gray-500 dark:text-gray-400">{customer.phone}</p>
-                      </div>
-                      
-                      {/* Location */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Location</p>
-                        {customer.city && customer.state && (
-                          <p className="text-gray-900 dark:text-white">
-                            {customer.city}, {customer.state}
-                          </p>
-                        )}
-                        {customer.country && (
-                          <p className="text-gray-500 dark:text-gray-400">
-                            {customer.country}
-                          </p>
-                        )}
-                        {!customer.city && !customer.state && !customer.country && (
-                          <p className="text-gray-500 dark:text-gray-400">N/A</p>
-                        )}
-                      </div>
-                      
-                      {/* Created Date */}
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Created</p>
-                        <p className="text-gray-900 dark:text-white">
-                          {customer.createdAt ? formatDate(customer.createdAt.toString()) : 'N/A'}
-                        </p>
-                      </div>
+  return (
+    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col">
+      <div className="overflow-auto flex-1">
+        <table className="w-full min-w-[900px]">
+          {/* Table Header with Sorting - Sticky */}
+          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+            <tr>
+              <th 
+                onClick={() => handleSort('id')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  {t('fields.id')}
+                  {sortBy === 'id' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('name')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  {t('fields.name')}
+                  {sortBy === 'name' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {t('fields.contact')}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {t('fields.location')}
+              </th>
+              <th 
+                onClick={() => handleSort('createdAt')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-1">
+                  {t('fields.createdAt')}
+                  {sortBy === 'createdAt' && (
+                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
+                </div>
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {t('actions.title')}
+              </th>
+            </tr>
+          </thead>
+          
+          {/* Table Body */}
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            {customers.map((customer) => (
+              <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                {/* ID */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    #{customer.id}
+                  </div>
+                </td>
+                
+                {/* Name */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {customer.firstName} {customer.lastName}
                     </div>
                   </div>
-                </div>
+                </td>
                 
-                {/* Right side - Actions */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => triggerCustomerAction('view', customer)}
-                    className="h-8 px-3"
-                  >
-                    <Eye className="h-3 w-3 mr-1" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => triggerCustomerAction('edit', customer)}
-                    className="h-8 px-3"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => triggerCustomerAction('viewOrders', customer)}
-                    className="h-8 px-3"
-                  >
-                    <ShoppingBag className="h-3 w-3 mr-1" />
-                    Orders
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {/* Contact */}
+                <td className="px-6 py-4">
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900 dark:text-white">{customer.email}</div>
+                    <div className="text-gray-500 dark:text-gray-400 text-xs">{customer.phone}</div>
+                  </div>
+                </td>
+                
+                {/* Location */}
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {customer.city && customer.state ? (
+                      <div>
+                        <div>{customer.city}, {customer.state}</div>
+                        {customer.country && (
+                          <div className="text-gray-500 dark:text-gray-400 text-xs">{customer.country}</div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500 dark:text-gray-400">N/A</span>
+                    )}
+                  </div>
+                </td>
+                
+                {/* Created Date */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {formatDate(customer.createdAt)}
+                  </div>
+                </td>
+                
+                {/* Actions - Dropdown Menu */}
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setOpenDropdownId(customer.id)}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end"
+                      open={openDropdownId === customer.id}
+                      onOpenChange={(open: boolean) => setOpenDropdownId(open ? customer.id : null)}
+                    >
+                      <DropdownMenuItem onClick={() => {
+                        onCustomerAction('view', customer.id);
+                        setOpenDropdownId(null);
+                      }}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        {t('actions.view')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        onCustomerAction('edit', customer.id);
+                        setOpenDropdownId(null);
+                      }}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        {t('actions.editCustomer')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        onCustomerAction('viewOrders', customer.id);
+                        setOpenDropdownId(null);
+                      }}>
+                        <ShoppingBag className="h-4 w-4 mr-2" />
+                        {t('actions.viewOrders')}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          onCustomerAction('delete', customer.id);
+                          setOpenDropdownId(null);
+                        }}
+                        className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {t('actions.deleteCustomer')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </Card>
   );
 }

@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withReadOnlyAuth } from '@rentalshop/auth';
 import { z } from 'zod';
-import { prisma } from '@rentalshop/database';
-import type { CalendarOrderSummary, DayOrders, CalendarResponse } from '@rentalshop/utils';
-import { handleApiError } from '@rentalshop/utils';
+import { db } from '@rentalshop/database';
+import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
+import { handleApiError, getUTCDateKey } from '@rentalshop/utils';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
-  month: z.coerce.number().int().min(1).max(12),
-  year: z.coerce.number().int().min(2020).max(2030),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
   outletId: z.coerce.number().int().positive().optional(),
-  limit: z.coerce.number().int().min(1).max(10).default(4), // Max 4 orders per day
+  merchantId: z.coerce.number().int().positive().optional(),
+  status: z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']).optional(),
+  orderType: z.enum(['RENT', 'SALE']).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(10), // Max 50 orders per day
 });
 
 // Types are now imported from @rentalshop/utils
@@ -24,7 +27,7 @@ const calendarOrdersQuerySchema = z.object({
  * - Limits to 3-4 orders per day for performance
  * - Optimized for calendar UI
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (
+export const GET = withReadOnlyAuth(async (
   request: NextRequest,
   { user, userScope }
 ) => {
@@ -39,25 +42,39 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     console.log('📅 Calendar query:', validatedQuery);
 
-    const { month, year, outletId, limit } = validatedQuery;
+    const { startDate: startDateStr, endDate: endDateStr, outletId, merchantId, status, orderType, limit } = validatedQuery;
 
-    // Build date range for the requested month
-    const startDate = new Date(year, month - 1, 1); // month is 1-based
-    const endDate = new Date(year, month, 0); // Last day of the month
+    // Parse date strings
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
 
     console.log('📅 Date range:', { startDate, endDate });
 
-    // Build where clause with role-based filtering - only pickup orders
+    // Build where clause with role-based filtering
+    // Calendar should show orders by pickup date, not return date
     const where: any = {
-      orderType: 'RENT',
-      status: {
-        in: ['RESERVED', 'PICKUPED', 'RETURNED']
-      },
       pickupPlanAt: {
         gte: startDate,
         lte: endDate
       }
     };
+
+    // Add optional filters
+    if (orderType) {
+      where.orderType = orderType;
+    } else {
+      // Default to RENT orders if no orderType specified
+      where.orderType = 'RENT';
+    }
+    
+    if (status) {
+      where.status = status;
+    } else {
+      // Default to only active pickup orders (not returned)
+      where.status = {
+        in: ['RESERVED', 'PICKUPED']
+      };
+    }
 
     // Role-based filtering
     if (user.role === 'ADMIN') {
@@ -65,36 +82,60 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       if (outletId) {
         where.outletId = outletId;
       }
-      // No merchantId filter for ADMIN - they can see all merchants
+      // No restrictions for ADMIN - they can see all merchants and outlets
     } else if (user.role === 'MERCHANT') {
       // MERCHANT: Can see orders from all their outlets
-      where.merchantId = userScope.merchantId;
+      // Filter by outlet.merchantId through relation
+      where.outlet = {
+        merchantId: userScope.merchantId
+      };
       if (outletId) {
         where.outletId = outletId;
+        // Remove outlet filter if outletId is specified
+        delete where.outlet;
       }
-      // If no outletId specified, they see all outlets within their merchant
     } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
       // OUTLET users: Can only see orders from their assigned outlet
-      where.merchantId = userScope.merchantId;
       where.outletId = userScope.outletId;
     }
 
     console.log('🔍 Calendar where clause:', where);
 
-    // Fetch orders for the month using simplified database API
-    const orders = await db.orders.search({
-      ...where,
+    // Fetch orders for the month with orderItems included using db.orders.searchWithItems
+    const ordersResult = await db.orders.searchWithItems({
+      where,
       limit: 1000, // Get all orders for the month
       page: 1
     });
+    
+    const orders = ordersResult.data;
 
-    console.log('📦 Found orders:', orders.data?.length || 0);
+    console.log('📦 Found orders:', orders?.length || 0);
+
+    // Helper function to parse productImages (handle both JSON string and array)
+    const parseProductImages = (images: any): string[] => {
+      if (!images) return [];
+      if (Array.isArray(images)) return images;
+      if (typeof images === 'string') {
+        try {
+          const parsed = JSON.parse(images);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
 
     // Group orders by date
-    const calendarData: CalendarResponse = {};
+    const calendarMap: { [dateKey: string]: CalendarOrderSummary[] } = {};
 
-    if (orders.data && Array.isArray(orders.data)) {
-      for (const order of orders.data) {
+    if (orders && Array.isArray(orders)) {
+      for (const order of orders) {
+        const orderItems = (order as any).orderItems || [];
+        const totalProductCount = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+        const firstProduct = orderItems[0]?.product;
+        
         const orderSummary: CalendarOrderSummary = {
           id: order.id,
           orderNumber: order.orderNumber,
@@ -102,87 +143,167 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
             `${order.customer.firstName} ${order.customer.lastName || ''}`.trim() : 
             'Unknown Customer',
           customerPhone: order.customer?.phone,
-          productName: (order as any).orderItems?.[0]?.product?.name || 'Unknown Product',
           status: order.status,
           totalAmount: order.totalAmount,
           outletName: order.outlet?.name,
           pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
-          returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined
+          returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
+          // Product summary for calendar display
+          productName: firstProduct?.name || 'Multiple Products',
+          productCount: totalProductCount,
+          // Include order items with flattened product data
+          orderItems: orderItems.map((item: any) => {
+            // Parse productImages to ensure it's always an array
+            const productImages = parseProductImages(item.product?.images);
+            
+            return {
+              id: item.id,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice,
+              notes: item.notes,
+              // Flattened product data
+              productId: item.product?.id,
+              productName: item.product?.name,
+              productBarcode: item.product?.barcode,
+              productImages: productImages,
+              productRentPrice: item.product?.rentPrice,
+              productDeposit: item.product?.deposit
+            };
+          })
         };
 
-        // Add to pickup dates
+        // Add order only to pickup date (RESERVED and PICKUPED orders only)
         if (order.pickupPlanAt) {
           const pickupDate = new Date(order.pickupPlanAt);
-          const dateKey = `${pickupDate.getFullYear()}-${String(pickupDate.getMonth() + 1).padStart(2, '0')}-${String(pickupDate.getDate()).padStart(2, '0')}`;
+          const pickupDateKey = getUTCDateKey(pickupDate);
           
-          if (!calendarData[dateKey]) {
-            calendarData[dateKey] = { pickups: [], total: 0 };
+          if (!calendarMap[pickupDateKey]) {
+            calendarMap[pickupDateKey] = [];
           }
           
-          if (calendarData[dateKey].pickups.length < limit) {
-            calendarData[dateKey].pickups.push(orderSummary);
-            calendarData[dateKey].total++;
+          // Check if already added to avoid duplicates
+          const alreadyInMap = calendarMap[pickupDateKey].some(o => o.id === order.id);
+          if (!alreadyInMap && calendarMap[pickupDateKey].length < limit) {
+            calendarMap[pickupDateKey].push(orderSummary);
           }
         }
-
-        // Only process pickup orders - skip return dates
       }
 
-      // Total is already calculated when adding orders
-
-      // Calculate monthly statistics (only pickup orders)
+      // Convert to calendar array format
+      const calendar: CalendarDay[] = [];
       let totalPickups = 0;
-      let totalOrders = 0;
+      let totalReturns = 0;
 
-      for (const dateKey in calendarData) {
-        totalPickups += calendarData[dateKey].pickups.length;
-        totalOrders += calendarData[dateKey].total;
+      for (const [dateKey, dayOrders] of Object.entries(calendarMap)) {
+        const dayRevenue = dayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+        
+        // All orders in calendarMap are pickup orders only (RESERVED and PICKUPED)
+        // Orders are only added to their pickup date
+        const dayPickups = dayOrders.length;
+        const dayReturns = 0; // No return orders displayed
+        
+        calendar.push({
+          date: dateKey,
+          orders: dayOrders,
+          summary: {
+            totalOrders: dayOrders.length,
+            totalRevenue: dayRevenue,
+            totalPickups: dayPickups,
+            totalReturns: dayReturns,
+            averageOrderValue: dayOrders.length > 0 ? dayRevenue / dayOrders.length : 0
+          }
+        });
+
+        totalPickups += dayPickups;
+        totalReturns += dayReturns;
       }
+
+      // Calculate unique orders and total revenue to avoid double counting
+      const allUniqueOrders = new Map();
+      calendar.forEach(day => {
+        day.orders.forEach(order => {
+          // Store order with its revenue only once
+          if (!allUniqueOrders.has(order.id)) {
+            allUniqueOrders.set(order.id, order.totalAmount);
+          }
+        });
+      });
+
+      const totalOrders = allUniqueOrders.size;
+      const totalRevenue = Array.from(allUniqueOrders.values()).reduce((sum, revenue) => sum + revenue, 0);
+
+      const calendarData: CalendarResponse = {
+        calendar,
+        summary: {
+          totalOrders,
+          totalRevenue,
+          totalPickups,
+          totalReturns,
+          averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0
+        }
+      };
 
       console.log('📅 Calendar data prepared:', {
-        daysWithOrders: Object.keys(calendarData).length,
+        daysWithOrders: calendar.length,
         totalPickups,
-        totalOrders
+        totalOrders,
+        totalRevenue
       });
 
       return NextResponse.json({
         success: true,
         data: calendarData,
         meta: {
-          month,
-          year,
-          totalDays: Object.keys(calendarData).length,
+          totalDays: calendar.length,
           stats: {
             totalPickups,
-            totalOrders
+            totalOrders,
+            totalRevenue,
+            totalReturns,
+            averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0
           },
           dateRange: {
             start: startDate.toISOString().split('T')[0],
             end: endDate.toISOString().split('T')[0]
           }
         },
-        message: `Calendar data for ${year}-${String(month).padStart(2, '0')}`
+        code: 'CALENDAR_DATA_SUCCESS',
+        message: `Calendar data for ${startDateStr} to ${endDateStr}`
       });
     }
 
-    // Return empty calendar data if orders.data is not an array
+    // Return empty calendar data if orders is not an array
+    const emptyCalendarData: CalendarResponse = {
+      calendar: [],
+      summary: {
+        totalOrders: 0,
+        totalRevenue: 0,
+        totalPickups: 0,
+        totalReturns: 0,
+        averageOrderValue: 0
+      }
+    };
+
     return NextResponse.json({
       success: true,
-      data: {},
+      data: emptyCalendarData,
       meta: {
-        month,
-        year,
         totalDays: 0,
         stats: {
           totalPickups: 0,
-          totalOrders: 0
+          totalOrders: 0,
+          totalRevenue: 0,
+          totalReturns: 0,
+          averageOrderValue: 0
         },
         dateRange: {
           start: startDate.toISOString().split('T')[0],
           end: endDate.toISOString().split('T')[0]
         }
       },
-      message: `No calendar data for ${year}-${String(month).padStart(2, '0')}`
+      code: 'NO_CALENDAR_DATA',
+      message: `No calendar data for ${startDateStr} to ${endDateStr}`
     });
 
   } catch (error) {

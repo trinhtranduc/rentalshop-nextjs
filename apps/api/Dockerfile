@@ -27,10 +27,14 @@ COPY apps/admin/package.json ./apps/admin/
 COPY apps/client/package.json ./apps/client/
 
 # Install ALL dependencies including devDependencies (needed for build)
-# Set NODE_ENV=development to ensure workspace devDependencies are installed
-# This includes tsup, typescript, etc. needed for package builds
 ENV NODE_ENV=development
-RUN yarn install --frozen-lockfile
+# Add retry and network timeout for Railway builds
+RUN yarn config set network-timeout 300000 && \
+    yarn config set registry https://registry.npmjs.org/ && \
+    (yarn install --frozen-lockfile --network-timeout 300000 || \
+     (echo "First attempt failed, retrying..." && \
+      yarn cache clean && \
+      yarn install --frozen-lockfile --network-timeout 300000))
 
 # ===================================
 # STAGE 2: Builder
@@ -50,8 +54,18 @@ COPY . .
 # Generate Prisma Client with all binary targets
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
+# Run database migrations (if DATABASE_URL is available at build time)
+# This ensures database schema is up to date before build
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+RUN if [ -n "$DATABASE_URL" ]; then \
+      echo "Running database migrations..." && \
+      npx prisma migrate deploy --schema=./prisma/schema.prisma || echo "Migration failed or skipped"; \
+    else \
+      echo "DATABASE_URL not provided, skipping migrations at build time"; \
+    fi
+
 # Build packages using Turbo (respects dependency order)
-# Use yarn instead of direct tsup command to find local node_modules/.bin/tsup
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
 RUN yarn build
@@ -62,8 +76,8 @@ RUN yarn build
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-# Install OpenSSL for Prisma (required for debian-openssl-3.0.x binary)
-RUN apk add --no-cache openssl
+# Install OpenSSL for Prisma AND postgresql-client for migrations
+RUN apk add --no-cache openssl postgresql-client
 
 ENV NODE_ENV=production
 ENV PORT=3002
@@ -87,8 +101,22 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/api/.next ./apps/api/.next
 # Public folder is optional (may not exist for API-only apps)
 RUN mkdir -p ./apps/api/public
 
-# Copy Prisma schema (needed for runtime)
+# Create uploads directory for Railway Volume mount
+RUN mkdir -p ./apps/api/public/uploads
+
+# Copy Prisma schema (needed for runtime migrations)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
+# Copy start script
+COPY --from=builder --chown=nextjs:nodejs /app/apps/api/start.sh ./apps/api/start.sh
+RUN chmod +x ./apps/api/start.sh
+
+# Note: Railway Volume will be mounted at /app/public/uploads via Railway Dashboard
+# No VOLUME keyword needed - Railway handles volume mounting automatically
+
+# CRITICAL: Copy Prisma binaries to correct location
+RUN mkdir -p ./apps/api/.next/server/.prisma/client
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma/client/* ./apps/api/.next/server/.prisma/client/
 
 USER nextjs
 
@@ -96,6 +124,5 @@ EXPOSE 3002
 
 WORKDIR /app/apps/api
 
-# Start Next.js server (normal mode, not standalone)
-CMD ["../../node_modules/.bin/next", "start", "-p", "3002"]
-
+# Run start script (includes migrations + server start)
+CMD ["sh", "start.sh"]

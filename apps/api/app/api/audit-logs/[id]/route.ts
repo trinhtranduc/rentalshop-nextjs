@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { db } from '@rentalshop/database';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -20,7 +20,7 @@ export async function GET(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid audit log ID format' },
+          ResponseBuilder.error('INVALID_AUDIT_LOG_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -28,12 +28,12 @@ export async function GET(
       const auditLogId = parseInt(id);
       
       // Get audit log using the simplified database API
-      const auditLog = await db.auditLogs.findFirst({ where: { id: auditLogId } });
+      const auditLog = await db.auditLogs.findFirst({ id: auditLogId });
 
       if (!auditLog) {
         console.log('❌ Audit log not found in database for auditLogId:', auditLogId);
         return NextResponse.json(
-          { success: false, message: 'Audit log not found' },
+          ResponseBuilder.error('AUDIT_LOG_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -43,6 +43,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: auditLog,
+        code: 'AUDIT_LOG_RETRIEVED_SUCCESS',
         message: 'Audit log retrieved successfully'
       });
 

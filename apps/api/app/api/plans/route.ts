@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { planCreateSchema, handleApiError } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';
@@ -62,7 +62,8 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
     return NextResponse.json({
       success: true,
       data: plan,
-      message: 'Plan created successfully'
+      code: 'PLAN_CREATED_SUCCESS',
+        message: 'Plan created successfully'
     }, { status: 201 });
 
   } catch (error: any) {

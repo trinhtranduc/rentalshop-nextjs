@@ -23,7 +23,7 @@ export const registerSchema = z.object({
   businessName: z.string().optional(),
   // Business configuration (required for merchants)
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
-  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY', 'WEEKLY']).optional(),
+  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
   // Address fields for merchant registration
   address: z.string().optional(),
   city: z.string().optional(),
@@ -65,7 +65,7 @@ export const productCreateSchema = z.object({
   totalStock: z.number().int().min(0, 'Total stock must be non-negative'),
   images: z.union([z.string(), z.array(z.string())]).optional(), // Allow both string and array for testing
   merchantId: z.coerce.number().int().positive().optional(), // Optional - required for ADMIN users, auto-assigned for others
-  outletStock: z.array(outletStockItemSchema).min(1, 'At least one outlet stock entry is required'), // Required - every product must have outlet stock
+  outletStock: z.array(outletStockItemSchema).optional(), // Optional - will use default outlet if not provided
 });
 
 export const productUpdateSchema = z.object({
@@ -74,14 +74,16 @@ export const productUpdateSchema = z.object({
   rentPrice: z.number().nonnegative().optional(),
   salePrice: z.number().nonnegative().nullable().optional(),
   deposit: z.number().nonnegative().optional(),
-  images: z.string().optional(),
+  images: z.union([z.string(), z.array(z.string())]).optional(), // Support both string and array
   categoryId: z.coerce.number().int().positive().optional(), // Changed from string to number
   totalStock: z.number().int().min(0).optional(),
+  outletStock: z.array(outletStockItemSchema).optional(), // Add outletStock field
 });
 
 export const productsQuerySchema = z.object({
   q: z.string().optional(), // Search query parameter (consistent with orders)
   search: z.string().optional(), // Keep for backward compatibility
+  merchantId: z.coerce.number().int().positive().optional(), // Add merchant filtering support
   categoryId: z.coerce.number().int().positive().optional(), // Changed from string to number
   outletId: z.coerce.number().int().positive().optional(), // Add outlet filtering
   available: z.coerce.boolean().optional(), // Add availability filter
@@ -139,6 +141,7 @@ export const customersQuerySchema = z.object({
   q: z.string().optional(), // Search query parameter (consistent with orders)
   search: z.string().optional(), // Keep for backward compatibility
   merchantId: z.coerce.number().int().positive().optional(), // Changed from string to number
+  outletId: z.coerce.number().int().positive().optional(), // Add outlet filtering support
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === 'boolean') return v;
     if (v === undefined) return undefined;
@@ -169,6 +172,7 @@ const orderStatusEnum = z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED',
 
 export const ordersQuerySchema = z.object({
   q: z.string().optional(),
+  merchantId: z.coerce.number().int().positive().optional(), // Add merchant filtering support
   outletId: z.coerce.number().int().positive().optional(), // Changed from string to number
   customerId: z.coerce.number().int().positive().optional(), // Changed from string to number
   userId: z.coerce.number().int().positive().optional(), // Changed from string to number
@@ -181,8 +185,10 @@ export const ordersQuerySchema = z.object({
   returnDate: z.coerce.date().optional(),
   minAmount: z.coerce.number().optional(),
   maxAmount: z.coerce.number().optional(),
+  page: z.coerce.number().int().min(1).default(1), // ✅ Use page instead of offset
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  offset: z.coerce.number().int().min(0).default(0),
+  sortBy: z.string().optional(), // Add sortBy support
+  sortOrder: z.enum(['asc', 'desc']).optional(), // Add sortOrder support
 });
 
 const orderItemSchema = z.object({
@@ -192,9 +198,7 @@ const orderItemSchema = z.object({
   totalPrice: z.coerce.number().nonnegative().optional(), // Made optional since server calculates it
   deposit: z.coerce.number().nonnegative().default(0),
   notes: z.string().optional(),
-  startDate: z.coerce.date().optional(),
-  endDate: z.coerce.date().optional(),
-  daysRented: z.coerce.number().int().nonnegative().optional(),
+  // daysRented removed - API will calculate from pickupPlanAt and returnPlanAt
 });
 
 
@@ -211,8 +215,8 @@ const baseOrderSchema = z.object({
   outletId: z.coerce.number().int().positive(),
   pickupPlanAt: z.coerce.date().optional(),
   returnPlanAt: z.coerce.date().optional(),
-  rentalDuration: z.coerce.number().int().positive().optional(),
-  subtotal: z.coerce.number().nonnegative(),
+  // rentalDuration removed - API will calculate from pickupPlanAt and returnPlanAt
+  subtotal: z.coerce.number().nonnegative().optional(),
   taxAmount: z.coerce.number().nonnegative().optional(),
   discountType: z.enum(['amount', 'percentage']).optional(),
   discountValue: z.coerce.number().nonnegative().optional(),
@@ -228,9 +232,7 @@ const baseOrderSchema = z.object({
   pickupNotes: z.string().optional(),
   returnNotes: z.string().optional(),
   damageNotes: z.string().optional(),
-  customerName: z.string().optional(),
-  customerPhone: z.string().optional(),
-  customerEmail: z.string().email().optional(),
+  // customerName, customerPhone, customerEmail removed - use customerId only
   isReadyToDeliver: z.boolean().optional(),
   
   // Order items management
@@ -257,6 +259,8 @@ export type OrderUpdatePayload = z.infer<typeof orderUpdateSchema>;
 const userRoleEnum = z.enum(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
 
 export const usersQuerySchema = z.object({
+  merchantId: z.coerce.number().int().positive().optional(), // Add merchant filtering support
+  outletId: z.coerce.number().int().positive().optional(), // Add outlet filtering support
   role: userRoleEnum.optional(),
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === 'boolean') return v;
@@ -300,16 +304,41 @@ export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 // Outlets validation schemas
 // ============================================================================
 export const outletsQuerySchema = z.object({
-  merchantId: z.coerce.number().int().positive().optional(), // Changed from string to number
+  merchantId: z.coerce.number().int().positive().optional(),
   isActive: z.union([z.string(), z.boolean()]).transform((v) => {
     if (typeof v === 'boolean') return v;
     if (v === undefined) return undefined;
     if (v === 'all') return 'all';
     return v === 'true';
   }).optional(),
-  search: z.string().optional(),
+  q: z.string().optional(), // Search by outlet name (primary)
+  search: z.string().optional(), // Alias for q (backward compatibility)
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).optional(),
+});
+
+// ============================================================================
+// Categories validation schemas
+// ============================================================================
+
+export const categoriesQuerySchema = z.object({
+  q: z.string().optional(), // Search by category name
+  search: z.string().optional(), // Alias for backward compatibility
+  merchantId: z.coerce.number().int().positive().optional(),
+  isActive: z.union([z.string(), z.boolean()]).transform((v) => {
+    if (typeof v === 'boolean') return v;
+    if (v === undefined) return undefined;
+    if (v === 'all') return 'all';
+    return v === 'true';
+  }).optional(),
+  sortBy: z.enum(['name', 'createdAt', 'updatedAt']).default('name').optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('asc').optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  offset: z.coerce.number().int().min(0).optional(),
 });
 
 export const outletCreateSchema = z.object({

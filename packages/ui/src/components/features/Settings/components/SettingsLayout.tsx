@@ -11,6 +11,7 @@ import {
   Button
 } from '@rentalshop/ui';
 import { ChevronRight } from 'lucide-react';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -46,19 +47,20 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   onSectionChange
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const t = useSettingsTranslations();
 
   // Show loading state while user data is being fetched
   if (loading) {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Settings</PageTitle>
-          <p>Manage your account settings and preferences</p>
+          <PageTitle>{t('title')}</PageTitle>
+          <p>{t('subtitle')}</p>
         </PageHeader>
         <div className="flex justify-center items-center py-12">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading settings...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700 mx-auto mb-4"></div>
+            <p className="text-gray-600">{t('loading') || 'Loading settings...'}</p>
           </div>
         </div>
       </PageWrapper>
@@ -71,8 +73,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   return (
     <PageWrapper>
       <PageHeader>
-        <PageTitle>Settings</PageTitle>
-        <p>Manage your account settings and preferences</p>
+        <PageTitle>{t('title')}</PageTitle>
+        <p>{t('subtitle')}</p>
       </PageHeader>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -97,12 +99,13 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                     const isActive = activeSection === item.id;
                     
                     return (
-                      <button
+                      <Button
+                        variant="ghost"
                         key={item.id}
                         onClick={() => onSectionChange(item.id)}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors ${
+                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors justify-start h-auto ${
                           isActive
-                            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
                             : 'text-gray-700 hover:bg-gray-50'
                         }`}
                       >
@@ -112,7 +115,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                           <p className="text-xs text-gray-500 truncate">{item.description}</p>
                         </div>
                         <ChevronRight className="h-4 w-4" />
-                      </button>
+                      </Button>
                     );
                   })}
               </nav>

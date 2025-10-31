@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronDown, LucideIcon } from 'lucide-react';
+import { Button } from '../../../ui/button';
 
 interface CollapsibleSectionProps {
   title: string;
@@ -20,13 +21,14 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 }) => (
   <div className="overflow-hidden">
     {/* Header */}
-    <button
+    <Button
+      variant="ghost"
       onClick={onToggle}
-      className="w-full flex items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-t-xl"
+      className="w-full flex items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-t-xl h-auto justify-start"
     >
       <div className="flex items-center space-x-3">
         <div className="p-2 bg-blue-100 rounded-lg">
-          <Icon className="w-5 h-5 text-blue-600" />
+          <Icon className="w-5 h-5 text-blue-700" />
         </div>
         <div>
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
@@ -43,7 +45,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           }`} 
         />
       </div>
-    </button>
+    </Button>
     
     {/* Content */}
     <div className={`transition-all duration-300 ease-in-out ${

@@ -4,6 +4,8 @@
 export { Alert, AlertTitle, AlertDescription } from './alert';
 export { Badge, badgeVariants } from './badge';
 export { StatusBadge } from './status-badge';
+export { Breadcrumb } from './breadcrumb';
+export type { BreadcrumbItem, BreadcrumbProps } from './breadcrumb';
 export { Button, buttonVariants } from './button';
 export { ButtonClean } from './button-clean';
 export { ButtonColorful } from './button-colorful';
@@ -16,6 +18,9 @@ export { ConfirmationDialog } from './confirmation-dialog';
 export { ConfirmationDialogWithReason } from './confirmation-dialog-with-reason';
 export { Input } from './input';
 export { Label } from './label';
+export { Logo } from './logo';
+export { LoadingIndicator, LoadingInline } from './loading-indicator';
+export { Money, MoneyBold, MoneyLarge } from './Money';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 export { Separator } from './separator';
 export { Switch } from './switch';
@@ -70,9 +75,9 @@ export {
 // ============================================================================
 export { ProductAvailabilityAsyncDisplay } from './product-availability-async-display';
 export { ProductAvailabilityBadge } from './product-availability-badge';
-export { ProductAvailabilityTest } from './product-availability-test';
 export { ProductAvailabilityWarning } from './product-availability-warning';
 export { SearchableSelect } from './searchable-select';
+export { SearchableCountrySelect } from './searchable-country-select';
 
 // ============================================================================
 // TOAST COMPONENTS
