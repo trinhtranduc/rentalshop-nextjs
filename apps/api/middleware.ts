@@ -209,8 +209,9 @@ export async function middleware(request: NextRequest) {
     // All other plans allow both web and mobile access
     
     if (payload.role !== 'ADMIN' && platformInfo.platform === 'web') {
-      const planName = payload.planName || 'Basic'; // Default to Basic if not set
+      const planName = payload.planName || 'Trial'; // Default to Trial if not set
       
+      // Only block Basic plan from web access; Trial and all other plans allow web access
       if (planName === 'Basic') {
         console.log('❌ MIDDLEWARE: Platform access denied:', {
           planName,
