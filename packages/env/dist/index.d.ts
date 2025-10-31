@@ -123,40 +123,7 @@ declare const envSchema: z.ZodObject<{
  * Validated and type-safe environment configuration
  * Use this throughout your application instead of process.env
  */
-declare const env: {
-    NODE_ENV: "development" | "production" | "test";
-    DATABASE_URL: string;
-    JWT_SECRET: string;
-    JWT_EXPIRES_IN: string;
-    NEXTAUTH_SECRET: string;
-    NEXTAUTH_URL: string;
-    CLIENT_URL: string;
-    ADMIN_URL: string;
-    API_URL: string;
-    CORS_ORIGINS: string;
-    UPLOAD_PROVIDER: "local" | "cloudinary" | "s3";
-    MAX_FILE_SIZE: number;
-    EMAIL_PROVIDER: "console" | "ses";
-    EMAIL_FROM: string;
-    AWS_SES_REGION: string;
-    LOG_LEVEL: "debug" | "info" | "warn" | "error";
-    LOG_FORMAT: "pretty" | "json";
-    ENABLE_EMAIL_VERIFICATION: boolean;
-    ENABLE_ANALYTICS: boolean;
-    ENABLE_DEBUG_LOGS: boolean;
-    RATE_LIMIT_WINDOW: string;
-    RATE_LIMIT_MAX: number;
-    UPLOAD_PATH?: string | undefined;
-    CLOUDINARY_CLOUD_NAME?: string | undefined;
-    CLOUDINARY_API_KEY?: string | undefined;
-    CLOUDINARY_API_SECRET?: string | undefined;
-    REDIS_URL?: string | undefined;
-    STRIPE_PUBLISHABLE_KEY?: string | undefined;
-    STRIPE_SECRET_KEY?: string | undefined;
-    STRIPE_WEBHOOK_SECRET?: string | undefined;
-    SENTRY_DSN?: string | undefined;
-    SENTRY_ENVIRONMENT?: string | undefined;
-};
+declare const env: any;
 /**
  * Environment type
  */
