@@ -334,6 +334,18 @@ export const simplifiedPlans = {
   },
 
   /**
+   * Find plan by name (simplified API)
+   */
+  findByName: async (name: string) => {
+    return await prisma.plan.findFirst({
+      where: { 
+        name,
+        isActive: true 
+      }
+    });
+  },
+
+  /**
    * Create new plan (simplified API)
    */
   create: async (data: any) => {

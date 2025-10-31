@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       const { merchant, outlet, category, user } = result;
 
       // 7. Get or create trial plan (outside transaction - can reuse existing)
-      let trialPlan = await db.plans.findById(1); // Default trial plan
+      let trialPlan = await db.plans.findByName('Trial'); // Find Trial plan by name
       if (!trialPlan) {
         trialPlan = await db.plans.create({
           name: 'Trial',
