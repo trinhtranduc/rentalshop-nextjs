@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ProductCard } from './ProductCard';
 import { Product } from '@rentalshop/types';
+import { Button } from '../../../ui/button';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
@@ -63,12 +64,12 @@ export function ProductGrid({
             Try adjusting your filters or add some products to get started.
           </p>
           {showAddButton && categories.length > 0 && outlets.length > 0 && merchantId && (
-            <button
+            <Button
               onClick={handleAddProduct}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+              className="px-4 py-2"
             >
               Add Your First Product
-            </button>
+            </Button>
           )}
         </div>
       </div>

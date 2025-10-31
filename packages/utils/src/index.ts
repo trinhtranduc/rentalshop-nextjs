@@ -14,6 +14,11 @@ export * from './core';
 
 // Unified Error handling (consolidated from api-errors.ts)
 export * from './core/errors';
+export * from './core/error-display';
+
+// Breadcrumb utilities
+export * from './breadcrumbs';
 
 // Performance monitoring
 export * from './performance';
+

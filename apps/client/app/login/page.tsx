@@ -1,14 +1,28 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LoginForm } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, error: authError, loading: authLoading, clearError } = useAuth();
+  const { user, login, error: authError, loading: authLoading, clearError } = useAuth();
   const [localError, setLocalError] = useState<string | null>(null);
+
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (user) {
+      console.log('✅ User already logged in, redirecting to dashboard...');
+      console.log('📍 Current pathname:', window.location.pathname);
+      
+      // Use setTimeout to ensure state is fully synced
+      setTimeout(() => {
+        console.log('🚀 Executing redirect to /dashboard');
+        window.location.href = '/dashboard';
+      }, 100);
+    }
+  }, [user]);
 
   const handleLogin = async (data: any) => {
     try {
@@ -21,11 +35,10 @@ export default function LoginPage() {
       console.log('📥 Login result received:', success);
       
       if (success) {
-        console.log('✅ Login successful, redirecting to dashboard...');
-        // Small delay to ensure auth state is updated
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 200);
+        console.log('✅ Login successful');
+        // Redirect immediately to avoid accidental extra keypress triggering other links
+        router.replace('/dashboard');
+        return;
       } else {
         console.log('❌ Login failed');
         // Don't set local error - let authError from useAuth handle it

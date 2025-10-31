@@ -1,8 +1,7 @@
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
-  if (typeof require !== "undefined")
-    return require.apply(this, arguments);
+  if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
 
@@ -43,7 +42,7 @@ var simplifiedUsers = {
             description: true,
             isActive: true,
             planId: true,
-            subscriptionStatus: true,
+            // subscriptionStatus removed - use subscription.status
             totalRevenue: true,
             createdAt: true,
             lastActiveAt: true
@@ -171,7 +170,7 @@ var simplifiedUsers = {
               description: true,
               isActive: true,
               planId: true,
-              subscriptionStatus: true,
+              // subscriptionStatus removed - use subscription.status
               totalRevenue: true,
               createdAt: true,
               lastActiveAt: true
@@ -233,23 +232,35 @@ var simplifiedUsers = {
    * Search users with simple filters (simplified API)
    */
   search: async (filters) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      ...whereFilters
+    } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.outletId)
-      where.outletId = whereFilters.outletId;
-    if (whereFilters.isActive !== void 0)
-      where.isActive = whereFilters.isActive;
-    if (whereFilters.role)
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId) where.outletId = whereFilters.outletId;
+    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+    if (whereFilters.roles && Array.isArray(whereFilters.roles)) {
+      where.role = { in: whereFilters.roles };
+    } else if (whereFilters.role) {
       where.role = whereFilters.role;
+    }
     if (whereFilters.search) {
       where.OR = [
-        { firstName: { contains: whereFilters.search } },
-        { lastName: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } }
+        { firstName: { contains: whereFilters.search, mode: "insensitive" } },
+        { lastName: { contains: whereFilters.search, mode: "insensitive" } },
+        { email: { contains: whereFilters.search, mode: "insensitive" } }
       ];
+    }
+    const orderBy = {};
+    if (sortBy === "firstName" || sortBy === "lastName" || sortBy === "email") {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.createdAt = sortOrder;
     }
     const [users, total] = await Promise.all([
       prisma.user.findMany({
@@ -258,22 +269,32 @@ var simplifiedUsers = {
           merchant: { select: { id: true, name: true } },
           outlet: { select: { id: true, name: true } }
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
+        // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.user.count({ where })
     ]);
+    console.log(`\u{1F4CA} db.users.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, users=${users.length}`);
     return {
       data: users,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
   count: async (options) => {
     const where = options?.where || {};
+    return await prisma.user.count({ where });
+  },
+  /**
+   * Get user statistics (simplified API)
+   */
+  getStats: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
     return await prisma.user.count({ where });
   }
 };
@@ -328,37 +349,44 @@ var simplifiedCustomers = {
    * Search customers with pagination (simplified API)
    */
   search: async (filters) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      ...whereFilters
+    } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.outletId)
-      where.outletId = whereFilters.outletId;
-    if (whereFilters.isActive !== void 0)
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId) where.outletId = whereFilters.outletId;
+    if (whereFilters.isActive !== void 0) {
       where.isActive = whereFilters.isActive;
+    } else {
+      where.isActive = true;
+    }
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { firstName: { contains: whereFilters.search } },
-        { lastName: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } },
-        { phone: { contains: whereFilters.search } }
+        { firstName: { contains: searchTerm, mode: "insensitive" } },
+        { lastName: { contains: searchTerm, mode: "insensitive" } },
+        { email: { contains: searchTerm, mode: "insensitive" } },
+        { phone: { contains: searchTerm, mode: "insensitive" } }
       ];
     }
-    if (whereFilters.firstName)
-      where.firstName = { contains: whereFilters.firstName };
-    if (whereFilters.lastName)
-      where.lastName = { contains: whereFilters.lastName };
-    if (whereFilters.email)
-      where.email = { contains: whereFilters.email };
-    if (whereFilters.phone)
-      where.phone = { contains: whereFilters.phone };
-    if (whereFilters.city)
-      where.city = { contains: whereFilters.city };
-    if (whereFilters.state)
-      where.state = { contains: whereFilters.state };
-    if (whereFilters.country)
-      where.country = { contains: whereFilters.country };
+    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName, mode: "insensitive" };
+    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName, mode: "insensitive" };
+    if (whereFilters.email) where.email = { contains: whereFilters.email, mode: "insensitive" };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: "insensitive" };
+    if (whereFilters.city) where.city = { contains: whereFilters.city, mode: "insensitive" };
+    if (whereFilters.state) where.state = { contains: whereFilters.state, mode: "insensitive" };
+    if (whereFilters.country) where.country = { contains: whereFilters.country, mode: "insensitive" };
+    const orderBy = {};
+    if (sortBy === "firstName" || sortBy === "lastName" || sortBy === "email" || sortBy === "phone") {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.createdAt = sortOrder;
+    }
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
         where,
@@ -368,19 +396,64 @@ var simplifiedCustomers = {
             select: { orders: true }
           }
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
+        // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.customer.count({ where })
     ]);
+    console.log(`\u{1F4CA} db.customers.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, customers=${customers.length}`);
     return {
       data: customers,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
+  },
+  /**
+   * Delete customer (soft delete) (simplified API)
+   */
+  delete: async (id) => {
+    return await prisma.customer.update({
+      where: { id },
+      data: { isActive: false },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true
+      }
+    });
+  },
+  /**
+   * Find first customer matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.customer.findFirst({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true
+      }
+    });
   },
   /**
    * Get customer statistics (simplified API)
@@ -517,9 +590,28 @@ var simplifiedProducts = {
     });
   },
   /**
+   * Find first product matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.product.findFirst({
+      where,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        outletStock: {
+          include: {
+            outlet: { select: { id: true, name: true } }
+          }
+        }
+      }
+    });
+  },
+  /**
    * Get product statistics (simplified API)
    */
-  getStats: async (where = {}) => {
+  getStats: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
     return await prisma.product.count({ where });
   },
   /**
@@ -529,25 +621,25 @@ var simplifiedProducts = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.categoryId)
-      where.categoryId = whereFilters.categoryId;
-    if (whereFilters.isActive !== void 0)
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
+    if (whereFilters.isActive !== void 0) {
       where.isActive = whereFilters.isActive;
+    } else {
+      where.isActive = true;
+    }
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { name: { contains: whereFilters.search } },
-        { description: { contains: whereFilters.search } },
-        { barcode: { contains: whereFilters.search } }
+        { name: { contains: searchTerm, mode: "insensitive" } },
+        { description: { contains: searchTerm, mode: "insensitive" } },
+        { barcode: { contains: searchTerm, mode: "insensitive" } }
       ];
     }
     if (whereFilters.minPrice !== void 0 || whereFilters.maxPrice !== void 0) {
       where.rentPrice = {};
-      if (whereFilters.minPrice !== void 0)
-        where.rentPrice.gte = whereFilters.minPrice;
-      if (whereFilters.maxPrice !== void 0)
-        where.rentPrice.lte = whereFilters.maxPrice;
+      if (whereFilters.minPrice !== void 0) where.rentPrice.gte = whereFilters.minPrice;
+      if (whereFilters.maxPrice !== void 0) where.rentPrice.lte = whereFilters.maxPrice;
     }
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -906,7 +998,7 @@ async function searchOrders(filters) {
 }
 var simplifiedOrders = {
   /**
-   * Find order by ID (simplified API)
+   * Find order by ID (simplified API) - OPTIMIZED for performance
    */
   findById: async (id) => {
     return await prisma.order.findUnique({
@@ -916,7 +1008,15 @@ var simplifiedOrders = {
         outlet: { select: { id: true, name: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            productId: true,
+            notes: true,
+            rentalDays: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -942,7 +1042,15 @@ var simplifiedOrders = {
         },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            productId: true,
+            notes: true,
+            rentalDays: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -961,7 +1069,15 @@ var simplifiedOrders = {
         outlet: { select: { id: true, name: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            productId: true,
+            notes: true,
+            rentalDays: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -987,7 +1103,14 @@ var simplifiedOrders = {
    * Search orders with simple filters (simplified API)
    */
   search: async (filters) => {
-    const { page = 1, limit = 20, where: whereClause, ...whereFilters } = filters;
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      where: whereClause,
+      ...whereFilters
+    } = filters;
     const skip = (page - 1) * limit;
     const where = whereClause || {};
     if (whereFilters.merchantId) {
@@ -998,12 +1121,9 @@ var simplifiedOrders = {
     if (whereFilters.outletId) {
       where.outletId = whereFilters.outletId;
     }
-    if (whereFilters.customerId)
-      where.customerId = whereFilters.customerId;
-    if (whereFilters.status)
-      where.status = whereFilters.status;
-    if (whereFilters.orderType)
-      where.orderType = whereFilters.orderType;
+    if (whereFilters.customerId) where.customerId = whereFilters.customerId;
+    if (whereFilters.status) where.status = whereFilters.status;
+    if (whereFilters.orderType) where.orderType = whereFilters.orderType;
     if (whereFilters.productId) {
       where.orderItems = {
         some: {
@@ -1013,18 +1133,27 @@ var simplifiedOrders = {
     }
     if (whereFilters.startDate || whereFilters.endDate) {
       where.createdAt = {};
-      if (whereFilters.startDate)
-        where.createdAt.gte = whereFilters.startDate;
-      if (whereFilters.endDate)
-        where.createdAt.lte = whereFilters.endDate;
+      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
+      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
     }
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { orderNumber: { contains: whereFilters.search } },
-        { customer: { firstName: { contains: whereFilters.search } } },
-        { customer: { lastName: { contains: whereFilters.search } } },
-        { customer: { phone: { contains: whereFilters.search } } }
+        { orderNumber: { contains: searchTerm, mode: "insensitive" } },
+        { customer: { firstName: { contains: searchTerm, mode: "insensitive" } } },
+        { customer: { lastName: { contains: searchTerm, mode: "insensitive" } } },
+        { customer: { phone: { contains: searchTerm, mode: "insensitive" } } }
       ];
+    }
+    const orderBy = {};
+    if (sortBy === "orderNumber") {
+      orderBy.orderNumber = sortOrder;
+    } else if (sortBy === "totalAmount") {
+      orderBy.totalAmount = sortOrder;
+    } else if (sortBy === "customer") {
+      orderBy.customer = { firstName: sortOrder };
+    } else {
+      orderBy.createdAt = sortOrder;
     }
     const [orders, total] = await Promise.all([
       // OPTIMIZED: Use select instead of include for better performance
@@ -1074,20 +1203,59 @@ var simplifiedOrders = {
             }
           }
         },
-        orderBy: { createdAt: "desc" },
-        // Uses @@index([createdAt])
+        orderBy,
+        // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.order.count({ where })
     ]);
+    console.log(`\u{1F4CA} db.orders.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, orders=${orders.length}`);
     return {
       data: orders,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
+  },
+  /**
+   * Find first order matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.order.findFirst({
+      where,
+      include: {
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true
+          }
+        },
+        outlet: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true
+              }
+            }
+          }
+        }
+      }
+    });
   },
   /**
    * Get order statistics (simplified API)
@@ -1107,6 +1275,1072 @@ var simplifiedOrders = {
    */
   aggregate: async (args) => {
     return await prisma.order.aggregate(args);
+  },
+  // ============================================================================
+  // PERFORMANCE OPTIMIZED METHODS FOR LARGE DATASETS
+  // ============================================================================
+  /**
+   * Get orders list with minimal data for performance (for large datasets)
+   * Only essential fields for list view - no nested objects
+   */
+  /**
+   * Search orders with orderItems included (for calendar API)
+   */
+  searchWithItems: async (filters = {}) => {
+    const {
+      merchantId,
+      outletId,
+      status,
+      orderType,
+      productId,
+      startDate,
+      endDate,
+      search: search3,
+      page = 1,
+      limit = 1e3,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      where: whereClause
+    } = filters;
+    const where = whereClause || {};
+    console.log("\u{1F50D} searchWithItems - Original whereClause:", JSON.stringify(whereClause, null, 2));
+    if (where.merchantId) {
+      console.log("\u{1F50D} Found merchantId in whereClause, converting to outlet.merchantId");
+      where.outlet = {
+        merchantId: where.merchantId
+      };
+      delete where.merchantId;
+      console.log("\u{1F50D} After conversion:", JSON.stringify(where, null, 2));
+    }
+    if (merchantId) {
+      where.outlet = {
+        merchantId
+      };
+    }
+    if (outletId) {
+      where.outletId = outletId;
+      delete where.outlet;
+    }
+    if (status) where.status = status;
+    if (orderType) where.orderType = orderType;
+    if (productId) {
+      where.orderItems = {
+        some: {
+          productId
+        }
+      };
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    if (search3) {
+      where.OR = [
+        { orderNumber: { contains: search3 } },
+        { customer: { firstName: { contains: search3 } } },
+        { customer: { lastName: { contains: search3 } } },
+        { customer: { phone: { contains: search3 } } }
+      ];
+    }
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              email: true
+            }
+          },
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+              merchantId: true
+            }
+          },
+          orderItems: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  barcode: true,
+                  images: true,
+                  rentPrice: true,
+                  deposit: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.order.count({ where })
+    ]);
+    return {
+      data: orders,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
+  },
+  findManyMinimal: async (filters = {}) => {
+    const {
+      merchantId,
+      outletId,
+      status,
+      orderType,
+      startDate,
+      endDate,
+      search: search3,
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc"
+    } = filters;
+    const where = {};
+    if (merchantId) where.merchantId = merchantId;
+    if (outletId) where.outletId = outletId;
+    if (status) where.status = status;
+    if (orderType) where.orderType = orderType;
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    if (search3) {
+      where.OR = [
+        { orderNumber: { contains: search3, mode: "insensitive" } },
+        { customer: { firstName: { contains: search3, mode: "insensitive" } } },
+        { customer: { lastName: { contains: search3, mode: "insensitive" } } },
+        { customer: { phone: { contains: search3, mode: "insensitive" } } }
+      ];
+    }
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          depositAmount: true,
+          notes: true,
+          createdAt: true,
+          updatedAt: true,
+          outletId: true,
+          customerId: true,
+          createdById: true,
+          // Minimal customer data
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              email: true
+            }
+          },
+          // Minimal outlet data
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              merchant: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          },
+          // Minimal createdBy data
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          }
+        },
+        orderBy: { [sortBy]: sortOrder },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.order.count({ where })
+    ]);
+    const orderIds = orders.map((order) => order.id);
+    const itemCounts = await prisma.orderItem.groupBy({
+      by: ["orderId"],
+      where: { orderId: { in: orderIds } },
+      _count: { id: true }
+    });
+    const itemCountMap = new Map(itemCounts.map((item) => [item.orderId, item._count.id]));
+    const paymentCounts = await prisma.payment.groupBy({
+      by: ["orderId"],
+      where: { orderId: { in: orderIds } },
+      _count: { id: true },
+      _sum: { amount: true }
+    });
+    const paymentCountMap = new Map(paymentCounts.map((payment) => [payment.orderId, payment._count.id]));
+    const totalPaidMap = new Map(paymentCounts.map((payment) => [payment.orderId, payment._sum.amount || 0]));
+    const enhancedOrders = orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      depositAmount: order.depositAmount,
+      notes: order.notes,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      // Flatten customer data
+      customerId: order.customerId,
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
+      customerPhone: order.customer?.phone || null,
+      customerEmail: order.customer?.email || null,
+      // Flatten outlet data
+      outletId: order.outletId,
+      outletName: order.outlet?.name || null,
+      outletAddress: order.outlet?.address || null,
+      merchantId: order.outlet?.merchant?.id || null,
+      merchantName: order.outlet?.merchant?.name || null,
+      // Flatten createdBy data
+      createdById: order.createdById,
+      createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
+      createdByEmail: order.createdBy?.email || null,
+      // Calculated fields
+      itemCount: itemCountMap.get(order.id) || 0,
+      paymentCount: paymentCountMap.get(order.id) || 0,
+      totalPaid: totalPaidMap.get(order.id) || 0
+    }));
+    return {
+      data: enhancedOrders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  },
+  /**
+   * Get orders list with complete order information for performance (for large datasets)
+   * Includes all order fields, customer, outlet, createdBy, and products
+   */
+  findManyLightweight: async (filters) => {
+    const {
+      merchantId,
+      outletId,
+      status,
+      orderType,
+      productId,
+      startDate,
+      endDate,
+      search: search3,
+      page = 1,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc"
+    } = filters;
+    const where = {};
+    if (merchantId) {
+      where.outlet = { merchantId };
+    }
+    if (outletId) {
+      where.outletId = outletId;
+    }
+    if (status) {
+      where.status = status;
+    }
+    if (orderType) {
+      where.orderType = orderType;
+    }
+    if (productId) {
+      where.orderItems = {
+        some: {
+          productId
+        }
+      };
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    if (search3) {
+      const searchTerm = search3.trim();
+      where.OR = [
+        { orderNumber: { contains: searchTerm, mode: "insensitive" } },
+        { customer: { firstName: { contains: searchTerm, mode: "insensitive" } } },
+        { customer: { lastName: { contains: searchTerm, mode: "insensitive" } } },
+        { customer: { phone: { contains: searchTerm, mode: "insensitive" } } }
+      ];
+    }
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          depositAmount: true,
+          securityDeposit: true,
+          damageFee: true,
+          lateFee: true,
+          discountType: true,
+          discountValue: true,
+          discountAmount: true,
+          pickupPlanAt: true,
+          returnPlanAt: true,
+          pickedUpAt: true,
+          returnedAt: true,
+          rentalDuration: true,
+          isReadyToDeliver: true,
+          collateralType: true,
+          collateralDetails: true,
+          notes: true,
+          pickupNotes: true,
+          returnNotes: true,
+          damageNotes: true,
+          createdAt: true,
+          updatedAt: true,
+          outletId: true,
+          customerId: true,
+          createdById: true,
+          // Customer data
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              email: true,
+              address: true,
+              city: true,
+              state: true,
+              zipCode: true,
+              country: true
+            }
+          },
+          // Outlet data
+          outlet: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              phone: true,
+              city: true,
+              state: true,
+              zipCode: true,
+              country: true,
+              merchant: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          },
+          // CreatedBy data
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          // Include products for list view
+          orderItems: {
+            select: {
+              id: true,
+              quantity: true,
+              unitPrice: true,
+              totalPrice: true,
+              notes: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  barcode: true,
+                  images: true,
+                  rentPrice: true,
+                  deposit: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { [sortBy]: sortOrder },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.order.count({ where })
+    ]);
+    const orderIds = orders.map((o) => o.id);
+    const [itemCounts, paymentCounts] = await Promise.all([
+      prisma.orderItem.groupBy({
+        by: ["orderId"],
+        where: { orderId: { in: orderIds } },
+        _count: { id: true }
+      }),
+      prisma.payment.groupBy({
+        by: ["orderId"],
+        where: {
+          orderId: { in: orderIds },
+          status: "COMPLETED"
+        },
+        _sum: { amount: true },
+        _count: { id: true }
+      })
+    ]);
+    const itemCountMap = new Map(itemCounts.map((item) => [item.orderId, item._count.id]));
+    const paymentCountMap = new Map(paymentCounts.map((payment) => [payment.orderId, payment._count.id]));
+    const totalPaidMap = new Map(paymentCounts.map((payment) => [payment.orderId, payment._sum.amount || 0]));
+    const enhancedOrders = orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      depositAmount: order.depositAmount,
+      securityDeposit: order.securityDeposit,
+      damageFee: order.damageFee,
+      lateFee: order.lateFee,
+      discountType: order.discountType,
+      discountValue: order.discountValue,
+      discountAmount: order.discountAmount,
+      pickupPlanAt: order.pickupPlanAt,
+      returnPlanAt: order.returnPlanAt,
+      pickedUpAt: order.pickedUpAt,
+      returnedAt: order.returnedAt,
+      rentalDuration: order.rentalDuration,
+      isReadyToDeliver: order.isReadyToDeliver,
+      collateralType: order.collateralType,
+      collateralDetails: order.collateralDetails,
+      notes: order.notes,
+      pickupNotes: order.pickupNotes,
+      returnNotes: order.returnNotes,
+      damageNotes: order.damageNotes,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      // Flatten customer data (simplified)
+      customerId: order.customerId,
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
+      customerPhone: order.customer?.phone || null,
+      // Flatten outlet data (simplified)
+      outletId: order.outletId,
+      outletName: order.outlet?.name || null,
+      merchantName: order.outlet?.merchant?.name || null,
+      // Flatten createdBy data
+      createdById: order.createdById,
+      createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
+      // Order items with flattened product data
+      orderItems: order.orderItems?.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        notes: item.notes,
+        // Flatten product data
+        productId: item.product?.id,
+        productName: item.product?.name,
+        productBarcode: item.product?.barcode,
+        productImages: item.product?.images ? Array.isArray(item.product.images) ? item.product.images : [] : [],
+        productRentPrice: item.product?.rentPrice,
+        productDeposit: item.product?.deposit
+      })) || [],
+      // Calculated fields
+      itemCount: itemCountMap.get(order.id) || 0,
+      paymentCount: paymentCountMap.get(order.id) || 0,
+      totalPaid: totalPaidMap.get(order.id) || 0
+    }));
+    return {
+      data: enhancedOrders,
+      total,
+      page,
+      limit,
+      hasMore: page * limit < total,
+      totalPages: Math.ceil(total / limit)
+    };
+  },
+  /**
+   * Get order by ID with full detail data
+   * Includes all order fields, customer, outlet, products, payments, and timeline
+   */
+  findByIdDetail: async (id) => {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        orderNumber: true,
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        securityDeposit: true,
+        damageFee: true,
+        lateFee: true,
+        discountType: true,
+        discountValue: true,
+        discountAmount: true,
+        pickupPlanAt: true,
+        returnPlanAt: true,
+        pickedUpAt: true,
+        returnedAt: true,
+        rentalDuration: true,
+        isReadyToDeliver: true,
+        collateralType: true,
+        collateralDetails: true,
+        notes: true,
+        pickupNotes: true,
+        returnNotes: true,
+        damageNotes: true,
+        createdAt: true,
+        updatedAt: true,
+        outletId: true,
+        customerId: true,
+        createdById: true,
+        // Full customer data
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true,
+            address: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true,
+            dateOfBirth: true,
+            notes: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        },
+        // Full outlet data
+        outlet: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            phone: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true,
+            isActive: true,
+            merchant: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                address: true,
+                city: true,
+                state: true,
+                zipCode: true,
+                country: true,
+                businessType: true,
+                pricingType: true,
+                taxId: true,
+                currency: true
+              }
+            }
+          }
+        },
+        // Full createdBy data
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            role: true,
+            isActive: true,
+            createdAt: true
+          }
+        },
+        // Full order items with products
+        orderItems: {
+          select: {
+            id: true,
+            orderId: true,
+            productId: true,
+            productName: true,
+            productBarcode: true,
+            productImages: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            deposit: true,
+            notes: true,
+            rentalDays: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true,
+                images: true,
+                rentPrice: true,
+                deposit: true,
+                description: true,
+                isActive: true,
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        // Full payments data
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            method: true,
+            status: true,
+            reference: true,
+            notes: true,
+            processedAt: true,
+            createdAt: true,
+            updatedAt: true
+          },
+          orderBy: { createdAt: "desc" }
+        }
+      }
+    });
+    if (!order) return null;
+    let timeline = [];
+    try {
+      timeline = await prisma.orderAuditLog?.findMany({
+        where: { orderId: id },
+        select: {
+          id: true,
+          action: true,
+          description: true,
+          oldValues: true,
+          newValues: true,
+          createdAt: true,
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      }) || [];
+    } catch (error) {
+      console.log("OrderAuditLog table not found, skipping timeline");
+    }
+    const itemCount = order.orderItems?.length || 0;
+    const paymentCount = order.payments?.length || 0;
+    const totalPaid = order.payments?.filter((p) => p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0) || 0;
+    return {
+      ...order,
+      // Calculated fields
+      itemCount,
+      paymentCount,
+      totalPaid,
+      // Timeline
+      timeline
+    };
+  },
+  /**
+   * Get order detail with optimized loading
+   * Loads related data only when needed
+   */
+  findByIdOptimized: async (id, options = {}) => {
+    const {
+      includeItems = true,
+      includePayments = true,
+      includeCustomer = true,
+      includeOutlet = true
+    } = options;
+    const select = {
+      id: true,
+      orderNumber: true,
+      orderType: true,
+      status: true,
+      totalAmount: true,
+      depositAmount: true,
+      securityDeposit: true,
+      damageFee: true,
+      lateFee: true,
+      discountType: true,
+      discountValue: true,
+      discountAmount: true,
+      pickupPlanAt: true,
+      returnPlanAt: true,
+      pickedUpAt: true,
+      returnedAt: true,
+      rentalDuration: true,
+      isReadyToDeliver: true,
+      collateralType: true,
+      collateralDetails: true,
+      notes: true,
+      pickupNotes: true,
+      returnNotes: true,
+      damageNotes: true,
+      createdAt: true,
+      updatedAt: true,
+      outletId: true,
+      customerId: true,
+      createdById: true
+    };
+    if (includeCustomer) {
+      select.customer = {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          email: true,
+          address: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          dateOfBirth: true,
+          idNumber: true,
+          idType: true
+        }
+      };
+    }
+    if (includeOutlet) {
+      select.outlet = {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          phone: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          merchant: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      };
+    }
+    select.createdBy = {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true
+      }
+    };
+    if (includeItems) {
+      select.orderItems = {
+        select: {
+          id: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+          deposit: true,
+          productId: true,
+          notes: true,
+          rentalDays: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              barcode: true,
+              description: true,
+              images: true,
+              category: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      };
+    }
+    if (includePayments) {
+      select.payments = {
+        select: {
+          id: true,
+          amount: true,
+          currency: true,
+          method: true,
+          type: true,
+          status: true,
+          reference: true,
+          transactionId: true,
+          invoiceNumber: true,
+          description: true,
+          notes: true,
+          failureReason: true,
+          processedAt: true,
+          processedBy: true,
+          createdAt: true
+        }
+      };
+    }
+    return await prisma.order.findUnique({
+      where: { id },
+      select
+    });
+  },
+  /**
+   * Search orders with cursor-based pagination for large datasets
+   * More efficient than offset-based pagination for large datasets
+   * Includes complete order information and products
+   */
+  searchWithCursor: async (filters) => {
+    const {
+      merchantId,
+      outletId,
+      status,
+      orderType,
+      startDate,
+      endDate,
+      cursor,
+      limit = 20,
+      sortBy = "createdAt",
+      sortOrder = "desc"
+    } = filters;
+    const where = {};
+    if (merchantId) {
+      where.outlet = { merchantId };
+    }
+    if (outletId) {
+      where.outletId = outletId;
+    }
+    if (status) {
+      where.status = status;
+    }
+    if (orderType) {
+      where.orderType = orderType;
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    if (cursor) {
+      const cursorCondition = sortOrder === "desc" ? { [sortBy]: { lt: new Date(cursor) } } : { [sortBy]: { gt: new Date(cursor) } };
+      where.AND = [cursorCondition];
+    }
+    const orders = await prisma.order.findMany({
+      where,
+      select: {
+        id: true,
+        orderNumber: true,
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        securityDeposit: true,
+        damageFee: true,
+        lateFee: true,
+        discountType: true,
+        discountValue: true,
+        discountAmount: true,
+        pickupPlanAt: true,
+        returnPlanAt: true,
+        pickedUpAt: true,
+        returnedAt: true,
+        rentalDuration: true,
+        isReadyToDeliver: true,
+        collateralType: true,
+        collateralDetails: true,
+        notes: true,
+        pickupNotes: true,
+        returnNotes: true,
+        damageNotes: true,
+        createdAt: true,
+        updatedAt: true,
+        outletId: true,
+        customerId: true,
+        createdById: true,
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true,
+            address: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true
+          }
+        },
+        outlet: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            phone: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            country: true,
+            merchant: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        // Include products for list view
+        orderItems: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            notes: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true,
+                images: true,
+                rentPrice: true,
+                deposit: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { [sortBy]: sortOrder },
+      take: limit + 1
+      // Take one extra to check if there are more
+    });
+    const hasMore = orders.length > limit;
+    if (hasMore) {
+      orders.pop();
+    }
+    const nextCursor = hasMore && orders.length > 0 ? orders[orders.length - 1][sortBy]?.toString() : null;
+    return {
+      data: orders,
+      hasMore,
+      nextCursor
+    };
+  },
+  /**
+   * Get order statistics for dashboard (optimized aggregation)
+   */
+  getStatistics: async (filters) => {
+    const { merchantId, outletId, startDate, endDate } = filters;
+    const where = {};
+    if (merchantId) {
+      where.outlet = { merchantId };
+    }
+    if (outletId) {
+      where.outletId = outletId;
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = startDate;
+      if (endDate) where.createdAt.lte = endDate;
+    }
+    const [
+      totalOrders,
+      totalRevenue,
+      statusBreakdown,
+      typeBreakdown,
+      recentOrders
+    ] = await Promise.all([
+      // Total orders count
+      prisma.order.count({ where }),
+      // Total revenue
+      prisma.order.aggregate({
+        where,
+        _sum: { totalAmount: true }
+      }),
+      // Status breakdown
+      prisma.order.groupBy({
+        by: ["status"],
+        where,
+        _count: { id: true }
+      }),
+      // Type breakdown
+      prisma.order.groupBy({
+        by: ["orderType"],
+        where,
+        _count: { id: true }
+      }),
+      // Recent orders (last 10)
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          orderNumber: true,
+          orderType: true,
+          status: true,
+          totalAmount: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10
+      })
+    ]);
+    return {
+      totalOrders,
+      totalRevenue: totalRevenue._sum.totalAmount || 0,
+      statusBreakdown: statusBreakdown.reduce((acc, item) => {
+        acc[item.status] = item._count.id;
+        return acc;
+      }, {}),
+      typeBreakdown: typeBreakdown.reduce((acc, item) => {
+        acc[item.orderType] = item._count.id;
+        return acc;
+      }, {}),
+      recentOrders
+    };
   }
 };
 
@@ -1183,6 +2417,24 @@ var simplifiedPayments = {
    */
   search: searchPayments,
   /**
+   * Find first payment matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.payment.findFirst({
+      where,
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            totalAmount: true
+          }
+        }
+      }
+    });
+  },
+  /**
    * Get payment statistics (simplified API)
    */
   getStats: async (whereClause) => {
@@ -1204,6 +2456,32 @@ var simplifiedPayments = {
 };
 
 // src/outlet.ts
+async function getDefaultOutlet(merchantId) {
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { id: true }
+  });
+  if (!merchant) {
+    throw new Error(`Merchant with id ${merchantId} not found`);
+  }
+  const outlet = await prisma.outlet.findFirst({
+    where: {
+      merchantId: merchant.id,
+      // Use CUID
+      isDefault: true,
+      isActive: true
+    },
+    select: {
+      id: true,
+      name: true,
+      merchantId: true
+    }
+  });
+  if (!outlet) {
+    throw new Error(`No default outlet found for merchant ${merchantId}`);
+  }
+  return outlet;
+}
 var simplifiedOutlets = {
   /**
    * Find outlet by ID (simplified API)
@@ -1302,33 +2580,36 @@ var simplifiedOutlets = {
    * Search outlets with pagination (simplified API)
    */
   search: async (filters) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { page = 1, limit = 20, sortBy = "createdAt", sortOrder = "desc", ...whereFilters } = filters;
     const skip = (page - 1) * limit;
+    console.log("\u{1F50D} DB outlet.search - Received filters:", filters);
+    console.log("\u{1F50D} DB outlet.search - whereFilters:", whereFilters);
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.outletId)
-      where.id = whereFilters.outletId;
-    if (whereFilters.isActive !== void 0)
-      where.isActive = whereFilters.isActive;
-    if (whereFilters.status)
-      where.status = whereFilters.status;
-    if (whereFilters.search) {
-      where.OR = [
-        { name: { contains: whereFilters.search } },
-        { address: { contains: whereFilters.search } },
-        { phone: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } }
-      ];
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.outletId) where.id = whereFilters.outletId;
+    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+    if (whereFilters.status) where.status = whereFilters.status;
+    const searchTerm = whereFilters.search?.trim();
+    console.log("\u{1F50D} DB outlet.search - searchTerm:", searchTerm, "length:", searchTerm?.length);
+    if (searchTerm && searchTerm.length > 0) {
+      where.name = {
+        contains: searchTerm,
+        mode: "insensitive"
+      };
+      console.log("\u2705 DB outlet.search - Added name filter:", where.name);
+    } else {
+      console.log("\u26A0\uFE0F DB outlet.search - No search term, will return all outlets for this merchant");
     }
-    if (whereFilters.name)
-      where.name = { contains: whereFilters.name };
-    if (whereFilters.address)
-      where.address = { contains: whereFilters.address };
-    if (whereFilters.phone)
-      where.phone = { contains: whereFilters.phone };
-    if (whereFilters.email)
-      where.email = { contains: whereFilters.email };
+    console.log("\u{1F50D} DB outlet.search - Final where clause:", JSON.stringify(where, null, 2));
+    if (whereFilters.name) where.name = { contains: whereFilters.name, mode: "insensitive" };
+    if (whereFilters.address) where.address = { contains: whereFilters.address, mode: "insensitive" };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: "insensitive" };
+    const orderBy = {};
+    if (sortBy === "name" || sortBy === "createdAt" || sortBy === "updatedAt") {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.createdAt = "desc";
+    }
     const [outlets, total] = await Promise.all([
       prisma.outlet.findMany({
         where,
@@ -1341,18 +2622,20 @@ var simplifiedOutlets = {
             }
           }
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
         skip,
         take: limit
       }),
       prisma.outlet.count({ where })
     ]);
+    console.log(`\u{1F4CA} db.outlets.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, outlets=${outlets.length}`);
     return {
       data: outlets,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
   count: async (options) => {
@@ -1362,6 +2645,27 @@ var simplifiedOutlets = {
 };
 
 // src/plan.ts
+function generatePlanPricing(basePrice) {
+  return {
+    monthly: {
+      price: basePrice,
+      discount: 0,
+      savings: 0
+    },
+    quarterly: {
+      price: basePrice * 3 * 0.95,
+      // 5% discount for quarterly
+      discount: 5,
+      savings: basePrice * 3 * 0.05
+    },
+    yearly: {
+      price: basePrice * 12 * 0.85,
+      // 15% discount for yearly
+      discount: 15,
+      savings: basePrice * 12 * 0.15
+    }
+  };
+}
 var simplifiedPlans = {
   /**
    * Find plan by ID (simplified API)
@@ -1403,10 +2707,8 @@ var simplifiedPlans = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.isActive !== void 0)
-      where.isActive = whereFilters.isActive;
-    if (whereFilters.isPopular !== void 0)
-      where.isPopular = whereFilters.isPopular;
+    if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
+    if (whereFilters.isPopular !== void 0) where.isPopular = whereFilters.isPopular;
     if (whereFilters.search) {
       where.OR = [
         { name: { contains: whereFilters.search } },
@@ -1415,10 +2717,8 @@ var simplifiedPlans = {
     }
     if (whereFilters.minPrice !== void 0 || whereFilters.maxPrice !== void 0) {
       where.basePrice = {};
-      if (whereFilters.minPrice !== void 0)
-        where.basePrice.gte = whereFilters.minPrice;
-      if (whereFilters.maxPrice !== void 0)
-        where.basePrice.lte = whereFilters.maxPrice;
+      if (whereFilters.minPrice !== void 0) where.basePrice.gte = whereFilters.minPrice;
+      if (whereFilters.maxPrice !== void 0) where.basePrice.lte = whereFilters.maxPrice;
     }
     const [plans, total] = await Promise.all([
       prisma.plan.findMany({
@@ -1435,6 +2735,42 @@ var simplifiedPlans = {
       page,
       limit,
       hasMore: skip + limit < total
+    };
+  },
+  /**
+   * Find first plan matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    const plan = await prisma.plan.findFirst({
+      where,
+      include: {
+        subscriptions: {
+          select: {
+            id: true,
+            merchantId: true,
+            status: true
+          }
+        }
+      }
+    });
+    if (!plan) return null;
+    return {
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      basePrice: plan.basePrice,
+      currency: plan.currency,
+      trialDays: plan.trialDays,
+      limits: JSON.parse(plan.limits),
+      features: JSON.parse(plan.features || "[]"),
+      isActive: plan.isActive,
+      isPopular: plan.isPopular,
+      sortOrder: plan.sortOrder,
+      pricing: generatePlanPricing(plan.basePrice),
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
+      subscriptions: plan.subscriptions
     };
   },
   /**
@@ -1459,6 +2795,7 @@ import { calculateSubscriptionPrice } from "@rentalshop/utils";
 function generatePricingFromBasePrice(basePrice) {
   const monthlyPrice = basePrice;
   const quarterlyPrice = monthlyPrice * 3;
+  const sixMonthsPrice = monthlyPrice * 6;
   const yearlyPrice = monthlyPrice * 12;
   return {
     monthly: {
@@ -1471,6 +2808,12 @@ function generatePricingFromBasePrice(basePrice) {
       discount: 5,
       // 5% discount for quarterly
       savings: quarterlyPrice * 0.05
+    },
+    sixMonths: {
+      price: sixMonthsPrice,
+      discount: 10,
+      // 10% discount for 6 months
+      savings: sixMonthsPrice * 0.1
     },
     yearly: {
       price: yearlyPrice,
@@ -1514,15 +2857,13 @@ async function getSubscriptionByMerchantId(merchantId) {
         select: {
           id: true,
           name: true,
-          email: true,
-          subscriptionStatus: true
+          email: true
         }
       },
       plan: true
     }
   });
-  if (!subscription)
-    return null;
+  if (!subscription) return null;
   return {
     id: subscription.id,
     merchantId: subscription.merchantId,
@@ -1554,8 +2895,7 @@ async function getExpiredSubscriptions() {
         select: {
           id: true,
           name: true,
-          email: true,
-          subscriptionStatus: true
+          email: true
         }
       },
       plan: true
@@ -1585,15 +2925,13 @@ async function getSubscriptionById(id) {
         select: {
           id: true,
           name: true,
-          email: true,
-          subscriptionStatus: true
+          email: true
         }
       },
       plan: true
     }
   });
-  if (!subscription)
-    return null;
+  if (!subscription) return null;
   return {
     id: subscription.id,
     merchantId: subscription.merchantId,
@@ -1621,8 +2959,7 @@ async function updateSubscription(subscriptionId, data) {
         select: {
           id: true,
           name: true,
-          email: true,
-          subscriptionStatus: true
+          email: true
         }
       },
       plan: true
@@ -1758,10 +3095,16 @@ var simplifiedSubscriptions = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId)
-      where.merchantId = whereFilters.merchantId;
-    if (whereFilters.planId)
-      where.planId = whereFilters.planId;
+    if (whereFilters.search) {
+      where.merchant = {
+        name: {
+          contains: whereFilters.search,
+          mode: "insensitive"
+        }
+      };
+    }
+    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    if (whereFilters.planId) where.planId = whereFilters.planId;
     if (whereFilters.isActive !== void 0) {
       if (whereFilters.isActive) {
         where.status = { not: "CANCELLED" };
@@ -1769,14 +3112,11 @@ var simplifiedSubscriptions = {
         where.status = "CANCELLED";
       }
     }
-    if (whereFilters.status)
-      where.status = whereFilters.status;
+    if (whereFilters.status) where.status = whereFilters.status;
     if (whereFilters.startDate || whereFilters.endDate) {
       where.createdAt = {};
-      if (whereFilters.startDate)
-        where.createdAt.gte = whereFilters.startDate;
-      if (whereFilters.endDate)
-        where.createdAt.lte = whereFilters.endDate;
+      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
+      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
     }
     const [subscriptions, total] = await Promise.all([
       prisma.subscription.findMany({
@@ -1802,6 +3142,30 @@ var simplifiedSubscriptions = {
       limit,
       hasMore: skip + limit < total
     };
+  },
+  /**
+   * Find first subscription matching criteria (simplified API)
+   */
+  findFirst: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.subscription.findFirst({
+      where,
+      include: {
+        merchant: { select: { id: true, name: true } },
+        plan: { select: { id: true, name: true } },
+        payments: {
+          orderBy: { createdAt: "desc" },
+          take: 5
+        }
+      }
+    });
+  },
+  /**
+   * Get subscription statistics (simplified API)
+   */
+  getStats: async (whereClause) => {
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.subscription.count({ where });
   },
   /**
    * Get expired subscriptions (simplified API)
@@ -1887,7 +3251,7 @@ async function findById2(id) {
   return await prisma.merchant.findUnique({
     where: { id },
     include: {
-      Plan: true,
+      // Plan removed - use subscription.plan instead (single source of truth)
       subscription: {
         include: {
           plan: true
@@ -1924,26 +3288,21 @@ async function search(filters) {
   const {
     page = 1,
     limit = 20,
-    search: search2,
+    search: search3,
     businessType,
-    subscriptionStatus,
     planId,
     isActive
   } = filters;
   const skip = (page - 1) * limit;
   const where = {};
-  if (search2) {
+  if (search3) {
     where.OR = [
-      { name: { contains: search2, mode: "insensitive" } },
-      { email: { contains: search2, mode: "insensitive" } },
-      { businessType: { contains: search2, mode: "insensitive" } }
+      { name: { contains: search3, mode: "insensitive" } },
+      { email: { contains: search3, mode: "insensitive" } }
     ];
   }
   if (businessType) {
     where.businessType = businessType;
-  }
-  if (subscriptionStatus) {
-    where.subscriptionStatus = subscriptionStatus;
   }
   if (planId !== void 0) {
     where.planId = planId;
@@ -1955,22 +3314,33 @@ async function search(filters) {
     prisma.merchant.findMany({
       where,
       include: {
-        Plan: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            basePrice: true,
-            currency: true
-          }
-        },
         subscription: {
           select: {
             id: true,
             status: true,
             currentPeriodStart: true,
             currentPeriodEnd: true,
-            amount: true
+            trialStart: true,
+            trialEnd: true,
+            amount: true,
+            currency: true,
+            interval: true,
+            period: true,
+            discount: true,
+            savings: true,
+            cancelAtPeriodEnd: true,
+            canceledAt: true,
+            cancelReason: true,
+            plan: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                basePrice: true,
+                currency: true,
+                trialDays: true
+              }
+            }
           }
         },
         _count: {
@@ -1997,9 +3367,11 @@ async function search(filters) {
   };
 }
 async function create(data) {
+  const { planId, ...rest } = data;
   return await prisma.merchant.create({
     data: {
-      ...data,
+      ...rest,
+      ...planId !== void 0 ? { Plan: { connect: { id: planId } } } : {},
       createdAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
     },
@@ -2010,10 +3382,12 @@ async function create(data) {
   });
 }
 async function update(id, data) {
+  const { planId, ...rest } = data;
   return await prisma.merchant.update({
     where: { id },
     data: {
-      ...data,
+      ...rest,
+      ...planId !== void 0 ? { Plan: { connect: { id: planId } } } : {},
       updatedAt: /* @__PURE__ */ new Date()
     },
     include: {
@@ -2073,15 +3447,55 @@ async function count(options) {
   const where = options?.where || {};
   return await prisma.merchant.count({ where });
 }
+async function checkDuplicate(email, phone, excludeId) {
+  if (!email && !phone) {
+    return null;
+  }
+  const conditions = [];
+  if (email) {
+    conditions.push({ email });
+  }
+  if (phone) {
+    conditions.push({ phone });
+  }
+  const where = {
+    OR: conditions
+  };
+  if (excludeId) {
+    where.id = { not: excludeId };
+  }
+  return await prisma.merchant.findFirst({ where });
+}
+var findFirst = async (whereClause) => {
+  const where = whereClause?.where || whereClause || {};
+  return await prisma.merchant.findFirst({
+    where,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      address: true,
+      businessType: true,
+      pricingType: true,
+      pricingConfig: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+};
 var simplifiedMerchants = {
   findById: findById2,
   findByEmail,
+  findFirst,
   search,
   create,
   update,
   remove,
   getStats,
-  count
+  count,
+  checkDuplicate
 };
 
 // src/order-number-generator.ts
@@ -2277,7 +3691,7 @@ async function generateCompactNumericNumber(outletIdStr, prefix) {
   let retryCount = 0;
   while (retryCount < maxRetries) {
     try {
-      const randomStr = generateRandomString(5, true);
+      const randomStr = generateRandomString(8, true);
       const orderNumber = `${prefix}${outletIdStr}${randomStr}`;
       const existingOrder = await prisma.order.findUnique({
         where: { orderNumber },
@@ -2319,29 +3733,29 @@ async function generateHybridNumber(outletIdStr, prefix, sequenceLength, generat
 }
 function generateRandomString(length, numericOnly = false) {
   const chars = numericOnly ? "0123456789" : "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const randomBytes = new Uint8Array(length);
+  const randomBytes2 = new Uint8Array(length);
   if (typeof window !== "undefined" && window.crypto) {
-    window.crypto.getRandomValues(randomBytes);
+    window.crypto.getRandomValues(randomBytes2);
   } else {
     const crypto = __require("crypto");
     const randomBytesNode = crypto.randomBytes(length);
-    randomBytes.set(randomBytesNode);
+    randomBytes2.set(randomBytesNode);
   }
-  return Array.from(randomBytes, (byte) => chars[byte % chars.length]).join("");
+  return Array.from(randomBytes2, (byte) => chars[byte % chars.length]).join("");
 }
 function validateOrderNumber(orderNumber) {
   const patterns = [
-    /^ORD-\d{3}-\d{4}$/,
+    /^\d{3}-\d{4}$/,
     // Sequential: ORD-001-0001
-    /^ORD-\d{3}-\d{8}-\d{4}$/,
+    /^\d{3}-\d{8}-\d{4}$/,
     // Date-based: ORD-001-20250115-0001
-    /^ORD-\d{3}-[A-Z0-9]{6}$/,
+    /^\d{3}-[A-Z0-9]{6}$/,
     // Random: ORD-001-A7B9C2
-    /^ORD-\d{3}-\d{6}$/,
+    /^\d{3}-\d{6}$/,
     // Random-numeric: ORD-001-123456
-    /^ORD-\d{3}-\d{8}-[A-Z0-9]{4}$/,
+    /^\d{3}-\d{8}-[A-Z0-9]{4}$/,
     // Hybrid: ORD-001-20250115-A7B9
-    /^ORD\d{3}\d{5}$/
+    /^\d{3}\d{5}$/
     // Compact-numeric: ORD00112345
   ];
   return patterns.some((pattern) => pattern.test(orderNumber));
@@ -2445,12 +3859,13 @@ var findById3 = async (id) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
   });
 };
-var findFirst = async (where) => {
+var findFirst2 = async (where) => {
   return await prisma.category.findFirst({
     where,
     select: {
@@ -2458,6 +3873,7 @@ var findFirst = async (where) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -2472,6 +3888,7 @@ var findMany = async (options = {}) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true,
       ...select
@@ -2489,6 +3906,7 @@ var create2 = async (data) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -2503,35 +3921,91 @@ var update2 = async (id, data) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
   });
 };
 var deleteCategory = async (id) => {
-  return await prisma.category.update({
-    where: { id },
-    data: { isActive: false },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true
-    }
+  return await prisma.category.delete({
+    where: { id }
   });
 };
-var getStats2 = async (where = {}) => {
+var search2 = async (filters) => {
+  const { page = 1, limit = 20, sortBy = "name", sortOrder = "asc", ...whereFilters } = filters;
+  const skip = (page - 1) * limit;
+  console.log("\u{1F50D} DB category.search - Received filters:", filters);
+  const where = {};
+  if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+  if (whereFilters.isActive !== void 0) {
+    where.isActive = whereFilters.isActive;
+  } else {
+    where.isActive = true;
+  }
+  const searchTerm = (whereFilters.q || whereFilters.search)?.trim();
+  console.log("\u{1F50D} DB category.search - searchTerm:", searchTerm, "length:", searchTerm?.length);
+  if (searchTerm && searchTerm.length > 0) {
+    where.name = {
+      contains: searchTerm,
+      mode: "insensitive"
+    };
+    console.log("\u2705 DB category.search - Added name filter:", where.name);
+  } else {
+    console.log("\u26A0\uFE0F DB category.search - No search term, will return all categories");
+  }
+  console.log("\u{1F50D} DB category.search - Final where clause:", JSON.stringify(where, null, 2));
+  const orderBy = {};
+  if (sortBy === "name" || sortBy === "createdAt" || sortBy === "updatedAt") {
+    orderBy[sortBy] = sortOrder;
+  } else {
+    orderBy.name = "asc";
+  }
+  const [categories, total] = await Promise.all([
+    prisma.category.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        isActive: true,
+        isDefault: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            products: true
+          }
+        }
+      },
+      orderBy,
+      skip,
+      take: limit
+    }),
+    prisma.category.count({ where })
+  ]);
+  console.log(`\u{1F4CA} db.categories.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, categories=${categories.length}`);
+  return {
+    data: categories,
+    total,
+    page,
+    limit,
+    hasMore: skip + limit < total,
+    totalPages: Math.ceil(total / limit)
+  };
+};
+var getStats2 = async (whereClause) => {
+  const where = whereClause?.where || whereClause || {};
   return await prisma.category.count({ where });
 };
 var simplifiedCategories = {
   findById: findById3,
-  findFirst,
+  findFirst: findFirst2,
   findMany,
   create: create2,
   update: update2,
   delete: deleteCategory,
+  search: search2,
   getStats: getStats2
 };
 
@@ -2556,10 +4030,11 @@ var findMany2 = async (options = {}) => {
     skip
   });
 };
-var getStats3 = async (where = {}) => {
+var getStats3 = async (whereClause) => {
+  const where = whereClause?.where || whereClause || {};
   return await prisma.auditLog.count({ where });
 };
-var findFirst2 = async (where) => {
+var findFirst3 = async (where) => {
   return await prisma.auditLog.findFirst({
     where,
     include: {
@@ -2591,7 +4066,7 @@ var create3 = async (data) => {
 };
 var simplifiedAuditLogs = {
   findMany: findMany2,
-  findFirst: findFirst2,
+  findFirst: findFirst3,
   create: create3,
   getStats: getStats3
 };
@@ -2626,10 +4101,11 @@ var groupBy = async (options) => {
   }
   return await prisma.orderItem.groupBy(groupByOptions);
 };
-var getStats4 = async (where = {}) => {
+var getStats4 = async (whereClause) => {
+  const where = whereClause?.where || whereClause || {};
   return await prisma.orderItem.count({ where });
 };
-var findFirst3 = async (where) => {
+var findFirst4 = async (where) => {
   return await prisma.orderItem.findFirst({
     where,
     include: {
@@ -2664,12 +4140,133 @@ var deleteOrderItem = async (id) => {
 };
 var simplifiedOrderItems = {
   findMany: findMany3,
-  findFirst: findFirst3,
+  findFirst: findFirst4,
   create: create4,
   update: update3,
   delete: deleteOrderItem,
   getStats: getStats4,
   groupBy
+};
+
+// src/sessions.ts
+import { randomBytes } from "crypto";
+function generateSessionId() {
+  return randomBytes(32).toString("hex");
+}
+async function createUserSession(userId, ipAddress, userAgent) {
+  const sessionId = generateSessionId();
+  const expiresAt = /* @__PURE__ */ new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+  return await prisma.$transaction(async (tx) => {
+    await tx.userSession.updateMany({
+      where: {
+        userId,
+        isActive: true
+      },
+      data: {
+        isActive: false,
+        invalidatedAt: /* @__PURE__ */ new Date()
+      }
+    });
+    const session = await tx.userSession.create({
+      data: {
+        userId,
+        sessionId,
+        ipAddress,
+        userAgent,
+        expiresAt,
+        isActive: true
+      }
+    });
+    return session;
+  });
+}
+async function validateSession(sessionId) {
+  if (!sessionId) {
+    return false;
+  }
+  const session = await prisma.userSession.findUnique({
+    where: { sessionId }
+  });
+  if (!session) {
+    return false;
+  }
+  if (!session.isActive) {
+    return false;
+  }
+  if (session.expiresAt < /* @__PURE__ */ new Date()) {
+    await prisma.userSession.update({
+      where: { id: session.id },
+      data: {
+        isActive: false,
+        invalidatedAt: /* @__PURE__ */ new Date()
+      }
+    });
+    return false;
+  }
+  return true;
+}
+async function invalidateSession(sessionId) {
+  await prisma.userSession.updateMany({
+    where: {
+      sessionId,
+      isActive: true
+    },
+    data: {
+      isActive: false,
+      invalidatedAt: /* @__PURE__ */ new Date()
+    }
+  });
+}
+async function invalidateAllUserSessions(userId) {
+  await prisma.userSession.updateMany({
+    where: {
+      userId,
+      isActive: true
+    },
+    data: {
+      isActive: false,
+      invalidatedAt: /* @__PURE__ */ new Date()
+    }
+  });
+}
+async function getUserActiveSessions(userId) {
+  return await prisma.userSession.findMany({
+    where: {
+      userId,
+      isActive: true,
+      expiresAt: {
+        gt: /* @__PURE__ */ new Date()
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+}
+async function cleanupExpiredSessions() {
+  const result = await prisma.userSession.updateMany({
+    where: {
+      isActive: true,
+      expiresAt: {
+        lt: /* @__PURE__ */ new Date()
+      }
+    },
+    data: {
+      isActive: false,
+      invalidatedAt: /* @__PURE__ */ new Date()
+    }
+  });
+  return result.count;
+}
+var sessions = {
+  generateSessionId,
+  createUserSession,
+  validateSession,
+  invalidateSession,
+  invalidateAllUserSessions,
+  getUserActiveSessions,
+  cleanupExpiredSessions
 };
 
 // src/audit.ts
@@ -2715,8 +4312,7 @@ var AuditLogger = class {
   }
   // Validate foreign key IDs to prevent constraint violations
   async validateUserId(userId) {
-    if (!userId)
-      return null;
+    if (!userId) return null;
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -2729,8 +4325,7 @@ var AuditLogger = class {
     }
   }
   async validateMerchantId(merchantId) {
-    if (!merchantId)
-      return null;
+    if (!merchantId) return null;
     try {
       const merchant = await this.prisma.merchant.findUnique({
         where: { id: merchantId },
@@ -2743,8 +4338,7 @@ var AuditLogger = class {
     }
   }
   async validateOutletId(outletId) {
-    if (!outletId)
-      return null;
+    if (!outletId) return null;
     try {
       const outlet = await this.prisma.outlet.findUnique({
         where: { id: outletId },
@@ -2844,28 +4438,18 @@ var AuditLogger = class {
   // Query audit logs
   async getAuditLogs(filter = {}) {
     const where = {};
-    if (filter.action)
-      where.action = filter.action;
-    if (filter.entityType)
-      where.entityType = filter.entityType;
-    if (filter.entityId)
-      where.entityId = filter.entityId;
-    if (filter.userId)
-      where.userId = filter.userId;
-    if (filter.merchantId)
-      where.merchantId = filter.merchantId;
-    if (filter.outletId)
-      where.outletId = filter.outletId;
-    if (filter.severity)
-      where.severity = filter.severity;
-    if (filter.category)
-      where.category = filter.category;
+    if (filter.action) where.action = filter.action;
+    if (filter.entityType) where.entityType = filter.entityType;
+    if (filter.entityId) where.entityId = filter.entityId;
+    if (filter.userId) where.userId = filter.userId;
+    if (filter.merchantId) where.merchantId = filter.merchantId;
+    if (filter.outletId) where.outletId = filter.outletId;
+    if (filter.severity) where.severity = filter.severity;
+    if (filter.category) where.category = filter.category;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
-      if (filter.startDate)
-        where.createdAt.gte = filter.startDate;
-      if (filter.endDate)
-        where.createdAt.lte = filter.endDate;
+      if (filter.startDate) where.createdAt.gte = filter.startDate;
+      if (filter.endDate) where.createdAt.lte = filter.endDate;
     }
     const limit = filter.limit || 50;
     const offset = filter.offset || 0;
@@ -2913,16 +4497,12 @@ var AuditLogger = class {
   // Get audit statistics
   async getAuditStats(filter = {}) {
     const where = {};
-    if (filter.merchantId)
-      where.merchantId = filter.merchantId;
-    if (filter.outletId)
-      where.outletId = filter.outletId;
+    if (filter.merchantId) where.merchantId = filter.merchantId;
+    if (filter.outletId) where.outletId = filter.outletId;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
-      if (filter.startDate)
-        where.createdAt.gte = filter.startDate;
-      if (filter.endDate)
-        where.createdAt.lte = filter.endDate;
+      if (filter.startDate) where.createdAt.gte = filter.startDate;
+      if (filter.endDate) where.createdAt.lte = filter.endDate;
     }
     const totalLogs = 0;
     const actionStats = [];
@@ -3084,8 +4664,8 @@ async function registerMerchant(tx, data) {
       state: data.state,
       zipCode: data.zipCode,
       country: data.country,
-      isActive: true,
-      subscriptionStatus: "trial"
+      isActive: true
+      // subscriptionStatus removed - will be set in subscription.status
     }
   });
   const lastOutlet = await tx.outlet.findFirst({
@@ -3357,6 +4937,10 @@ async function registerBasicUser(tx, data) {
 // src/index.ts
 var db = {
   // ============================================================================
+  // PRISMA CLIENT (for transactions)
+  // ============================================================================
+  prisma,
+  // ============================================================================
   // USER OPERATIONS
   // ============================================================================
   users: simplifiedUsers,
@@ -3422,7 +5006,11 @@ var db = {
   // ============================================================================
   // SUBSCRIPTION ACTIVITY OPERATIONS
   // ============================================================================
-  subscriptionActivities: simplifiedSubscriptionActivities
+  subscriptionActivities: simplifiedSubscriptionActivities,
+  // ============================================================================
+  // SESSION OPERATIONS (Single Session Enforcement)
+  // ============================================================================
+  sessions
 };
 var checkDatabaseConnection = async () => {
   try {
@@ -3440,11 +5028,21 @@ var generateOrderNumber2 = async (outletId) => {
   if (!outlet) {
     throw new Error(`Outlet with id ${outletId} not found`);
   }
-  const orderCount = await prisma.order.count({
-    where: { outletId }
-  });
-  const sequence = (orderCount + 1).toString().padStart(4, "0");
-  return `ORD-${outletId.toString().padStart(3, "0")}-${sequence}`;
+  const generateRandom8Digits = () => {
+    return Math.floor(1e7 + Math.random() * 9e7).toString();
+  };
+  const maxRetries = 10;
+  for (let i = 0; i < maxRetries; i++) {
+    const randomSequence = generateRandom8Digits();
+    const orderNumber = randomSequence;
+    const existingOrder = await prisma.order.findUnique({
+      where: { orderNumber }
+    });
+    if (!existingOrder) {
+      return orderNumber;
+    }
+  }
+  throw new Error("Failed to generate unique order number after maximum retries");
 };
 export {
   AuditLogger,
@@ -3455,6 +5053,7 @@ export {
   extractAuditContext,
   generateOrderNumber2 as generateOrderNumber,
   getAuditLogger,
+  getDefaultOutlet,
   getExpiredSubscriptions,
   getOutletOrderStats,
   getSubscriptionById,

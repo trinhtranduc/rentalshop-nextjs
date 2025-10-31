@@ -119,8 +119,8 @@ export const analyticsApi = {
   /**
    * Get dashboard summary
    */
-  async getDashboardSummary(): Promise<ApiResponse<any>> {
-    const response = await authenticatedFetch(apiUrls.analytics.dashboard);
+  async getDashboardSummary(period: 'today' | 'month' | 'year' = 'today'): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`${apiUrls.analytics.dashboard}?period=${period}`);
     return await parseApiResponse<any>(response);
   },
 

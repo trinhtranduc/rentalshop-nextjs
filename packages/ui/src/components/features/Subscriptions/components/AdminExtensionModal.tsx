@@ -317,7 +317,7 @@ export const AdminExtensionModal: React.FC<AdminExtensionModalProps> = ({
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="font-medium">Amount:</span>
-                  <span className="font-semibold text-blue-600">
+                  <span className="font-semibold text-blue-700">
                     {formatCurrency(formData.amount, subscription.currency)}
                   </span>
                 </div>
@@ -337,7 +337,7 @@ export const AdminExtensionModal: React.FC<AdminExtensionModalProps> = ({
             <Button 
               onClick={handleSubmit}
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-700 hover:bg-blue-700"
             >
               {loading ? 'Processing...' : 'Extend Subscription'}
             </Button>

@@ -1,16 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   User, 
   CreditCard, 
   Settings as SettingsIcon, 
   Building2,
-  Store
+  Store,
+  Languages
 } from 'lucide-react';
-import { useAuth } from '@rentalshop/hooks';
+import type { CurrencyCode } from '@rentalshop/types';
+import { useAuth, useSettingsTranslations } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
 import { useToast } from '@rentalshop/ui';
+import { useCurrency } from '../../../contexts/CurrencyContext';
 
 // Import components
 import { SettingsLayout } from './components/SettingsLayout';
@@ -19,6 +23,7 @@ import { MerchantSection } from './components/MerchantSection';
 import { OutletSection } from './components/OutletSection';
 import { SubscriptionSection } from './components/SubscriptionSection';
 import { AccountSection } from './components/AccountSection';
+import { LanguageSection } from './components/LanguageSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 
@@ -26,39 +31,45 @@ import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 // SETTINGS MENU ITEMS
 // ============================================================================
 
-const settingsMenuItems = [
+const createSettingsMenuItems = (t: any) => [
   {
     id: 'profile',
-    label: 'Profile',
+    label: t('menuItems.profile.label'),
     icon: User,
-    description: 'Manage your personal information'
+    description: t('menuItems.profile.description')
   },
   {
     id: 'merchant',
-    label: 'Business',
+    label: t('menuItems.merchant.label'),
     icon: Building2,
-    description: 'Manage your business information and pricing',
+    description: t('menuItems.merchant.description'),
     roles: ['MERCHANT']
   },
   {
     id: 'outlet',
-    label: 'Outlet',
+    label: t('menuItems.outlet.label'),
     icon: Store,
-    description: 'Manage your outlet information',
+    description: t('menuItems.outlet.description'),
     roles: ['OUTLET_ADMIN', 'OUTLET_STAFF']
   },
   {
     id: 'subscription',
-    label: 'Subscription',
+    label: t('menuItems.subscription.label'),
     icon: CreditCard,
-    description: 'Manage your subscription and billing',
+    description: t('menuItems.subscription.description'),
     roles: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'] // ADMIN, MERCHANT, and OUTLET_ADMIN can access subscription
   },
   {
+    id: 'language',
+    label: t('menuItems.language.label'),
+    icon: Languages,
+    description: t('menuItems.language.description')
+  },
+  {
     id: 'account',
-    label: 'Account',
+    label: t('menuItems.account.label'),
     icon: SettingsIcon,
-    description: 'Account settings, password and preferences'
+    description: t('menuItems.account.description')
   }
 ];
 
@@ -67,11 +78,18 @@ const settingsMenuItems = [
 // ============================================================================
 
 export const SettingsComponent: React.FC = () => {
+  const t = useSettingsTranslations();
   const { user, logout, loading } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const { currency, setCurrency } = useCurrency();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get tab from URL or default to 'profile'
+  const tabFromUrl = searchParams.get('tab') || 'profile';
   
   // Navigation state
-  const [activeSection, setActiveSection] = useState('profile');
+  const [activeSection, setActiveSection] = useState(tabFromUrl);
   
   // Profile editing state
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
@@ -121,6 +139,31 @@ export const SettingsComponent: React.FC = () => {
   // Subscription state
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+
+  // Sync URL with active section
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'profile';
+    if (tabFromUrl !== activeSection) {
+      setActiveSection(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  // Function to change section and update URL
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+    router.push(`/settings?tab=${section}`);
+  };
+
+  // Update personalFormData when user data loads
+  useEffect(() => {
+    if (user) {
+      setPersonalFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user]);
 
   // Fetch subscription data
   useEffect(() => {
@@ -255,7 +298,8 @@ export const SettingsComponent: React.FC = () => {
     }
   }, [user]);
 
-  // Filter menu items based on user role
+  // Create and filter menu items based on user role
+  const settingsMenuItems = createSettingsMenuItems(t);
   const filteredMenuItems = settingsMenuItems.filter(item => {
     // If item has roles restriction, check if user role is allowed
     if (item.roles) {
@@ -293,13 +337,38 @@ export const SettingsComponent: React.FC = () => {
       setIsUpdating(true);
       const response = await settingsApi.updateUserProfile(personalFormData);
       if (response.success) {
+        // Update authData in localStorage
+        const storedAuth = localStorage.getItem('authData');
+        if (storedAuth) {
+          const authData = JSON.parse(storedAuth);
+          if (authData.user) {
+            // Update user personal data
+            authData.user.firstName = personalFormData.firstName;
+            authData.user.lastName = personalFormData.lastName;
+            authData.user.phone = personalFormData.phone;
+            authData.user.name = `${personalFormData.firstName} ${personalFormData.lastName}`;
+            
+            localStorage.setItem('authData', JSON.stringify(authData));
+            console.log('✅ Updated user personal data in localStorage');
+            
+            // Also update user object in memory
+            if (user) {
+              user.firstName = personalFormData.firstName;
+              user.lastName = personalFormData.lastName;
+              user.phone = personalFormData.phone;
+              user.name = `${personalFormData.firstName} ${personalFormData.lastName}`;
+              console.log('✅ Updated user personal data in memory');
+            }
+          }
+        }
+        
         setIsEditingPersonal(false);
-        toastSuccess('Success', 'Personal profile updated successfully!');
+        toastSuccess('Success', t('messages.personalProfileUpdated'));
       } else {
-        toastError('Error', response.error || 'Failed to update personal profile');
+        toastError('Error', response.error || t('messages.personalProfileUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', 'Failed to update personal profile. Please try again.');
+      toastError('Error', t('messages.personalProfileUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -309,16 +378,52 @@ export const SettingsComponent: React.FC = () => {
   const handleEditMerchantInfo = () => setIsEditingMerchant(true);
   const handleUpdateMerchantInfo = async () => {
     try {
+      console.log('🔧 handleUpdateMerchantInfo called');
+      console.log('🔧 merchantFormData:', merchantFormData);
       setIsUpdating(true);
       const response = await settingsApi.updateMerchantInfo(merchantFormData);
+      console.log('🔧 API response:', response);
+      
       if (response.success) {
+        console.log('🔧 API success, updating localStorage...');
+        
+        // Update authData in localStorage (NOT 'user' key - it's 'authData')
+        const storedAuth = localStorage.getItem('authData');
+        console.log('🔧 storedAuth before update:', storedAuth ? 'exists' : 'null');
+        
+        if (storedAuth) {
+          const authData = JSON.parse(storedAuth);
+          console.log('🔧 authData.user.merchant before:', authData.user?.merchant);
+          
+          if (authData.user && authData.user.merchant) {
+            // Only update the country field (API already updated all fields in database)
+            authData.user.merchant.country = merchantFormData.country;
+            console.log('🔧 Updated country in authData.user.merchant:', authData.user.merchant.country);
+            
+            localStorage.setItem('authData', JSON.stringify(authData));
+            console.log('✅ Updated merchant country in localStorage:', authData.user.merchant.country);
+            
+            // IMPORTANT: Also update user object in memory so next Edit shows new country
+            if (user && user.merchant) {
+              user.merchant.country = merchantFormData.country;
+              console.log('✅ Updated merchant country in memory:', user.merchant.country);
+            }
+          } else {
+            console.log('❌ authData.user.merchant is null/undefined');
+          }
+        } else {
+          console.log('❌ No authData found in localStorage');
+        }
+        
         setIsEditingMerchant(false);
-        toastSuccess('Success', 'Business information updated successfully!');
+        toastSuccess('Success', t('messages.businessInfoUpdated'));
       } else {
-        toastError('Error', response.error || 'Failed to update business information');
+        console.log('❌ API failed:', response.error);
+        toastError('Error', response.error || t('messages.businessInfoUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', 'Failed to update business information. Please try again.');
+      console.error('❌ Error in handleUpdateMerchantInfo:', error);
+      toastError('Error', t('messages.businessInfoUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -332,12 +437,12 @@ export const SettingsComponent: React.FC = () => {
       const response = await settingsApi.updateOutletInfo(outletFormData);
       if (response.success) {
         setIsEditingOutlet(false);
-        toastSuccess('Success', 'Outlet information updated successfully!');
+        toastSuccess('Success', t('messages.outletInfoUpdated'));
       } else {
-        toastError('Error', response.error || 'Failed to update outlet information');
+        toastError('Error', response.error || t('messages.outletInfoUpdateFailed'));
       }
     } catch (error) {
-      toastError('Error', 'Failed to update outlet information. Please try again.');
+      toastError('Error', t('messages.outletInfoUpdateFailed'));
     } finally {
       setIsUpdating(false);
     }
@@ -360,15 +465,15 @@ export const SettingsComponent: React.FC = () => {
         throw new Error('User ID not found');
       }
       
-      const response = await usersApi.deleteAccount(user.id);
+      const response = await usersApi.deleteUser(user.id);
       if (response.success) {
-        toastSuccess('Account Deleted', 'Your account has been deleted successfully.');
+        toastSuccess('Account Deleted', t('messages.accountDeleted'));
         await logout();
       } else {
-        toastError('Delete Failed', response.message || 'Failed to delete account');
+        toastError('Delete Failed', response.message || t('messages.accountDeleteFailed'));
       }
     } catch (error) {
-      toastError('Delete Failed', 'Failed to delete account. Please try again.');
+      toastError('Delete Failed', t('messages.accountDeleteFailed'));
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -379,23 +484,52 @@ export const SettingsComponent: React.FC = () => {
     try {
       setIsChangingPassword(true);
       if (passwordData.newPassword !== passwordData.confirmPassword) {
-        throw new Error('New passwords do not match');
+        throw new Error(t('messages.passwordMismatch'));
       }
       if (passwordData.newPassword.length < 6) {
-        throw new Error('New password must be at least 6 characters');
+        throw new Error(t('messages.passwordTooShort'));
       }
       const response = await authApi.changePassword(passwordData.currentPassword, passwordData.newPassword);
       if (response.success) {
         setShowChangePassword(false);
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        toastSuccess('Password Changed', 'Your password has been changed successfully!');
+        toastSuccess('Password Changed', t('messages.passwordChanged'));
       } else {
-        throw new Error(response.message || 'Failed to change password');
+        throw new Error(response.message || t('messages.passwordChangeFailed'));
       }
     } catch (error) {
-      toastError('Password Change Failed', error instanceof Error ? error.message : 'Failed to change password');
+      toastError('Password Change Failed', error instanceof Error ? error.message : t('messages.passwordChangeFailed'));
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  const handleCurrencyChange = async (newCurrency: CurrencyCode) => {
+    try {
+      setIsUpdating(true);
+      const response = await settingsApi.updateMerchantCurrency({ currency: newCurrency });
+      if (response.success) {
+        // Update currency in context - CurrencyProvider will re-render all components
+        setCurrency(newCurrency);
+        
+        // Update authData in localStorage to persist currency
+        const storedAuth = localStorage.getItem('authData');
+        if (storedAuth) {
+          const authData = JSON.parse(storedAuth);
+          if (authData.user && authData.user.merchant) {
+            authData.user.merchant.currency = newCurrency;
+            localStorage.setItem('authData', JSON.stringify(authData));
+          }
+        }
+        
+        toastSuccess('Success', t('messages.currencyUpdated'));
+      } else {
+        toastError('Error', response.error || t('messages.currencyUpdateFailed'));
+      }
+    } catch (error) {
+      toastError('Error', t('messages.currencyUpdateFailed'));
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -421,10 +555,12 @@ export const SettingsComponent: React.FC = () => {
             isEditing={isEditingMerchant}
             isUpdating={isUpdating}
             formData={merchantFormData}
+            currentCurrency={currency}
             onEdit={handleEditMerchantInfo}
             onSave={handleUpdateMerchantInfo}
             onCancel={handleCancelMerchant}
             onInputChange={handleMerchantInputChange}
+            onCurrencyChange={handleCurrencyChange}
           />
         );
       case 'outlet':
@@ -448,6 +584,8 @@ export const SettingsComponent: React.FC = () => {
             currentUserRole={user?.role}
           />
         );
+      case 'language':
+        return <LanguageSection />;
       case 'account':
         return (
           <AccountSection
@@ -480,7 +618,7 @@ export const SettingsComponent: React.FC = () => {
         loading={loading}
         menuItems={filteredMenuItems}
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
+        onSectionChange={handleSectionChange}
       >
         {renderActiveSection()}
       </SettingsLayout>

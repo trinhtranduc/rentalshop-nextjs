@@ -7,20 +7,23 @@ import {
   PageHeader,
   PageTitle,
   PageContent,
-  ProductsLoading
+  ProductsLoading,
+  Button
 } from '@rentalshop/ui';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi,
   outletsApi
 } from '@rentalshop/utils';
 import type { Category, Outlet, ProductCreateInput } from '@rentalshop/types';
-import { ProductAddForm } from '@rentalshop/ui';
+import { ProductSimpleForm } from '@rentalshop/ui';
 
 export default function ProductAddPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [outlets, setOutlets] = useState<Outlet[]>([]);
@@ -104,10 +107,12 @@ export default function ProductAddPage() {
     fetchData();
   }, [authLoading]);
 
-  const handleSave = async (data: ProductCreateInput) => {
+  const handleSave = async (data: ProductCreateInput, files?: File[]) => {
     try {
-      // Call the create API
-      const response = await productsApi.createProduct(data);
+      // Call the appropriate API method based on whether files are provided
+      const response = files && files.length > 0 
+        ? await productsApi.createProductWithFiles(data, files)
+        : await productsApi.createProduct(data);
       
       // Redirect to the new product view page
       if (response.data?.id) {
@@ -134,7 +139,7 @@ export default function ProductAddPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Add New Product</PageTitle>
+          <PageTitle>{t('createProduct')}</PageTitle>
         </PageHeader>
         <PageContent>
           <ProductsLoading />
@@ -147,7 +152,7 @@ export default function ProductAddPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Add New Product</PageTitle>
+          <PageTitle>{t('createProduct')}</PageTitle>
         </PageHeader>
         <PageContent>
           <ProductsLoading />
@@ -160,7 +165,7 @@ export default function ProductAddPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Add New Product</PageTitle>
+          <PageTitle>{t('createProduct')}</PageTitle>
         </PageHeader>
         <PageContent>
           <div className="text-center py-12">
@@ -168,12 +173,12 @@ export default function ProductAddPage() {
             <p className="text-muted-foreground mb-4">
               {error}
             </p>
-            <button 
+            <Button 
               onClick={() => window.location.reload()} 
-              className="text-primary hover:underline"
+              variant="link"
             >
               Try again
-            </button>
+            </Button>
           </div>
         </PageContent>
       </PageWrapper>
@@ -189,7 +194,7 @@ export default function ProductAddPage() {
     return (
       <PageWrapper>
         <PageHeader>
-          <PageTitle>Add New Product</PageTitle>
+          <PageTitle>{t('createProduct')}</PageTitle>
         </PageHeader>
         <PageContent>
           <div className="text-center py-12">
@@ -201,27 +206,27 @@ export default function ProductAddPage() {
             </p>
             <div className="flex justify-center space-x-4">
               {categories.length === 0 && (
-                <button 
+                <Button 
                   onClick={() => router.push('/categories')} 
-                  className="text-primary hover:underline"
+                  variant="link"
                 >
                   Go to Categories
-                </button>
+                </Button>
               )}
               {outlets.length === 0 && (
-                <button 
+                <Button 
                   onClick={() => router.push('/outlets')} 
-                  className="text-primary hover:underline"
+                  variant="link"
                 >
                   Go to Outlets
-                </button>
+                </Button>
               )}
-              <button 
+              <Button 
                 onClick={() => router.push('/products')} 
-                className="text-primary hover:underline"
+                variant="link"
               >
-                Back to Products
-              </button>
+                {tc('buttons.back')}
+              </Button>
             </div>
           </div>
         </PageContent>
@@ -232,13 +237,13 @@ export default function ProductAddPage() {
   return (
     <PageWrapper>
       <PageContent>
-        <ProductAddForm
+        <ProductSimpleForm
           categories={categories}
           outlets={outlets}
-          merchantId={String(merchantId)}
-          onSave={handleSave}
+          onSubmit={handleSave}
           onCancel={handleCancel}
-          onBack={handleBack}
+          mode="create"
+          useMultipartUpload={true}
         />
       </PageContent>
     </PageWrapper>

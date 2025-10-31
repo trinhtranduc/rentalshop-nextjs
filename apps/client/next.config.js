@@ -1,3 +1,9 @@
+// Import next-intl plugin for proper i18n configuration
+const createNextIntlPlugin = require('next-intl/plugin');
+
+// Create the plugin with the path to i18n config
+const withNextIntl = createNextIntlPlugin('./i18n.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // CRITICAL for Railway deployment - reduces bundle size by 90%
@@ -27,17 +33,11 @@ const nextConfig = {
   },
   // Performance optimizations
   experimental: {
+    // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
+    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines'],
     // Enable optimizations for better performance
     optimizeCss: true,
     optimizePackageImports: ['@rentalshop/ui', '@rentalshop/utils', '@rentalshop/hooks'],
-    // Enable modern JavaScript features for better performance
-    modern: true,
-    // Disable automatic timestamp parameters (_t) in development
-    disableOptimizedLoading: true,
-    // Disable automatic PostCSS optimizations that can add timestamps
-    disablePostcssPresetEnv: true,
-    // Disable automatic CSS optimizations that can add timestamps
-    disableOptimizedCSS: true,
   },
   
   // Disable development caching that adds timestamp parameters
@@ -131,4 +131,5 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig; 
+// Export config wrapped with next-intl plugin
+module.exports = withNextIntl(nextConfig); 

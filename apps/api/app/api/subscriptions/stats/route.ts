@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     try {
       // TODO: Implement subscription statistics functionality
       return NextResponse.json(
-        { success: false, message: 'Subscription statistics functionality not yet implemented' },
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
         { status: 501 }
       );
     } catch (error) {

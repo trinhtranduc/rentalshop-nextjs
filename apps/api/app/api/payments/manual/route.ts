@@ -5,9 +5,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 // Manual payment creation schema
@@ -42,7 +42,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
 
     if (!merchant) {
       return NextResponse.json(
-        { success: false, message: 'Merchant not found' },
+        ResponseBuilder.error('MERCHANT_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -52,7 +52,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
 
     if (!plan) {
       return NextResponse.json(
-        { success: false, message: 'Plan not found' },
+        ResponseBuilder.error('PLAN_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -108,7 +108,9 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
 
     return NextResponse.json({
       success: true,
-      message: 'Manual payment created successfully',
+      code: 'MANUAL_PAYMENT_CREATED_SUCCESS',
+      code: 'MANUAL_PAYMENT_CREATED_SUCCESS',
+        message: 'Manual payment created successfully',
       data: {
         payment: {
           id: payment.id,

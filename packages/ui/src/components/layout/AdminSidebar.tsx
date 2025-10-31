@@ -57,19 +57,26 @@ const adminMenuItems: MenuItem[] = [
     icon: Building2,
   },
   {
-    label: 'Plans',
-    href: '/plans',
-    icon: Package,
-  },
-  {
-    label: 'Subscriptions',
+    label: 'Subscription',
     href: '/subscriptions',
     icon: Clock,
+    subItems: [
+      { 
+        label: 'Subscriptions', 
+        href: '/subscriptions', 
+        icon: Clock 
+      },
+      { 
+        label: 'Payments', 
+        href: '/payments', 
+        icon: CreditCard 
+      }
+    ]
   },
   {
-    label: 'Payments',
-    href: '/payments',
-    icon: CreditCard,
+    label: 'Orders',
+    href: '/orders',
+    icon: ShoppingCart,
   },
   {
     label: 'Users',
@@ -77,24 +84,19 @@ const adminMenuItems: MenuItem[] = [
     icon: Users,
   },
   {
-    label: 'System',
-    href: '/system',
+    label: 'Settings',
+    href: '/settings',
     icon: Settings,
     subItems: [
       { 
-        label: 'Backup Management', 
-        href: '/system/backup', 
-        icon: Database 
+        label: 'Admin Info', 
+        href: '/settings/admin', 
+        icon: User 
       },
       { 
-        label: 'Data Integrity', 
-        href: '/system/integrity', 
-        icon: ShieldCheck 
-      },
-      { 
-        label: 'Audit Logs', 
-        href: '/system/audit-logs', 
-        icon: FileText 
+        label: 'Plans', 
+        href: '/plans', 
+        icon: Package 
       }
     ]
   }
@@ -136,60 +138,59 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
     return (
       <div key={item.href}>
-        <div className="flex items-center">
-          {hasSubItems ? (
-            <button
-              onClick={() => toggleExpanded(item.href)}
-              className={cn(
-                'flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group',
-                active
-                  ? 'bg-action-primary text-text-inverted'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
-              )}
-            >
-              <div className="flex items-center space-x-3">
-                <Icon className={cn(
-                  'w-5 h-5 flex-shrink-0',
-                  active ? 'text-text-inverted' : 'text-text-secondary'
-                )} />
-                {!isCollapsed && (
-                  <span className="text-base">{item.label}</span>
-                )}
-              </div>
+        {hasSubItems ? (
+          <Button
+            variant="ghost"
+            onClick={() => toggleExpanded(item.href)}
+            className={cn(
+              'flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out h-auto',
+              active 
+                ? 'text-blue-700 font-medium' 
+                : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Icon className={cn(
+                'w-4 h-4',
+                active ? 'text-blue-700' : 'text-text-secondary'
+              )} />
               {!isCollapsed && (
-                <ChevronRight className={cn(
-                  'w-4 h-4 transition-transform duration-200',
-                  isExpanded ? 'rotate-90' : ''
-                )} />
+                <span>{item.label}</span>
               )}
-            </button>
-          ) : (
-            <Link
-              href={item.href}
-              className={cn(
-                'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group',
-                active
-                  ? 'bg-action-primary text-text-inverted'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+            </div>
+            {!isCollapsed && (
+              <ChevronRight className={cn(
+                'w-4 h-4 transition-transform duration-200',
+                isExpanded ? 'rotate-90' : ''
+              )} />
+            )}
+          </Button>
+        ) : (
+          <Link
+            href={item.href}
+            className={cn(
+              'flex items-center justify-between px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out',
+              active 
+                ? 'text-blue-700 font-medium' 
+                : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Icon className={cn(
+                'w-4 h-4',
+                active ? 'text-blue-700' : 'text-text-secondary'
+              )} />
+              {!isCollapsed && (
+                <span>{item.label}</span>
               )}
-            >
-              <div className="flex items-center space-x-3">
-                <Icon className={cn(
-                  'w-5 h-5 flex-shrink-0',
-                  active ? 'text-text-inverted' : 'text-text-secondary'
-                )} />
-                {!isCollapsed && (
-                  <span className="text-base">{item.label}</span>
-                )}
-              </div>
-              {!isCollapsed && item.badge && (
-                <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          )}
-        </div>
+            </div>
+            {!isCollapsed && item.badge && (
+              <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                {item.badge}
+              </span>
+            )}
+          </Link>
+        )}
 
         {/* Sub Items */}
         {hasSubItems && isExpanded && !isCollapsed && (
@@ -203,13 +204,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   key={subItem.href}
                   href={subItem.href}
                   className={cn(
-                    'flex items-center space-x-3 px-3 py-2 text-sm rounded-lg transition-colors duration-200',
-                    subActive
-                      ? 'bg-action-primary/20 text-action-primary'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+                    'flex items-center gap-2 px-4 py-2 text-sm font-normal rounded-lg transition-colors',
+                    subActive ? 'text-blue-700 font-medium' : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary'
                   )}
                 >
-                  <SubIcon className="w-4 h-4 flex-shrink-0" />
+                  <SubIcon className="w-4 h-4" />
                   <span>{subItem.label}</span>
                 </Link>
               );
@@ -222,25 +221,25 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   return (
     <div className={cn(
-      'flex flex-col h-full bg-bg-card border-r border-border transition-all duration-300',
+      'flex flex-col h-full bg-bg-card border-r border-border shadow-sm transition-all duration-300',
       isCollapsed ? 'w-16' : 'w-64'
     )}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-sm">
               <Store className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-text-primary">RentalShop</h1>
+              <h1 className="text-lg font-semibold text-text-primary">AnyRent</h1>
               <p className="text-xs text-text-secondary">Admin</p>
             </div>
           </div>
         )}
         
         {isCollapsed && (
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mx-auto">
+          <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center mx-auto shadow-sm">
             <Store className="w-5 h-5 text-white" />
           </div>
         )}
@@ -249,7 +248,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           variant="ghost"
           size="icon"
           onClick={onCollapseToggle}
-          className="h-8 w-8"
+          className="h-8 w-8 text-text-tertiary hover:text-text-primary"
         >
           {isCollapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -275,7 +274,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <p className="text-sm font-medium text-text-primary truncate">
                 {user.name || user.email}
               </p>
-              <p className="text-xs text-text-secondary truncate">
+              <p className="text-xs text-text-tertiary truncate">
                 {user.role}
               </p>
             </div>
@@ -295,7 +294,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             variant="ghost"
             onClick={onLogout}
             className={cn(
-              'w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary',
+              'w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary text-sm font-normal',
               isCollapsed && 'justify-center px-2'
             )}
           >

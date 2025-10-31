@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import type { Product } from '@rentalshop/types';
+import { getUTCDateKey } from '@rentalshop/utils';
 
 // ============================================================================
 // TYPES
@@ -140,7 +141,7 @@ export function useProductAvailability() {
     
     // Check availability for each day in the range
     for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = getUTCDateKey(date);
       const status = calculateAvailability(
         product, 
         dateStr, 

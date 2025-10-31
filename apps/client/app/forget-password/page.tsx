@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ForgetPasswordForm } from '@rentalshop/ui';
+import { ForgetPasswordForm, LanguageSwitcher } from '@rentalshop/ui';
 import { authApi } from '@rentalshop/utils';
 
 export default function ForgetPasswordPage() {
@@ -38,12 +38,19 @@ export default function ForgetPasswordPage() {
   };
 
   return (
-    <ForgetPasswordForm
-      onResetPassword={handleResetPassword}
-      onNavigate={handleNavigate}
-      error={error}
-      loading={loading}
-      success={success}
-    />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative">
+      {/* Language Switcher - Top Right */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher variant="compact" />
+      </div>
+
+      <ForgetPasswordForm
+        onResetPassword={handleResetPassword}
+        onNavigate={handleNavigate}
+        error={error}
+        loading={loading}
+        success={success}
+      />
+    </div>
   );
 } 

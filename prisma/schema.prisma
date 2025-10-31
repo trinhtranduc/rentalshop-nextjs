@@ -8,6 +8,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Business domain enums
+enum BusinessType {
+  GENERAL
+  VEHICLE
+  CLOTHING
+  EQUIPMENT
+}
+
+enum PricingType {
+  FIXED
+  HOURLY
+  DAILY
+}
+
 model User {
   id                     Int                    @id @default(autoincrement())
   email                  String                 @unique
@@ -27,6 +41,7 @@ model User {
   subscriptionActivities SubscriptionActivity[]
   merchant               Merchant?              @relation(fields: [merchantId], references: [id])
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
+  sessions               UserSession[]
 
   @@unique([merchantId, email])
   @@unique([merchantId, phone])
@@ -34,6 +49,23 @@ model User {
   @@index([merchantId])
   @@index([outletId])
   @@index([deletedAt])
+}
+
+model UserSession {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  sessionId     String    @unique
+  ipAddress     String?
+  userAgent     String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime
+  invalidatedAt DateTime?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([sessionId])
+  @@index([expiresAt])
 }
 
 model Merchant {
@@ -46,7 +78,7 @@ model Merchant {
   state              String?
   zipCode            String?
   country            String?
-  businessType       String?
+  businessType       BusinessType  @default(GENERAL)
   taxId              String?
   website            String?
   description        String?
@@ -58,7 +90,8 @@ model Merchant {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   pricingConfig      String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
-  pricingType        String?
+  pricingType        PricingType   @default(FIXED)
+  currency           String        @default("USD")
   categories         Category[]
   customers          Customer[]
   Plan               Plan?         @relation(fields: [planId], references: [id])
@@ -70,8 +103,8 @@ model Merchant {
 
   @@index([name])
   @@index([email])
-  @@index([subscriptionStatus])
   @@index([planId])
+  @@index([subscriptionStatus])
 }
 
 model Outlet {
@@ -107,6 +140,7 @@ model Category {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   merchantId  Int
+  isDefault   Boolean   @default(false)
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products    Product[]
 
@@ -123,7 +157,7 @@ model Product {
   rentPrice   Float
   salePrice   Float?
   deposit     Float         @default(0)
-  images      String?
+  images      Json?
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -131,8 +165,8 @@ model Product {
   categoryId  Int
   orderItems  OrderItem[]
   outletStock OutletStock[]
-  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
   @@index([merchantId])
   @@index([categoryId])
@@ -149,8 +183,8 @@ model OutletStock {
   updatedAt DateTime @updatedAt
   productId Int
   outletId  Int
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   outlet    Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, outletId])
   @@index([outletId, available])
@@ -213,9 +247,9 @@ model Order {
   outletId          Int
   customerId        Int?
   createdById       Int
+  createdBy         User        @relation(fields: [createdById], references: [id])
   customer          Customer?   @relation(fields: [customerId], references: [id])
   outlet            Outlet      @relation(fields: [outletId], references: [id])
-  createdBy         User        @relation(fields: [createdById], references: [id])
   orderItems        OrderItem[]
   payments          Payment[]
 
@@ -234,17 +268,21 @@ model Order {
 }
 
 model OrderItem {
-  id         Int     @id @default(autoincrement())
-  quantity   Int     @default(1)
-  unitPrice  Float
-  totalPrice Float
-  deposit    Float   @default(0)
-  orderId    Int
-  productId  Int
-  notes      String?
-  rentalDays Int?
-  product    Product @relation(fields: [productId], references: [id])
-  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id              Int     @id @default(autoincrement())
+  quantity        Int     @default(1)
+  unitPrice       Float
+  totalPrice      Float
+  deposit         Float   @default(0)
+  orderId         Int
+  productId       Int
+  notes           String?
+  rentalDays      Int?
+  // Snapshot fields - preserve product info even if product is deleted
+  productName     String?
+  productBarcode  String?
+  productImages   Json?    // Store as JSON array of URLs
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id])
 
   @@index([orderId, productId])
 }
@@ -270,9 +308,9 @@ model Payment {
   orderId        Int?
   subscriptionId Int?
   merchantId     Int?
+  merchant       Merchant?     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  merchant       Merchant?     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
   @@index([orderId, status])
   @@index([subscriptionId, status])
@@ -328,13 +366,14 @@ model Subscription {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   payments           Payment[]
-  plan               Plan                   @relation(fields: [planId], references: [id])
   merchant           Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  plan               Plan                   @relation(fields: [planId], references: [id])
   activities         SubscriptionActivity[]
 
   @@index([merchantId])
   @@index([planId])
   @@index([status])
+  @@index([currency])
 }
 
 model SubscriptionActivity {

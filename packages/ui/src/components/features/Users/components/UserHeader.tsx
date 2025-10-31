@@ -14,7 +14,7 @@ export function UserHeader({ viewMode, onViewModeChange, onAddUser }: UserHeader
       <div className="flex items-center gap-2">
         <Button
           onClick={onAddUser}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-blue-700 hover:bg-blue-700 text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add User

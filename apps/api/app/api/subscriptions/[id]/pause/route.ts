@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -17,12 +17,12 @@ export async function POST(
       const subscriptionId = parseInt(params.id);
       
       if (isNaN(subscriptionId)) {
-        return NextResponse.json({ success: false, message: 'Invalid subscription ID' }, { status: 400 });
+        return NextResponse.json(ResponseBuilder.error('INVALID_SUBSCRIPTION_ID'), { status: 400 });
       }
 
       const existing = await db.subscriptions.findById(subscriptionId);
       if (!existing) {
-        return NextResponse.json({ success: false, message: 'Subscription not found' }, { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('SUBSCRIPTION_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       // Get reason from request body
@@ -61,6 +61,7 @@ export async function POST(
       return NextResponse.json({ 
         success: true, 
         data: pausedSubscription,
+        code: 'SUBSCRIPTION_PAUSED_SUCCESS',
         message: 'Subscription paused successfully'
       });
     } catch (error) {

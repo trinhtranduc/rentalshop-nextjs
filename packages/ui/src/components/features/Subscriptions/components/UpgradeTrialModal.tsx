@@ -163,7 +163,7 @@ export function UpgradeTrialModal({
                       </ul>
                     )}
                     {selectedPlan?.id === plan.id && (
-                      <div className="flex items-center gap-1 text-blue-600 font-medium">
+                      <div className="flex items-center gap-1 text-blue-700 font-medium">
                         <Check className="w-4 h-4" />
                         Selected
                       </div>

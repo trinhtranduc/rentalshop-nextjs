@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { Card } from '../../../ui/card';
 import { Button } from '../../../ui/button';
 import { cn } from '../../../../lib/cn';
-import { Eye, Edit } from 'lucide-react';
+import { Eye, Edit, Package } from 'lucide-react';
+import { getProductImageUrl } from '@rentalshop/utils';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
@@ -18,7 +19,7 @@ export interface ProductCardProps {
   rentPrice: number;
   salePrice?: number;
   deposit: number;
-  images: string[];
+  images: string[] | string;
   category: {
     name: string;
   };
@@ -67,7 +68,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
-  const mainImage = images?.[0] || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBDMTE2LjU2OSA3MCAxMzAgODMuNDMxIDMwIDEwMEMxMzAgMTE2LjU2OSAxMTYuNTY5IDEzMCAxMDAgMTMwQzgzLjQzMSAxMzAgNzAgMTE2LjU2OSA3MCAxMEM3MCA4My40MzEgODMuNDMxIDcwIDEwMCA3MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHBhdGggZD0iTTEwMCAxMTVDMTA4LjI4NCAxMTUgMTE1IDEwOC4yODQgMTE1IDEwMEMxMTUgOTEuNzE2IDEwOC4yODQgODUgMTAwIDg1QzkxLjcxNiA4NSA4NSA5MS43MTYgODUgMTAwQzg1IDEwOC4yODQgOTEuNzE2IDExNSAxMDAgMTE1WiIgZmlsbD0iI0E5Q0JCRiIvPgo8L3N2Zz4K';
+  // Normalize images to check if we have any
+  const normalizeImages = (images: string[] | string | null | undefined): string[] => {
+    if (!images) return [];
+    if (Array.isArray(images)) return images.filter(Boolean);
+    if (typeof images === 'string') {
+      try {
+        const parsed = JSON.parse(images);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : images.split(',').filter(Boolean);
+      } catch {
+        return images.split(',').filter(Boolean);
+      }
+    }
+    return [];
+  };
+
+  const imageArray = normalizeImages(images);
+  
+  // Use utility function to get proper image URL from S3 or placeholder
+  const productData = {
+    id,
+    name,
+    images: images
+  };
+  const mainImage = getProductImageUrl(productData as any);
+  const hasImages = imageArray.length > 0 && mainImage && mainImage.trim() !== '';
   const isAvailable = available > 0;
 
   // Enhanced edit handler that opens the dialog
@@ -86,21 +111,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     name,
     description: description || '',
     barcode: '',
-    categoryId: '', // This would need to be passed from parent
+    categoryId: 0, // This would need to be passed from parent
     rentPrice,
     salePrice,
     deposit,
     totalStock: stock,
-    images: images.join(','),
+    images: Array.isArray(images) ? images.join(',') : (typeof images === 'string' ? images : ''),
     isActive: true,
     outletStock: [{
-      outletId: '', // This would need to be passed from parent
+      id: 0, // This would need to be passed from parent
+      outletId: 0, // This would need to be passed from parent
       stock,
       available,
-      renting
+      renting,
+      outlet: { id: 0, name: outlet.name, merchantId: merchantId || 0 }
     }],
-    category: { id: '', name: category.name },
-    merchant: { id: merchantId, name: '' },
+    category: { id: 0, name: category.name },
+    merchant: { id: typeof merchantId === 'number' ? merchantId : 0, name: '' },
     createdAt: new Date(),
     updatedAt: new Date()
   });
@@ -119,14 +146,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <Card className={cn('overflow-hidden transition-all hover:shadow-lg', className)}>
         {/* Product Image */}
         <div className="relative aspect-square overflow-hidden bg-gray-100">
-          <img
-            src={mainImage}
-            alt={name}
-            className="h-full w-full object-cover transition-transform hover:scale-105"
-            onError={(e) => {
-              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBDMTE2LjU2OSA3MCAxMzAgODMuNDMxIDMwIDEwMEMxMzAgMTE2LjU2OSAxMTYuNTY5IDEzMCAxMDAgMTMwQzgzLjQzMSAxMzAgNzAgMTE2LjU2OSA3MCAxMEM3MCA4My40MzEgODMuNDMxIDcwIDEwMCA3MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHBhdGggZD0iTTEwMCAxMTVDMTA4LjI4NCAxMTUgMTE1IDEwOC4yODQgMTE1IDEwMEMxMTUgOTEuNzE2IDEwOC4yODQgODUgMTAwIDg1QzkxLjcxNiA4NSA4NSA5MS43MTYgODUgMTAwQzg1IDEwOC4yODQgOTEuNzE2IDExNSAxMDAgMTE1WiIgZmlsbD0iI0E5Q0JCRiIvPgo8L3N2Zz4K';
-            }}
-          />
+          {hasImages ? (
+            <img
+              src={mainImage}
+              alt={name}
+              className="h-full w-full object-cover transition-transform hover:scale-105"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          {/* Placeholder - shown when no images or image fails */}
+          <div className={`${hasImages ? 'hidden' : ''} h-full w-full flex items-center justify-center bg-gray-100`}>
+            <Package className="w-16 h-16 text-gray-400" />
+          </div>
           {!isAvailable && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="text-white font-semibold text-lg">Out of Stock</span>
@@ -196,7 +231,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="mb-4 space-y-1">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Rent Price:</span>
-              <span className="font-semibold text-lg text-blue-600">
+              <span className="font-semibold text-lg text-blue-700">
                 ${rentPrice.toFixed(2)}/day
               </span>
             </div>

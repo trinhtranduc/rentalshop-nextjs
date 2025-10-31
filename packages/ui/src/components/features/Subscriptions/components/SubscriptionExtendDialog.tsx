@@ -34,11 +34,10 @@ interface SubscriptionExtendDialogProps {
 }
 
 const EXTENSION_METHODS = [
-  'MANUAL_EXTENSION',
-  'PAYMENT_RECEIVED',
-  'ADMIN_EXTENSION',
-  'COMPENSATION',
-  'OTHER'
+  { value: 'MANUAL_EXTENSION', label: 'Manual Extension' },
+  { value: 'PAYMENT_RECEIVED', label: 'Payment Received' },
+  { value: 'ADMIN_EXTENSION', label: 'Admin Extension' },
+  { value: 'COMPENSATION', label: 'Compensation' }
 ];
 
 export function SubscriptionExtendDialog({
@@ -76,7 +75,7 @@ export function SubscriptionExtendDialog({
 
   if (!subscription) return null;
 
-  const currentEndDate = subscription.endDate ? new Date(subscription.endDate) : new Date();
+  const currentEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
   const minDate = new Date().toISOString().split('T')[0];
   const suggestedEndDate = new Date(currentEndDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -85,7 +84,7 @@ export function SubscriptionExtendDialog({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-blue-600" />
+            <Calendar className="h-5 w-5 text-blue-700" />
             Extend Subscription
           </DialogTitle>
           <DialogDescription>
@@ -94,36 +93,7 @@ export function SubscriptionExtendDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Current Subscription Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Subscription</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Plan</Label>
-                  <p className="text-sm font-medium">{subscription.plan?.name || 'Unknown Plan'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Current Amount</Label>
-                  <p className="text-sm font-medium">
-                    {formatCurrency(subscription.amount, subscription.currency)}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Current End Date</Label>
-                  <p className="text-sm">{formatDate(subscription.endDate!)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Status</Label>
-                  <p className="text-sm">{subscription.status}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
+        <div className="space-y-4">
           {/* Extension Details */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -158,13 +128,13 @@ export function SubscriptionExtendDialog({
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Current amount: {formatCurrency(subscription.amount, subscription.currency)}
+                  Current amount: {formatCurrency(subscription.amount, (subscription.plan?.currency || 'USD') as any)}
                 </p>
               </div>
             </div>
 
             <div>
-              <Label htmlFor="method">Extension Method *</Label>
+              <Label htmlFor="method">Extension Method</Label>
               <select
                 id="method"
                 value={method}
@@ -172,8 +142,8 @@ export function SubscriptionExtendDialog({
                 className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {EXTENSION_METHODS.map((m) => (
-                  <option key={m} value={m}>
-                    {m.replace('_', ' ')}
+                  <option key={m.value} value={m.value}>
+                    {m.label}
                   </option>
                 ))}
               </select>
@@ -190,32 +160,6 @@ export function SubscriptionExtendDialog({
               />
             </div>
           </div>
-
-          {/* Extension Preview */}
-          {newEndDate && amount && (
-            <Alert>
-              <Clock className="h-4 w-4" />
-              <AlertDescription>
-                <div className="space-y-2">
-                  <p className="font-medium">Extension Preview:</p>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Current End:</span> {formatDate(subscription.endDate!)}
-                    </div>
-                    <div>
-                      <span className="font-medium">New End:</span> {formatDate(new Date(newEndDate))}
-                    </div>
-                    <div>
-                      <span className="font-medium">Extension Amount:</span> {formatCurrency(parseFloat(amount) || 0, subscription.currency)}
-                    </div>
-                    <div>
-                      <span className="font-medium">Method:</span> {method.replace('_', ' ')}
-                    </div>
-                  </div>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
 
         <DialogFooter>

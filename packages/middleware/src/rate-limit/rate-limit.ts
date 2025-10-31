@@ -71,7 +71,7 @@ export const createRateLimiter = (config: RateLimitConfig) => {
 // Pre-configured rate limiters for different use cases
 export const searchRateLimiter = createRateLimiter({
   windowMs: 30000, // 30 seconds
-  maxRequests: 20, // 20 requests per 30 seconds
+  maxRequests: 100, // 100 requests per 30 seconds (increased for development)
   keyGenerator: (req: NextRequest) => {
     // Use IP + user agent for search endpoints
     const forwarded = req.headers.get('x-forwarded-for');

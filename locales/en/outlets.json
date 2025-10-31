@@ -1,0 +1,76 @@
+{
+  "title": "Outlets",
+  "addOutlet": "Add Outlet",
+  "editOutlet": "Edit Outlet",
+  "outletDetails": "Outlet Details",
+  "fields": {
+    "name": "Outlet Name",
+    "address": "Address",
+    "city": "City",
+    "state": "State/Province",
+    "zipCode": "Zip Code",
+    "country": "Country",
+    "phone": "Phone Number",
+    "description": "Description",
+    "status": "Status",
+    "manager": "Manager",
+    "notAvailable": "N/A"
+  },
+  "labels": {
+    "default": "Default"
+  },
+  "actions": {
+    "export": "Export Outlets",
+    "viewDetails": "View Details",
+    "editOutlet": "Edit Outlet",
+    "deleteOutlet": "Delete Outlet",
+    "addOutlet": "Add Outlet",
+    "backToOutlets": "Back to Outlets",
+    "disableOutlet": "Disable Outlet",
+    "enableOutlet": "Enable Outlet"
+  },
+  "stats": {
+    "totalOutlets": "Total Outlets",
+    "activeOutlets": "Active Outlets",
+    "totalUsers": "Total Users",
+    "totalProducts": "Total Products"
+  },
+  "search": {
+    "placeholder": "Search outlets by name, city, or phone..."
+  },
+  "dialogs": {
+    "addOutletTitle": "Add New Outlet",
+    "editOutletTitle": "Edit Outlet",
+    "deleteOutletTitle": "Delete Outlet",
+    "outletDetails": "Outlet Details",
+    "editOutletName": "Edit Outlet: {name}"
+  },
+  "messages": {
+    "createSuccess": "Outlet created successfully",
+    "createFailed": "Failed to create outlet",
+    "updateSuccess": "Outlet updated successfully",
+    "updateFailed": "Failed to update outlet",
+    "deleteSuccess": "Outlet deleted successfully",
+    "deleteFailed": "Failed to delete outlet",
+    "enableSuccess": "Outlet enabled successfully",
+    "enableFailed": "Failed to enable outlet",
+    "disableSuccess": "Outlet disabled successfully",
+    "disableFailed": "Failed to disable outlet",
+    "confirmDelete": "Are you sure you want to delete this outlet?",
+    "noOutlets": "No outlets found",
+    "tryAdjustingSearch": "Try adjusting your search",
+    "getStarted": "Get started by adding your first outlet",
+    "loadingOutlets": "Loading outlets..."
+  },
+  "placeholders": {
+    "enterOutletName": "Enter outlet name",
+    "enterStreetAddress": "Enter street address",
+    "enterCity": "Enter city",
+    "enterState": "Enter state",
+    "enterZipCode": "Enter ZIP code",
+    "enterCountry": "Enter country",
+    "enterOutletPhone": "Enter outlet phone number",
+    "enterOutletDescription": "Enter outlet description"
+  }
+}
+

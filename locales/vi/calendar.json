@@ -1,0 +1,86 @@
+{
+  "title": "Lịch lấy hàng",
+  "navigation": {
+    "today": "Hôm nay",
+    "previousMonth": "Tháng trước",
+    "nextMonth": "Tháng sau",
+    "goToToday": "Về hôm nay"
+  },
+  "labels": {
+    "pickups": "Lấy hàng",
+    "returns": "Trả hàng",
+    "totalOrders": "Tổng đơn hàng",
+    "pickupOrders": "Đơn lấy hàng",
+    "returnOrders": "Đơn trả hàng",
+    "pickup": "Lấy hàng",
+    "return": "Trả hàng",
+    "order": "Đơn hàng",
+    "customer": "Khách hàng",
+    "product": "Sản phẩm",
+    "type": "Loại",
+    "status": "Trạng thái",
+    "amount": "Số tiền",
+    "overdue": "Quá hạn",
+    "month": "Tháng",
+    "noOrders": "Không có đơn hàng",
+    "more": "Thêm..."
+  },
+  "stats": {
+    "ordersToday": "Đơn hàng hôm nay",
+    "ordersThisWeek": "Đơn hàng tuần này",
+    "ordersThisMonth": "Đơn hàng tháng này",
+    "pickupsToday": "Lấy hàng hôm nay",
+    "returnsToday": "Trả hàng hôm nay",
+    "monthlyStatistics": "Thống kê tháng",
+    "activeDays": "Ngày hoạt động",
+    "daysWithScheduledOrders": "ngày có đơn hàng đã lên lịch",
+    "dateRange": "Khoảng thời gian",
+    "to": "đến"
+  },
+  "modal": {
+    "ordersFor": "Đơn hàng ngày {date}",
+    "pickupOrders": "Đơn lấy hàng",
+    "returnOrders": "Đơn trả hàng",
+    "viewDetails": "Xem chi tiết",
+    "close": "Đóng",
+    "ordersFound": "đơn hàng",
+    "ordersFoundPlural": "đơn hàng",
+    "noOrders": "Không có đơn hàng",
+    "noPickupReturnOrders": "Không có đơn lấy hàng hoặc trả hàng nào được lên lịch cho ngày này.",
+    "items": "sản phẩm"
+  },
+  "empty": {
+    "noOrders": "Không có đơn hàng",
+    "noPickups": "Không có đơn lấy hàng",
+    "noReturns": "Không có đơn trả hàng",
+    "selectDate": "Chọn ngày để xem đơn hàng"
+  },
+  "loading": {
+    "loadingCalendar": "Đang tải lịch...",
+    "loadingOrders": "Đang tải đơn hàng..."
+  },
+  "days": {
+    "sunday": "CN",
+    "monday": "T2",
+    "tuesday": "T3",
+    "wednesday": "T4",
+    "thursday": "T5",
+    "friday": "T6",
+    "saturday": "T7"
+  },
+  "months": {
+    "january": "Tháng 1",
+    "february": "Tháng 2",
+    "march": "Tháng 3",
+    "april": "Tháng 4",
+    "may": "Tháng 5",
+    "june": "Tháng 6",
+    "july": "Tháng 7",
+    "august": "Tháng 8",
+    "september": "Tháng 9",
+    "october": "Tháng 10",
+    "november": "Tháng 11",
+    "december": "Tháng 12"
+  }
+}
+

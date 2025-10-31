@@ -1,5 +1,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
+import { useCommonTranslations } from '@rentalshop/hooks';
+import { useFormattedDaily, useFormattedMonthOnly } from '@rentalshop/utils';
 import { 
   BarChart, 
   Bar, 
@@ -20,13 +22,27 @@ interface RevenueData {
 interface IncomeChartProps {
   data: RevenueData[];
   loading?: boolean;
+  actualLabel?: string;
+  projectedLabel?: string;
+  noDataText?: string;
+  loadingText?: string;
+  timePeriod?: 'month' | 'year';
 }
 
-export const IncomeChart: React.FC<IncomeChartProps> = ({ data, loading = false }) => {
+export const IncomeChart: React.FC<IncomeChartProps> = ({ 
+  data, 
+  loading = false,
+  actualLabel = "Actual Revenue",
+  projectedLabel = "Projected Revenue",
+  noDataText = "No data available",
+  loadingText = "Loading chart data...",
+  timePeriod = 'month'
+}) => {
+  const tc = useCommonTranslations();
   if (loading) {
     return (
       <div className="h-64 flex items-center justify-center">
-        <div className="text-gray-500">Loading chart data...</div>
+        <div className="text-gray-500">{loadingText}</div>
       </div>
     );
   }
@@ -34,17 +50,24 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({ data, loading = false 
   if (!data || data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center">
-        <div className="text-gray-500">No data available</div>
+        <div className="text-gray-500">{noDataText}</div>
       </div>
     );
   }
 
-  // Transform data for Recharts
-  const chartData = data.map(item => ({
-    period: item.period,
-    'Actual Revenue': item.actual,
-    'Projected Revenue': item.projected,
-  }));
+  // Transform data for Recharts with localized formatting based on time period
+  const chartData = data.map(item => {
+    // Use different formatting based on time period
+    const formattedPeriod = timePeriod === 'year' 
+      ? useFormattedMonthOnly(item.period)  // For yearly: 01/25, 02/25, etc.
+      : useFormattedDaily(item.period);     // For monthly: 01/10, 02/10, etc.
+    
+    return {
+      period: formattedPeriod,
+      [actualLabel]: item.actual,
+      [projectedLabel]: item.projected,
+    };
+  });
 
   // Custom tooltip formatter
   const formatTooltip = (value: number, name: string) => [
@@ -73,16 +96,16 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({ data, loading = false 
         />
         <Legend />
         <Bar 
-          dataKey="Actual Revenue" 
+          dataKey={actualLabel} 
           fill="#3B82F6" 
           radius={[4, 4, 0, 0]}
-          name="Actual Revenue"
+          name={actualLabel}
         />
         <Bar 
-          dataKey="Projected Revenue" 
+          dataKey={projectedLabel} 
           fill="#10B981" 
           radius={[4, 4, 0, 0]}
-          name="Projected Revenue"
+          name={projectedLabel}
         />
       </BarChart>
     </ResponsiveContainer>

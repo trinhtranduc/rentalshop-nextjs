@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { z } from 'zod';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
@@ -162,6 +162,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       data: updatedOrder,
+      code: 'ORDER_STATUS_UPDATED_SUCCESS',
       message: responseMessage
     });
 

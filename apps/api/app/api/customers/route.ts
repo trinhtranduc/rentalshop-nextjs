@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
-import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
+import { db } from '@rentalshop/database';
+import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 import crypto from 'crypto';
@@ -29,6 +29,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json({ 
         success: false, 
+        code: 'INVALID_QUERY',
         message: 'Invalid query', 
         error: parsed.error.flatten() 
       }, { status: 400 });
@@ -40,6 +41,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       q, 
       search, 
       merchantId,
+      outletId,
       isActive,
       city,
       state,
@@ -47,7 +49,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     } = parsed.data;
 
     console.log('Parsed filters:', { 
-      page, limit, q, search, merchantId, isActive, 
+      page, limit, q, search, merchantId, outletId, isActive, 
       city, state, country 
     });
 
@@ -63,7 +65,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Access denied: Cannot view customers from other merchants' 
+          code: 'CROSS_MERCHANT_ACCESS_DENIED',
+        message: 'Access denied: Cannot view customers from other merchants' 
         },
         { status: 403 }
       );
@@ -74,6 +77,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Build search filters for customer search
     const searchFilters = {
       merchantId: filterMerchantId,
+      outletId: outletId, // Add outlet filtering support
       isActive,
       city,
       state,
@@ -97,7 +101,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
-        hasMore: result.hasMore || false
+        hasMore: result.hasMore || false,
+        totalPages: result.totalPages || Math.ceil((result.total || 0) / (result.limit || 20))
       }
     };
 
@@ -124,7 +129,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   } catch (error) {
     console.error('Error fetching customers:', error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
@@ -144,6 +149,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
+        code: 'INVALID_PAYLOAD',
         message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
@@ -160,6 +166,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       return NextResponse.json(
         { 
           success: false, 
+          code: 'MERCHANT_ID_REQUIRED',
           message: user.role === 'ADMIN' 
             ? 'MerchantId is required for ADMIN users when creating customers' 
             : 'User is not associated with any merchant'
@@ -170,6 +177,39 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
 
     console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
 
+    // Check for duplicate phone or email within the same merchant
+    if (parsed.data.phone || parsed.data.email) {
+      const duplicateConditions = [];
+      
+      if (parsed.data.phone) {
+        duplicateConditions.push({ phone: parsed.data.phone });
+      }
+      
+      if (parsed.data.email) {
+        duplicateConditions.push({ email: parsed.data.email });
+      }
+
+      const duplicateCustomer = await db.customers.findFirst({
+        merchantId: merchantId,
+        OR: duplicateConditions
+      });
+
+      if (duplicateCustomer) {
+        const duplicateField = duplicateCustomer.phone === parsed.data.phone ? 'phone number' : 'email';
+        const duplicateValue = duplicateCustomer.phone === parsed.data.phone ? parsed.data.phone : parsed.data.email;
+        
+        console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'CUSTOMER_DUPLICATE',
+            message: `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // Check plan limits before creating customer
     try {
       await assertPlanLimit(merchantId, 'customers');
@@ -179,7 +219,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       return NextResponse.json(
         { 
           success: false, 
-          message: error.message || 'Plan limit exceeded for customers',
+          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for customers',
           error: 'PLAN_LIMIT_EXCEEDED'
         },
         { status: 403 }
@@ -208,7 +248,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     return NextResponse.json({
       success: true,
       data: customer,
-      message: 'Customer created successfully'
+      code: 'CUSTOMER_CREATED_SUCCESS',
+        message: 'Customer created successfully'
     });
 
   } catch (error: any) {
@@ -217,13 +258,13 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     // Handle specific Prisma errors
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { success: false, message: 'A customer with this email or phone already exists' },
+        ResponseBuilder.error('CUSTOMER_DUPLICATE'),
         { status: 409 }
       );
     }
     
     return NextResponse.json(
-      { success: false, message: 'Failed to create customer' },
+      ResponseBuilder.error('CREATE_CUSTOMER_FAILED'),
       { status: 500 }
     );
   }
@@ -243,6 +284,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     if (!parsed.success) {
       return NextResponse.json({ 
         success: false, 
+        code: 'INVALID_PAYLOAD',
         message: 'Invalid payload', 
         error: parsed.error.flatten() 
       }, { status: 400 });
@@ -254,7 +296,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     if (!id) {
       return NextResponse.json(
-        { success: false, message: 'Customer ID is required' },
+        ResponseBuilder.error('CUSTOMER_ID_REQUIRED'),
         { status: 400 }
       );
     }
@@ -263,7 +305,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const existingCustomer = await db.customers.findById(id);
     if (!existingCustomer) {
       return NextResponse.json(
-        { success: false, message: 'Customer not found' },
+        ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
         { status: 404 }
       );
     }
@@ -271,9 +313,45 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Check if user can access this customer (ADMIN can access all customers)
     if (user.role !== 'ADMIN' && existingCustomer.merchantId !== userScope.merchantId) {
       return NextResponse.json(
-        { success: false, message: 'Forbidden' },
+        ResponseBuilder.error('FORBIDDEN'),
         { status: 403 }
       );
+    }
+
+    // Check for duplicate phone or email if being updated
+    if (parsed.data.phone || parsed.data.email) {
+      const duplicateConditions = [];
+      
+      if (parsed.data.phone && parsed.data.phone !== existingCustomer.phone) {
+        duplicateConditions.push({ phone: parsed.data.phone });
+      }
+      
+      if (parsed.data.email && parsed.data.email !== existingCustomer.email) {
+        duplicateConditions.push({ email: parsed.data.email });
+      }
+
+      if (duplicateConditions.length > 0) {
+        const duplicateCustomer = await db.customers.findFirst({
+          merchantId: existingCustomer.merchantId,
+          OR: duplicateConditions,
+          id: { not: id }
+        });
+
+        if (duplicateCustomer) {
+          const duplicateField = duplicateCustomer.phone === parsed.data.phone ? 'phone number' : 'email';
+          const duplicateValue = duplicateCustomer.phone === parsed.data.phone ? parsed.data.phone : parsed.data.email;
+          
+          console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'CUSTOMER_DUPLICATE',
+              message: `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+            },
+            { status: 409 }
+          );
+        }
+      }
     }
 
     console.log('🔍 Updating customer with data:', { id, ...parsed.data });
@@ -285,7 +363,8 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json({
       success: true,
       data: updatedCustomer,
-      message: 'Customer updated successfully'
+      code: 'CUSTOMER_UPDATED_SUCCESS',
+        message: 'Customer updated successfully'
     });
 
   } catch (error: any) {
@@ -294,7 +373,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Handle specific Prisma errors
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { success: false, message: 'A customer with this email or phone already exists' },
+        ResponseBuilder.error('CUSTOMER_DUPLICATE'),
         { status: 409 }
       );
     }

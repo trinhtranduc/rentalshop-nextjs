@@ -245,10 +245,10 @@ export default function PlanVariantForm({
                 
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                    <TrendingUp className="w-4 h-4 text-blue-700" />
                     <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Savings</span>
                   </div>
-                  <div className="text-lg font-bold text-blue-600">
+                  <div className="text-lg font-bold text-blue-700">
                     ${calculatedSavings.toFixed(2)}
                   </div>
                 </div>

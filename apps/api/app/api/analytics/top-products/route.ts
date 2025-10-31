@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -50,6 +50,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       return NextResponse.json({
         success: true,
         data: [],
+        code: 'NO_DATA_AVAILABLE',
         message: 'No data available - user not assigned to merchant/outlet'
       });
     }
@@ -89,11 +90,30 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       take: 10
     }) : [];
 
+    // Helper function to parse productImages (handle both JSON string and array)
+    const parseProductImages = (images: any): string[] => {
+      if (!images) return [];
+      if (Array.isArray(images)) return images;
+      if (typeof images === 'string') {
+        try {
+          const parsed = JSON.parse(images);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
     // Get product details for each top product in order
     const topProductsWithDetails = [];
     for (const item of topProducts) {
       const productId = typeof item.productId === 'number' ? item.productId : (item as any).productId;
       const product = await db.products.findById(productId);
+
+      // Parse product images safely
+      const productImages = parseProductImages(product?.images);
+      const firstImage = productImages.length > 0 ? productImages[0] : null;
 
       topProductsWithDetails.push({
         id: product?.id || 0, // Use id (number) as the external ID
@@ -102,14 +122,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         category: product?.category?.name || 'Uncategorized',
         rentalCount: (item._count as any).productId,
         totalRevenue: item._sum?.totalPrice || 0,
-        image: product?.images ? JSON.parse(product.images)[0] : null
+        image: firstImage
       });
     }
 
     return NextResponse.json({
       success: true,
       data: topProductsWithDetails,
-      message: 'Top products retrieved successfully'
+      code: 'TOP_PRODUCTS_SUCCESS',
+        message: 'Top products retrieved successfully'
     });
 
   } catch (error) {

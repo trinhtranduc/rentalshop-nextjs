@@ -64,6 +64,7 @@ export interface ApiUrls {
     delete: (id: number) => string;
     updateStock: (id: number) => string;
     bulkUpdate: string;
+    availability: (id: number) => string;
   };
   orders: {
     list: string;
@@ -219,6 +220,7 @@ export interface ApiUrls {
     user: string;
     outlet: string;
     billing: string;
+    currency: string;
     changePassword: string;
     uploadPicture: string;
     deletePicture: string;
@@ -268,6 +270,20 @@ function getEnvironment(): Environment {
     return explicitEnv;
   }
 
+  // Check Railway's native environment variable
+  const railwayEnv = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_ENVIRONMENT_NAME;
+  if (railwayEnv === 'development') {
+    return 'development';
+  }
+  if (railwayEnv === 'production') {
+    return 'production';
+  }
+
+  // Check if we're on Railway development domain
+  if (typeof window !== 'undefined' && window.location.hostname.includes('dev-client-development')) {
+    return 'development';
+  }
+
   // Fallback to NODE_ENV
   if (process.env.NODE_ENV === 'production') {
     return 'production';
@@ -288,22 +304,24 @@ function getApiBaseUrlInternal(): string {
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
     APP_ENV: process.env.APP_ENV,
+    RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+    RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
     detectedEnv: env,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL
   });
   
   switch (env) {
     case 'local':
-      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
     
     case 'development':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://apis-development.up.railway.app';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
     
     case 'production':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.rentalshop.com';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://api.anyrent.shop';
     
     default:
-      return 'http://localhost:3002';
+      return 'https://api.anyrent.shop';
   }
 }
 
@@ -362,7 +380,7 @@ function getApiConfig(): ApiConfig {
         urls: {
           client: process.env.CLIENT_URL || 'http://localhost:3000',
           admin: process.env.ADMIN_URL || 'http://localhost:3001',
-          api: process.env.API_URL || 'http://localhost:3002',
+          api: process.env.API_URL || 'https://dev-api.anyrent.shop',
           mobile: process.env.MOBILE_URL || 'http://localhost:3003'
         },
         logging: {
@@ -388,9 +406,9 @@ function getApiConfig(): ApiConfig {
         },
         cors: {
           origins: [
-            'https://dev.rentalshop.com',
-            'https://admin.dev.rentalshop.com',
-            'https://mobile.dev.rentalshop.com'
+            'https://dev.anyrent.shop',
+            'https://dev-admin.anyrent.shop',
+            'https://dev-api.anyrent.shop'
           ]
         },
         features: {
@@ -399,10 +417,10 @@ function getApiConfig(): ApiConfig {
           rateLimiting: true
         },
         urls: {
-          client: process.env.CLIENT_URL || 'https://dev.rentalshop.com',
-          admin: process.env.ADMIN_URL || 'https://admin.dev.rentalshop.com',
-          api: process.env.API_URL || 'https://api.dev.rentalshop.com',
-          mobile: process.env.MOBILE_URL || 'https://mobile.dev.rentalshop.com'
+          client: process.env.CLIENT_URL || 'https://dev.anyrent.shop',
+          admin: process.env.ADMIN_URL || 'https://dev-admin.anyrent.shop',
+          api: process.env.API_URL || 'https://dev-api.anyrent.shop',
+          mobile: process.env.MOBILE_URL || 'http://localhost:3003'
         },
         logging: {
           level: process.env.LOG_LEVEL || 'info',
@@ -427,9 +445,9 @@ function getApiConfig(): ApiConfig {
         },
         cors: {
           origins: [
-            'https://rentalshop.com',
-            'https://admin.rentalshop.com',
-            'https://mobile.rentalshop.com'
+            'https://anyrent.shop',
+            'https://admin.anyrent.shop',
+            'https://api.anyrent.shop'
           ]
         },
         features: {
@@ -438,10 +456,10 @@ function getApiConfig(): ApiConfig {
           rateLimiting: true
         },
         urls: {
-          client: process.env.CLIENT_URL || 'https://rentalshop.com',
-          admin: process.env.ADMIN_URL || 'https://admin.rentalshop.com',
-          api: process.env.API_URL || 'https://apis-development.up.railway.app',
-          mobile: process.env.MOBILE_URL || 'https://mobile.rentalshop.com'
+          client: process.env.CLIENT_URL || 'https://anyrent.shop',
+          admin: process.env.ADMIN_URL || 'https://admin.anyrent.shop',
+          api: process.env.API_URL || 'https://api.anyrent.shop',
+          mobile: process.env.MOBILE_URL || 'http://localhost:3003'
         },
         logging: {
           level: process.env.LOG_LEVEL || 'warn',
@@ -489,6 +507,7 @@ function createApiUrls(): ApiUrls {
       delete: (id: number) => `${base}/api/products/${id}`,
       updateStock: (id: number) => `${base}/api/products/${id}/stock`,
       bulkUpdate: `${base}/api/products/bulk-update`,
+      availability: (id: number) => `${base}/api/products/${id}/availability`,
     },
     orders: {
       list: `${base}/api/orders`,
@@ -644,6 +663,7 @@ function createApiUrls(): ApiUrls {
     user: `${base}/api/users/profile`,
     outlet: `${base}/api/settings/outlet`,
     billing: `${base}/api/settings/billing`,
+    currency: `${base}/api/settings/currency`,
     changePassword: `${base}/api/profile/change-password`,
     uploadPicture: `${base}/api/profile/upload-picture`,
     deletePicture: `${base}/api/profile/delete-picture`,

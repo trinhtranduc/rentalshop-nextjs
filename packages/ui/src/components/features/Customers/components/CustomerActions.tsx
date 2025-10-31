@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../../../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
 import { Plus, Users, Filter } from 'lucide-react';
+import { AddCustomerDialog } from './AddCustomerDialog';
 
 interface CustomerActionsProps {
   onAction: (action: string, customerId: number) => void;
@@ -23,6 +24,7 @@ export function CustomerActions({
   onError,
   onViewOrders
 }: CustomerActionsProps) {
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const router = useRouter();
 
   // Listen for actions from the table and handle navigation
@@ -78,8 +80,7 @@ export function CustomerActions({
   }, [router, onViewOrders]);
 
   const handleAddCustomer = () => {
-    // Navigate to add customer page
-    router.push('/customers/add');
+    setIsAddDialogOpen(true);
   };
 
   const actions = [
@@ -114,6 +115,14 @@ export function CustomerActions({
           </Button>
         ))}
       </div>
+      
+      {/* Customer Add Dialog */}
+      <AddCustomerDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onCustomerCreated={onCustomerCreated}
+        onError={onError}
+      />
     </div>
   );
 }

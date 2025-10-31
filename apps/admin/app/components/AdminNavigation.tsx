@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Button } from '@rentalshop/ui';
 import { 
   Users, 
   Building2, 
@@ -139,7 +140,7 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
             <div className="flex-shrink-0 flex items-center">
               <Building2 className="h-8 w-8 text-action-primary" />
               <span className="ml-2 text-xl font-bold text-text-primary">
-                RentalShop Admin
+                AnyRent Admin
               </span>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -166,9 +167,10 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
             <div className="ml-3 relative">
               <div>
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => setIsOpen(!isOpen)}
-                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-action-primary"
+                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-action-primary p-0 h-auto"
                 >
                   <div className="h-8 w-8 rounded-full bg-action-primary flex items-center justify-center">
                     <span className="text-sm font-medium text-text-inverted">
@@ -179,7 +181,7 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
                     {user?.name || 'Admin'}
                   </span>
                   <ChevronDown className="ml-1 h-4 w-4 text-text-tertiary" />
-                </button>
+                </Button>
               </div>
 
               {isOpen && (
@@ -188,13 +190,14 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
                     <div className="font-medium text-text-primary">{user?.name || 'Admin'}</div>
                     <div className="text-text-tertiary">{user?.email}</div>
                   </div>
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={onLogout}
-                    className="flex items-center w-full px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary"
+                    className="flex items-center w-full px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary justify-start h-auto rounded-none"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign out
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -202,7 +205,9 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
 
           {/* Mobile menu button */}
           <div className="flex items-center sm:hidden">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setIsOpen(!isOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-inset focus:ring-action-primary"
             >
@@ -211,7 +216,7 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
               <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

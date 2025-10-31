@@ -1,8 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Standalone mode disabled for Railpack deployment
-  // Railpack doesn't properly trace Prisma binaries in monorepo
-  // Trade-off: Larger bundle (~300MB) but deployment works
+  // Enable standalone output for proper Prisma binary handling
+  // Only use standalone in production (Railway/Docker)
+  output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
+  
+  // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
+  experimental: {
+    // Point to monorepo root for file tracing
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines', 'prisma'],
+  },
   
   transpilePackages: [
     '@rentalshop/database',
@@ -31,41 +38,31 @@ const nextConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),
+        '@prisma/client': require('path').join(__dirname, '../../node_modules/@prisma/client'),
       };
     }
     return config;
   },
   async headers() {
-    // Avoid requiring TS files here; compute CORS origins directly from env
-    const csv = process.env.CORS_ORIGINS || '';
-    const envOrigins = csv
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const fallbacks = [
-      process.env.CLIENT_URL,
-      process.env.ADMIN_URL,
-      process.env.API_URL,
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-    ].filter(Boolean);
-    const origins = envOrigins.length ? envOrigins : fallbacks;
-    
-    // For development, allow all localhost origins
-    const allowOrigin = process.env.NODE_ENV === 'development' 
-      ? '*' 
-      : (origins[0] || '*');
-      
+    // Note: CORS is handled dynamically in middleware.ts
+    // This static config is a fallback only
     return [
       {
         source: '/api/:path*',
         headers: [
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: allowOrigin },
           { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT,OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
         ],
+      },
+    ];
+  },
+  async rewrites() {
+    // Serve static files from uploads directory
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: '/apps/api/public/uploads/:path*',
       },
     ];
   },

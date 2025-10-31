@@ -1,8 +1,9 @@
 'use client'
 
 import React from 'react';
-import { Card, CardContent } from '@rentalshop/ui';
+import { Card, CardContent, Button } from '@rentalshop/ui';
 import type { User } from '@rentalshop/types';
+import { useUsersTranslations } from '@rentalshop/hooks';
 
 interface UserDisplayInfoProps {
   user: User;
@@ -27,6 +28,8 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
   onChangePassword,
   isLoading = false
 }) => {
+  const t = useUsersTranslations();
+  
   const getRoleBadgeStyle = (role: string) => {
     switch (role) {
       case 'ADMIN':
@@ -53,185 +56,170 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
   };
 
   const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'Admin';
-      case 'MERCHANT': return 'Merchant';
-      case 'OUTLET_ADMIN': return 'Outlet Admin';
-      case 'OUTLET_STAFF': return 'Outlet Staff';
-      case 'CLIENT': return 'Client';
-      default: return role;
-    }
+    const roleKey = role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+    return t(`roles.${roleKey}` as any) || role;
   };
 
   const getStatusDisplayName = (isActive: boolean) => {
-    return isActive ? 'Active' : 'Inactive';
+    return isActive ? t('fields.active') : t('fields.inactive');
   };
 
   return (
-    <div className="space-y-6">
-      {/* Personal Information */}
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-            Personal Information
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <Card>
+      <CardContent className="p-6 space-y-6">
+        {/* Personal Information */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-900 mb-4">{t('userInformation')}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-              <p className="text-gray-900 text-base font-medium">
-                {`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Not provided'}
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.name')}</label>
+              <p className="text-gray-900 font-medium">
+                {`${user.firstName || ''} ${user.lastName || ''}`.trim() || t('messages.na')}
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <p className="text-gray-900 text-base">{user.email}</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.email')}</label>
+              <p className="text-gray-900">{user.email}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-              <p className="text-gray-900 text-base">{user.phone || 'Not provided'}</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.phone')}</label>
+              <p className="text-gray-900">{user.phone || t('messages.na')}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.role')}</label>
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeStyle(user.role)}`}>
                 {getRoleDisplayName(user.role)}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.status')}</label>
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(user.isActive)}`}>
                 {getStatusDisplayName(user.isActive)}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">User ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.id')}</label>
               <p className="text-gray-500 text-sm font-mono">{user.id}</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Outlet Information */}
-      {user.outlet && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              Outlet Information
-            </h3>
+        {/* Outlet Information */}
+        {user.outlet && (
+          <div className="border-t pt-6">
+            <h3 className="text-sm font-medium text-gray-900 mb-4">{t('outletInformation')}</h3>
             <div className="border rounded-lg p-4 bg-gray-50">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.outletName')}</label>
                   <p className="text-gray-900 text-base">{user.outlet.name}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Outlet ID</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.outletId')}</label>
                   <p className="text-gray-500 text-sm font-mono">{user.outlet.id}</p>
                 </div>
                 {user.outlet.merchant && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Merchant Name</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.merchantName')}</label>
                       <p className="text-gray-900 text-base">{user.outlet.merchant.name}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Merchant ID</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.merchantId')}</label>
                       <p className="text-gray-500 text-sm font-mono">{user.outlet.merchant.id}</p>
                     </div>
                   </>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      {/* Account Actions - Only show if actions are enabled */}
-      {showActions && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-              Account Actions
-            </h3>
+        {/* Account Actions - Only show if actions are enabled */}
+        {showActions && (
+          <div className="border-t pt-6">
+            <h3 className="text-sm font-medium text-gray-900 mb-4">{t('accountActions')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {onChangePassword && (
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">Password Management</h4>
-                  <button
+                  <h4 className="font-medium text-gray-900">{t('passwordManagement')}</h4>
+                  <Button
+                    variant="outline"
                     onClick={onChangePassword}
-                    className="w-full flex items-center justify-start px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                    className="w-full flex items-center justify-start px-3 py-2 text-sm h-auto"
                     disabled={isLoading}
                   >
-                    🔑 Change Password
-                  </button>
+                    🔑 {t('actions.changePassword')}
+                  </Button>
                   <p className="text-xs text-gray-500">
-                    Allow users to change their password securely
+                    {t('messages.allowChangePassword')}
                   </p>
                 </div>
               )}
               
               <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Account Status</h4>
+                <h4 className="font-medium text-gray-900">{t('accountStatus')}</h4>
                 {user.isActive ? (
                   onDeactivate && (
-                    <button
+                    <Button
+                      variant="outline"
                       onClick={onDeactivate}
-                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-orange-600 border border-orange-200 rounded-md hover:bg-orange-50 disabled:opacity-50"
+                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-orange-600 border-orange-200 hover:bg-orange-50 h-auto"
                       disabled={isLoading || user.role === 'ADMIN'}
                     >
-                      {isLoading ? '⏳ Deactivating...' : '❌ Deactivate Account'}
-                    </button>
+                      {isLoading ? `⏳ ${t('actions.deactivating')}` : `❌ ${t('actions.deactivateAccount')}`}
+                    </Button>
                   )
                 ) : (
                   onActivate && (
-                    <button
+                    <Button
+                      variant="outline"
                       onClick={onActivate}
-                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-green-600 border border-green-200 rounded-md hover:bg-green-50 disabled:opacity-50"
+                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-green-600 border-green-200 hover:bg-green-50 h-auto"
                       disabled={isLoading}
                     >
-                      {isLoading ? '⏳ Activating...' : '✅ Activate Account'}
-                    </button>
+                      {isLoading ? `⏳ ${t('actions.activating')}` : `✅ ${t('actions.activateAccount')}`}
+                    </Button>
                   )
                 )}
                 <p className="text-xs text-gray-500">
                   {user.isActive 
-                    ? 'Deactivate to prevent login access' 
-                    : 'Activate to restore login access'
+                    ? t('messages.deactivateToPrevent')
+                    : t('messages.activateToRestore')
                   }
                 </p>
                 {user.role === 'ADMIN' && (
                   <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                    ⚠️ Admin accounts cannot be deactivated
+                    ⚠️ {t('messages.cannotDeactivateAdminShort')}
                   </div>
                 )}
               </div>
               
               {onDelete && (
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">Danger Zone</h4>
-                  <button
+                  <h4 className="font-medium text-gray-900">{t('dangerZone')}</h4>
+                  <Button
+                    variant="outline"
                     onClick={onDelete}
-                    className="w-full flex items-center justify-start px-3 py-2 text-sm text-red-600 border border-red-200 rounded-md hover:bg-red-50 disabled:opacity-50"
+                    className="w-full flex items-center justify-start px-3 py-2 text-sm text-red-600 border-red-200 hover:bg-red-50 h-auto"
                     disabled={isLoading || user.role === 'ADMIN'}
                   >
-                    {isLoading ? '⏳ Deleting...' : '🗑️ Delete Account'}
-                  </button>
+                    {isLoading ? `⏳ ${t('actions.deleting')}` : `🗑️ ${t('actions.deleteAccount')}`}
+                  </Button>
                   <p className="text-xs text-gray-500">
-                    Permanently delete this user account
+                    {t('messages.permanentlyDeleteShort')}
                   </p>
                   {user.role === 'ADMIN' && (
                     <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                      ⚠️ Admin accounts cannot be deleted
+                      ⚠️ {t('messages.cannotDeleteAdmin')}
                     </div>
                   )}
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

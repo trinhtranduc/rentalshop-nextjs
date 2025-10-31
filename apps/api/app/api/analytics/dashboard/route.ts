@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -13,10 +13,24 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   console.log(`📊 GET /api/analytics/dashboard - User: ${user.email}`);
   
   try {
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || 'today'; // Get period from query params
+    
     // Build where clause based on user role and scope
     const orderWhereClause: any = {
       status: { in: ['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED'] }
     };
+    
+    // Add date filter if period is 'today'
+    if (period === 'today') {
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+      orderWhereClause.createdAt = {
+        gte: startOfDay,
+        lte: endOfDay
+      };
+    }
     
     const paymentWhereClause: any = {
       status: 'COMPLETED'
@@ -53,7 +67,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
             cancelledOrders: 0,
             returnedOrders: 0
           },
-          message: 'No outlets found for merchant'
+          code: 'NO_OUTLETS_FOUND',
+        message: 'No outlets found for merchant'
         });
       }
     } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
@@ -91,6 +106,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           cancelledOrders: 0,
           returnedOrders: 0
         },
+        code: 'NO_DATA_AVAILABLE',
         message: 'No data available - user not assigned to merchant/outlet'
       });
     }

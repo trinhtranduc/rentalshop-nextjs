@@ -1,138 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { comparePassword, generateToken } from '@rentalshop/auth';
-import { loginSchema } from '@rentalshop/utils';
+import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
-/**
- * @swagger
- * /api/auth/login:
- *   post:
- *     summary: User login
- *     description: Authenticate user with email and password
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 description: User's email address
- *                 example: "user@example.com"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 description: User's password
- *                 example: "password123"
- *     responses:
- *       200:
- *         description: Login successful
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Login successful"
- *                 data:
- *                   type: object
- *                   properties:
- *                     user:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: string
- *                         email:
- *                           type: string
- *                         name:
- *                           type: string
- *                         role:
- *                           type: string
- *                     token:
- *                       type: string
- *       400:
- *         description: Validation failed
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Validation failed"
- *                 errors:
- *                   type: array
- *       401:
- *         description: Invalid credentials
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Invalid email or password"
- *       403:
- *         description: Account deactivated
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Account is deactivated. Please contact support."
- *       402:
- *         description: Subscription issue (expired, cancelled, paused, etc.)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Your subscription has expired. Please renew to continue using our services."
- *                 errorCode:
- *                   type: string
- *                   example: "SUBSCRIPTION_ERROR"
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Login failed"
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -145,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
+        ResponseBuilder.error('INVALID_CREDENTIALS'),
         { status: 401 }
       );
     }
@@ -153,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Check if user is active
     if (!user.isActive) {
       return NextResponse.json(
-        { success: false, message: 'Account is deactivated. Please contact support.' },
+        ResponseBuilder.error('ACCOUNT_DEACTIVATED'),
         { status: 403 }
       );
     }
@@ -162,31 +34,132 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = await comparePassword(validatedData.password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
+        ResponseBuilder.error('INVALID_CREDENTIALS'),
         { status: 401 }
       );
     }
 
-    // Generate token
+    // Get merchant's active subscription plan (for platform access control)
+    let planName = 'Basic'; // Default plan
+    let merchantData = null; // MerchantReference | null
+    let outletData = null;   // OutletReference | null
+    let subscriptionData = null; // Subscription data
+    
+    if (user.merchantId) {
+      const merchant = await db.merchants.findById(user.merchantId);
+      if (merchant) {
+        if (merchant.subscription?.plan) {
+          planName = merchant.subscription.plan.name;
+          
+          // ✅ Return complete subscription data
+          subscriptionData = {
+            id: merchant.subscription.id,
+            merchantId: merchant.subscription.merchantId,
+            planId: merchant.subscription.planId,
+            status: merchant.subscription.status,
+            currentPeriodStart: merchant.subscription.currentPeriodStart,
+            currentPeriodEnd: merchant.subscription.currentPeriodEnd,
+            trialStart: merchant.subscription.trialStart || undefined,
+            trialEnd: merchant.subscription.trialEnd || undefined,
+            cancelAtPeriodEnd: merchant.subscription.cancelAtPeriodEnd,
+            canceledAt: merchant.subscription.canceledAt || undefined,
+            cancelReason: merchant.subscription.cancelReason || undefined,
+            amount: merchant.subscription.amount,
+            currency: merchant.subscription.currency,
+            interval: merchant.subscription.interval,
+            intervalCount: merchant.subscription.intervalCount,
+            // Include plan details
+            plan: {
+              id: merchant.subscription.plan.id,
+              name: merchant.subscription.plan.name,
+              description: merchant.subscription.plan.description,
+              basePrice: merchant.subscription.plan.basePrice,
+              currency: merchant.subscription.plan.currency,
+              trialDays: merchant.subscription.plan.trialDays,
+              features: merchant.subscription.plan.features,
+              limits: merchant.subscription.plan.limits,
+              isActive: merchant.subscription.plan.isActive,
+              isPopular: merchant.subscription.plan.isPopular,
+            }
+          };
+        }
+        // ✅ Return complete merchant data for Settings page
+        merchantData = {
+          id: merchant.id,
+          name: merchant.name,
+          email: merchant.email || undefined,
+          phone: merchant.phone || undefined,
+          address: merchant.address || undefined,
+          city: merchant.city || undefined,
+          state: merchant.state || undefined,
+          zipCode: merchant.zipCode || undefined,
+          country: merchant.country || undefined,
+          businessType: merchant.businessType || undefined,
+          pricingType: merchant.pricingType || undefined,
+          taxId: merchant.taxId || undefined,
+          currency: (merchant as any).currency || 'USD',
+          // ✅ Include subscription data in merchant object
+          subscription: subscriptionData,
+        };
+      }
+    }
+
+    // Get outlet data if user has outlet assignment
+    if (user.outletId) {
+      const outlet = await db.outlets.findById(user.outletId);
+      if (outlet) {
+        // ✅ Follow OutletReference type: { id, name, address?, merchantId }
+        outletData = {
+          id: outlet.id,
+          name: outlet.name,
+          address: outlet.address || undefined,
+          merchantId: outlet.merchantId
+        };
+      }
+    }
+
+    // ✅ Create new session and invalidate all previous sessions (single session enforcement)
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined;
+    const userAgent = request.headers.get('user-agent') || undefined;
+    
+    const session = await db.sessions.createUserSession(
+      user.id,
+      ipAddress,
+      userAgent
+    );
+
+    // Generate token with plan name and sessionId for platform access control
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role,
       merchantId: user.merchantId,
       outletId: user.outletId,
+      planName, // ✅ Include plan name in JWT
+      sessionId: session.sessionId, // ✅ Include session ID for single session enforcement
     } as any);
 
     const result = {
       success: true,
-      message: 'Login successful',
+      code: 'LOGIN_SUCCESS',
+        message: 'Login successful',
       data: {
         user: {
           id: user.id,
           email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
           name: user.firstName + ' ' + user.lastName,
+          phone: user.phone || undefined,
           role: user.role,
           merchantId: user.merchantId,
           outletId: user.outletId,
+          // ✅ Optional: merchant object (null for ADMIN users without merchant)
+          merchant: merchantData,  // MerchantReference | null
+          // ✅ Optional: outlet object (null for ADMIN/MERCHANT users without outlet)
+          outlet: outletData,      // OutletReference | null
+          // ✅ Optional: subscription object (null for ADMIN users or merchants without subscription)
+          subscription: subscriptionData, // Subscription | null
         },
         token,
       },

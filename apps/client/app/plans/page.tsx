@@ -30,8 +30,11 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
+  PageWrapper,
+  Breadcrumb
 } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   CreditCard,
   CheckCircle,
@@ -188,13 +191,14 @@ export default function PlansPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <PageWrapper>
+      <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900">Choose Your Plan</h1>
@@ -208,7 +212,7 @@ export default function PlansPage() {
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-blue-600" />
+              <CheckCircle className="h-5 w-5 text-blue-700" />
               <div>
                 <h3 className="font-medium text-blue-800">Current Plan</h3>
                 <p className="text-sm text-blue-700">
@@ -444,6 +448,7 @@ export default function PlansPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PageWrapper>
   );
 }

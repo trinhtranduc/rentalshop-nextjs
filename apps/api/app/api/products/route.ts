@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { prisma } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { db } from '@rentalshop/database';
+import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
+import { z } from 'zod';
 
 /**
  * GET /api/products
  * Get products with filtering and pagination using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/products - User: ${user.email} (${user.role})`);
   
   try {
@@ -26,11 +27,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const parsed = productsQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Invalid query', 
-        error: parsed.error.flatten() 
-      }, { status: 400 });
+      return NextResponse.json(
+        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        { status: 400 }
+      );
     }
 
     const { 
@@ -38,6 +38,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       limit,
       q, 
       search, 
+      merchantId: queryMerchantId,
       categoryId, 
       outletId: queryOutletId,
       available,
@@ -48,14 +49,36 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     } = parsed.data;
 
     console.log('Parsed filters:', { 
-      page, limit, q, search, categoryId, queryOutletId, 
+      page, limit, q, search, queryMerchantId, categoryId, queryOutletId, 
       available, minPrice, maxPrice, sortBy, sortOrder 
     });
     
-    // Use simplified database API with userScope
+    // Role-based merchant filtering:
+    // - ADMIN role: Can see products from all merchants (unless queryMerchantId is specified)
+    // - MERCHANT role: Can only see products from their own merchant
+    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their merchant
+    let filterMerchantId = userScope.merchantId;
+    if (user.role === 'ADMIN') {
+      // Admins can see all merchants unless specifically filtering by merchant
+      filterMerchantId = queryMerchantId || userScope.merchantId;
+    }
+
+    // Role-based outlet filtering:
+    // - MERCHANT role: Can see products from all outlets of their merchant (unless queryOutletId is specified)
+    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their assigned outlet
+    let filterOutletId = userScope.outletId;
+    if (user.role === 'MERCHANT') {
+      // Merchants can see all outlets unless specifically filtering by outlet
+      filterOutletId = queryOutletId || userScope.outletId;
+    } else if (user.role === 'ADMIN') {
+      // Admins can see all products (no outlet filtering unless specified)
+      filterOutletId = queryOutletId;
+    }
+
+    // Use simplified database API with role-based filtering
     const searchFilters = {
-      merchantId: userScope.merchantId,
-      outletId: queryOutletId || userScope.outletId,
+      merchantId: filterMerchantId,
+      outletId: filterOutletId,
       categoryId,
       search: q || search,
       available,
@@ -72,10 +95,34 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const result = await db.products.search(searchFilters);
     console.log('✅ Search completed, found:', result.data?.length || 0, 'products');
 
+    // Process product images - parse from database format
+    const processedProducts = result.data?.map((product: any) => {
+      let imageUrls: string[] = [];
+      
+      // Images are stored as JSON string in database
+      if (typeof product.images === 'string') {
+        try {
+          const parsed = JSON.parse(product.images);
+          // Handle both cases: JSON array string or already parsed
+          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          // Not JSON, treat as comma-separated
+          imageUrls = product.images.split(',').filter(Boolean);
+        }
+      } else if (Array.isArray(product.images)) {
+        imageUrls = product.images;
+      }
+      
+      return {
+        ...product,
+        images: imageUrls
+      };
+    }) || [];
+
     return NextResponse.json({
       success: true,
       data: {
-        products: result.data || [],
+        products: processedProducts,
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
@@ -83,57 +130,219 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         hasMore: result.hasMore || false,
         totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
       },
+      code: "PRODUCTS_FOUND",
       message: `Found ${result.total || 0} products`
     });
 
   } catch (error) {
     console.error('Error in GET /api/products:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch products' },
+      ResponseBuilder.error('FETCH_PRODUCTS_FAILED'),
       { status: 500 }
     );
   }
 });
 
 /**
+ * Helper function to validate image file
+ */
+function validateImage(file: File): { isValid: boolean; error?: string } {
+  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  
+  const fileTypeLower = file.type.toLowerCase().trim();
+  const fileNameLower = file.name.toLowerCase().trim();
+  
+  const isValidMimeType = fileTypeLower ? ALLOWED_TYPES.some(type => 
+    fileTypeLower === type.toLowerCase()
+  ) : false;
+  
+  const isValidExtension = ALLOWED_EXTENSIONS.some(ext => 
+    fileNameLower.endsWith(ext)
+  );
+  
+  if (!isValidMimeType && !isValidExtension) {
+    return {
+      isValid: false,
+      error: `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')} or extensions: ${ALLOWED_EXTENSIONS.join(',')}. File type: "${file.type}", File name: "${file.name}"`
+    };
+  }
+  
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      isValid: false,
+      error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`
+    };
+  }
+  
+  if (file.size < 100) {
+    return {
+      isValid: false,
+      error: 'File size is too small, file may be corrupted'
+    };
+  }
+  
+  return { isValid: true };
+}
+
+/**
  * POST /api/products
  * Create a new product using simplified database API
+ * SUPPORTS: Both JSON payload and multipart FormData with file uploads
  * REFACTORED: Now uses unified withAuth pattern
  * Requires active subscription
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+export const POST = withManagementAuth(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/products - User: ${user.email} (${user.role})`);
   
+  // Store parsed data for potential cleanup
+  let uploadedImages: string[] = [];
+  
   try {
-    const body = await request.json();
-    const parsed = productCreateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Invalid payload', 
-        error: parsed.error.flatten() 
-      }, { status: 400 });
+    const contentType = request.headers.get('content-type') || '';
+    let parsedResult: any;
+    let productDataFromRequest: any = {};
+    let uploadedFiles: string[] = [];
+
+    // Check if request contains multipart form data
+    if (contentType.includes('multipart/form-data')) {
+      console.log('🔍 Processing multipart form data with file uploads');
+      
+      const formData = await request.formData();
+      
+      // Extract JSON data from form fields
+      const jsonDataStr = formData.get('data') as string;
+      if (!jsonDataStr) {
+        return NextResponse.json(
+          ResponseBuilder.error('MISSING_PRODUCT_DATA'),
+          { status: 400 }
+        );
+      }
+      
+      try {
+        productDataFromRequest = JSON.parse(jsonDataStr);
+      } catch (parseError) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_JSON_DATA'),
+          { status: 400 }
+        );
+      }
+
+      // Handle file uploads
+      const imageFiles = formData.getAll('images') as File[];
+      console.log(`🔍 Found ${imageFiles.length} image files`);
+      
+      for (const file of imageFiles) {
+        if (file && file.size > 0) {
+          const validation = validateImage(file);
+          if (!validation.isValid) {
+            return NextResponse.json(
+              ResponseBuilder.error('IMAGE_VALIDATION_FAILED', { details: validation.error }),
+              { status: 400 }
+            );
+          }
+          
+          // Convert file to buffer and upload to S3
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          
+          const uploadResult = await uploadToS3(buffer, {
+            folder: 'staging',
+            fileName: file.name,
+            contentType: file.type,
+            preserveOriginalName: false
+          });
+          
+          if (uploadResult.success && uploadResult.data) {
+            // Use CloudFront URL if available, otherwise fallback to S3 URL
+            const accessUrl = uploadResult.data.url; // Already uses CloudFront if configured
+            uploadedFiles.push(accessUrl);
+            console.log(`✅ Uploaded image: ${file.name} -> ${accessUrl}`);
+          } else {
+            console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
+            return NextResponse.json(
+              ResponseBuilder.error('IMAGE_UPLOAD_FAILED', { details: uploadResult.error }),
+              { status: 500 }
+            );
+          }
+        }
+      }
+      
+      // Combine uploaded files with existing images
+      const existingImages = productDataFromRequest.images || [];
+      const allImages = [
+        ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
+        ...uploadedFiles
+      ];
+      // Ensure allImages is properly normalized (not stringified JSON)
+      productDataFromRequest.images = allImages.map(img => {
+        if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
+          try {
+            const parsed = JSON.parse(img);
+            return Array.isArray(parsed) ? parsed[0] : img;
+          } catch {
+            return img;
+          }
+        }
+        return img;
+      }).flat().filter(Boolean);
+      
+    } else {
+      // Handle regular JSON request
+      console.log('🔍 Processing JSON request');
+      const body = await request.json();
+      productDataFromRequest = body;
+      
+      // Normalize images to array of strings
+      if (productDataFromRequest.images !== undefined) {
+        if (Array.isArray(productDataFromRequest.images)) {
+          productDataFromRequest.images = productDataFromRequest.images.filter(Boolean);
+        } else if (typeof productDataFromRequest.images === 'string') {
+          productDataFromRequest.images = productDataFromRequest.images
+            .split(',')
+            .filter(Boolean)
+            .map(url => url.trim());
+        }
+        
+        if (productDataFromRequest.images.length === 0) {
+          delete productDataFromRequest.images;
+        }
+      }
     }
 
-    console.log('🔍 Raw outletStock from request:', parsed.data.outletStock);
-    
-    // Validate that outletStock is provided (required)
-    if (!parsed.data.outletStock || !Array.isArray(parsed.data.outletStock) || parsed.data.outletStock.length === 0) {
+    // Validate product data
+    parsedResult = productCreateSchema.safeParse(productDataFromRequest);
+    if (!parsedResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Product must have at least one outlet stock entry' },
+        ResponseBuilder.error('VALIDATION_ERROR', parsedResult.error.flatten()),
         { status: 400 }
       );
     }
     
-    const outletStock: Array<{ outletId: number; stock: number }> = parsed.data.outletStock.map(os => ({
-      outletId: os.outletId,
-      stock: os.stock || 0,
-    }));
-    
-    console.log('🔍 Processed outletStock:', outletStock);
+    const parsed = parsedResult;
 
-    const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
-    console.log('🔍 Calculated totalStock:', totalStock);
+    console.log('🔍 Raw outletStock from request:', parsed.data.outletStock);
+    
+    let outletStock: Array<{ outletId: number; stock: number }>;
+    let totalStock: number;
+    
+    // This will be handled after merchant is determined
+
+    // Check for duplicate product name within the same merchant
+    const existingProduct = await db.products.findFirst({
+      name: parsed.data.name,
+      merchantId: userScope.merchantId,
+      isActive: true
+    });
+
+    if (existingProduct) {
+      console.log('❌ Product name already exists:', parsed.data.name);
+      return NextResponse.json(
+        ResponseBuilder.error('PRODUCT_NAME_EXISTS', `A product with the name "${parsed.data.name}" already exists. Please choose a different name.`),
+        { status: 409 }
+      );
+    }
 
     // Determine merchantId for product creation
     let merchantId = userScope.merchantId;
@@ -144,12 +353,9 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
       merchantId = parsed.data.merchantId;
     } else if (!merchantId) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: user.role === 'ADMIN' 
-            ? 'MerchantId is required for ADMIN users when creating products' 
-            : 'User is not associated with any merchant'
-        },
+        ResponseBuilder.error('MERCHANT_ID_REQUIRED', user.role === 'ADMIN' 
+          ? 'MerchantId is required for ADMIN users when creating products' 
+          : 'User is not associated with any merchant'),
         { status: 400 }
       );
     }
@@ -163,11 +369,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     } catch (error: any) {
       console.log('❌ Plan limit exceeded for products:', error.message);
       return NextResponse.json(
-        { 
-          success: false, 
-          message: error.message || 'Plan limit exceeded for products',
-          error: 'PLAN_LIMIT_EXCEEDED'
-        },
+        ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for products'),
         { status: 403 }
       );
     }
@@ -177,22 +379,145 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
 
     if (!merchant) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: `Merchant with ID ${merchantId} not found`
-        },
+        ResponseBuilder.error('MERCHANT_NOT_FOUND', `Merchant with ID ${merchantId} not found`),
         { status: 404 }
       );
     }
 
-    // Handle images - convert array to JSON string if needed
+    // Handle outletStock after merchant is determined
+    if (parsed.data.outletStock && Array.isArray(parsed.data.outletStock) && parsed.data.outletStock.length > 0) {
+      // Use provided outletStock
+      outletStock = parsed.data.outletStock.map((os: any) => ({
+        outletId: os.outletId,
+        stock: os.stock || 0,
+      }));
+      console.log('🔍 Using provided outletStock:', outletStock);
+    } else {
+      // Auto-create outletStock from default outlet
+      console.log('🔍 No outletStock provided, using default outlet');
+      
+      try {
+        const { getDefaultOutlet } = await import('@rentalshop/database');
+        const defaultOutlet = await getDefaultOutlet(merchant.id);
+        
+        outletStock = [{
+          outletId: defaultOutlet.id,
+          stock: parsed.data.totalStock || 0
+        }];
+        
+        console.log('✅ Using default outlet:', defaultOutlet.name, 'with stock:', outletStock[0].stock);
+      } catch (error) {
+        console.error('❌ Error getting default outlet:', error);
+        return NextResponse.json(
+          ResponseBuilder.error('DEFAULT_OUTLET_NOT_FOUND'),
+          { status: 400 }
+        );
+      }
+    }
+    
+    totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
+    console.log('🔍 Final outletStock:', outletStock);
+    console.log('🔍 Calculated totalStock:', totalStock);
+
+    // Handle images - Support both uploaded files and staging files
     let imagesValue = parsed.data.images;
+    let stagingKeys: string[] = [];
+    let committedImageUrls: string[] = [];
+
+    if (imagesValue && imagesValue.length > 0) {
+      // Parse images (could be array, string, or comma-separated)
+      const imageUrls = Array.isArray(imagesValue) 
+        ? imagesValue 
+        : typeof imagesValue === 'string' 
+          ? imagesValue.split(',').filter(Boolean)
+          : [];
+
+      // Extract staging keys from URLs (both uploaded files and existing staging files)
+      stagingKeys = imageUrls
+        .filter(url => url && url.includes('amazonaws.com'))
+        .map(url => {
+          const urlParts = url.split('amazonaws.com/');
+          return urlParts.length > 1 ? urlParts[1].split('?')[0] : null;
+        })
+        .filter((key): key is string => key !== null && key.startsWith('staging/'));
+
+      console.log('🔍 Found staging keys to commit:', stagingKeys);
+      console.log('🔍 All image URLs:', imageUrls);
+
+      // Commit staging files to production (including newly uploaded files)
+      if (stagingKeys.length > 0) {
+        // Use product/merchantId/ structure for better organization
+        const targetFolder = `product/${merchantId}`;
+        const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
+        
+        if (commitResult.success) {
+          // Generate production URLs with presigned access
+          const productionUrls = await Promise.all(
+            commitResult.committedKeys.map(async (key) => {
+              const presignedUrl = await generateAccessUrl(key, 86400 * 365); // 1 year expiration
+              if (presignedUrl) {
+                return presignedUrl;
+              }
+              // Fallback to direct URL if presigned fails
+              const region = process.env.AWS_REGION || 'ap-southeast-1';
+              const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
+              return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+            })
+          );
+          
+          // Map staging URLs to production URLs
+          committedImageUrls = imageUrls.map(url => {
+            const urlParts = url.split('amazonaws.com/');
+            if (urlParts.length > 1) {
+              const key = urlParts[1].split('?')[0];
+              const committedKey = commitResult.committedKeys.find(ck => 
+                ck.replace('product/', '') === key.replace('staging/', '')
+              );
+              if (committedKey) {
+                return productionUrls[commitResult.committedKeys.indexOf(committedKey)];
+              }
+            }
+            return url; // Keep original URL if not found in staging
+          });
+          
+          console.log('✅ Committed staging files with presigned URLs:', committedImageUrls);
+        } else {
+          console.error('❌ Failed to commit staging files:', commitResult.errors);
+          // Continue with original URLs if commit fails
+          committedImageUrls = imageUrls;
+        }
+      } else {
+        // No staging files, but ensure URLs have presigned access if they're S3 URLs
+        committedImageUrls = await Promise.all(
+          imageUrls.map(async (url) => {
+            // If it's already a presigned URL or external URL, keep it as is
+            if (url.includes('?') || !url.includes('amazonaws.com')) {
+              return url;
+            }
+            
+            // Extract key from S3 URL and generate presigned URL
+            const urlParts = url.split('amazonaws.com/');
+            if (urlParts.length > 1) {
+              const key = urlParts[1];
+              const presignedUrl = await generateAccessUrl(key, 86400 * 365);
+              return presignedUrl || url;
+            }
+            
+            return url;
+          })
+        );
+      }
+    }
+
+    // Use committed URLs for product data
     if (Array.isArray(imagesValue)) {
-      imagesValue = JSON.stringify(imagesValue);
+      imagesValue = JSON.stringify(committedImageUrls);
+    } else if (typeof imagesValue === 'string') {
+      imagesValue = committedImageUrls.join(',');
     }
 
     // Use Prisma relation syntax with CUID
-    const productData: any = {
+    const finalProductData: any = {
       merchant: { connect: { id: merchant.id } }, // Use CUID, not publicId
       name: parsed.data.name,
       description: parsed.data.description,
@@ -213,23 +538,47 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (
     // Only add category connection if categoryId is provided
     // If not provided, simplifiedProducts.create will use default category
     if (parsed.data.categoryId) {
-      productData.category = { connect: { id: parsed.data.categoryId } };
+      finalProductData.category = { connect: { id: parsed.data.categoryId } };
     }
 
-    console.log('🔍 Creating product with data:', productData);
+    console.log('🔍 Creating product with data:', finalProductData);
     
     // Use simplified database API
-    const product = await db.products.create(productData);
+    const product = await db.products.create(finalProductData);
     console.log('✅ Product created successfully:', product);
+
+    // Parse images from database response to return array
+    let imageUrls: string[] = [];
+    if (typeof product.images === 'string') {
+      try {
+        const parsed = JSON.parse(product.images);
+        imageUrls = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        imageUrls = product.images.split(',').filter(Boolean);
+      }
+    } else if (Array.isArray(product.images)) {
+      imageUrls = product.images;
+    }
+
+    // Return product with parsed images
+    const responseProduct = {
+      ...product,
+      images: imageUrls
+    };
 
     return NextResponse.json({
       success: true,
-      data: product,
+      data: responseProduct,
+      code: 'PRODUCT_CREATED_SUCCESS',
       message: 'Product created successfully'
     });
 
   } catch (error: any) {
     console.error('Error in POST /api/products:', error);
+    
+    // Note: With Two-Phase Upload Pattern, staging files remain in staging/
+    // They will be cleaned up by background job or TTL policy
+    // No manual cleanup needed on product creation failure
     
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);

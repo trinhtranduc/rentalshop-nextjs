@@ -1,24 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getAuthToken } from '@rentalshop/utils';
 import dynamic from 'next/dynamic';
+// Note: swagger-ui-react types may not export SwaggerUIProps properly
+// We'll use the component type directly
 
-// @ts-ignore - Dynamic import issue with Next.js and swagger-ui-react types
-const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-  )
-});
+// Dynamic import with proper typing
+const SwaggerUI = dynamic(
+  () => import('swagger-ui-react'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Loading API Documentation...</span>
+      </div>
+    )
+  }
+) as React.ComponentType<any>;
 
 // Import SwaggerUI CSS
 import 'swagger-ui-react/swagger-ui.css';
 
 interface SwaggerUIProps {
-  spec: any;
+  spec: Record<string, any>;
   title?: string;
   description?: string;
   showHeader?: boolean;
@@ -33,6 +39,9 @@ interface SwaggerUIProps {
   showCommonExtensions?: boolean;
   supportedSubmitMethods?: ('get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head' | 'trace')[];
   tryItOutEnabled?: boolean;
+  onComplete?: (system: any) => void;
+  requestInterceptor?: (request: any) => any;
+  responseInterceptor?: (response: any) => any;
 }
 
 export default function SwaggerUIComponent({
@@ -50,18 +59,104 @@ export default function SwaggerUIComponent({
   showExtensions = true,
   showCommonExtensions = true,
   supportedSubmitMethods = ['get', 'post', 'put', 'delete', 'patch'],
-  tryItOutEnabled = true
+  tryItOutEnabled = true,
+  onComplete,
+  requestInterceptor,
+  responseInterceptor
 }: SwaggerUIProps) {
   const [mounted, setMounted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Memoized request interceptor with auth token
+  const handleRequestInterceptor = useCallback((request: any) => {
+    try {
+      // Add authentication headers if available
+      const token = getAuthToken();
+      if (token) {
+        request.headers = {
+          ...request.headers,
+          Authorization: `Bearer ${token}`
+        };
+      }
+      
+      // Call custom request interceptor if provided
+      if (requestInterceptor) {
+        return requestInterceptor(request);
+      }
+      
+      return request;
+    } catch (err) {
+      console.error('Error in request interceptor:', err);
+      return request;
+    }
+  }, [requestInterceptor]);
+
+  // Memoized response interceptor
+  const handleResponseInterceptor = useCallback((response: any) => {
+    try {
+      // Call custom response interceptor if provided
+      if (responseInterceptor) {
+        return responseInterceptor(response);
+      }
+      return response;
+    } catch (err) {
+      console.error('Error in response interceptor:', err);
+      return response;
+    }
+  }, [responseInterceptor]);
+
+  // Memoized onComplete handler
+  const handleComplete = useCallback((system: any) => {
+    try {
+      console.log('SwaggerUI loaded successfully');
+      
+      // Add custom styling
+      const swaggerContainer = document.querySelector('.swagger-ui');
+      if (swaggerContainer) {
+        swaggerContainer.classList.add('custom-swagger-ui');
+      }
+      
+      // Security schemes should be available in the UI automatically
+      // based on the global security configuration in the OpenAPI spec
+      // The "Authorize" button should show the header input fields
+      
+      // Call custom onComplete if provided
+      if (onComplete) {
+        onComplete(system);
+      }
+    } catch (err) {
+      console.error('Error in SwaggerUI onComplete:', err);
+      setError('Error loading API documentation');
+    }
+  }, [onComplete]);
+
   if (!mounted) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="mt-4 text-gray-600">Loading API Documentation...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
+        <div className="text-red-600 text-lg font-semibold mb-2">Error Loading Documentation</div>
+        <div className="text-gray-600">{error}</div>
+        <button 
+          onClick={() => {
+            setError(null);
+            window.location.reload();
+          }}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -91,28 +186,13 @@ export default function SwaggerUIComponent({
             showCommonExtensions={showCommonExtensions}
             supportedSubmitMethods={supportedSubmitMethods}
             tryItOutEnabled={tryItOutEnabled}
-            onComplete={(system: any) => {
-              // Customize SwaggerUI after it's loaded
-              console.log('SwaggerUI loaded successfully');
-              
-              // Add custom styling
-              const swaggerContainer = document.querySelector('.swagger-ui');
-              if (swaggerContainer) {
-                swaggerContainer.classList.add('custom-swagger-ui');
-              }
-            }}
-            requestInterceptor={(request: any) => {
-              // Add authentication headers if available
-              const token = getAuthToken();
-              if (token) {
-                request.headers.Authorization = `Bearer ${token}`;
-              }
-              return request;
-            }}
-            responseInterceptor={(response: any) => {
-              // Handle response formatting
-              return response;
-            }}
+            requestSnippetsEnabled={true}
+            requestSnippets={['curl', 'javascript']}
+            persistAuthorization={true}
+            deepLinking={true}
+            onComplete={handleComplete}
+            requestInterceptor={handleRequestInterceptor}
+            responseInterceptor={handleResponseInterceptor}
           />
         </div>
       </div>

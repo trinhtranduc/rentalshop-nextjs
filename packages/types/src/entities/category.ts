@@ -75,6 +75,23 @@ export interface CategorySearchParams extends BaseSearchParams {
 }
 
 /**
+ * Category filters (alias for CategorySearchParams)
+ * Used for consistent API interface with other entities
+ */
+export interface CategoryFilters {
+  q?: string;           // Search query parameter
+  search?: string;      // Alias for q (backward compatibility)
+  merchantId?: number;
+  isActive?: boolean;
+  status?: string;
+  page?: number;
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
  * Category search result
  * Extends base search result with category-specific data
  */

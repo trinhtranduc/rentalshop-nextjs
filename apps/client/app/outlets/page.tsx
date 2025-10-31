@@ -1,41 +1,42 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, 
-  CardContent, 
-  Button,
+import React, { useCallback, useMemo, useState } from "react";
+import {
   PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
-  OutletTable,
+  Outlets,
+  OutletsLoading,
+  useToast,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogTrigger,
+  ConfirmationDialog,
+  AddOutletDialog,
+  Card,
+  CardContent,
   Input,
   Label,
   Textarea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  useToast } from '@rentalshop/ui';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Building2, 
-  CheckCircle,
-  XCircle
-} from 'lucide-react';
-import { useAuth, useCanExportData } from '@rentalshop/hooks';
-import { outletsApi } from '@rentalshop/utils';
-import { Outlet, OutletCreateInput, OutletUpdateInput } from '@rentalshop/types';
+  Button,
+} from "@rentalshop/ui";
+import { Plus, Download } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import {
+  useAuth,
+  useOutletsWithFilters,
+  useCanExportData,
+  useCommonTranslations,
+  useOutletsTranslations,
+} from "@rentalshop/hooks";
+import { outletsApi } from "@rentalshop/utils";
+import type {
+  OutletFilters,
+  Outlet,
+  OutletUpdateInput,
+} from "@rentalshop/types";
 
 interface OutletFormData {
   name: string;
@@ -48,114 +49,229 @@ interface OutletFormData {
   description: string;
 }
 
+/**
+ * ✅ MODERN NEXT.JS 13+ OUTLETS PAGE - URL STATE PATTERN
+ */
 export default function OutletsPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError, toastWarning, toastInfo, removeToast } = useToast();
+  const { toastSuccess, toastError } = useToast();
+  const t = useCommonTranslations();
+  const to = useOutletsTranslations();
   const canExport = useCanExportData();
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Dialog states
+  const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [outletToDisable, setOutletToDisable] = useState<Outlet | null>(null);
-  const [editingOutlet, setEditingOutlet] = useState<Outlet | null>(null);
-  const [viewingOutlet, setViewingOutlet] = useState<Outlet | null>(null);
   const [formData, setFormData] = useState<OutletFormData>({
-    name: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    phone: '',
-    description: ''
+    name: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
+    phone: "",
+    description: "",
   });
 
-  // Try both merchant.id and merchantId (same fix as products page)
+  // ============================================================================
+  // URL PARAMS - Single Source of Truth
+  // ============================================================================
+
+  const search = searchParams.get("q") || "";
+  const status = searchParams.get("status") || "";
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = parseInt(searchParams.get("limit") || "25");
+  const sortBy = searchParams.get("sortBy") || "createdAt";
+  const sortOrder = (searchParams.get("sortOrder") || "desc") as "asc" | "desc";
+
   const merchantId = user?.merchant?.id || user?.merchantId;
-  
-  // Debug logging
-  console.log('🔍 OutletsPage render - user:', user);
-  console.log('🔍 OutletsPage render - merchant info:', {
-    'user.merchant': user?.merchant,
-    'user.merchantId': user?.merchantId,
-    'resolved merchantId': merchantId
-  });
-  console.log('🔍 OutletsPage render - outlets state:', outlets);
-  console.log('🔍 OutletsPage render - loading state:', loading);
 
-  useEffect(() => {
-    if (!merchantId) return;
-    fetchOutlets();
-  }, [merchantId]);
+  // ============================================================================
+  // DATA FETCHING - Clean & Simple
+  // ============================================================================
 
-  const fetchOutlets = async () => {
+  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
+  const filters: OutletFilters = useMemo(
+    () => ({
+      q: search || undefined,
+      merchantId: merchantId ? Number(merchantId) : undefined,
+      isActive:
+        status === "active" ? true : status === "inactive" ? false : undefined,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    }),
+    [search, merchantId, status, page, limit, sortBy, sortOrder]
+  );
+
+  const { data, loading, error, refetch } = useOutletsWithFilters({ filters });
+
+  // ============================================================================
+  // URL UPDATE HELPER
+  // ============================================================================
+
+  const updateURL = useCallback(
+    (updates: Record<string, string | number | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value && value !== "" && value !== "all") {
+          params.set(key, value.toString());
+        } else {
+          params.delete(key);
+        }
+      });
+
+      const newURL = `${pathname}?${params.toString()}`;
+      router.push(newURL, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+
+  const handleSearchChange = useCallback(
+    (searchValue: string) => {
+      updateURL({ q: searchValue, page: 1 });
+    },
+    [updateURL]
+  );
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      updateURL({ page: newPage });
+    },
+    [updateURL]
+  );
+
+  const handleSort = useCallback(
+    (column: string) => {
+      const newSortBy = column;
+      const newSortOrder =
+        sortBy === column && sortOrder === "asc" ? "desc" : "asc";
+      updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
+    },
+    [sortBy, sortOrder, updateURL]
+  );
+
+  const handleOutletAction = useCallback(
+    async (action: string, outletId: number) => {
+      const outlet = data?.outlets.find((o: Outlet) => o.id === outletId);
+
+      switch (action) {
+        case "view":
+          if (outlet) {
+            setSelectedOutlet(outlet);
+            setShowViewDialog(true);
+          }
+          break;
+
+        case "edit":
+          // Show edit dialog
+          if (outlet) {
+            setSelectedOutlet(outlet);
+            setFormData({
+              name: outlet.name,
+              address: outlet.address || "",
+              city: (outlet as any).city || "",
+              state: (outlet as any).state || "",
+              zipCode: (outlet as any).zipCode || "",
+              country: (outlet as any).country || "",
+              phone: outlet.phone || "",
+              description: outlet.description || "",
+            });
+            setShowEditDialog(true);
+          }
+          break;
+
+        case "disable":
+        case "enable":
+          if (outlet) {
+            if (outlet.isActive) {
+              setOutletToDisable(outlet);
+              setShowDisableConfirm(true);
+            } else {
+              try {
+                const response = await outletsApi.updateOutlet(outletId, {
+                  id: outletId,
+                  isActive: true,
+                });
+                if (response.success) {
+                  toastSuccess(
+                    to("messages.enableSuccess"),
+                    `${to("messages.enableSuccess")} - "${outlet.name}"`
+                  );
+                  refetch();
+                } else {
+                  toastError(
+                    to("messages.enableFailed"),
+                    response.error || to("messages.enableFailed")
+                  );
+                }
+              } catch (err) {
+                toastError(
+                  to("messages.enableFailed"),
+                  to("messages.enableFailed")
+                );
+              }
+            }
+          }
+          break;
+
+        default:
+          console.log("Unknown action:", action);
+      }
+    },
+    [data?.outlets, router, toastSuccess, toastError, refetch]
+  );
+
+  const handleConfirmDisable = useCallback(async () => {
+    if (!outletToDisable) return;
+
     try {
-      setLoading(true);
-      console.log('🔍 Fetching outlets for merchant:', merchantId);
-      
-      const result = await outletsApi.getOutletsByMerchant(Number(merchantId));
-      console.log('📥 Outlets API response:', result);
-      
-      if (result.success) {
-        // API returns { success: true, data: { outlets: Outlet[], total, page, hasMore } }
-        console.log('🔍 Outlets API response structure:', {
-          'result.data': result.data,
-          'result.data.outlets': result.data?.outlets,
-          'result.data.outlets length': result.data?.outlets?.length,
-          'result.data type': typeof result.data,
-          'result.data isArray': Array.isArray(result.data)
-        });
-        
-        const outletsData = result.data?.outlets || [];
-        console.log('✅ Setting outlets state:', outletsData);
-        console.log('✅ Outlets count:', outletsData.length);
-        setOutlets(outletsData);
+      const response = await outletsApi.updateOutlet(outletToDisable.id, {
+        id: outletToDisable.id,
+        isActive: false,
+      });
+      if (response.success) {
+        toastSuccess(
+          to("messages.disableSuccess"),
+          `${to("messages.disableSuccess")} - "${outletToDisable.name}"`
+        );
+        refetch();
       } else {
-        console.error('❌ Failed to fetch outlets:', result.error);
-        setOutlets([]); // Ensure outlets is always an array
-        toastError('Failed to fetch outlets', result.error || 'Unknown error occurred');
+        toastError(
+          to("messages.disableFailed"),
+          response.error || to("messages.disableFailed")
+        );
       }
     } catch (err) {
-      console.error('💥 Error fetching outlets:', err);
-      setOutlets([]); // Ensure outlets is always an array
-      toastError('Error fetching outlets', 'An unexpected error occurred while loading outlets');
+      toastError(to("messages.disableFailed"), to("messages.disableFailed"));
     } finally {
-      setLoading(false);
+      setShowDisableConfirm(false);
+      setOutletToDisable(null);
     }
-  };
+  }, [outletToDisable, router, toastSuccess, toastError, refetch]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      if (editingOutlet) {
-        // Update existing outlet
-        const result = await outletsApi.updateOutlet(editingOutlet.id, {
-          id: editingOutlet.id,
-          name: formData.name,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-          country: formData.country,
-          phone: formData.phone,
-          description: formData.description
-        });
-        
-        if (result.success) {
-          await fetchOutlets();
-          setShowAddDialog(false);
-          setEditingOutlet(null);
-          resetForm();
-          toastSuccess('Outlet updated successfully', `Outlet "${formData.name}" has been updated`);
-        } else {
-          toastError('Failed to update outlet', result.error || 'Unknown error occurred');
-        }
-      } else {
-        // Create new outlet
-        const result = await outletsApi.createOutlet({
+  // Handle outlet update from edit dialog
+  const handleOutletUpdate = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!selectedOutlet) return;
+
+      try {
+        const response = await outletsApi.updateOutlet(selectedOutlet.id, {
+          id: selectedOutlet.id,
           name: formData.name,
           address: formData.address,
           city: formData.city,
@@ -164,133 +280,58 @@ export default function OutletsPage() {
           country: formData.country,
           phone: formData.phone,
           description: formData.description,
-          merchantId: Number(merchantId)
         });
-        
-        if (result.success) {
-          await fetchOutlets();
-          setShowAddDialog(false);
-          resetForm();
-          toastSuccess('Outlet created successfully', `Outlet "${formData.name}" has been created`);
+
+        if (response.success) {
+          toastSuccess(
+            to("messages.updateSuccess"),
+            `${to("messages.updateSuccess")} - "${formData.name}"`
+          );
+          setShowEditDialog(false);
+          setSelectedOutlet(null);
+          refetch();
         } else {
-          toastError('Failed to create outlet', result.error || 'Unknown error occurred');
+          toastError(
+            to("messages.updateFailed"),
+            response.error || to("messages.updateFailed")
+          );
         }
+      } catch (err) {
+        toastError(to("messages.updateFailed"), to("messages.updateFailed"));
       }
-    } catch (err) {
-      console.error('Error saving outlet:', err);
-      toastError('Error saving outlet', 'An unexpected error occurred while saving the outlet');
+    },
+    [selectedOutlet, formData, router, toastSuccess, toastError, refetch]
+  );
+
+  // ============================================================================
+  // TRANSFORM DATA
+  // ============================================================================
+
+  const outletData = useMemo(() => {
+    if (!data) {
+      return {
+        outlets: [],
+        total: 0,
+        page: 1,
+        totalPages: 1,
+        limit: 25,
+        hasMore: false,
+      };
     }
-  };
 
-  const handleView = (outlet: Outlet) => {
-    setViewingOutlet(outlet);
-    setShowViewDialog(true);
-  };
+    return {
+      outlets: data.outlets,
+      total: data.total,
+      page: data.currentPage,
+      totalPages: data.totalPages,
+      limit: data.limit,
+      hasMore: data.hasMore,
+    };
+  }, [data]);
 
-  const handleEdit = (outlet: Outlet) => {
-    setEditingOutlet(outlet);
-    setFormData({
-      name: outlet.name,
-      address: outlet.address || '',
-      city: (outlet as any).city || '',
-      state: (outlet as any).state || '',
-      zipCode: (outlet as any).zipCode || '',
-      country: (outlet as any).country || '',
-      phone: outlet.phone || '',
-      description: outlet.description || ''
-    });
-    setShowAddDialog(true);
-  };
-
-  const handleToggleStatus = async (outlet: Outlet) => {
-    // If outlet is ACTIVE (isActive: true), show confirmation dialog for disable
-    if (outlet.isActive) {
-      setOutletToDisable(outlet);
-      setShowDisableConfirm(true);
-      return;
-    }
-    
-    // If outlet is INACTIVE (isActive: false), enable directly (no confirmation needed)
-    try {
-      const result = await outletsApi.updateOutlet(outlet.id, { 
-        id: outlet.id,
-        isActive: true 
-      });
-      if (result.success) {
-        await fetchOutlets();
-        toastSuccess('Outlet enabled successfully', `Outlet "${outlet.name}" has been enabled`);
-      } else {
-        toastError('Failed to enable outlet', result.error || 'Unknown error occurred');
-      }
-    } catch (err) {
-      console.error('Error enabling outlet:', err);
-      toastError('Error enabling outlet', 'An unexpected error occurred while enabling the outlet');
-    }
-  };
-
-  const handleOutletAction = (action: string, outletId: number) => {
-    const outlet = outlets.find(o => o.id === outletId);
-    if (!outlet) return;
-
-    switch (action) {
-      case 'view':
-        handleView(outlet);
-        break;
-      case 'edit':
-        handleEdit(outlet);
-        break;
-      case 'disable':
-        handleToggleStatus(outlet);
-        break;
-      case 'enable':
-        handleToggleStatus(outlet);
-        break;
-      default:
-        console.log('Unknown action:', action);
-    }
-  };
-
-  const handleConfirmDisable = async () => {
-    if (!outletToDisable) return;
-    
-    try {
-      const result = await outletsApi.updateOutlet(outletToDisable.id, { 
-        id: outletToDisable.id,
-        isActive: false 
-      });
-      if (result.success) {
-        await fetchOutlets();
-        toastSuccess('Outlet disabled successfully', `Outlet "${outletToDisable.name}" has been disabled`);
-      } else {
-        toastError('Failed to disable outlet', result.error || 'Unknown error occurred');
-      }
-    } catch (err) {
-      console.error('Error disabling outlet:', err);
-      toastError('Error disabling outlet', 'An unexpected error occurred while disabling the outlet');
-    } finally {
-      setShowDisableConfirm(false);
-      setOutletToDisable(null);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      address: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: '',
-      phone: '',
-      description: ''
-    });
-    setEditingOutlet(null);
-  };
-
-  const openAddDialog = () => {
-    resetForm();
-    setShowAddDialog(true);
-  };
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
   if (!merchantId) {
     return (
@@ -298,8 +339,10 @@ export default function OutletsPage() {
         <PageContent>
           <Card>
             <CardContent className="p-8 text-center text-gray-600">
-              <div className="mb-4">Merchant ID not found</div>
-              <div className="text-sm text-gray-500">Please log in again to access this page</div>
+              <div className="mb-4">{t("messages.unauthorized")}</div>
+              <div className="text-sm text-gray-500">
+                {t("messages.sessionExpired")}
+              </div>
             </CardContent>
           </Card>
         </PageContent>
@@ -307,352 +350,325 @@ export default function OutletsPage() {
     );
   }
 
+  if (loading && !data) {
+    return (
+      <PageWrapper
+        spacing="none"
+        className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0"
+      >
+        <PageHeader className="flex-shrink-0">
+          <PageTitle>{to("title")}</PageTitle>
+          <p className="text-sm text-gray-600">
+            {to("messages.loadingOutlets")}
+          </p>
+        </PageHeader>
+        <OutletsLoading />
+      </PageWrapper>
+    );
+  }
+
   return (
-    <PageWrapper>
-      <PageHeader>
+    <PageWrapper
+      spacing="none"
+      className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0"
+    >
+      <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
-            <PageTitle>Outlets</PageTitle>
-            <p className="text-gray-600">Manage your business outlets and branches</p>
+            <PageTitle>{to("title")}</PageTitle>
+            <p className="text-sm text-gray-600">{to("title")}</p>
           </div>
           <div className="flex gap-3">
-            {canExport && (
-              <button 
+            {/* Export feature - temporarily hidden, will be enabled in the future */}
+            {/* {canExport && (
+              <Button
                 onClick={() => {
-                  // TODO: Implement export functionality
-                  toastInfo('Export functionality coming soon!', 'This feature is currently under development');
+                  toastSuccess('Export Feature', 'Export functionality coming soon!');
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-md flex items-center text-sm"
+                variant="default"
+                size="sm"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                Export
-              </button>
-            )}
-            <Button 
-              onClick={openAddDialog}
-              className="bg-green-600 hover:bg-green-700 text-white h-9 px-4"
+                <Download className="w-4 h-4 mr-2" />
+                {to('actions.export')}
+              </Button>
+            )} */}
+            <Button
+              onClick={() => setShowAddDialog(true)}
+              variant="default"
+              size="sm"
             >
-              <Plus className="w-4 h-4 mr-2" /> Add Outlet
+              <Plus className="w-4 h-4 mr-2" />
+              {to("addOutlet")}
             </Button>
           </div>
         </div>
       </PageHeader>
 
-      <PageContent>
-        {loading ? (
-          <Card>
-            <CardContent className="p-8 text-center text-gray-600">
-              Loading outlets...
-            </CardContent>
-          </Card>
-        ) : outlets.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center text-gray-600">
-              <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium mb-2">No Outlets Found</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                You haven't created any outlets yet. Create your first outlet to get started.
-              </p>
-              <Button onClick={openAddDialog} className="bg-green-600 hover:bg-green-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Outlet
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <OutletTable
-            outlets={outlets}
-            onOutletAction={handleOutletAction}
-            onSort={(column) => {
-              // TODO: Implement sorting if needed
-              console.log('Sort by:', column);
-            }}
-          />
-        )}
+      <div className="flex-1 min-h-0 overflow-auto">
+        <Outlets
+          data={outletData}
+          filters={filters}
+          onSearchChange={handleSearchChange}
+          onOutletAction={handleOutletAction}
+          onPageChange={handlePageChange}
+          onSort={handleSort}
+        />
+      </div>
 
-        {/* Add/Edit Outlet Dialog */}
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="sm:max-w-[600px]">
+      {/* View Outlet Dialog */}
+      {selectedOutlet && (
+        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {editingOutlet ? 'Edit Outlet' : 'Add New Outlet'}
-              </DialogTitle>
+              <DialogTitle>{to("dialogs.outletDetails")}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Outlet Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter outlet name"
-                  required
-                />
-              </div>
-              
-              {/* Address Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Address Information</h3>
-                
+            <Card>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="address">Street Address</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                    placeholder="Enter street address"
-                  />
+                  <p className="text-sm font-medium text-gray-700">
+                    {to("fields.name")}
+                  </p>
+                  <p className="mt-1 text-gray-900 font-medium">
+                    {selectedOutlet.name}
+                  </p>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                      placeholder="Enter city"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="state">State/Province</Label>
-                    <Input
-                      id="state"
-                      value={formData.state}
-                      onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                      placeholder="Enter state"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="zipCode">ZIP/Postal Code</Label>
-                    <Input
-                      id="zipCode"
-                      value={formData.zipCode}
-                      onChange={(e) => setFormData(prev => ({ ...prev, zipCode: e.target.value }))}
-                      placeholder="Enter ZIP code"
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={formData.country}
-                    onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                    placeholder="Enter country"
-                  />
+                  <p className="text-sm font-medium text-gray-700">{to("fields.phone")}</p>
+                  <p className="mt-1 text-gray-900">
+                    {selectedOutlet.phone || to("fields.notAvailable")}
+                  </p>
                 </div>
+                <div className="md:col-span-2">
+                  <p className="text-sm font-medium text-gray-700">{to("fields.address")}</p>
+                  <p className="mt-1 text-gray-900">
+                    {selectedOutlet.address || to("fields.notAvailable")}
+                  </p>
+                </div>
+                {selectedOutlet.description && (
+                  <div className="md:col-span-2">
+                    <p className="text-sm font-medium text-gray-700">
+                      {to("fields.description")}
+                    </p>
+                    <p className="mt-1 text-gray-900 whitespace-pre-wrap">
+                      {selectedOutlet.description}
+                    </p>
+                  </div>
+                )}
               </div>
-              
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="Enter outlet phone number"
-                />
-              </div>
-              
-              {/* Status field removed - outlets are managed through enable/disable toggle */}
-              
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Enter outlet description"
-                  rows={3}
-                />
-              </div>
-              
-              <div className="flex items-center justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowAddDialog(false);
-                    resetForm();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingOutlet ? 'Update Outlet' : 'Create Outlet'}
-                </Button>
-              </div>
-            </form>
+              </CardContent>
+            </Card>
           </DialogContent>
         </Dialog>
+      )}
 
-        {/* Disable Outlet Confirmation Dialog */}
-        <Dialog open={showDisableConfirm} onOpenChange={setShowDisableConfirm}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Disable Outlet</DialogTitle>
-            </DialogHeader>
+      {/* Edit Outlet Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {to("dialogs.editOutletName").replace(
+                "{name}",
+                selectedOutlet?.name || ""
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleOutletUpdate}>
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div>
+                  <Label htmlFor="name">{to("fields.name")} *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder={to("placeholders.enterOutletName")}
+                required
+              />
+            </div>
+
+            {/* Address Information */}
             <div className="space-y-4">
-              <p className="text-gray-600">
-                Are you sure you want to disable the outlet <strong>"{outletToDisable?.name}"</strong>?
-              </p>
-              <p className="text-sm text-gray-500">
-                This will:
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Stop new orders from being created for this outlet</li>
-                  <li>Hide the outlet from active outlet lists</li>
-                  <li>Preserve all existing data and history</li>
-                  <li>Allow you to re-enable it later</li>
-                </ul>
-              </p>
-              <div className="flex items-center justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowDisableConfirm(false);
-                    setOutletToDisable(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={handleConfirmDisable}
-                >
-                  Disable Outlet
-                </Button>
+              <h3 className="text-lg font-medium text-gray-900">
+                {t("labels.addressInformation")}
+              </h3>
+
+              <div>
+                <Label htmlFor="address">{to("fields.address")}</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      address: e.target.value,
+                    }))
+                  }
+                  placeholder={to("placeholders.enterStreetAddress")}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="city">{to("fields.city")}</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, city: e.target.value }))
+                    }
+                    placeholder={to("placeholders.enterCity")}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="state">{to("fields.state")}</Label>
+                  <Input
+                    id="state"
+                    value={formData.state}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        state: e.target.value,
+                      }))
+                    }
+                    placeholder={to("placeholders.enterState")}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="zipCode">{to("fields.zipCode")}</Label>
+                  <Input
+                    id="zipCode"
+                    value={formData.zipCode}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        zipCode: e.target.value,
+                      }))
+                    }
+                    placeholder={to("placeholders.enterZipCode")}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="country">{to("fields.country")}</Label>
+                <Input
+                  id="country"
+                  value={formData.country}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      country: e.target.value,
+                    }))
+                  }
+                  placeholder={to("placeholders.enterCountry")}
+                />
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
 
-        {/* View Outlet Dialog */}
-        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <div>
-                <DialogTitle className="text-xl font-semibold">
-                  Outlet Details
-                </DialogTitle>
-                <DialogDescription className="text-sm text-gray-600 mt-1">
-                  View outlet information and details
-                </DialogDescription>
-              </div>
-            </DialogHeader>
-            {viewingOutlet && (
-              <div className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  <div>
-                  <Label className="text-sm font-medium text-gray-700">Outlet Name</Label>
-                  <div className="mt-1 p-3 bg-gray-50 rounded-md border">
-                    <p className="text-gray-900 font-medium">{viewingOutlet.name}</p>
-                  </div>
-                </div>
-                  
-                  {/* Address Information */}
-                  {(viewingOutlet.address || (viewingOutlet as any).city || (viewingOutlet as any).state || (viewingOutlet as any).zipCode || (viewingOutlet as any).country) && (
-                    <div className="md:col-span-2">
-                      <Label className="text-sm font-medium text-gray-700">Address Information</Label>
-                      <div className="mt-1 p-3 bg-gray-50 rounded-md border space-y-2">
-                        {viewingOutlet.address && (
-                          <p className="text-gray-900"><strong>Street:</strong> {viewingOutlet.address}</p>
-                        )}
-                        {((viewingOutlet as any).city || (viewingOutlet as any).state || (viewingOutlet as any).zipCode) && (
-                          <div className="flex flex-wrap gap-2">
-                            {(viewingOutlet as any).city && (
-                              <span className="text-gray-900"><strong>City:</strong> {(viewingOutlet as any).city}</span>
-                            )}
-                            {(viewingOutlet as any).state && (
-                              <span className="text-gray-900"><strong>State:</strong> {(viewingOutlet as any).state}</span>
-                            )}
-                            {(viewingOutlet as any).zipCode && (
-                              <span className="text-gray-900"><strong>ZIP:</strong> {(viewingOutlet as any).zipCode}</span>
-                            )}
-                          </div>
-                        )}
-                        {(viewingOutlet as any).country && (
-                          <p className="text-gray-900"><strong>Country:</strong> {(viewingOutlet as any).country}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {viewingOutlet.phone && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Phone</Label>
-                      <div className="mt-1 p-3 bg-gray-50 rounded-md border">
-                        <p className="text-gray-900">{viewingOutlet.phone}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {viewingOutlet.description && (
-                    <div className="md:col-span-2">
-                      <Label className="text-sm font-medium text-gray-700">Description</Label>
-                      <div className="mt-1 p-3 bg-gray-50 rounded-md border">
-                        <p className="text-gray-900 whitespace-pre-wrap">{viewingOutlet.description}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Created</Label>
-                    <div className="mt-1 p-3 bg-gray-50 rounded-md border">
-                      <p className="text-gray-900">
-                        {new Date(viewingOutlet.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Last Updated</Label>
-                    <div className="mt-1 p-3 bg-gray-50 rounded-md border">
-                      <p className="text-gray-900">
-                        {new Date(viewingOutlet.updatedAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-end gap-3 pt-4">
+            <div>
+              <Label htmlFor="phone">{to("fields.phone")}</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
+                placeholder={to("placeholders.enterOutletPhone")}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="description">{to("fields.description")}</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                placeholder={to("placeholders.enterOutletDescription")}
+                rows={3}
+              />
+            </div>
+
+                <div className="flex items-center justify-end gap-3 border-t pt-4">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowViewDialog(false)}
-                  >
-                    Close
-                  </Button>
-                  <Button
-                    type="button"
                     onClick={() => {
-                      setShowViewDialog(false);
-                      handleEdit(viewingOutlet);
+                      setShowEditDialog(false);
+                      setSelectedOutlet(null);
                     }}
                   >
-                    Edit Outlet
+                    {t("buttons.cancel")}
                   </Button>
+                  <Button type="submit">{to("actions.editOutlet")}</Button>
                 </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      </PageContent>
+              </CardContent>
+            </Card>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Outlet Dialog */}
+      <AddOutletDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        merchantId={merchantId}
+        onOutletCreated={async (outletData) => {
+          try {
+            const response = await outletsApi.createOutlet({
+              ...outletData,
+              merchantId: merchantId || 0,
+            });
+
+            if (response.success) {
+              toastSuccess(
+                to("messages.createSuccess"),
+                to("messages.createSuccess")
+              );
+              refetch();
+            } else {
+              throw new Error(response.error || to("messages.createFailed"));
+            }
+          } catch (error) {
+            console.error("Error creating outlet:", error);
+            toastError(
+              t("labels.error"),
+              error instanceof Error
+                ? error.message
+                : to("messages.createFailed")
+            );
+            throw error;
+          }
+        }}
+        onError={(error) => {
+          toastError(t("labels.error"), error);
+        }}
+      />
+
+      {/* Disable Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDisableConfirm}
+        onOpenChange={setShowDisableConfirm}
+        type="warning"
+        title={to("actions.deleteOutlet")}
+        description={to("messages.confirmDelete")}
+        confirmText={to("actions.deleteOutlet")}
+        cancelText={t("buttons.cancel")}
+        onConfirm={handleConfirmDisable}
+        onCancel={() => {
+          setShowDisableConfirm(false);
+          setOutletToDisable(null);
+        }}
+      />
     </PageWrapper>
   );
 }
-

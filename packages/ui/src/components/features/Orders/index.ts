@@ -9,6 +9,8 @@ export { default as Orders } from './Orders';
 export { 
   OrderHeader,
   OrderFilters,
+  OrderQuickFilters,
+  OrderDateRangeFilter,
   OrderTable,
   OrderActions,
   OrderStats,
@@ -16,6 +18,9 @@ export {
   OrdersLoading,
   OrderDetailLoading
 } from './components';
+
+// Types
+export type { QuickFilterOption, DateRangeOption } from './components';
 
 // Order creation components
 export { RentalPeriodSelector } from './RentalPeriodSelector';

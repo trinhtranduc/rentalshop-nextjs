@@ -54,6 +54,7 @@ export const ordersApi = {
         params.append('status', filters.status);
       }
     }
+    if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.customerId) params.append('customerId', filters.customerId.toString());
     if (filters.productId) params.append('productId', filters.productId.toString());

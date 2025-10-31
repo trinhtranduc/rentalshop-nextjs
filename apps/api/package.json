@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev -p 3002",
     "build": "SKIP_ENV_VALIDATION=true next build",
-    "build:railway": "npx prisma generate --schema=../../prisma/schema.prisma && next build",
+    "build:railway": "npx prisma migrate deploy --schema=../../prisma/schema.prisma && npx prisma generate --schema=../../prisma/schema.prisma && next build",
     "start": "next start -p 3002",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate:deploy": "npx prisma migrate deploy --schema=../../prisma/schema.prisma",
+    "migrate:generate": "npx prisma generate --schema=../../prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "6.16.2",
@@ -18,13 +20,12 @@
     "@rentalshop/utils": "file:../../packages/utils",
     "@rentalshop/validation": "file:../../packages/validation",
     "@types/jsonwebtoken": "^9.0.10",
-    "cloudinary": "^2.7.0",
     "jsonwebtoken": "^9.0.2",
     "next": "^14.0.0",
     "prisma": "6.16.2",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "swagger-ui-react": "^5.10.0",
+    "swagger-ui-react": "^5.29.5",
     "zod": "^3.22.0"
   },
   "devDependencies": {

@@ -23,6 +23,7 @@ export const findById = async (id: number) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -40,6 +41,7 @@ export const findFirst = async (where: any) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -59,6 +61,7 @@ export const findMany = async (options: any = {}) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true,
       ...select
@@ -80,6 +83,7 @@ export const create = async (data: any) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -98,6 +102,7 @@ export const update = async (id: number, data: any) => {
       name: true,
       description: true,
       isActive: true,
+      isDefault: true,
       createdAt: true,
       updatedAt: true
     }
@@ -105,27 +110,101 @@ export const update = async (id: number, data: any) => {
 };
 
 /**
- * Delete category (soft delete) (simplified API)
+ * Delete category (hard delete) (simplified API)
+ * Note: Dependency check should be done before calling this function
  */
 export const deleteCategory = async (id: number) => {
-  return await prisma.category.update({
-    where: { id },
-    data: { isActive: false },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true
-    }
+  return await prisma.category.delete({
+    where: { id }
   });
+};
+
+/**
+ * Search categories with pagination (simplified API)
+ */
+export const search = async (filters: any) => {
+  const { page = 1, limit = 20, sortBy = 'name', sortOrder = 'asc', ...whereFilters } = filters;
+  const skip = (page - 1) * limit;
+
+  console.log('🔍 DB category.search - Received filters:', filters);
+
+  // Build where clause
+  const where: any = {};
+  
+  if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+  // Default to active categories only unless explicitly requesting all
+  if (whereFilters.isActive !== undefined) {
+    where.isActive = whereFilters.isActive;
+  } else {
+    where.isActive = true; // Default: only show active categories
+  }
+  
+  // Text search by category name - accept both 'q' and 'search' parameters
+  const searchTerm = (whereFilters.q || whereFilters.search)?.trim();
+  console.log('🔍 DB category.search - searchTerm:', searchTerm, 'length:', searchTerm?.length);
+  
+  if (searchTerm && searchTerm.length > 0) {
+    where.name = { 
+      contains: searchTerm, 
+      mode: 'insensitive' 
+    };
+    console.log('✅ DB category.search - Added name filter:', where.name);
+  } else {
+    console.log('⚠️ DB category.search - No search term, will return all categories');
+  }
+  
+  console.log('🔍 DB category.search - Final where clause:', JSON.stringify(where, null, 2));
+
+  // Build orderBy based on sortBy and sortOrder
+  const orderBy: any = {};
+  if (sortBy === 'name' || sortBy === 'createdAt' || sortBy === 'updatedAt') {
+    orderBy[sortBy] = sortOrder;
+  } else {
+    orderBy.name = 'asc'; // Default
+  }
+
+  const [categories, total] = await Promise.all([
+    prisma.category.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        isActive: true,
+        isDefault: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            products: true
+          }
+        }
+      },
+      orderBy,
+      skip,
+      take: limit
+    }),
+    prisma.category.count({ where })
+  ]);
+
+  console.log(`📊 db.categories.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, categories=${categories.length}`);
+
+  return {
+    data: categories,
+    total,
+    page,
+    limit,
+    hasMore: skip + limit < total,
+    totalPages: Math.ceil(total / limit)
+  };
 };
 
 /**
  * Get category statistics (simplified API)
  */
-export const getStats = async (where: any = {}) => {
+export const getStats = async (whereClause?: any) => {
+  // Handle both direct where clause and object with where property
+  const where = whereClause?.where || whereClause || {};
   return await prisma.category.count({ where });
 };
 
@@ -140,5 +219,6 @@ export const simplifiedCategories = {
   create,
   update,
   delete: deleteCategory,
+  search,
   getStats
 };

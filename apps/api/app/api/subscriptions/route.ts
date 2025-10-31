@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { subscriptionCreateSchema, handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
@@ -16,6 +16,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const filters = {
+      search: searchParams.get('q') || searchParams.get('search') || undefined,
       merchantId: searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : undefined,
       planId: searchParams.get('planId') ? parseInt(searchParams.get('planId')!) : undefined,
       status: searchParams.get('status') || undefined,
@@ -76,7 +77,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     return NextResponse.json({
       success: true,
       data: subscription,
-      message: 'Subscription created successfully'
+      code: 'SUBSCRIPTION_CREATED_SUCCESS',
+        message: 'Subscription created successfully'
     });
   } catch (error) {
     console.error('Error creating subscription:', error);

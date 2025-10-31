@@ -176,7 +176,7 @@ export function SubscriptionActivityTimeline({
       case 'PLAN_CHANGED':
       case 'PLAN_UPGRADED':
       case 'PLAN_DOWNGRADED':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-blue-700 bg-blue-100';
       case 'SUBSCRIPTION_ACTIVATED':
       case 'BILLING_CYCLE_RENEWED':
       case 'RENEWAL':
@@ -200,7 +200,7 @@ export function SubscriptionActivityTimeline({
       case 'PAYMENT_FAILED':
         return 'text-red-600 bg-red-100';
       case 'TRIAL_STARTED':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-blue-700 bg-blue-100';
       case 'TRIAL_ENDED':
         return 'text-yellow-600 bg-yellow-100';
       case 'DISCOUNT_APPLIED':
@@ -210,7 +210,7 @@ export function SubscriptionActivityTimeline({
       case 'INVOICE_GENERATED':
         return 'text-indigo-600 bg-indigo-100';
       case 'REMINDER_SENT':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-blue-700 bg-blue-100';
       case 'DUNNING_STARTED':
         return 'text-red-600 bg-red-100';
       case 'SUBSCRIPTION_EXPIRED':
