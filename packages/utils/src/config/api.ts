@@ -50,6 +50,7 @@ export interface ApiUrls {
     forgotPassword: string;
     resetPassword: string;
     changePassword: string;
+    resendVerification: string;
   };
   categories: {
     list: string;
@@ -493,6 +494,7 @@ function createApiUrls(): ApiUrls {
       forgotPassword: `${base}/api/auth/forgot-password`,
       resetPassword: `${base}/api/auth/reset-password`,
       changePassword: `${base}/api/auth/change-password`,
+      resendVerification: `${base}/api/auth/resend-verification`,
     },
     categories: {
       list: `${base}/api/categories`,

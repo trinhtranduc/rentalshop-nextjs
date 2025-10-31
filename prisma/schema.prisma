@@ -31,6 +31,8 @@ model User {
   phone                  String?
   role                   String                 @default("OUTLET_STAFF")
   isActive               Boolean                @default(true)
+  emailVerified          Boolean                @default(false)
+  emailVerifiedAt        DateTime?
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   merchantId             Int?
@@ -39,6 +41,7 @@ model User {
   auditLogs              AuditLog[]
   createdOrders          Order[]
   subscriptionActivities SubscriptionActivity[]
+  emailVerifications     EmailVerification[]
   merchant               Merchant?              @relation(fields: [merchantId], references: [id])
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
   sessions               UserSession[]
@@ -49,6 +52,7 @@ model User {
   @@index([merchantId])
   @@index([outletId])
   @@index([deletedAt])
+  @@index([emailVerified])
 }
 
 model UserSession {
@@ -268,21 +272,21 @@ model Order {
 }
 
 model OrderItem {
-  id              Int     @id @default(autoincrement())
-  quantity        Int     @default(1)
-  unitPrice       Float
-  totalPrice      Float
-  deposit         Float   @default(0)
-  orderId         Int
-  productId       Int
-  notes           String?
-  rentalDays      Int?
+  id             Int     @id @default(autoincrement())
+  quantity       Int     @default(1)
+  unitPrice      Float
+  totalPrice     Float
+  deposit        Float   @default(0)
+  orderId        Int
+  productId      Int
+  notes          String?
+  rentalDays     Int?
   // Snapshot fields - preserve product info even if product is deleted
-  productName     String?
-  productBarcode  String?
-  productImages   Json?    // Store as JSON array of URLs
-  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product         Product @relation(fields: [productId], references: [id])
+  productName    String?
+  productBarcode String?
+  productImages  Json? // Store as JSON array of URLs
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product @relation(fields: [productId], references: [id])
 
   @@index([orderId, productId])
 }
@@ -409,4 +413,22 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+model EmailVerification {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  token      String    @unique
+  email      String
+  verified   Boolean   @default(false)
+  verifiedAt DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([email])
+  @@index([expiresAt])
+  @@index([verified])
 }

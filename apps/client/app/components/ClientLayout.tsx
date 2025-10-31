@@ -8,6 +8,7 @@ import { Menu, X } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
 import { useAuth, useCommonTranslations } from '@rentalshop/hooks';
 import type { CurrencyCode } from '@rentalshop/types';
+import { isPublicRoute, isAuthRoute, isPublicInfoRoute } from '../../lib/routes';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -45,15 +46,10 @@ export default function ClientLayout({
         );
       }
 
-  // Check if we're on auth pages - hide sidebar on auth pages
-  const isAuthPage = pathname === '/login' 
-    || pathname === '/register' 
-    || pathname === '/forget-password'
-    || pathname?.startsWith('/register');
-  
-  // Check if we're on public pages (landing, auth, legal pages) - no auth required
-  const isLegalPage = pathname === '/terms' || pathname === '/privacy';
-  const isPublicPage = pathname === '/' || isAuthPage || isLegalPage;
+  // ✅ OFFICIAL WAY: Use centralized route configuration
+  // Check route types using centralized route utilities
+  const isAuthPage = isAuthRoute(pathname);
+  const isPublicPage = isPublicRoute(pathname);
   
   // Check if we're on full-width pages - hide sidebar for better space
   // Edit order route: /orders/[id]/edit
@@ -86,8 +82,9 @@ export default function ClientLayout({
     return null;
   }
 
-  // If user is logged in but on auth page, redirect to dashboard
-  if (user && isAuthPage) {
+  // If user is logged in but on auth page (not public info pages), redirect to dashboard
+  // Public info pages like /email-verification can still be accessed by logged-in users
+  if (user && isAuthRoute(pathname) && !isPublicInfoRoute(pathname)) {
     if (typeof window !== 'undefined') {
       // Redirect to dashboard
       window.location.href = '/dashboard';

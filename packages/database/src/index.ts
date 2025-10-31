@@ -232,6 +232,9 @@ export { searchOrders } from './order'; // Legacy order search function
 export { registerUser, registerMerchantWithTrial } from './registration';
 export type { RegistrationInput, RegistrationResult } from './registration';
 
+// Email verification functions
+export * from './email-verification';
+
 // ============================================================================
 // MIGRATION GUIDE
 // ============================================================================

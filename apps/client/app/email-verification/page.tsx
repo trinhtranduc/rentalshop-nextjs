@@ -1,22 +1,13 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { RegisterForm, LanguageSwitcher } from '@rentalshop/ui';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { LanguageSwitcher, CheckEmailVerification } from '@rentalshop/ui';
 
-export default function RegisterPage() {
-  const router = useRouter();
+export default function EmailVerificationPage() {
   const searchParams = useSearchParams();
-
-  const handleRegister = async (data: any) => {
-    // Registration is now handled directly by the RegisterForm component
-    // using the centralized API. This function is kept for compatibility
-    // but the actual registration logic is in the form component.
-    console.log('Registration data received:', data);
-  };
-
-  const handleNavigate = (path: string) => {
-    router.push(path);
-  };
+  const router = useRouter();
+  
+  const email = searchParams.get('email') || '';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
@@ -53,20 +44,20 @@ export default function RegisterPage() {
         .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
       `}</style>
       
-      {/* Background Pattern - Grid */}
+      {/* Background Pattern */}
       <div className="absolute inset-0 pointer-events-none" style={{
         backgroundImage: `radial-gradient(circle, #c7d2fe 1.5px, transparent 1.5px)`,
         backgroundSize: '50px 50px',
         opacity: 0.4
       }}></div>
       
-      {/* Floating Elements - Giữ như cũ */}
+      {/* Floating Elements */}
       <div className="absolute top-20 left-10 w-32 h-32 bg-blue-400 rounded-full opacity-30 blur-2xl pointer-events-none float-1 pulse-glow"></div>
       <div className="absolute top-40 right-20 w-24 h-24 bg-indigo-400 rounded-full opacity-40 blur-2xl pointer-events-none float-2 pulse-glow"></div>
       <div className="absolute bottom-32 left-20 w-20 h-20 bg-purple-400 rounded-full opacity-35 blur-2xl pointer-events-none float-3 pulse-glow"></div>
       <div className="absolute bottom-20 right-32 w-36 h-36 bg-blue-500 rounded-full opacity-30 blur-2xl pointer-events-none float-4 pulse-glow"></div>
       
-      {/* Decorative Shapes - Di chuyển xa hơn */}
+      {/* Decorative Shapes */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-blue-200 to-transparent rounded-full opacity-40 blur-3xl pointer-events-none" style={{
         animation: 'rotate-move 30s ease-in-out infinite',
         transformOrigin: 'center'
@@ -76,27 +67,18 @@ export default function RegisterPage() {
         transformOrigin: 'center'
       }}></div>
       
-      {/* Language Switcher - Top Right */}
+      {/* Language Switcher */}
       <div className="absolute top-4 right-4 z-10">
         <LanguageSwitcher variant="compact" />
       </div>
 
       <div className="relative z-10 w-full">
-        <RegisterForm 
-          initialStep={(searchParams.get('step') === '2' ? 2 : 1) as 1 | 2}
-          onNavigate={(path) => {
-            // Allow external navigations to pass through
-            if (path === '/login' || path === '/terms' || path === '/privacy' || path.startsWith('/email-verification')) {
-              router.push(path);
-              return;
-            }
-            // Map internal navigation to query param pattern
-            if (path.includes('step-2')) router.push('/register?step=2');
-            else router.push('/register?step=1');
-          }}
-          onRegister={handleRegister}
+        <CheckEmailVerification 
+          email={email}
+          onBackToLogin={() => router.push('/login')}
         />
       </div>
     </div>
   );
-} 
+}
+

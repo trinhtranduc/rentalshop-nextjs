@@ -205,23 +205,33 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         const result = await authApi.register(registrationData);
         
         if (!result.success) {
-          // Prioritize message over error field
           throw new Error(result.message || result.error || 'Registration failed');
         }
-        
-        // Do not auto-login; show success and redirect to login
-        toastSuccess(t('register.registrationComplete'), t('register.accountCreatedSuccessfully'));
 
-        // Reset form
+        // Registration successful - ALWAYS redirect to email verification page
+        // Get email from response or use the email from registration data
+        const resultData = result.data as any;
+        const userEmail = resultData?.user?.email || completeData.login || registrationData.email;
+        
+        // Reset form after successful registration
         formik.resetForm();
         setCurrentStep(1);
         setAccountData({});
+
+        // Show success message
+        toastSuccess(
+          t('register.registrationComplete'), 
+          t('register.checkEmailToActivate')
+        );
         
-        // Navigate to login immediately
+        // Always redirect to email verification page after successful registration
+        const redirectUrl = `/email-verification?email=${encodeURIComponent(userEmail || registrationData.email)}`;
+        console.log('✅ RegisterForm: Registration successful, redirecting to email verification:', redirectUrl);
+        
         if (onNavigate) {
-          onNavigate('/login');
+          onNavigate(redirectUrl);
         } else {
-          router.replace('/login');
+          router.replace(redirectUrl);
         }
       } catch (error: any) {
         toastError(
@@ -275,166 +285,175 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             e.preventDefault();
             formik.handleSubmit(e);
           }} className="space-y-6">
-            {/* Step 1: Account Information */}
+            {/* Step 1: Account Information - Sắp xếp theo UX best practices */}
             {currentStep === 1 && (
               <>
-                {/* Email Field */}
-                <div className="space-y-2">
-                  <label htmlFor="login" className="text-sm font-medium text-gray-700">
-                    {t('register.email')}
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <Input
-                      id="login"
-                      name="login"
-                      type="email"
-                      placeholder={t('register.enterYourEmail')}
-                      value={formik.values.login}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`pl-10 ${formik.errors.login && formik.touched.login ? 'border-red-500' : ''}`}
-                    />
+                {/* Personal Information Section */}
+                <div className="space-y-4">
+                  {/* First Name and Last Name Fields - Bắt đầu với tên */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* First Name Field */}
+                    <div className="space-y-2">
+                      <label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                        {t('register.firstName')}
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          type="text"
+                          placeholder={t('register.enterFirstName')}
+                          value={formik.values.firstName}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          className={`pl-10 ${formik.errors.firstName && formik.touched.firstName ? 'border-red-500' : ''}`}
+                        />
+                      </div>
+                      {formik.errors.firstName && formik.touched.firstName && (
+                        <p className="text-red-500 text-sm">{formik.errors.firstName}</p>
+                      )}
+                    </div>
+
+                    {/* Last Name Field */}
+                    <div className="space-y-2">
+                      <label htmlFor="lastName" className="text-sm font-medium text-gray-700">
+                        {t('register.lastName')}
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          type="text"
+                          placeholder={t('register.enterLastName')}
+                          value={formik.values.lastName}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          className={`pl-10 ${formik.errors.lastName && formik.touched.lastName ? 'border-red-500' : ''}`}
+                        />
+                      </div>
+                      {formik.errors.lastName && formik.touched.lastName && (
+                        <p className="text-red-500 text-sm">{formik.errors.lastName}</p>
+                      )}
+                    </div>
                   </div>
-                  {formik.errors.login && formik.touched.login && (
-                    <p className="text-red-500 text-sm">{formik.errors.login}</p>
-                  )}
                 </div>
 
-                {/* Password Field */}
-                <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium text-gray-700">
-                    {t('register.password')}
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type={viewPass ? "text" : "password"}
-                      placeholder={t('register.createPassword')}
-                      value={formik.values.password}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`pl-10 pr-10 ${formik.errors.password && formik.touched.password ? 'border-red-500' : ''}`}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      type="button"
-                      onClick={() => setViewPass(!viewPass)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
-                    >
-                      {viewPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </Button>
-                  </div>
-                  {formik.errors.password && formik.touched.password && (
-                    <p className="text-red-500 text-sm">{formik.errors.password}</p>
-                  )}
-                </div>
-
-                {/* Confirm Password Field */}
-                <div className="space-y-2">
-                  <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                    {t('register.confirmPassword')}
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type={viewConfirmPass ? "text" : "password"}
-                      placeholder={t('register.confirmYourPassword')}
-                      value={formik.values.confirmPassword}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`pl-10 pr-10 ${formik.errors.confirmPassword && formik.touched.confirmPassword ? 'border-red-500' : ''}`}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      type="button"
-                      onClick={() => setViewConfirmPass(!viewConfirmPass)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
-                    >
-                      {viewConfirmPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </Button>
-                  </div>
-                  {formik.errors.confirmPassword && formik.touched.confirmPassword && (
-                    <p className="text-red-500 text-sm">{formik.errors.confirmPassword}</p>
-                  )}
-                </div>
-
-                {/* First Name and Last Name Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* First Name Field */}
+                {/* Contact Information Section */}
+                <div className="space-y-4">
+                  {/* Email Field - Quan trọng cho account */}
                   <div className="space-y-2">
-                    <label htmlFor="firstName" className="text-sm font-medium text-gray-700">
-                      {t('register.firstName')}
+                    <label htmlFor="login" className="text-sm font-medium text-gray-700">
+                      {t('register.email')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                       <Input
-                        id="firstName"
-                        name="firstName"
-                        type="text"
-                        placeholder={t('register.enterFirstName')}
-                        value={formik.values.firstName}
+                        id="login"
+                        name="login"
+                        type="email"
+                        placeholder={t('register.enterYourEmail')}
+                        value={formik.values.login}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className={`pl-10 ${formik.errors.firstName && formik.touched.firstName ? 'border-red-500' : ''}`}
+                        className={`pl-10 ${formik.errors.login && formik.touched.login ? 'border-red-500' : ''}`}
                       />
                     </div>
-                    {formik.errors.firstName && formik.touched.firstName && (
-                      <p className="text-red-500 text-sm">{formik.errors.firstName}</p>
+                    {formik.errors.login && formik.touched.login && (
+                      <p className="text-red-500 text-sm">{formik.errors.login}</p>
                     )}
                   </div>
 
-                  {/* Last Name Field */}
+                  {/* Phone Field */}
                   <div className="space-y-2">
-                    <label htmlFor="lastName" className="text-sm font-medium text-gray-700">
-                      {t('register.lastName')}
+                    <label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                      {t('register.phone')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                       <Input
-                        id="lastName"
-                        name="lastName"
-                        type="text"
-                        placeholder={t('register.enterLastName')}
-                        value={formik.values.lastName}
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        placeholder={t('register.enterPhoneNumber')}
+                        value={formik.values.phone}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className={`pl-10 ${formik.errors.lastName && formik.touched.lastName ? 'border-red-500' : ''}`}
+                        className={`pl-10 ${formik.errors.phone && formik.touched.phone ? 'border-red-500' : ''}`}
                       />
                     </div>
-                    {formik.errors.lastName && formik.touched.lastName && (
-                      <p className="text-red-500 text-sm">{formik.errors.lastName}</p>
+                    {formik.errors.phone && formik.touched.phone && (
+                      <p className="text-red-500 text-sm">{formik.errors.phone}</p>
                     )}
                   </div>
                 </div>
 
-                {/* Phone Field */}
-                <div className="space-y-2">
-                  <label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                    {t('register.phone')}
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder={t('register.enterPhoneNumber')}
-                      value={formik.values.phone}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`pl-10 ${formik.errors.phone && formik.touched.phone ? 'border-red-500' : ''}`}
-                    />
+                {/* Account Security Section */}
+                <div className="space-y-4">
+                  {/* Password Field */}
+                  <div className="space-y-2">
+                    <label htmlFor="password" className="text-sm font-medium text-gray-700">
+                      {t('register.password')} <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="password"
+                        name="password"
+                        type={viewPass ? "text" : "password"}
+                        placeholder={t('register.createPassword')}
+                        value={formik.values.password}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`pl-10 pr-10 ${formik.errors.password && formik.touched.password ? 'border-red-500' : ''}`}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        type="button"
+                        onClick={() => setViewPass(!viewPass)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
+                      >
+                        {viewPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </Button>
+                    </div>
+                    {formik.errors.password && formik.touched.password && (
+                      <p className="text-red-500 text-sm">{formik.errors.password}</p>
+                    )}
                   </div>
-                  {formik.errors.phone && formik.touched.phone && (
-                    <p className="text-red-500 text-sm">{formik.errors.phone}</p>
-                  )}
+
+                  {/* Confirm Password Field */}
+                  <div className="space-y-2">
+                    <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                      {t('register.confirmPassword')} <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={viewConfirmPass ? "text" : "password"}
+                        placeholder={t('register.confirmYourPassword')}
+                        value={formik.values.confirmPassword}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`pl-10 pr-10 ${formik.errors.confirmPassword && formik.touched.confirmPassword ? 'border-red-500' : ''}`}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        type="button"
+                        onClick={() => setViewConfirmPass(!viewConfirmPass)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
+                      >
+                        {viewConfirmPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </Button>
+                    </div>
+                    {formik.errors.confirmPassword && formik.touched.confirmPassword && (
+                      <p className="text-red-500 text-sm">{formik.errors.confirmPassword}</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Submit Button for Step 1 */}
@@ -448,139 +467,152 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               </>
             )}
 
-            {/* Step 2: Business Information */}
+            {/* Step 2: Business Information - Sắp xếp theo UX best practices */}
             {currentStep === 2 && (
               <>
-                {/* Business Name Field */}
-                <div className="space-y-2">
-                  <label htmlFor="businessName" className="text-sm font-medium text-gray-700">
-                    {t('register.businessName')}
-                  </label>
-                  <div className="relative">
-                    <Store className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <Input
-                      id="businessName"
-                      name="businessName"
-                      type="text"
-                      placeholder={t('register.enterBusinessName')}
-                      value={formik.values.businessName}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`pl-10 ${formik.errors.businessName && formik.touched.businessName ? 'border-red-500' : ''}`}
-                    />
-                  </div>
-                  {formik.errors.businessName && formik.touched.businessName && (
-                    <p className="text-red-500 text-sm">{formik.errors.businessName}</p>
-                  )}
-                </div>
-
-
-                {/* Business Type and Pricing Type - Hidden (use defaults) */}
-
-                {/* Address Field */}
-                <div className="space-y-2">
-                  <label htmlFor="address" className="text-sm font-medium text-gray-700">
-                    {t('register.address')}
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <Input
-                      id="address"
-                      name="address"
-                      type="text"
-                      placeholder={t('register.enterBusinessAddress')}
-                      value={formik.values.address}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`pl-10 ${formik.errors.address && formik.touched.address ? 'border-red-500' : ''}`}
-                    />
-                  </div>
-                  {formik.errors.address && formik.touched.address && (
-                    <p className="text-red-500 text-sm">{formik.errors.address}</p>
-                  )}
-                </div>
-
-                {/* Ward/Commune and Province/City Row */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Business Information Section */}
+                <div className="space-y-4">
+                  {/* Business Name Field - Quan trọng nhất */}
                   <div className="space-y-2">
-                    <label htmlFor="city" className="text-sm font-medium text-gray-700">Phường/Xã</label>
-                    <Input
-                      id="city"
-                      name="city"
-                      type="text"
-                      placeholder="Phường/Xã"
-                      value={formik.values.city}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={formik.errors.city && formik.touched.city ? 'border-red-500' : ''}
-                    />
-                    {formik.errors.city && formik.touched.city && (
-                      <p className="text-red-500 text-sm">{formik.errors.city}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="state" className="text-sm font-medium text-gray-700">Tỉnh/Thành</label>
-                    <Input
-                      id="state"
-                      name="state"
-                      type="text"
-                      placeholder="Tỉnh/Thành"
-                      value={formik.values.state}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={formik.errors.state && formik.touched.state ? 'border-red-500' : ''}
-                    />
-                    {formik.errors.state && formik.touched.state && (
-                      <p className="text-red-500 text-sm">{formik.errors.state}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* ZIP Code and Country Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="zipCode" className="text-sm font-medium text-gray-700">
-                      {t('register.zipCode')}
+                    <label htmlFor="businessName" className="text-sm font-medium text-gray-700">
+                      {t('register.businessName')} <span className="text-red-500">*</span>
                     </label>
-                    <Input
-                      id="zipCode"
-                      name="zipCode"
-                      type="text"
-                      placeholder={t('register.zipCode')}
-                      value={formik.values.zipCode}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={formik.errors.zipCode && formik.touched.zipCode ? 'border-red-500' : ''}
-                    />
-                    {formik.errors.zipCode && formik.touched.zipCode && (
-                      <p className="text-red-500 text-sm">{formik.errors.zipCode}</p>
+                    <div className="relative">
+                      <Store className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="businessName"
+                        name="businessName"
+                        type="text"
+                        placeholder={t('register.enterBusinessName')}
+                        value={formik.values.businessName}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`pl-10 ${formik.errors.businessName && formik.touched.businessName ? 'border-red-500' : ''}`}
+                      />
+                    </div>
+                    {formik.errors.businessName && formik.touched.businessName && (
+                      <p className="text-red-500 text-sm">{formik.errors.businessName}</p>
                     )}
                   </div>
+                </div>
+
+                {/* Address Information Section */}
+                <div className="space-y-4">
+                  {/* Address Field - Full address */}
                   <div className="space-y-2">
-                    <label htmlFor="country" className="text-sm font-medium text-gray-700">
-                      {t('register.country')} *
+                    <label htmlFor="address" className="text-sm font-medium text-gray-700">
+                      {t('register.address')} <span className="text-red-500">*</span>
                     </label>
-                    <Select
-                      value={formik.values.country}
-                      onValueChange={(value) => formik.setFieldValue('country', value)}
-                    >
-                      <SelectTrigger className={`w-full ${formik.errors.country && formik.touched.country ? 'border-red-500' : ''}`}>
-                        <SelectValue placeholder={t('register.selectCountry')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {COUNTRIES.map((country: any) => (
-                          <SelectItem key={country.code} value={country.name}>
-                            <div className="flex items-center gap-2">
-                              <span>{country.flag}</span>
-                              <span>{country.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {formik.errors.country && formik.touched.country && (
-                      <p className="text-red-500 text-sm">{formik.errors.country}</p>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="address"
+                        name="address"
+                        type="text"
+                        placeholder={t('register.enterBusinessAddress')}
+                        value={formik.values.address}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`pl-10 ${formik.errors.address && formik.touched.address ? 'border-red-500' : ''}`}
+                      />
+                    </div>
+                    {formik.errors.address && formik.touched.address && (
+                      <p className="text-red-500 text-sm">{formik.errors.address}</p>
                     )}
+                  </div>
+
+                  {/* Location Fields - Grouped together */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* City/Ward */}
+                    <div className="space-y-2">
+                      <label htmlFor="city" className="text-sm font-medium text-gray-700">
+                        {t('register.city')} <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        id="city"
+                        name="city"
+                        type="text"
+                        placeholder={t('register.city')}
+                        value={formik.values.city}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={formik.errors.city && formik.touched.city ? 'border-red-500' : ''}
+                      />
+                      {formik.errors.city && formik.touched.city && (
+                        <p className="text-red-500 text-sm">{formik.errors.city}</p>
+                      )}
+                    </div>
+                    
+                    {/* State/Province */}
+                    <div className="space-y-2">
+                      <label htmlFor="state" className="text-sm font-medium text-gray-700">
+                        {t('register.state')} <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        id="state"
+                        name="state"
+                        type="text"
+                        placeholder={t('register.state')}
+                        value={formik.values.state}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={formik.errors.state && formik.touched.state ? 'border-red-500' : ''}
+                      />
+                      {formik.errors.state && formik.touched.state && (
+                        <p className="text-red-500 text-sm">{formik.errors.state}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ZIP Code and Country Row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* ZIP Code */}
+                    <div className="space-y-2">
+                      <label htmlFor="zipCode" className="text-sm font-medium text-gray-700">
+                        {t('register.zipCode')}
+                      </label>
+                      <Input
+                        id="zipCode"
+                        name="zipCode"
+                        type="text"
+                        placeholder={t('register.zipCode')}
+                        value={formik.values.zipCode}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={formik.errors.zipCode && formik.touched.zipCode ? 'border-red-500' : ''}
+                      />
+                      {formik.errors.zipCode && formik.touched.zipCode && (
+                        <p className="text-red-500 text-sm">{formik.errors.zipCode}</p>
+                      )}
+                    </div>
+                    
+                    {/* Country */}
+                    <div className="space-y-2">
+                      <label htmlFor="country" className="text-sm font-medium text-gray-700">
+                        {t('register.country')} <span className="text-red-500">*</span>
+                      </label>
+                      <Select
+                        value={formik.values.country}
+                        onValueChange={(value) => formik.setFieldValue('country', value)}
+                      >
+                        <SelectTrigger className={`w-full ${formik.errors.country && formik.touched.country ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder={t('register.selectCountry')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COUNTRIES.map((country: any) => (
+                            <SelectItem key={country.code} value={country.name}>
+                              <div className="flex items-center gap-2">
+                                <span>{country.flag}</span>
+                                <span>{country.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {formik.errors.country && formik.touched.country && (
+                        <p className="text-red-500 text-sm">{formik.errors.country}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 

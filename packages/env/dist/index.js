@@ -18,9 +18,9 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/index.ts
-var index_exports = {};
-__export(index_exports, {
-  default: () => index_default,
+var src_exports = {};
+__export(src_exports, {
+  default: () => src_default,
   env: () => env,
   getCorsOrigins: () => getCorsOrigins,
   getDatabaseUrl: () => getDatabaseUrl,
@@ -29,7 +29,7 @@ __export(index_exports, {
   isTest: () => isTest,
   printEnvironmentInfo: () => printEnvironmentInfo
 });
-module.exports = __toCommonJS(index_exports);
+module.exports = __toCommonJS(src_exports);
 var import_zod = require("zod");
 var envSchema = import_zod.z.object({
   // Node Environment
@@ -57,9 +57,10 @@ var envSchema = import_zod.z.object({
   CLOUDINARY_API_KEY: import_zod.z.string().optional(),
   CLOUDINARY_API_SECRET: import_zod.z.string().optional(),
   // Email
-  EMAIL_PROVIDER: import_zod.z.enum(["console", "resend", "sendgrid"]).default("console"),
+  EMAIL_PROVIDER: import_zod.z.enum(["console", "ses"]).default("console"),
   EMAIL_FROM: import_zod.z.string().email("EMAIL_FROM must be a valid email").default("noreply@localhost"),
-  RESEND_API_KEY: import_zod.z.string().optional(),
+  // AWS SES (uses existing AWS credentials from S3)
+  AWS_SES_REGION: import_zod.z.string().default("us-east-1"),
   // Redis (optional)
   REDIS_URL: import_zod.z.string().optional(),
   // Logging
@@ -149,7 +150,7 @@ function printEnvironmentInfo() {
 if (isDevelopment() && env.ENABLE_DEBUG_LOGS) {
   printEnvironmentInfo();
 }
-var index_default = env;
+var src_default = env;
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   env,
