@@ -36,6 +36,13 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
   const fromEmail = options.from || env.EMAIL_FROM;
   const fromName = options.fromName || 'AnyRent';
 
+  console.log('📧 [Email Service] Sending email:', {
+    to: options.to,
+    subject: options.subject,
+    provider: emailProvider,
+    from: fromEmail,
+  });
+
   try {
     switch (emailProvider) {
       case 'ses':
@@ -48,13 +55,22 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
       case 'console':
       default:
         // Console mode for development/testing
+        console.log('ℹ️ [Email Service] Using console mode (email will be logged, not sent)');
         return sendEmailToConsole(options);
     }
   } catch (error: any) {
-    console.error('❌ Email sending failed:', error);
+    const errorMessage = error?.message || error?.toString() || 'Failed to send email';
+    console.error('❌ [Email Service] Email sending failed:', {
+      error: errorMessage,
+      errorType: error?.constructor?.name,
+      errorCode: error?.code,
+      stack: error?.stack,
+      provider: emailProvider,
+      from: fromEmail,
+    });
     return {
       success: false,
-      error: error.message || 'Failed to send email',
+      error: errorMessage,
     };
   }
 }
@@ -69,17 +85,37 @@ async function sendEmailWithSES(options: EmailOptions & { fromName: string }): P
   const AWS_SES_REGION = env.AWS_SES_REGION || 'us-east-1';
 
   if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
-    console.error('❌ AWS credentials not configured');
+    const errorMsg = 'AWS credentials not configured. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.';
+    console.error('❌ [Email Service - SES]', errorMsg);
+    console.error('💡 [Email Service - SES] Hint: Set EMAIL_PROVIDER=console for development without AWS credentials');
     return {
       success: false,
-      error: 'AWS credentials not configured. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY',
+      error: errorMsg,
     };
   }
 
   try {
+    console.log('🔧 [Email Service - SES] Initializing AWS SES client...', {
+      region: AWS_SES_REGION,
+      from: options.from,
+      to: options.to,
+    });
+
     // Use AWS SDK v3 for SES (dynamically imported)
-    // @ts-ignore - AWS SDK will be installed
-    const { SESClient, SendEmailCommand } = await import('@aws-sdk/client-ses');
+    let SESClient, SendEmailCommand;
+    try {
+      // @ts-ignore - AWS SDK will be installed
+      const awsSES = await import('@aws-sdk/client-ses');
+      SESClient = awsSES.SESClient;
+      SendEmailCommand = awsSES.SendEmailCommand;
+    } catch (importError: any) {
+      const errorMsg = `Failed to import AWS SES SDK: ${importError?.message || 'Unknown import error'}. Please ensure @aws-sdk/client-ses is installed.`;
+      console.error('❌ [Email Service - SES]', errorMsg);
+      return {
+        success: false,
+        error: errorMsg,
+      };
+    }
     
     const sesClient = new SESClient({
       region: AWS_SES_REGION,
@@ -112,17 +148,48 @@ async function sendEmailWithSES(options: EmailOptions & { fromName: string }): P
       },
     });
 
+    console.log('📤 [Email Service - SES] Sending email via AWS SES...');
     const result = await sesClient.send(command);
-    console.log('✅ Email sent successfully via AWS SES:', result.MessageId);
+    console.log('✅ [Email Service - SES] Email sent successfully:', {
+      messageId: result.MessageId,
+      to: options.to
+    });
     return {
       success: true,
       messageId: result.MessageId,
     };
   } catch (error: any) {
-    console.error('❌ AWS SES error:', error);
+    const errorMessage = error?.message || error?.toString() || 'Failed to send email via AWS SES';
+    const errorCode = error?.code || error?.name || 'UNKNOWN_ERROR';
+    
+    console.error('❌ [Email Service - SES] Error:', {
+      message: errorMessage,
+      code: errorCode,
+      errorType: error?.constructor?.name,
+      region: AWS_SES_REGION,
+      fromEmail: options.from,
+      stack: error?.stack,
+    });
+    
+    // Provide helpful error messages for common AWS SES errors
+    let userFriendlyError = errorMessage;
+    if (errorCode === 'MessageRejected' || errorCode === 'InvalidParameterValue' && errorMessage.includes('rejected')) {
+      userFriendlyError = `Email was rejected by AWS SES (${errorCode}). Please verify that the sender email "${options.from}" is verified in AWS SES console.`;
+    } else if (errorCode === 'InvalidParameterValue') {
+      userFriendlyError = `Invalid email configuration (${errorCode}). Please check EMAIL_FROM="${options.from}" and AWS_SES_REGION="${AWS_SES_REGION}" settings.`;
+    } else if (errorCode === 'AccessDenied' || errorCode === 'UnauthorizedOperation') {
+      userFriendlyError = `AWS SES access denied (${errorCode}). Please check AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) and IAM permissions for SES.`;
+    } else if (errorCode === 'CredentialsError' || errorMessage.includes('credentials')) {
+      userFriendlyError = `AWS credentials error (${errorCode}). Please verify AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are correct.`;
+    } else if (errorCode === 'NetworkError' || errorMessage.includes('network') || errorMessage.includes('timeout')) {
+      userFriendlyError = `Network error connecting to AWS SES (${errorCode}). Please check your internet connection and AWS SES region "${AWS_SES_REGION}".`;
+    } else {
+      userFriendlyError = `AWS SES error (${errorCode}): ${errorMessage}`;
+    }
+    
     return {
       success: false,
-      error: error.message || 'Failed to send email via AWS SES',
+      error: userFriendlyError,
     };
   }
 }

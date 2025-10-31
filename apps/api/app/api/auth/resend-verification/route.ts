@@ -16,9 +16,11 @@ const resendVerificationSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('📧 [Resend Verification] Request received:', { email: body.email });
     
     // Validate input first to get email
     const validatedData = resendVerificationSchema.parse(body);
+    console.log('✅ [Resend Verification] Input validated:', { email: validatedData.email });
     
     // Apply rate limiting using email as key (prevents spam per email address)
     const emailRateLimiter = createRateLimiter({
@@ -30,6 +32,7 @@ export async function POST(request: NextRequest) {
     const rateLimitResult = emailRateLimiter(request);
     if (rateLimitResult) {
       const retryAfter = rateLimitResult.headers.get('Retry-After') || '300';
+      console.warn('⚠️ [Resend Verification] Rate limit exceeded:', { email: validatedData.email });
       return NextResponse.json(
         ResponseBuilder.error('RATE_LIMIT_EXCEEDED', 
           `Quá nhiều yêu cầu. Vui lòng đợi ${Math.ceil(parseInt(retryAfter) / 60)} phút trước khi thử lại.`
@@ -42,8 +45,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Find user by email
+    console.log('🔍 [Resend Verification] Looking up user by email:', { email: validatedData.email });
     const user = await db.users.findByEmail(validatedData.email);
     if (!user) {
+      console.log('ℹ️ [Resend Verification] User not found (security: returning success)');
       // Don't reveal if user exists (security best practice)
       return NextResponse.json(
         ResponseBuilder.success('VERIFICATION_EMAIL_SENT', {
@@ -52,8 +57,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('✅ [Resend Verification] User found:', { 
+      userId: user.id, 
+      email: user.email, 
+      emailVerified: user.emailVerified 
+    });
+
     // Check if already verified
     if (user.emailVerified) {
+      console.log('⚠️ [Resend Verification] Email already verified');
       return NextResponse.json(
         ResponseBuilder.error('EMAIL_ALREADY_VERIFIED', 'Email đã được xác thực rồi'),
         { status: 400 }
@@ -61,23 +73,55 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new verification token
+    console.log('🔑 [Resend Verification] Creating new verification token...');
     const verification = await resendVerificationToken(user.id, user.email);
+    console.log('✅ [Resend Verification] Verification token created:', { 
+      tokenId: verification.id,
+      expiresAt: verification.expiresAt 
+    });
     
     // Send verification email
     const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+    console.log('📨 [Resend Verification] Sending verification email...', {
+      to: user.email,
+      userName,
+      provider: process.env.EMAIL_PROVIDER || 'console'
+    });
+    
     const emailResult = await sendVerificationEmail(
       user.email,
       userName,
       verification.token
     );
 
+    console.log('📬 [Resend Verification] Email result:', {
+      success: emailResult.success,
+      error: emailResult.error,
+      messageId: emailResult.messageId,
+      provider: process.env.EMAIL_PROVIDER
+    });
+
     if (!emailResult.success) {
-      console.error('Failed to send verification email:', emailResult.error);
+      const errorDetails = emailResult.error || 'Không thể xác định lỗi';
+      console.error('❌ [Resend Verification] Failed to send email:', {
+        error: errorDetails,
+        email: user.email,
+        provider: process.env.EMAIL_PROVIDER,
+        fullResult: JSON.stringify(emailResult)
+      });
+      
+      // Include the actual error message in the response
+      const errorMessage = `Không thể gửi email xác thực. ${errorDetails}`;
       return NextResponse.json(
-        ResponseBuilder.error('EMAIL_SEND_FAILED', 'Không thể gửi email xác thực. Vui lòng thử lại sau.'),
+        ResponseBuilder.error('EMAIL_SEND_FAILED', errorMessage),
         { status: 500 }
       );
     }
+
+    console.log('✅ [Resend Verification] Email sent successfully:', {
+      messageId: emailResult.messageId,
+      email: user.email
+    });
 
     return NextResponse.json(
       ResponseBuilder.success('VERIFICATION_EMAIL_SENT', {
@@ -85,7 +129,11 @@ export async function POST(request: NextRequest) {
       })
     );
   } catch (error: any) {
-    console.error('Resend verification error:', error);
+    console.error('❌ [Resend Verification] Error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
