@@ -202,7 +202,15 @@ function parseEnvironment() {
   } catch (error) {
     console.error('💥 Failed to load environment configuration:');
     console.error(error);
-    process.exit(1);
+    
+    // Only exit in Node.js environment (server-side)
+    // In browser/client-side, throw error instead
+    if (typeof process !== 'undefined' && typeof process.exit === 'function') {
+      process.exit(1);
+    } else {
+      // Client-side: throw error to prevent silent failures
+      throw new Error('Environment configuration failed. Check console for details.');
+    }
   }
 }
 
