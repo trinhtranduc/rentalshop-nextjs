@@ -83,6 +83,13 @@ async function sendEmailWithSES(options: EmailOptions & { fromName: string }): P
   const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
   const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
   const AWS_SES_REGION = env.AWS_SES_REGION || 'us-east-1';
+  
+  // Debug: Log region source
+  console.log('🔍 [Email Service - SES] Region configuration:', {
+    fromEnv: env.AWS_SES_REGION,
+    fromProcessEnv: process.env.AWS_SES_REGION,
+    finalRegion: AWS_SES_REGION,
+  });
 
   if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
     const errorMsg = 'AWS credentials not configured. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.';
