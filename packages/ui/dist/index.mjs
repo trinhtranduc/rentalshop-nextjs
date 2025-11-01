@@ -14571,14 +14571,13 @@ var CheckEmailVerification = ({
   const [resendSuccess, setResendSuccess] = useState25(false);
   const { toastSuccess, toastError } = useToast();
   const t2 = useAuthTranslations4();
-  const spamWarningText = t2("checkEmail.spamWarning");
   useEffect15(() => {
     console.log("\u{1F50D} CheckEmailVerification translation debug:", {
-      "checkEmail.spamWarning": spamWarningText,
+      "checkEmail.spamWarning": t2("checkEmail.spamWarning"),
       "checkEmail.title": t2("checkEmail.title"),
       "checkEmail.subtitle": t2("checkEmail.subtitle")
     });
-  }, [spamWarningText, t2]);
+  }, [t2]);
   useEffect15(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => {
@@ -14638,20 +14637,12 @@ var CheckEmailVerification = ({
       ] }) }),
       /* @__PURE__ */ jsxs41("div", { className: "flex items-start space-x-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3", children: [
         /* @__PURE__ */ jsx55(AlertCircle5, { className: "w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" }),
-        /* @__PURE__ */ jsx55(
-          "p",
-          {
-            className: "text-sm text-yellow-800",
-            dangerouslySetInnerHTML: {
-              __html: spamWarningText || "If you don't see the email, please check your spam folder"
-            }
-          }
-        )
+        /* @__PURE__ */ jsx55("p", { className: "text-sm text-yellow-800", children: t2("checkEmail.spamWarning") })
       ] }),
       email && /* @__PURE__ */ jsx55("div", { className: "text-center space-y-2", children: isResending ? /* @__PURE__ */ jsxs41("div", { className: "text-sm text-gray-600 flex items-center justify-center", children: [
         /* @__PURE__ */ jsx55(RefreshCw2, { className: "w-4 h-4 mr-2 animate-spin" }),
         t2("checkEmail.sending")
-      ] }) : countdown > 0 ? /* @__PURE__ */ jsx55("p", { className: "text-sm text-gray-600", children: t2("checkEmail.resendAfter").replace("{minutes}", Math.ceil(countdown / 60).toString()) }) : resendSuccess ? /* @__PURE__ */ jsxs41("div", { className: "text-sm text-green-600 flex items-center justify-center", children: [
+      ] }) : countdown > 0 ? /* @__PURE__ */ jsx55("p", { className: "text-sm text-gray-600", children: t2("checkEmail.resendAfter", { minutes: Math.ceil(countdown / 60) }) }) : resendSuccess ? /* @__PURE__ */ jsxs41("div", { className: "text-sm text-green-600 flex items-center justify-center", children: [
         /* @__PURE__ */ jsx55(CheckCircle22, { className: "w-4 h-4 mr-2" }),
         t2("checkEmail.emailResent")
       ] }) : /* @__PURE__ */ jsxs41(

@@ -28,17 +28,14 @@ export const CheckEmailVerification: React.FC<CheckEmailVerificationProps> = ({
   const { toastSuccess, toastError } = useToast();
   const t = useAuthTranslations();
   
-  // Get spam warning translation - next-intl supports nested keys with dot notation
-  const spamWarningText = t('checkEmail.spamWarning');
-  
   // Debug: Log translation to help troubleshoot
   useEffect(() => {
     console.log('🔍 CheckEmailVerification translation debug:', {
-      'checkEmail.spamWarning': spamWarningText,
+      'checkEmail.spamWarning': t('checkEmail.spamWarning'),
       'checkEmail.title': t('checkEmail.title'),
       'checkEmail.subtitle': t('checkEmail.subtitle'),
     });
-  }, [spamWarningText, t]);
+  }, [t]);
 
   // Countdown timer
   useEffect(() => {
@@ -126,12 +123,9 @@ export const CheckEmailVerification: React.FC<CheckEmailVerificationProps> = ({
           {/* Spam Warning */}
           <div className="flex items-start space-x-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-            <p 
-              className="text-sm text-yellow-800" 
-              dangerouslySetInnerHTML={{ 
-                __html: spamWarningText || 'If you don\'t see the email, please check your spam folder'
-              }} 
-            />
+            <p className="text-sm text-yellow-800">
+              {t('checkEmail.spamWarning')}
+            </p>
           </div>
 
           {/* Resend Link - Inline link to prevent rapid clicking */}
@@ -144,7 +138,7 @@ export const CheckEmailVerification: React.FC<CheckEmailVerificationProps> = ({
                 </div>
               ) : countdown > 0 ? (
                 <p className="text-sm text-gray-600">
-                  {t('checkEmail.resendAfter').replace('{minutes}', Math.ceil(countdown / 60).toString())}
+                  {t('checkEmail.resendAfter', { minutes: Math.ceil(countdown / 60) })}
                 </p>
               ) : resendSuccess ? (
                 <div className="text-sm text-green-600 flex items-center justify-center">
