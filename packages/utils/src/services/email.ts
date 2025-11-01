@@ -2,7 +2,7 @@
 // EMAIL SERVICE - AWS SES Email Sending
 // ============================================================================
 
-import { env } from '@rentalshop/env';
+// Lazy load env to avoid initialization issues in browser
 // AWS SES will be imported dynamically to avoid requiring it if not used
 
 // ============================================================================
@@ -32,6 +32,9 @@ export interface EmailVerificationData {
  * Send email using AWS SES or console (for development)
  */
 export async function sendEmail(options: EmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Lazy load env to avoid initialization issues in browser
+  const { env } = await import('@rentalshop/env');
+  
   const emailProvider = env.EMAIL_PROVIDER;
   const fromEmail = options.from || env.EMAIL_FROM;
   const fromName = options.fromName || 'AnyRent';
@@ -56,7 +59,7 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
       default:
         // Console mode for development/testing
         console.log('ℹ️ [Email Service] Using console mode (email will be logged, not sent)');
-        return sendEmailToConsole(options);
+        return await sendEmailToConsole(options);
     }
   } catch (error: any) {
     const errorMessage = error?.message || error?.toString() || 'Failed to send email';
@@ -80,6 +83,9 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
  * Send email using AWS SES
  */
 async function sendEmailWithSES(options: EmailOptions & { fromName: string }): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Lazy load env to avoid initialization issues in browser
+  const { env } = await import('@rentalshop/env');
+  
   const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
   const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
   const AWS_SES_REGION = env.AWS_SES_REGION || 'us-east-1';
@@ -205,7 +211,10 @@ async function sendEmailWithSES(options: EmailOptions & { fromName: string }): P
 /**
  * Send email to console (for development/testing)
  */
-function sendEmailToConsole(options: EmailOptions): { success: boolean; messageId?: string } {
+async function sendEmailToConsole(options: EmailOptions): Promise<{ success: boolean; messageId?: string }> {
+  // Lazy load env to avoid initialization issues in browser
+  const { env } = await import('@rentalshop/env');
+  
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('📧 EMAIL (Console Mode)');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -314,6 +323,9 @@ export async function sendVerificationEmail(
   name: string,
   verificationToken: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Lazy load env to avoid initialization issues in browser
+  const { env } = await import('@rentalshop/env');
+  
   const clientUrl = env.CLIENT_URL;
   const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
 
