@@ -65,6 +65,7 @@
   "PASSWORD_RESET_SUCCESS": "Đặt lại mật khẩu thành công",
   "PASSWORD_RESET_LINK_SENT": "Nếu tài khoản tồn tại, liên kết đặt lại mật khẩu đã được gửi",
   "TOKEN_VALID": "Token hợp lệ",
+  "EMAIL_NOT_VERIFIED": "Email chưa được xác thực. Vui lòng kiểm tra email và xác thực tài khoản của bạn trước khi đăng nhập.",
   "LOGIN_SUCCESS": "Đăng nhập thành công",
   "MOBILE_LOGIN_SUCCESS": "Đăng nhập di động thành công",
   "LOGOUT_SUCCESS": "Đăng xuất thành công",

@@ -94,7 +94,7 @@ git push origin main
 ### **2. Test upload:**
 ```bash
 # Test API endpoint
-curl -X POST https://dev-apis-development.up.railway.app/api/health/volume
+curl -X POST https://dev-api.anyrent.shop/api/health/volume
 ```
 
 ### **3. Kiểm tra logs:**

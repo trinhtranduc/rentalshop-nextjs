@@ -82,11 +82,6 @@ export async function middleware(request: NextRequest) {
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',
-    // Railway production domains
-    'https://rental-client.up.railway.app',
-    'https://rental-admin.up.railway.app',
-    'https://dev-apis-development.up.railway.app',
-    'https://apis-development.up.railway.app',
     // Custom domains - anyrent.shop (production)
     'https://anyrent.shop',
     'https://www.anyrent.shop', // Production website (www subdomain)
