@@ -81,23 +81,52 @@ function generatePlanPricing(basePrice: number) {
  * Transform raw Prisma plan to Plan type
  */
 function transformPlan(plan: any): Plan {
-  return {
-    id: plan.id,
-    name: plan.name,
-    description: plan.description,
-    basePrice: plan.basePrice,
-    currency: plan.currency,
-    trialDays: plan.trialDays,
-    limits: typeof plan.limits === 'string' ? JSON.parse(plan.limits) : plan.limits,
-    features: typeof plan.features === 'string' ? JSON.parse(plan.features || '[]') : (plan.features || []),
-    isActive: plan.isActive,
-    isPopular: plan.isPopular,
-    sortOrder: plan.sortOrder,
-    pricing: generatePlanPricing(plan.basePrice),
-    createdAt: plan.createdAt,
-    updatedAt: plan.updatedAt,
-    ...(plan.deletedAt && { deletedAt: plan.deletedAt })
-  };
+  try {
+    // Parse limits safely
+    let parsedLimits;
+    if (typeof plan.limits === 'string') {
+      try {
+        parsedLimits = JSON.parse(plan.limits);
+      } catch {
+        parsedLimits = {};
+      }
+    } else {
+      parsedLimits = plan.limits || {};
+    }
+
+    // Parse features safely
+    let parsedFeatures;
+    if (typeof plan.features === 'string') {
+      try {
+        parsedFeatures = JSON.parse(plan.features || '[]');
+      } catch {
+        parsedFeatures = [];
+      }
+    } else {
+      parsedFeatures = plan.features || [];
+    }
+
+    return {
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      basePrice: plan.basePrice,
+      currency: plan.currency || 'USD',
+      trialDays: plan.trialDays || 0,
+      limits: parsedLimits,
+      features: parsedFeatures,
+      isActive: plan.isActive ?? true,
+      isPopular: plan.isPopular ?? false,
+      sortOrder: plan.sortOrder ?? 0,
+      pricing: generatePlanPricing(plan.basePrice),
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
+      ...(plan.deletedAt && { deletedAt: plan.deletedAt })
+    };
+  } catch (error) {
+    console.error('Error transforming plan:', error, plan);
+    throw new Error(`Failed to transform plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 /**
@@ -120,8 +149,14 @@ export async function GET(request: NextRequest) {
     // Get active plans using database function
     const result = await db.plans.search({ isActive: true, limit: 50 });
     
+    // Validate result structure
+    if (!result || !result.data || !Array.isArray(result.data)) {
+      console.error('Invalid result structure from db.plans.search:', result);
+      throw new Error('Invalid data structure received from database');
+    }
+    
     // Transform raw Prisma data to Plan type
-    const plans = result.data.map(transformPlan);
+    const plans = result.data.map(transformPlan).filter(plan => plan !== null);
 
     return NextResponse.json({
       success: true,
@@ -135,6 +170,9 @@ export async function GET(request: NextRequest) {
     
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
+    return NextResponse.json(response, { 
+      status: statusCode,
+      headers: buildCorsHeaders(request)
+    });
   }
 }
