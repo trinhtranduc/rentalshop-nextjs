@@ -89,6 +89,7 @@ export async function middleware(request: NextRequest) {
     'https://apis-development.up.railway.app',
     // Custom domains - anyrent.shop (production)
     'https://anyrent.shop',
+    'https://www.anyrent.shop', // Production website (www subdomain)
     'https://api.anyrent.shop', // Production API
     'https://admin.anyrent.shop',
     // Custom domains - anyrent.shop (development)

@@ -4,6 +4,52 @@ import { handleApiError } from '@rentalshop/utils';
 import type { Plan } from '@rentalshop/types';
 
 /**
+ * Get allowed CORS origins
+ */
+function getAllowedOrigins(): string[] {
+  const corsOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  
+  return [
+    ...corsOrigins,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'https://rental-client.up.railway.app',
+    'https://rental-admin.up.railway.app',
+    'https://dev-apis-development.up.railway.app',
+    'https://apis-development.up.railway.app',
+    'https://anyrent.shop',
+    'https://www.anyrent.shop',
+    'https://api.anyrent.shop',
+    'https://admin.anyrent.shop',
+    'https://dev.anyrent.shop',
+    'https://dev-api.anyrent.shop',
+    'https://dev-admin.anyrent.shop'
+  ];
+}
+
+/**
+ * Build CORS headers for response
+ */
+function buildCorsHeaders(request: NextRequest): Record<string, string> {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = getAllowedOrigins();
+  const isAllowedOrigin = allowedOrigins.includes(origin);
+  const allowOrigin = isAllowedOrigin ? origin : 'null';
+  
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+/**
  * Helper function to generate pricing object from base price
  */
 function generatePlanPricing(basePrice: number) {
@@ -55,6 +101,17 @@ function transformPlan(plan: any): Plan {
 }
 
 /**
+ * OPTIONS /api/plans/public
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: buildCorsHeaders(request),
+  });
+}
+
+/**
  * GET /api/plans/public
  * Get all active plans for public display (no authentication required)
  */
@@ -69,6 +126,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: plans
+    }, {
+      headers: buildCorsHeaders(request)
     });
 
   } catch (error) {
