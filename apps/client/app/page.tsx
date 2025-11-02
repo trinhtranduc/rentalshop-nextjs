@@ -767,11 +767,11 @@ const Pricing = () => {
             </Button>
           </div>
         )}
-
+        
         {/* Pricing Cards */}
         {!loading && !error && pricingData.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {pricingData.map((plan, index) => (
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {pricingData.map((plan, index) => (
             <div key={index} className={`relative bg-bg-card rounded-2xl shadow-lg border-2 transition-all duration-300 hover:shadow-xl ${
               plan.popular ? 'border-brand-primary scale-105' : 'border-border'
             }`}>
@@ -821,7 +821,7 @@ const Pricing = () => {
               </div>
             </div>
           ))}
-          </div>
+        </div>
         )}
 
         {/* Empty State */}

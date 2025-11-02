@@ -13,13 +13,13 @@ export interface RegistrationInput {
   password: string;
   name: string;
   phone?: string;
-  role?: 'CLIENT' | 'SHOP_OWNER' | 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+  role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
   // For merchant registration
   businessName?: string;
   outletName?: string;
   // Business configuration (locked after registration)
-  businessType?: 'RENTAL' | 'SALE' | 'MIXED';
-  pricingType?: 'FIXED' | 'DYNAMIC' | 'DURATION_BASED';
+  businessType?: 'GENERAL' | 'VEHICLE' | 'CLOTHING' | 'EQUIPMENT';
+  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY';
   // Address fields for merchant registration
   address?: string;
   city?: string;
@@ -227,7 +227,9 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
       role: 'MERCHANT',
       merchantId: merchant.id,
       outletId: outlet.id, // Assign default outlet to merchant user
-      isActive: true
+      isActive: true,
+      emailVerified: false, // Email needs to be verified after registration
+      emailVerifiedAt: null
     }
   });
 

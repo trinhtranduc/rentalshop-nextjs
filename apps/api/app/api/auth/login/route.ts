@@ -3,7 +3,7 @@ import { db } from '@rentalshop/database';
 import { comparePassword, generateToken } from '@rentalshop/auth';
 import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { API } from '@rentalshop/constants';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,12 +30,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
+    // Verify password FIRST - only check email verification AFTER password is correct
     const isPasswordValid = await comparePassword(validatedData.password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_CREDENTIALS'),
         { status: 401 }
+      );
+    }
+
+    // Check if email verification is required AND if email is not verified
+    const emailVerificationEnabled = process.env.ENABLE_EMAIL_VERIFICATION === 'true';
+    if (emailVerificationEnabled && !user.emailVerified) {
+      return NextResponse.json(
+        ResponseBuilder.error('EMAIL_NOT_VERIFIED', 'Email chưa được xác thực. Vui lòng kiểm tra email và xác thực tài khoản của bạn trước khi đăng nhập.'),
+        { status: 403 }
       );
     }
 
@@ -154,6 +163,8 @@ export async function POST(request: NextRequest) {
           role: user.role,
           merchantId: user.merchantId,
           outletId: user.outletId,
+          emailVerified: (user as any).emailVerified || false,
+          emailVerifiedAt: (user as any).emailVerifiedAt || undefined,
           // ✅ Optional: merchant object (null for ADMIN users without merchant)
           merchant: merchantData,  // MerchantReference | null
           // ✅ Optional: outlet object (null for ADMIN/MERCHANT users without outlet)
