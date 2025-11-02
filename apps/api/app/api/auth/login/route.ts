@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const emailVerificationEnabled = process.env.ENABLE_EMAIL_VERIFICATION === 'true';
     if (emailVerificationEnabled && !user.emailVerified) {
       return NextResponse.json(
-        ResponseBuilder.error('EMAIL_NOT_VERIFIED', 'Email chưa được xác thực. Vui lòng kiểm tra email và xác thực tài khoản của bạn trước khi đăng nhập.'),
+        ResponseBuilder.error('EMAIL_NOT_VERIFIED'),
         { status: 403 }
       );
     }

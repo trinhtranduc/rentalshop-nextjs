@@ -16,20 +16,20 @@ export const categorySwaggerConfig = {
   },
   servers: [
     {
-      url: 'https://dev-apis-development.up.railway.app',
-      description: 'Development Railway server (Recommended for Local)'
+      url: 'https://api.anyrent.shop',
+      description: 'Production server'
     },
     {
-      url: 'https://apis-development.up.railway.app',
-      description: 'Production Railway server'
+      url: 'https://dev-api.anyrent.shop',
+      description: 'Development server'
     },
     {
       url: getApiUrl(),
-      description: 'Railway API server'
+      description: 'Current server'
     },
     {
       url: 'http://localhost:3002',
-      description: 'Local development server (Fallback)'
+      description: 'Local development server'
     }
   ],
   tags: [

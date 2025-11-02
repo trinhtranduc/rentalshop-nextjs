@@ -25,6 +25,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   // Authentication & Authorization
   'INVALID_CREDENTIALS': 'Invalid email or password',
   'ACCOUNT_DEACTIVATED': 'Account is deactivated. Please contact support.',
+  'EMAIL_NOT_VERIFIED': 'Email has not been verified. Please check your email and verify your account before logging in.',
   'CURRENT_PASSWORD_REQUIRED': 'Current password is required',
   'CURRENT_PASSWORD_INCORRECT': 'Current password is incorrect',
   'PASSWORD_MIN_LENGTH': 'New password must be at least 6 characters',

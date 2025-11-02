@@ -7,7 +7,7 @@ Tài liệu đầy đủ về tất cả API endpoints trong hệ thống Rental
 ### Base URL
 ```
 Development: http://localhost:3002
-Production: https://apis-development.up.railway.app
+Production: https://api.anyrent.shop
 ```
 
 ### Mobile Access Headers (Required for iOS/Swift)
@@ -1000,7 +1000,7 @@ type: product|customer|user
 ### 1. HTTP Client Setup
 ```swift
 struct APIClient {
-    private let baseURL = "https://apis-development.up.railway.app"
+    private let baseURL = "https://api.anyrent.shop"
     private let devBaseURL = "http://localhost:3002"
     private let session = URLSession.shared
     

@@ -65,6 +65,7 @@
   "PASSWORD_RESET_SUCCESS": "Password has been reset successfully",
   "PASSWORD_RESET_LINK_SENT": "If an account with that email exists, a password reset link has been sent",
   "TOKEN_VALID": "Token is valid",
+  "EMAIL_NOT_VERIFIED": "Email has not been verified. Please check your email and verify your account before logging in.",
   "LOGIN_SUCCESS": "Login successful",
   "MOBILE_LOGIN_SUCCESS": "Mobile login successful",
   "LOGOUT_SUCCESS": "Logged out successfully",

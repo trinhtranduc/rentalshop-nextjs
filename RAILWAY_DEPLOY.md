@@ -235,10 +235,10 @@ railway logs --service apis -f
 ### Step 4: Verify Deployment
 ```bash
 # Check health endpoint
-curl https://apis-production.up.railway.app/api/health
+curl https://api.anyrent.shop/api/health
 
 # Test login
-curl -X POST https://apis-production.up.railway.app/api/auth/login \
+curl -X POST https://api.anyrent.shop/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@rentalshop.com","password":"admin123"}'
 ```
@@ -434,7 +434,7 @@ curl -X POST https://your-api.railway.app/api/auth/login \
 ```
 
 Hoặc truy cập Admin Dashboard:
-- URL: `https://admin-production.up.railway.app`
+- URL: `https://admin.anyrent.shop`
 - Email: `admin@rentalshop.com`
 - Password: `admin123`
 
@@ -791,12 +791,12 @@ railway service delete
 
 ## 🎉 Done!
 
-Your Rental Shop is now deployed on Railway! 🚀
+Your Rental Shop is now deployed! 🚀
 
 **Your URLs:**
-- API: `https://apis-production.up.railway.app`
-- Admin: `https://admin-production.up.railway.app`
-- Client: `https://client-production.up.railway.app`
+- API: `https://api.anyrent.shop`
+- Admin: `https://admin.anyrent.shop`
+- Client: `https://anyrent.shop`
 
 **Default Login:**
 - Email: `admin@rentalshop.com`

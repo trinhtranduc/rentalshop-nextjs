@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getAuthToken, getStoredUser, clearAuthData, storeAuthData } from '@rentalshop/utils';
 import type { User } from '@rentalshop/types';
+import { useErrorTranslations } from './useTranslation';
 
 // ============================================================================
 // TYPES
@@ -39,6 +40,36 @@ export function useAuth() {
     loading: true,
     error: null,
   });
+  
+  // Use translation hook for error messages
+  const t = useErrorTranslations();
+
+  // Helper function to translate error from API response
+  const translateError = useCallback((errorData: any): string => {
+    // If error has a code, use it for translation
+    if (errorData?.code) {
+      const translated = t(errorData.code);
+      // If translation exists (not the same as code), use it
+      if (translated !== errorData.code) {
+        return translated;
+      }
+    }
+    
+    // Fallback to message if available
+    if (errorData?.message) {
+      // Check if message is an error code (all caps)
+      if (typeof errorData.message === 'string' && /^[A-Z_]+$/.test(errorData.message)) {
+        const translated = t(errorData.message);
+        if (translated !== errorData.message) {
+          return translated;
+        }
+      }
+      return errorData.message;
+    }
+    
+    // Default fallback
+    return t('UNKNOWN_ERROR');
+  }, [t]);
 
   // ============================================================================
   // AUTH FUNCTIONS
@@ -46,7 +77,7 @@ export function useAuth() {
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      setState(prev => ({ ...prev, loading: true }));
+      setState(prev => ({ ...prev, loading: true, error: null }));
 
       const { apiUrls } = await import('@rentalshop/utils');
       const response = await fetch(apiUrls.auth.login, {
@@ -57,21 +88,13 @@ export function useAuth() {
         body: JSON.stringify({ email, password }),
       });
 
-      if (response.status === 402) {
+      // Handle non-200 responses
+      if (!response.ok) {
         const errorData = await response.json();
+        const translatedError = translateError(errorData);
         setState(prev => ({ 
           ...prev, 
-          error: errorData.message || 'Subscription issue detected',
-          loading: false 
-        }));
-        return false;
-      }
-
-      if (response.status === 401) {
-        const errorData = await response.json();
-        setState(prev => ({ 
-          ...prev, 
-          error: errorData.message || 'Invalid credentials',
+          error: translatedError,
           loading: false 
         }));
         return false;
@@ -84,19 +107,21 @@ export function useAuth() {
         setState(prev => ({ 
           ...prev, 
           user: data.data.user, 
-          loading: false 
+          loading: false,
+          error: null 
         }));
         return true;
       } else {
+        const translatedError = translateError(data);
         setState(prev => ({ 
           ...prev, 
-          error: data.message || 'Login failed',
+          error: translatedError,
           loading: false 
         }));
         return false;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      const errorMessage = err instanceof Error ? err.message : t('UNKNOWN_ERROR');
       setState(prev => ({ 
         ...prev, 
         error: errorMessage,
@@ -104,7 +129,7 @@ export function useAuth() {
       }));
       return false;
     }
-  }, []);
+  }, [translateError, t]);
 
   const logout = useCallback(() => {
     clearAuthData();
