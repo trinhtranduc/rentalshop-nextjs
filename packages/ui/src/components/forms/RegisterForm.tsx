@@ -94,14 +94,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     lastName: Yup.string()
       .min(1, t('register.lastNameRequired'))
       .required(t('register.lastNameRequired')),
-    phone: Yup.string()
-      .matches(/^[0-9+\-\s()]+$/, t('register.phoneInvalid'))
-      .min(10, t('register.phoneMinLength'))
-      .required(t('register.phoneRequired')),
   });
 
   // Step 2 validation schema (Business Information)
   const step2ValidationSchema = Yup.object({
+    phone: Yup.string()
+      .matches(/^[0-9+\-\s()]+$/, t('register.phoneInvalid'))
+      .min(10, t('register.phoneMinLength'))
+      .required(t('register.phoneRequired')),
     businessName: Yup.string()
       .min(2, t('register.businessNameMinLength'))
       .required(t('register.businessNameRequired')),
@@ -160,7 +160,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           confirmPassword: values.confirmPassword,
           firstName: values.firstName,
           lastName: values.lastName,
-          phone: values.phone,
           role: values.role,
         });
         setCurrentStep(2);
@@ -364,29 +363,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       <p className="text-red-500 text-sm">{formik.errors.login}</p>
                     )}
                   </div>
-
-                  {/* Phone Field */}
-                  <div className="space-y-2">
-                    <label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                      {t('register.phone')} <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        placeholder={t('register.enterPhoneNumber')}
-                        value={formik.values.phone}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        className={`pl-10 ${formik.errors.phone && formik.touched.phone ? 'border-red-500' : ''}`}
-                      />
-                    </div>
-                    {formik.errors.phone && formik.touched.phone && (
-                      <p className="text-red-500 text-sm">{formik.errors.phone}</p>
-                    )}
-                  </div>
                 </div>
 
                 {/* Account Security Section */}
@@ -492,6 +468,29 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     </div>
                     {formik.errors.businessName && formik.touched.businessName && (
                       <p className="text-red-500 text-sm">{formik.errors.businessName}</p>
+                    )}
+                  </div>
+
+                  {/* Phone Field */}
+                  <div className="space-y-2">
+                    <label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                      {t('register.phone')} <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        placeholder={t('register.enterPhoneNumber')}
+                        value={formik.values.phone}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`pl-10 ${formik.errors.phone && formik.touched.phone ? 'border-red-500' : ''}`}
+                      />
+                    </div>
+                    {formik.errors.phone && formik.touched.phone && (
+                      <p className="text-red-500 text-sm">{formik.errors.phone}</p>
                     )}
                   </div>
                 </div>
