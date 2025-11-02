@@ -86,7 +86,7 @@ export default function RegisterPage() {
           initialStep={(searchParams.get('step') === '2' ? 2 : 1) as 1 | 2}
           onNavigate={(path) => {
             // Allow external navigations to pass through
-            if (path === '/login' || path === '/terms' || path === '/privacy') {
+            if (path === '/login' || path === '/terms' || path === '/privacy' || path.startsWith('/email-verification')) {
               router.push(path);
               return;
             }

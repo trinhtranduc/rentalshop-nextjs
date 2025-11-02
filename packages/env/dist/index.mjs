@@ -26,9 +26,10 @@ var envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
   // Email
-  EMAIL_PROVIDER: z.enum(["console", "resend", "sendgrid"]).default("console"),
-  EMAIL_FROM: z.string().email("EMAIL_FROM must be a valid email").default("noreply@localhost"),
-  RESEND_API_KEY: z.string().optional(),
+  EMAIL_PROVIDER: z.enum(["console", "ses"]).default("console"),
+  EMAIL_FROM: z.string().email("EMAIL_FROM must be a valid email").default("noreply@example.com"),
+  // AWS SES (uses existing AWS credentials from S3)
+  AWS_SES_REGION: z.string().default("us-east-1"),
   // Redis (optional)
   REDIS_URL: z.string().optional(),
   // Logging
@@ -51,6 +52,58 @@ var envSchema = z.object({
 });
 function parseEnvironment() {
   try {
+    const skipValidation = process.env.SKIP_ENV_VALIDATION === "true";
+    if (skipValidation) {
+      const buildSchema = envSchema.extend({
+        EMAIL_FROM: z.string().default("noreply@anyrent.shop")
+        // No .email() validation when skipping
+      });
+      const buildEnv = {
+        ...process.env,
+        // Ensure EMAIL_FROM has a valid default if not provided
+        EMAIL_FROM: process.env.EMAIL_FROM || "noreply@anyrent.shop"
+      };
+      const parsed2 = buildSchema.safeParse(buildEnv);
+      if (parsed2.success) {
+        console.log("\u26A0\uFE0F  EMAIL_FROM validation skipped for build - using default if needed");
+        return parsed2.data;
+      }
+      console.warn("\u26A0\uFE0F  Using minimal validation for build - some env vars may use defaults");
+      return {
+        NODE_ENV: buildEnv.NODE_ENV || "production",
+        DATABASE_URL: buildEnv.DATABASE_URL || "",
+        JWT_SECRET: buildEnv.JWT_SECRET || "build-time-secret",
+        JWT_EXPIRES_IN: buildEnv.JWT_EXPIRES_IN || "7d",
+        NEXTAUTH_SECRET: buildEnv.NEXTAUTH_SECRET || "build-time-secret",
+        NEXTAUTH_URL: buildEnv.NEXTAUTH_URL || "http://localhost:3000",
+        CLIENT_URL: buildEnv.CLIENT_URL || "http://localhost:3000",
+        ADMIN_URL: buildEnv.ADMIN_URL || "http://localhost:3001",
+        API_URL: buildEnv.API_URL || "http://localhost:3002",
+        CORS_ORIGINS: buildEnv.CORS_ORIGINS || "",
+        UPLOAD_PROVIDER: buildEnv.UPLOAD_PROVIDER || "local",
+        UPLOAD_PATH: buildEnv.UPLOAD_PATH,
+        MAX_FILE_SIZE: parseInt(buildEnv.MAX_FILE_SIZE || "10485760", 10),
+        CLOUDINARY_CLOUD_NAME: buildEnv.CLOUDINARY_CLOUD_NAME,
+        CLOUDINARY_API_KEY: buildEnv.CLOUDINARY_API_KEY,
+        CLOUDINARY_API_SECRET: buildEnv.CLOUDINARY_API_SECRET,
+        EMAIL_PROVIDER: buildEnv.EMAIL_PROVIDER || "console",
+        EMAIL_FROM: buildEnv.EMAIL_FROM || "noreply@anyrent.shop",
+        AWS_SES_REGION: buildEnv.AWS_SES_REGION || "us-east-1",
+        REDIS_URL: buildEnv.REDIS_URL,
+        LOG_LEVEL: buildEnv.LOG_LEVEL || "info",
+        LOG_FORMAT: buildEnv.LOG_FORMAT || "json",
+        ENABLE_EMAIL_VERIFICATION: buildEnv.ENABLE_EMAIL_VERIFICATION === "true",
+        ENABLE_ANALYTICS: buildEnv.ENABLE_ANALYTICS === "true",
+        ENABLE_DEBUG_LOGS: buildEnv.ENABLE_DEBUG_LOGS === "true",
+        RATE_LIMIT_WINDOW: buildEnv.RATE_LIMIT_WINDOW || "15m",
+        RATE_LIMIT_MAX: parseInt(buildEnv.RATE_LIMIT_MAX || "100", 10),
+        STRIPE_PUBLISHABLE_KEY: buildEnv.STRIPE_PUBLISHABLE_KEY,
+        STRIPE_SECRET_KEY: buildEnv.STRIPE_SECRET_KEY,
+        STRIPE_WEBHOOK_SECRET: buildEnv.STRIPE_WEBHOOK_SECRET,
+        SENTRY_DSN: buildEnv.SENTRY_DSN,
+        SENTRY_ENVIRONMENT: buildEnv.SENTRY_ENVIRONMENT
+      };
+    }
     const parsed = envSchema.safeParse(process.env);
     if (!parsed.success) {
       console.error("\u274C Environment validation failed:");
@@ -118,9 +171,9 @@ function printEnvironmentInfo() {
 if (isDevelopment() && env.ENABLE_DEBUG_LOGS) {
   printEnvironmentInfo();
 }
-var index_default = env;
+var src_default = env;
 export {
-  index_default as default,
+  src_default as default,
   env,
   getCorsOrigins,
   getDatabaseUrl,

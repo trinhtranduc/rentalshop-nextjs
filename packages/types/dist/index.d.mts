@@ -3682,6 +3682,7 @@ var register = {
 	and: "and",
 	registrationComplete: "Registration Complete!",
 	accountCreatedSuccessfully: "Account created successfully.",
+	checkEmailToActivate: "Please check your email to activate your account",
 	registrationFailed: "Registration Failed",
 	somethingWentWrong: "Something went wrong. Please try again.",
 	merchantNameRequired: "Merchant name is required",
@@ -3748,7 +3749,12 @@ var register = {
 		}
 	},
 	chooseBusinessType: "Choose the type of business you operate",
-	choosePricingType: "How do you want to price your rentals?"
+	choosePricingType: "How do you want to price your rentals?",
+	personalInfo: "Personal Information",
+	contactInfo: "Contact Information",
+	accountSecurity: "Account Security",
+	businessInfo: "Business Information",
+	businessAddress: "Business Address"
 };
 var forgotPassword = {
 	title: "Forgot Password",
@@ -3779,21 +3785,44 @@ var logout = {
 	cancel: "Cancel",
 	success: "Logged out successfully"
 };
+var checkEmail = {
+	title: "Please check your email",
+	subtitle: "We have sent an account activation link to your email",
+	emailSentTo: "Email sent to:",
+	nextSteps: "Next steps:",
+	step1: "Check your inbox",
+	step2: "Click the activation link in the email",
+	step3: "Log in after successful activation",
+	spamWarning: "If you don't see the email, please check your spam folder or promotions folder",
+	sending: "Sending...",
+	resendAfter: "Resend after {minutes} minutes",
+	emailResent: "Email has been resent",
+	resendEmail: "Resend activation email",
+	backToLogin: "Back to login",
+	resendSuccess: "Email sent",
+	resendSuccessMessage: "Please check your inbox",
+	rateLimitError: "Too many requests",
+	rateLimitMessage: "Please wait 5 minutes before trying again",
+	sendError: "Email send error",
+	sendErrorMessage: "Unable to send email. Please try again later."
+};
 var auth = {
 	login: login,
 	register: register,
 	forgotPassword: forgotPassword,
 	changePassword: changePassword,
-	logout: logout
+	logout: logout,
+	checkEmail: checkEmail
 };
 
 declare const _________locales_en_auth_json_changePassword: typeof changePassword;
+declare const _________locales_en_auth_json_checkEmail: typeof checkEmail;
 declare const _________locales_en_auth_json_forgotPassword: typeof forgotPassword;
 declare const _________locales_en_auth_json_login: typeof login;
 declare const _________locales_en_auth_json_logout: typeof logout;
 declare const _________locales_en_auth_json_register: typeof register;
 declare namespace _________locales_en_auth_json {
-  export { _________locales_en_auth_json_changePassword as changePassword, auth as default, _________locales_en_auth_json_forgotPassword as forgotPassword, _________locales_en_auth_json_login as login, _________locales_en_auth_json_logout as logout, _________locales_en_auth_json_register as register };
+  export { _________locales_en_auth_json_changePassword as changePassword, _________locales_en_auth_json_checkEmail as checkEmail, auth as default, _________locales_en_auth_json_forgotPassword as forgotPassword, _________locales_en_auth_json_login as login, _________locales_en_auth_json_logout as logout, _________locales_en_auth_json_register as register };
 }
 
 var buttons = {
