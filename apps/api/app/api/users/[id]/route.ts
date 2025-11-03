@@ -1,19 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth, withMerchantAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/users/[id]
  * Get user by ID
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAnyAuth(async (request, { user, userScope }) => {
+  return withAnyAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+      
       const { id } = params;
       console.log('🔍 GET /api/users/[id] - Looking for user with ID:', id);
 
@@ -27,8 +42,11 @@ export async function GET(
 
       const userId = parseInt(id);
       
-      // Get user using the simplified database API
-      const foundUser = await db.users.findById(userId);
+      // Get user using Prisma
+      const foundUser = await db.user.findUnique({
+        where: { id: userId },
+        include: { outlet: true }
+      });
 
       if (!foundUser) {
         console.log('❌ User not found in database for userId:', userId);
@@ -43,7 +61,6 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: foundUser,
-        code: 'USER_RETRIEVED_SUCCESS',
         code: 'USER_RETRIEVED_SUCCESS',
         message: 'User retrieved successfully'
       });
@@ -61,13 +78,25 @@ export async function GET(
 /**
  * PUT /api/users/[id]
  * Update user by ID
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withMerchantAuth(async (request, { user, userScope }) => {
+  return withMerchantAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+      
       const { id } = params;
 
       // Check if the ID is numeric (public ID)
@@ -85,7 +114,9 @@ export async function PUT(
       console.log('🔍 PUT /api/users/[id] - Update request body:', body);
 
       // Check if user exists
-      const existingUser = await db.users.findById(userId);
+      const existingUser = await db.user.findUnique({
+        where: { id: userId }
+      });
       if (!existingUser) {
         return NextResponse.json(
           ResponseBuilder.error('USER_NOT_FOUND'),
@@ -93,14 +124,19 @@ export async function PUT(
         );
       }
 
-      // Update the user using the simplified database API
-      const updatedUser = await db.users.update(userId, body);
+      // Remove merchantId if present
+      const { merchantId: _, ...updateData } = body;
+
+      // Update the user using Prisma
+      const updatedUser = await db.user.update({
+        where: { id: userId },
+        data: updateData as any
+      });
       console.log('✅ User updated successfully:', updatedUser);
 
       return NextResponse.json({
         success: true,
         data: updatedUser,
-        code: 'USER_UPDATED_SUCCESS',
         code: 'USER_UPDATED_SUCCESS',
         message: 'User updated successfully'
       });
@@ -118,13 +154,25 @@ export async function PUT(
 /**
  * DELETE /api/users/[id]
  * Delete user by ID (soft delete)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withMerchantAuth(async (request, { user, userScope }) => {
+  return withMerchantAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+      
       const { id } = params;
 
       // Check if the ID is numeric (public ID)
@@ -138,7 +186,9 @@ export async function DELETE(
       const userId = parseInt(id);
 
       // Check if user exists
-      const existingUser = await db.users.findById(userId);
+      const existingUser = await db.user.findUnique({
+        where: { id: userId }
+      });
       if (!existingUser) {
         return NextResponse.json(
           ResponseBuilder.error('USER_NOT_FOUND'),
@@ -154,34 +204,36 @@ export async function DELETE(
         );
       }
 
-      // Check if this is the last admin user for the merchant
-      if (existingUser.role === 'ADMIN' || (existingUser.role === 'MERCHANT' && existingUser.merchantId)) {
-        const merchantId = existingUser.merchantId;
-        const adminCount = await db.users.getStats({
-          merchantId: merchantId || null,
-          role: existingUser.role,
-          isActive: true
+      // Check if this is the last OUTLET_ADMIN
+      if (existingUser.role === 'OUTLET_ADMIN') {
+        const adminCount = await db.user.count({
+          where: {
+            role: 'OUTLET_ADMIN',
+            isActive: true
+          }
         });
 
         if (adminCount <= 1) {
           return NextResponse.json(
-            ResponseBuilder.error('CANNOT_DELETE_LAST_ADMIN', 'Cannot delete the last administrator. Please assign another administrator first.'),
+            ResponseBuilder.error('CANNOT_DELETE_LAST_ADMIN', 'Cannot delete the last outlet administrator. Please assign another administrator first.'),
             { status: API.STATUS.CONFLICT }
           );
         }
       }
 
       // Soft delete by setting isActive to false and deletedAt
-      const deletedUser = await db.users.update(userId, { 
-        isActive: false,
-        deletedAt: new Date()
+      const deletedUser = await db.user.update({
+        where: { id: userId },
+        data: { 
+          isActive: false,
+          deletedAt: new Date()
+        }
       });
       console.log('✅ User soft deleted successfully:', deletedUser);
 
       return NextResponse.json({
         success: true,
         data: deletedUser,
-        code: 'USER_DELETED_SUCCESS',
         code: 'USER_DELETED_SUCCESS',
         message: 'User deleted successfully'
       });

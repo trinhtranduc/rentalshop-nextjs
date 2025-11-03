@@ -1,21 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
  * GET /api/orders/[orderId]
  * Get order by ID
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export const GET = async (
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) => {
-  return withReadOnlyAuth(async (request, { user, userScope }) => {
+  return withReadOnlyAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+      
       const { orderId } = params;
       console.log('🔍 GET /api/orders/[orderId] - Looking for order with ID:', orderId);
 
@@ -29,18 +42,19 @@ export const GET = async (
 
       const orderIdNum = parseInt(orderId);
       
-      // Get user scope for merchant isolation
-      const userMerchantId = userScope.merchantId;
-      
-      if (!userMerchantId) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
-        );
-      }
-      
-      // Get order using the optimized database API
-      const order: any = await db.orders.findByIdDetail(orderIdNum);
+      // Get order using Prisma
+      const order: any = await db.order.findUnique({
+        where: { id: orderIdNum },
+        include: {
+          customer: true,
+          outlet: true,
+          createdBy: true,
+          orderItems: {
+            include: { product: true }
+          },
+          payments: true
+        }
+      });
 
       if (!order) {
         console.log('❌ Order not found in database for orderId:', orderIdNum);
@@ -98,13 +112,25 @@ export const GET = async (
 /**
  * PUT /api/orders/[orderId]
  * Update order by ID
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export const PUT = async (
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) => {
-  return withReadOnlyAuth(async (request, { user, userScope }) => {
+  return withReadOnlyAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+      
       const { orderId } = params;
 
       // Check if the ID is numeric (public ID)
@@ -117,22 +143,14 @@ export const PUT = async (
 
       const orderIdNum = parseInt(orderId);
 
-      // Get user scope for merchant isolation
-      const userMerchantId = userScope.merchantId;
-      
-      if (!userMerchantId) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
-        );
-      }
-
       // Parse and validate request body
       const body = await request.json();
       console.log('🔍 PUT /api/orders/[orderId] - Update request body:', body);
 
-      // Check if order exists and user has access to it
-      const existingOrder = await db.orders.findById(orderIdNum);
+      // Check if order exists
+      const existingOrder = await db.order.findUnique({
+        where: { id: orderIdNum }
+      });
       if (!existingOrder) {
         return NextResponse.json(
           ResponseBuilder.error('ORDER_NOT_FOUND'),
@@ -145,12 +163,26 @@ export const PUT = async (
       
       console.log('🔧 Filtered update data keys:', Object.keys(validUpdateData));
 
-      // Update the order using the simplified database API
-      const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
-      console.log('✅ Order updated successfully:', updatedOrder);
+      // Update the order using Prisma
+      await db.order.update({
+        where: { id: orderIdNum },
+        data: validUpdateData
+      });
+      console.log('✅ Order updated successfully');
 
       // Get full order details after update (with all relations)
-      const fullOrder: any = await db.orders.findByIdDetail(orderIdNum);
+      const fullOrder: any = await db.order.findUnique({
+        where: { id: orderIdNum },
+        include: {
+          customer: true,
+          outlet: true,
+          createdBy: true,
+          orderItems: {
+            include: { product: true }
+          },
+          payments: true
+        }
+      });
       
       if (!fullOrder) {
         return NextResponse.json(

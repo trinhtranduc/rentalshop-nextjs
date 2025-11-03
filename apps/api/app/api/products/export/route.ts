@@ -1,44 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withProductExportAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/products/export
  * Export products to CSV (Admin, Merchant, Outlet Admin only)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  * OUTLET_STAFF cannot export products
  */
 export const GET = withProductExportAuth(async (authorizedRequest) => {
   try {
-    // User is already authenticated and authorized to export products
-    // Only ADMIN, MERCHANT, OUTLET_ADMIN can export
-    // OUTLET_STAFF will automatically get 403 Forbidden
-    const { user, userScope, request } = authorizedRequest;
+    const { user, request } = authorizedRequest;
+    
+    const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '1000');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Build search filters based on user scope
-    const filters: any = {
-      limit,
-      offset,
-      sortBy: 'name',
-      sortOrder: 'asc'
-    };
-
-    // Apply scope restrictions
-    if (userScope.merchantId) {
-      filters.merchantId = userScope.merchantId;
-    }
-    if (userScope.outletId) {
-      filters.outletId = userScope.outletId;
+    // Build where clause - NO merchantId needed
+    const where: any = {};
+    if (user.role === 'OUTLET_ADMIN') {
+      // Filter products that have stock at this outlet
+      where.outletStock = {
+        some: {
+          outletId: user.outletId
+        }
+      };
     }
 
     // Get products
-    const result = await db.products.search(filters);
-    const products = result.data;
+    const products = await db.product.findMany({
+      where,
+      include: {
+        category: true,
+        outletStock: {
+          include: { outlet: true }
+        }
+      },
+      orderBy: { name: 'asc' },
+      take: limit,
+      skip: offset
+    });
 
     // Convert to CSV
     const csvHeaders = [
@@ -58,8 +75,8 @@ export const GET = withProductExportAuth(async (authorizedRequest) => {
 
     const csvRows = products.flatMap((product: any) => {
       // If filtering by specific outlet, only export that outlet's data
-      if (userScope.outletId) {
-        const outletStock = product.outletStock.find((os: any) => os.outlet.id === userScope.outletId);
+      if (user.role === 'OUTLET_ADMIN') {
+        const outletStock = product.outletStock.find((os: any) => os.outlet.id === user.outletId);
         if (!outletStock) return []; // Skip products not in this outlet
         
         return [[

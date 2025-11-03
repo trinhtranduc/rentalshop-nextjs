@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+export const GET = withManagementAuth(async (request, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -17,12 +29,21 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
     const validOffset = Math.max(offset, 0);
 
     // Get recent audit logs
-    const auditLogs = await db.auditLogs.findMany({
+    const auditLogs = await db.auditLog.findMany({
       orderBy: {
         createdAt: 'desc'
       },
       take: maxLimit,
-      skip: validOffset
+      skip: validOffset,
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
     });
 
     // Transform audit logs to activity format
@@ -86,18 +107,19 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
     });
 
     // Get total count for pagination
-    const totalCount = await db.auditLogs.getStats();
+    const totalCount = await db.auditLog.count();
 
-    return NextResponse.json({
-      success: true,
-      data: activities,
-      pagination: {
-        total: totalCount,
-        limit: maxLimit,
-        offset: validOffset,
-        hasMore: validOffset + maxLimit < totalCount
-      }
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('RECENT_ACTIVITIES_SUCCESS', {
+        data: activities,
+        pagination: {
+          total: totalCount,
+          limit: maxLimit,
+          offset: validOffset,
+          hasMore: validOffset + maxLimit < totalCount
+        }
+      })
+    );
 
   } catch (error) {
     console.error('Error fetching recent activities:', error);

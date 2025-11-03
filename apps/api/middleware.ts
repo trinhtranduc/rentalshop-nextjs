@@ -259,6 +259,13 @@ export async function middleware(request: NextRequest) {
     if (platformInfo.version) {
       requestHeaders.set('x-app-version', platformInfo.version);
     }
+    
+    // Forward subdomain from request (Phase 1: Header-based detection)
+    const subdomain = request.headers.get('x-subdomain');
+    if (subdomain) {
+      requestHeaders.set('x-tenant-subdomain', subdomain);
+      console.log('🔍 MIDDLEWARE: Subdomain detected:', subdomain);
+    }
 
     // Note: Subscription validation is handled in the centralized authenticateRequest function
     // in packages/auth/src/core.ts, which is called by each API route

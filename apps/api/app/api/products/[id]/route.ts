@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
 import { withManagementAuth } from '@rentalshop/auth';
-import { productUpdateSchema, handleApiError, ResponseBuilder, uploadToS3, generateAccessUrl, commitStagingFiles } from '@rentalshop/utils';
+import { productUpdateSchema, handleApiError, ResponseBuilder, uploadToS3, generateAccessUrl, commitStagingFiles, getTenantDbFromRequest } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * Helper function to validate image file
@@ -50,13 +52,25 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
 /**
  * GET /api/products/[id]
  * Get product by ID
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withManagementAuth(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+      
       const { id } = params;
       console.log('🔍 GET /api/products/[id] - Looking for product with ID:', id);
 
@@ -70,18 +84,16 @@ export async function GET(
 
       const productId = parseInt(id);
       
-      // Get user scope for merchant isolation
-      const userMerchantId = userScope.merchantId;
-      
-      if (!userMerchantId) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
-        );
-      }
-      
-      // Get product using the simplified database API
-      const product = await db.products.findById(productId);
+      // Get product using Prisma
+      const product = await db.product.findUnique({
+        where: { id: productId },
+        include: {
+          category: true,
+          outletStock: {
+            include: { outlet: true }
+          }
+        }
+      });
 
       if (!product) {
         console.log('❌ Product not found in database for productId:', productId);
@@ -100,12 +112,12 @@ export async function GET(
           imageUrls = product.images.split(',').filter(Boolean);
         }
       } else if (Array.isArray(product.images)) {
-        imageUrls = product.images;
+        imageUrls = product.images as string[];
       }
 
-      // Transform the data to match the expected format
+      // Transform the data to match the expected format (NO merchant field)
       const transformedProduct = {
-        id: product.id, // Return id directly to frontend
+        id: product.id,
         name: product.name,
         description: product.description,
         barcode: product.barcode,
@@ -117,17 +129,16 @@ export async function GET(
         images: imageUrls,
         isActive: product.isActive,
         category: product.category,
-        merchant: product.merchant,
         outletStock: product.outletStock.map((os: any) => ({
           id: os.id,
-          outletId: os.outlet.id, // Use id for frontend
+          outletId: os.outlet.id,
           stock: os.stock,
           available: os.available,
           renting: os.renting,
           outlet: {
-            id: os.outlet.id, // Use id for frontend
+            id: os.outlet.id,
             name: os.outlet.name,
-            address: os.outlet.address || null // Include address if available
+            address: os.outlet.address || null
           }
         })),
         createdAt: product.createdAt.toISOString(),
@@ -156,13 +167,25 @@ export async function GET(
 /**
  * PUT /api/products/[id]
  * Update product by ID
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withManagementAuth(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db, subdomain } = result;
+      
       const { id } = params;
 
       // Check if the ID is numeric (public ID)
@@ -174,16 +197,6 @@ export async function PUT(
       }
 
       const productId = parseInt(id);
-
-      // Get user scope for merchant isolation
-      const userMerchantId = userScope.merchantId;
-      
-      if (!userMerchantId) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
-        );
-      }
 
       // Parse and validate request body - handle both JSON and multipart form data
       const contentType = request.headers.get('content-type') || '';
@@ -224,7 +237,7 @@ export async function PUT(
               productDataFromRequest.images = productDataFromRequest.images
                 .split(',')
                 .filter(Boolean)
-                .map(url => url.trim());
+                .map((url: string) => url.trim());
             }
             
             if (productDataFromRequest.images.length === 0) {
@@ -293,8 +306,8 @@ export async function PUT(
           
           // Commit staging files to production
           if (stagingKeys.length > 0) {
-            // Use product/merchantId/ structure for better organization
-            const targetFolder = `product/${userMerchantId}`;
+            // Use product/subdomain/ structure for better organization
+            const targetFolder = `product/${subdomain}`;
             const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
             
             if (commitResult.success) {
@@ -393,19 +406,22 @@ export async function PUT(
       const { outletStock, ...productUpdateData } = validatedData;
       console.log('🔍 PUT /api/products/[id] - Processing outletStock:', outletStock);
 
-      // Check if product exists and user has access to it
-      const existingProduct = await db.products.findById(productId);
+      // Check if product exists (no merchantId needed - DB is isolated)
+      const existingProduct = await db.product.findUnique({
+        where: { id: productId }
+      });
       if (!existingProduct) {
         throw new Error('Product not found');
       }
 
       // Check for duplicate product name if name is being updated
       if (productUpdateData.name && productUpdateData.name !== existingProduct.name) {
-        const duplicateProduct = await db.products.findFirst({
-          name: productUpdateData.name,
-          merchantId: userMerchantId,
-          isActive: true,
-          id: { not: productId }
+        const duplicateProduct = await db.product.findFirst({
+          where: {
+            name: productUpdateData.name,
+            isActive: true,
+            NOT: { id: productId }
+          }
         });
 
         if (duplicateProduct) {
@@ -423,17 +439,19 @@ export async function PUT(
       if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
         console.log('🔄 Preparing outlet stock nested write:', outletStock);
         
-        // Verify all outlets exist first using db API
+        // Verify all outlets exist first
         const validOutletStock = [];
         for (const stock of outletStock) {
           if (stock.outletId && typeof stock.stock === 'number') {
             console.log(`🔍 Verifying outlet ID: ${stock.outletId}`);
-            const outlet = await db.outlets.findById(stock.outletId);
+            const outlet = await db.outlet.findUnique({
+              where: { id: stock.outletId }
+            });
             if (outlet) {
               console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name });
               // For nested write, we need to use outlet's database ID (number)
               validOutletStock.push({
-                outletId: outlet.id, // Use id (number) for nested write
+                outletId: outlet.id,
                 stock: stock.stock,
                 available: stock.stock,
                 renting: 0
@@ -449,8 +467,8 @@ export async function PUT(
         if (validOutletStock.length > 0) {
           // Use nested write to replace all outlet stock
           finalUpdateData.outletStock = {
-            deleteMany: {}, // Delete all existing outlet stock
-            create: validOutletStock // Create new ones
+            deleteMany: {},
+            create: validOutletStock
           };
           console.log('✅ Prepared outletStock nested write:', finalUpdateData.outletStock);
         }
@@ -458,13 +476,35 @@ export async function PUT(
         console.log('ℹ️ No outletStock provided or empty array');
       }
 
-      // Update the product using the simplified database API with nested write
-      const updatedProduct = await db.products.update(productId, finalUpdateData);
+      // Update the product using Prisma
+      const updatedProduct = await db.product.update({
+        where: { id: productId },
+        data: finalUpdateData,
+        include: {
+          category: true,
+          outletStock: {
+            include: { outlet: true }
+          }
+        }
+      });
       console.log('✅ Product updated successfully with outletStock:', updatedProduct);
 
-      // Transform the response to match frontend expectations
+      // Parse images from database response
+      let imageUrls: string[] = [];
+      if (typeof updatedProduct.images === 'string') {
+        try {
+          const parsed = JSON.parse(updatedProduct.images);
+          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          imageUrls = (updatedProduct.images as string).split(',').filter(Boolean);
+        }
+      } else if (Array.isArray(updatedProduct.images)) {
+        imageUrls = updatedProduct.images as string[];
+      }
+
+      // Transform the response to match frontend expectations (NO merchant field)
       const transformedProduct = {
-        id: updatedProduct.id, // Return id directly to frontend
+        id: updatedProduct.id,
         name: updatedProduct.name,
         description: updatedProduct.description,
         barcode: updatedProduct.barcode,
@@ -473,10 +513,21 @@ export async function PUT(
         salePrice: updatedProduct.salePrice,
         deposit: updatedProduct.deposit,
         totalStock: updatedProduct.totalStock,
-        images: updatedProduct.images,
+        images: imageUrls,
         isActive: updatedProduct.isActive,
         category: updatedProduct.category,
-        merchant: updatedProduct.merchant,
+        outletStock: updatedProduct.outletStock.map((os: any) => ({
+          id: os.id,
+          outletId: os.outlet.id,
+          stock: os.stock,
+          available: os.available,
+          renting: os.renting,
+          outlet: {
+            id: os.outlet.id,
+            name: os.outlet.name,
+            address: os.outlet.address || null
+          }
+        })),
         createdAt: updatedProduct.createdAt.toISOString(),
         updatedAt: updatedProduct.updatedAt.toISOString()
       };
@@ -501,13 +552,25 @@ export async function PUT(
 /**
  * DELETE /api/products/[id]
  * Delete product by ID (soft delete)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withManagementAuth(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+      
       const { id } = params;
 
       // Check if the ID is numeric (public ID)
@@ -520,24 +583,25 @@ export async function DELETE(
 
       const productId = parseInt(id);
 
-      // Get user scope for merchant isolation
-      const userMerchantId = userScope.merchantId;
-      
-      if (!userMerchantId) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
-        );
-      }
-
-      // Check if product exists and user has access to it
-      const existingProduct = await db.products.findById(productId);
+      // Check if product exists
+      const existingProduct = await db.product.findUnique({
+        where: { id: productId }
+      });
       if (!existingProduct) {
         throw new Error('Product not found');
       }
 
       // Soft delete by setting isActive to false
-      const deletedProduct = await db.products.update(productId, { isActive: false });
+      const deletedProduct = await db.product.update({
+        where: { id: productId },
+        data: { isActive: false },
+        include: {
+          category: true,
+          outletStock: {
+            include: { outlet: true }
+          }
+        }
+      });
       console.log('✅ Product soft deleted successfully:', deletedProduct);
 
       // Parse images from database response to return array
@@ -547,10 +611,10 @@ export async function DELETE(
           const parsed = JSON.parse(deletedProduct.images);
           imageUrls = Array.isArray(parsed) ? parsed : [parsed];
         } catch {
-          imageUrls = deletedProduct.images.split(',').filter(Boolean);
+          imageUrls = (deletedProduct.images as string).split(',').filter(Boolean);
         }
       } else if (Array.isArray(deletedProduct.images)) {
-        imageUrls = deletedProduct.images;
+        imageUrls = deletedProduct.images as string[];
       }
 
       // Return product with parsed images

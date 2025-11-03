@@ -1,58 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/analytics/orders - Get order analytics
- * Requires: Any authenticated user (scoped by role)
- * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const groupBy = searchParams.get('groupBy') || 'month'; // month or day
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Apply role-based filtering (consistent with other APIs)
+    // Build where clause - NO merchantId needed, DB is isolated
     let orderWhereClause: any = {};
 
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
-      // Find merchant by id to get outlets
-      const merchant = await db.merchants.findById(userScope.merchantId);
-      if (merchant && merchant.outlets) {
-        orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+    // Outlet filtering for outlet-level users
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.outletId) {
+        orderWhereClause.outletId = user.outletId;
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
-      // Find outlet by id to get CUID
-      const outlet = await db.outlets.findById(userScope.outletId);
-      if (outlet) {
-        orderWhereClause.outletId = outlet.id;
-      }
-    } else if (user.role === 'ADMIN') {
-      // ADMIN users see all data (system-wide access)
-      // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-    } else {
-      // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-      return NextResponse.json({
-        success: true,
-        data: [],
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
     }
 
     // Add date filtering if provided
@@ -63,15 +47,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     }
 
     // Get orders based on user scope
-    const orders = await db.orders.search({
+    const orders = await db.order.findMany({
       where: orderWhereClause,
-      limit: 1000 // Get enough orders to analyze
+      take: 1000 // Get enough orders to analyze
     });
 
     // Group orders by time period
     const groupedOrders: { [key: string]: number } = {};
     
-    orders.data?.forEach(order => {
+    orders.forEach(order => {
       const date = new Date(order.createdAt);
       let key: string;
       
@@ -90,12 +74,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       count
     })).sort((a, b) => a.period.localeCompare(b.period));
 
-    return NextResponse.json({
-      success: true,
-      data: analyticsData,
-      code: 'ORDER_ANALYTICS_SUCCESS',
-        message: 'Order analytics retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('ORDER_ANALYTICS_SUCCESS', analyticsData)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching order analytics:', error);
@@ -105,5 +86,3 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json(response, { status: statusCode });
   }
 });
-
-export const runtime = 'nodejs';

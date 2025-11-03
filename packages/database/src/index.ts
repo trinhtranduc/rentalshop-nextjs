@@ -14,7 +14,7 @@ import { simplifiedOutlets } from './outlet';
 import { simplifiedPlans } from './plan';
 import { simplifiedSubscriptions } from './subscription';
 import { simplifiedSubscriptionActivities } from './subscription-activity';
-import { simplifiedMerchants } from './merchant';
+// import { simplifiedMerchants } from './merchant'; // TEMPORARY: Disabled for multi-tenant migration
 import { simplifiedOrderNumbers } from './order-number-generator';
 import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
@@ -100,7 +100,7 @@ const db = {
   // ============================================================================
   // MERCHANT OPERATIONS
   // ============================================================================
-  merchants: simplifiedMerchants,
+  // merchants: simplifiedMerchants, // TEMPORARY: Disabled for multi-tenant migration
 
   // ============================================================================
   // PLAN OPERATIONS
@@ -234,6 +234,15 @@ export type { RegistrationInput, RegistrationResult } from './registration';
 
 // Email verification functions
 export * from './email-verification';
+
+// Multi-tenant functions
+export { 
+  getMainDb, 
+  getTenantDb, 
+  createTenantDatabase,
+  generateSubdomain,
+  validateSubdomain 
+} from './tenant-db-manager';
 
 // ============================================================================
 // MIGRATION GUIDE

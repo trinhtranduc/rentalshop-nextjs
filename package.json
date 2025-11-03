@@ -27,10 +27,18 @@
     "test": "turbo run test",
     "db:regenerate-system": "node scripts/regenerate-entire-system-2025.js",
     "db:create-admin": "node scripts/create-super-admin.js",
+    "db:create-admin-main-db": "node scripts/create-super-admin-main-db.js",
+    "railway:reset-db": "node scripts/railway-reset-db.js",
     "railway:migrate": "npx prisma migrate deploy --schema=./prisma/schema.prisma",
     "railway:generate": "npx prisma generate --schema=./prisma/schema.prisma",
     "railway:seed": "node scripts/regenerate-entire-system-2025.js",
-    "railway:setup": "yarn railway:generate && yarn railway:migrate && yarn railway:seed"
+    "railway:setup": "yarn railway:generate && yarn railway:migrate && yarn railway:seed",
+    "db:generate:main": "npx prisma generate --schema=prisma/main/schema.prisma",
+    "db:push:main": "npx prisma db push --schema=prisma/main/schema.prisma --accept-data-loss",
+    "db:migrate:main": "npx prisma migrate dev --schema=prisma/main/schema.prisma",
+    "db:generate:tenant": "npx prisma generate --schema=prisma/schema.prisma",
+    "db:push:tenant": "npx prisma db push --schema=prisma/schema.prisma",
+    "db:generate:all": "yarn db:generate:main && yarn db:generate:tenant"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

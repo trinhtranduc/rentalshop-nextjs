@@ -6,10 +6,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export interface UserFilters {
   role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
@@ -27,11 +30,22 @@ export interface UserListOptions {
 /**
  * GET /api/users
  * Get users with filtering and pagination
- * REFACTORED: Uses unified withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']) pattern
- * Note: OUTLET_STAFF cannot access user management
+ * MULTI-TENANT: Uses subdomain-based tenant DB
+ * Note: All users in tenant DB are OUTLET_ADMIN or OUTLET_STAFF
  */
-export const GET = withManagementAuth(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     console.log(`🔍 GET /api/users - User: ${user.email} (${user.role})`);
 
     // Parse query parameters
@@ -46,84 +60,77 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
 
     const q = parsed.data as any;
     
-    // Use simplified database API
-    const searchFilters: any = {
-      role: q.role,
-      isActive: q.isActive,
-      search: q.search,
-      page: q.page || 1,
-      limit: q.limit || 20
-    };
-
-    // Role-based merchant filtering:
-    // - ADMIN role: Can see users from all merchants (unless queryMerchantId is specified)
-    // - MERCHANT role: Can only see users from their own merchant
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see users from their merchant
-    if (user.role === 'ADMIN') {
-      // Admins can see all merchants unless specifically filtering by merchant
-      searchFilters.merchantId = q.merchantId;
-    } else {
-      // Non-admin users restricted to their merchant
-      searchFilters.merchantId = userScope.merchantId;
-    }
-
-    // Role-based outlet filtering:
-    // - MERCHANT role: Can see users from all outlets of their merchant (unless queryOutletId is specified)
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see users from their assigned outlet
-    if (user.role === 'MERCHANT') {
-      // Merchants can see all outlets unless specifically filtering by outlet
-      searchFilters.outletId = q.outletId;
-    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
-      // Outlet users can only see users from their assigned outlet
-      searchFilters.outletId = userScope.outletId;
-    } else if (user.role === 'ADMIN') {
-      // Admins can see all users (no outlet filtering unless specified)
-      searchFilters.outletId = q.outletId;
-    }
-
-    // If user is MERCHANT, only return OUTLET_ADMIN and OUTLET_STAFF users
-    // Do not return other MERCHANT users
-    if (user.role === 'MERCHANT') {
-      if (!q.role) {
-        // If no specific role filter is requested, restrict to outlet-level roles only
-        searchFilters.roles = ['OUTLET_ADMIN', 'OUTLET_STAFF'];
-        delete searchFilters.role; // Remove single role filter since we're using roles array
-        console.log('🔒 MERCHANT user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
-      } else if (q.role === 'MERCHANT') {
-        // If merchant specifically requests MERCHANT role, return empty (merchants shouldn't see other merchants)
-        console.log('🚫 MERCHANT user: Blocked request for MERCHANT role users');
+    // Build where clause - NO merchantId needed
+    const where: any = {};
+    
+    // Role filtering: Only OUTLET_ADMIN and OUTLET_STAFF exist in tenant DB
+    if (q.role) {
+      if (q.role === 'MERCHANT' || q.role === 'ADMIN') {
+        // These roles don't exist in tenant DB, return empty
         return NextResponse.json({
           success: true,
           data: [],
           pagination: {
-            page: 1,
+            page: q.page || 1,
             limit: q.limit || 20,
             total: 0,
             hasMore: false,
             totalPages: 0
           }
         });
-      } else if (q.role === 'OUTLET_ADMIN' || q.role === 'OUTLET_STAFF') {
-        // Allow these specific role requests from merchant
-        console.log(`✅ MERCHANT user: Allowed request for ${q.role} users`);
       }
+      where.role = q.role;
     }
-
-    console.log('🔄 Using simplified db.users.search() with filters:', searchFilters);
     
-    const result = await db.users.search(searchFilters);
+    // Outlet filtering: OUTLET_STAFF can only see their outlet
+    if (user.role === 'OUTLET_STAFF' && user.outletId) {
+      where.outletId = user.outletId;
+    } else if (q.outletId) {
+      where.outletId = q.outletId;
+    }
     
-    console.log(`✅ Retrieved ${result.data.length} users (total: ${result.total})`);
+    // Active status filtering
+    if (q.isActive !== undefined) {
+      where.isActive = q.isActive;
+    }
+    
+    // Search filtering
+    if (q.search) {
+      where.OR = [
+        { firstName: { contains: q.search, mode: 'insensitive' } },
+        { lastName: { contains: q.search, mode: 'insensitive' } },
+        { email: { contains: q.search, mode: 'insensitive' } }
+      ];
+    }
+    
+    const pageNum = q.page || 1;
+    const limitNum = q.limit || 20;
+    const skip = (pageNum - 1) * limitNum;
+    
+    console.log('🔄 Querying users with where clause:', where);
+    
+    const [users, total] = await Promise.all([
+      db.user.findMany({
+        where,
+        include: { outlet: true },
+        orderBy: { createdAt: 'desc' },
+        take: limitNum,
+        skip
+      }),
+      db.user.count({ where })
+    ]);
+    
+    console.log(`✅ Retrieved ${users.length} users (total: ${total})`);
 
     return NextResponse.json({
       success: true,
-      data: result.data,
+      data: users,
       pagination: {
-        page: result.page,
-        limit: result.limit,
-        total: result.total,
-        hasMore: result.hasMore,
-        totalPages: result.totalPages || Math.ceil((result.total || 0) / (result.limit || 20))
+        page: pageNum,
+        limit: limitNum,
+        total: total,
+        hasMore: skip + limitNum < total,
+        totalPages: Math.ceil(total / limitNum)
       }
     });
 
@@ -139,11 +146,22 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
 /**
  * POST /api/users
  * Create a new user
- * REFACTORED: Uses unified withAuth pattern
- * Note: OUTLET_STAFF cannot create users
+ * MULTI-TENANT: Uses subdomain-based tenant DB
+ * Note: Only OUTLET_ADMIN and OUTLET_STAFF can be created in tenant DB
  */
-export const POST = withManagementAuth(async (request, { user, userScope }) => {
+export const POST = withManagementAuth(async (request, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     console.log(`➕ POST /api/users - User: ${user.email} (${user.role})`);
 
     const body = await request.json();
@@ -156,48 +174,20 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Smart assignment of merchantId and outletId based on role and user permissions
-    let merchantId: number | undefined;
-    let outletId: number | undefined;
-
-    if (parsed.data.role === 'ADMIN') {
-      // ADMIN can be assigned to any merchant/outlet or none
-      merchantId = parsed.data.merchantId;
-      outletId = parsed.data.outletId;
-    } else if (parsed.data.role === 'MERCHANT') {
-      // MERCHANT must have merchantId, no outletId
-      merchantId = parsed.data.merchantId || userScope.merchantId;
-      outletId = undefined;
-    } else if (parsed.data.role === 'OUTLET_ADMIN' || parsed.data.role === 'OUTLET_STAFF') {
-      // OUTLET users must have both merchantId and outletId
-      merchantId = parsed.data.merchantId || userScope.merchantId;
-      outletId = parsed.data.outletId || userScope.outletId;
+    // In tenant DB, only OUTLET_ADMIN and OUTLET_STAFF roles exist
+    if (parsed.data.role === 'ADMIN' || parsed.data.role === 'MERCHANT') {
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_ROLE', 'Only OUTLET_ADMIN and OUTLET_STAFF can be created in tenant database'),
+        { status: 400 }
+      );
     }
 
-    const userData = {
-      ...parsed.data,
-      merchantId,
-      outletId
-    };
+    // Remove merchantId if present
+    const { merchantId: _, ...userDataWithoutMerchant } = parsed.data;
 
-    console.log('🔍 POST /api/users: Creating user with data:', userData);
-    console.log('🔍 POST /api/users: merchantId:', merchantId, 'outletId:', outletId);
-
-    // Check plan limits before creating user (only for non-ADMIN users)
-    if (parsed.data.role !== 'ADMIN' && merchantId) {
-      try {
-        await assertPlanLimit(merchantId, 'users');
-        console.log('✅ Plan limit check passed for users');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for users:', error.message);
-        return NextResponse.json(
-          ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for users'),
-          { status: 403 }
-        );
-      }
-    }
-
-    const newUser = await db.users.create(userData);
+    const newUser = await db.user.create({
+      data: userDataWithoutMerchant as any
+    });
     
     console.log(`✅ Created user: ${newUser.email} (ID: ${newUser.id})`);
 
@@ -205,7 +195,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       success: true,
       data: newUser,
       code: 'USER_CREATED_SUCCESS',
-        message: 'User created successfully'
+      message: 'User created successfully'
     }, { status: 201 });
 
   } catch (error: any) {
@@ -220,10 +210,21 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 /**
  * PUT /api/users
  * Update an existing user
- * REFACTORED: Uses unified withAuth pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const PUT = withManagementAuth(async (request, { user, userScope }) => {
+export const PUT = withManagementAuth(async (request, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     console.log(`✏️ PUT /api/users - User: ${user.email} (${user.role})`);
 
     const body = await request.json();
@@ -247,8 +248,10 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Check if user exists and is accessible within scope
-    const existingUser = await db.users.findById(id);
+    // Check if user exists (NO merchantId validation needed)
+    const existingUser = await db.user.findUnique({
+      where: { id }
+    });
     if (!existingUser) {
       return NextResponse.json(
         ResponseBuilder.error('USER_NOT_FOUND', 'User not found'),
@@ -256,15 +259,13 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Scope validation
-    if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
-      return NextResponse.json(
-        ResponseBuilder.error('UPDATE_USER_OUT_OF_SCOPE', 'Cannot update user outside your scope'),
-        { status: 403 }
-      );
-    }
+    // Remove merchantId if present
+    const { merchantId: _, ...updateDataWithoutMerchant } = updateData;
 
-    const updatedUser = await db.users.update(id, updateData);
+    const updatedUser = await db.user.update({
+      where: { id },
+      data: updateDataWithoutMerchant as any
+    });
     
     console.log(`✅ Updated user: ${updatedUser.email} (ID: ${updatedUser.id})`);
 
@@ -272,7 +273,7 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
       success: true,
       data: updatedUser,
       code: 'USER_UPDATED_SUCCESS',
-        message: 'User updated successfully'
+      message: 'User updated successfully'
     });
 
   } catch (error) {
@@ -287,10 +288,21 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
 /**
  * DELETE /api/users
  * Delete/deactivate a user
- * REFACTORED: Uses unified withAuth pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const DELETE = withManagementAuth(async (request, { user, userScope }) => {
+export const DELETE = withManagementAuth(async (request, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     console.log(`🗑️ DELETE /api/users - User: ${user.email} (${user.role})`);
 
     const { searchParams } = new URL(request.url);
@@ -303,8 +315,10 @@ export const DELETE = withManagementAuth(async (request, { user, userScope }) =>
       );
     }
 
-    // Check if user exists and is accessible within scope
-    const existingUser = await db.users.findById(userId);
+    // Check if user exists (NO merchantId validation needed)
+    const existingUser = await db.user.findUnique({
+      where: { id: userId }
+    });
     if (!existingUser) {
       return NextResponse.json(
         ResponseBuilder.error('USER_NOT_FOUND', 'User not found'),
@@ -312,23 +326,18 @@ export const DELETE = withManagementAuth(async (request, { user, userScope }) =>
       );
     }
 
-    // Scope validation
-    if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
-      return NextResponse.json(
-        ResponseBuilder.error('DELETE_USER_OUT_OF_SCOPE', 'Cannot delete user outside your scope'),
-        { status: 403 }
-      );
-    }
-
     // Soft delete (deactivate)
-    await db.users.update(userId, { isActive: false, deletedAt: new Date() });
+    await db.user.update({
+      where: { id: userId },
+      data: { isActive: false, deletedAt: new Date() }
+    });
     
     console.log(`✅ Deactivated user: ${existingUser.email} (ID: ${userId})`);
 
     return NextResponse.json({
       success: true,
       code: 'USER_DEACTIVATED_SUCCESS',
-        message: 'User deactivated successfully'
+      message: 'User deactivated successfully'
     });
 
   } catch (error) {

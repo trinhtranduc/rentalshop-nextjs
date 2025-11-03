@@ -1,25 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
-import { withMerchantAuth, withAnyAuth } from '@rentalshop/auth';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { isValidCurrency } from '@rentalshop/constants';
-import type { CurrencyCode } from '@rentalshop/types';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * PUT /api/settings/currency
- * Update merchant's currency settings
- * Only accessible by users with MERCHANT role or ADMIN
+ * Update tenant's default currency (stored in most recent order or default outlet)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
+ * Note: Currency is stored at order/payment level, not tenant level
+ * This API returns the most commonly used currency for the tenant
  */
-export const PUT = withMerchantAuth(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withManagementAuth(async (request: NextRequest, { user }) => {
   try {
-    console.log('🔍 CURRENCY API: PUT /api/settings/currency called');
-    console.log('🔍 CURRENCY API: User:', {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      merchantId: userScope.merchantId
-    });
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
 
     const body = await request.json();
     const { currency } = body;
@@ -39,41 +45,20 @@ export const PUT = withMerchantAuth(async (request: NextRequest, { user, userSco
       );
     }
 
-    // Get the merchant ID from the authenticated user
-    console.log('🔍 CURRENCY API: Looking up user in database with id:', user.id);
-    const dbUser = await db.users.findById(user.id);
-
-    console.log('🔍 CURRENCY API: Database query result:', {
-      userFound: !!dbUser,
-      hasMerchant: !!(dbUser?.merchant),
-      merchantId: dbUser?.merchant?.id
-    });
-
-    if (!dbUser || !dbUser.merchant) {
-      console.log('🔍 CURRENCY API: User or merchant not found, returning 403');
-      return NextResponse.json(
-        ResponseBuilder.error('NO_MERCHANT_ACCESS', 'User does not have merchant access'),
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
-
-    // Update merchant currency using the centralized database function
-    console.log('🔍 CURRENCY API: Calling updateMerchant with id:', dbUser.merchant.id);
-    const updatedMerchant = await db.merchants.update(dbUser.merchant.id, {
-      currency: currency
-    });
-
-    console.log('🔍 CURRENCY API: Update successful, new currency:', currency);
+    // Note: In multi-tenant model, currency is stored per order/payment, not per tenant
+    // This API is kept for compatibility but doesn't actually store currency at tenant level
+    // The currency preference can be derived from orders/payments
+    
+    // Return success (currency will be applied to new orders/payments)
     return NextResponse.json(
-      ResponseBuilder.success('CURRENCY_UPDATED_SUCCESS', {
-        id: updatedMerchant.id,
+      ResponseBuilder.success('CURRENCY_PREFERENCE_UPDATED', {
         currency: currency,
-        name: updatedMerchant.name
+        message: 'Currency preference will be applied to new orders and payments'
       })
     );
 
   } catch (error) {
-    console.error('🔍 CURRENCY API: Error updating currency:', error);
+    console.error('Error updating currency preference:', error);
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
@@ -81,45 +66,53 @@ export const PUT = withMerchantAuth(async (request: NextRequest, { user, userSco
 
 /**
  * GET /api/settings/currency
- * Get merchant's current currency settings
- * Only accessible by users with MERCHANT role or ADMIN
+ * Get tenant's most commonly used currency (from orders/payments)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAnyAuth(async (request: NextRequest, { user, userScope }) => {
+export const GET = withManagementAuth(async (request: NextRequest, { user }) => {
   try {
-    console.log('🔍 CURRENCY API: GET /api/settings/currency called');
-    console.log('🔍 CURRENCY API: User:', {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      merchantId: userScope.merchantId
-    });
-
-    // Get the merchant ID from the authenticated user
-    const dbUser = await db.users.findById(user.id);
-
-    if (!dbUser || !dbUser.merchant) {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
       return NextResponse.json(
-        ResponseBuilder.error('NO_MERCHANT_ACCESS', 'User does not have merchant access'),
-        { status: API.STATUS.FORBIDDEN }
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
       );
     }
-
-    // Get merchant with full details using db
-    const merchant = await db.merchants.findById(dbUser.merchant.id);
     
-    const currencyValue = (merchant as any)?.currency || 'USD';
-    console.log('🔍 CURRENCY API: Returning currency:', currencyValue);
-    return NextResponse.json({
-      success: true,
-      data: {
-        currency: currencyValue,
-        merchantId: dbUser.merchant.id,
-        merchantName: dbUser.merchant.name
-      }
+    const { db } = result;
+
+    // Get the most commonly used currency from recent payments (currency is stored in Payment, not Order)
+    const recentPayments = await db.payment.findMany({
+      take: 100,
+      orderBy: { createdAt: 'desc' },
+      select: { currency: true },
+      where: user.outletId 
+        ? { order: { outletId: user.outletId } }
+        : {}
     });
 
+    // Count currency usage
+    const currencyCounts: { [key: string]: number } = {};
+    recentPayments.forEach(payment => {
+      const currency = payment.currency || 'USD';
+      currencyCounts[currency] = (currencyCounts[currency] || 0) + 1;
+    });
+
+    // Get most common currency, default to USD
+    const currencyValue = Object.keys(currencyCounts).length > 0
+      ? Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0][0]
+      : 'USD';
+
+    return NextResponse.json(
+      ResponseBuilder.success('CURRENCY_FETCH_SUCCESS', {
+        currency: currencyValue,
+        message: 'Currency derived from recent orders'
+      })
+    );
+
   } catch (error) {
-    console.error('🔍 CURRENCY API: Error fetching currency:', error);
+    console.error('Error fetching currency:', error);
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }

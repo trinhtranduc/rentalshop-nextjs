@@ -1,19 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * GET /api/customers/[id]/orders
  * Get customer orders
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+      
       const customerId = parseInt(params.id);
       if (isNaN(customerId)) {
         return NextResponse.json(
@@ -22,7 +37,9 @@ export async function GET(
         );
       }
 
-      const customer = await db.customers.findById(customerId);
+      const customer = await db.customer.findUnique({
+        where: { id: customerId }
+      });
       if (!customer) {
         return NextResponse.json(
           ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
@@ -31,14 +48,28 @@ export async function GET(
       }
 
       // Get orders for this customer
-      const orders = await db.orders.search({
-        customerId: customerId
+      const orders = await db.order.findMany({
+        where: { customerId: customerId },
+        include: {
+          customer: true,
+          outlet: true,
+          orderItems: {
+            include: {
+              product: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      const total = await db.order.count({
+        where: { customerId: customerId }
       });
 
       return NextResponse.json({
         success: true,
-        data: orders.data || [],
-        total: orders.total || 0
+        data: orders,
+        total: total
       });
 
     } catch (error) {

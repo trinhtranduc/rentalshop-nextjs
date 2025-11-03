@@ -1,28 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * POST /api/payments/process
  * Process payment
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function POST(request: NextRequest) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+
       const body = await request.json();
       const { orderId, amount, method, reference } = body;
 
       if (!orderId || !amount || !method) {
         return NextResponse.json(
-          ResponseBuilder.error('ORDER_PAYMENT_REQUIRED'),
+          ResponseBuilder.error('ORDER_PAYMENT_REQUIRED', 'Order ID, amount, and method are required'),
           { status: 400 }
         );
       }
 
       // Check if order exists
-      const order = await db.orders.findById(orderId);
+      const order = await db.order.findUnique({
+        where: { id: orderId }
+      });
+      
       if (!order) {
         return NextResponse.json(
           ResponseBuilder.error('ORDER_NOT_FOUND'),
@@ -32,7 +49,7 @@ export async function POST(request: NextRequest) {
 
       // TODO: Implement payment processing functionality
       return NextResponse.json(
-        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED', 'Payment processing not yet implemented'),
         { status: 501 }
       );
 

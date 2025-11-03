@@ -1,17 +1,31 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
- * GET /api/analytics/system - Get system analytics (Admin only)
- * REFACTORED: Now uses unified withAuth pattern
+ * GET /api/analytics/system - Get system analytics for tenant
+ * MULTI-TENANT: Uses subdomain-based tenant DB
+ * Note: This provides tenant-level analytics, not system-wide
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
-  console.log(`🔧 GET /api/analytics/system - Admin: ${user.email}`);
+export const GET = withManagementAuth(async (request, { user }) => {
+  console.log(`🔧 GET /api/analytics/system - User: ${user.email}`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
 
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
@@ -33,91 +47,54 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     }
 
-    // Fetch system metrics in parallel
+    // Build where clause - NO merchantId needed, DB is isolated
+    let orderWhereClause: any = {
+      createdAt: {
+        gte: dateStart,
+        lte: dateEnd
+      }
+    };
+
+    // Outlet filtering for outlet-level users
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.outletId) {
+        orderWhereClause.outletId = user.outletId;
+      }
+    }
+
+    // Fetch tenant metrics in parallel
     const [
-      totalMerchants,
       totalOutlets,
       totalUsers,
       totalProducts,
       totalCustomers,
       totalOrders,
-      activeMerchants,
-      newMerchantsThisMonth,
-      newMerchantsThisYear,
       totalRevenue
     ] = await Promise.all([
-      // Total merchants
-      db.merchants.count({ where: { isActive: true } }),
-      
       // Total outlets
-      db.outlets.count({ where: { isActive: true } }),
+      db.outlet.count({ where: { isActive: true } }),
       
       // Total users
-      db.users.count({ where: { isActive: true } }),
+      db.user.count({ where: { isActive: true } }),
       
       // Total products
-      db.products.count({ where: { isActive: true } }),
+      db.product.count({ where: { isActive: true } }),
       
       // Total customers
-      db.customers.getStats({ where: { isActive: true } }),
+      db.customer.count({ where: { isActive: true } }),
       
       // Total orders
-      db.orders.getStats(),
-      
-      // Active merchants (with recent activity in date range)
-      db.merchants.count({ 
-        where: { 
-          isActive: true,
-          outlets: {
-            some: {
-              orders: {
-                some: { 
-                  createdAt: { 
-                    gte: dateStart,
-                    lte: dateEnd
-                  }
-                }
-              }
-            }
-          }
-        }
-      }),
-      
-      // New merchants in date range
-      db.merchants.count({ 
-        where: { 
-          isActive: true,
-          createdAt: { 
-            gte: dateStart,
-            lte: dateEnd
-          }
-        }
-      }),
-      
-      // New merchants this year (keep for comparison)
-      db.merchants.count({ 
-        where: { 
-          isActive: true,
-          createdAt: { 
-            gte: new Date(new Date().getFullYear(), 0, 1)
-          }
-        }
-      }),
+      db.order.count(),
       
       // Revenue in date range
-      db.orders.aggregate({
-        where: {
-          createdAt: {
-            gte: dateStart,
-            lte: dateEnd
-          }
-        },
+      db.order.aggregate({
+        where: orderWhereClause,
         _sum: { totalAmount: true }
       })
     ]);
 
-    // Get merchant registration trends based on groupBy parameter
-    const merchantTrends = [];
+    // Get order trends based on groupBy parameter
+    const orderTrends = [];
     
     if (groupBy === 'month') {
       // Generate trends for each month in the date range
@@ -126,24 +103,28 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
         const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
         const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
         
-        const newMerchants = await db.merchants.count({
+        const monthOrderWhereClause = {
+          ...orderWhereClause,
+          createdAt: { gte: monthStart, lte: monthEnd }
+        };
+        
+        const newOrders = await db.order.count({
+          where: monthOrderWhereClause
+        });
+        
+        const totalOrdersByMonth = await db.order.count({
           where: {
-            isActive: true,
-            createdAt: { gte: monthStart, lte: monthEnd }
+            createdAt: { lte: monthEnd },
+            ...(user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF' 
+              ? { outletId: user.outletId } 
+              : {})
           }
         });
         
-        const activeMerchants = await db.merchants.count({
-          where: {
-            isActive: true,
-            createdAt: { lte: monthEnd }
-          }
-        });
-        
-        merchantTrends.push({
+        orderTrends.push({
           month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
-          newMerchants,
-          activeMerchants
+          newOrders,
+          totalOrders: totalOrdersByMonth
         });
         
         current.setMonth(current.getMonth() + 1);
@@ -155,24 +136,28 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
         const dayStart = new Date(current.getFullYear(), current.getMonth(), current.getDate());
         const dayEnd = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1);
         
-        const newMerchants = await db.merchants.count({
+        const dayOrderWhereClause = {
+          ...orderWhereClause,
+          createdAt: { gte: dayStart, lte: dayEnd }
+        };
+        
+        const newOrders = await db.order.count({
+          where: dayOrderWhereClause
+        });
+        
+        const totalOrdersByDay = await db.order.count({
           where: {
-            isActive: true,
-            createdAt: { gte: dayStart, lte: dayEnd }
+            createdAt: { lte: dayEnd },
+            ...(user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF' 
+              ? { outletId: user.outletId } 
+              : {})
           }
         });
         
-        const activeMerchants = await db.merchants.count({
-          where: {
-            isActive: true,
-            createdAt: { lte: dayEnd }
-          }
-        });
-        
-        merchantTrends.push({
+        orderTrends.push({
           month: dayStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          newMerchants,
-          activeMerchants
+          newOrders,
+          totalOrders: totalOrdersByDay
         });
         
         current.setDate(current.getDate() + 1);
@@ -180,23 +165,18 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
     }
 
     const systemMetrics = {
-      totalMerchants,
       totalOutlets,
       totalUsers,
       totalProducts,
       totalCustomers,
       totalOrders,
       totalRevenue: totalRevenue?._sum?.totalAmount || 0,
-      activeMerchants,
-      newMerchantsThisMonth: newMerchantsThisMonth, // New merchants in date range
-      newMerchantsThisYear,
-      merchantTrends
+      orderTrends
     };
 
-    return NextResponse.json({
-      success: true,
-      data: systemMetrics
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('SYSTEM_ANALYTICS_SUCCESS', systemMetrics)
+    );
 
   } catch (error) {
     console.error('Error fetching system analytics:', error);

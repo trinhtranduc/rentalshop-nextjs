@@ -1,56 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { getMainDb } from '@rentalshop/database';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/subscriptions/status
- * Get subscription status for the authenticated merchant
- * 
- * **Why OUTLET_ADMIN and OUTLET_STAFF need access:**
- * - They need to know plan limits (products, users, outlets)
- * - They need to see subscription status for their outlet
- * - They work for the merchant, so should have read access
- * - Read-only access, cannot modify subscription
+ * Get subscription status for the tenant
+ * MULTI-TENANT: Uses subdomain-based tenant DB
+ * Note: Plans are stored in Main DB, but subscriptions are in tenant DB
  */
 export async function GET(request: NextRequest) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user }) => {
     try {
-      // For MERCHANT, OUTLET_ADMIN, OUTLET_STAFF: get their merchant's subscription
-      // For ADMIN role, they can specify merchantId in query params
-      const { searchParams } = new URL(request.url);
-      const merchantId = user.role === 'ADMIN' 
-        ? (searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : userScope.merchantId)
-        : userScope.merchantId; // All outlet users have merchantId in scope
-
-      if (!merchantId) {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
         return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ID_REQUIRED'),
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
           { status: 400 }
         );
       }
+      
+      const { db } = result;
 
-      // Get merchant with subscription details
-      const merchant = await db.merchants.findById(merchantId);
-      if (!merchant) {
+      // Get the most recent active subscription for the tenant
+      const subscription = await db.subscription.findFirst({
+        where: {
+          status: { in: ['ACTIVE', 'TRIAL', 'PAST_DUE', 'PAUSED'] }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (!subscription) {
         return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
+          ResponseBuilder.error('NO_SUBSCRIPTION_FOUND', 'No active subscription found for this tenant'),
           { status: 404 }
         );
       }
 
-      // Check if merchant has a subscription
-      if (!merchant.subscription) {
-        return NextResponse.json(
-          ResponseBuilder.error('NO_SUBSCRIPTION_FOUND'),
-          { status: 404 }
+      // Get plan details from Main DB
+      const mainDb = await getMainDb();
+      let plan = null;
+      try {
+        const planResult = await mainDb.query(
+          'SELECT name, description, "basePrice", currency, "trialDays", limits, features FROM "Plan" WHERE "publicId" = $1',
+          [subscription.planId]
         );
+        if (planResult.rows.length > 0) {
+          plan = planResult.rows[0];
+        }
+        mainDb.end();
+      } catch (error) {
+        console.error('Error fetching plan from Main DB:', error);
+        mainDb.end();
       }
 
-      // Get plan details
-      const plan = merchant.subscription.plan;
-      const subscription = merchant.subscription;
       const now = new Date();
 
       // ============================================================================
@@ -118,22 +126,22 @@ export async function GET(request: NextRequest) {
       const hasAccess = computedStatus === 'ACTIVE';  // Chỉ cần ACTIVE
       const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0;
 
+      // Get usage statistics from tenant DB
+      const [outletCount, userCount, productCount, customerCount] = await Promise.all([
+        db.outlet.count({ where: { isActive: true } }),
+        db.user.count({ where: { isActive: true } }),
+        db.product.count({ where: { isActive: true } }),
+        db.customer.count()
+      ]);
+
       // ============================================================================
-      // BUILD CLEAN RESPONSE STRUCTURE (EXPERT-LEVEL SIMPLICITY)
+      // BUILD CLEAN RESPONSE STRUCTURE
       // ============================================================================
       
       const subscriptionStatus = {
         // ============================================================================
-        // MERCHANT INFO
-        // ============================================================================
-        merchantId: merchant.id,
-        merchantName: merchant.name,
-        merchantEmail: merchant.email,
-        
-        // ============================================================================
         // SUBSCRIPTION STATUS (SINGLE SOURCE OF TRUTH)
         // ============================================================================
-        // Use computedStatus instead of multiple boolean flags
         status: computedStatus,           // CANCELED | EXPIRED | PAST_DUE | PAUSED | TRIAL | ACTIVE
         statusReason,                     // Human-readable reason
         hasAccess,                        // Can user access features?
@@ -153,9 +161,9 @@ export async function GET(request: NextRequest) {
         trialEnd: subscription.trialEnd,
         
         // ============================================================================
-        // PLAN INFO
+        // PLAN INFO (from Main DB)
         // ============================================================================
-        planId: plan?.id || null,
+        planId: subscription.planId,
         planName: plan?.name || 'Unknown Plan',
         planDescription: plan?.description || '',
         planPrice: plan?.basePrice || 0,
@@ -180,18 +188,18 @@ export async function GET(request: NextRequest) {
         // ============================================================================
         // PLAN LIMITS & USAGE
         // ============================================================================
-        limits: plan?.limits ? JSON.parse(plan.limits) : {},
+        limits: plan?.limits ? JSON.parse(plan.limits as string) : {},
         usage: {
-          outlets: merchant._count?.outlets || 0,
-          users: merchant._count?.users || 0,
-          products: merchant._count?.products || 0,
-          customers: merchant._count?.customers || 0
+          outlets: outletCount,
+          users: userCount,
+          products: productCount,
+          customers: customerCount
         },
         
         // ============================================================================
         // PLAN FEATURES
         // ============================================================================
-        features: plan?.features ? JSON.parse(plan.features) : []
+        features: plan?.features ? JSON.parse(plan.features as string) : []
       };
 
       return NextResponse.json(ResponseBuilder.success('SUBSCRIPTION_STATUS_RETRIEVED', subscriptionStatus));

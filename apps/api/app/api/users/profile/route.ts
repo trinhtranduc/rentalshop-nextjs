@@ -1,23 +1,40 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/users/profile
  * Get current user's profile
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAnyAuth(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAnyAuth(async (request: NextRequest, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     console.log('🔍 Profile API called');
     
     console.log('✅ Token verification result: Success', { id: user.id, role: user.role });
 
-    // Get user profile with complete merchant and outlet data
-    // Note: user.id is the id, we need to find by id
+    // Get user profile with outlet data (NO merchant - tenant DB is isolated)
     console.log('🔍 Searching for user with id:', user.id);
-    const userProfile = await db.users.findById(user.id);
+    const userProfile = await db.user.findUnique({
+      where: { id: user.id },
+      include: { outlet: true }
+    });
 
     if (!userProfile) {
       console.log('❌ User not found with id:', user.id);
@@ -34,47 +51,14 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
       lastName: userProfile.lastName,
       phone: userProfile.phone,
       role: userProfile.role,
-      hasMerchant: !!userProfile.merchant,
       hasOutlet: !!userProfile.outlet
     });
-    
-    console.log('🔍 Merchant data from DB:', {
-      businessType: userProfile.merchant?.businessType,
-      pricingType: userProfile.merchant?.pricingType,
-      hasBusinessType: 'businessType' in (userProfile.merchant || {}),
-      hasPricingType: 'pricingType' in (userProfile.merchant || {}),
-      merchantKeys: Object.keys(userProfile.merchant || {})
-    });
 
-    // Transform user data to include complete merchant and outlet information
+    // Transform user data to include outlet information
     const transformedUser = {
       ...userProfile,
       // Direct IDs for quick access
-      merchantId: userProfile.merchant?.id,
       outletId: userProfile.outlet?.id,
-      // Complete merchant object with all business info including pricingConfig
-      merchant: userProfile.merchant ? {
-        id: userProfile.merchant.id,
-        name: userProfile.merchant.name,
-        email: userProfile.merchant.email,
-        phone: userProfile.merchant.phone,
-        address: userProfile.merchant.address,
-        city: userProfile.merchant.city,
-        state: userProfile.merchant.state,
-        zipCode: userProfile.merchant.zipCode,
-        country: userProfile.merchant.country,
-        businessType: userProfile.merchant.businessType,
-        pricingType: userProfile.merchant.pricingType,
-        taxId: userProfile.merchant.taxId,
-        website: userProfile.merchant.website,
-        description: userProfile.merchant.description,
-        isActive: userProfile.merchant.isActive,
-        planId: userProfile.merchant.planId,
-        subscriptionStatus: userProfile.merchant.subscription?.status,
-        totalRevenue: userProfile.merchant.totalRevenue,
-        createdAt: userProfile.merchant.createdAt,
-        lastActiveAt: userProfile.merchant.lastActiveAt,
-      } : undefined,
       // Complete outlet object with all outlet info  
       outlet: userProfile.outlet ? {
         id: userProfile.outlet.id,
@@ -85,10 +69,6 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         isActive: userProfile.outlet.isActive,
         isDefault: userProfile.outlet.isDefault,
         createdAt: userProfile.outlet.createdAt,
-        merchant: userProfile.outlet.merchant ? {
-          id: userProfile.outlet.merchant.id,
-          name: userProfile.outlet.merchant.name,
-        } : undefined,
       } : undefined,
     };
 
@@ -98,11 +78,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
       firstName: userProfile.firstName,
       lastName: userProfile.lastName,
       phone: userProfile.phone,
-      merchantId: userProfile.merchant?.id,
       outletId: userProfile.outlet?.id,
-      hasMerchant: !!userProfile.merchant,
       hasOutlet: !!userProfile.outlet,
-      merchantName: userProfile.merchant?.name,
       outletName: userProfile.outlet?.name
     });
     
@@ -132,10 +109,21 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
 /**
  * PUT /api/users/profile
  * Update current user's profile
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
-  const { user, userScope } = context;
+  const { user } = context;
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
 
     const body = await request.json();
     
@@ -159,37 +147,18 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
       );
     }
 
-    // Validate phone uniqueness if phone is being updated
+    // Validate phone uniqueness if phone is being updated (NO merchantId - tenant DB is isolated)
     if (updateData.phone) {
-      // Get the current user's merchant ID from database
-      const currentUser = await db.users.findById(user.id);
-
-      // Build the where clause for phone uniqueness check
-      const whereClause: any = {
-        phone: updateData.phone,
-        id: { not: user.id }, // Exclude current user
-      };
-
-      // For admin users (merchantId is null), check globally
-      // For other users, check within their merchant
-      if (currentUser?.merchantId) {
-        whereClause.merchantId = currentUser.merchantId;
-      } else if (currentUser?.role === 'ADMIN') {
-        // Admin users can have unique phone numbers globally
-        // No additional filter needed
-      } else {
-        // For users without merchant, check globally
-        whereClause.merchantId = null;
-      }
-
-      const existingUserWithPhone = await db.users.findFirst(whereClause);
+      const existingUserWithPhone = await db.user.findFirst({
+        where: {
+          phone: updateData.phone,
+          id: { not: user.id } // Exclude current user
+        }
+      });
 
       if (existingUserWithPhone) {
-        const scopeMessage = currentUser?.role === 'ADMIN' 
-          ? 'globally' 
-          : 'in your organization';
         return NextResponse.json(
-          ResponseBuilder.error('PHONE_ALREADY_EXISTS', `Phone number already exists ${scopeMessage}`),
+          ResponseBuilder.error('PHONE_ALREADY_EXISTS', 'Phone number already exists in your organization'),
           { status: 400 }
         );
       }
@@ -200,11 +169,14 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
     console.log('🔄 Updating user profile:', {
       userId: user.id,
       updateData,
-      userRole: user.role,
-      merchantId: user.merchant?.id
+      userRole: user.role
     });
 
-    const updatedUser = await db.users.update(user.id, updateData);
+    const updatedUser = await db.user.update({
+      where: { id: user.id },
+      data: updateData,
+      include: { outlet: true }
+    });
 
     console.log('✅ Profile updated successfully:', {
       userId: updatedUser.id,
@@ -217,13 +189,7 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
     const transformedUser = {
       ...updatedUser,
       // Direct IDs for quick access
-      merchantId: updatedUser.merchant?.id,
       outletId: updatedUser.outlet?.id,
-      // Complete merchant object with all business info
-      merchant: updatedUser.merchant ? {
-        id: updatedUser.merchant.id,
-        name: updatedUser.merchant.name,
-      } : undefined,
       // Complete outlet object with all outlet info  
       outlet: updatedUser.outlet ? {
         id: updatedUser.outlet.id,

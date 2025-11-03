@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Simple in-memory storage (in production, use database)
 let billingConfig = {
   intervals: [
@@ -14,10 +17,9 @@ let billingConfig = {
 
 export async function GET() {
   try {
-    return NextResponse.json({
-      success: true,
-      data: billingConfig
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('BILLING_CONFIG_FETCH_SUCCESS', billingConfig)
+    );
   } catch (error) {
     return NextResponse.json(
       ResponseBuilder.error('FETCH_BILLING_FAILED'),

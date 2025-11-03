@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+/**
+ * GET /api/payments
+ * Get payments list
+ * MULTI-TENANT: Uses subdomain-based tenant DB
+ */
 export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
 
     // Get search parameters
     const { searchParams } = new URL(request.url);
@@ -22,8 +40,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
       where.OR = [
         { description: { contains: search } },
         { invoiceNumber: { contains: search } },
-        { transactionId: { contains: search } },
-        { merchant: { name: { contains: search } } }
+        { transactionId: { contains: search } }
       ];
     }
 
@@ -35,60 +52,48 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
       where.method = method.toUpperCase();
     }
 
-    // Fetch all payments using simplified database API
-    const result = await db.payments.search({
-      ...where,
-      page: Math.floor(offset / limit) + 1,
-      limit
-    });
-    
-    const payments = result.data;
-    const total = result.total;
+    // Fetch all payments using Prisma
+    const [payments, total] = await Promise.all([
+      db.payment.findMany({
+        where,
+        include: {
+          order: {
+            include: {
+              customer: true,
+              outlet: true
+            }
+          },
+          subscription: true
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset
+      }),
+      db.payment.count({ where })
+    ]);
 
-    // Get merchant and subscription data for payments
-    const merchantIds = [...new Set(payments.map(p => p.merchantId).filter(Boolean))];
-    const subscriptionIds = [...new Set(payments.map(p => p.subscriptionId).filter(Boolean))];
-    
-    // Fetch merchant data
-    const merchants = merchantIds.length > 0 
-      ? await Promise.all(merchantIds.map(id => id ? db.merchants.findById(id) : null))
-      : [];
-    const merchantMap = merchants.reduce((acc, merchant) => {
-      if (merchant) acc[merchant.id] = merchant;
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Fetch subscription data with plans
-    const subscriptions = subscriptionIds.length > 0
-      ? await Promise.all(subscriptionIds.map(id => id ? db.subscriptions.findById(id) : null))
-      : [];
-    const subscriptionMap = subscriptions.reduce((acc, sub) => {
-      if (sub) acc[sub.id] = sub;
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Transform data for frontend with real data
-    const transformedPayments = payments.map(payment => {
-      const merchant = payment.merchantId ? merchantMap[payment.merchantId] : null;
-      const subscription = payment.subscriptionId ? subscriptionMap[payment.subscriptionId] : null;
-      
-      return {
-        id: payment.id,
-        merchantId: payment.merchantId || 0,
-        merchantName: merchant?.name || 'Unknown Merchant',
-        planName: subscription?.planName || 'Manual Payment',
-        amount: payment.amount,
-        currency: payment.currency || 'USD',
-        status: payment.status?.toLowerCase() || 'pending',
-        paymentMethod: payment.method?.toLowerCase() || 'unknown',
-        invoiceNumber: payment.invoiceNumber || payment.reference || `PAY-${payment.id}`,
-        description: payment.description || payment.notes || 'Payment',
-        transactionId: payment.transactionId || payment.reference || `txn_${payment.id}`,
-        createdAt: payment.createdAt?.toISOString(),
-        processedAt: payment.processedAt?.toISOString(),
-        failureReason: payment.failureReason
-      };
-    });
+    // Transform data for frontend
+    const transformedPayments = payments.map(payment => ({
+      id: payment.id,
+      orderId: payment.orderId,
+      subscriptionId: payment.subscriptionId,
+      planName: payment.subscription ? 'Subscription Payment' : (payment.orderId ? 'Order Payment' : 'Manual Payment'),
+      amount: payment.amount,
+      currency: payment.currency || 'USD',
+      status: payment.status?.toLowerCase() || 'pending',
+      paymentMethod: payment.method?.toLowerCase() || 'unknown',
+      invoiceNumber: payment.invoiceNumber || payment.reference || `PAY-${payment.id}`,
+      description: payment.description || payment.notes || 'Payment',
+      transactionId: payment.transactionId || payment.reference || `txn_${payment.id}`,
+      createdAt: payment.createdAt?.toISOString(),
+      processedAt: payment.processedAt?.toISOString(),
+      failureReason: payment.failureReason,
+      order: payment.order ? {
+        orderNumber: payment.order.orderNumber,
+        customerName: payment.order.customer ? `${payment.order.customer.firstName} ${payment.order.customer.lastName}` : null,
+        outletName: payment.order.outlet.name
+      } : null
+    }));
 
     return NextResponse.json({
       success: true,

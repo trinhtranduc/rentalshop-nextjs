@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/analytics/dashboard - Get dashboard analytics
- * REFACTORED: Now uses unified withAuthRoles pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user }) => {
   console.log(`📊 GET /api/analytics/dashboard - User: ${user.email}`);
   
   try {
-    const { searchParams } = new URL(request.url);
-    const period = searchParams.get('period') || 'today'; // Get period from query params
+    const result = await getTenantDbFromRequest(request);
     
-    // Build where clause based on user role and scope
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || 'today';
+    
+    // Build where clause - NO merchantId needed, DB is isolated
     const orderWhereClause: any = {
       status: { in: ['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED'] }
     };
@@ -32,83 +45,21 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       };
     }
     
+    // Outlet filtering for outlet-level users
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.outletId) {
+        orderWhereClause.outletId = user.outletId;
+      }
+    }
+    
     const paymentWhereClause: any = {
       status: 'COMPLETED'
     };
-
-    // Apply role-based filtering
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
-      // Find merchant by id to get outlets
-      const merchant = await db.merchants.findById(userScope.merchantId);
-      console.log('🔍 Merchant found:', {
-        merchantId: userScope.merchantId,
-        merchant: merchant ? { id: merchant.id, name: merchant.name } : null,
-        outlets: merchant?.outlets || [],
-        outletsLength: merchant?.outlets?.length || 0
-      });
-      
-      if (merchant && merchant.outlets && merchant.outlets.length > 0) {
-        const outletIds = merchant.outlets.map(outlet => outlet.id);
-        orderWhereClause.outletId = { in: outletIds };
-        paymentWhereClause.order = { outletId: { in: outletIds } };
-        console.log('✅ Applied outlet filter:', { outletIds });
-      } else {
-        console.log('❌ No outlets found for merchant, returning empty data');
-        return NextResponse.json({
-          success: true,
-          data: {
-            totalOrders: 0,
-            totalRevenue: 0,
-            activeRentals: 0,
-            recentOrders: [],
-            reservedOrders: 0,
-            pickupOrders: 0,
-            completedOrders: 0,
-            cancelledOrders: 0,
-            returnedOrders: 0
-          },
-          code: 'NO_OUTLETS_FOUND',
-        message: 'No outlets found for merchant'
-        });
+    
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.outletId) {
+        paymentWhereClause.order = { outletId: user.outletId };
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
-      // Find outlet by id to get CUID
-      const outlet = await db.outlets.findById(userScope.outletId );
-      if (outlet) {
-        orderWhereClause.outletId = outlet.id;
-        paymentWhereClause.order = { outletId: outlet.id };
-      }
-    } else if (user.role === 'ADMIN') {
-      // ADMIN users see all data (system-wide access)
-      // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-    } else {
-      // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-      return NextResponse.json({
-        success: true,
-        data: {
-          totalOrders: 0,
-          totalRevenue: 0,
-          activeRentals: 0,
-          recentOrders: [],
-          reservedOrders: 0,
-          pickupOrders: 0,
-          completedOrders: 0,
-          cancelledOrders: 0,
-          returnedOrders: 0
-        },
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
     }
 
     console.log('🔍 Dashboard filters:', { orderWhereClause, paymentWhereClause });
@@ -126,10 +77,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       returnedOrders
     ] = await Promise.all([
       // Total orders count
-      db.orders.getStats(orderWhereClause),
+      db.order.count({ where: orderWhereClause }),
       
       // Total revenue based on order status and type
-      db.orders.search({
+      db.order.findMany({
         where: orderWhereClause,
         select: {
           id: true,
@@ -142,21 +93,23 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           pickedUpAt: true,
           returnedAt: true
         }
-      }).then(result => result.data),
+      }),
       
       // Pickup orders count
-      db.orders.getStats({ 
-        ...orderWhereClause, 
-        status: 'PICKUPED' 
+      db.order.count({ 
+        where: {
+          ...orderWhereClause, 
+          status: 'PICKUPED' 
+        }
       }),
       
       // Today's orders (orders created today)
-      db.orders.search({
+      db.order.findMany({
         where: {
           ...orderWhereClause,
           createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)), // Start of today
-            lte: new Date(new Date().setHours(23, 59, 59, 999)) // End of today
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lte: new Date(new Date().setHours(23, 59, 59, 999))
           }
         },
         include: {
@@ -169,36 +122,46 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           }
         },
         orderBy: { createdAt: 'desc' }
-      }).then(result => result.data),
+      }),
       
       // Reserved orders count
-      db.orders.getStats({
-        ...orderWhereClause,
-        status: 'RESERVED'
+      db.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'RESERVED'
+        }
       }),
       
       // Pickup orders count (duplicate - already above)
-      db.orders.getStats({
-        ...orderWhereClause,
-        status: 'PICKUPED'
+      db.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'PICKUPED'
+        }
       }),
       
       // Completed orders count
-      db.orders.getStats({
-        ...orderWhereClause,
-        status: 'COMPLETED'
+      db.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'COMPLETED'
+        }
       }),
       
       // Cancelled orders count
-      db.orders.getStats({
-        ...orderWhereClause,
-        status: 'CANCELLED'
+      db.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'CANCELLED'
+        }
       }),
       
       // Returned orders count
-      db.orders.getStats({
-        ...orderWhereClause,
-        status: 'RETURNED'
+      db.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'RETURNED'
+        }
       })
     ]);
 
@@ -261,7 +224,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         createdAt: order.createdAt,
         pickupPlanAt: order.pickupPlanAt,
         returnPlanAt: order.returnPlanAt,
-        productNames: (order as any).orderItems?.map((item: any) => item.product?.name).filter(Boolean).join(', ') || 'N/A'
+        productNames: order.orderItems?.map((item: any) => item.product?.name).filter(Boolean).join(', ') || 'N/A'
       }))
     };
 
@@ -274,7 +237,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
     }
-    return new NextResponse(dataString, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    
+    return new NextResponse(dataString, { 
+      status: API.STATUS.OK, 
+      headers: { 
+        'Content-Type': 'application/json', 
+        ETag: etag, 
+        'Cache-Control': 'private, max-age=60' 
+      } 
+    });
 
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
@@ -284,5 +255,3 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json(response, { status: statusCode });
   }
 });
-
-export const runtime = 'nodejs';

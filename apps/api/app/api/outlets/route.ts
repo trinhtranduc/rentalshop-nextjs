@@ -1,18 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/outlets
  * Get outlets with filtering and pagination
- * REFACTORED: Now uses unified withAuth pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user }) => {
   console.log(`🔍 GET /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+    
     const { searchParams } = new URL(request.url);
     console.log('Search params:', Object.fromEntries(searchParams.entries()));
     
@@ -26,7 +40,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     }
 
     const { 
-      merchantId: queryMerchantId,
+      merchantId: queryMerchantId, // Ignore in multi-tenant
       isActive,
       q,
       search,
@@ -41,47 +55,56 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const searchQuery = q || search;
 
     console.log('Parsed filters:', { 
-      queryMerchantId, isActive, searchQuery, sortBy, sortOrder, page, limit, offset
+      isActive, searchQuery, sortBy, sortOrder, page, limit, offset
     });
     
-    // Use simplified database API with userScope and role-based filtering
-    const searchFilters = {
-      // Role-based merchant filtering
-      merchantId: user.role === 'ADMIN' 
-        ? (queryMerchantId || undefined)  // Admin can see any merchant's outlets
-        : userScope.merchantId,           // Others restricted to their merchant
-      
-      // Outlet-level users can only see their own outlet
-      outletId: (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') 
-        ? userScope.outletId 
-        : undefined,
-        
-      isActive: isActive === 'all' ? undefined : (isActive !== undefined ? Boolean(isActive) : true),
-      search: searchQuery || undefined, // Search by outlet name
-      sortBy: sortBy || 'name',
-      sortOrder: sortOrder || 'asc',
-      page: page || 1,
-      limit: limit || 20,
-      offset: offset
-    };
-
-    console.log('🔍 Using simplified db.outlets.search with filters:', searchFilters);
+    // Build where clause - NO merchantId needed
+    const where: any = {};
     
-    const result = await db.outlets.search(searchFilters);
-    console.log('✅ Search completed, found:', result.data?.length || 0, 'outlets');
+    // Outlet-level users can only see their own outlet
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      where.id = user.outletId;
+    }
+    
+    if (isActive !== 'all' && isActive !== undefined) {
+      where.isActive = Boolean(isActive);
+    } else {
+      where.isActive = true; // Default to active
+    }
+    
+    if (searchQuery) {
+      where.name = { contains: searchQuery, mode: 'insensitive' };
+    }
+
+    const pageNum = page || 1;
+    const limitNum = limit || 20;
+    const skip = offset || (pageNum - 1) * limitNum;
+    
+    console.log('🔍 Using Prisma with where clause:', where);
+    
+    const [outlets, total] = await Promise.all([
+      db.outlet.findMany({
+        where,
+        orderBy: { [sortBy || 'name']: sortOrder || 'asc' },
+        take: limitNum,
+        skip
+      }),
+      db.outlet.count({ where })
+    ]);
+    console.log('✅ Search completed, found:', outlets.length, 'outlets');
 
     return NextResponse.json({
       success: true,
       data: {
-        outlets: result.data || [],
-        total: result.total || 0,
-        page: result.page || 1,
-        limit: result.limit || 20,
-        hasMore: result.hasMore || false,
-        totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
+        outlets: outlets,
+        total: total,
+        page: pageNum,
+        limit: limitNum,
+        hasMore: skip + limitNum < total,
+        totalPages: Math.ceil(total / limitNum)
       },
       code: "OUTLETS_FOUND",
-      message: `Found ${result.total || 0} outlets`
+      message: `Found ${total} outlets`
     });
 
   } catch (error) {
@@ -95,13 +118,24 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
 /**
  * POST /api/outlets
- * Create a new outlet using simplified database API
- * REFACTORED: Now uses unified withAuth pattern
+ * Create a new outlet
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user }) => {
   console.log(`🔍 POST /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+    
     const body = await request.json();
     const parsed = outletCreateSchema.safeParse(body);
     if (!parsed.success) {
@@ -113,35 +147,12 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
       }, { status: 400 });
     }
 
-    // Get merchantId from userScope or from request body
-    let merchantId = userScope.merchantId;
-    
-    // If user is ADMIN and no merchantId in scope, allow them to specify merchantId in request
-    if (!merchantId && user.role === 'ADMIN' && body.merchantId) {
-      merchantId = body.merchantId;
-    }
-    
-    console.log('🔍 User scope debug:', {
-      userRole: user.role,
-      userScope,
-      requestMerchantId: body.merchantId,
-      resolvedMerchantId: merchantId,
-      hasMerchantId: !!merchantId
-    });
-
-    if (!merchantId) {
-      console.log('❌ No merchantId available for user:', user.email);
-      return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_ID_REQUIRED'),
-        { status: 400 }
-      );
-    }
-
-    // Check for duplicate outlet name within the same merchant
-    const existingOutlet = await db.outlets.findFirst({
-      name: parsed.data.name,
-      merchantId: merchantId,
-      isActive: true
+    // Check for duplicate outlet name (NO merchantId needed)
+    const existingOutlet = await db.outlet.findFirst({
+      where: {
+        name: parsed.data.name,
+        isActive: true
+      }
     });
 
     if (existingOutlet) {
@@ -156,40 +167,19 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
       );
     }
 
-    // Check plan limits before creating outlet
-    try {
-      await assertPlanLimit(merchantId, 'outlets');
-      console.log('✅ Plan limit check passed for outlets');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for outlets:', error.message);
-      return NextResponse.json(
-        { 
-          success: false, 
-          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for outlets',
-          error: 'PLAN_LIMIT_EXCEEDED'
-        },
-        { status: 403 }
-      );
-    }
-
-    // Create outlet with proper relations
-    const outletData = {
-      merchant: { connect: { id: merchantId } },
-      name: parsed.data.name,
-      address: parsed.data.address,
-      city: parsed.data.city,
-      state: parsed.data.state,
-      zipCode: parsed.data.zipCode,
-      country: parsed.data.country,
-      phone: parsed.data.phone,
-      status: parsed.data.status || 'ACTIVE',
-      description: parsed.data.description
-    };
-
-    console.log('🔍 Creating outlet with data:', outletData);
-    
-    // Use simplified database API
-    const outlet = await db.outlets.create(outletData);
+    // Create outlet (NO merchantId needed)
+    const outlet = await db.outlet.create({
+      data: {
+        name: parsed.data.name,
+        address: parsed.data.address,
+        city: parsed.data.city,
+        state: parsed.data.state,
+        zipCode: parsed.data.zipCode,
+        country: parsed.data.country,
+        phone: parsed.data.phone,
+        description: parsed.data.description
+      } as any
+    });
     console.log('✅ Outlet created successfully:', outlet);
 
     return NextResponse.json(
@@ -216,13 +206,24 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
 
 /**
  * PUT /api/outlets?id={id}
- * Update an outlet using simplified database API  
- * REFACTORED: Now uses unified withAuth pattern
+ * Update an outlet
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user }) => {
   console.log(`🔍 PUT /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+    
     const body = await request.json();
     const parsed = outletUpdateSchema.safeParse(body);
     if (!parsed.success) {
@@ -243,20 +244,14 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
       );
     }
 
-    // Get existing outlet to check permissions
-    const existingOutlet = await db.outlets.findById(id);
+    // Get existing outlet
+    const existingOutlet = await db.outlet.findUnique({
+      where: { id }
+    });
     if (!existingOutlet) {
       return NextResponse.json(
         ResponseBuilder.error('OUTLET_NOT_FOUND'),
         { status: 404 }
-      );
-    }
-
-    // Check if user can access this outlet
-    if (user.role !== 'ADMIN' && existingOutlet.merchantId !== userScope.merchantId) {
-      return NextResponse.json(
-        ResponseBuilder.error('FORBIDDEN'),
-        { status: 403 }
       );
     }
 
@@ -268,13 +263,14 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
       );
     }
 
-    // Check for duplicate outlet name if name is being updated
+    // Check for duplicate outlet name if name is being updated (NO merchantId)
     if (parsed.data.name && parsed.data.name !== existingOutlet.name) {
-      const duplicateOutlet = await db.outlets.findFirst({
-        name: parsed.data.name,
-        merchantId: existingOutlet.merchantId,
-        isActive: true,
-        id: { not: id }
+      const duplicateOutlet = await db.outlet.findFirst({
+        where: {
+          name: parsed.data.name,
+          isActive: true,
+          id: { not: id }
+        }
       });
 
       if (duplicateOutlet) {
@@ -299,8 +295,11 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
 
     console.log('🔍 Updating outlet with data:', { id, ...updateData });
     
-    // Use simplified database API
-    const updatedOutlet = await db.outlets.update(id, updateData);
+    // Update outlet using Prisma
+    const updatedOutlet = await db.outlet.update({
+      where: { id },
+      data: updateData as any
+    });
     console.log('✅ Outlet updated successfully:', updatedOutlet);
 
     return NextResponse.json(
@@ -328,12 +327,23 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
 /**
  * DELETE /api/outlets?id={id}
  * Delete an outlet (soft delete)
- * REFACTORED: Now uses unified withAuth pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user }) => {
   console.log(`🔍 DELETE /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+    
     // Extract id from query params
     const { searchParams } = new URL(request.url);
     const id = parseInt(searchParams.get('id') || searchParams.get('outletId') || '0');
@@ -345,20 +355,14 @@ export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { use
       );
     }
 
-    // Get existing outlet to check permissions
-    const existingOutlet = await db.outlets.findById(id);
+    // Get existing outlet
+    const existingOutlet = await db.outlet.findUnique({
+      where: { id }
+    });
     if (!existingOutlet) {
       return NextResponse.json(
         ResponseBuilder.error('OUTLET_NOT_FOUND'),
         { status: 404 }
-      );
-    }
-
-    // Check if user can access this outlet
-    if (user.role !== 'ADMIN' && existingOutlet.merchant.id !== userScope.merchantId) {
-      return NextResponse.json(
-        ResponseBuilder.error('FORBIDDEN'),
-        { status: 403 }
       );
     }
 
@@ -378,7 +382,10 @@ export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { use
     console.log('🔍 Soft deleting outlet:', id);
     
     // Soft delete by setting isActive to false
-    const deletedOutlet = await db.outlets.update(id, { isActive: false });
+    const deletedOutlet = await db.outlet.update({
+      where: { id },
+      data: { isActive: false }
+    });
     console.log('✅ Outlet soft deleted successfully:', deletedOutlet);
 
     return NextResponse.json(

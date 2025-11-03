@@ -1,50 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { categoriesQuerySchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/categories
  * Get categories with filtering and pagination
- * REFACTORED: Now uses validation schema and db.categories.search()
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAuthRoles()(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAuthRoles()(async (request: NextRequest, { user }) => {
   console.log(`🔍 GET /api/categories - User: ${user.email} (${user.role})`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     const { searchParams } = new URL(request.url);
     const hasSearchParams = searchParams.toString().length > 0;
     console.log('Search params:', Object.fromEntries(searchParams.entries()), 'Has params:', hasSearchParams);
-    
-    // Determine merchantId based on role
-    let filterMerchantId: number | undefined;
-    
-    if (user.role === 'ADMIN') {
-      // Admin can see any merchant's categories or all categories
-      filterMerchantId = undefined;
-    } else if (user.role === 'MERCHANT' || user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
-      // Non-admin users restricted to their merchant
-      filterMerchantId = userScope.merchantId;
-      
-      // For outlet users, get merchant from outlet
-      if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId && !filterMerchantId) {
-        const outlet = await db.outlets.findById(userScope.outletId);
-        if (outlet) {
-          filterMerchantId = outlet.merchantId;
-        }
-      }
-    }
     
     // SIMPLE LIST MODE: No search params → Return simple array for dropdowns
     if (!hasSearchParams) {
       console.log('🔍 Simple list mode - returning array for dropdowns');
       
-      const where: any = { isActive: true };
-      if (filterMerchantId) where.merchantId = filterMerchantId;
-      
-      const categories = await db.categories.findMany({
-        where,
+      const categories = await db.category.findMany({
+        where: { isActive: true },
         orderBy: { name: 'asc' }
       });
 
@@ -69,7 +61,7 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
     const { 
       q, 
       search, 
-      merchantId: queryMerchantId,
+      merchantId: queryMerchantId, // Ignore in multi-tenant
       isActive,
       sortBy,
       sortOrder,
@@ -78,44 +70,49 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
     } = parsed.data;
 
     console.log('Parsed filters:', { 
-      q, search, queryMerchantId, isActive, sortBy, sortOrder, page, limit
+      q, search, isActive, sortBy, sortOrder, page, limit
     });
 
-    // Override merchantId from query if admin
-    if (user.role === 'ADMIN' && queryMerchantId) {
-      filterMerchantId = queryMerchantId;
+    // Build where clause
+    const where: any = {};
+    if (isActive !== 'all' && isActive !== undefined) {
+      where.isActive = Boolean(isActive);
+    } else if (isActive === undefined) {
+      where.isActive = true;
+    }
+    
+    const searchQuery = q || search;
+    if (searchQuery) {
+      where.name = { contains: searchQuery, mode: 'insensitive' };
     }
 
-    console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'for user role:', user.role);
+    const pageNum = page || 1;
+    const limitNum = limit || 25;
+    const skip = (pageNum - 1) * limitNum;
 
-    // Build search filters with role-based access control
-    const searchFilters = {
-      merchantId: filterMerchantId,
-      isActive: isActive === 'all' ? undefined : (isActive !== undefined ? Boolean(isActive) : true),
-      q: q || search, // Pass q parameter to database search
-      sortBy: sortBy || 'name',
-      sortOrder: sortOrder || 'asc',
-      page: page || 1,
-      limit: limit || 25
-    };
-
-    console.log('🔍 Using db.categories.search with filters:', searchFilters);
-    
-    const result = await db.categories.search(searchFilters);
-    console.log('✅ Search completed, found:', result.total || 0, 'categories');
+    const [categories, total] = await Promise.all([
+      db.category.findMany({
+        where,
+        orderBy: { [sortBy || 'name']: sortOrder || 'asc' },
+        take: limitNum,
+        skip
+      }),
+      db.category.count({ where })
+    ]);
+    console.log('✅ Search completed, found:', total, 'categories');
 
     return NextResponse.json({
       success: true,
       data: {
-        categories: result.data || [],
-        total: result.total || 0,
-        page: result.page || 1,
-        limit: result.limit || 25,
-        hasMore: result.hasMore || false,
-        totalPages: Math.ceil((result.total || 0) / (result.limit || 25))
+        categories: categories,
+        total: total,
+        page: pageNum,
+        limit: limitNum,
+        hasMore: skip + limitNum < total,
+        totalPages: Math.ceil(total / limitNum)
       },
       code: "CATEGORIES_FOUND",
-      message: `Found ${result.total || 0} categories`
+      message: `Found ${total} categories`
     });
 
   } catch (error) {
@@ -130,29 +127,30 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
 /**
  * POST /api/categories
  * Create a new category
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user }) => {
   console.log('🚀 POST /api/categories - Starting category creation...');
   
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     console.log('👤 User verification result: Success');
 
     console.log('👤 User details:', {
       id: user.id,
       email: user.email,
-      role: user.role,
-      merchantId: user.merchantId,
-      outletId: user.outletId
+      role: user.role
     });
-
-    // Check if user can manage categories
-    if (!userScope.merchantId) {
-      console.log('❌ User has no merchantId - merchant access required');
-      return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_ACCESS_REQUIRED'),
-        { status: API.STATUS.FORBIDDEN }
-      );
-    }
 
     const body = await request.json();
     console.log('📝 Request body received:', body);
@@ -170,13 +168,14 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
 
     console.log('✅ Validation passed - proceeding with category creation');
 
-    // Check if category name already exists for this merchant
-    console.log('🔍 Checking for existing category with name:', name.trim(), 'for merchant:', userScope.merchantId);
+    // Check if category name already exists (NO merchantId needed)
+    console.log('🔍 Checking for existing category with name:', name.trim());
     
-    const existingCategory = await db.categories.findFirst({
-      name: name.trim(),
-      merchantId: userScope.merchantId,
-      isActive: true
+    const existingCategory = await db.category.findFirst({
+      where: {
+        name: name.trim(),
+        isActive: true
+      }
     });
 
     if (existingCategory) {
@@ -190,10 +189,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
     console.log('✅ No duplicate category found - proceeding to create category');
 
     // Create category with proper data handling
-    // Note: ID will be auto-generated by Prisma @default(autoincrement())
     const categoryData: any = {
       name: name.trim(),
-      merchantId: userScope.merchantId,
       isActive: true
     };
 
@@ -204,26 +201,15 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextReq
 
     console.log('💾 Creating category in database with data:', categoryData);
 
-    const category = await db.categories.create(categoryData);
+    const category = await db.category.create({
+      data: categoryData
+    });
 
     console.log('✅ Category created successfully in database:', category);
-
-    // Transform response: internal id → public id as "id"
-    const transformedCategory = {
-      id: category.id,                    // Return id as "id" to frontend
-      name: category.name,
-      description: category.description,
-      isActive: category.isActive,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt
-      // DO NOT include category.id (internal CUID)
-    };
-
-    console.log('🔄 Transformed category response:', transformedCategory);
     console.log('🎉 Category creation completed successfully!');
 
     return NextResponse.json(
-      ResponseBuilder.success('CATEGORY_CREATED_SUCCESS', transformedCategory),
+      ResponseBuilder.success('CATEGORY_CREATED_SUCCESS', category),
       { status: 201 }
     );
 
