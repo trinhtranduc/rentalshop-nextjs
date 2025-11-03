@@ -1,19 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/audit-logs/[id]
  * Get audit log by ID
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+
       const { id } = params;
       console.log('🔍 GET /api/audit-logs/[id] - Looking for audit log with ID:', id);
 
@@ -27,8 +41,28 @@ export async function GET(
 
       const auditLogId = parseInt(id);
       
-      // Get audit log using the simplified database API
-      const auditLog = await db.auditLogs.findFirst({ id: auditLogId });
+      // Build where clause
+      const where: any = { id: auditLogId };
+      
+      // User filtering for outlet-level users (AuditLog doesn't have outletId)
+      if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+        where.userId = user.id;
+      }
+      
+      // Get audit log
+      const auditLog = await db.auditLog.findFirst({
+        where,
+        include: {
+          user: {
+            select: {
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true
+            }
+          }
+        }
+      });
 
       if (!auditLog) {
         console.log('❌ Audit log not found in database for auditLogId:', auditLogId);
@@ -40,12 +74,9 @@ export async function GET(
 
       console.log('✅ Audit log found:', auditLog);
 
-      return NextResponse.json({
-        success: true,
-        data: auditLog,
-        code: 'AUDIT_LOG_RETRIEVED_SUCCESS',
-        message: 'Audit log retrieved successfully'
-      });
+      return NextResponse.json(
+        ResponseBuilder.success('AUDIT_LOG_RETRIEVED_SUCCESS', auditLog)
+      );
 
     } catch (error) {
       console.error('❌ Error fetching audit log:', error);

@@ -1,20 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/subscriptions/expired
  * Get expired subscriptions
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function GET(request: NextRequest) {
-  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  return withManagementAuth(async (request, { user }) => {
     try {
-      // TODO: Implement expired subscriptions functionality
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+
+      const now = new Date();
+
+      // Get expired subscriptions (past period end date)
+      const expiredSubscriptions = await db.subscription.findMany({
+        where: {
+          currentPeriodEnd: {
+            lt: now
+          },
+          status: {
+            not: 'CANCELLED'
+          }
+        },
+        include: {
+          payments: {
+            take: 5,
+            orderBy: { createdAt: 'desc' }
+          }
+        },
+        orderBy: { currentPeriodEnd: 'desc' }
+      });
+
       return NextResponse.json(
-        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
-        { status: 501 }
+        ResponseBuilder.success('EXPIRED_SUBSCRIPTIONS_FETCH_SUCCESS', {
+          data: expiredSubscriptions,
+          total: expiredSubscriptions.length
+        })
       );
     } catch (error) {
       console.error('Error fetching expired subscriptions:', error);

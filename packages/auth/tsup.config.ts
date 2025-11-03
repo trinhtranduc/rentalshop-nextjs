@@ -8,7 +8,7 @@ export default defineConfig({
     admin: 'src/admin/index.ts'
   },
   format: ['esm', 'cjs'],
-  dts: true,
+  dts: false, // Disabled for multi-tenant - auth has complex type issues with merchant references
   external: [
     '@rentalshop/ui',
     '@rentalshop/database',

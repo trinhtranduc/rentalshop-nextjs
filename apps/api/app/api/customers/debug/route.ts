@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('Raw request body:', JSON.stringify(body, null, 2));
     
-    // Check for missing required fields
-    const requiredFields = ['firstName', 'lastName', 'phone', 'merchantId'];
+    // Check for missing required fields (NO merchantId)
+    const requiredFields = ['firstName', 'lastName', 'phone'];
     const missingFields = requiredFields.filter(field => !body[field]);
     
     if (missingFields.length > 0) {
@@ -61,11 +61,6 @@ export async function POST(request: NextRequest) {
             type: typeof body.phone,
             length: body.phone?.length,
             isValidFormat: /^[0-9+\-\s()]+$/.test(body.phone || '')
-          },
-          merchantId: {
-            value: body.merchantId,
-            type: typeof body.merchantId,
-            length: body.merchantId?.length
           }
         }
       }, { status: 400 });
@@ -81,8 +76,7 @@ export async function POST(request: NextRequest) {
         firstName: { value: parsedBody.data.firstName, type: typeof parsedBody.data.firstName },
         lastName: { value: parsedBody.data.lastName, type: typeof parsedBody.data.lastName },
         email: { value: parsedBody.data.email, type: typeof parsedBody.data.email },
-        phone: { value: parsedBody.data.phone, type: typeof parsedBody.data.phone },
-        merchantId: { value: parsedBody.data.merchantId, type: typeof parsedBody.data.merchantId }
+        phone: { value: parsedBody.data.phone, type: typeof parsedBody.data.phone }
       }
     });
     

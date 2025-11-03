@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, getTenantDbFromRequest } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * GET /api/products
  * Get products with filtering and pagination using simplified database API
- * REFACTORED: Now uses unified withAuth pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withManagementAuth(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user }) => {
   console.log(`🔍 GET /api/products - User: ${user.email} (${user.role})`);
   
   try {
@@ -20,6 +22,17 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     if (rateLimitResult) {
       return rateLimitResult;
     }
+
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
 
     const { searchParams } = new URL(request.url);
     console.log('Search params:', Object.fromEntries(searchParams.entries()));
@@ -38,7 +51,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
       limit,
       q, 
       search, 
-      merchantId: queryMerchantId,
+      merchantId: queryMerchantId, // Ignore in multi-tenant
       categoryId, 
       outletId: queryOutletId,
       available,
@@ -49,54 +62,97 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     } = parsed.data;
 
     console.log('Parsed filters:', { 
-      page, limit, q, search, queryMerchantId, categoryId, queryOutletId, 
+      page, limit, q, search, categoryId, queryOutletId, 
       available, minPrice, maxPrice, sortBy, sortOrder 
     });
     
-    // Role-based merchant filtering:
-    // - ADMIN role: Can see products from all merchants (unless queryMerchantId is specified)
-    // - MERCHANT role: Can only see products from their own merchant
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their merchant
-    let filterMerchantId = userScope.merchantId;
-    if (user.role === 'ADMIN') {
-      // Admins can see all merchants unless specifically filtering by merchant
-      filterMerchantId = queryMerchantId || userScope.merchantId;
-    }
-
-    // Role-based outlet filtering:
-    // - MERCHANT role: Can see products from all outlets of their merchant (unless queryOutletId is specified)
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their assigned outlet
-    let filterOutletId = userScope.outletId;
-    if (user.role === 'MERCHANT') {
-      // Merchants can see all outlets unless specifically filtering by outlet
-      filterOutletId = queryOutletId || userScope.outletId;
-    } else if (user.role === 'ADMIN') {
-      // Admins can see all products (no outlet filtering unless specified)
-      filterOutletId = queryOutletId;
-    }
-
-    // Use simplified database API with role-based filtering
-    const searchFilters = {
-      merchantId: filterMerchantId,
-      outletId: filterOutletId,
-      categoryId,
-      search: q || search,
-      available,
-      minPrice,
-      maxPrice,
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
-      page: page || 1,
-      limit: limit || 20
+    // Build where clause - NO merchantId needed
+    const where: any = {
+      isActive: true // Default to active products
     };
-
-    console.log('🔍 Using simplified db.products.search with filters:', searchFilters);
     
-    const result = await db.products.search(searchFilters);
-    console.log('✅ Search completed, found:', result.data?.length || 0, 'products');
+    // Outlet filtering - use outletStock relationship
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      where.outletStock = {
+        some: {
+          outletId: user.outletId
+        }
+      };
+    } else if (queryOutletId && user.role === 'MERCHANT') {
+      where.outletStock = {
+        some: {
+          outletId: queryOutletId
+        }
+      };
+    }
+    
+    // Category filtering
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+    
+    // Price filtering
+    if (minPrice || maxPrice) {
+      where.rentPrice = {};
+      if (minPrice) where.rentPrice.gte = minPrice;
+      if (maxPrice) where.rentPrice.lte = maxPrice;
+    }
+    
+    // Available filtering - check outletStock
+    if (available !== undefined) {
+      if (available === true) {
+        where.outletStock = {
+          ...where.outletStock,
+          some: {
+            available: { gt: 0 }
+          }
+        };
+      } else {
+        where.outletStock = {
+          ...where.outletStock,
+          none: {
+            available: { gt: 0 }
+          }
+        };
+      }
+    }
+    
+    // Search functionality
+    const searchTerm = q || search;
+    if (searchTerm) {
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { barcode: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } }
+      ];
+    }
+
+    const pageNum = page || 1;
+    const limitNum = limit || 20;
+    const offset = (pageNum - 1) * limitNum;
+    
+    console.log('🔍 Using Prisma with where clause:', where);
+    
+    const [products, total] = await Promise.all([
+      db.product.findMany({
+        where,
+        include: {
+          category: true,
+          outletStock: {
+            include: { outlet: true }
+          }
+        },
+        orderBy: { [sortBy || 'createdAt']: sortOrder || 'desc' },
+        take: limitNum,
+        skip: offset
+      }),
+      db.product.count({ where })
+    ]);
+    
+    console.log('✅ Search completed, found:', products.length, 'products');
 
     // Process product images - parse from database format
-    const processedProducts = result.data?.map((product: any) => {
+    const processedProducts = products.map((product: any) => {
       let imageUrls: string[] = [];
       
       // Images are stored as JSON string in database
@@ -117,21 +173,21 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
         ...product,
         images: imageUrls
       };
-    }) || [];
+    });
 
     return NextResponse.json({
       success: true,
       data: {
         products: processedProducts,
-        total: result.total || 0,
-        page: result.page || 1,
-        limit: result.limit || 20,
-        offset: ((result.page || 1) - 1) * (result.limit || 20),
-        hasMore: result.hasMore || false,
-        totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
+        total: total,
+        page: pageNum,
+        limit: limitNum,
+        offset: offset,
+        hasMore: pageNum * limitNum < total,
+        totalPages: Math.ceil(total / limitNum)
       },
       code: "PRODUCTS_FOUND",
-      message: `Found ${result.total || 0} products`
+      message: `Found ${total} products`
     });
 
   } catch (error) {
@@ -193,13 +249,23 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  * REFACTORED: Now uses unified withAuth pattern
  * Requires active subscription
  */
-export const POST = withManagementAuth(async (request, { user, userScope }) => {
+export const POST = withManagementAuth(async (request, { user }) => {
   console.log(`🔍 POST /api/products - User: ${user.email} (${user.role})`);
   
   // Store parsed data for potential cleanup
   let uploadedImages: string[] = [];
   
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db, subdomain } = result;
     const contentType = request.headers.get('content-type') || '';
     let parsedResult: any;
     let productDataFromRequest: any = {};
@@ -302,7 +368,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
           productDataFromRequest.images = productDataFromRequest.images
             .split(',')
             .filter(Boolean)
-            .map(url => url.trim());
+            .map((url: string) => url.trim());
         }
         
         if (productDataFromRequest.images.length === 0) {
@@ -324,16 +390,12 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 
     console.log('🔍 Raw outletStock from request:', parsed.data.outletStock);
     
-    let outletStock: Array<{ outletId: number; stock: number }>;
-    let totalStock: number;
-    
-    // This will be handled after merchant is determined
-
-    // Check for duplicate product name within the same merchant
-    const existingProduct = await db.products.findFirst({
-      name: parsed.data.name,
-      merchantId: userScope.merchantId,
-      isActive: true
+    // Check for duplicate product name (no merchantId needed - DB is isolated)
+    const existingProduct = await db.product.findFirst({
+      where: {
+        name: parsed.data.name,
+        isActive: true
+      }
     });
 
     if (existingProduct) {
@@ -344,47 +406,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Determine merchantId for product creation
-    let merchantId = userScope.merchantId;
-    
-    // For ADMIN users, they need to specify merchantId in the request
-    // For other roles, use their assigned merchantId
-    if (user.role === 'ADMIN' && parsed.data.merchantId) {
-      merchantId = parsed.data.merchantId;
-    } else if (!merchantId) {
-      return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_ID_REQUIRED', user.role === 'ADMIN' 
-          ? 'MerchantId is required for ADMIN users when creating products' 
-          : 'User is not associated with any merchant'),
-        { status: 400 }
-      );
-    }
-
-    console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
-
-    // Check plan limits before creating product
-    try {
-      await assertPlanLimit(merchantId, 'products');
-      console.log('✅ Plan limit check passed for products');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for products:', error.message);
-      return NextResponse.json(
-        ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for products'),
-        { status: 403 }
-      );
-    }
-
-    // Find merchant by publicId to get CUID
-    const merchant = await db.merchants.findById(merchantId);
-
-    if (!merchant) {
-      return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_NOT_FOUND', `Merchant with ID ${merchantId} not found`),
-        { status: 404 }
-      );
-    }
-
-    // Handle outletStock after merchant is determined
+    // Handle outletStock
+    let outletStock: Array<{ outletId: number; stock: number }>;
     if (parsed.data.outletStock && Array.isArray(parsed.data.outletStock) && parsed.data.outletStock.length > 0) {
       // Use provided outletStock
       outletStock = parsed.data.outletStock.map((os: any) => ({
@@ -396,26 +419,28 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       // Auto-create outletStock from default outlet
       console.log('🔍 No outletStock provided, using default outlet');
       
-      try {
-        const { getDefaultOutlet } = await import('@rentalshop/database');
-        const defaultOutlet = await getDefaultOutlet(merchant.id);
-        
-        outletStock = [{
-          outletId: defaultOutlet.id,
-          stock: parsed.data.totalStock || 0
-        }];
-        
-        console.log('✅ Using default outlet:', defaultOutlet.name, 'with stock:', outletStock[0].stock);
-      } catch (error) {
-        console.error('❌ Error getting default outlet:', error);
+      const defaultOutlet = await db.outlet.findFirst({
+        where: {
+          isDefault: true
+        }
+      });
+      
+      if (!defaultOutlet) {
         return NextResponse.json(
-          ResponseBuilder.error('DEFAULT_OUTLET_NOT_FOUND'),
-          { status: 400 }
+          ResponseBuilder.error('DEFAULT_OUTLET_NOT_FOUND', 'No default outlet found. Please create an outlet first.'),
+          { status: 404 }
         );
       }
+      
+      outletStock = [{
+        outletId: defaultOutlet.id,
+        stock: parsed.data.totalStock || 0
+      }];
+      
+      console.log('✅ Using default outlet:', defaultOutlet.name, 'with stock:', outletStock[0].stock);
     }
     
-    totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
+    const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
     console.log('🔍 Final outletStock:', outletStock);
     console.log('🔍 Calculated totalStock:', totalStock);
 
@@ -446,8 +471,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 
       // Commit staging files to production (including newly uploaded files)
       if (stagingKeys.length > 0) {
-        // Use product/merchantId/ structure for better organization
-        const targetFolder = `product/${merchantId}`;
+        // Use product/subdomain/ structure for better organization
+        const targetFolder = `product/${subdomain}`;
         const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
         
         if (commitResult.success) {
@@ -516,9 +541,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       imagesValue = committedImageUrls.join(',');
     }
 
-    // Use Prisma relation syntax with CUID
+    // Build product data (NO merchant connection needed - DB is isolated)
     const finalProductData: any = {
-      merchant: { connect: { id: merchant.id } }, // Use CUID, not publicId
       name: parsed.data.name,
       description: parsed.data.description,
       barcode: parsed.data.barcode,
@@ -536,15 +560,31 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     };
 
     // Only add category connection if categoryId is provided
-    // If not provided, simplifiedProducts.create will use default category
+    // If not provided, use default category
     if (parsed.data.categoryId) {
       finalProductData.category = { connect: { id: parsed.data.categoryId } };
+    } else {
+      // Find default category
+      const defaultCategory = await db.category.findFirst({
+        where: { isDefault: true }
+      });
+      if (defaultCategory) {
+        finalProductData.category = { connect: { id: defaultCategory.id } };
+      }
     }
 
     console.log('🔍 Creating product with data:', finalProductData);
     
-    // Use simplified database API
-    const product = await db.products.create(finalProductData);
+    // Create product using Prisma
+    const product = await db.product.create({
+      data: finalProductData,
+      include: {
+        category: true,
+        outletStock: {
+          include: { outlet: true }
+        }
+      }
+    });
     console.log('✅ Product created successfully:', product);
 
     // Parse images from database response to return array
@@ -557,7 +597,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
         imageUrls = product.images.split(',').filter(Boolean);
       }
     } else if (Array.isArray(product.images)) {
-      imageUrls = product.images;
+      imageUrls = product.images as string[];
     }
 
     // Return product with parsed images

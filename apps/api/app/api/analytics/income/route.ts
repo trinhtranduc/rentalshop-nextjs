@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/analytics/income - Get income analytics
- * REFACTORED: Now uses unified withAuthRoles pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user }) => {
   console.log(`💰 GET /api/analytics/income - User: ${user.email}`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -22,7 +34,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     if (!startDate || !endDate) {
       return NextResponse.json(
-        { success: false, error: 'startDate and endDate are required' },
+        ResponseBuilder.error('VALIDATION_ERROR', 'startDate and endDate are required'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
@@ -47,45 +59,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         const startOfMonth = new Date(year, month, 1);
         const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
-        // Get real income (completed payments) with proper filtering
-        const paymentWhereClause: any = {
-          status: 'COMPLETED',
-          createdAt: {
-            gte: startOfMonth,
-            lte: endOfMonth,
-          }
-        };
-
-        // Add user scope filtering for payments
-        if (userScope.merchantId) {
-          const merchant = await db.merchants.findById(userScope.merchantId );
-          if (merchant) {
-            paymentWhereClause.merchantId = merchant.id;
-          }
-        } else if (userScope.outletId) {
-          // For outlet scope, filter through orders
-          const outlet = await db.outlets.findById(userScope.outletId );
-          if (outlet) {
-            paymentWhereClause.order = {
-              outletId: outlet.id
-            };
-          }
-        } else if (user.role !== 'ADMIN') {
-          // New users without merchant/outlet assignment should see no data
-          console.log('🚫 User without merchant/outlet assignment:', {
-            role: user.role,
-            merchantId: userScope.merchantId,
-            outletId: userScope.outletId
-          });
-          return NextResponse.json({
-            success: true,
-            data: [],
-            code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-          });
-        }
-
-        // Build where clause for orders
+        // Build where clause for orders - NO merchantId needed, DB is isolated
         const orderWhereClause: any = {
           createdAt: {
             gte: startOfMonth,
@@ -93,21 +67,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           }
         };
 
-        // Add user scope filtering for orders
-        if (userScope.merchantId) {
-          const merchant = await db.merchants.findById(userScope.merchantId);
-          if (merchant && merchant.outlets) {
-            orderWhereClause.outletId = { in: merchant.outlets.map((outlet: any) => outlet.id) };
-          }
-        } else if (userScope.outletId) {
-          const outlet = await db.outlets.findById(userScope.outletId );
-          if (outlet) {
-            orderWhereClause.outletId = outlet.id;
+        // Outlet filtering for outlet-level users
+        if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+          if (user.outletId) {
+            orderWhereClause.outletId = user.outletId;
           }
         }
 
         // Get orders for revenue calculation using new formula
-        const ordersForRevenueResult = await db.orders.search({
+        const ordersForRevenueResult = await db.order.findMany({
           where: orderWhereClause,
           select: {
             id: true,
@@ -152,12 +120,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           return 0;
         };
 
-        const realIncome = ordersForRevenueResult.data.reduce((sum: number, order: any) => {
+        const realIncome = ordersForRevenueResult.reduce((sum: number, order: any) => {
           return sum + calculateOrderRevenue(order);
         }, 0);
 
         // Get future income (pending orders with future return dates)
-        const futureIncome = await db.orders.aggregate({
+        const futureIncome = await db.order.aggregate({
           where: {
             status: { in: ['RESERVED', 'ACTIVE'] },
             returnPlanAt: {
@@ -169,10 +137,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           _sum: {
             totalAmount: true
           }
-        });
+        }).catch(() => ({ _sum: { totalAmount: 0 } }));
 
         // Get order count for the month
-        const orderCount = await db.orders.getStats({
+        const orderCount = await db.order.count({
           where: {
             createdAt: {
               gte: startOfMonth,
@@ -210,45 +178,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         const startOfDay = new Date(year, month, day, 0, 0, 0);
         const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
 
-        // Get real income (completed payments) with proper filtering
-        const paymentWhereClause: any = {
-          status: 'COMPLETED',
-          createdAt: {
-            gte: startOfDay,
-            lte: endOfDay,
-          }
-        };
-
-        // Add user scope filtering for payments
-        if (userScope.merchantId) {
-          const merchant = await db.merchants.findById(userScope.merchantId );
-          if (merchant) {
-            paymentWhereClause.merchantId = merchant.id;
-          }
-        } else if (userScope.outletId) {
-          // For outlet scope, filter through orders
-          const outlet = await db.outlets.findById(userScope.outletId );
-          if (outlet) {
-            paymentWhereClause.order = {
-              outletId: outlet.id
-            };
-          }
-        } else if (user.role !== 'ADMIN') {
-          // New users without merchant/outlet assignment should see no data
-          console.log('🚫 User without merchant/outlet assignment:', {
-            role: user.role,
-            merchantId: userScope.merchantId,
-            outletId: userScope.outletId
-          });
-          return NextResponse.json({
-            success: true,
-            data: [],
-            code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-          });
-        }
-
-        // Build where clause for orders
+        // Build where clause for orders - NO merchantId needed, DB is isolated
         const orderWhereClause: any = {
           createdAt: {
             gte: startOfDay,
@@ -256,21 +186,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           }
         };
 
-        // Add user scope filtering for orders
-        if (userScope.merchantId) {
-          const merchant = await db.merchants.findById(userScope.merchantId);
-          if (merchant && merchant.outlets) {
-            orderWhereClause.outletId = { in: merchant.outlets.map((outlet: any) => outlet.id) };
-          }
-        } else if (userScope.outletId) {
-          const outlet = await db.outlets.findById(userScope.outletId );
-          if (outlet) {
-            orderWhereClause.outletId = outlet.id;
+        // Outlet filtering for outlet-level users
+        if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+          if (user.outletId) {
+            orderWhereClause.outletId = user.outletId;
           }
         }
 
         // Get orders for revenue calculation using new formula
-        const ordersForRevenueResult = await db.orders.search({
+        const ordersForRevenueResult = await db.order.findMany({
           where: orderWhereClause,
           select: {
             id: true,
@@ -315,12 +239,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           return 0;
         };
 
-        const realIncome = ordersForRevenueResult.data.reduce((sum: number, order: any) => {
+        const realIncome = ordersForRevenueResult.reduce((sum: number, order: any) => {
           return sum + calculateOrderRevenue(order);
         }, 0);
 
         // Get future income (pending orders with future return dates)
-        const futureIncome = await db.orders.aggregate({
+        const futureIncome = await db.order.aggregate({
           where: {
             status: { in: ['RESERVED', 'ACTIVE'] },
             returnPlanAt: {
@@ -332,10 +256,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           _sum: {
             totalAmount: true
           }
-        });
+        }).catch(() => ({ _sum: { totalAmount: 0 } }));
 
         // Get order count for the day
-        const orderCount = await db.orders.getStats({
+        const orderCount = await db.order.count({
           where: {
             createdAt: {
               gte: startOfDay,
@@ -359,13 +283,20 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       }
     }
 
-    const body = JSON.stringify({ success: true, data: incomeData });
+    const body = JSON.stringify(ResponseBuilder.success('INCOME_ANALYTICS_SUCCESS', incomeData));
     const etag = crypto.createHash('sha1').update(body).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
     }
-    return new NextResponse(body, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    return new NextResponse(body, { 
+      status: API.STATUS.OK, 
+      headers: { 
+        'Content-Type': 'application/json', 
+        ETag: etag, 
+        'Cache-Control': 'private, max-age=60' 
+      } 
+    });
 
   } catch (error) {
     console.error('Error fetching income analytics:', error);
@@ -375,5 +306,3 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json(response, { status: statusCode });
   }
 });
-
-export const runtime = 'nodejs';

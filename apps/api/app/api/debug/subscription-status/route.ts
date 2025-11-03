@@ -1,32 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
+import { ResponseBuilder } from '@rentalshop/utils';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * DEBUG ENDPOINT: Check subscription status in database
- * GET /api/debug/subscription-status?merchantId=1
- * No auth required for debugging
+ * GET /api/debug/subscription-status?subscriptionId=1
+ * MULTI-TENANT: Uses subdomain-based tenant DB
+ * Note: Requires x-subdomain header for tenant identification
  */
 export async function GET(request: NextRequest) {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required (x-subdomain header)'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+
     const { searchParams } = new URL(request.url);
-    const merchantId = parseInt(searchParams.get('merchantId') || '1');
+    const subscriptionId = parseInt(searchParams.get('subscriptionId') || '1');
 
     // Query database directly
-    const subscription = await prisma.subscription.findUnique({
-      where: { merchantId },
+    const subscription = await db.subscription.findUnique({
+      where: { id: subscriptionId },
       include: {
-        merchant: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
         plan: {
           select: {
             id: true,
-            name: true
+            name: true,
+            basePrice: true,
+            currency: true
           }
+        },
+        payments: {
+          take: 5,
+          orderBy: { createdAt: 'desc' }
         }
       }
     });
@@ -36,7 +51,7 @@ export async function GET(request: NextRequest) {
         success: false,
         code: 'SUBSCRIPTION_NOT_FOUND',
         message: 'Subscription not found',
-        merchantId
+        subscriptionId
       });
     }
 
@@ -44,16 +59,18 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         subscriptionId: subscription.id,
-        merchantId: subscription.merchantId,
-        merchantName: subscription.merchant.name,
         status: subscription.status,
         statusUpperCase: subscription.status.toUpperCase(),
         statusLowerCase: subscription.status.toLowerCase(),
+        planId: subscription.planId,
         planName: subscription.plan.name,
+        planPrice: subscription.plan.basePrice,
         currentPeriodStart: subscription.currentPeriodStart,
         currentPeriodEnd: subscription.currentPeriodEnd,
         amount: subscription.amount,
-        updatedAt: subscription.updatedAt
+        currency: subscription.currency,
+        updatedAt: subscription.updatedAt,
+        paymentsCount: subscription.payments.length
       },
       timestamp: new Date().toISOString()
     });

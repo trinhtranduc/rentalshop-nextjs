@@ -1,33 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, ResponseBuilder } from '@rentalshop/utils';
+import { getTenantDbFromRequest, ordersQuerySchema, orderCreateSchema, orderUpdateSchema, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/orders
  * Get orders with filtering, pagination
- * REFACTORED: Now uses unified withAuth pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withManagementAuth(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user }) => {
   console.log(`🔍 GET /api/orders - User: ${user.email} (${user.role})`);
-  console.log(`🔍 GET /api/orders - UserScope:`, userScope);
-  
-  // Validate that non-admin users have merchant association
-  if (user.role !== 'ADMIN' && !userScope.merchantId) {
-    console.log('❌ Non-admin user without merchant association:', {
-      role: user.role,
-      merchantId: userScope.merchantId,
-      outletId: userScope.outletId
-    });
-    return NextResponse.json(
-      ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED', 'User must be associated with a merchant'),
-      { status: 403 }
-    );
-  }
   
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     const { searchParams } = new URL(request.url);
     console.log('Search params:', Object.fromEntries(searchParams.entries()));
     
@@ -46,7 +44,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
       q, 
       orderType,
       status,
-      merchantId: queryMerchantId,
+      merchantId: queryMerchantId, // Ignore in multi-tenant
       outletId: queryOutletId,
       customerId,
       productId,
@@ -58,92 +56,118 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
 
     console.log('Parsed filters:', { 
       page, limit, q, orderType, status, 
-      queryMerchantId, queryOutletId, customerId, productId, startDate, endDate,
+      queryOutletId, customerId, productId, startDate, endDate,
       sortBy, sortOrder
     });
     
-    // Implement role-based filtering
-    let searchFilters: any = {
-      customerId,
-      productId,
-      orderType,
-      status,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      search: q,
-      page: page || 1,
-      limit: limit || 20,
-      sortBy: sortBy || 'createdAt',
-      sortOrder: sortOrder || 'desc'
-    };
-
-    // Role-based merchant filtering:
-    // - ADMIN role: Can see orders from all merchants (unless queryMerchantId is specified)
-    // - MERCHANT role: Can only see orders from their own merchant
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their merchant
-    if (user.role === 'ADMIN') {
-      // Admins can see all merchants unless specifically filtering by merchant
-      searchFilters.merchantId = queryMerchantId;
-    } else {
-      // Non-admin users restricted to their merchant
-      searchFilters.merchantId = userScope.merchantId;
+    // Build where clause - NO merchantId needed, DB is isolated
+    const where: any = {};
+    
+    // Outlet filtering
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      where.outletId = user.outletId;
+    } else if (queryOutletId && user.role === 'MERCHANT') {
+      where.outletId = queryOutletId;
     }
-
-    // Role-based outlet filtering:
-    // - MERCHANT role: Can see orders from all outlets of their merchant (unless queryOutletId is specified)
-    // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
-    if (user.role === 'MERCHANT') {
-      // Merchants can see all outlets unless specifically filtering by outlet
-      searchFilters.outletId = queryOutletId;
-    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
-      // Outlet users can only see orders from their assigned outlet
-      searchFilters.outletId = userScope.outletId;
-    } else if (user.role === 'ADMIN') {
-      // Admins can see all orders (no outlet filtering unless specified)
-      searchFilters.outletId = queryOutletId;
+    
+    // Status filtering
+    if (status) {
+      where.status = status;
     }
-
-    // Add product filtering if specified
+    
+    // Order type filtering
+    if (orderType) {
+      where.orderType = orderType;
+    }
+    
+    // Customer filtering
+    if (customerId) {
+      where.customerId = customerId;
+    }
+    
+    // Product filtering
     if (productId) {
-      searchFilters.productId = productId;
+      where.orderItems = {
+        some: {
+          productId: productId
+        }
+      };
     }
-
-    console.log(`🔍 Role-based filtering for ${user.role}:`, {
-      'userScope.merchantId': userScope.merchantId,
-      'userScope.outletId': userScope.outletId,
-      'queryMerchantId': queryMerchantId,
-      'queryOutletId': queryOutletId,
-      'final merchantId filter': searchFilters.merchantId,
-      'final outletId filter': searchFilters.outletId,
-      'productId filter': searchFilters.productId
-    });
-
-    console.log('🔍 Using simplified db.orders.search with filters:', searchFilters);
-    console.log('📊 PAGINATION DEBUG: page=', searchFilters.page, ', limit=', searchFilters.limit);
     
-    // Use performance monitoring for query optimization
-    // For large datasets, use lightweight method for better performance
-    const result = await PerformanceMonitor.measureQuery(
-      'orders.search',
-      () => db.orders.findManyLightweight(searchFilters)
-    );
+    // Date filtering
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
     
-    console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
-    console.log('📊 RESULT DEBUG: page=', result.page, ', total=', result.total, ', limit=', result.limit);
+    // Search functionality
+    if (q) {
+      const searchTerm = q.trim();
+      where.OR = [
+        { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
+        { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
+        { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
+        { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } }
+      ];
+    }
+    
+    // Pagination
+    const pageNum = page || 1;
+    const limitNum = limit || 20;
+    const offset = (pageNum - 1) * limitNum;
+    
+    console.log(`🔍 Querying with where clause:`, where);
+    
+    const [orders, total] = await Promise.all([
+      db.order.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              email: true
+            }
+          },
+          outlet: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          }
+        },
+        orderBy: { [sortBy || 'createdAt']: sortOrder || 'desc' },
+        take: limitNum,
+        skip: offset
+      }),
+      db.order.count({ where })
+    ]);
+    
+    console.log('✅ Search completed, found:', orders.length, 'orders');
 
     return NextResponse.json({
       success: true,
       data: {
-        orders: result.data || [],
-        total: result.total || 0,
-        page: result.page || 1,
-        limit: result.limit || 20,
-        offset: ((result.page || 1) - 1) * (result.limit || 20),
-        hasMore: (result.page || 1) * (result.limit || 20) < (result.total || 0),
-        totalPages: Math.ceil((result.total || 0) / (result.limit || 20))
+        orders: orders,
+        total: total,
+        page: pageNum,
+        limit: limitNum,
+        offset: offset,
+        hasMore: pageNum * limitNum < total,
+        totalPages: Math.ceil(total / limitNum)
       },
       code: "ORDERS_FOUND",
-      message: `Found ${result.total || 0} orders`
+      message: `Found ${total} orders`
     });
 
   } catch (error) {
@@ -158,12 +182,23 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
 /**
  * POST /api/orders
  * Create a new order using simplified database API
- * REFACTORED: Now uses unified withAuth pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const POST = withManagementAuth(async (request, { user, userScope }) => {
+export const POST = withManagementAuth(async (request, { user }) => {
   console.log(`🔍 POST /api/orders - User: ${user.email} (${user.role})`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     const body = await request.json();
     const parsed = orderCreateSchema.safeParse(body);
     if (!parsed.success) {
@@ -173,33 +208,14 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Get outlet and merchant to check association and plan limits
-    const outlet = await db.outlets.findById(parsed.data.outletId);
+    // Get outlet to verify it exists
+    const outlet = await db.outlet.findUnique({
+      where: { id: parsed.data.outletId }
+    });
     if (!outlet) {
       return NextResponse.json(
         ResponseBuilder.error('OUTLET_NOT_FOUND'),
         { status: 404 }
-      );
-    }
-
-    // Get merchant for pricing configuration
-    const merchant = await db.merchants.findById(outlet.merchantId);
-    if (!merchant) {
-      return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-        { status: 404 }
-      );
-    }
-
-    // Check plan limits before creating order (optional - orders are typically unlimited)
-    try {
-      await assertPlanLimit(outlet.merchantId, 'orders');
-      console.log('✅ Plan limit check passed for orders');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for orders:', error.message);
-      return NextResponse.json(
-        ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for orders'),
-        { status: 403 }
       );
     }
 
@@ -249,7 +265,9 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       orderItems: {
         create: await Promise.all(parsed.data.orderItems?.map(async item => {
           // Get product details for snapshot
-          const product = await db.products.findById(item.productId);
+          const product = await db.product.findUnique({
+            where: { id: item.productId }
+          });
           if (!product) {
             throw new Error(`Product with ID ${item.productId} not found`);
           }
@@ -284,7 +302,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
             // Snapshot fields
             productName: product.name || null,
             productBarcode: product.barcode || null,
-            productImages: product.images || null,
+            productImages: (product.images as any) || null,
             // Order item fields
             quantity: item.quantity,
             unitPrice: pricing.unitPrice,
@@ -299,8 +317,19 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 
     console.log('🔍 Creating order with data:', orderData);
     
-    // Use simplified database API
-    const order = await db.orders.create(orderData);
+    // Create order using Prisma
+    const order = await db.order.create({
+      data: orderData,
+      include: {
+        customer: true,
+        outlet: true,
+        createdBy: true,
+        orderItems: {
+          include: { product: true }
+        },
+        payments: true
+      }
+    });
     console.log('✅ Order created successfully:', order);
 
     // Flatten order response (consistent with order list response)
@@ -405,12 +434,23 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 /**
  * PUT /api/orders?id={id}
  * Update an order using simplified database API  
- * REFACTORED: Now uses unified withAuth pattern
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const PUT = withManagementAuth(async (request, { user, userScope }) => {
+export const PUT = withManagementAuth(async (request, { user }) => {
   console.log(`🔍 PUT /api/orders - User: ${user.email} (${user.role})`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     const body = await request.json();
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
@@ -432,7 +472,9 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
     }
 
     // Get existing order to check permissions
-    const existingOrder = await db.orders.findById(id);
+    const existingOrder = await db.order.findUnique({
+      where: { id }
+    });
     if (!existingOrder) {
       return NextResponse.json(
         ResponseBuilder.error('ORDER_NOT_FOUND'),
@@ -440,31 +482,38 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Check if user can access this order (orders are scoped to merchant via userScope)
-    // Access is controlled by the database API based on merchantId filter
-
     // Extract only basic fields for update (avoid complex orderItems)
-    const updateData = {
-      status: parsed.data.status,
-      totalAmount: parsed.data.totalAmount,
-      depositAmount: parsed.data.depositAmount,
-      pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : undefined,
-      returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : undefined,
-      notes: parsed.data.notes,
-      // Add other simple fields as needed
-    };
+    const updateData: any = {};
+    if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
+    if (parsed.data.totalAmount !== undefined) updateData.totalAmount = parsed.data.totalAmount;
+    if (parsed.data.depositAmount !== undefined) updateData.depositAmount = parsed.data.depositAmount;
+    if (parsed.data.pickupPlanAt !== undefined) updateData.pickupPlanAt = parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null;
+    if (parsed.data.returnPlanAt !== undefined) updateData.returnPlanAt = parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null;
+    if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
 
     console.log('🔍 Updating order with data:', { id, ...updateData });
     
-    // Use simplified database API with basic update
-    const updatedOrder = await db.orders.update(id, updateData);
+    // Update order using Prisma
+    const updatedOrder = await db.order.update({
+      where: { id },
+      data: updateData,
+      include: {
+        customer: true,
+        outlet: true,
+        createdBy: true,
+        orderItems: {
+          include: { product: true }
+        },
+        payments: true
+      }
+    });
     console.log('✅ Order updated successfully:', updatedOrder);
 
     return NextResponse.json({
       success: true,
       data: updatedOrder,
       code: 'ORDER_UPDATED_SUCCESS',
-        message: 'Order updated successfully'
+      message: 'Order updated successfully'
     });
 
   } catch (error: any) {

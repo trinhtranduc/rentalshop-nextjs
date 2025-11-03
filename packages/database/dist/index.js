@@ -25,17 +25,21 @@ __export(index_exports, {
   createEmailVerification: () => createEmailVerification,
   createOrderNumberWithFormat: () => createOrderNumberWithFormat,
   createSubscriptionPayment: () => createSubscriptionPayment,
+  createTenantDatabase: () => createTenantDatabase,
   db: () => db,
   deleteExpiredTokens: () => deleteExpiredTokens,
   extractAuditContext: () => extractAuditContext,
   generateOrderNumber: () => generateOrderNumber2,
+  generateSubdomain: () => generateSubdomain,
   generateVerificationToken: () => generateVerificationToken,
   getAuditLogger: () => getAuditLogger,
   getDefaultOutlet: () => getDefaultOutlet,
   getExpiredSubscriptions: () => getExpiredSubscriptions,
+  getMainDb: () => getMainDb,
   getOutletOrderStats: () => getOutletOrderStats,
   getSubscriptionById: () => getSubscriptionById,
   getSubscriptionByMerchantId: () => getSubscriptionByMerchantId,
+  getTenantDb: () => getTenantDb,
   getVerificationTokenByUserId: () => getVerificationTokenByUserId,
   isEmailVerified: () => isEmailVerified,
   prisma: () => prisma,
@@ -46,6 +50,7 @@ __export(index_exports, {
   simplifiedPayments: () => simplifiedPayments,
   simplifiedSubscriptionActivities: () => simplifiedSubscriptionActivities,
   updateSubscription: () => updateSubscription,
+  validateSubdomain: () => validateSubdomain,
   verifyEmailByToken: () => verifyEmailByToken
 });
 module.exports = __toCommonJS(index_exports);
@@ -1355,7 +1360,7 @@ var simplifiedOrders = {
       productId,
       startDate,
       endDate,
-      search: search3,
+      search: search2,
       page = 1,
       limit = 1e3,
       sortBy = "createdAt",
@@ -1395,12 +1400,12 @@ var simplifiedOrders = {
       if (startDate) where.createdAt.gte = startDate;
       if (endDate) where.createdAt.lte = endDate;
     }
-    if (search3) {
+    if (search2) {
       where.OR = [
-        { orderNumber: { contains: search3 } },
-        { customer: { firstName: { contains: search3 } } },
-        { customer: { lastName: { contains: search3 } } },
-        { customer: { phone: { contains: search3 } } }
+        { orderNumber: { contains: search2 } },
+        { customer: { firstName: { contains: search2 } } },
+        { customer: { lastName: { contains: search2 } } },
+        { customer: { phone: { contains: search2 } } }
       ];
     }
     const [orders, total] = await Promise.all([
@@ -1460,7 +1465,7 @@ var simplifiedOrders = {
       orderType,
       startDate,
       endDate,
-      search: search3,
+      search: search2,
       page = 1,
       limit = 20,
       sortBy = "createdAt",
@@ -1476,12 +1481,12 @@ var simplifiedOrders = {
       if (startDate) where.createdAt.gte = startDate;
       if (endDate) where.createdAt.lte = endDate;
     }
-    if (search3) {
+    if (search2) {
       where.OR = [
-        { orderNumber: { contains: search3, mode: "insensitive" } },
-        { customer: { firstName: { contains: search3, mode: "insensitive" } } },
-        { customer: { lastName: { contains: search3, mode: "insensitive" } } },
-        { customer: { phone: { contains: search3, mode: "insensitive" } } }
+        { orderNumber: { contains: search2, mode: "insensitive" } },
+        { customer: { firstName: { contains: search2, mode: "insensitive" } } },
+        { customer: { lastName: { contains: search2, mode: "insensitive" } } },
+        { customer: { phone: { contains: search2, mode: "insensitive" } } }
       ];
     }
     const [orders, total] = await Promise.all([
@@ -1608,7 +1613,7 @@ var simplifiedOrders = {
       productId,
       startDate,
       endDate,
-      search: search3,
+      search: search2,
       page = 1,
       limit = 20,
       sortBy = "createdAt",
@@ -1639,8 +1644,8 @@ var simplifiedOrders = {
       if (startDate) where.createdAt.gte = startDate;
       if (endDate) where.createdAt.lte = endDate;
     }
-    if (search3) {
-      const searchTerm = search3.trim();
+    if (search2) {
+      const searchTerm = search2.trim();
       where.OR = [
         { orderNumber: { contains: searchTerm, mode: "insensitive" } },
         { customer: { firstName: { contains: searchTerm, mode: "insensitive" } } },
@@ -3317,258 +3322,6 @@ var simplifiedSubscriptionActivities = {
   getBySubscriptionId: getActivitiesBySubscriptionId
 };
 
-// src/merchant.ts
-async function findById2(id) {
-  return await prisma.merchant.findUnique({
-    where: { id },
-    include: {
-      // Plan removed - use subscription.plan instead (single source of truth)
-      subscription: {
-        include: {
-          plan: true
-        }
-      },
-      outlets: {
-        select: {
-          id: true,
-          name: true,
-          isActive: true
-        }
-      },
-      _count: {
-        select: {
-          outlets: true,
-          users: true,
-          products: true,
-          customers: true
-        }
-      }
-    }
-  });
-}
-async function findByEmail(email) {
-  return await prisma.merchant.findUnique({
-    where: { email },
-    include: {
-      Plan: true,
-      subscription: true
-    }
-  });
-}
-async function search(filters) {
-  const {
-    page = 1,
-    limit = 20,
-    search: search3,
-    businessType,
-    planId,
-    isActive
-  } = filters;
-  const skip = (page - 1) * limit;
-  const where = {};
-  if (search3) {
-    where.OR = [
-      { name: { contains: search3, mode: "insensitive" } },
-      { email: { contains: search3, mode: "insensitive" } }
-    ];
-  }
-  if (businessType) {
-    where.businessType = businessType;
-  }
-  if (planId !== void 0) {
-    where.planId = planId;
-  }
-  if (isActive !== void 0) {
-    where.isActive = isActive;
-  }
-  const [merchants, total] = await Promise.all([
-    prisma.merchant.findMany({
-      where,
-      include: {
-        subscription: {
-          select: {
-            id: true,
-            status: true,
-            currentPeriodStart: true,
-            currentPeriodEnd: true,
-            trialStart: true,
-            trialEnd: true,
-            amount: true,
-            currency: true,
-            interval: true,
-            period: true,
-            discount: true,
-            savings: true,
-            cancelAtPeriodEnd: true,
-            canceledAt: true,
-            cancelReason: true,
-            plan: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                basePrice: true,
-                currency: true,
-                trialDays: true
-              }
-            }
-          }
-        },
-        _count: {
-          select: {
-            outlets: true,
-            users: true,
-            products: true,
-            customers: true
-          }
-        }
-      },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit
-    }),
-    prisma.merchant.count({ where })
-  ]);
-  return {
-    data: merchants,
-    total,
-    page,
-    limit,
-    hasMore: skip + limit < total
-  };
-}
-async function create(data) {
-  const { planId, ...rest } = data;
-  return await prisma.merchant.create({
-    data: {
-      ...rest,
-      ...planId !== void 0 ? { Plan: { connect: { id: planId } } } : {},
-      createdAt: /* @__PURE__ */ new Date(),
-      updatedAt: /* @__PURE__ */ new Date()
-    },
-    include: {
-      Plan: true,
-      subscription: true
-    }
-  });
-}
-async function update(id, data) {
-  const { planId, ...rest } = data;
-  return await prisma.merchant.update({
-    where: { id },
-    data: {
-      ...rest,
-      ...planId !== void 0 ? { Plan: { connect: { id: planId } } } : {},
-      updatedAt: /* @__PURE__ */ new Date()
-    },
-    include: {
-      Plan: true,
-      subscription: true
-    }
-  });
-}
-async function remove(id) {
-  return await prisma.merchant.update({
-    where: { id },
-    data: {
-      isActive: false,
-      updatedAt: /* @__PURE__ */ new Date()
-    }
-  });
-}
-async function getStats(id) {
-  const merchant = await prisma.merchant.findUnique({
-    where: { id },
-    include: {
-      _count: {
-        select: {
-          outlets: true,
-          users: true,
-          products: true,
-          customers: true
-        }
-      }
-    }
-  });
-  if (!merchant) {
-    return null;
-  }
-  const revenueResult = await prisma.order.aggregate({
-    where: {
-      outlet: {
-        merchantId: id
-      },
-      status: { in: ["COMPLETED", "RETURNED"] }
-    },
-    _sum: {
-      totalAmount: true
-    }
-  });
-  return {
-    totalOutlets: merchant._count.outlets,
-    totalUsers: merchant._count.users,
-    totalProducts: merchant._count.products,
-    totalCustomers: merchant._count.customers,
-    totalOrders: 0,
-    // Will be calculated separately
-    totalRevenue: revenueResult._sum.totalAmount || 0
-  };
-}
-async function count(options) {
-  const where = options?.where || {};
-  return await prisma.merchant.count({ where });
-}
-async function checkDuplicate(email, phone, excludeId) {
-  if (!email && !phone) {
-    return null;
-  }
-  const conditions = [];
-  if (email) {
-    conditions.push({ email });
-  }
-  if (phone) {
-    conditions.push({ phone });
-  }
-  const where = {
-    OR: conditions
-  };
-  if (excludeId) {
-    where.id = { not: excludeId };
-  }
-  return await prisma.merchant.findFirst({ where });
-}
-var findFirst = async (whereClause) => {
-  const where = whereClause?.where || whereClause || {};
-  return await prisma.merchant.findFirst({
-    where,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      address: true,
-      businessType: true,
-      pricingType: true,
-      pricingConfig: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true
-    }
-  });
-};
-var simplifiedMerchants = {
-  findById: findById2,
-  findByEmail,
-  findFirst,
-  search,
-  create,
-  update,
-  remove,
-  getStats,
-  count,
-  checkDuplicate
-};
-
 // src/order-number-generator.ts
 var FORMAT_CONFIGS = {
   sequential: {
@@ -3880,9 +3633,9 @@ async function createOrderNumberWithFormat(outletId, format) {
   };
   return await generateOrderNumber(config);
 }
-async function generateTestOrderNumbers(outletId, count2, format = "sequential") {
+async function generateTestOrderNumbers(outletId, count, format = "sequential") {
   const orderNumbers = [];
-  for (let i = 0; i < count2; i++) {
+  for (let i = 0; i < count; i++) {
     const result = await createOrderNumberWithFormat(outletId, format);
     orderNumbers.push(result.orderNumber);
   }
@@ -3904,8 +3657,8 @@ var simplifiedOrderNumbers = {
   /**
    * Generate multiple order numbers (simplified API)
    */
-  generateMultiple: async (outletId, count2, format = "sequential") => {
-    return await generateTestOrderNumbers(outletId, count2, format);
+  generateMultiple: async (outletId, count, format = "sequential") => {
+    return await generateTestOrderNumbers(outletId, count, format);
   },
   /**
    * Validate order number format (simplified API)
@@ -3922,7 +3675,7 @@ var simplifiedOrderNumbers = {
 };
 
 // src/category.ts
-var findById3 = async (id) => {
+var findById2 = async (id) => {
   return await prisma.category.findUnique({
     where: { id },
     select: {
@@ -3936,7 +3689,7 @@ var findById3 = async (id) => {
     }
   });
 };
-var findFirst2 = async (where) => {
+var findFirst = async (where) => {
   return await prisma.category.findFirst({
     where,
     select: {
@@ -3969,7 +3722,7 @@ var findMany = async (options = {}) => {
     skip
   });
 };
-var create2 = async (data) => {
+var create = async (data) => {
   return await prisma.category.create({
     data,
     select: {
@@ -3983,7 +3736,7 @@ var create2 = async (data) => {
     }
   });
 };
-var update2 = async (id, data) => {
+var update = async (id, data) => {
   return await prisma.category.update({
     where: { id },
     data,
@@ -4003,7 +3756,7 @@ var deleteCategory = async (id) => {
     where: { id }
   });
 };
-var search2 = async (filters) => {
+var search = async (filters) => {
   const { page = 1, limit = 20, sortBy = "name", sortOrder = "asc", ...whereFilters } = filters;
   const skip = (page - 1) * limit;
   console.log("\u{1F50D} DB category.search - Received filters:", filters);
@@ -4065,19 +3818,19 @@ var search2 = async (filters) => {
     totalPages: Math.ceil(total / limit)
   };
 };
-var getStats2 = async (whereClause) => {
+var getStats = async (whereClause) => {
   const where = whereClause?.where || whereClause || {};
   return await prisma.category.count({ where });
 };
 var simplifiedCategories = {
-  findById: findById3,
-  findFirst: findFirst2,
+  findById: findById2,
+  findFirst,
   findMany,
-  create: create2,
-  update: update2,
+  create,
+  update,
   delete: deleteCategory,
-  search: search2,
-  getStats: getStats2
+  search,
+  getStats
 };
 
 // src/audit-logs.ts
@@ -4101,11 +3854,11 @@ var findMany2 = async (options = {}) => {
     skip
   });
 };
-var getStats3 = async (whereClause) => {
+var getStats2 = async (whereClause) => {
   const where = whereClause?.where || whereClause || {};
   return await prisma.auditLog.count({ where });
 };
-var findFirst3 = async (where) => {
+var findFirst2 = async (where) => {
   return await prisma.auditLog.findFirst({
     where,
     include: {
@@ -4120,7 +3873,7 @@ var findFirst3 = async (where) => {
     }
   });
 };
-var create3 = async (data) => {
+var create2 = async (data) => {
   return await prisma.auditLog.create({
     data,
     include: {
@@ -4137,9 +3890,9 @@ var create3 = async (data) => {
 };
 var simplifiedAuditLogs = {
   findMany: findMany2,
-  findFirst: findFirst3,
-  create: create3,
-  getStats: getStats3
+  findFirst: findFirst2,
+  create: create2,
+  getStats: getStats2
 };
 
 // src/order-items.ts
@@ -4172,11 +3925,11 @@ var groupBy = async (options) => {
   }
   return await prisma.orderItem.groupBy(groupByOptions);
 };
-var getStats4 = async (whereClause) => {
+var getStats3 = async (whereClause) => {
   const where = whereClause?.where || whereClause || {};
   return await prisma.orderItem.count({ where });
 };
-var findFirst4 = async (where) => {
+var findFirst3 = async (where) => {
   return await prisma.orderItem.findFirst({
     where,
     include: {
@@ -4185,7 +3938,7 @@ var findFirst4 = async (where) => {
     }
   });
 };
-var create4 = async (data) => {
+var create3 = async (data) => {
   return await prisma.orderItem.create({
     data,
     include: {
@@ -4194,7 +3947,7 @@ var create4 = async (data) => {
     }
   });
 };
-var update3 = async (id, data) => {
+var update2 = async (id, data) => {
   return await prisma.orderItem.update({
     where: { id },
     data,
@@ -4211,11 +3964,11 @@ var deleteOrderItem = async (id) => {
 };
 var simplifiedOrderItems = {
   findMany: findMany3,
-  findFirst: findFirst4,
-  create: create4,
-  update: update3,
+  findFirst: findFirst3,
+  create: create3,
+  update: update2,
   delete: deleteOrderItem,
-  getStats: getStats4,
+  getStats: getStats3,
   groupBy
 };
 
@@ -5077,6 +4830,80 @@ async function deleteExpiredTokens() {
   return result.count;
 }
 
+// src/tenant-db-manager.ts
+var import_client17 = require("@prisma/client");
+var import_pg = require("pg");
+async function getMainDb() {
+  const url = new URL(process.env.MAIN_DATABASE_URL);
+  return new import_pg.Client({
+    host: url.hostname,
+    port: parseInt(url.port || "5432"),
+    user: url.username,
+    password: url.password,
+    database: url.pathname.slice(1)
+  });
+}
+var tenantClients = /* @__PURE__ */ new Map();
+async function getTenantDb(subdomain) {
+  if (tenantClients.has(subdomain)) {
+    return tenantClients.get(subdomain);
+  }
+  const mainDbClient = await getMainDb();
+  await mainDbClient.connect();
+  try {
+    const result = await mainDbClient.query(
+      'SELECT id, subdomain, name, "merchantId", "databaseUrl", status, "createdAt", "updatedAt" FROM "Tenant" WHERE subdomain = $1',
+      [subdomain]
+    );
+    const tenant = result.rows[0];
+    if (!tenant || tenant.status !== "active") {
+      throw new Error(`Tenant not found or inactive: ${subdomain}`);
+    }
+    const client = new import_client17.PrismaClient({
+      datasources: { db: { url: tenant.databaseUrl } }
+    });
+    tenantClients.set(subdomain, client);
+    return client;
+  } finally {
+    await mainDbClient.end();
+  }
+}
+async function createTenantDatabase(subdomain, merchantId) {
+  const dbName = `${subdomain.replace(/-/g, "_")}_shop_db`;
+  const mainDbUrl = process.env.MAIN_DATABASE_URL;
+  const url = new URL(mainDbUrl);
+  const adminClient = new import_pg.Client({
+    host: url.hostname,
+    port: parseInt(url.port || "5432"),
+    user: url.username,
+    password: url.password,
+    database: url.pathname.slice(1)
+  });
+  await adminClient.connect();
+  try {
+    await adminClient.query(`DROP DATABASE IF EXISTS ${dbName}`);
+    await adminClient.query(`CREATE DATABASE ${dbName}`);
+    const tenantDbUrl = `postgresql://${url.username}:${url.password}@${url.hostname}:${url.port}/${dbName}`;
+    const { execSync } = require("child_process");
+    execSync("npx prisma db push --skip-generate", {
+      stdio: "inherit",
+      env: { ...process.env, DATABASE_URL: tenantDbUrl },
+      cwd: process.cwd()
+    });
+    return tenantDbUrl;
+  } finally {
+    await adminClient.end();
+  }
+}
+function generateSubdomain(businessName) {
+  return businessName.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").substring(0, 50);
+}
+function validateSubdomain(subdomain) {
+  const reserved = ["www", "api", "admin", "app", "mail", "ftp", "smtp"];
+  if (reserved.includes(subdomain.toLowerCase())) return false;
+  return /^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/.test(subdomain);
+}
+
 // src/index.ts
 var db = {
   // ============================================================================
@@ -5110,7 +4937,7 @@ var db = {
   // ============================================================================
   // MERCHANT OPERATIONS
   // ============================================================================
-  merchants: simplifiedMerchants,
+  // merchants: simplifiedMerchants, // TEMPORARY: Disabled for multi-tenant migration
   // ============================================================================
   // PLAN OPERATIONS
   // ============================================================================
@@ -5194,17 +5021,21 @@ var generateOrderNumber2 = async (outletId) => {
   createEmailVerification,
   createOrderNumberWithFormat,
   createSubscriptionPayment,
+  createTenantDatabase,
   db,
   deleteExpiredTokens,
   extractAuditContext,
   generateOrderNumber,
+  generateSubdomain,
   generateVerificationToken,
   getAuditLogger,
   getDefaultOutlet,
   getExpiredSubscriptions,
+  getMainDb,
   getOutletOrderStats,
   getSubscriptionById,
   getSubscriptionByMerchantId,
+  getTenantDb,
   getVerificationTokenByUserId,
   isEmailVerified,
   prisma,
@@ -5215,6 +5046,7 @@ var generateOrderNumber2 = async (outletId) => {
   simplifiedPayments,
   simplifiedSubscriptionActivities,
   updateSubscription,
+  validateSubdomain,
   verifyEmailByToken
 });
 //# sourceMappingURL=index.js.map

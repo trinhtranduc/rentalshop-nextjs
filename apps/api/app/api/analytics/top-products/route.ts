@@ -1,58 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/analytics/top-products - Get top-performing products
- * Requires: Any authenticated user (scoped by role)
- * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Apply role-based filtering (consistent with other APIs)
+    // Build where clause - NO merchantId needed, DB is isolated
     let orderWhereClause: any = {};
 
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
-      // Find merchant by id to get outlets
-      const merchant = await db.merchants.findById(userScope.merchantId);
-      if (merchant && merchant.outlets) {
-        orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+    // Outlet filtering for outlet-level users
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.outletId) {
+        orderWhereClause.outletId = user.outletId;
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
-      // Find outlet by id to get CUID
-      const outlet = await db.outlets.findById(userScope.outletId);
-      if (outlet) {
-        orderWhereClause.outletId = outlet.id;
-      }
-    } else if (user.role === 'ADMIN') {
-      // ADMIN users see all data (system-wide access)
-      // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-    } else {
-      // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-      return NextResponse.json({
-        success: true,
-        data: [],
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
     }
 
     // Add date filtering if provided
@@ -63,15 +47,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     }
 
     // Get orders based on user scope
-    const orders = await db.orders.search({
+    const orders = await db.order.findMany({
       where: orderWhereClause,
-      limit: 1000 // Get enough orders to analyze
+      take: 1000 // Get enough orders to analyze
     });
 
-    const orderIds = orders.data?.map(order => order.id) || [];
+    const orderIds = orders.map(order => order.id);
 
     // Then get the top products from those orders
-    const topProducts = orderIds.length > 0 ? await db.orderItems.groupBy({
+    const topProducts = orderIds.length > 0 ? await db.orderItem.groupBy({
       by: ['productId'],
       where: {
         orderId: { in: orderIds }
@@ -108,15 +92,18 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Get product details for each top product in order
     const topProductsWithDetails = [];
     for (const item of topProducts) {
-      const productId = typeof item.productId === 'number' ? item.productId : (item as any).productId;
-      const product = await db.products.findById(productId);
+      const productId = item.productId;
+      const product = await db.product.findUnique({
+        where: { id: productId },
+        include: { category: true }
+      });
 
       // Parse product images safely
       const productImages = parseProductImages(product?.images);
       const firstImage = productImages.length > 0 ? productImages[0] : null;
 
       topProductsWithDetails.push({
-        id: product?.id || 0, // Use id (number) as the external ID
+        id: product?.id || 0,
         name: product?.name || 'Unknown Product',
         rentPrice: product?.rentPrice || 0,
         category: product?.category?.name || 'Uncategorized',
@@ -126,12 +113,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: topProductsWithDetails,
-      code: 'TOP_PRODUCTS_SUCCESS',
-        message: 'Top products retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('TOP_PRODUCTS_SUCCESS', topProductsWithDetails)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching top products analytics:', error);
@@ -141,5 +125,3 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json(response, { status: statusCode });
   }
 });
-
-export const runtime = 'nodejs';

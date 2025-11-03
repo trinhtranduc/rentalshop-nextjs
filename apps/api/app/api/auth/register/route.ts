@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, createEmailVerification } from '@rentalshop/database';
+import { 
+  getMainDb, 
+  getTenantDb, 
+  createTenantDatabase,
+  generateSubdomain,
+  validateSubdomain,
+  createEmailVerification
+} from '@rentalshop/database';
 import { registerSchema, sendVerificationEmail } from '@rentalshop/utils';
-import { generateToken, hashPassword } from '@rentalshop/auth';
+import { hashPassword } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, getDefaultPricingConfig, type BusinessType, type PricingType } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,321 +20,156 @@ export async function POST(request: NextRequest) {
     
     // Validate input
     const validatedData = registerSchema.parse(body);
-    // Prevent duplicate email early with clear error code
-    const existingUser = await db.users.findByEmail(validatedData.email);
-    if (existingUser) {
-      return NextResponse.json(
-        ResponseBuilder.error('EMAIL_ALREADY_EXISTS', 'Email already exists'),
-        { status: 409 }
-      );
-    }
     
-    // Process name - support both firstName/lastName and full name
-    let firstName = validatedData.firstName || '';
-    let lastName = validatedData.lastName || '';
-    
-    if (validatedData.name && !firstName && !lastName) {
-      // Auto-split full name if firstName/lastName not provided
-      const nameParts = validatedData.name.trim().split(/\s+/);
-      firstName = nameParts[0] || '';
-      lastName = nameParts.slice(1).join(' ') || '';
-    }
-
     // Determine registration type
     const isMerchantRegistration = validatedData.role === 'MERCHANT' || !!validatedData.businessName;
 
     if (isMerchantRegistration) {
       // ============================================================================
-      // MERCHANT REGISTRATION FLOW (WITH TRANSACTION)
+      // MERCHANT REGISTRATION FLOW (Multi-tenant)
       // ============================================================================
       
-      // PRE-CHECKS: Validate before transaction to avoid partial creation
+      // Generate subdomain from business name
+      const subdomain = body.subdomain || generateSubdomain(validatedData.businessName!);
       
-      // 1. Check for duplicate merchant email or phone
-      const existingMerchant = await db.merchants.checkDuplicate(
-        validatedData.email,
-        validatedData.phone
-      );
-
-      if (existingMerchant) {
-        const duplicateField = existingMerchant.email === validatedData.email ? 'email' : 'phone number';
-        const duplicateValue = existingMerchant.email === validatedData.email ? validatedData.email : validatedData.phone;
-        
-        console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
-        return NextResponse.json({
-          success: false,
-          code: 'MERCHANT_DUPLICATE',
-          message: `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
-        }, { status: 409 });
+      // Validate subdomain format
+      if (!validateSubdomain(subdomain)) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_SUBDOMAIN', 'Invalid subdomain format'),
+          { status: 400 }
+        );
       }
-
-      // 2. Check if user email already exists
-      const existingUser = await db.users.findByEmail(validatedData.email);
-      if (existingUser) {
-        console.log('❌ User email already exists:', validatedData.email);
-        return NextResponse.json({
-          success: false,
-          code: 'EMAIL_EXISTS',
-          message: `A user with email ${validatedData.email} already exists. Please use a different email.`
-        }, { status: 409 });
-      }
-
-      // ALL CHECKS PASSED - Start transaction for atomic creation
-      console.log('🔄 Starting transaction for merchant registration...');
       
-      const result = await db.prisma.$transaction(async (tx) => {
-        // 3. Create merchant with business configuration
-        console.log('📝 Step 1: Creating merchant with data:', {
-          name: validatedData.businessName,
-          email: validatedData.email,
-          phone: validatedData.phone
-        });
-        
-        const merchant = await tx.merchant.create({
-          data: {
-            name: validatedData.businessName!,
-            email: validatedData.email,
-            phone: validatedData.phone,
-            address: validatedData.address,
-            city: validatedData.city,
-            state: validatedData.state,
-            zipCode: validatedData.zipCode,
-            country: validatedData.country,
-            businessType: validatedData.businessType || 'GENERAL',
-            pricingType: validatedData.pricingType || 'FIXED',
-            // Lock pricing configuration after registration using constants
-            pricingConfig: JSON.stringify(
-              validatedData.businessType && validatedData.pricingType
-                ? {
-                    businessType: validatedData.businessType,
-                    defaultPricingType: validatedData.pricingType,
-                    businessRules: {
-                      requireRentalDates: validatedData.pricingType !== 'FIXED',
-                      showPricingOptions: ['VEHICLE'].includes(validatedData.businessType)
-                    },
-                    durationLimits: {
-                      minDuration: validatedData.pricingType === 'HOURLY' ? 1 : 1,
-                      maxDuration: validatedData.pricingType === 'HOURLY' ? 168 : validatedData.pricingType === 'DAILY' ? 30 : 1,
-                      defaultDuration: validatedData.pricingType === 'HOURLY' ? 4 : validatedData.pricingType === 'DAILY' ? 3 : 1
-                    }
-                  }
-                : getDefaultPricingConfig(validatedData.businessType as BusinessType || 'GENERAL')
-            )
-          }
-        });
-
-        console.log('✅ Step 1 Complete: Merchant created:', { id: merchant.id, name: merchant.name });
-
-        // 4. Create default outlet
-        console.log('📝 Step 2: Creating outlet with merchantId:', merchant.id);
-        
-        const outlet = await tx.outlet.create({
-          data: {
-            name: `${merchant.name} - Main Store`,
-            address: merchant.address || validatedData.address || 'Address to be updated',
-            phone: merchant.phone || validatedData.phone,
-            city: merchant.city || validatedData.city,
-            state: merchant.state || validatedData.state,
-            zipCode: merchant.zipCode || validatedData.zipCode,
-            country: merchant.country || validatedData.country,
-            description: 'Default outlet created during registration',
-            merchantId: merchant.id,
-            isDefault: true
-          }
-        });
-
-        console.log('✅ Step 2 Complete: Outlet created:', { id: outlet.id, name: outlet.name });
-
-               // 5. Create default category
-               console.log('📝 Step 3: Creating default category...');
-               
-               const category = await tx.category.create({
-                 data: {
-                   name: 'General',
-                   description: 'Default category for general products',
-                   merchantId: merchant.id,
-                   isDefault: true
-                 }
-               });
-
-        console.log('✅ Step 3 Complete: Category created:', { id: category.id, name: category.name });
-
-        // 6. Create merchant user
-        console.log('📝 Step 4: Creating merchant user...');
-        
-        const hashedPassword = await hashPassword(validatedData.password);
-        const user = await tx.user.create({
-          data: {
-            email: validatedData.email,
-            password: hashedPassword,
-            firstName: firstName,
-            lastName: lastName,
-            phone: validatedData.phone,
-            role: 'MERCHANT',
-            merchantId: merchant.id,
-            outletId: outlet.id,
-            emailVerified: false, // Email needs to be verified after registration
-            emailVerifiedAt: null
-          }
-        });
-
-        console.log('✅ Step 4 Complete: User created:', { id: user.id, email: user.email });
-        console.log('🎉 Transaction complete - All entities created successfully!');
-
-        // Return created entities from transaction
-        return { merchant, outlet, category, user };
-      }); // End transaction
-
-      console.log('✅ Transaction committed successfully!');
-
-      // Extract results from transaction
-      const { merchant, outlet, category, user } = result;
-
-      // 7. Get or create trial plan (outside transaction - can reuse existing)
-      let trialPlan = await db.plans.findByName('Trial'); // Find Trial plan by name
-      if (!trialPlan) {
-        trialPlan = await db.plans.create({
-          name: 'Trial',
-          description: 'Free trial plan for new merchants',
-          basePrice: 0,
-          currency: 'USD',
-          trialDays: 14,
-          limits: JSON.stringify({
-            outlets: 1,
-            users: 3,
-            products: 500,
-            customers: 2000
-          }),
-          features: JSON.stringify([
-            'Basic inventory management',
-            'Customer management',
-            'Order processing',
-            'Basic reporting',
-            'Mobile app access',
-            '14-day free trial'
-          ]),
-          isActive: true,
-          sortOrder: 0
-        });
-      }
-
-      // 8. Create trial subscription
-      const subscriptionStartDate = new Date();
-      const trialEndDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
+      // Check if subdomain already exists in Main DB
+      const mainDb = await getMainDb();
+      await mainDb.connect();
       
-      await db.subscriptions.create({
-        merchantId: merchant.id,
-        planId: trialPlan.id,
-        status: 'trial',
-        amount: 0,
-        currency: 'USD',
-        currentPeriodStart: subscriptionStartDate,
-        currentPeriodEnd: trialEndDate,
-        trialStart: subscriptionStartDate,
-        trialEnd: trialEndDate
-      });
-
-      console.log('✅ Registration complete for merchant:', merchant.name);
-
-      // 9. Create email verification token and send verification email
-      console.log('📧 Step 5: Creating email verification...');
+      let merchantId: number;
       
       try {
-        const verification = await createEmailVerification(user.id, user.email);
-        const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+        const existingTenant = await mainDb.query(
+          'SELECT id FROM "Tenant" WHERE subdomain = $1',
+          [subdomain]
+        );
         
-        // Send verification email
-        const emailResult = await sendVerificationEmail(
+        if (existingTenant.rows.length > 0) {
+          await mainDb.end();
+          return NextResponse.json(
+            ResponseBuilder.error('SUBDOMAIN_ALREADY_EXISTS', 'Subdomain already taken'),
+            { status: 409 }
+          );
+        }
+        
+        // Check if merchant email already exists
+        const existingMerchant = await mainDb.query(
+          'SELECT id FROM "Merchant" WHERE email = $1',
+          [validatedData.email]
+        );
+        
+        if (existingMerchant.rows.length > 0) {
+          await mainDb.end();
+          return NextResponse.json(
+            ResponseBuilder.error('EMAIL_ALREADY_EXISTS', 'Email already exists'),
+            { status: 409 }
+          );
+        }
+        
+        // Create merchant in Main DB
+        const merchantResult = await mainDb.query(
+          'INSERT INTO "Merchant" (name, email, phone, "createdAt", "updatedAt") VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id',
+          [validatedData.businessName, validatedData.email, validatedData.phone]
+        );
+        
+        merchantId = merchantResult.rows[0].id;
+        
+        // Create tenant database
+        const databaseUrl = await createTenantDatabase(subdomain, merchantId);
+        
+        // Create tenant record in Main DB
+        await mainDb.query(
+          'INSERT INTO "Tenant" (id, subdomain, name, "merchantId", "databaseUrl", status, "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, NOW(), NOW())',
+          [subdomain, validatedData.businessName, merchantId, databaseUrl, 'active']
+        );
+        
+        console.log('✅ Tenant created:', { subdomain, merchantId });
+        
+      } finally {
+        await mainDb.end();
+      }
+      
+      // Get tenant DB and create initial entities
+      const tenantDb = await getTenantDb(subdomain);
+      
+      // Process name
+      let firstName = validatedData.firstName || '';
+      let lastName = validatedData.lastName || '';
+      
+      if (validatedData.name && !firstName && !lastName) {
+        const nameParts = validatedData.name.trim().split(/\s+/);
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+      
+      // Create default outlet
+      const outlet = await tenantDb.outlet.create({
+        data: {
+          name: `${validatedData.businessName} - Main Store`,
+          address: validatedData.address || 'Address to be updated',
+          phone: validatedData.phone,
+          isDefault: true
+        } as any
+      });
+      
+      // Create default category
+      const category = await tenantDb.category.create({
+        data: {
+          name: 'General',
+          description: 'Default category for general products',
+          isDefault: true
+        } as any
+      });
+      
+      // Create merchant user in tenant DB as OUTLET_ADMIN
+      const hashedPassword = await hashPassword(validatedData.password);
+      const user = await tenantDb.user.create({
+        data: {
+          email: validatedData.email,
+          password: hashedPassword,
+          firstName: firstName,
+          lastName: lastName,
+          phone: validatedData.phone,
+          role: 'OUTLET_ADMIN', // Tenant DB only has OUTLET_ADMIN and OUTLET_STAFF
+          outletId: outlet.id
+        }
+      });
+      
+      console.log('✅ Merchant registration complete:', { subdomain, merchantId });
+      
+      // Create email verification and send email
+      try {
+        const verification = await createEmailVerification(
+          user.id,
+          user.email,
+          24 // 24 hours expiry
+        );
+        
+        const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+        await sendVerificationEmail(
           user.email,
           userName,
           verification.token
         );
-
-        if (!emailResult.success) {
-          console.warn('⚠️ Failed to send verification email:', emailResult.error);
-          // Don't fail registration if email fails, but log it
-        } else {
-          console.log('✅ Verification email sent successfully');
-        }
-      } catch (error) {
-        console.error('❌ Error sending verification email:', error);
+        
+        console.log('✅ Verification email sent to:', user.email);
+      } catch (emailError) {
+        console.error('⚠️ Failed to send verification email:', emailError);
         // Don't fail registration if email fails
       }
-
-      // Don't generate JWT token yet - user must verify email first
-      return NextResponse.json({
-        success: true,
-        code: 'MERCHANT_ACCOUNT_CREATED_PENDING_VERIFICATION', 
-        message: 'Merchant account created successfully. Please check your email to verify your account before logging in.',
-        data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            emailVerified: false,
-            merchant: {
-              id: merchant.id,
-              name: merchant.name,
-              businessType: merchant.businessType,
-              pricingType: merchant.pricingType
-            },
-            outlet: {
-              id: outlet.id,
-              name: outlet.name
-            }
-          },
-          subscription: {
-            planName: trialPlan.name,
-            trialEnd: trialEndDate,
-            daysRemaining: Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-          },
-          requiresEmailVerification: true
-        }
-      }, { status: 201 });
-
-    } else {
-      // ============================================================================
-      // BASIC USER REGISTRATION FLOW
-      // ============================================================================
       
-      const hashedPassword = await hashPassword(validatedData.password);
-      const user = await db.users.create({
-        email: validatedData.email,
-        password: hashedPassword,
-        firstName: firstName,
-        lastName: lastName,
-        phone: validatedData.phone,
-        role: validatedData.role || 'CLIENT'
-      });
-
-      // Create email verification token and send verification email
-      try {
-        const verification = await createEmailVerification(user.id, user.email);
-        const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
-        
-        // Send verification email
-        const emailResult = await sendVerificationEmail(
-          user.email,
-          userName,
-          verification.token
-        );
-
-        if (!emailResult.success) {
-          console.warn('⚠️ Failed to send verification email:', emailResult.error);
-        } else {
-          console.log('✅ Verification email sent successfully');
-        }
-      } catch (error) {
-        console.error('❌ Error sending verification email:', error);
-      }
-
-      // Don't generate JWT token yet - user must verify email first
       return NextResponse.json({
         success: true,
-        code: 'USER_ACCOUNT_CREATED_PENDING_VERIFICATION',
-        message: 'User account created successfully. Please check your email to verify your account before logging in.',
+        code: 'MERCHANT_ACCOUNT_CREATED',
+        message: 'Merchant account created successfully',
         data: {
           user: {
             id: user.id,
@@ -333,18 +177,27 @@ export async function POST(request: NextRequest) {
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
-            emailVerified: false
+            subdomain
           },
-          requiresEmailVerification: true
+          merchant: {
+            subdomain,
+            url: `${subdomain}.anyrent.shop`
+          }
         }
       }, { status: 201 });
+      
+    } else {
+      // Basic user registration (not implemented for multi-tenant)
+      return NextResponse.json(
+        ResponseBuilder.error('REGISTRATION_NOT_SUPPORTED', 'User registration not supported in multi-tenant mode'),
+        { status: 400 }
+      );
     }
     
   } catch (error: any) {
     console.error('Registration error:', error);
     
-    // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-} 
+}

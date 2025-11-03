@@ -1,74 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * GET /api/orders/stats - Get order statistics
- * REFACTORED: Now uses unified withAuthRoles pattern for all business roles
- * NOTE: Database functions getOrderStats and getOverdueRentals not implemented - using placeholders
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user }) => {
   console.log(`📊 GET /api/orders/stats - User: ${user.email}, Role: ${user.role}`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+    
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const outletId = searchParams.get('outletId') ? parseInt(searchParams.get('outletId')!) : undefined;
     const includeOverdue = searchParams.get('includeOverdue') === 'true';
 
-    // Build filter based on user scope
-    const filters: any = {};
-    if (userScope.outletId) {
-      filters.outletId = userScope.outletId;
-    } else if (userScope.merchantId) {
-      filters.merchantId = userScope.merchantId;
-    }
-    if (outletId && user.role === 'ADMIN') {
-      filters.outletId = outletId;
+    // Build filter based on user scope - NO merchantId needed
+    const where: any = {};
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      where.outletId = user.outletId;
+    } else if (outletId && user.role === 'MERCHANT') {
+      where.outletId = outletId;
     }
 
     // Get order statistics using real data
-    const totalOrdersResult = await db.orders.search({ ...filters, limit: 1 });
-    const totalOrders = totalOrdersResult.total;
+    const totalOrders = await db.order.count({ where });
 
-    const activeRentalsResult = await db.orders.search({ 
-      ...filters, 
-      status: 'PICKUPED',
-      limit: 1 
-    });
-    const activeRentals = activeRentalsResult.total;
+    const activeRentalsWhere = { ...where, status: 'PICKUPED' };
+    const activeRentals = await db.order.count({ where: activeRentalsWhere });
 
-    const completedOrdersResult = await db.orders.search({ 
-      ...filters, 
-      status: 'COMPLETED',
-      limit: 1 
-    });
-    const completedOrders = completedOrdersResult.total;
+    const completedOrdersWhere = { ...where, status: 'COMPLETED' };
+    const completedOrders = await db.order.count({ where: completedOrdersWhere });
 
     // Get overdue rentals (return date passed but status still PICKUPED)
-    const overdueResult = await db.orders.search({ 
-      ...filters, 
+    const overdueWhere = { 
+      ...where, 
       status: 'PICKUPED',
-      returnPlanAt: { lt: new Date() },
-      limit: 100 // Get actual overdue orders
+      returnPlanAt: { lt: new Date() }
+    };
+    const overdueOrders = await db.order.findMany({
+      where: overdueWhere,
+      take: 100
     });
-    const overdueRentals = overdueResult.data;
+    const overdueRentals = overdueOrders;
 
     // Calculate revenue and average order value
-    const allOrdersResult = await db.orders.search({ 
-      ...filters, 
-      status: { in: ['COMPLETED', 'RETURNED'] },
-      limit: 1000 // Get recent completed orders for calculation
+    const completedOrdersQuery = await db.order.findMany({
+      where: { ...where, status: { in: ['COMPLETED', 'RETURNED'] } },
+      take: 1000
     });
     
-    const totalRevenue = allOrdersResult.data.reduce((sum: number, order: any) => 
+    const totalRevenue = completedOrdersQuery.reduce((sum: number, order: any) => 
       sum + (order.totalAmount || 0), 0
     );
     
-    const averageOrderValue = allOrdersResult.data.length > 0 
-      ? totalRevenue / allOrdersResult.data.length 
+    const averageOrderValue = completedOrdersQuery.length > 0 
+      ? totalRevenue / completedOrdersQuery.length 
       : 0;
 
     const stats = {

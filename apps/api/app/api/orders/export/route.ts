@@ -1,20 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/orders/export
  * Export orders to CSV (Admin, Merchant, Outlet Admin only)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  * OUTLET_STAFF cannot export orders
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user }) => {
   try {
-    // User is already authenticated and authorized to export orders
-    // Only ADMIN, MERCHANT, OUTLET_ADMIN can export
-    // OUTLET_STAFF will automatically get 403 Forbidden
-    // user and userScope are now available directly
+    const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '1000');
@@ -24,31 +34,33 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (r
     const status = searchParams.get('status');
     const orderType = searchParams.get('orderType');
 
-    // Build search filters based on user scope
-    const filters: any = {
-      limit,
-      offset,
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    };
-
-    // Apply scope restrictions
-    if (userScope.merchantId) {
-      filters.merchantId = userScope.merchantId;
+    // Build where clause - NO merchantId needed
+    const where: any = {};
+    if (user.role === 'OUTLET_ADMIN') {
+      where.outletId = user.outletId;
     }
-    if (userScope.outletId) {
-      filters.outletId = userScope.outletId;
-    }
-
+    
     // Apply additional filters
-    if (startDate) filters.startDate = new Date(startDate);
-    if (endDate) filters.endDate = new Date(endDate);
-    if (status) filters.status = status;
-    if (orderType) filters.orderType = orderType;
+    if (startDate) {
+      where.createdAt = { ...where.createdAt, gte: new Date(startDate) };
+    }
+    if (endDate) {
+      where.createdAt = { ...where.createdAt, lte: new Date(endDate) };
+    }
+    if (status) where.status = status;
+    if (orderType) where.orderType = orderType;
 
     // Get orders
-    const result = await db.orders.search(filters);
-    const orders = result.data;
+    const orders = await db.order.findMany({
+      where,
+      include: {
+        customer: true,
+        outlet: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset
+    });
 
     // Convert to CSV
     const csvHeaders = [

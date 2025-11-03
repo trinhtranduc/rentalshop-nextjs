@@ -60,8 +60,18 @@ export async function POST(request: NextRequest) {
     console.log('✅ [Resend Verification] User found:', { 
       userId: user.id, 
       email: user.email, 
-      emailVerified: user.emailVerified 
+      emailVerified: user.emailVerified,
+      role: user.role
     });
+
+    // Admin users don't need email verification
+    if (user.role === 'ADMIN') {
+      console.log('⚠️ [Resend Verification] Admin users do not need email verification');
+      return NextResponse.json(
+        ResponseBuilder.error('EMAIL_VERIFICATION_NOT_REQUIRED', 'Admin users do not need email verification'),
+        { status: 400 }
+      );
+    }
 
     // Check if already verified
     if (user.emailVerified) {
@@ -72,7 +82,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new verification token
+    // Create new verification token (only for Tenant DB users)
     console.log('🔑 [Resend Verification] Creating new verification token...');
     const verification = await resendVerificationToken(user.id, user.email);
     console.log('✅ [Resend Verification] Verification token created:', { 

@@ -5,6 +5,7 @@
 // Basic utilities
 export * from './string-utils';
 export * from './function-utils';
+export * from './tenant-utils';
 
 // Export common utilities without conflicts
 export { 

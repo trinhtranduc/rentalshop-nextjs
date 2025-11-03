@@ -1,44 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withCustomerExportAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/customers/export
  * Export customers to CSV (Admin, Merchant, Outlet Admin only)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  * OUTLET_STAFF cannot export customers
  */
 export const GET = withCustomerExportAuth(async (authorizedRequest) => {
   try {
-    // User is already authenticated and authorized to export customers
-    // Only ADMIN, MERCHANT, OUTLET_ADMIN can export
-    // OUTLET_STAFF will automatically get 403 Forbidden
-    const { user, userScope, request } = authorizedRequest;
+    const { user, request } = authorizedRequest;
+    
+    const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '1000');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Build search filters based on user scope
-    const filters: any = {
-      limit,
-      offset,
-      sortBy: 'firstName',
-      sortOrder: 'asc'
-    };
-
-    // Apply scope restrictions
-    if (userScope.merchantId) {
-      filters.merchantId = userScope.merchantId;
-    }
-    if (userScope.outletId) {
-      filters.outletId = userScope.outletId;
-    }
-
-    // Get customers
-    const result = await db.customers.search(filters);
-    const customers = result.data;
+    // Get customers (NO merchantId needed)
+    const customers = await db.customer.findMany({
+      orderBy: { firstName: 'asc' },
+      take: limit,
+      skip: offset
+    });
 
     // Convert to CSV
     const csvHeaders = [

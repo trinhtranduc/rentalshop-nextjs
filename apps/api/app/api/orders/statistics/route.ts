@@ -1,40 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/orders/statistics
  * Get order statistics for dashboard (optimized aggregation)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withReadOnlyAuth(async (request, { user, userScope }) => {
+export const GET = withReadOnlyAuth(async (request, { user }) => {
   console.log(`🔍 GET /api/orders/statistics - User: ${user.email} (${user.role})`);
   
   try {
+    const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+    
     const { searchParams } = new URL(request.url);
     
-    // Parse query parameters
-    const filters = {
-      merchantId: userScope.merchantId,
-      outletId: user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF' ? userScope.outletId : undefined,
-      startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
-      endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined
-    };
+    // Build where clause - NO merchantId needed
+    const where: any = {};
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      where.outletId = user.outletId;
+    }
+    
+    if (searchParams.get('startDate')) {
+      where.createdAt = { ...where.createdAt, gte: new Date(searchParams.get('startDate')!) };
+    }
+    if (searchParams.get('endDate')) {
+      where.createdAt = { ...where.createdAt, lte: new Date(searchParams.get('endDate')!) };
+    }
 
-    console.log('🔍 Statistics filters:', filters);
+    console.log('🔍 Statistics where clause:', where);
     
-    // Use performance monitoring for query optimization
-    const result = await PerformanceMonitor.measureQuery(
-      'orders.getStatistics',
-      () => db.orders.getStatistics(filters)
-    );
+    // Get order statistics using Prisma aggregate
+    const totalOrders = await db.order.count({ where });
     
-    console.log('✅ Statistics completed:', {
-      totalOrders: result.totalOrders,
-      totalRevenue: result.totalRevenue,
-      statusBreakdown: result.statusBreakdown
+    const totalRevenueResult = await db.order.aggregate({
+      where: { ...where, status: { in: ['COMPLETED', 'RETURNED'] } },
+      _sum: { totalAmount: true }
     });
+    const totalRevenue = totalRevenueResult._sum.totalAmount || 0;
+    
+    // Status breakdown
+    const statusBreakdown: any = {};
+    for (const status of ['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']) {
+      const count = await db.order.count({ where: { ...where, status } });
+      statusBreakdown[status] = count;
+    }
+    
+    const result = {
+      totalOrders,
+      totalRevenue,
+      statusBreakdown
+    };
+    
+    console.log('✅ Statistics completed:', result);
 
     return NextResponse.json({
       success: true,

@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/analytics/growth-metrics - Get growth metrics
- * Requires: Any authenticated user (scoped by role)
- * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
     const startDateParam = searchParams.get('startDate');
@@ -50,49 +62,18 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Determine the actual end date for current period
     const currentEnd = endDateParam ? new Date(endDateParam + 'T23:59:59') : now;
 
-    // Apply role-based filtering (consistent with other APIs)
+    // Build where clause - NO merchantId needed, DB is isolated
     let orderWhereClause: any = {};
 
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
-      // Find merchant by id to get outlets
-      const merchant = await db.merchants.findById(userScope.merchantId);
-      if (merchant && merchant.outlets) {
-        orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+    // Outlet filtering for outlet-level users
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.outletId) {
+        orderWhereClause.outletId = user.outletId;
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
-      // Find outlet by id to get CUID
-      const outlet = await db.outlets.findById(userScope.outletId);
-      if (outlet) {
-        orderWhereClause.outletId = outlet.id;
-      }
-    } else if (user.role === 'ADMIN') {
-      // ADMIN users see all data (system-wide access)
-      // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-    } else {
-      // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-      return NextResponse.json({
-        success: true,
-        data: {
-          orders: { current: 0, previous: 0, growth: 0 },
-          revenue: { current: 0, previous: 0, growth: 0 }
-        },
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
     }
 
     // Get current period orders (use provided date range or current month)
-    const currentMonthOrders = await db.orders.search({
+    const currentMonthOrders = await db.order.findMany({
       where: {
         ...orderWhereClause,
         createdAt: {
@@ -100,11 +81,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           lte: currentEnd
         }
       },
-      limit: 1000
+      take: 1000
     });
 
     // Get previous period orders
-    const lastMonthOrders = await db.orders.search({
+    const lastMonthOrders = await db.order.findMany({
       where: {
         ...orderWhereClause,
         createdAt: {
@@ -112,14 +93,14 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           lte: lastMonthEnd
         }
       },
-      limit: 1000
+      take: 1000
     });
 
     // Calculate growth metrics
-    const currentMonthCount = currentMonthOrders.total || 0;
-    const lastMonthCount = lastMonthOrders.total || 0;
-    const currentMonthRevenue = currentMonthOrders.data?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
-    const lastMonthRevenue = lastMonthOrders.data?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
+    const currentMonthCount = currentMonthOrders.length;
+    const lastMonthCount = lastMonthOrders.length;
+    const currentMonthRevenue = currentMonthOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const lastMonthRevenue = lastMonthOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
     const orderGrowth = lastMonthCount > 0 ? ((currentMonthCount - lastMonthCount) / lastMonthCount * 100) : 0;
     const revenueGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;
@@ -137,12 +118,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       }
     };
 
-    return NextResponse.json({
-      success: true,
-      data: growthMetrics,
-      code: 'GROWTH_METRICS_SUCCESS',
-        message: 'Growth metrics retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('GROWTH_METRICS_SUCCESS', growthMetrics)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching growth metrics:', error);
@@ -152,5 +130,3 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json(response, { status: statusCode });
   }
 });
-
-export const runtime = 'nodejs';

@@ -1,39 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * PUT /api/settings/outlet
  * Update current user's outlet information
- * Only accessible by users with outlet access (OUTLET_ADMIN, OUTLET_STAFF) or admin
+ * MULTI-TENANT: Uses subdomain-based tenant DB
+ * Only accessible by users with outlet access (OUTLET_ADMIN, OUTLET_STAFF)
  */
-export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withManagementAuth(async (request: NextRequest, { user }) => {
   try {
-    console.log('🔍 DEBUG: Settings outlet PUT API called');
+    const result = await getTenantDbFromRequest(request);
     
-    console.log('🔍 DEBUG: User authenticated:', {
-      id: user.id,
-      role: user.role,
-      merchantId: userScope.merchantId,
-      outletId: user.outletId
-    });
-
-    // Check if user has outlet access
-    // Admin users can access any outlet, others need specific outlet access
-    if (!user.outletId && user.role !== 'ADMIN') {
-      console.error('❌ DEBUG: User does not have outlet access:', {
-        outletId: user.outletId,
-        role: user.role
-      });
+    if (!result) {
       return NextResponse.json(
-        ResponseBuilder.error('NO_OUTLET_ACCESS'),
-        { status: API.STATUS.FORBIDDEN }
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
       );
     }
     
-    console.log('🔍 DEBUG: User has outlet access, proceeding with update');
+    const { db } = result;
+
+    // Check if user has outlet access
+    if (!user.outletId) {
+      return NextResponse.json(
+        ResponseBuilder.error('NO_OUTLET_ACCESS', 'User does not have outlet access'),
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
 
     const body = await request.json();
     const { name, address, phone, description } = body;
@@ -45,23 +44,8 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
         { status: 400 }
       );
     }
-
-    // Update outlet
-    // For admin users, we need to get the outlet ID from the request or use a default
-    let outletId = user.outletId;
     
-    // If admin user doesn't have outletId, we need to handle this differently
-    if (!outletId && user.role === 'ADMIN') {
-      console.log('🔍 DEBUG: Admin user without outletId, need to specify outlet');
-      return NextResponse.json(
-        ResponseBuilder.error('ADMIN_OUTLET_ID_REQUIRED'),
-        { status: 400 }
-      );
-    }
-    
-    console.log('🔍 DEBUG: Updating outlet with ID:', outletId);
-    
-    // Only update fields that have values to avoid overwriting existing data with null
+    // Only update fields that have values
     const updateData: any = {
       name,
       address,
@@ -77,15 +61,18 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
       updateData.description = description.trim();
     }
 
-    const updatedOutlet = await db.outlets.update(outletId, updateData);
+    const updatedOutlet = await db.outlet.update({
+      where: { id: user.outletId },
+      data: updateData
+    });
 
     return NextResponse.json(
       ResponseBuilder.success('OUTLET_INFO_UPDATED_SUCCESS', {
         id: updatedOutlet.id,
         name: updatedOutlet.name,
         address: updatedOutlet.address,
-        phone: updatedOutlet.phone,
-        description: updatedOutlet.description,
+        phone: updatedOutlet.phone || null,
+        description: updatedOutlet.description || null,
         isActive: updatedOutlet.isActive,
         isDefault: updatedOutlet.isDefault,
         createdAt: updatedOutlet.createdAt,

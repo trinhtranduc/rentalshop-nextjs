@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withReadOnlyAuth } from '@rentalshop/auth';
+import { withManagementAuth } from '@rentalshop/auth';
 import { z } from 'zod';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest, handleApiError, getUTCDateKey, ResponseBuilder } from '@rentalshop/utils';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
-import { handleApiError, getUTCDateKey } from '@rentalshop/utils';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format'),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
   outletId: z.coerce.number().int().positive().optional(),
-  merchantId: z.coerce.number().int().positive().optional(),
   status: z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']).optional(),
   orderType: z.enum(['RENT', 'SALE']).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(10), // Max 50 orders per day
@@ -20,6 +21,7 @@ const calendarOrdersQuerySchema = z.object({
 
 /**
  * 🎯 Calendar Orders API
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  * 
  * Returns order counts and summaries for calendar display
  * - Groups orders by date
@@ -27,14 +29,24 @@ const calendarOrdersQuerySchema = z.object({
  * - Limits to 3-4 orders per day for performance
  * - Optimized for calendar UI
  */
-export const GET = withReadOnlyAuth(async (
+export const GET = withManagementAuth(async (
   request: NextRequest,
-  { user, userScope }
+  { user }
 ) => {
   console.log(`🔍 GET /api/calendar/orders - User: ${user.email} (${user.role})`);
-  console.log(`🔍 Calendar API - UserScope:`, userScope);
 
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const query = Object.fromEntries(searchParams.entries());
@@ -42,7 +54,7 @@ export const GET = withReadOnlyAuth(async (
 
     console.log('📅 Calendar query:', validatedQuery);
 
-    const { startDate: startDateStr, endDate: endDateStr, outletId, merchantId, status, orderType, limit } = validatedQuery;
+    const { startDate: startDateStr, endDate: endDateStr, outletId, status, orderType, limit } = validatedQuery;
 
     // Parse date strings
     const startDate = new Date(startDateStr);
@@ -76,39 +88,52 @@ export const GET = withReadOnlyAuth(async (
       };
     }
 
-    // Role-based filtering
-    if (user.role === 'ADMIN') {
-      // ADMIN: Can see all orders, optionally filter by outletId
-      if (outletId) {
-        where.outletId = outletId;
-      }
-      // No restrictions for ADMIN - they can see all merchants and outlets
-    } else if (user.role === 'MERCHANT') {
-      // MERCHANT: Can see orders from all their outlets
-      // Filter by outlet.merchantId through relation
-      where.outlet = {
-        merchantId: userScope.merchantId
-      };
-      if (outletId) {
-        where.outletId = outletId;
-        // Remove outlet filter if outletId is specified
-        delete where.outlet;
-      }
-    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+    // Role-based filtering - NO merchantId needed, DB is isolated
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
       // OUTLET users: Can only see orders from their assigned outlet
-      where.outletId = userScope.outletId;
+      if (user.outletId) {
+        where.outletId = user.outletId;
+      }
+    } else if (outletId) {
+      // Optional outlet filtering for admin-level users
+      where.outletId = outletId;
     }
 
     console.log('🔍 Calendar where clause:', where);
 
-    // Fetch orders for the month with orderItems included using db.orders.searchWithItems
-    const ordersResult = await db.orders.searchWithItems({
+    // Fetch orders for the month with orderItems included
+    const orders = await db.order.findMany({
       where,
-      limit: 1000, // Get all orders for the month
-      page: 1
+      include: {
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+            phone: true
+          }
+        },
+        outlet: {
+          select: {
+            name: true
+          }
+        },
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                barcode: true,
+                images: true,
+                rentPrice: true,
+                deposit: true
+              }
+            }
+          }
+        }
+      },
+      take: 1000 // Get all orders for the month
     });
-    
-    const orders = ordersResult.data;
 
     console.log('📦 Found orders:', orders?.length || 0);
 
@@ -251,26 +276,25 @@ export const GET = withReadOnlyAuth(async (
         totalRevenue
       });
 
-      return NextResponse.json({
-        success: true,
-        data: calendarData,
-        meta: {
-          totalDays: calendar.length,
-          stats: {
-            totalPickups,
-            totalOrders,
-            totalRevenue,
-            totalReturns,
-            averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0
-          },
-          dateRange: {
-            start: startDate.toISOString().split('T')[0],
-            end: endDate.toISOString().split('T')[0]
+      return NextResponse.json(
+        ResponseBuilder.success('CALENDAR_DATA_SUCCESS', {
+          ...calendarData,
+          meta: {
+            totalDays: calendar.length,
+            stats: {
+              totalPickups,
+              totalOrders,
+              totalRevenue,
+              totalReturns,
+              averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0
+            },
+            dateRange: {
+              start: startDate.toISOString().split('T')[0],
+              end: endDate.toISOString().split('T')[0]
+            }
           }
-        },
-        code: 'CALENDAR_DATA_SUCCESS',
-        message: `Calendar data for ${startDateStr} to ${endDateStr}`
-      });
+        })
+      );
     }
 
     // Return empty calendar data if orders is not an array
@@ -285,26 +309,25 @@ export const GET = withReadOnlyAuth(async (
       }
     };
 
-    return NextResponse.json({
-      success: true,
-      data: emptyCalendarData,
-      meta: {
-        totalDays: 0,
-        stats: {
-          totalPickups: 0,
-          totalOrders: 0,
-          totalRevenue: 0,
-          totalReturns: 0,
-          averageOrderValue: 0
-        },
-        dateRange: {
-          start: startDate.toISOString().split('T')[0],
-          end: endDate.toISOString().split('T')[0]
+    return NextResponse.json(
+      ResponseBuilder.success('NO_CALENDAR_DATA', {
+        ...emptyCalendarData,
+        meta: {
+          totalDays: 0,
+          stats: {
+            totalPickups: 0,
+            totalOrders: 0,
+            totalRevenue: 0,
+            totalReturns: 0,
+            averageOrderValue: 0
+          },
+          dateRange: {
+            start: startDate.toISOString().split('T')[0],
+            end: endDate.toISOString().split('T')[0]
+          }
         }
-      },
-      code: 'NO_CALENDAR_DATA',
-      message: `No calendar data for ${startDateStr} to ${endDateStr}`
-    });
+      })
+    );
 
   } catch (error) {
     console.error('❌ Calendar API error:', error);

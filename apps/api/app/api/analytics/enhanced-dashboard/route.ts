@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/analytics/enhanced-dashboard - Get comprehensive dashboard analytics
- * Requires: Any authenticated user (scoped by role)
- * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, { user }) => {
   try {
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
+    
     const { searchParams } = new URL(request.url);
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
@@ -52,57 +64,18 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
     }
 
-    // Apply role-based filtering (consistent with other APIs)
+    // Build where clause - NO merchantId needed, DB is isolated
     let orderWhereClause: any = {};
     let paymentWhereClause: any = {};
-    let customerWhereClause: any = {};
     let outletStockWhereClause: any = {};
 
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
-      // Find merchant by id to get outlets
-      const merchant = await db.merchants.findById(userScope.merchantId);
-      if (merchant && merchant.outlets) {
-        orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
-        paymentWhereClause.order = { outletId: { in: merchant.outlets.map(outlet => outlet.id) } };
-        customerWhereClause.merchantId = merchant.id;
-        outletStockWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+    // Outlet filtering for outlet-level users
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.outletId) {
+        orderWhereClause.outletId = user.outletId;
+        paymentWhereClause.order = { outletId: user.outletId };
+        outletStockWhereClause.outletId = user.outletId;
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
-      // Find outlet by id to get CUID
-      const outlet = await db.outlets.findById(userScope.outletId);
-      if (outlet) {
-        orderWhereClause.outletId = outlet.id;
-        paymentWhereClause.order = { outletId: outlet.id };
-        customerWhereClause.merchantId = outlet.merchantId;
-        outletStockWhereClause.outletId = outlet.id;
-      }
-    } else if (user.role === 'ADMIN') {
-      // ADMIN users see all data (system-wide access)
-      // No additional filtering needed for ADMIN role
-      console.log('✅ ADMIN user accessing all system data:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-    } else {
-      // All other users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-      return NextResponse.json({
-        success: true,
-        data: {
-          today: { orders: 0, revenue: 0 },
-          thisMonth: { orders: 0, revenue: 0 },
-          activeRentals: 0,
-          stock: { total: 0, available: 0, renting: 0 },
-          growth: { revenue: 0 }
-        },
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
     }
 
     // Determine date range based on parameters
@@ -110,56 +83,85 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const end = endDateParam ? new Date(endDateParam + 'T23:59:59') : new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
     
     // Get today's orders (for startDate to endDate range)
-    const todayOrders = await db.orders.search({
-      where: {
-        ...orderWhereClause,
-        createdAt: { gte: start, lte: end }
-      },
-      limit: 1000
-    });
+    const [todayOrdersData, todayOrdersCount] = await Promise.all([
+      db.order.findMany({
+        where: {
+          ...orderWhereClause,
+          createdAt: { gte: start, lte: end }
+        },
+        take: 1000
+      }),
+      db.order.count({
+        where: {
+          ...orderWhereClause,
+          createdAt: { gte: start, lte: end }
+        }
+      })
+    ]);
+    const todayOrders = { data: todayOrdersData, total: todayOrdersCount };
 
     // Get this month/period's orders (same as today for the provided range)
-    const thisMonthOrders = await db.orders.search({
-      where: {
-        ...orderWhereClause,
-        createdAt: { gte: start, lte: end }
-      },
-      limit: 1000
-    });
+    const thisMonthOrders = todayOrders;
 
     // Get last month's orders
-    const lastMonthOrders = await db.orders.search({
-      where: {
-        ...orderWhereClause,
-        createdAt: { gte: lastMonth, lte: lastMonthEnd }
-      },
-      limit: 1000
-    });
+    const [lastMonthOrdersData, lastMonthOrdersCount] = await Promise.all([
+      db.order.findMany({
+        where: {
+          ...orderWhereClause,
+          createdAt: { gte: lastMonth, lte: lastMonthEnd }
+        },
+        take: 1000
+      }),
+      db.order.count({
+        where: {
+          ...orderWhereClause,
+          createdAt: { gte: lastMonth, lte: lastMonthEnd }
+        }
+      })
+    ]);
+    const lastMonthOrders = { data: lastMonthOrdersData, total: lastMonthOrdersCount };
 
     // Get active rentals - Orders that are currently being rented out
-    // This includes ALL orders with status PICKUPED (regardless of when they were picked up)
-    // This makes business sense because:
-    // - User wants to know total active rentals across all time
-    // - Not just rentals that started today
-    const activeRentals = await db.orders.search({
-      where: {
-        ...orderWhereClause,
-        status: 'PICKUPED'
-      },
-      limit: 1000
-    });
+    const [activeRentalsData, activeRentalsCount] = await Promise.all([
+      db.order.findMany({
+        where: {
+          ...orderWhereClause,
+          status: 'PICKUPED'
+        },
+        take: 1000
+      }),
+      db.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'PICKUPED'
+        }
+      })
+    ]);
+    const activeRentals = { data: activeRentalsData, total: activeRentalsCount };
     
     // Get today's pickups - Orders that were picked up TODAY
-    const todayPickups = await db.orders.search({
-      where: {
-        ...orderWhereClause,
-        status: 'PICKUPED',
-        pickedUpAt: {
-          gte: new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const [todayPickupsData, todayPickupsCount] = await Promise.all([
+      db.order.findMany({
+        where: {
+          ...orderWhereClause,
+          status: 'PICKUPED',
+          pickedUpAt: {
+            gte: new Date(today.getFullYear(), today.getMonth(), today.getDate())
+          }
+        },
+        take: 1000
+      }),
+      db.order.count({
+        where: {
+          ...orderWhereClause,
+          status: 'PICKUPED',
+          pickedUpAt: {
+            gte: new Date(today.getFullYear(), today.getMonth(), today.getDate())
+          }
         }
-      },
-      limit: 1000
-    });
+      })
+    ]);
+    const todayPickups = { data: todayPickupsData, total: todayPickupsCount };
 
     // Get stock metrics
     const stockMetrics = await db.outletStock.aggregate({
@@ -169,7 +171,13 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         available: true,
         renting: true
       }
-    });
+    }).catch(() => ({
+      _sum: {
+        stock: 0,
+        available: 0,
+        renting: 0
+      }
+    }));
 
     // Calculate metrics
     const todayRevenue = todayOrders.data?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
@@ -211,12 +219,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       }
     };
 
-    return NextResponse.json({
-      success: true,
-      data: dashboardData,
-      code: 'DASHBOARD_DATA_SUCCESS',
-        message: 'Enhanced dashboard data retrieved successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('DASHBOARD_DATA_SUCCESS', dashboardData)
+    );
 
   } catch (error) {
     console.error('❌ Error fetching enhanced dashboard:', error);
@@ -226,5 +231,3 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json(response, { status: statusCode });
   }
 });
-
-export const runtime = 'nodejs';

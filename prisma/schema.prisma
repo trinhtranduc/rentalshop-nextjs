@@ -35,21 +35,17 @@ model User {
   emailVerifiedAt        DateTime?
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
-  merchantId             Int?
   outletId               Int?
   deletedAt              DateTime?
   auditLogs              AuditLog[]
   createdOrders          Order[]
   subscriptionActivities SubscriptionActivity[]
   emailVerifications     EmailVerification[]
-  merchant               Merchant?              @relation(fields: [merchantId], references: [id])
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
   sessions               UserSession[]
 
-  @@unique([merchantId, email])
-  @@unique([merchantId, phone])
+  @@unique([phone])
   @@index([email])
-  @@index([merchantId])
   @@index([outletId])
   @@index([deletedAt])
   @@index([emailVerified])
@@ -72,45 +68,6 @@ model UserSession {
   @@index([expiresAt])
 }
 
-model Merchant {
-  id                 Int           @id @default(autoincrement())
-  name               String
-  email              String        @unique
-  phone              String?
-  address            String?
-  city               String?
-  state              String?
-  zipCode            String?
-  country            String?
-  businessType       BusinessType  @default(GENERAL)
-  taxId              String?
-  website            String?
-  description        String?
-  planId             Int?
-  subscriptionStatus String        @default("trial")
-  totalRevenue       Float         @default(0)
-  lastActiveAt       DateTime?
-  isActive           Boolean       @default(true)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  pricingConfig      String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
-  pricingType        PricingType   @default(FIXED)
-  currency           String        @default("USD")
-  categories         Category[]
-  customers          Customer[]
-  Plan               Plan?         @relation(fields: [planId], references: [id])
-  outlets            Outlet[]
-  payments           Payment[]
-  products           Product[]
-  subscription       Subscription?
-  users              User[]
-
-  @@index([name])
-  @@index([email])
-  @@index([planId])
-  @@index([subscriptionStatus])
-}
-
 model Outlet {
   id          Int           @id @default(autoincrement())
   name        String
@@ -120,18 +77,15 @@ model Outlet {
   isDefault   Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  merchantId  Int
   phone       String?
   city        String?
   country     String?
   state       String?
   zipCode     String?
   orders      Order[]
-  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products    OutletStock[]
   users       User[]
 
-  @@index([merchantId])
   @@index([name])
   @@index([isDefault])
 }
@@ -143,13 +97,10 @@ model Category {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  merchantId  Int
   isDefault   Boolean   @default(false)
-  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products    Product[]
 
-  @@unique([merchantId, name])
-  @@index([merchantId])
+  @@unique([name])
 }
 
 model Product {
@@ -165,14 +116,11 @@ model Product {
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  merchantId  Int
   categoryId  Int
   orderItems  OrderItem[]
   outletStock OutletStock[]
   category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
-  @@index([merchantId])
   @@index([categoryId])
   @@index([barcode])
   @@index([name])
@@ -213,12 +161,10 @@ model Customer {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  merchantId  Int
-  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   orders      Order[]
 
-  @@unique([merchantId, phone])
-  @@index([merchantId, firstName, lastName])
+  @@unique([phone])
+  @@index([firstName, lastName])
 }
 
 model Order {
@@ -311,46 +257,19 @@ model Payment {
   updatedAt      DateTime      @updatedAt
   orderId        Int?
   subscriptionId Int?
-  merchantId     Int?
-  merchant       Merchant?     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([orderId, status])
   @@index([subscriptionId, status])
-  @@index([merchantId, status])
   @@index([status])
   @@index([type])
   @@index([method])
   @@index([currency])
 }
 
-model Plan {
-  id            Int            @id @default(autoincrement())
-  name          String         @unique
-  description   String
-  basePrice     Float
-  currency      String         @default("USD")
-  trialDays     Int            @default(14)
-  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
-  features      String         @default("[]")
-  isActive      Boolean        @default(true)
-  isPopular     Boolean        @default(false)
-  sortOrder     Int            @default(0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
-  Merchant      Merchant[]
-  subscriptions Subscription[]
-
-  @@index([isActive])
-  @@index([sortOrder])
-  @@index([deletedAt])
-}
-
 model Subscription {
   id                 Int                    @id @default(autoincrement())
-  merchantId         Int                    @unique
   planId             Int
   status             String                 @default("trial")
   currentPeriodStart DateTime
@@ -370,14 +289,34 @@ model Subscription {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   payments           Payment[]
-  merchant           Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   plan               Plan                   @relation(fields: [planId], references: [id])
   activities         SubscriptionActivity[]
 
-  @@index([merchantId])
   @@index([planId])
   @@index([status])
   @@index([currency])
+}
+
+model Plan {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  description   String
+  basePrice     Float
+  currency      String         @default("USD")
+  trialDays     Int            @default(14)
+  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
+  features      String         @default("[]")
+  isActive      Boolean        @default(true)
+  isPopular     Boolean        @default(false)
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  subscriptions Subscription[]
+
+  @@index([isActive])
+  @@index([sortOrder])
+  @@index([deletedAt])
 }
 
 model SubscriptionActivity {

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { z } from 'zod';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Validation schema for product availability query
 const productAvailabilitySchema = z.object({
@@ -14,6 +17,7 @@ const productAvailabilitySchema = z.object({
 /**
  * GET /api/products/availability
  * Check product availability for a specific date
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  * Returns product summary (stock, rented, available) and orders for that date
  * 
  * Query parameters:
@@ -28,8 +32,19 @@ const productAvailabilitySchema = z.object({
  * - Availability status
  */
 export const GET = withReadOnlyAuth(
-  async (request, { user, userScope }) => {
+  async (request, { user }) => {
     try {
+      const result = await getTenantDbFromRequest(request);
+      
+      if (!result) {
+        return NextResponse.json(
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+          { status: 400 }
+        );
+      }
+      
+      const { db } = result;
+      
       const { searchParams } = new URL(request.url);
       console.log('Product availability params:', Object.fromEntries(searchParams.entries()));
       
@@ -59,7 +74,7 @@ export const GET = withReadOnlyAuth(
       
       if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
-        finalOutletId = queryOutletId || userScope.outletId;
+        finalOutletId = queryOutletId || user.outletId;
       } else if (user.role === 'MERCHANT') {
         // Merchants: outletId is required
         if (!queryOutletId) {
@@ -81,7 +96,9 @@ export const GET = withReadOnlyAuth(
       }
 
       // Get product information
-      const product = await db.products.findById(productId);
+      const product = await db.product.findUnique({
+        where: { id: productId }
+      });
       if (!product) {
         return NextResponse.json(
           ResponseBuilder.error('PRODUCT_NOT_FOUND', 'Product not found'),
@@ -90,7 +107,7 @@ export const GET = withReadOnlyAuth(
       }
 
       // Check if product exists in the outlet
-      const outletStock = await db.prisma.outletStock.findFirst({
+      const outletStock = await db.outletStock.findFirst({
         where: {
           productId: productId,
           outletId: finalOutletId
@@ -114,7 +131,7 @@ export const GET = withReadOnlyAuth(
       // Get orders that have this product and overlap with the target date
       // CRITICAL FIX: Ensure we only get orders from the specific outlet
       // Get ALL orders for this product in the specific outlet (no date filtering)
-      const allOrders = await db.prisma.order.findMany({
+      const allOrders = await db.order.findMany({
         where: {
           outletId: finalOutletId,
           orderType: {
@@ -139,13 +156,7 @@ export const GET = withReadOnlyAuth(
           outlet: {
             select: {
               id: true,
-              name: true,
-              merchant: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
+              name: true
             }
           },
           createdBy: {
@@ -331,11 +342,7 @@ export const GET = withReadOnlyAuth(
           customerPhone: order.customer?.phone || null,
           customerEmail: order.customer?.email || null,
           
-          // Flatten merchant info
-          merchantId: order.outlet?.merchant?.id || null,
-          merchantName: order.outlet?.merchant?.name || 'Unknown Merchant',
-          
-          // Created by info
+          // Created by info (no merchant info - tenant DB is isolated)
           createdById: order.createdById || null,
           createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
           

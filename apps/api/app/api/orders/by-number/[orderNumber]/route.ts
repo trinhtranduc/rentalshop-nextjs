@@ -1,36 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { getTenantDbFromRequest } from '@rentalshop/utils';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
+export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
  * GET /api/orders/by-number/[orderNumber]
  * Get order by order number
+ * MULTI-TENANT: Uses subdomain-based tenant DB
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { orderNumber: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user }) => {
     try {
-      const { orderNumber } = params;
-      console.log('🔍 GET /api/orders/by-number/[orderNumber] - Looking for order with number:', orderNumber);
-
-      // Get user scope for merchant isolation
-      const userMerchantId = userScope.merchantId;
+      const result = await getTenantDbFromRequest(request);
       
-      if (!userMerchantId) {
+      if (!result) {
         return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
+          ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
           { status: 400 }
         );
       }
       
-      // Get order by order number using the simplified database API
-      const order: any = await db.orders.findByNumber(orderNumber);
+      const { db } = result;
+      
+      const { orderNumber } = params;
+      console.log('🔍 GET /api/orders/by-number/[orderNumber] - Looking for order with number:', orderNumber);
+      
+      // Get order by order number using Prisma
+      const order: any = await db.order.findUnique({
+        where: { orderNumber },
+        include: {
+          customer: true,
+          outlet: true,
+          createdBy: true,
+          orderItems: {
+            include: { product: true }
+          },
+          payments: true
+        }
+      });
 
       if (!order) {
         console.log('❌ Order not found in database for orderNumber:', orderNumber);

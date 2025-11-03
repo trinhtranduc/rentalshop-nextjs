@@ -1,3 +1,3 @@
 import { createBaseConfig } from '../../tsup.config.base';
 
-export default createBaseConfig('src/index.ts', ['@prisma/client']); 
+export default createBaseConfig('src/index.ts', ['@prisma/client', 'pg'], { dts: false }); 

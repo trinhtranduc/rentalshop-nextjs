@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { withManagementAuth } from '@rentalshop/auth';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+export const GET = withManagementAuth(async (request, { user }) => {
   try {
-    // User is already authenticated and authorized to view analytics
+    const result = await getTenantDbFromRequest(request);
+    
+    if (!result) {
+      return NextResponse.json(
+        ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
+        { status: 400 }
+      );
+    }
+    
+    const { db } = result;
 
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
@@ -28,7 +39,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       dateStart.setDate(dateStart.getDate() - 30);
     }
 
-    // Build where clause based on user role and scope
+    // Build where clause - NO merchantId needed, DB is isolated
     const orderWhereClause: any = {
       customerId: { not: null },
       createdAt: {
@@ -38,36 +49,14 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED', 'PICKUPED', 'RETURNED'] }
     };
 
-    // Apply role-based filtering
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
-      // Find merchant by id to get CUID, then filter by outlet
-      const merchant = await db.merchants.findById(userScope.merchantId);
-      if (merchant && merchant.outlets) {
-        orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
+    // Outlet filtering for outlet-level users
+    if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.outletId) {
+        orderWhereClause.outletId = user.outletId;
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
-      // Find outlet by id to get CUID
-      const outlet = await db.outlets.findById(userScope.outletId );
-      if (outlet) {
-        orderWhereClause.outletId = outlet.id;
-      }
-    } else if (user.role !== 'ADMIN') {
-      // New users without merchant/outlet assignment should see no data
-      console.log('🚫 User without merchant/outlet assignment:', {
-        role: user.role,
-        merchantId: userScope.merchantId,
-        outletId: userScope.outletId
-      });
-      return NextResponse.json({
-        success: true,
-        data: [],
-        code: 'NO_DATA_AVAILABLE',
-        message: 'No data available - user not assigned to merchant/outlet'
-      });
     }
-    // ADMIN sees all data (no additional filtering)
 
-    const topCustomers = await db.orders.groupBy({
+    const topCustomers = await db.order.groupBy({
       by: ['customerId'],
       where: orderWhereClause,
       _count: {
@@ -87,10 +76,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Get customer details for each top customer in order
     const topCustomersWithDetails = [];
     for (const item of topCustomers) {
-      const customer = await db.customers.findById(item.customerId!);
+      const customer = await db.customer.findUnique({
+        where: { id: item.customerId! }
+      });
 
     // Get rental count for this customer (only RENT orders)
-    const rentalCount = await db.orders.getStats({
+    const rentalCount = await db.order.count({
       where: {
         ...orderWhereClause,
         customerId: item.customerId!,
@@ -99,7 +90,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     });
 
     // Get sale count for this customer (only SALE orders)
-    const saleCount = await db.orders.getStats({
+    const saleCount = await db.order.count({
       where: {
         ...orderWhereClause,
         customerId: item.customerId!,
@@ -121,17 +112,25 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       });
     }
 
-    const body = JSON.stringify({ 
-      success: true, 
+    const responseData = {
       data: topCustomersWithDetails,
       userRole: user.role // Include user role for frontend filtering
-    });
+    };
+    
+    const body = JSON.stringify(ResponseBuilder.success('TOP_CUSTOMERS_SUCCESS', responseData));
     const etag = crypto.createHash('sha1').update(body).digest('hex');
     const ifNoneMatch = request.headers.get('if-none-match');
     if (ifNoneMatch && ifNoneMatch === etag) {
       return new NextResponse(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'private, max-age=60' } });
     }
-    return new NextResponse(body, { status: API.STATUS.OK, headers: { 'Content-Type': 'application/json', ETag: etag, 'Cache-Control': 'private, max-age=60' } });
+    return new NextResponse(body, { 
+      status: API.STATUS.OK, 
+      headers: { 
+        'Content-Type': 'application/json', 
+        ETag: etag, 
+        'Cache-Control': 'private, max-age=60' 
+      } 
+    });
 
   } catch (error) {
     console.error('Error fetching top customers analytics:', error);
@@ -141,5 +140,3 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json(response, { status: statusCode });
   }
 });
-
-export const runtime = 'nodejs';
