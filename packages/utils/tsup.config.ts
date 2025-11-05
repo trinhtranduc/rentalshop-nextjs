@@ -1,4 +1,6 @@
 import { defineConfig } from 'tsup';
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 
 // Official esbuild plugin to exclude React from server-side bundle
 // This intercepts React imports at build time and prevents them from being included
@@ -27,6 +29,40 @@ const excludeReactPlugin = {
       loader: 'js',
     }));
   },
+};
+
+// Post-build: Remove React imports from generated files (backup solution)
+// This ensures React imports are completely removed even if plugin doesn't catch everything
+const removeReactImports = (outDir: string) => {
+  const esmPath = join(outDir, 'index.mjs');
+  const cjsPath = join(outDir, 'index.js');
+  
+  // Remove from ESM output
+  try {
+    let content = readFileSync(esmPath, 'utf-8');
+    // Remove all React-related imports
+    content = content.replace(/import\s+React[^'"]*from\s+['"]react['"];?\n?/g, '');
+    content = content.replace(/import\s+.*\{[^}]*\}.*from\s+['"]react['"];?\n?/g, '');
+    content = content.replace(/import\s+.*from\s+['"]react\/jsx-runtime['"];?\n?/g, '');
+    content = content.replace(/import\s+['"]react['"];?\n?/g, '');
+    content = content.replace(/import\s+['"]react\/jsx-runtime['"];?\n?/g, '');
+    writeFileSync(esmPath, content);
+  } catch (e) {
+    // File might not exist, that's ok
+  }
+
+  // Remove from CJS output
+  try {
+    let content = readFileSync(cjsPath, 'utf-8');
+    // Remove all React-related requires
+    content = content.replace(/const\s+React[^;]*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
+    content = content.replace(/const\s+\{[^}]*\}\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
+    content = content.replace(/require\(['"]react['"]\)[^;]*;?\n?/g, '');
+    content = content.replace(/require\(['"]react\/jsx-runtime['"]\)[^;]*;?\n?/g, '');
+    writeFileSync(cjsPath, content);
+  } catch (e) {
+    // File might not exist, that's ok
+  }
 };
 
 export default defineConfig([
@@ -91,6 +127,10 @@ export default defineConfig([
         options.external.push('react', 'react-dom', 'react/jsx-runtime');
       }
       return options;
+    },
+    // Post-build cleanup: Remove React imports as backup solution
+    onSuccess: async () => {
+      removeReactImports('dist/api');
     },
   }
 ]); 
