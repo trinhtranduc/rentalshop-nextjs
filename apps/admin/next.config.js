@@ -64,6 +64,33 @@ const nextConfig = {
   ...(process.env.NODE_ENV === 'development' && {
     staticPageGenerationTimeout: 0,
   }),
+  // Webpack config to exclude Node.js built-ins from client bundles
+  webpack: (config, { isServer }) => {
+    // CRITICAL: Exclude Node.js built-in modules from client bundles
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        child_process: false,
+        crypto: false,
+        util: false,
+        os: false,
+        stream: false,
+        dns: false,
+        net: false,
+        tls: false,
+        http: false,
+        https: false,
+        url: false,
+        querystring: false,
+        buffer: false,
+        events: false,
+        zlib: false,
+      };
+    }
+    return config;
+  },
 };
 
 // Export config wrapped with next-intl plugin

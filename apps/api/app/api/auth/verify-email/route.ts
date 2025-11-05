@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db, verifyEmailByToken } from '@rentalshop/database';
 import { generateToken } from '@rentalshop/auth';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 
 const verifyEmailSchema = z.object({
   token: z.string().min(1, 'Token is required'),

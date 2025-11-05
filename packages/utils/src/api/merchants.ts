@@ -41,8 +41,32 @@ export interface MerchantSearchFilters {
 export const merchantsApi = {
   /**
    * Get all merchants
+   * For ADMIN role: Returns tenants from Main DB
+   * For other roles: Returns merchants from tenant DB (if applicable)
    */
   async getMerchants(): Promise<ApiResponse<MerchantsResponse>> {
+    // Check if user is ADMIN - if so, use tenants endpoint
+    // This is a client-side check, backend will enforce proper authorization
+    try {
+      // Try admin tenants endpoint first (for backward compatibility)
+      // If user is not ADMIN, backend will return 403 and we can fallback
+      const adminTenantsUrl = `${apiUrls.base}/api/admin/tenants`;
+      const response = await authenticatedFetch(adminTenantsUrl);
+      
+      if (response.ok) {
+        const result = await parseApiResponse<MerchantsResponse>(response);
+        // Transform tenants response to merchants format
+        if (result.success && result.data) {
+          // Response already has 'merchants' key for backward compatibility
+          return result;
+        }
+      }
+    } catch (error) {
+      // Fallback to original merchants endpoint if admin endpoint fails
+      console.log('Falling back to merchants endpoint');
+    }
+    
+    // Fallback to original endpoint
     const response = await authenticatedFetch(apiUrls.merchants.list);
     const result = await parseApiResponse<MerchantsResponse>(response);
     return result;

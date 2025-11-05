@@ -23,15 +23,16 @@ import {
  * Main Outlet interface - consolidated from multiple sources
  * Combines outlet-data.ts and outlets/outlet.ts definitions
  */
-export interface Outlet extends BaseEntityWithMerchant, Address, ContactInfo {
+// Note: BaseEntityWithMerchant removed - tenant databases don't have merchant model
+export interface Outlet extends BaseEntity, Address, ContactInfo {
   // Core outlet fields
   name: string;
   description?: string;
   isActive: boolean;
-  isDefault?: boolean; // Indicates if this is the default outlet for the merchant
+  isDefault?: boolean; // Indicates if this is the default outlet for the tenant
   
   // Related entities (populated when needed)
-  merchant?: MerchantReference;
+  // Note: merchant removed - tenant databases don't have merchant model
 }
 
 // ============================================================================
@@ -51,7 +52,7 @@ export interface OutletCreateInput extends BaseFormInput {
   zipCode?: string;
   country?: string;
   description?: string;
-  merchantId: number;
+  // Note: merchantId removed - tenant databases are already isolated per tenant
 }
 
 /**
@@ -107,11 +108,7 @@ export interface OutletSearchResult {
   isDefault?: boolean;  // Indicates if this is the default outlet for the merchant
   createdAt: Date | string;
   updatedAt: Date | string;
-  merchantId: number;
-  merchant: {
-    id: number;      // Auto-incrementing integer ID
-    name: string;
-  };
+  // Note: merchantId and merchant removed - tenant databases are already isolated per tenant
 }
 
 /**

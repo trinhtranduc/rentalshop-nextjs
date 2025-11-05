@@ -38,7 +38,13 @@
     "db:migrate:main": "npx prisma migrate dev --schema=prisma/main/schema.prisma",
     "db:generate:tenant": "npx prisma generate --schema=prisma/schema.prisma",
     "db:push:tenant": "npx prisma db push --schema=prisma/schema.prisma",
-    "db:generate:all": "yarn db:generate:main && yarn db:generate:tenant"
+    "db:generate:all": "yarn db:generate:main && yarn db:generate:tenant",
+    "db:setup-main": "node scripts/setup-main-db.js",
+    "db:setup-main:railway": "railway run --service apis node scripts/setup-main-db.js",
+    "db:push:railway": "railway run --service apis yarn db:push:tenant --accept-data-loss",
+    "env:verify": "node scripts/verify-env.js",
+    "verify:multi-tenant": "node scripts/verify-multi-tenant.js",
+    "verify:railway": "railway run --service apis node scripts/verify-multi-tenant.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

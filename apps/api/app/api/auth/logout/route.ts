@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 import { verifyTokenSimple } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';

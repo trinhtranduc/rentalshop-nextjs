@@ -13,6 +13,7 @@ export default defineConfig({
     '@rentalshop/ui',
     '@rentalshop/database',
     '@rentalshop/utils',
+    '@rentalshop/utils/api', // Support subpath exports
     'bcryptjs',
     'jsonwebtoken', 
     'next-auth'

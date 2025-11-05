@@ -26,12 +26,12 @@ export default function LoginPage() {
 
   const handleLogin = async (data: any) => {
     try {
-      console.log('🔐 Login attempt started with:', { email: data.email });
+      console.log('🔐 Login attempt started with:', { email: data.email, subdomain: data.subdomain });
       setLocalError(null);
       // Note: Don't clear authError here - let useAuth handle it
       
       console.log('📞 Calling login function from useAuth hook...');
-      const success = await login(data.email, data.password);
+      const success = await login(data.email, data.password, data.subdomain);
       console.log('📥 Login result received:', success);
       
       if (success) {

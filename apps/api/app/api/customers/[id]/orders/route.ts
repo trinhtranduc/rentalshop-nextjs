@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTenantDbFromRequest } from '@rentalshop/utils';
+import { getTenantDbFromRequest } from '@rentalshop/utils/api';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 import { API } from '@rentalshop/constants';
 
 export const dynamic = 'force-dynamic';

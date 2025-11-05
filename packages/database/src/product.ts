@@ -14,32 +14,13 @@ import type { ProductSearchFilter } from '@rentalshop/types';
 // ============================================================================
 
 /**
- * Get product by id (number) - follows dual ID system
- * SECURITY: Enforces merchant isolation to prevent cross-tenant access
+ * Get product by id
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-export async function getProductById(id: number, merchantId: number) {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
-  return await prisma.product.findFirst({
-    where: { 
-      id,
-      merchantId: merchant.id // Use CUID for merchant isolation
-    },
+export async function getProductById(id: number) {
+  return await prisma.product.findUnique({
+    where: { id },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       category: {
         select: {
           id: true,
@@ -54,7 +35,7 @@ export async function getProductById(id: number, merchantId: number) {
           renting: true,
           outlet: {
             select: {
-      id: true,
+              id: true,
               name: true,
               address: true,
             },
@@ -66,32 +47,13 @@ export async function getProductById(id: number, merchantId: number) {
 }
 
 /**
- * Get product by barcode - follows dual ID system
- * SECURITY: Enforces merchant isolation to prevent cross-tenant access
+ * Get product by barcode
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-export async function getProductByBarcode(barcode: string, merchantId: number) {
-  // Find merchant by id to get the CUID
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function getProductByBarcode(barcode: string) {
   return await prisma.product.findFirst({
-    where: { 
-      barcode,
-      merchantId: merchant.id // Use CUID for merchant isolation
-    },
+    where: { barcode },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       category: {
         select: {
           id: true,
@@ -150,17 +112,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
     isActive,
   };
 
-  if (merchantId) {
-    // Find merchant by id
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantId },
-      select: { id: true }
-    });
-    
-    if (merchant) {
-      where.merchantId = merchant.id; // Use CUID
-    }
-  }
+  // Note: merchantId filtering removed - tenant databases are already isolated per tenant
 
   if (categoryId) {
     // Find category by id
@@ -249,12 +201,6 @@ export async function searchProducts(filters: ProductSearchFilter) {
             name: true
           }
         },
-        merchant: {
-          select: {
-      id: true,
-            name: true
-          }
-        },
         outletStock: {
           select: {
             id: true,
@@ -296,10 +242,6 @@ export async function searchProducts(filters: ProductSearchFilter) {
       id: product.category.id, // Return id (number)
       name: product.category.name,
     },
-    merchant: {
-      id: product.merchant.id, // Return id (number)
-      name: product.merchant.name,
-    },
     outletStock: product.outletStock.map((stock: any) => ({
       id: stock.id, // Keep CUID for internal use
       stock: stock.stock,
@@ -329,13 +271,13 @@ export async function searchProducts(filters: ProductSearchFilter) {
 // ============================================================================
 
 /**
- * Get or create default category for merchant
+ * Get or create default category
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-async function getOrCreateDefaultCategory(merchantId: number): Promise<any> {
+async function getOrCreateDefaultCategory(): Promise<any> {
   // First try to find existing default category
   const existingDefault = await prisma.category.findFirst({
     where: {
-      merchantId: merchantId, // merchantId is number (public ID)
       name: 'General',
       isActive: true
     }
@@ -347,7 +289,7 @@ async function getOrCreateDefaultCategory(merchantId: number): Promise<any> {
   }
 
   // Create default category if not exists
-  console.log('🔧 Creating default category for merchant:', merchantId);
+  console.log('🔧 Creating default category');
   
   // Generate next category id
   const lastCategory = await prisma.category.findFirst({
@@ -361,7 +303,6 @@ async function getOrCreateDefaultCategory(merchantId: number): Promise<any> {
       id: nextPublicId,
       name: 'General',
       description: 'Default category for general products',
-      merchantId: merchantId,
       isActive: true
     }
   });
@@ -378,15 +319,12 @@ async function getOrCreateDefaultCategory(merchantId: number): Promise<any> {
  * Create new product - follows dual ID system
  * Input: ids (numbers), Output: id (number)
  */
+/**
+ * Create new product
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
+ */
 export async function createProduct(input: any): Promise<any> {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: input.merchantId }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${input.merchantId} not found`);
-  }
+  // Note: merchantId removed - tenant databases are already isolated per tenant
 
   // Find category by id if provided
   let category = null;
@@ -419,7 +357,6 @@ export async function createProduct(input: any): Promise<any> {
     deposit: input.deposit || 0,
     images: input.images,
     isActive: input.isActive ?? true,
-    merchantId: merchant.id, // Use CUID
   };
 
   // Only add categoryId if category is provided
@@ -509,12 +446,6 @@ export async function updateProduct(
     where: { id },
     data: updateData,
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       category: {
         select: {
           id: true,
@@ -532,21 +463,11 @@ export async function updateProduct(
 // ============================================================================
 
 /**
- * Get products by merchant - follows dual ID system
+ * Get all products
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-export async function getProductsByMerchant(merchantId: number) {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function getAllProducts() {
   return await prisma.product.findMany({
-    where: { merchantId: merchant.id }, // Use CUID
     include: {
       category: {
         select: {
@@ -723,7 +644,6 @@ export const simplifiedProducts = {
     return await prisma.product.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
@@ -741,7 +661,6 @@ export const simplifiedProducts = {
     return await prisma.product.findUnique({
       where: { barcode },
       include: {
-        merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
@@ -760,19 +679,18 @@ export const simplifiedProducts = {
       console.log('🔍 simplifiedProducts.create called with data:', data);
       
       // If no categoryId provided, get or create default category
-      if (!data.categoryId && data.merchant && data.merchant.connect && data.merchant.connect.id) {
-        const merchantPublicId = data.merchant.connect.id; // This is the public ID (number)
-        const defaultCategory = await getOrCreateDefaultCategory(merchantPublicId);
+      // Note: merchantId removed - tenant databases are already isolated per tenant
+      if (!data.categoryId) {
+        const defaultCategory = await getOrCreateDefaultCategory();
         
         // Add category connection to data
         data.category = { connect: { id: defaultCategory.id } };
-        console.log('✅ Using default category:', defaultCategory.id, 'for merchant:', merchantPublicId);
+        console.log('✅ Using default category:', defaultCategory.id);
       }
       
       const product = await prisma.product.create({
         data,
         include: {
-          merchant: { select: { id: true, name: true } },
           category: { select: { id: true, name: true } },
           outletStock: {
             include: {
@@ -798,7 +716,6 @@ export const simplifiedProducts = {
       where: { id },
       data,
       include: {
-        merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
@@ -828,7 +745,6 @@ export const simplifiedProducts = {
     return await prisma.product.findFirst({
       where,
       include: {
-        merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
@@ -858,7 +774,7 @@ export const simplifiedProducts = {
     // Build where clause
     const where: any = {};
     
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
     // Default to active products only unless explicitly requesting all
     if (whereFilters.isActive !== undefined) {
@@ -888,7 +804,6 @@ export const simplifiedProducts = {
       prisma.product.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           category: { select: { id: true, name: true } },
           outletStock: {
             include: {

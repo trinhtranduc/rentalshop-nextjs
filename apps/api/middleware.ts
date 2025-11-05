@@ -260,11 +260,18 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-app-version', platformInfo.version);
     }
     
-    // Forward subdomain from request (Phase 1: Header-based detection)
-    const subdomain = request.headers.get('x-subdomain');
+    // Extract and forward subdomain from hostname or header
+    const hostname = request.headers.get('host') || '';
+    const { extractSubdomain } = await import('@rentalshop/database');
+    const subdomainFromHost = extractSubdomain(hostname);
+    const subdomainFromHeader = request.headers.get('x-subdomain');
+    
+    // Prefer hostname subdomain over header
+    const subdomain = subdomainFromHost || subdomainFromHeader;
+    
     if (subdomain) {
       requestHeaders.set('x-tenant-subdomain', subdomain);
-      console.log('🔍 MIDDLEWARE: Subdomain detected:', subdomain);
+      console.log('🔍 MIDDLEWARE: Subdomain detected:', subdomain, { fromHost: !!subdomainFromHost, fromHeader: !!subdomainFromHeader });
     }
 
     // Note: Subscription validation is handled in the centralized authenticateRequest function

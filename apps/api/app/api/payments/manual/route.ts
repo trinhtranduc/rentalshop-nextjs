@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getMainDb } from '@rentalshop/database';
 import { withManagementAuth } from '@rentalshop/auth';
-import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { getTenantDbFromRequest, handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 import {API} from '@rentalshop/constants';
 
 export const dynamic = 'force-dynamic';

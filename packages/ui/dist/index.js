@@ -13842,13 +13842,15 @@ var LoginForm = ({
   const t2 = (0, import_hooks11.useAuthTranslations)();
   const validationSchema = create$3({
     email: create$6().email(t2("login.invalidEmail")).required(t2("login.invalidEmail")),
-    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword"))
+    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword")),
+    subdomain: isAdmin ? create$6().optional() : create$6().min(1, t2("login.storeNameRequired")).required(t2("login.storeNameRequired"))
   });
   const validation = useFormik({
     enableReinitialize: true,
     initialValues: {
       email: "",
-      password: ""
+      password: "",
+      subdomain: ""
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -13942,6 +13944,32 @@ var LoginForm = ({
           error
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "space-y-4", children: [
+          !isAdmin && /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.storeName") }),
+            /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "relative", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.Globe, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+              /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(
+                import_ui14.Input,
+                {
+                  type: "text",
+                  placeholder: t2("login.storeNamePlaceholder"),
+                  className: "pl-10 pr-32",
+                  onChange: (e2) => {
+                    validation.handleChange(e2);
+                    onInputChange?.();
+                  },
+                  onBlur: validation.handleBlur,
+                  value: validation.values.subdomain || "",
+                  name: "subdomain"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none", children: /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("span", { className: "text-sm text-gray-400 font-mono", children: [
+                ".",
+                typeof window !== "undefined" ? process.env.NEXT_PUBLIC_ROOT_DOMAIN || "anyrent.shop" : "anyrent.shop"
+              ] }) })
+            ] }),
+            validation.touched.subdomain && validation.errors.subdomain && /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("p", { className: "mt-2 text-sm text-red-600", children: validation.errors.subdomain })
+          ] }),
           /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.email") }),
             /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "relative", children: [
@@ -14072,6 +14100,7 @@ var import_utils17 = require("@rentalshop/utils");
 var import_constants8 = require("@rentalshop/constants");
 var import_ui15 = require("@rentalshop/ui");
 var import_hooks12 = require("@rentalshop/hooks");
+var import_database = require("@rentalshop/database");
 var import_jsx_runtime54 = require("react/jsx-runtime");
 var RegisterForm = ({
   onRegister,
@@ -14086,6 +14115,7 @@ var RegisterForm = ({
   const [currentStep, setCurrentStep] = (0, import_react30.useState)(initialStep || 1);
   const [accountData, setAccountData] = (0, import_react30.useState)({});
   const [isSubmitting, setIsSubmitting] = (0, import_react30.useState)(false);
+  const [generatedSubdomain, setGeneratedSubdomain] = (0, import_react30.useState)("");
   const { toastSuccess, toastError, removeToast } = (0, import_ui15.useToast)();
   const t2 = (0, import_hooks12.useAuthTranslations)();
   const step1ValidationSchema = create$3({
@@ -14170,7 +14200,9 @@ var RegisterForm = ({
           city: values.city,
           state: values.state,
           zipCode: values.zipCode,
-          country: values.country
+          country: values.country,
+          subdomain: generatedSubdomain || (0, import_database.sanitizeSubdomain)(values.businessName)
+          // Auto-generate from business name
         };
         const result = await import_utils17.authApi.register(registrationData);
         if (!result.success) {
@@ -14390,13 +14422,35 @@ var RegisterForm = ({
                     type: "text",
                     placeholder: t2("register.enterBusinessName"),
                     value: formik.values.businessName,
-                    onChange: formik.handleChange,
+                    onChange: (e2) => {
+                      formik.handleChange(e2);
+                      const businessName = e2.target.value;
+                      if (businessName) {
+                        const subdomain = (0, import_database.sanitizeSubdomain)(businessName);
+                        setGeneratedSubdomain(subdomain);
+                      } else {
+                        setGeneratedSubdomain("");
+                      }
+                    },
                     onBlur: formik.handleBlur,
                     className: `pl-10 ${formik.errors.businessName && formik.touched.businessName ? "border-red-500" : ""}`
                   }
                 )
               ] }),
-              formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.businessName })
+              formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.businessName }),
+              generatedSubdomain && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "flex items-center space-x-2", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.Globe, { className: "h-4 w-4 text-blue-600" }),
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "flex-1", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-xs text-gray-600 mb-2", children: t2("register.shopUrl") }),
+                  /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "flex items-baseline gap-0", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-sm font-mono font-semibold text-blue-700", children: generatedSubdomain }),
+                    /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("span", { className: "text-sm font-mono text-gray-400", children: [
+                      ".",
+                      typeof window !== "undefined" ? process.env.NEXT_PUBLIC_ROOT_DOMAIN || "anyrent.shop" : "anyrent.shop"
+                    ] })
+                  ] })
+                ] })
+              ] }) })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "phone", className: "text-sm font-medium text-gray-700", children: [

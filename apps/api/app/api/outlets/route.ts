@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { getTenantDbFromRequest } from '@rentalshop/utils';
-import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { getTenantDbFromRequest } from '@rentalshop/utils/api';
+import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 import { API } from '@rentalshop/constants';
 
 export const dynamic = 'force-dynamic';

@@ -131,7 +131,7 @@ export const search = async (filters: any) => {
   // Build where clause
   const where: any = {};
   
-  if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+  // Note: merchantId filtering removed - tenant databases are already isolated per tenant
   // Default to active categories only unless explicitly requesting all
   if (whereFilters.isActive !== undefined) {
     where.isActive = whereFilters.isActive;

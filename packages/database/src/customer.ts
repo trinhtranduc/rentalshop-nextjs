@@ -20,32 +20,14 @@ import type {
 // ============================================================================
 
 /**
- * Get customer by public ID and merchant - follows dual ID system
- * Input: id (number) and merchantId (number), Output: Customer with relations
+ * Get customer by public ID - follows dual ID system
+ * Input: id (number), Output: Customer with relations
+ * Note: Tenant databases are already isolated per tenant, merchantId not needed
  */
-export async function getCustomerByPublicId(id: number, merchantId: number) {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function getCustomerByPublicId(id: number) {
   return await prisma.customer.findFirst({
-    where: { 
-      id,
-      merchantId: merchant.id // Use CUID for merchant
-    },
+    where: { id },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       orders: {
         select: {
           id: true,
@@ -60,62 +42,22 @@ export async function getCustomerByPublicId(id: number, merchantId: number) {
 }
 
 /**
- * Get customer by email and merchant - follows dual ID system
+ * Get customer by email
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-export async function getCustomerByEmail(email: string, merchantId: number) {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function getCustomerByEmail(email: string) {
   return await prisma.customer.findFirst({
-    where: {
-      merchantId: merchant.id, // Use CUID
-      email: email,
-    },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
+    where: { email },
   });
 }
 
 /**
- * Get customer by phone and merchant - follows dual ID system
+ * Get customer by phone
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-export async function getCustomerByPhone(phone: string, merchantId: number) {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function getCustomerByPhone(phone: string) {
   return await prisma.customer.findFirst({
-    where: {
-      merchantId: merchant.id, // Use CUID
-      phone: phone,
-    },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
+    where: { phone },
   });
 }
 
@@ -126,17 +68,9 @@ export async function getCustomerByPhone(phone: string, merchantId: number) {
 /**
  * Create new customer - follows dual ID system
  * Input: ids (numbers), Output: id (number)
+ * Note: Tenant databases are already isolated per tenant, merchantId not needed
  */
 export async function createCustomer(input: CustomerInput): Promise<any> {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: input.merchantId }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${input.merchantId} not found`);
-  }
-
   // Generate next customer id
   const lastCustomer = await prisma.customer.findFirst({
     orderBy: { id: 'desc' },
@@ -162,15 +96,6 @@ export async function createCustomer(input: CustomerInput): Promise<any> {
       idType: input.idType,
       notes: input.notes,
       isActive: true, // Default to true
-      merchantId: merchant.id, // Use CUID
-    },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
     },
   });
 
@@ -217,14 +142,6 @@ export async function updateCustomer(
       notes: input.notes,
       isActive: input.isActive,
     },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
   });
 
   return updatedCustomer;
@@ -257,7 +174,6 @@ export async function searchCustomers(
 ): Promise<CustomerSearchResponse> {
   const {
     q,
-    merchantId,
     isActive,
     city,
     state,
@@ -272,17 +188,7 @@ export async function searchCustomers(
   // Build where conditions
   const where: any = {};
 
-  if (merchantId) {
-    // Find merchant by id
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantId },
-      select: { id: true }
-    });
-    
-    if (merchant) {
-      where.merchantId = merchant.id; // Use CUID
-    }
-  }
+  // Note: merchantId filtering removed - tenant databases are already isolated per tenant
 
   // Default to active customers only
   if (isActive !== undefined) {
@@ -324,14 +230,6 @@ export async function searchCustomers(
   // Get customers with pagination
   const customers = await prisma.customer.findMany({
     where,
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      }
-    },
     orderBy: buildCustomerOrderByClause(sortBy, sortOrder),
     take: limit,
     skip: offset
@@ -356,11 +254,6 @@ export async function searchCustomers(
     isActive: customer.isActive,
     createdAt: customer.createdAt,
     updatedAt: customer.updatedAt,
-    merchantId: customer.merchant.id, // Add merchantId as required
-    merchant: {
-      id: customer.merchant.id, // Use id (number) as required
-      name: customer.merchant.name,
-    },
   }));
 
   return {
@@ -382,50 +275,23 @@ export async function searchCustomers(
 // ============================================================================
 
 /**
- * Get customers by merchant - follows dual ID system
+ * Get all customers
+ * Note: Tenant databases are already isolated per tenant, merchantId not needed
+ * This function replaces getCustomersByMerchant
  */
-export async function getCustomersByMerchant(merchantId: number) {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function getAllCustomers() {
   return await prisma.customer.findMany({
-    where: { merchantId: merchant.id }, // Use CUID
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
     orderBy: { createdAt: 'desc' },
   });
 }
 
 /**
- * Check if customer exists by email - follows dual ID system
+ * Check if customer exists by email
+ * Note: Tenant databases are already isolated per tenant, merchantId not needed
  */
-export async function customerExistsByEmail(email: string, merchantId: number): Promise<boolean> {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function customerExistsByEmail(email: string): Promise<boolean> {
   const customer = await prisma.customer.findFirst({
     where: {
-      merchantId: merchant.id, // Use CUID
       email: email,
     },
   });
@@ -434,22 +300,12 @@ export async function customerExistsByEmail(email: string, merchantId: number): 
 }
 
 /**
- * Check if customer exists by phone - follows dual ID system
+ * Check if customer exists by phone
+ * Note: Tenant databases are already isolated per tenant, merchantId not needed
  */
-export async function customerExistsByPhone(phone: string, merchantId: number): Promise<boolean> {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function customerExistsByPhone(phone: string): Promise<boolean> {
   const customer = await prisma.customer.findFirst({
     where: {
-      merchantId: merchant.id, // Use CUID
       phone: phone,
     },
   });
@@ -469,7 +325,6 @@ export const simplifiedCustomers = {
     return await prisma.customer.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
         orders: {
           select: { id: true, orderNumber: true, totalAmount: true, status: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
@@ -494,9 +349,6 @@ export const simplifiedCustomers = {
     
     return await prisma.customer.create({
       data: customerData,
-      include: {
-        merchant: { select: { id: true, name: true } }
-      }
     });
   },
 
@@ -507,9 +359,6 @@ export const simplifiedCustomers = {
     return await prisma.customer.update({
       where: { id },
       data,
-      include: {
-        merchant: { select: { id: true, name: true } }
-      }
     });
   },
 
@@ -529,7 +378,7 @@ export const simplifiedCustomers = {
     // Build where clause
     const where: any = {};
     
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
     // Default to active customers only unless explicitly requesting all
     if (whereFilters.isActive !== undefined) {
@@ -571,7 +420,6 @@ export const simplifiedCustomers = {
       prisma.customer.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           _count: {
             select: { orders: true }
           }
@@ -611,8 +459,7 @@ export const simplifiedCustomers = {
         address: true,
         isActive: true,
         createdAt: true,
-        updatedAt: true,
-        merchantId: true
+        updatedAt: true
       }
     });
   },
@@ -634,8 +481,7 @@ export const simplifiedCustomers = {
         address: true,
         isActive: true,
         createdAt: true,
-        updatedAt: true,
-        merchantId: true
+        updatedAt: true
       }
     });
   },

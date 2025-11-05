@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
-import { ResponseBuilder } from '@rentalshop/utils';
-import { uploadToS3, generateAccessUrl } from '@rentalshop/utils';
+import { ResponseBuilder } from '@rentalshop/utils/api';
+import { uploadToS3, generateAccessUrl } from '@rentalshop/utils/api';
 
 // Allowed image types - JPG, PNG, and WebP (browser often converts to WebP)
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];

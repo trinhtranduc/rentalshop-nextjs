@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMainDb, getTenantDb } from '@rentalshop/database';
 import { comparePassword, generateToken } from '@rentalshop/auth';
-import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
-import { handleApiError } from '@rentalshop/utils';
+import { loginSchema, ResponseBuilder } from '@rentalshop/utils/api';
+import { handleApiError } from '@rentalshop/utils/api';
 import { hash } from 'bcryptjs';
 import { compare } from 'bcryptjs';
 
@@ -14,14 +14,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
     
-    // Get subdomain from header (Phase 1: header-based detection)
-    const subdomain = request.headers.get('x-subdomain') || body.subdomain;
+    // Get subdomain from body (required for tenant login)
+    const subdomain = body.subdomain;
     
     // Validate input
     const validatedData = loginSchema.parse(body);
     
     // Admin login (no subdomain) - use Main DB
-    if (!subdomain) {
+    if (!subdomain || subdomain.trim() === '') {
       const mainDb = await getMainDb();
       await mainDb.connect();
       

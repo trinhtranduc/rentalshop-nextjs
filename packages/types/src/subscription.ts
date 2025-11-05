@@ -21,7 +21,7 @@ export interface SubscriptionPeriod {
 
 export interface Subscription {
   id: number;
-  merchantId: number;
+  // Note: merchantId removed - tenant databases are already isolated per tenant
   planId: number;
   status: SubscriptionStatus;
   billingInterval: BillingInterval; // monthly, quarterly, sixMonths, yearly
@@ -35,16 +35,12 @@ export interface Subscription {
   subscriptionPeriod?: SubscriptionPeriod;
   
   // Relations
-  merchant: {
-    id: number;
-    name: string;
-    email: string;
-  };
+  // Note: merchant removed - tenant databases don't have merchant model
   plan: Plan;
 }
 
 export interface SubscriptionCreateInput {
-  merchantId: number;
+  // Note: merchantId removed - tenant databases are already isolated per tenant
   planId: number;
   billingInterval?: BillingInterval; // month, quarter, semiAnnual, year
   status?: SubscriptionStatus;
@@ -60,7 +56,7 @@ export interface SubscriptionUpdateInput {
 }
 
 export interface SubscriptionFilters {
-  merchantId?: number;
+  // Note: merchantId removed - tenant databases are already isolated per tenant
   planId?: number;
   status?: string;
   startDate?: Date | string;

@@ -34,7 +34,6 @@ export interface OrderWithRelations {
   createdAt: Date
   updatedAt: Date
   outletId: number
-  merchantId?: number // Extracted from outlet relation for authorization
   customerId?: number
   createdById: number
   // Relations
@@ -51,11 +50,6 @@ export interface OrderWithRelations {
     id: number
     name: string
     address: string
-    merchantId: number
-    merchant: {
-      id: number
-      name: string
-    }
   }
   createdBy?: {
     id: number
@@ -131,13 +125,6 @@ const orderInclude = {
       id: true,
       name: true,
       address: true,
-      merchantId: true, // Include merchantId for authorization checks
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        }
-      }
     }
   },
   createdBy: {
@@ -202,7 +189,6 @@ function transformOrder(order: any): OrderWithRelations {
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     outletId: order.outletId,
-    merchantId: order.outlet?.merchantId, // Extract merchantId from outlet relation for authorization
     customerId: order.customerId || undefined,
     createdById: order.createdById,
     // Relations
@@ -702,8 +688,6 @@ export const simplifiedOrders = {
           select: { 
             id: true, 
             name: true,
-            merchantId: true,
-            merchant: { select: { id: true, name: true } }
           } 
         },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
@@ -786,14 +770,8 @@ export const simplifiedOrders = {
     // Build where clause - start with provided where clause if any
     const where: any = whereClause || {};
     
-    // Handle merchant-level filtering (orders belong to outlets, outlets belong to merchants)
-    if (whereFilters.merchantId) {
-      where.outlet = {
-        merchantId: whereFilters.merchantId
-      };
-    }
-    
-    // Handle outlet-level filtering (overrides merchant filter if both are present)                                                                            
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
+    // Handle outlet-level filtering                                                                            
     if (whereFilters.outletId) {
       // Support both simple values and complex objects like { in: [...] }
       where.outletId = whereFilters.outletId;
@@ -872,8 +850,7 @@ export const simplifiedOrders = {
           outlet: { 
             select: { 
               id: true, 
-              name: true,
-              merchant: { select: { id: true, name: true } }
+              name: true
             } 
           },
           createdBy: { 
@@ -984,7 +961,7 @@ export const simplifiedOrders = {
    * Search orders with orderItems included (for calendar API)
    */
   searchWithItems: async (filters: {
-    merchantId?: number;
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     outletId?: number;
     status?: string;
     orderType?: string;
@@ -999,7 +976,7 @@ export const simplifiedOrders = {
     where?: any;
   } = {}) => {
     const {
-      merchantId,
+      // Note: merchantId removed - tenant databases are already isolated per tenant
       outletId,
       status,
       orderType,
@@ -1019,21 +996,10 @@ export const simplifiedOrders = {
     
     console.log('🔍 searchWithItems - Original whereClause:', JSON.stringify(whereClause, null, 2));
 
-    // Handle merchant-level filtering from whereClause first
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
+    // Remove merchantId from where clause if present (for backward compatibility)
     if (where.merchantId) {
-      console.log('🔍 Found merchantId in whereClause, converting to outlet.merchantId');
-      where.outlet = {
-        merchantId: where.merchantId
-      };
-      delete where.merchantId; // Remove direct merchantId
-      console.log('🔍 After conversion:', JSON.stringify(where, null, 2));
-    }
-
-    // Handle merchant-level filtering from parameters
-    if (merchantId) {
-      where.outlet = {
-        merchantId: merchantId
-      };
+      delete where.merchantId;
     }
 
     // Handle outlet-level filtering (overrides merchant filter if both are present)
@@ -1089,7 +1055,6 @@ export const simplifiedOrders = {
             select: {
               id: true,
               name: true,
-              merchantId: true
             }
           },
           orderItems: {
@@ -1124,7 +1089,7 @@ export const simplifiedOrders = {
   },
 
   findManyMinimal: async (filters: {
-    merchantId?: number;
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     outletId?: number;
     status?: string;
     orderType?: string;
@@ -1137,7 +1102,7 @@ export const simplifiedOrders = {
     sortOrder?: 'asc' | 'desc';
   } = {}) => {
     const {
-      merchantId,
+      // Note: merchantId removed - tenant databases are already isolated per tenant
       outletId,
       status,
       orderType,
@@ -1152,7 +1117,7 @@ export const simplifiedOrders = {
 
     // Build where clause
     const where: any = {};
-    if (merchantId) where.merchantId = merchantId;
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (outletId) where.outletId = outletId;
     if (status) where.status = status;
     if (orderType) where.orderType = orderType;
@@ -1202,12 +1167,6 @@ export const simplifiedOrders = {
               id: true,
               name: true,
               address: true,
-              merchant: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
             }
           },
           // Minimal createdBy data
@@ -1268,8 +1227,6 @@ export const simplifiedOrders = {
       outletId: order.outletId,
       outletName: order.outlet?.name || null,
       outletAddress: order.outlet?.address || null,
-      merchantId: order.outlet?.merchant?.id || null,
-      merchantName: order.outlet?.merchant?.name || null,
       
       // Flatten createdBy data
       createdById: order.createdById,
@@ -1298,7 +1255,7 @@ export const simplifiedOrders = {
    * Includes all order fields, customer, outlet, createdBy, and products
    */
   findManyLightweight: async (filters: {
-    merchantId?: number;
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     outletId?: number;
     status?: string;
     orderType?: string;
@@ -1312,7 +1269,7 @@ export const simplifiedOrders = {
     sortOrder?: 'asc' | 'desc';
   }) => {
     const {
-      merchantId,
+      // Note: merchantId removed - tenant databases are already isolated per tenant
       outletId,
       status,
       orderType,
@@ -1328,9 +1285,7 @@ export const simplifiedOrders = {
 
     const where: any = {};
     
-    if (merchantId) {
-      where.outlet = { merchantId };
-    }
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (outletId) {
       where.outletId = outletId;
     }
@@ -1426,12 +1381,6 @@ export const simplifiedOrders = {
               state: true,
               zipCode: true,
               country: true,
-              merchant: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
             }
           },
           // CreatedBy data
@@ -1532,7 +1481,6 @@ export const simplifiedOrders = {
       // Flatten outlet data (simplified)
       outletId: order.outletId,
       outletName: order.outlet?.name || null,
-      merchantName: order.outlet?.merchant?.name || null,
       
       // Flatten createdBy data
       createdById: order.createdById,
@@ -1641,23 +1589,6 @@ export const simplifiedOrders = {
             zipCode: true,
             country: true,
             isActive: true,
-            merchant: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                address: true,
-                city: true,
-                state: true,
-                zipCode: true,
-                country: true,
-                businessType: true,
-                pricingType: true,
-                taxId: true,
-                currency: true
-              }
-            }
           }
         },
         
@@ -1858,13 +1789,7 @@ export const simplifiedOrders = {
           city: true,
           state: true,
           zipCode: true,
-          country: true,
-          merchant: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
+          country: true
         }
       };
     }
@@ -1942,7 +1867,7 @@ export const simplifiedOrders = {
    * Includes complete order information and products
    */
   searchWithCursor: async (filters: {
-    merchantId?: number;
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     outletId?: number;
     status?: string;
     orderType?: string;
@@ -1954,7 +1879,7 @@ export const simplifiedOrders = {
     sortOrder?: 'asc' | 'desc';
   }) => {
     const {
-      merchantId,
+      // Note: merchantId removed - tenant databases are already isolated per tenant
       outletId,
       status,
       orderType,
@@ -1968,9 +1893,7 @@ export const simplifiedOrders = {
 
     const where: any = {};
     
-    if (merchantId) {
-      where.outlet = { merchantId };
-    }
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (outletId) {
       where.outletId = outletId;
     }
@@ -2050,12 +1973,6 @@ export const simplifiedOrders = {
             state: true,
             zipCode: true,
             country: true,
-            merchant: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
           }
         },
         createdBy: {
@@ -2111,18 +2028,21 @@ export const simplifiedOrders = {
    * Get order statistics for dashboard (optimized aggregation)
    */
   getStatistics: async (filters: {
-    merchantId?: number;
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     outletId?: number;
     startDate?: Date;
     endDate?: Date;
   }) => {
-    const { merchantId, outletId, startDate, endDate } = filters;
+    const { 
+      // Note: merchantId removed - tenant databases are already isolated per tenant
+      outletId, 
+      startDate, 
+      endDate 
+    } = filters;
 
     const where: any = {};
     
-    if (merchantId) {
-      where.outlet = { merchantId };
-    }
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (outletId) {
       where.outletId = outletId;
     }

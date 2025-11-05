@@ -5,7 +5,8 @@
 // Basic utilities
 export * from './string-utils';
 export * from './function-utils';
-export * from './tenant-utils';
+// Note: tenant-utils.ts is NOT exported here - it's server-side only (imports PostgreSQL)
+// API routes should import getTenantDbFromRequest directly from @rentalshop/database or @rentalshop/utils/api
 
 // Export common utilities without conflicts
 export { 
@@ -79,14 +80,17 @@ export {
 } from './pricing-calculator';
 
 // Main subscription manager (consolidates all subscription functionality)
-export * from './subscription-manager';
+// Note: subscription-manager.ts imports @rentalshop/database (PostgreSQL) - server-only
+// Exported from '@rentalshop/utils/api' instead of root exports
+// export * from './subscription-manager'; // MOVED TO api/index.ts
 
 // Subscription renewal functionality (now consolidated in subscription-manager.ts)
-export type {
-  SubscriptionRenewalConfig,
-  SubscriptionRenewalResult,
-  RenewalStats
-} from './subscription-manager';
+// Note: Moved to server-only exports (api/index.ts)
+// export type {
+//   SubscriptionRenewalConfig,
+//   SubscriptionRenewalResult,
+//   RenewalStats
+// } from './subscription-manager'; // MOVED TO api/index.ts
 
 // Individual utilities (only export unique functions to avoid conflicts)
 export {
@@ -124,10 +128,10 @@ export * from './product-utils';
 export * from './user-utils';
 
 // Validation (plan limits validation now consolidated in validation.ts)
-export * from './validation';
-
-// Export assertPlanLimit specifically for API routes
-export { assertPlanLimit } from './validation';
+// Note: validation.ts imports @rentalshop/database (PostgreSQL) - server-only
+// Exported from '@rentalshop/utils/api' instead of root exports
+// export * from './validation'; // MOVED TO api/index.ts
+// export { assertPlanLimit } from './validation'; // MOVED TO api/index.ts
 
 // Payment utilities
 export * from './currency';

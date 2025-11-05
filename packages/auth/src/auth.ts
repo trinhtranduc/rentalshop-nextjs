@@ -1,7 +1,7 @@
 import { prisma } from '@rentalshop/database';
 import { comparePassword, hashPassword } from './password';
 import { generateToken } from './jwt';
-import { getSubscriptionError } from '@rentalshop/utils';
+import { getSubscriptionError } from '@rentalshop/utils/api';
 import type { LoginCredentials, RegisterData, AuthResponse, AuthUser } from './types';
 
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {

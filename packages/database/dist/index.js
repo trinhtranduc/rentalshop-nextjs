@@ -1,8 +1,13 @@
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -15,41 +20,572 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/main-db.ts
+var main_db_exports = {};
+__export(main_db_exports, {
+  createTenant: () => createTenant,
+  getDefaultPlan: () => getDefaultPlan,
+  getMainDbClient: () => getMainDbClient,
+  getPlanById: () => getPlanById,
+  getTenantById: () => getTenantById,
+  getTenantBySubdomain: () => getTenantBySubdomain,
+  listActivePlans: () => listActivePlans,
+  listAllTenants: () => listAllTenants,
+  subdomainExists: () => subdomainExists,
+  tenantEmailExists: () => tenantEmailExists,
+  updateTenant: () => updateTenant
+});
+async function getMainDbClient() {
+  if (!process.env.MAIN_DATABASE_URL) {
+    throw new Error("MAIN_DATABASE_URL environment variable is required");
+  }
+  const url = new URL(process.env.MAIN_DATABASE_URL);
+  const client = new import_pg.Client({
+    host: url.hostname,
+    port: parseInt(url.port || "5432"),
+    user: url.username,
+    password: url.password,
+    database: url.pathname.slice(1)
+  });
+  await client.connect();
+  return client;
+}
+async function getTenantBySubdomain(subdomain) {
+  const client = await getMainDbClient();
+  try {
+    const result = await client.query(
+      `SELECT id, subdomain, name, email, phone, address, city, state, "zipCode", country, 
+              "taxId", "businessType", website, description, "databaseUrl", status, 
+              "planId", "subscriptionStatus", "currentPeriodStart", "currentPeriodEnd", 
+              "trialStart", "trialEnd", "canceledAt", "cancelReason", "createdAt", "updatedAt" 
+       FROM "Tenant" WHERE subdomain = $1`,
+      [subdomain]
+    );
+    if (result.rows.length === 0) return null;
+    return result.rows[0];
+  } finally {
+    await client.end();
+  }
+}
+async function getTenantById(id) {
+  const client = await getMainDbClient();
+  try {
+    const result = await client.query(
+      `SELECT id, subdomain, name, email, phone, address, city, state, "zipCode", country, 
+              "taxId", "businessType", website, description, "databaseUrl", status, 
+              "planId", "subscriptionStatus", "currentPeriodStart", "currentPeriodEnd", 
+              "trialStart", "trialEnd", "canceledAt", "cancelReason", "createdAt", "updatedAt" 
+       FROM "Tenant" WHERE id = $1`,
+      [id]
+    );
+    if (result.rows.length === 0) return null;
+    return result.rows[0];
+  } finally {
+    await client.end();
+  }
+}
+async function subdomainExists(subdomain) {
+  const client = await getMainDbClient();
+  try {
+    const result = await client.query(
+      'SELECT 1 FROM "Tenant" WHERE subdomain = $1 LIMIT 1',
+      [subdomain]
+    );
+    return result.rows.length > 0;
+  } finally {
+    await client.end();
+  }
+}
+async function tenantEmailExists(email) {
+  const client = await getMainDbClient();
+  try {
+    const result = await client.query(
+      'SELECT 1 FROM "Tenant" WHERE email = $1 LIMIT 1',
+      [email]
+    );
+    return result.rows.length > 0;
+  } finally {
+    await client.end();
+  }
+}
+async function createTenant(data) {
+  const client = await getMainDbClient();
+  try {
+    const id = data.id || `tenant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const result = await client.query(
+      `INSERT INTO "Tenant" (
+        id, subdomain, name, email, phone, address, city, state, "zipCode", country,
+        "taxId", "businessType", website, description, "databaseUrl", status,
+        "planId", "subscriptionStatus", "trialStart", "trialEnd", "createdAt", "updatedAt"
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW()
+      ) RETURNING *`,
+      [
+        id,
+        data.subdomain,
+        data.name,
+        data.email,
+        data.phone || null,
+        data.address || null,
+        data.city || null,
+        data.state || null,
+        data.zipCode || null,
+        data.country || null,
+        data.taxId || null,
+        data.businessType || null,
+        data.website || null,
+        data.description || null,
+        data.databaseUrl,
+        data.status || "active",
+        data.planId || null,
+        data.subscriptionStatus || "trial",
+        data.trialStart || null,
+        data.trialEnd || null
+      ]
+    );
+    return result.rows[0];
+  } finally {
+    await client.end();
+  }
+}
+async function updateTenant(id, data) {
+  const client = await getMainDbClient();
+  try {
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+    if (data.name !== void 0) {
+      updates.push(`name = $${paramIndex++}`);
+      values.push(data.name);
+    }
+    if (data.email !== void 0) {
+      updates.push(`email = $${paramIndex++}`);
+      values.push(data.email);
+    }
+    if (data.phone !== void 0) {
+      updates.push(`phone = $${paramIndex++}`);
+      values.push(data.phone);
+    }
+    if (data.address !== void 0) {
+      updates.push(`address = $${paramIndex++}`);
+      values.push(data.address);
+    }
+    if (data.city !== void 0) {
+      updates.push(`city = $${paramIndex++}`);
+      values.push(data.city);
+    }
+    if (data.state !== void 0) {
+      updates.push(`state = $${paramIndex++}`);
+      values.push(data.state);
+    }
+    if (data.zipCode !== void 0) {
+      updates.push(`"zipCode" = $${paramIndex++}`);
+      values.push(data.zipCode);
+    }
+    if (data.country !== void 0) {
+      updates.push(`country = $${paramIndex++}`);
+      values.push(data.country);
+    }
+    if (data.taxId !== void 0) {
+      updates.push(`"taxId" = $${paramIndex++}`);
+      values.push(data.taxId);
+    }
+    if (data.businessType !== void 0) {
+      updates.push(`"businessType" = $${paramIndex++}`);
+      values.push(data.businessType);
+    }
+    if (data.website !== void 0) {
+      updates.push(`website = $${paramIndex++}`);
+      values.push(data.website);
+    }
+    if (data.description !== void 0) {
+      updates.push(`description = $${paramIndex++}`);
+      values.push(data.description);
+    }
+    if (data.status !== void 0) {
+      updates.push(`status = $${paramIndex++}`);
+      values.push(data.status);
+    }
+    if (data.subscriptionStatus !== void 0) {
+      updates.push(`"subscriptionStatus" = $${paramIndex++}`);
+      values.push(data.subscriptionStatus);
+    }
+    if (data.planId !== void 0) {
+      updates.push(`"planId" = $${paramIndex++}`);
+      values.push(data.planId);
+    }
+    if (data.currentPeriodStart !== void 0) {
+      updates.push(`"currentPeriodStart" = $${paramIndex++}`);
+      values.push(data.currentPeriodStart);
+    }
+    if (data.currentPeriodEnd !== void 0) {
+      updates.push(`"currentPeriodEnd" = $${paramIndex++}`);
+      values.push(data.currentPeriodEnd);
+    }
+    if (data.trialStart !== void 0) {
+      updates.push(`"trialStart" = $${paramIndex++}`);
+      values.push(data.trialStart);
+    }
+    if (data.trialEnd !== void 0) {
+      updates.push(`"trialEnd" = $${paramIndex++}`);
+      values.push(data.trialEnd);
+    }
+    if (data.canceledAt !== void 0) {
+      updates.push(`"canceledAt" = $${paramIndex++}`);
+      values.push(data.canceledAt);
+    }
+    if (data.cancelReason !== void 0) {
+      updates.push(`"cancelReason" = $${paramIndex++}`);
+      values.push(data.cancelReason);
+    }
+    updates.push(`"updatedAt" = NOW()`);
+    values.push(id);
+    if (updates.length === 1) {
+      throw new Error("No fields to update");
+    }
+    const result = await client.query(
+      `UPDATE "Tenant" SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
+      values
+    );
+    if (result.rows.length === 0) {
+      throw new Error(`Tenant with id ${id} not found`);
+    }
+    return result.rows[0];
+  } finally {
+    await client.end();
+  }
+}
+async function listAllTenants(filters) {
+  const client = await getMainDbClient();
+  try {
+    const where = [];
+    const values = [];
+    let paramIndex = 1;
+    if (filters?.status) {
+      where.push(`status = $${paramIndex++}`);
+      values.push(filters.status);
+    }
+    if (filters?.planId) {
+      where.push(`"planId" = $${paramIndex++}`);
+      values.push(filters.planId);
+    }
+    const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+    const countResult = await client.query(
+      `SELECT COUNT(*) as total FROM "Tenant" ${whereClause}`,
+      values
+    );
+    const total = parseInt(countResult.rows[0].total);
+    const limit = filters?.limit || 50;
+    const offset = filters?.offset || 0;
+    values.push(limit, offset);
+    const result = await client.query(
+      `SELECT * FROM "Tenant" ${whereClause} ORDER BY "createdAt" DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
+      values
+    );
+    return {
+      tenants: result.rows,
+      total
+    };
+  } finally {
+    await client.end();
+  }
+}
+async function getPlanById(id) {
+  const client = await getMainDbClient();
+  try {
+    const result = await client.query(
+      'SELECT * FROM "Plan" WHERE id = $1 AND "deletedAt" IS NULL',
+      [id]
+    );
+    if (result.rows.length === 0) return null;
+    return result.rows[0];
+  } finally {
+    await client.end();
+  }
+}
+async function listActivePlans() {
+  const client = await getMainDbClient();
+  try {
+    const result = await client.query(
+      'SELECT * FROM "Plan" WHERE "isActive" = true AND "deletedAt" IS NULL ORDER BY "sortOrder" ASC, "basePrice" ASC'
+    );
+    return result.rows;
+  } finally {
+    await client.end();
+  }
+}
+async function getDefaultPlan() {
+  const client = await getMainDbClient();
+  try {
+    const result = await client.query(
+      'SELECT * FROM "Plan" WHERE "isActive" = true AND "deletedAt" IS NULL ORDER BY "basePrice" ASC LIMIT 1'
+    );
+    if (result.rows.length === 0) return null;
+    return result.rows[0];
+  } finally {
+    await client.end();
+  }
+}
+var import_pg;
+var init_main_db = __esm({
+  "src/main-db.ts"() {
+    "use strict";
+    import_pg = require("pg");
+  }
+});
+
+// src/tenant-db.ts
+var tenant_db_exports = {};
+__export(tenant_db_exports, {
+  clearTenantCache: () => clearTenantCache,
+  createTenantDatabase: () => createTenantDatabase,
+  getCachedTenants: () => getCachedTenants,
+  getTenantDb: () => getTenantDb
+});
+async function getTenantDb(subdomain) {
+  if (tenantClients.has(subdomain)) {
+    return tenantClients.get(subdomain);
+  }
+  const tenant = await getTenantBySubdomain(subdomain);
+  if (!tenant || tenant.status !== "active") {
+    throw new Error(`Tenant not found or inactive: ${subdomain}`);
+  }
+  const client = new import_client15.PrismaClient({
+    datasources: {
+      db: { url: tenant.databaseUrl }
+    },
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"]
+  });
+  tenantClients.set(subdomain, client);
+  return client;
+}
+async function createTenantDatabase(subdomain) {
+  if (!process.env.MAIN_DATABASE_URL) {
+    throw new Error("MAIN_DATABASE_URL environment variable is required");
+  }
+  const dbName = `${subdomain.replace(/-/g, "_")}_db`;
+  const mainDbUrl = process.env.MAIN_DATABASE_URL;
+  const url = new URL(mainDbUrl);
+  const adminClient = new import_pg2.Client({
+    host: url.hostname,
+    port: parseInt(url.port || "5432"),
+    user: url.username,
+    password: url.password,
+    database: url.pathname.slice(1)
+  });
+  await adminClient.connect();
+  try {
+    if (process.env.NODE_ENV === "development") {
+      await adminClient.query(`DROP DATABASE IF EXISTS "${dbName}"`);
+    } else {
+      const existsResult = await adminClient.query(
+        `SELECT 1 FROM pg_database WHERE datname = $1`,
+        [dbName]
+      );
+      if (existsResult.rows.length > 0) {
+        throw new Error(`Database ${dbName} already exists`);
+      }
+    }
+    await adminClient.query(`CREATE DATABASE "${dbName}"`);
+    console.log(`\u2705 Created database: ${dbName}`);
+    const tenantDbUrl = `postgresql://${url.username}:${url.password}@${url.hostname}:${url.port}/${dbName}`;
+    const { execSync } = require("child_process");
+    let rootDir = process.cwd();
+    while (rootDir !== import_path.default.dirname(rootDir)) {
+      const schemaPath = import_path.default.join(rootDir, "prisma", "schema.prisma");
+      if (import_fs.default.existsSync(schemaPath)) {
+        break;
+      }
+      rootDir = import_path.default.dirname(rootDir);
+    }
+    const prismaSchemaPath = import_path.default.join(rootDir, "prisma", "schema.prisma");
+    if (!import_fs.default.existsSync(prismaSchemaPath)) {
+      throw new Error(`Prisma schema not found at ${prismaSchemaPath}`);
+    }
+    execSync(`npx prisma db push --schema="${prismaSchemaPath}" --skip-generate`, {
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        DATABASE_URL: tenantDbUrl
+      },
+      cwd: rootDir
+    });
+    console.log(`\u2705 Migrated database: ${dbName}`);
+    return tenantDbUrl;
+  } finally {
+    await adminClient.end();
+  }
+}
+function clearTenantCache(subdomain) {
+  if (subdomain) {
+    const client = tenantClients.get(subdomain);
+    if (client) {
+      client.$disconnect().catch(console.error);
+      tenantClients.delete(subdomain);
+    }
+  } else {
+    for (const client of tenantClients.values()) {
+      client.$disconnect().catch(console.error);
+    }
+    tenantClients.clear();
+  }
+}
+function getCachedTenants() {
+  return Array.from(tenantClients.keys());
+}
+var import_client15, import_pg2, import_path, import_fs, tenantClients;
+var init_tenant_db = __esm({
+  "src/tenant-db.ts"() {
+    "use strict";
+    import_client15 = require("@prisma/client");
+    init_main_db();
+    import_pg2 = require("pg");
+    import_path = __toESM(require("path"));
+    import_fs = __toESM(require("fs"));
+    tenantClients = /* @__PURE__ */ new Map();
+  }
+});
+
+// src/subdomain-utils.ts
+var subdomain_utils_exports = {};
+__export(subdomain_utils_exports, {
+  buildTenantUrl: () => buildTenantUrl,
+  extractSubdomain: () => extractSubdomain,
+  generateSubdomain: () => generateSubdomain,
+  getProtocol: () => getProtocol,
+  getReservedSubdomains: () => getReservedSubdomains,
+  getRootDomain: () => getRootDomain,
+  isReservedSubdomain: () => isReservedSubdomain,
+  sanitizeSubdomain: () => sanitizeSubdomain,
+  validateSubdomain: () => validateSubdomain
+});
+function removeVietnameseDiacritics(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+}
+function sanitizeSubdomain(input) {
+  if (!input) return "";
+  let sanitized = removeVietnameseDiacritics(input);
+  sanitized = sanitized.toLowerCase().trim();
+  sanitized = sanitized.replace(/[^a-z0-9]/g, "");
+  sanitized = sanitized.substring(0, 50);
+  return sanitized;
+}
+function validateSubdomain(subdomain) {
+  if (!subdomain || subdomain.length === 0) return false;
+  if (RESERVED_SUBDOMAINS.includes(subdomain.toLowerCase())) {
+    return false;
+  }
+  const pattern = /^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/;
+  return pattern.test(subdomain) && subdomain.length >= 1 && subdomain.length <= 50;
+}
+function generateSubdomain(businessName) {
+  return sanitizeSubdomain(businessName);
+}
+function getRootDomain() {
+  return process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost:3000";
+}
+function getProtocol() {
+  if (process.env.NODE_ENV === "production") {
+    return "https";
+  }
+  return "http";
+}
+function buildTenantUrl(subdomain) {
+  const protocol = getProtocol();
+  const rootDomain = getRootDomain();
+  return `${protocol}://${subdomain}.${rootDomain}`;
+}
+function extractSubdomain(hostname) {
+  if (!hostname) return null;
+  const host = hostname.split(":")[0];
+  const parts = host.split(".");
+  if (parts.length >= 2 && parts[parts.length - 1] === "localhost") {
+    return parts[0];
+  }
+  if (parts.length > 2) {
+    return parts[0];
+  }
+  const rootDomain = getRootDomain().split(":")[0];
+  if (host === rootDomain || host === `www.${rootDomain}`) {
+    return null;
+  }
+  return null;
+}
+function isReservedSubdomain(subdomain) {
+  return RESERVED_SUBDOMAINS.includes(subdomain.toLowerCase());
+}
+function getReservedSubdomains() {
+  return [...RESERVED_SUBDOMAINS];
+}
+var RESERVED_SUBDOMAINS;
+var init_subdomain_utils = __esm({
+  "src/subdomain-utils.ts"() {
+    "use strict";
+    RESERVED_SUBDOMAINS = ["www", "api", "admin", "app", "mail", "ftp", "smtp", "client", "www2", "test", "demo", "staging"];
+  }
+});
 
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
   AuditLogger: () => AuditLogger,
+  buildTenantUrl: () => buildTenantUrl,
   checkDatabaseConnection: () => checkDatabaseConnection,
+  clearTenantCache: () => clearTenantCache,
   createEmailVerification: () => createEmailVerification,
   createOrderNumberWithFormat: () => createOrderNumberWithFormat,
   createSubscriptionPayment: () => createSubscriptionPayment,
+  createTenant: () => createTenant,
   createTenantDatabase: () => createTenantDatabase,
   db: () => db,
   deleteExpiredTokens: () => deleteExpiredTokens,
   extractAuditContext: () => extractAuditContext,
+  extractSubdomain: () => extractSubdomain,
   generateOrderNumber: () => generateOrderNumber2,
   generateSubdomain: () => generateSubdomain,
   generateVerificationToken: () => generateVerificationToken,
   getAuditLogger: () => getAuditLogger,
+  getCachedTenants: () => getCachedTenants,
   getDefaultOutlet: () => getDefaultOutlet,
+  getDefaultPlan: () => getDefaultPlan,
   getExpiredSubscriptions: () => getExpiredSubscriptions,
-  getMainDb: () => getMainDb,
+  getMainDbClient: () => getMainDbClient,
   getOutletOrderStats: () => getOutletOrderStats,
+  getPlanById: () => getPlanById,
+  getProtocol: () => getProtocol,
+  getReservedSubdomains: () => getReservedSubdomains,
+  getRootDomain: () => getRootDomain,
   getSubscriptionById: () => getSubscriptionById,
-  getSubscriptionByMerchantId: () => getSubscriptionByMerchantId,
+  getTenantById: () => getTenantById,
+  getTenantBySubdomain: () => getTenantBySubdomain,
   getTenantDb: () => getTenantDb,
   getVerificationTokenByUserId: () => getVerificationTokenByUserId,
   isEmailVerified: () => isEmailVerified,
+  isReservedSubdomain: () => isReservedSubdomain,
+  listActivePlans: () => listActivePlans,
+  listAllTenants: () => listAllTenants,
   prisma: () => prisma,
-  registerMerchantWithTrial: () => registerMerchantWithTrial,
+  registerTenantWithTrial: () => registerTenantWithTrial,
   registerUser: () => registerUser,
   resendVerificationToken: () => resendVerificationToken,
+  sanitizeSubdomain: () => sanitizeSubdomain,
   searchOrders: () => searchOrders,
   simplifiedPayments: () => simplifiedPayments,
   simplifiedSubscriptionActivities: () => simplifiedSubscriptionActivities,
+  subdomainExists: () => subdomainExists,
+  tenantEmailExists: () => tenantEmailExists,
   updateSubscription: () => updateSubscription,
+  updateTenant: () => updateTenant,
   validateSubdomain: () => validateSubdomain,
   verifyEmailByToken: () => verifyEmailByToken
 });
@@ -74,30 +610,6 @@ var simplifiedUsers = {
     return await prisma.user.findUnique({
       where: { id },
       include: {
-        merchant: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            address: true,
-            city: true,
-            state: true,
-            zipCode: true,
-            country: true,
-            businessType: true,
-            pricingType: true,
-            taxId: true,
-            website: true,
-            description: true,
-            isActive: true,
-            planId: true,
-            // subscriptionStatus removed - use subscription.status
-            totalRevenue: true,
-            createdAt: true,
-            lastActiveAt: true
-          }
-        },
         outlet: {
           select: {
             id: true,
@@ -107,13 +619,7 @@ var simplifiedUsers = {
             description: true,
             isActive: true,
             isDefault: true,
-            createdAt: true,
-            merchant: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
+            createdAt: true
           }
         }
       }
@@ -138,10 +644,8 @@ var simplifiedUsers = {
         emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true,
-        merchantId: true,
         outletId: true,
         deletedAt: true,
-        merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }
     });
@@ -153,7 +657,6 @@ var simplifiedUsers = {
     return await prisma.user.findFirst({
       where,
       include: {
-        merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }
     });
@@ -165,26 +668,13 @@ var simplifiedUsers = {
     try {
       console.log("\u{1F50D} simplifiedUsers.create called with data:", data);
       const userData = { ...data };
-      if (userData.merchantId && typeof userData.merchantId === "number") {
-        const merchant = await prisma.merchant.findUnique({
-          where: { id: userData.merchantId },
-          select: { id: true, name: true }
-        });
-        if (!merchant) {
-          throw new Error(`Merchant with id ${userData.merchantId} not found`);
-        }
-        console.log("\u2705 Merchant found:", merchant);
-      }
       if (userData.outletId && typeof userData.outletId === "number") {
         const outlet = await prisma.outlet.findUnique({
           where: { id: userData.outletId },
-          select: { id: true, name: true, merchantId: true }
+          select: { id: true, name: true }
         });
         if (!outlet) {
           throw new Error(`Outlet with id ${userData.outletId} not found`);
-        }
-        if (userData.merchantId && outlet.merchantId !== userData.merchantId) {
-          throw new Error(`Outlet ${userData.outletId} does not belong to merchant ${userData.merchantId}`);
         }
         console.log("\u2705 Outlet found:", outlet);
       }
@@ -197,16 +687,15 @@ var simplifiedUsers = {
           throw new Error(`Email ${userData.email} is already registered`);
         }
       }
-      if (userData.phone && userData.merchantId) {
+      if (userData.phone) {
         const existingPhone = await prisma.user.findFirst({
           where: {
-            phone: userData.phone,
-            merchantId: userData.merchantId
+            phone: userData.phone
           },
-          select: { id: true, phone: true, merchantId: true }
+          select: { id: true, phone: true }
         });
         if (existingPhone) {
-          throw new Error(`Phone number ${userData.phone} is already registered in this merchant`);
+          throw new Error(`Phone number ${userData.phone} is already registered`);
         }
       }
       const lastUser = await prisma.user.findFirst({
@@ -218,29 +707,6 @@ var simplifiedUsers = {
       const user = await prisma.user.create({
         data: userData,
         include: {
-          merchant: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true,
-              address: true,
-              city: true,
-              state: true,
-              zipCode: true,
-              country: true,
-              businessType: true,
-              taxId: true,
-              website: true,
-              description: true,
-              isActive: true,
-              planId: true,
-              // subscriptionStatus removed - use subscription.status
-              totalRevenue: true,
-              createdAt: true,
-              lastActiveAt: true
-            }
-          },
           outlet: {
             select: {
               id: true,
@@ -250,13 +716,7 @@ var simplifiedUsers = {
               description: true,
               isActive: true,
               isDefault: true,
-              createdAt: true,
-              merchant: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
+              createdAt: true
             }
           }
         }
@@ -276,7 +736,6 @@ var simplifiedUsers = {
       where: { id },
       data,
       include: {
-        merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }
     });
@@ -306,7 +765,6 @@ var simplifiedUsers = {
     } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
     if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
     if (whereFilters.roles && Array.isArray(whereFilters.roles)) {
@@ -331,7 +789,6 @@ var simplifiedUsers = {
       prisma.user.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           outlet: { select: { id: true, name: true } }
         },
         orderBy,
@@ -373,7 +830,6 @@ var simplifiedCustomers = {
     return await prisma.customer.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
         orders: {
           select: { id: true, orderNumber: true, totalAmount: true, status: true, createdAt: true },
           orderBy: { createdAt: "desc" },
@@ -392,10 +848,7 @@ var simplifiedCustomers = {
     };
     delete customerData.merchant;
     return await prisma.customer.create({
-      data: customerData,
-      include: {
-        merchant: { select: { id: true, name: true } }
-      }
+      data: customerData
     });
   },
   /**
@@ -404,10 +857,7 @@ var simplifiedCustomers = {
   update: async (id, data) => {
     return await prisma.customer.update({
       where: { id },
-      data,
-      include: {
-        merchant: { select: { id: true, name: true } }
-      }
+      data
     });
   },
   /**
@@ -423,7 +873,6 @@ var simplifiedCustomers = {
     } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
     if (whereFilters.isActive !== void 0) {
       where.isActive = whereFilters.isActive;
@@ -456,7 +905,6 @@ var simplifiedCustomers = {
       prisma.customer.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           _count: {
             select: { orders: true }
           }
@@ -494,8 +942,7 @@ var simplifiedCustomers = {
         address: true,
         isActive: true,
         createdAt: true,
-        updatedAt: true,
-        merchantId: true
+        updatedAt: true
       }
     });
   },
@@ -515,8 +962,7 @@ var simplifiedCustomers = {
         address: true,
         isActive: true,
         createdAt: true,
-        updatedAt: true,
-        merchantId: true
+        updatedAt: true
       }
     });
   },
@@ -530,11 +976,9 @@ var simplifiedCustomers = {
 };
 
 // src/product.ts
-async function getOrCreateDefaultCategory(merchantId) {
+async function getOrCreateDefaultCategory() {
   const existingDefault = await prisma.category.findFirst({
     where: {
-      merchantId,
-      // merchantId is number (public ID)
       name: "General",
       isActive: true
     }
@@ -543,7 +987,7 @@ async function getOrCreateDefaultCategory(merchantId) {
     console.log("\u2705 Found existing default category:", existingDefault.id);
     return existingDefault;
   }
-  console.log("\u{1F527} Creating default category for merchant:", merchantId);
+  console.log("\u{1F527} Creating default category");
   const lastCategory = await prisma.category.findFirst({
     orderBy: { id: "desc" },
     select: { id: true }
@@ -554,7 +998,6 @@ async function getOrCreateDefaultCategory(merchantId) {
       id: nextPublicId,
       name: "General",
       description: "Default category for general products",
-      merchantId,
       isActive: true
     }
   });
@@ -569,7 +1012,6 @@ var simplifiedProducts = {
     return await prisma.product.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
@@ -586,7 +1028,6 @@ var simplifiedProducts = {
     return await prisma.product.findUnique({
       where: { barcode },
       include: {
-        merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
@@ -602,16 +1043,14 @@ var simplifiedProducts = {
   create: async (data) => {
     try {
       console.log("\u{1F50D} simplifiedProducts.create called with data:", data);
-      if (!data.categoryId && data.merchant && data.merchant.connect && data.merchant.connect.id) {
-        const merchantPublicId = data.merchant.connect.id;
-        const defaultCategory = await getOrCreateDefaultCategory(merchantPublicId);
+      if (!data.categoryId) {
+        const defaultCategory = await getOrCreateDefaultCategory();
         data.category = { connect: { id: defaultCategory.id } };
-        console.log("\u2705 Using default category:", defaultCategory.id, "for merchant:", merchantPublicId);
+        console.log("\u2705 Using default category:", defaultCategory.id);
       }
       const product = await prisma.product.create({
         data,
         include: {
-          merchant: { select: { id: true, name: true } },
           category: { select: { id: true, name: true } },
           outletStock: {
             include: {
@@ -635,7 +1074,6 @@ var simplifiedProducts = {
       where: { id },
       data,
       include: {
-        merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
@@ -662,7 +1100,6 @@ var simplifiedProducts = {
     return await prisma.product.findFirst({
       where,
       include: {
-        merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
@@ -686,7 +1123,6 @@ var simplifiedProducts = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
     if (whereFilters.isActive !== void 0) {
       where.isActive = whereFilters.isActive;
@@ -710,7 +1146,6 @@ var simplifiedProducts = {
       prisma.product.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           category: { select: { id: true, name: true } },
           outletStock: {
             include: {
@@ -755,15 +1190,7 @@ var orderInclude = {
     select: {
       id: true,
       name: true,
-      address: true,
-      merchantId: true,
-      // Include merchantId for authorization checks
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      }
+      address: true
     }
   },
   createdBy: {
@@ -827,8 +1254,6 @@ function transformOrder(order) {
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     outletId: order.outletId,
-    merchantId: order.outlet?.merchantId,
-    // Extract merchantId from outlet relation for authorization
     customerId: order.customerId || void 0,
     createdById: order.createdById,
     // Relations
@@ -1100,9 +1525,7 @@ var simplifiedOrders = {
         outlet: {
           select: {
             id: true,
-            name: true,
-            merchantId: true,
-            merchant: { select: { id: true, name: true } }
+            name: true
           }
         },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
@@ -1178,11 +1601,6 @@ var simplifiedOrders = {
     } = filters;
     const skip = (page - 1) * limit;
     const where = whereClause || {};
-    if (whereFilters.merchantId) {
-      where.outlet = {
-        merchantId: whereFilters.merchantId
-      };
-    }
     if (whereFilters.outletId) {
       where.outletId = whereFilters.outletId;
     }
@@ -1249,8 +1667,7 @@ var simplifiedOrders = {
           outlet: {
             select: {
               id: true,
-              name: true,
-              merchant: { select: { id: true, name: true } }
+              name: true
             }
           },
           createdBy: {
@@ -1353,7 +1770,7 @@ var simplifiedOrders = {
    */
   searchWithItems: async (filters = {}) => {
     const {
-      merchantId,
+      // Note: merchantId removed - tenant databases are already isolated per tenant
       outletId,
       status,
       orderType,
@@ -1370,17 +1787,7 @@ var simplifiedOrders = {
     const where = whereClause || {};
     console.log("\u{1F50D} searchWithItems - Original whereClause:", JSON.stringify(whereClause, null, 2));
     if (where.merchantId) {
-      console.log("\u{1F50D} Found merchantId in whereClause, converting to outlet.merchantId");
-      where.outlet = {
-        merchantId: where.merchantId
-      };
       delete where.merchantId;
-      console.log("\u{1F50D} After conversion:", JSON.stringify(where, null, 2));
-    }
-    if (merchantId) {
-      where.outlet = {
-        merchantId
-      };
     }
     if (outletId) {
       where.outletId = outletId;
@@ -1424,8 +1831,7 @@ var simplifiedOrders = {
           outlet: {
             select: {
               id: true,
-              name: true,
-              merchantId: true
+              name: true
             }
           },
           orderItems: {
@@ -1459,7 +1865,7 @@ var simplifiedOrders = {
   },
   findManyMinimal: async (filters = {}) => {
     const {
-      merchantId,
+      // Note: merchantId removed - tenant databases are already isolated per tenant
       outletId,
       status,
       orderType,
@@ -1472,7 +1878,6 @@ var simplifiedOrders = {
       sortOrder = "desc"
     } = filters;
     const where = {};
-    if (merchantId) where.merchantId = merchantId;
     if (outletId) where.outletId = outletId;
     if (status) where.status = status;
     if (orderType) where.orderType = orderType;
@@ -1520,13 +1925,7 @@ var simplifiedOrders = {
             select: {
               id: true,
               name: true,
-              address: true,
-              merchant: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
+              address: true
             }
           },
           // Minimal createdBy data
@@ -1579,8 +1978,6 @@ var simplifiedOrders = {
       outletId: order.outletId,
       outletName: order.outlet?.name || null,
       outletAddress: order.outlet?.address || null,
-      merchantId: order.outlet?.merchant?.id || null,
-      merchantName: order.outlet?.merchant?.name || null,
       // Flatten createdBy data
       createdById: order.createdById,
       createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
@@ -1606,7 +2003,7 @@ var simplifiedOrders = {
    */
   findManyLightweight: async (filters) => {
     const {
-      merchantId,
+      // Note: merchantId removed - tenant databases are already isolated per tenant
       outletId,
       status,
       orderType,
@@ -1620,9 +2017,6 @@ var simplifiedOrders = {
       sortOrder = "desc"
     } = filters;
     const where = {};
-    if (merchantId) {
-      where.outlet = { merchantId };
-    }
     if (outletId) {
       where.outletId = outletId;
     }
@@ -1711,13 +2105,7 @@ var simplifiedOrders = {
               city: true,
               state: true,
               zipCode: true,
-              country: true,
-              merchant: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
+              country: true
             }
           },
           // CreatedBy data
@@ -1810,7 +2198,6 @@ var simplifiedOrders = {
       // Flatten outlet data (simplified)
       outletId: order.outletId,
       outletName: order.outlet?.name || null,
-      merchantName: order.outlet?.merchant?.name || null,
       // Flatten createdBy data
       createdById: order.createdById,
       createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
@@ -1910,24 +2297,7 @@ var simplifiedOrders = {
             state: true,
             zipCode: true,
             country: true,
-            isActive: true,
-            merchant: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                address: true,
-                city: true,
-                state: true,
-                zipCode: true,
-                country: true,
-                businessType: true,
-                pricingType: true,
-                taxId: true,
-                currency: true
-              }
-            }
+            isActive: true
           }
         },
         // Full createdBy data
@@ -2106,13 +2476,7 @@ var simplifiedOrders = {
           city: true,
           state: true,
           zipCode: true,
-          country: true,
-          merchant: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
+          country: true
         }
       };
     }
@@ -2186,7 +2550,7 @@ var simplifiedOrders = {
    */
   searchWithCursor: async (filters) => {
     const {
-      merchantId,
+      // Note: merchantId removed - tenant databases are already isolated per tenant
       outletId,
       status,
       orderType,
@@ -2198,9 +2562,6 @@ var simplifiedOrders = {
       sortOrder = "desc"
     } = filters;
     const where = {};
-    if (merchantId) {
-      where.outlet = { merchantId };
-    }
     if (outletId) {
       where.outletId = outletId;
     }
@@ -2274,13 +2635,7 @@ var simplifiedOrders = {
             city: true,
             state: true,
             zipCode: true,
-            country: true,
-            merchant: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
+            country: true
           }
         },
         createdBy: {
@@ -2331,11 +2686,13 @@ var simplifiedOrders = {
    * Get order statistics for dashboard (optimized aggregation)
    */
   getStatistics: async (filters) => {
-    const { merchantId, outletId, startDate, endDate } = filters;
+    const {
+      // Note: merchantId removed - tenant databases are already isolated per tenant
+      outletId,
+      startDate,
+      endDate
+    } = filters;
     const where = {};
-    if (merchantId) {
-      where.outlet = { merchantId };
-    }
     if (outletId) {
       where.outletId = outletId;
     }
@@ -2521,29 +2878,19 @@ var simplifiedPayments = {
 };
 
 // src/outlet.ts
-async function getDefaultOutlet(merchantId) {
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
+async function getDefaultOutlet() {
   const outlet = await prisma.outlet.findFirst({
     where: {
-      merchantId: merchant.id,
-      // Use CUID
       isDefault: true,
       isActive: true
     },
     select: {
       id: true,
-      name: true,
-      merchantId: true
+      name: true
     }
   });
   if (!outlet) {
-    throw new Error(`No default outlet found for merchant ${merchantId}`);
+    throw new Error(`No default outlet found`);
   }
   return outlet;
 }
@@ -2555,7 +2902,6 @@ var simplifiedOutlets = {
     return await prisma.outlet.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
         _count: {
           select: {
             users: true,
@@ -2572,22 +2918,9 @@ var simplifiedOutlets = {
   create: async (data) => {
     try {
       console.log("\u{1F50D} simplifiedOutlets.create called with data:", data);
-      if (data.merchant && data.merchant.connect && data.merchant.connect.id) {
-        const merchantId = data.merchant.connect.id;
-        const merchant = await prisma.merchant.findUnique({
-          where: { id: merchantId },
-          select: { id: true }
-        });
-        if (!merchant) {
-          throw new Error(`Merchant with id ${merchantId} not found`);
-        }
-        console.log("\u2705 Merchant found:", merchant);
-      }
+      const { merchant, ...outletData } = data;
       const outlet = await prisma.outlet.create({
-        data,
-        include: {
-          merchant: { select: { id: true, name: true } }
-        }
+        data: outletData
       });
       console.log("\u2705 Outlet created successfully:", outlet);
       return outlet;
@@ -2600,12 +2933,10 @@ var simplifiedOutlets = {
    * Update outlet (simplified API)
    */
   update: async (id, data) => {
+    const { merchant, ...outletData } = data;
     return await prisma.outlet.update({
       where: { id },
-      data,
-      include: {
-        merchant: { select: { id: true, name: true } }
-      }
+      data: outletData
     });
   },
   /**
@@ -2615,7 +2946,6 @@ var simplifiedOutlets = {
     return await prisma.outlet.findFirst({
       where,
       include: {
-        merchant: { select: { id: true, name: true } },
         _count: {
           select: {
             users: true,
@@ -2650,7 +2980,6 @@ var simplifiedOutlets = {
     console.log("\u{1F50D} DB outlet.search - Received filters:", filters);
     console.log("\u{1F50D} DB outlet.search - whereFilters:", whereFilters);
     const where = {};
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.id = whereFilters.outletId;
     if (whereFilters.isActive !== void 0) where.isActive = whereFilters.isActive;
     if (whereFilters.status) where.status = whereFilters.status;
@@ -2679,7 +3008,6 @@ var simplifiedOutlets = {
       prisma.outlet.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           _count: {
             select: {
               users: true,
@@ -2824,7 +3152,7 @@ var simplifiedPlans = {
         subscriptions: {
           select: {
             id: true,
-            merchantId: true,
+            // Note: merchantId removed - tenant databases are already isolated per tenant
             status: true
           }
         }
@@ -2918,31 +3246,16 @@ function convertPrismaPlanToPlan(prismaPlan) {
     deletedAt: prismaPlan.deletedAt || void 0
   };
 }
-async function getSubscriptionByMerchantId(merchantId) {
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  if (!merchant) {
-    return null;
-  }
+async function getSubscriptionById(subscriptionId) {
   const subscription = await prisma.subscription.findUnique({
-    where: { merchantId: merchant.id },
+    where: { id: subscriptionId },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
-      },
       plan: true
     }
   });
   if (!subscription) return null;
   return {
     id: subscription.id,
-    merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status,
     billingInterval: subscription.interval,
@@ -2951,7 +3264,6 @@ async function getSubscriptionByMerchantId(merchantId) {
     amount: subscription.amount,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
     plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
@@ -2967,20 +3279,14 @@ async function getExpiredSubscriptions() {
       }
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
-      },
+      // Note: merchant removed - tenant databases don't have merchant model
       plan: true
     },
     orderBy: { currentPeriodEnd: "asc" }
   });
   return subscriptions.map((sub) => ({
     id: sub.id,
-    merchantId: sub.merchantId,
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     planId: sub.planId,
     status: sub.status,
     billingInterval: sub.interval,
@@ -2989,39 +3295,9 @@ async function getExpiredSubscriptions() {
     amount: sub.amount,
     createdAt: sub.createdAt,
     updatedAt: sub.updatedAt,
-    merchant: sub.merchant,
+    // Note: merchant removed - tenant databases don't have merchant model
     plan: convertPrismaPlanToPlan(sub.plan)
   }));
-}
-async function getSubscriptionById(id) {
-  const subscription = await prisma.subscription.findUnique({
-    where: { id },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
-      },
-      plan: true
-    }
-  });
-  if (!subscription) return null;
-  return {
-    id: subscription.id,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status,
-    billingInterval: subscription.interval,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    amount: subscription.amount,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: convertPrismaPlanToPlan(subscription.plan)
-  };
 }
 async function updateSubscription(subscriptionId, data) {
   const subscription = await prisma.subscription.update({
@@ -3031,19 +3307,13 @@ async function updateSubscription(subscriptionId, data) {
       updatedAt: /* @__PURE__ */ new Date()
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
-      },
+      // Note: merchant removed - tenant databases don't have merchant model
       plan: true
     }
   });
   return {
     id: subscription.id,
-    merchantId: subscription.merchantId,
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     planId: subscription.planId,
     status: subscription.status,
     billingInterval: subscription.interval,
@@ -3052,7 +3322,7 @@ async function updateSubscription(subscriptionId, data) {
     amount: subscription.amount,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
+    // Note: merchant removed - tenant databases don't have merchant model
     plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
@@ -3099,7 +3369,6 @@ var simplifiedSubscriptions = {
     return await prisma.subscription.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } },
         payments: {
           orderBy: { createdAt: "desc" },
@@ -3109,16 +3378,15 @@ var simplifiedSubscriptions = {
     });
   },
   /**
-   * Find subscription by merchant ID (simplified API)
+   * Find active subscription (simplified API)
+   * Note: findByMerchantId removed - tenant databases are already isolated per tenant
    */
-  findByMerchantId: async (merchantId) => {
+  findActive: async () => {
     return await prisma.subscription.findFirst({
       where: {
-        merchantId,
         status: { not: "CANCELLED" }
       },
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } },
         payments: {
           orderBy: { createdAt: "desc" },
@@ -3134,7 +3402,6 @@ var simplifiedSubscriptions = {
     return await prisma.subscription.create({
       data,
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } }
       }
     });
@@ -3147,7 +3414,6 @@ var simplifiedSubscriptions = {
       where: { id },
       data,
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } }
       }
     });
@@ -3171,15 +3437,6 @@ var simplifiedSubscriptions = {
     const { page = 1, limit = 20, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
     const where = {};
-    if (whereFilters.search) {
-      where.merchant = {
-        name: {
-          contains: whereFilters.search,
-          mode: "insensitive"
-        }
-      };
-    }
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.planId) where.planId = whereFilters.planId;
     if (whereFilters.isActive !== void 0) {
       if (whereFilters.isActive) {
@@ -3198,7 +3455,6 @@ var simplifiedSubscriptions = {
       prisma.subscription.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           plan: { select: { id: true, name: true } },
           payments: {
             orderBy: { createdAt: "desc" },
@@ -3227,7 +3483,6 @@ var simplifiedSubscriptions = {
     return await prisma.subscription.findFirst({
       where,
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } },
         payments: {
           orderBy: { createdAt: "desc" },
@@ -3263,7 +3518,6 @@ var simplifiedSubscriptions = {
         ]
       },
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } }
       },
       orderBy: { currentPeriodEnd: "asc" }
@@ -3761,7 +4015,6 @@ var search = async (filters) => {
   const skip = (page - 1) * limit;
   console.log("\u{1F50D} DB category.search - Received filters:", filters);
   const where = {};
-  if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
   if (whereFilters.isActive !== void 0) {
     where.isActive = whereFilters.isActive;
   } else {
@@ -4110,7 +4363,6 @@ var AuditLogger = class {
       const id = await this.getNextPublicId();
       console.log("\u{1F50D} AuditLogger.log - Got id:", id);
       const validatedUserId = await this.validateUserId(data.context.userId);
-      const validatedMerchantId = await this.validateMerchantId(data.context.merchantId);
       const validatedOutletId = await this.validateOutletId(data.context.outletId);
       console.log("\u{1F50D} AuditLogger.log - About to create audit log with data:", {
         id,
@@ -4118,7 +4370,6 @@ var AuditLogger = class {
         entityType: data.entityType,
         entityId: data.entityId,
         userId: validatedUserId,
-        merchantId: validatedMerchantId,
         outletId: validatedOutletId
       });
       console.log("\u{1F50D} Audit log would be created:", {
@@ -4148,19 +4399,7 @@ var AuditLogger = class {
       return null;
     }
   }
-  async validateMerchantId(merchantId) {
-    if (!merchantId) return null;
-    try {
-      const merchant = await this.prisma.merchant.findUnique({
-        where: { id: merchantId },
-        select: { id: true }
-      });
-      return merchant ? merchantId : null;
-    } catch (error) {
-      console.warn("\u26A0\uFE0F AuditLogger - Failed to validate merchantId:", merchantId, error);
-      return null;
-    }
-  }
+  // Note: validateMerchantId removed - tenant databases are already isolated per tenant
   async validateOutletId(outletId) {
     if (!outletId) return null;
     try {
@@ -4266,7 +4505,6 @@ var AuditLogger = class {
     if (filter.entityType) where.entityType = filter.entityType;
     if (filter.entityId) where.entityId = filter.entityId;
     if (filter.userId) where.userId = filter.userId;
-    if (filter.merchantId) where.merchantId = filter.merchantId;
     if (filter.outletId) where.outletId = filter.outletId;
     if (filter.severity) where.severity = filter.severity;
     if (filter.category) where.category = filter.category;
@@ -4291,10 +4529,7 @@ var AuditLogger = class {
         name: `${log.user.firstName} ${log.user.lastName}`,
         role: log.user.role
       } : null,
-      merchant: log.merchant ? {
-        id: log.merchant.id,
-        name: log.merchant.name
-      } : null,
+      // Note: merchant removed - tenant databases are already isolated per tenant
       outlet: log.outlet ? {
         id: log.outlet.id,
         name: log.outlet.name
@@ -4321,7 +4556,6 @@ var AuditLogger = class {
   // Get audit statistics
   async getAuditStats(filter = {}) {
     const where = {};
-    if (filter.merchantId) where.merchantId = filter.merchantId;
     if (filter.outletId) where.outletId = filter.outletId;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
@@ -4372,7 +4606,7 @@ function extractAuditContext(request, user) {
     userId: user?.id,
     userEmail: user?.email,
     userRole: user?.role,
-    merchantId: user?.merchantId,
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     outletId: user?.outletId,
     ipAddress: headers.get("x-forwarded-for") || headers.get("x-real-ip") || "unknown",
     userAgent: headers.get("user-agent") || "unknown",
@@ -4399,7 +4633,7 @@ async function registerUser(data) {
       }
       const registrationType = determineRegistrationType(data);
       if (registrationType === "MERCHANT") {
-        return await registerMerchant(tx, data);
+        throw new Error("MERCHANT registration is deprecated. Use registerTenantWithTrial for tenant registration instead.");
       } else if (registrationType === "OUTLET_ADMIN" || registrationType === "OUTLET_STAFF") {
         return await registerOutletUser(tx, data);
       } else {
@@ -4427,235 +4661,15 @@ function determineRegistrationType(data) {
   }
   return "BASIC";
 }
-async function registerMerchant(tx, data) {
-  const existingMerchant = await tx.merchant.findUnique({
-    where: { email: data.email }
-  });
-  if (existingMerchant) {
-    throw new Error("Merchant with this email already exists");
-  }
-  let trialPlan = await tx.plan.findFirst({
-    where: {
-      name: "Trial",
-      isActive: true
-    }
-  });
-  if (!trialPlan) {
-    console.log("Creating trial plan automatically...");
-    trialPlan = await tx.plan.create({
-      data: {
-        name: "Trial",
-        description: "Free trial plan for new merchants to test the platform",
-        basePrice: 0,
-        // Free
-        currency: "USD",
-        trialDays: 14,
-        limits: JSON.stringify({
-          outlets: 1,
-          users: 2,
-          products: 25,
-          customers: 50
-        }),
-        features: JSON.stringify([
-          "Basic inventory management",
-          "Customer management",
-          "Order processing (limited)",
-          "Basic reporting",
-          "Email support",
-          "Mobile app access",
-          "14-day free trial"
-        ]),
-        isActive: true,
-        isPopular: false,
-        sortOrder: 0
-        // Show first
-      }
-    });
-    console.log("\u2705 Trial plan created automatically");
-  }
-  const merchant = await tx.merchant.create({
-    data: {
-      name: data.businessName || `${data.name}'s Business`,
-      email: data.email,
-      phone: data.phone,
-      address: data.address,
-      city: data.city,
-      state: data.state,
-      zipCode: data.zipCode,
-      country: data.country,
-      isActive: true
-      // subscriptionStatus removed - will be set in subscription.status
-    }
-  });
-  const outlet = await tx.outlet.create({
-    data: {
-      name: data.outletName || "Main Store",
-      // Always use merchant's information as primary source, with user input as fallback
-      address: merchant.address || data.address || "Address to be updated",
-      phone: merchant.phone || data.phone,
-      city: merchant.city || data.city,
-      state: merchant.state || data.state,
-      zipCode: merchant.zipCode || data.zipCode,
-      country: merchant.country || data.country,
-      description: "Default outlet created during registration",
-      merchantId: merchant.id,
-      isActive: true,
-      isDefault: true
-    }
-  });
-  const defaultCategory = await tx.category.create({
-    data: {
-      name: "General",
-      description: "Default category for general products",
-      merchantId: merchant.id,
-      isActive: true
-    }
-  });
-  const hashedPassword = await (0, import_auth.hashPassword)(data.password);
-  const user = await tx.user.create({
-    data: {
-      email: data.email,
-      password: hashedPassword,
-      firstName: data.name.split(" ")[0] || "",
-      lastName: data.name.split(" ").slice(1).join(" ") || "",
-      phone: data.phone,
-      role: "MERCHANT",
-      merchantId: merchant.id,
-      outletId: outlet.id,
-      // Assign default outlet to merchant user
-      isActive: true,
-      emailVerified: false,
-      // Email needs to be verified after registration
-      emailVerifiedAt: null
-    }
-  });
-  const subscriptionStartDate = /* @__PURE__ */ new Date();
-  const endDate = new Date(subscriptionStartDate.getTime() + trialPlan.trialDays * 24 * 60 * 60 * 1e3);
-  const subscription = await tx.subscription.create({
-    data: {
-      merchantId: merchant.id,
-      planId: trialPlan.id,
-      status: "trial",
-      amount: 0,
-      // Free trial
-      currency: "USD",
-      interval: "month",
-      // Default to monthly for trial
-      intervalCount: 1,
-      // 1 month intervals
-      currentPeriodStart: subscriptionStartDate,
-      currentPeriodEnd: endDate,
-      trialStart: subscriptionStartDate,
-      trialEnd: endDate,
-      cancelAtPeriodEnd: false
-    }
-  });
-  return {
-    success: true,
-    user: {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      merchant: {
-        id: merchant.id,
-        name: merchant.name
-      },
-      outlet: {
-        id: outlet.id,
-        name: outlet.name
-      }
-    },
-    token: "",
-    // Will be generated by auth service
-    message: "Merchant account created successfully with default outlet"
-  };
-}
-async function registerMerchantWithTrial(data) {
-  const registrationData = {
-    email: data.userEmail,
-    password: data.userPassword,
-    name: `${data.userFirstName} ${data.userLastName}`,
-    phone: data.userPhone,
-    role: "MERCHANT",
-    businessName: data.merchantName,
-    outletName: data.outletName,
-    address: data.outletAddress
-  };
-  const result = await registerUser(registrationData);
-  if (!result.success) {
-    throw new Error(result.message);
-  }
-  return {
-    merchant: {
-      id: result.user.merchant?.id,
-      name: result.user.merchant?.name,
-      email: result.user.email
-    },
-    user: {
-      id: result.user.id,
-      email: result.user.email,
-      firstName: result.user.firstName,
-      lastName: result.user.lastName,
-      role: result.user.role
-    },
-    outlet: {
-      id: result.user.outlet?.id,
-      name: result.user.outlet?.name
-    },
-    subscription: {
-      planName: "Trial",
-      trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1e3)
-      // 14 days from now
-    }
-  };
-}
 async function registerOutletUser(tx, data) {
-  if (!data.merchantCode) {
-    throw new Error("Merchant code is required for outlet user registration");
+  if (!data.outletCode) {
+    throw new Error("Outlet code is required for outlet user registration");
   }
-  const merchant = await tx.merchant.findUnique({
-    where: { id: parseInt(data.merchantCode) }
+  const outlet = await tx.outlet.findUnique({
+    where: { id: parseInt(data.outletCode) }
   });
-  if (!merchant) {
-    throw new Error("Invalid merchant code. Please check with your manager.");
-  }
-  let outlet = null;
-  if (data.outletCode) {
-    outlet = await tx.outlet.findUnique({
-      where: {
-        id: parseInt(data.outletCode),
-        merchantId: merchant.id
-      }
-    });
-    if (!outlet) {
-      throw new Error("Invalid outlet code. Please check with your manager.");
-    }
-  } else {
-    outlet = await tx.outlet.findFirst({
-      where: {
-        merchantId: merchant.id,
-        isDefault: true
-      }
-    });
-    if (!outlet) {
-      outlet = await tx.outlet.create({
-        data: {
-          name: `${merchant.name} - Main Store`,
-          address: merchant.address || "Address to be updated",
-          phone: merchant.phone,
-          city: merchant.city,
-          state: merchant.state,
-          zipCode: merchant.zipCode,
-          country: merchant.country,
-          description: "Default outlet for staff",
-          merchantId: merchant.id,
-          isActive: true,
-          isDefault: true
-        }
-      });
-    }
+  if (!outlet) {
+    throw new Error("Invalid outlet code. Please check with your manager.");
   }
   const hashedPassword = await (0, import_auth.hashPassword)(data.password);
   const user = await tx.user.create({
@@ -4666,7 +4680,6 @@ async function registerOutletUser(tx, data) {
       lastName: data.name.split(" ").slice(1).join(" ") || "",
       phone: data.phone,
       role: data.role || "OUTLET_STAFF",
-      merchantId: merchant.id,
       outletId: outlet.id,
       isActive: true
     }
@@ -4679,10 +4692,6 @@ async function registerOutletUser(tx, data) {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
-      merchant: {
-        id: merchant.id,
-        name: merchant.name
-      },
       outlet: {
         id: outlet.id,
         name: outlet.name
@@ -4720,6 +4729,171 @@ async function registerBasicUser(tx, data) {
     message: "User account created successfully"
   };
 }
+async function registerTenantWithTrial(data) {
+  const {
+    createTenant: createTenant2,
+    subdomainExists: subdomainExists2,
+    tenantEmailExists: tenantEmailExists2,
+    getDefaultPlan: getDefaultPlan2
+  } = await Promise.resolve().then(() => (init_main_db(), main_db_exports));
+  const { getTenantDb: getTenantDb2, createTenantDatabase: createTenantDatabase2 } = await Promise.resolve().then(() => (init_tenant_db(), tenant_db_exports));
+  const {
+    sanitizeSubdomain: sanitize,
+    validateSubdomain: validate,
+    buildTenantUrl: buildUrl
+  } = await Promise.resolve().then(() => (init_subdomain_utils(), subdomain_utils_exports));
+  const subdomain = data.subdomain ? sanitize(data.subdomain) : sanitize(data.businessName);
+  if (!validate(subdomain)) {
+    throw new Error("Invalid subdomain format");
+  }
+  if (await subdomainExists2(subdomain)) {
+    throw new Error("Subdomain already taken");
+  }
+  if (await tenantEmailExists2(data.email)) {
+    throw new Error("Email already registered");
+  }
+  const defaultPlan = await getDefaultPlan2();
+  const planId = defaultPlan?.id || void 0;
+  const trialDays = defaultPlan?.trialDays || 14;
+  const trialStart = /* @__PURE__ */ new Date();
+  const trialEnd = new Date(trialStart.getTime() + trialDays * 24 * 60 * 60 * 1e3);
+  console.log(`Creating database for tenant: ${subdomain}`);
+  const databaseUrl = await createTenantDatabase2(subdomain);
+  const tenant = await createTenant2({
+    subdomain,
+    name: data.businessName,
+    email: data.email,
+    phone: data.phone,
+    address: data.address,
+    city: data.city,
+    state: data.state,
+    zipCode: data.zipCode,
+    country: data.country,
+    taxId: data.taxId,
+    businessType: data.businessType,
+    website: data.website,
+    description: data.description,
+    databaseUrl,
+    status: "active",
+    planId: planId || void 0,
+    subscriptionStatus: "trial",
+    trialStart,
+    trialEnd
+  });
+  const tenantDb = await getTenantDb2(subdomain);
+  const result = await tenantDb.$transaction(async (tx) => {
+    let trialPlan = await tx.plan.findFirst({
+      where: {
+        name: "Trial",
+        isActive: true
+      }
+    });
+    if (!trialPlan && defaultPlan) {
+      trialPlan = await tx.plan.create({
+        data: {
+          name: defaultPlan.name,
+          description: defaultPlan.description,
+          basePrice: defaultPlan.basePrice,
+          currency: defaultPlan.currency,
+          trialDays: defaultPlan.trialDays,
+          limits: defaultPlan.limits,
+          features: defaultPlan.features,
+          isActive: defaultPlan.isActive,
+          isPopular: defaultPlan.isPopular,
+          sortOrder: defaultPlan.sortOrder
+        }
+      });
+    }
+    const outlet = await tx.outlet.create({
+      data: {
+        name: data.outletName || "Main Store",
+        address: data.address || "Address to be updated",
+        phone: data.phone,
+        city: data.city,
+        state: data.state,
+        zipCode: data.zipCode,
+        country: data.country,
+        description: "Default outlet created during registration",
+        isActive: true,
+        isDefault: true
+      }
+    });
+    const defaultCategory = await tx.category.create({
+      data: {
+        name: "General",
+        description: "Default category for general products",
+        isActive: true,
+        isDefault: false
+      }
+    });
+    const hashedPassword = await (0, import_auth.hashPassword)(data.password);
+    const user = await tx.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        role: "MERCHANT",
+        outletId: outlet.id,
+        isActive: true,
+        emailVerified: false,
+        emailVerifiedAt: null
+      }
+    });
+    let subscription = null;
+    if (trialPlan && trialPlan.id) {
+      subscription = await tx.subscription.create({
+        data: {
+          planId: trialPlan.id,
+          status: "trial",
+          currentPeriodStart: trialStart,
+          currentPeriodEnd: trialEnd,
+          trialStart,
+          trialEnd,
+          amount: 0,
+          currency: trialPlan.currency || "USD",
+          interval: "month",
+          intervalCount: 1,
+          period: 1,
+          discount: 0,
+          savings: 0
+        }
+      });
+    }
+    return {
+      user,
+      outlet,
+      subscription,
+      plan: trialPlan
+    };
+  });
+  const tenantUrl = buildUrl(subdomain);
+  return {
+    tenant: {
+      id: tenant.id,
+      subdomain: tenant.subdomain,
+      name: tenant.name,
+      email: tenant.email
+    },
+    user: {
+      id: result.user.id,
+      email: result.user.email,
+      firstName: result.user.firstName,
+      lastName: result.user.lastName,
+      role: result.user.role
+    },
+    outlet: {
+      id: result.outlet.id,
+      name: result.outlet.name
+    },
+    subscription: {
+      planName: result.plan?.name || "Trial",
+      trialEnd: result.subscription?.trialEnd || trialEnd
+    },
+    tenantUrl
+  };
+}
 
 // src/email-verification.ts
 var import_crypto2 = require("crypto");
@@ -4730,19 +4904,13 @@ async function createEmailVerification(userId, email, expiresInHours = 24) {
   const token = generateVerificationToken();
   const expiresAt = /* @__PURE__ */ new Date();
   expiresAt.setHours(expiresAt.getHours() + expiresInHours);
-  await prisma.emailVerification.updateMany({
-    where: {
-      userId,
-      verified: false,
-      expiresAt: { gt: /* @__PURE__ */ new Date() }
-      // Not expired yet
-    },
-    data: {
-      verified: true,
-      // Mark as used/invalid
-      verifiedAt: /* @__PURE__ */ new Date()
-    }
-  });
+  await prisma.$executeRaw`
+    UPDATE "EmailVerification"
+    SET verified = true, "verifiedAt" = NOW()
+    WHERE "userId" = ${userId}
+      AND verified = false
+      AND "expiresAt" > NOW()
+  `;
   const verification = await prisma.emailVerification.create({
     data: {
       userId,
@@ -4756,7 +4924,14 @@ async function createEmailVerification(userId, email, expiresInHours = 24) {
 async function verifyEmailByToken(token) {
   const verification = await prisma.emailVerification.findUnique({
     where: { token },
-    include: { user: true }
+    select: {
+      id: true,
+      userId: true,
+      email: true,
+      token: true,
+      verified: true,
+      expiresAt: true
+    }
   });
   if (!verification) {
     return {
@@ -4783,7 +4958,20 @@ async function verifyEmailByToken(token) {
       verifiedAt: /* @__PURE__ */ new Date()
     }
   });
-  const user = await prisma.user.update({
+  const user = await prisma.user.findUnique({
+    where: { id: verification.userId },
+    select: {
+      id: true,
+      email: true
+    }
+  });
+  if (!user) {
+    return {
+      success: false,
+      error: "User kh\xF4ng t\u1ED3n t\u1EA1i"
+    };
+  }
+  await prisma.user.update({
     where: { id: verification.userId },
     data: {
       emailVerified: true,
@@ -4830,81 +5018,10 @@ async function deleteExpiredTokens() {
   return result.count;
 }
 
-// src/tenant-db-manager.ts
-var import_client17 = require("@prisma/client");
-var import_pg = require("pg");
-async function getMainDb() {
-  const url = new URL(process.env.MAIN_DATABASE_URL);
-  return new import_pg.Client({
-    host: url.hostname,
-    port: parseInt(url.port || "5432"),
-    user: url.username,
-    password: url.password,
-    database: url.pathname.slice(1)
-  });
-}
-var tenantClients = /* @__PURE__ */ new Map();
-async function getTenantDb(subdomain) {
-  if (tenantClients.has(subdomain)) {
-    return tenantClients.get(subdomain);
-  }
-  const mainDbClient = await getMainDb();
-  await mainDbClient.connect();
-  try {
-    const result = await mainDbClient.query(
-      'SELECT id, subdomain, name, "merchantId", "databaseUrl", status, "createdAt", "updatedAt" FROM "Tenant" WHERE subdomain = $1',
-      [subdomain]
-    );
-    const tenant = result.rows[0];
-    if (!tenant || tenant.status !== "active") {
-      throw new Error(`Tenant not found or inactive: ${subdomain}`);
-    }
-    const client = new import_client17.PrismaClient({
-      datasources: { db: { url: tenant.databaseUrl } }
-    });
-    tenantClients.set(subdomain, client);
-    return client;
-  } finally {
-    await mainDbClient.end();
-  }
-}
-async function createTenantDatabase(subdomain, merchantId) {
-  const dbName = `${subdomain.replace(/-/g, "_")}_shop_db`;
-  const mainDbUrl = process.env.MAIN_DATABASE_URL;
-  const url = new URL(mainDbUrl);
-  const adminClient = new import_pg.Client({
-    host: url.hostname,
-    port: parseInt(url.port || "5432"),
-    user: url.username,
-    password: url.password,
-    database: url.pathname.slice(1)
-  });
-  await adminClient.connect();
-  try {
-    await adminClient.query(`DROP DATABASE IF EXISTS ${dbName}`);
-    await adminClient.query(`CREATE DATABASE ${dbName}`);
-    const tenantDbUrl = `postgresql://${url.username}:${url.password}@${url.hostname}:${url.port}/${dbName}`;
-    const { execSync } = require("child_process");
-    execSync("npx prisma db push --skip-generate", {
-      stdio: "inherit",
-      env: { ...process.env, DATABASE_URL: tenantDbUrl },
-      cwd: process.cwd()
-    });
-    return tenantDbUrl;
-  } finally {
-    await adminClient.end();
-  }
-}
-function generateSubdomain(businessName) {
-  return businessName.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").substring(0, 50);
-}
-function validateSubdomain(subdomain) {
-  const reserved = ["www", "api", "admin", "app", "mail", "ftp", "smtp"];
-  if (reserved.includes(subdomain.toLowerCase())) return false;
-  return /^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/.test(subdomain);
-}
-
 // src/index.ts
+init_tenant_db();
+init_main_db();
+init_subdomain_utils();
 var db = {
   // ============================================================================
   // PRISMA CLIENT (for transactions)
@@ -5017,35 +5134,53 @@ var generateOrderNumber2 = async (outletId) => {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AuditLogger,
+  buildTenantUrl,
   checkDatabaseConnection,
+  clearTenantCache,
   createEmailVerification,
   createOrderNumberWithFormat,
   createSubscriptionPayment,
+  createTenant,
   createTenantDatabase,
   db,
   deleteExpiredTokens,
   extractAuditContext,
+  extractSubdomain,
   generateOrderNumber,
   generateSubdomain,
   generateVerificationToken,
   getAuditLogger,
+  getCachedTenants,
   getDefaultOutlet,
+  getDefaultPlan,
   getExpiredSubscriptions,
-  getMainDb,
+  getMainDbClient,
   getOutletOrderStats,
+  getPlanById,
+  getProtocol,
+  getReservedSubdomains,
+  getRootDomain,
   getSubscriptionById,
-  getSubscriptionByMerchantId,
+  getTenantById,
+  getTenantBySubdomain,
   getTenantDb,
   getVerificationTokenByUserId,
   isEmailVerified,
+  isReservedSubdomain,
+  listActivePlans,
+  listAllTenants,
   prisma,
-  registerMerchantWithTrial,
+  registerTenantWithTrial,
   registerUser,
   resendVerificationToken,
+  sanitizeSubdomain,
   searchOrders,
   simplifiedPayments,
   simplifiedSubscriptionActivities,
+  subdomainExists,
+  tenantEmailExists,
   updateSubscription,
+  updateTenant,
   validateSubdomain,
   verifyEmailByToken
 });

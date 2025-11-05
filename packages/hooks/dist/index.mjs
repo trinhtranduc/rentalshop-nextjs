@@ -3683,7 +3683,7 @@ function useAuth() {
     }
     return t3("UNKNOWN_ERROR");
   }, [t3]);
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, subdomain) => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       const { apiUrls } = await import("@rentalshop/utils");
@@ -3692,7 +3692,7 @@ function useAuth() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, subdomain })
       });
       if (!response.ok) {
         const errorData = await response.json();

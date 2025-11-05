@@ -44,17 +44,14 @@ export async function createEmailVerification(
   expiresAt.setHours(expiresAt.getHours() + expiresInHours);
 
   // Invalidate any existing unverified tokens for this user
-  await prisma.emailVerification.updateMany({
-    where: {
-      userId,
-      verified: false,
-      expiresAt: { gt: new Date() }, // Not expired yet
-    },
-    data: {
-      verified: true, // Mark as used/invalid
-      verifiedAt: new Date(),
-    },
-  });
+  // Use raw query to avoid Prisma relation validation issues with merchantId
+  await prisma.$executeRaw`
+    UPDATE "EmailVerification"
+    SET verified = true, "verifiedAt" = NOW()
+    WHERE "userId" = ${userId}
+      AND verified = false
+      AND "expiresAt" > NOW()
+  `;
 
   // Create new verification token
   const verification = await prisma.emailVerification.create({
@@ -75,9 +72,17 @@ export async function createEmailVerification(
 export async function verifyEmailByToken(
   token: string
 ): Promise<{ success: boolean; user?: { id: number; email: string }; error?: string }> {
+  // Don't include user relation to avoid merchantId issues in tenant database
   const verification = await prisma.emailVerification.findUnique({
     where: { token },
-    include: { user: true },
+    select: {
+      id: true,
+      userId: true,
+      email: true,
+      token: true,
+      verified: true,
+      expiresAt: true,
+    },
   });
 
   if (!verification) {
@@ -110,8 +115,24 @@ export async function verifyEmailByToken(
     },
   });
 
+  // Get user separately without including relations that might have merchantId
+  const user = await prisma.user.findUnique({
+    where: { id: verification.userId },
+    select: {
+      id: true,
+      email: true,
+    },
+  });
+
+  if (!user) {
+    return {
+      success: false,
+      error: 'User không tồn tại',
+    };
+  }
+
   // Update user email verified status
-  const user = await prisma.user.update({
+  await prisma.user.update({
     where: { id: verification.userId },
     data: {
       emailVerified: true,

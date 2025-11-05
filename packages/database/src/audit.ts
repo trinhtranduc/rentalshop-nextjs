@@ -16,7 +16,7 @@ export interface AuditContext {
   userId?: number;
   userEmail?: string;
   userRole?: string;
-  merchantId?: number;
+  // Note: merchantId removed - tenant databases are already isolated per tenant
   outletId?: number;
   ipAddress?: string;
   userAgent?: string;
@@ -44,7 +44,7 @@ export interface AuditLogFilter {
   entityType?: string;
   entityId?: string;
   userId?: number;
-  merchantId?: number;
+  // Note: merchantId removed - tenant databases are already isolated per tenant
   outletId?: number;
   severity?: string;
   category?: string;
@@ -78,7 +78,7 @@ export class AuditLogger {
       
       // Validate foreign key IDs to prevent constraint violations
       const validatedUserId = await this.validateUserId(data.context.userId);
-      const validatedMerchantId = await this.validateMerchantId(data.context.merchantId);
+      // Note: merchantId validation removed - tenant databases are already isolated per tenant
       const validatedOutletId = await this.validateOutletId(data.context.outletId);
       
       console.log('🔍 AuditLogger.log - About to create audit log with data:', {
@@ -87,7 +87,6 @@ export class AuditLogger {
         entityType: data.entityType,
         entityId: data.entityId,
         userId: validatedUserId,
-        merchantId: validatedMerchantId,
         outletId: validatedOutletId
       });
       
@@ -123,20 +122,7 @@ export class AuditLogger {
     }
   }
 
-  private async validateMerchantId(merchantId?: number): Promise<number | null> {
-    if (!merchantId) return null;
-    
-    try {
-      const merchant = await this.prisma.merchant.findUnique({
-        where: { id: merchantId },
-        select: { id: true }
-      });
-      return merchant ? merchantId : null;
-    } catch (error) {
-      console.warn('⚠️ AuditLogger - Failed to validate merchantId:', merchantId, error);
-      return null;
-    }
-  }
+  // Note: validateMerchantId removed - tenant databases are already isolated per tenant
 
   private async validateOutletId(outletId?: number): Promise<number | null> {
     if (!outletId) return null;
@@ -302,7 +288,7 @@ export class AuditLogger {
     if (filter.entityType) where.entityType = filter.entityType;
     if (filter.entityId) where.entityId = filter.entityId;
     if (filter.userId) where.userId = filter.userId;
-    if (filter.merchantId) where.merchantId = filter.merchantId;
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (filter.outletId) where.outletId = filter.outletId;
     if (filter.severity) where.severity = filter.severity;
     if (filter.category) where.category = filter.category;
@@ -333,10 +319,7 @@ export class AuditLogger {
         name: `${log.user.firstName} ${log.user.lastName}`,
         role: log.user.role
       } : null,
-      merchant: log.merchant ? {
-        id: log.merchant.id,
-        name: log.merchant.name
-      } : null,
+      // Note: merchant removed - tenant databases are already isolated per tenant
       outlet: log.outlet ? {
         id: log.outlet.id,
         name: log.outlet.name
@@ -373,7 +356,7 @@ export class AuditLogger {
   }> {
     const where: any = {};
     
-    if (filter.merchantId) where.merchantId = filter.merchantId;
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (filter.outletId) where.outletId = filter.outletId;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
@@ -433,7 +416,7 @@ export function extractAuditContext(request: Request, user?: any): AuditContext 
     userId: user?.id,
     userEmail: user?.email,
     userRole: user?.role,
-    merchantId: user?.merchantId,
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     outletId: user?.outletId,
     ipAddress: headers.get('x-forwarded-for') || headers.get('x-real-ip') || 'unknown',
     userAgent: headers.get('user-agent') || 'unknown',

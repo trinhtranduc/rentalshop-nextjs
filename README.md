@@ -5,6 +5,8 @@ A comprehensive rental shop management system built with Next.js, featuring a mo
 ## 📚 Documentation
 
 - **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)** - 🚀 Complete deployment guide for Railway (Recommended)
+- **[MULTI_TENANT_SETUP.md](MULTI_TENANT_SETUP.md)** - 🏢 Multi-tenant system setup guide
+- **[MULTI_TENANT_ENV_SETUP.md](MULTI_TENANT_ENV_SETUP.md)** - 🔧 Environment configuration for multi-tenant
 - **[.cursorrules](.cursorrules)** - Development rules and best practices including API standardization
 
 ## 🚀 Quick Start
@@ -445,8 +447,54 @@ git push origin main
 
 **See [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md) for complete deployment guide with PostgreSQL database setup, environment configuration, and troubleshooting.**
 
+## 🏢 **Multi-Tenant System**
+
+This application supports a **multi-tenant architecture** where each tenant (business) gets:
+
+- **Isolated Database**: Separate PostgreSQL database per tenant
+- **Subdomain Routing**: Access via `{subdomain}.anyrent.shop`
+- **Complete Data Isolation**: Tenants cannot access each other's data
+- **Scalable Architecture**: Support for thousands of tenants
+
+### **Quick Multi-Tenant Setup**
+
+```bash
+# 1. Verify environment variables
+yarn env:verify
+
+# 2. Setup Main Database (stores tenant metadata)
+yarn db:setup-main
+
+# 3. Verify complete setup
+yarn verify:multi-tenant
+
+# 4. Start services
+yarn dev
+```
+
+### **Multi-Tenant Features**
+
+- **Tenant Registration**: New tenants register via `client.anyrent.shop`
+- **Admin Management**: Super admin manages all tenants via `admin.anyrent.shop`
+- **Subdomain Routing**: Automatic tenant detection and routing
+- **Subscription Plans**: Centralized plan management in Main DB
+- **Dynamic Database Creation**: Tenant databases created automatically
+
+### **URL Structure**
+
+- **Admin**: `admin.anyrent.shop` - Super admin dashboard
+- **Client (Public)**: `client.anyrent.shop` - Registration and public pages
+- **Tenant Dashboard**: `{subdomain}.anyrent.shop` - Individual tenant dashboards
+
+### **Documentation**
+
+- **[MULTI_TENANT_SETUP.md](MULTI_TENANT_SETUP.md)** - Complete setup guide
+- **[MULTI_TENANT_ENV_SETUP.md](MULTI_TENANT_ENV_SETUP.md)** - Environment configuration
+
 ## 📚 **Additional Documentation**
 
+- **Multi-Tenant Setup**: [MULTI_TENANT_SETUP.md](MULTI_TENANT_SETUP.md) - Complete multi-tenant setup guide
+- **Environment Config**: [MULTI_TENANT_ENV_SETUP.md](MULTI_TENANT_ENV_SETUP.md) - Multi-tenant environment variables
 - **Deployment Guide**: [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md) - Complete Railway deployment instructions
 - **Development Rules**: [.cursorrules](.cursorrules) - Coding standards and API best practices
 - **Component Library**: `packages/ui/README.md` - UI components documentation
