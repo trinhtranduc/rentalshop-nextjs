@@ -15,16 +15,16 @@ export const GET = withReadOnlyAuth(async (request, { user }) => {
   console.log(`🔍 GET /api/orders/statistics - User: ${user.email} (${user.role})`);
   
   try {
-    const result = await getTenantDbFromRequest(request);
+    const tenantResult = await getTenantDbFromRequest(request);
       
-      if (!result) {
+      if (!tenantResult) {
         return NextResponse.json(
           ResponseBuilder.error('TENANT_REQUIRED', 'Tenant subdomain is required'),
           { status: 400 }
         );
       }
       
-      const { db } = result;
+      const { db } = tenantResult;
     
     const { searchParams } = new URL(request.url);
     
