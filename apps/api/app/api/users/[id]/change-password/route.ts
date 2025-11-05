@@ -1,7 +1,7 @@
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
-import { getTenantDbFromRequest } from '@rentalshop/utils';
+import { getTenantDbFromRequest } from '@rentalshop/utils/api';
 import bcrypt from 'bcryptjs';
 import {API} from '@rentalshop/constants';
 

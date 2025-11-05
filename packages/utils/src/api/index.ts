@@ -4,6 +4,22 @@
 
 // Core API utilities are exported from the main utils package
 
+// Server-side only utilities (cannot be used in client-side code)
+// These utilities import PostgreSQL and other Node.js-only modules
+export { getTenantDbFromRequest, withTenantDb } from '../core/tenant-utils';
+
+// Subscription manager (server-only - imports PostgreSQL)
+export * from '../core/subscription-manager';
+export type {
+  SubscriptionRenewalConfig,
+  SubscriptionRenewalResult,
+  RenewalStats
+} from '../core/subscription-manager';
+
+// Validation (server-only - imports PostgreSQL)
+export * from '../core/validation';
+export { assertPlanLimit } from '../core/validation';
+
 // Domain-specific API clients
 export * from './auth';
 export * from './products';

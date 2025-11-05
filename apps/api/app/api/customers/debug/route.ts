@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { customerCreateSchema, handleApiError } from '@rentalshop/utils';
+import { customerCreateSchema, handleApiError } from '@rentalshop/utils/api';
 import {API} from '@rentalshop/constants';
 
 /**

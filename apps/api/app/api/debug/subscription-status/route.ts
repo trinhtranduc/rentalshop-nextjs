@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTenantDbFromRequest } from '@rentalshop/utils';
-import { ResponseBuilder } from '@rentalshop/utils';
+import { getTenantDbFromRequest } from '@rentalshop/utils/api';
+import { ResponseBuilder } from '@rentalshop/utils/api';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

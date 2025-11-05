@@ -130,7 +130,7 @@ export default function MerchantsPage() {
   // MERCHANT ACTION HANDLERS
   // ============================================================================
   
-  const handleMerchantAction = useCallback((action: string, merchantId: number) => {
+  const handleMerchantAction = useCallback((action: string, merchantId: number | string, merchantData?: any) => {
     switch (action) {
       case 'view':
         router.push(`/merchants/${merchantId}`);
@@ -139,10 +139,18 @@ export default function MerchantsPage() {
         router.push(`/merchants/${merchantId}/edit`);
         break;
       case 'change-plan':
-        console.log('Change plan for merchant:', merchantId);
+        console.log('Change plan for tenant:', merchantId);
+        break;
+      case 'view-tenant':
+        // Open tenant subdomain URL
+        if (merchantData?.subdomain) {
+          const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'anyrent.shop';
+          const tenantUrl = `http://${merchantData.subdomain}.${rootDomain}`;
+          window.open(tenantUrl, '_blank');
+        }
         break;
       default:
-        console.log('Merchant action:', action, merchantId);
+        console.log('Tenant action:', action, merchantId);
     }
   }, [router]);
 
@@ -172,7 +180,9 @@ export default function MerchantsPage() {
     const merchants = data.merchants || [];
     const stats = {
       totalMerchants: data.total || 0,
-      activeMerchants: merchants.filter((m: any) => m.isActive).length,
+      totalTenants: data.total || 0, // Alias for clarity
+      activeMerchants: merchants.filter((m: any) => m.isActive || m.status === 'active').length,
+      activeTenants: merchants.filter((m: any) => m.isActive || m.status === 'active').length,
       trialAccounts: merchants.filter((m: any) => m.subscriptionStatus === 'trial').length,
       totalRevenue: merchants.reduce((sum: number, m: any) => sum + (m.totalRevenue || 0), 0)
     };
@@ -207,8 +217,8 @@ export default function MerchantsPage() {
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <PageTitle subtitle="Manage all merchants across the platform">
-          Merchant Management
+        <PageTitle subtitle="Manage all tenants (merchants) across the platform. Each tenant has an isolated database and subdomain.">
+          Tenant Management
         </PageTitle>
       </PageHeader>
 

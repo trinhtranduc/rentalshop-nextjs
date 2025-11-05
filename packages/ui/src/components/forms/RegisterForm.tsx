@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
-import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin, Globe } from "lucide-react";
 import { authApi } from "@rentalshop/utils";
 import { 
   BUSINESS_TYPE_OPTIONS,
@@ -29,6 +29,7 @@ import {
   useToast
 } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
+import { sanitizeSubdomain } from "@rentalshop/database";
 
 // Types for the registration form
 interface RegisterFormData {
@@ -73,6 +74,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [currentStep, setCurrentStep] = useState(initialStep || 1);
   const [accountData, setAccountData] = useState<Partial<RegisterFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [generatedSubdomain, setGeneratedSubdomain] = useState<string>("");
   const { toastSuccess, toastError, removeToast } = useToast();
   const t = useAuthTranslations();
 
@@ -199,6 +201,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           state: values.state,
           zipCode: values.zipCode,
           country: values.country,
+          subdomain: generatedSubdomain || sanitizeSubdomain(values.businessName), // Auto-generate from business name
         };
         
         const result = await authApi.register(registrationData);
@@ -461,13 +464,46 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         type="text"
                         placeholder={t('register.enterBusinessName')}
                         value={formik.values.businessName}
-                        onChange={formik.handleChange}
+                        onChange={(e) => {
+                          formik.handleChange(e);
+                          // Auto-generate subdomain from business name
+                          const businessName = e.target.value;
+                          if (businessName) {
+                            const subdomain = sanitizeSubdomain(businessName);
+                            setGeneratedSubdomain(subdomain);
+                          } else {
+                            setGeneratedSubdomain("");
+                          }
+                        }}
                         onBlur={formik.handleBlur}
                         className={`pl-10 ${formik.errors.businessName && formik.touched.businessName ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {formik.errors.businessName && formik.touched.businessName && (
                       <p className="text-red-500 text-sm">{formik.errors.businessName}</p>
+                    )}
+                    
+                    {/* Generated Subdomain Display */}
+                    {generatedSubdomain && (
+                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <Globe className="h-4 w-4 text-blue-600" />
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-600 mb-2">{t('register.shopUrl')}</p>
+                            <div className="flex items-baseline gap-0">
+                              <span className="text-sm font-mono font-semibold text-blue-700">
+                                {generatedSubdomain}
+                              </span>
+                              <span className="text-sm font-mono text-gray-400">
+                                .{typeof window !== 'undefined' 
+                                  ? (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'anyrent.shop')
+                                  : 'anyrent.shop'
+                                }
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
 

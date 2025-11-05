@@ -37,7 +37,7 @@ export { prisma };
 // ============================================================================
 
 export interface SimpleFilters {
-  merchantId?: number;
+  // Note: merchantId removed - tenant databases are already isolated per tenant
   outletId?: number;
   isActive?: boolean;
   search?: string;
@@ -220,7 +220,8 @@ export { simplifiedPayments } from './payment';
 export { simplifiedSubscriptionActivities } from './subscription-activity';
 
 // Legacy exports for backward compatibility
-export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById } from './subscription';
+// Note: getSubscriptionByMerchantId removed - tenant databases are already isolated per tenant
+export { createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById } from './subscription';
 export { AuditLogger, getAuditLogger, extractAuditContext } from './audit';
 export type { AuditContext } from './audit';
 export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number-generator';
@@ -229,7 +230,8 @@ export type { OrderNumberFormat } from './order-number-generator';
 export { searchOrders } from './order'; // Legacy order search function
 
 // Registration functions
-export { registerUser, registerMerchantWithTrial } from './registration';
+// Note: registerMerchantWithTrial removed - use registerTenantWithTrial instead
+export { registerUser, registerTenantWithTrial } from './registration';
 export type { RegistrationInput, RegistrationResult } from './registration';
 
 // Email verification functions
@@ -237,12 +239,41 @@ export * from './email-verification';
 
 // Multi-tenant functions
 export { 
-  getMainDb, 
   getTenantDb, 
   createTenantDatabase,
+  clearTenantCache,
+  getCachedTenants
+} from './tenant-db';
+
+// Main DB functions
+export {
+  getMainDbClient,
+  getTenantBySubdomain,
+  getTenantById,
+  subdomainExists,
+  tenantEmailExists,
+  createTenant,
+  updateTenant,
+  listAllTenants,
+  getPlanById,
+  listActivePlans,
+  getDefaultPlan
+} from './main-db';
+
+export type { Tenant, Plan } from './main-db';
+
+// Subdomain utilities
+export {
+  sanitizeSubdomain,
+  validateSubdomain,
   generateSubdomain,
-  validateSubdomain 
-} from './tenant-db-manager';
+  getRootDomain,
+  getProtocol,
+  buildTenantUrl,
+  extractSubdomain,
+  isReservedSubdomain,
+  getReservedSubdomains
+} from './subdomain-utils';
 
 // ============================================================================
 // MIGRATION GUIDE
@@ -262,7 +293,7 @@ import { db, prisma, checkDatabaseConnection } from '@rentalshop/database';
 
 // Usage examples:
 const user = await db.users.findById(123);
-const users = await db.users.search({ merchantId: 1, page: 1, limit: 20 });
+const users = await db.users.search({ page: 1, limit: 20 }); // Note: merchantId not needed - tenant isolation
 const product = await db.products.findByBarcode('123456789');
 const orders = await db.orders.search({ outletId: 1, status: 'ACTIVE' });
 

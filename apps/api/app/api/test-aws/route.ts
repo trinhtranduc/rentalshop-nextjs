@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { ResponseBuilder } from '@rentalshop/utils';
+import { ResponseBuilder } from '@rentalshop/utils/api';
 
 /**
  * GET /api/test-aws

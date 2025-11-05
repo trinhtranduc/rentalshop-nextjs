@@ -40,6 +40,35 @@ const nextConfig = {
         '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),
         '@prisma/client': require('path').join(__dirname, '../../node_modules/@prisma/client'),
       };
+      
+      // Support subpath exports for @rentalshop/utils/api
+      config.resolve.extensionAlias = {
+        ...config.resolve.extensionAlias,
+        '.js': ['.js', '.ts', '.tsx'],
+        '.mjs': ['.mjs', '.ts', '.tsx'],
+      };
+    } else {
+      // CRITICAL: Exclude Node.js built-in modules from client bundles (if any client code exists)
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        child_process: false,
+        crypto: false,
+        util: false,
+        os: false,
+        stream: false,
+        dns: false,
+        net: false,
+        tls: false,
+        http: false,
+        https: false,
+        url: false,
+        querystring: false,
+        buffer: false,
+        events: false,
+        zlib: false,
+      };
     }
     return config;
   },

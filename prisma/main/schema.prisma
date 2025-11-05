@@ -1,58 +1,13 @@
-generator client {
-  provider = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
-}
+// NO generator block - Raw SQL only
+// This schema is for documentation purposes only
+// Main DB operations use pg Client directly to avoid Prisma conflicts
 
 datasource db {
   provider = "postgresql"
   url      = env("MAIN_DATABASE_URL")
 }
 
-model Tenant {
-  id          String   @id @default(cuid())
-  subdomain   String   @unique
-  name        String
-  merchantId  Int      @unique
-  databaseUrl String
-  status      String   @default("active")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  merchant    Merchant @relation(fields: [merchantId], references: [id])
-  
-  @@index([subdomain])
-  @@index([status])
-}
-
-model Merchant {
-  id          Int      @id @default(autoincrement())
-  name        String
-  email       String   @unique
-  phone       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  tenant      Tenant?
-  
-  @@index([email])
-  @@index([name])
-}
-
-model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  password      String
-  firstName     String
-  lastName      String
-  phone         String?
-  role          String    @default("ADMIN")
-  isActive      Boolean   @default(true)
-  emailVerified Boolean   @default(false)
-  emailVerifiedAt DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  @@index([email])
-}
-
+// Plan table - Shared across all tenants (Super Admin manages)
 model Plan {
   id          Int      @id @default(autoincrement())
   name        String   @unique
@@ -63,7 +18,64 @@ model Plan {
   limits      String   @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
   features    String   @default("[]")
   isActive    Boolean  @default(true)
+  isPopular   Boolean  @default(false)
+  sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  
+  @@index([isActive])
+  @@index([sortOrder])
+  @@index([deletedAt])
+}
+
+// SIMPLIFIED: Only Tenant table (replaces Merchant)
+// 1 Tenant = 1 Business = 1 isolated database
+// Contains ALL business information
+model Tenant {
+  id          String   @id @default(cuid())
+  subdomain   String   @unique
+  
+  // Business Info (from Merchant model)
+  name        String
+  email       String   @unique
+  phone       String?
+  
+  // Address Info
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  country     String?
+  
+  // Business Details
+  taxId       String?  // Tax ID / EIN
+  businessType String? // e.g., "GENERAL", "VEHICLE", "EQUIPMENT"
+  website     String?
+  description String?
+  
+  // Multi-tenant specific
+  databaseUrl String
+  status      String   @default("active") // active, inactive, suspended
+  
+  // Subscription info - References Plan in Main DB
+  planId            Int?
+  subscriptionStatus String?   @default("trial") // trial, active, past_due, canceled
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  trialStart         DateTime?
+  trialEnd           DateTime?
+  canceledAt         DateTime?
+  cancelReason       String?
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([subdomain])
+  @@index([status])
+  @@index([email])
+  @@index([subscriptionStatus])
+  @@index([planId])
 }
 

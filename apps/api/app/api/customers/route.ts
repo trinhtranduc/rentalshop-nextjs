@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { getTenantDbFromRequest } from '@rentalshop/utils';
-import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { getTenantDbFromRequest } from '@rentalshop/utils/api';
+import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 import crypto from 'crypto';

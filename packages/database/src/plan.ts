@@ -432,7 +432,7 @@ export const simplifiedPlans = {
         subscriptions: {
           select: {
             id: true,
-            merchantId: true,
+            // Note: merchantId removed - tenant databases are already isolated per tenant
             status: true
           }
         }

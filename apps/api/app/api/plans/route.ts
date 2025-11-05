@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { planCreateSchema, handleApiError } from '@rentalshop/utils';
+import { planCreateSchema, handleApiError } from '@rentalshop/utils/api';
 import type { PlanCreateInput } from '@rentalshop/types';
 import {API} from '@rentalshop/constants';
 

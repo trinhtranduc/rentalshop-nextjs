@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db, resendVerificationToken } from '@rentalshop/database';
-import { sendVerificationEmail } from '@rentalshop/utils';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { sendVerificationEmail } from '@rentalshop/utils/api';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 import { createRateLimiter } from '@rentalshop/middleware';
 
 const resendVerificationSchema = z.object({

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { z } from 'zod';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError } from '@rentalshop/utils/api';
 import {API} from '@rentalshop/constants';
 
 // Schema for status update

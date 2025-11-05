@@ -75,7 +75,7 @@ export function useAuth() {
   // AUTH FUNCTIONS
   // ============================================================================
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string, subdomain?: string): Promise<boolean> => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
@@ -85,7 +85,7 @@ export function useAuth() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, subdomain }),
       });
 
       // Handle non-200 responses

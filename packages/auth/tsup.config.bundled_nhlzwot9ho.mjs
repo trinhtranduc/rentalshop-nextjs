@@ -1,0 +1,28 @@
+// tsup.config.ts
+import { defineConfig } from "tsup";
+var tsup_config_default = defineConfig({
+  entry: {
+    index: "src/index.ts",
+    "unified-auth": "src/unified-auth.ts",
+    client: "src/client/index.ts",
+    admin: "src/admin/index.ts"
+  },
+  format: ["esm", "cjs"],
+  dts: false,
+  // Disabled for multi-tenant - auth has complex type issues with merchant references
+  external: [
+    "@rentalshop/ui",
+    "@rentalshop/database",
+    "@rentalshop/utils",
+    "bcryptjs",
+    "jsonwebtoken",
+    "next-auth"
+  ],
+  clean: true,
+  sourcemap: true,
+  minify: false
+});
+export {
+  tsup_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidHN1cC5jb25maWcudHMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9faW5qZWN0ZWRfZmlsZW5hbWVfXyA9IFwiL1VzZXJzL21hYy9Tb3VyY2UtQ29kZS9yZW50YWxzaG9wLW5leHRqcy9wYWNrYWdlcy9hdXRoL3RzdXAuY29uZmlnLnRzXCI7Y29uc3QgX19pbmplY3RlZF9kaXJuYW1lX18gPSBcIi9Vc2Vycy9tYWMvU291cmNlLUNvZGUvcmVudGFsc2hvcC1uZXh0anMvcGFja2FnZXMvYXV0aFwiO2NvbnN0IF9faW5qZWN0ZWRfaW1wb3J0X21ldGFfdXJsX18gPSBcImZpbGU6Ly8vVXNlcnMvbWFjL1NvdXJjZS1Db2RlL3JlbnRhbHNob3AtbmV4dGpzL3BhY2thZ2VzL2F1dGgvdHN1cC5jb25maWcudHNcIjtpbXBvcnQgeyBkZWZpbmVDb25maWcgfSBmcm9tICd0c3VwJztcblxuZXhwb3J0IGRlZmF1bHQgZGVmaW5lQ29uZmlnKHtcbiAgZW50cnk6IHtcbiAgICBpbmRleDogJ3NyYy9pbmRleC50cycsXG4gICAgJ3VuaWZpZWQtYXV0aCc6ICdzcmMvdW5pZmllZC1hdXRoLnRzJyxcbiAgICBjbGllbnQ6ICdzcmMvY2xpZW50L2luZGV4LnRzJyxcbiAgICBhZG1pbjogJ3NyYy9hZG1pbi9pbmRleC50cydcbiAgfSxcbiAgZm9ybWF0OiBbJ2VzbScsICdjanMnXSxcbiAgZHRzOiBmYWxzZSwgLy8gRGlzYWJsZWQgZm9yIG11bHRpLXRlbmFudCAtIGF1dGggaGFzIGNvbXBsZXggdHlwZSBpc3N1ZXMgd2l0aCBtZXJjaGFudCByZWZlcmVuY2VzXG4gIGV4dGVybmFsOiBbXG4gICAgJ0ByZW50YWxzaG9wL3VpJyxcbiAgICAnQHJlbnRhbHNob3AvZGF0YWJhc2UnLFxuICAgICdAcmVudGFsc2hvcC91dGlscycsXG4gICAgJ2JjcnlwdGpzJyxcbiAgICAnanNvbndlYnRva2VuJywgXG4gICAgJ25leHQtYXV0aCdcbiAgXSxcbiAgY2xlYW46IHRydWUsXG4gIHNvdXJjZW1hcDogdHJ1ZSxcbiAgbWluaWZ5OiBmYWxzZSxcbn0pOyAiXSwKICAibWFwcGluZ3MiOiAiO0FBQWdULFNBQVMsb0JBQW9CO0FBRTdVLElBQU8sc0JBQVEsYUFBYTtBQUFBLEVBQzFCLE9BQU87QUFBQSxJQUNMLE9BQU87QUFBQSxJQUNQLGdCQUFnQjtBQUFBLElBQ2hCLFFBQVE7QUFBQSxJQUNSLE9BQU87QUFBQSxFQUNUO0FBQUEsRUFDQSxRQUFRLENBQUMsT0FBTyxLQUFLO0FBQUEsRUFDckIsS0FBSztBQUFBO0FBQUEsRUFDTCxVQUFVO0FBQUEsSUFDUjtBQUFBLElBQ0E7QUFBQSxJQUNBO0FBQUEsSUFDQTtBQUFBLElBQ0E7QUFBQSxJQUNBO0FBQUEsRUFDRjtBQUFBLEVBQ0EsT0FBTztBQUFBLEVBQ1AsV0FBVztBQUFBLEVBQ1gsUUFBUTtBQUNWLENBQUM7IiwKICAibmFtZXMiOiBbXQp9Cg==

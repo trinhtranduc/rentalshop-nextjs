@@ -11514,7 +11514,7 @@ var baseIsArguments_default = baseIsArguments;
 var objectProto8 = Object.prototype;
 var hasOwnProperty7 = objectProto8.hasOwnProperty;
 var propertyIsEnumerable = objectProto8.propertyIsEnumerable;
-var isArguments = baseIsArguments_default(function() {
+var isArguments = baseIsArguments_default(/* @__PURE__ */ function() {
   return arguments;
 }()) ? baseIsArguments_default : function(value) {
   return isObjectLike_default(value) && hasOwnProperty7.call(value, "callee") && !propertyIsEnumerable.call(value, "callee");
@@ -12004,7 +12004,7 @@ var initCloneByTag_default = initCloneByTag;
 
 // ../../node_modules/lodash-es/_baseCreate.js
 var objectCreate = Object.create;
-var baseCreate = function() {
+var baseCreate = /* @__PURE__ */ function() {
   function object2() {
   }
   return function(proto) {
@@ -13479,7 +13479,7 @@ FieldArrayInner.defaultProps = {
 };
 
 // src/components/forms/LoginForm.tsx
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Globe as Globe2 } from "lucide-react";
 import { Button as Button8, Card as Card7, CardContent as CardContent7, Input as Input5, Logo as Logo2 } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
 
@@ -13590,13 +13590,15 @@ var LoginForm = ({
   const t2 = useAuthTranslations();
   const validationSchema = create$3({
     email: create$6().email(t2("login.invalidEmail")).required(t2("login.invalidEmail")),
-    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword"))
+    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword")),
+    subdomain: isAdmin ? create$6().optional() : create$6().min(1, t2("login.storeNameRequired")).required(t2("login.storeNameRequired"))
   });
   const validation = useFormik({
     enableReinitialize: true,
     initialValues: {
       email: "",
-      password: ""
+      password: "",
+      subdomain: ""
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -13690,6 +13692,32 @@ var LoginForm = ({
           error
         ] }),
         /* @__PURE__ */ jsxs38("div", { className: "space-y-4", children: [
+          !isAdmin && /* @__PURE__ */ jsxs38("div", { children: [
+            /* @__PURE__ */ jsx52("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.storeName") }),
+            /* @__PURE__ */ jsxs38("div", { className: "relative", children: [
+              /* @__PURE__ */ jsx52(Globe2, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+              /* @__PURE__ */ jsx52(
+                Input5,
+                {
+                  type: "text",
+                  placeholder: t2("login.storeNamePlaceholder"),
+                  className: "pl-10 pr-32",
+                  onChange: (e2) => {
+                    validation.handleChange(e2);
+                    onInputChange?.();
+                  },
+                  onBlur: validation.handleBlur,
+                  value: validation.values.subdomain || "",
+                  name: "subdomain"
+                }
+              ),
+              /* @__PURE__ */ jsx52("div", { className: "absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none", children: /* @__PURE__ */ jsxs38("span", { className: "text-sm text-gray-400 font-mono", children: [
+                ".",
+                typeof window !== "undefined" ? process.env.NEXT_PUBLIC_ROOT_DOMAIN || "anyrent.shop" : "anyrent.shop"
+              ] }) })
+            ] }),
+            validation.touched.subdomain && validation.errors.subdomain && /* @__PURE__ */ jsx52("p", { className: "mt-2 text-sm text-red-600", children: validation.errors.subdomain })
+          ] }),
           /* @__PURE__ */ jsxs38("div", { children: [
             /* @__PURE__ */ jsx52("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.email") }),
             /* @__PURE__ */ jsxs38("div", { className: "relative", children: [
@@ -13815,7 +13843,7 @@ var LoginForm_default = LoginForm;
 // src/components/forms/RegisterForm.tsx
 import { useState as useState23 } from "react";
 import { useRouter as useRouter2 } from "next/navigation";
-import { Eye as Eye2, EyeOff as EyeOff2, Mail as Mail2, Lock as Lock2, User as User3, Store, Phone, CheckCircle as CheckCircle10, MapPin } from "lucide-react";
+import { Eye as Eye2, EyeOff as EyeOff2, Mail as Mail2, Lock as Lock2, User as User3, Store, Phone, CheckCircle as CheckCircle10, MapPin, Globe as Globe3 } from "lucide-react";
 import { authApi } from "@rentalshop/utils";
 import {
   COUNTRIES,
@@ -13837,6 +13865,7 @@ import {
   useToast as useToast5
 } from "@rentalshop/ui";
 import { useAuthTranslations as useAuthTranslations2 } from "@rentalshop/hooks";
+import { sanitizeSubdomain } from "@rentalshop/database";
 import { Fragment as Fragment8, jsx as jsx53, jsxs as jsxs39 } from "react/jsx-runtime";
 var RegisterForm = ({
   onRegister,
@@ -13851,6 +13880,7 @@ var RegisterForm = ({
   const [currentStep, setCurrentStep] = useState23(initialStep || 1);
   const [accountData, setAccountData] = useState23({});
   const [isSubmitting, setIsSubmitting] = useState23(false);
+  const [generatedSubdomain, setGeneratedSubdomain] = useState23("");
   const { toastSuccess, toastError, removeToast } = useToast5();
   const t2 = useAuthTranslations2();
   const step1ValidationSchema = create$3({
@@ -13858,10 +13888,10 @@ var RegisterForm = ({
     password: create$6().min(6, t2("register.passwordMinLength")).max(25, t2("register.passwordMaxLength")).required(t2("register.passwordRequired")),
     confirmPassword: create$6().oneOf([create$9("password")], t2("register.passwordMismatch")).required(t2("register.confirmPasswordRequired")),
     firstName: create$6().min(1, t2("register.firstNameRequired")).required(t2("register.firstNameRequired")),
-    lastName: create$6().min(1, t2("register.lastNameRequired")).required(t2("register.lastNameRequired")),
-    phone: create$6().matches(/^[0-9+\-\s()]+$/, t2("register.phoneInvalid")).min(10, t2("register.phoneMinLength")).required(t2("register.phoneRequired"))
+    lastName: create$6().min(1, t2("register.lastNameRequired")).required(t2("register.lastNameRequired"))
   });
   const step2ValidationSchema = create$3({
+    phone: create$6().matches(/^[0-9+\-\s()]+$/, t2("register.phoneInvalid")).min(10, t2("register.phoneMinLength")).required(t2("register.phoneRequired")),
     businessName: create$6().min(2, t2("register.businessNameMinLength")).required(t2("register.businessNameRequired")),
     // businessType and pricingType are hidden and defaulted, no validation required
     address: create$6().min(5, t2("register.addressMinLength")).required(t2("register.addressRequired")),
@@ -13905,7 +13935,6 @@ var RegisterForm = ({
           confirmPassword: values.confirmPassword,
           firstName: values.firstName,
           lastName: values.lastName,
-          phone: values.phone,
           role: values.role
         });
         setCurrentStep(2);
@@ -13936,7 +13965,9 @@ var RegisterForm = ({
           city: values.city,
           state: values.state,
           zipCode: values.zipCode,
-          country: values.country
+          country: values.country,
+          subdomain: generatedSubdomain || sanitizeSubdomain(values.businessName)
+          // Auto-generate from business name
         };
         const result = await authApi.register(registrationData);
         if (!result.success) {
@@ -14032,56 +14063,30 @@ var RegisterForm = ({
               formik.errors.lastName && formik.touched.lastName && /* @__PURE__ */ jsx53("p", { className: "text-red-500 text-sm", children: formik.errors.lastName })
             ] })
           ] }) }),
-          /* @__PURE__ */ jsxs39("div", { className: "space-y-4", children: [
-            /* @__PURE__ */ jsxs39("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ jsxs39("label", { htmlFor: "login", className: "text-sm font-medium text-gray-700", children: [
-                t2("register.email"),
-                " ",
-                /* @__PURE__ */ jsx53("span", { className: "text-red-500", children: "*" })
-              ] }),
-              /* @__PURE__ */ jsxs39("div", { className: "relative", children: [
-                /* @__PURE__ */ jsx53(Mail2, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
-                /* @__PURE__ */ jsx53(
-                  Input6,
-                  {
-                    id: "login",
-                    name: "login",
-                    type: "email",
-                    placeholder: t2("register.enterYourEmail"),
-                    value: formik.values.login,
-                    onChange: formik.handleChange,
-                    onBlur: formik.handleBlur,
-                    className: `pl-10 ${formik.errors.login && formik.touched.login ? "border-red-500" : ""}`
-                  }
-                )
-              ] }),
-              formik.errors.login && formik.touched.login && /* @__PURE__ */ jsx53("p", { className: "text-red-500 text-sm", children: formik.errors.login })
+          /* @__PURE__ */ jsx53("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs39("div", { className: "space-y-2", children: [
+            /* @__PURE__ */ jsxs39("label", { htmlFor: "login", className: "text-sm font-medium text-gray-700", children: [
+              t2("register.email"),
+              " ",
+              /* @__PURE__ */ jsx53("span", { className: "text-red-500", children: "*" })
             ] }),
-            /* @__PURE__ */ jsxs39("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ jsxs39("label", { htmlFor: "phone", className: "text-sm font-medium text-gray-700", children: [
-                t2("register.phone"),
-                " ",
-                /* @__PURE__ */ jsx53("span", { className: "text-red-500", children: "*" })
-              ] }),
-              /* @__PURE__ */ jsxs39("div", { className: "relative", children: [
-                /* @__PURE__ */ jsx53(Phone, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
-                /* @__PURE__ */ jsx53(
-                  Input6,
-                  {
-                    id: "phone",
-                    name: "phone",
-                    type: "tel",
-                    placeholder: t2("register.enterPhoneNumber"),
-                    value: formik.values.phone,
-                    onChange: formik.handleChange,
-                    onBlur: formik.handleBlur,
-                    className: `pl-10 ${formik.errors.phone && formik.touched.phone ? "border-red-500" : ""}`
-                  }
-                )
-              ] }),
-              formik.errors.phone && formik.touched.phone && /* @__PURE__ */ jsx53("p", { className: "text-red-500 text-sm", children: formik.errors.phone })
-            ] })
-          ] }),
+            /* @__PURE__ */ jsxs39("div", { className: "relative", children: [
+              /* @__PURE__ */ jsx53(Mail2, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+              /* @__PURE__ */ jsx53(
+                Input6,
+                {
+                  id: "login",
+                  name: "login",
+                  type: "email",
+                  placeholder: t2("register.enterYourEmail"),
+                  value: formik.values.login,
+                  onChange: formik.handleChange,
+                  onBlur: formik.handleBlur,
+                  className: `pl-10 ${formik.errors.login && formik.touched.login ? "border-red-500" : ""}`
+                }
+              )
+            ] }),
+            formik.errors.login && formik.touched.login && /* @__PURE__ */ jsx53("p", { className: "text-red-500 text-sm", children: formik.errors.login })
+          ] }) }),
           /* @__PURE__ */ jsxs39("div", { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs39("div", { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs39("label", { htmlFor: "password", className: "text-sm font-medium text-gray-700", children: [
@@ -14165,30 +14170,78 @@ var RegisterForm = ({
           )
         ] }),
         currentStep === 2 && /* @__PURE__ */ jsxs39(Fragment8, { children: [
-          /* @__PURE__ */ jsx53("div", { className: "space-y-4", children: /* @__PURE__ */ jsxs39("div", { className: "space-y-2", children: [
-            /* @__PURE__ */ jsxs39("label", { htmlFor: "businessName", className: "text-sm font-medium text-gray-700", children: [
-              t2("register.businessName"),
-              " ",
-              /* @__PURE__ */ jsx53("span", { className: "text-red-500", children: "*" })
+          /* @__PURE__ */ jsxs39("div", { className: "space-y-4", children: [
+            /* @__PURE__ */ jsxs39("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ jsxs39("label", { htmlFor: "businessName", className: "text-sm font-medium text-gray-700", children: [
+                t2("register.businessName"),
+                " ",
+                /* @__PURE__ */ jsx53("span", { className: "text-red-500", children: "*" })
+              ] }),
+              /* @__PURE__ */ jsxs39("div", { className: "relative", children: [
+                /* @__PURE__ */ jsx53(Store, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+                /* @__PURE__ */ jsx53(
+                  Input6,
+                  {
+                    id: "businessName",
+                    name: "businessName",
+                    type: "text",
+                    placeholder: t2("register.enterBusinessName"),
+                    value: formik.values.businessName,
+                    onChange: (e2) => {
+                      formik.handleChange(e2);
+                      const businessName = e2.target.value;
+                      if (businessName) {
+                        const subdomain = sanitizeSubdomain(businessName);
+                        setGeneratedSubdomain(subdomain);
+                      } else {
+                        setGeneratedSubdomain("");
+                      }
+                    },
+                    onBlur: formik.handleBlur,
+                    className: `pl-10 ${formik.errors.businessName && formik.touched.businessName ? "border-red-500" : ""}`
+                  }
+                )
+              ] }),
+              formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ jsx53("p", { className: "text-red-500 text-sm", children: formik.errors.businessName }),
+              generatedSubdomain && /* @__PURE__ */ jsx53("div", { className: "mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg", children: /* @__PURE__ */ jsxs39("div", { className: "flex items-center space-x-2", children: [
+                /* @__PURE__ */ jsx53(Globe3, { className: "h-4 w-4 text-blue-600" }),
+                /* @__PURE__ */ jsxs39("div", { className: "flex-1", children: [
+                  /* @__PURE__ */ jsx53("p", { className: "text-xs text-gray-600 mb-2", children: t2("register.shopUrl") }),
+                  /* @__PURE__ */ jsxs39("div", { className: "flex items-baseline gap-0", children: [
+                    /* @__PURE__ */ jsx53("span", { className: "text-sm font-mono font-semibold text-blue-700", children: generatedSubdomain }),
+                    /* @__PURE__ */ jsxs39("span", { className: "text-sm font-mono text-gray-400", children: [
+                      ".",
+                      typeof window !== "undefined" ? process.env.NEXT_PUBLIC_ROOT_DOMAIN || "anyrent.shop" : "anyrent.shop"
+                    ] })
+                  ] })
+                ] })
+              ] }) })
             ] }),
-            /* @__PURE__ */ jsxs39("div", { className: "relative", children: [
-              /* @__PURE__ */ jsx53(Store, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
-              /* @__PURE__ */ jsx53(
-                Input6,
-                {
-                  id: "businessName",
-                  name: "businessName",
-                  type: "text",
-                  placeholder: t2("register.enterBusinessName"),
-                  value: formik.values.businessName,
-                  onChange: formik.handleChange,
-                  onBlur: formik.handleBlur,
-                  className: `pl-10 ${formik.errors.businessName && formik.touched.businessName ? "border-red-500" : ""}`
-                }
-              )
-            ] }),
-            formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ jsx53("p", { className: "text-red-500 text-sm", children: formik.errors.businessName })
-          ] }) }),
+            /* @__PURE__ */ jsxs39("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ jsxs39("label", { htmlFor: "phone", className: "text-sm font-medium text-gray-700", children: [
+                t2("register.phone"),
+                " ",
+                /* @__PURE__ */ jsx53("span", { className: "text-red-500", children: "*" })
+              ] }),
+              /* @__PURE__ */ jsxs39("div", { className: "relative", children: [
+                /* @__PURE__ */ jsx53(Phone, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+                /* @__PURE__ */ jsx53(
+                  Input6,
+                  {
+                    id: "phone",
+                    name: "phone",
+                    type: "tel",
+                    placeholder: t2("register.enterPhoneNumber"),
+                    value: formik.values.phone,
+                    onChange: formik.handleChange,
+                    onBlur: formik.handleBlur,
+                    className: `pl-10 ${formik.errors.phone && formik.touched.phone ? "border-red-500" : ""}`
+                  }
+                )
+              ] }),
+              formik.errors.phone && formik.touched.phone && /* @__PURE__ */ jsx53("p", { className: "text-red-500 text-sm", children: formik.errors.phone })
+            ] })
+          ] }),
           /* @__PURE__ */ jsxs39("div", { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs39("div", { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs39("label", { htmlFor: "address", className: "text-sm font-medium text-gray-700", children: [
@@ -34646,9 +34699,9 @@ function SettingsLayout({
 }
 
 // src/components/features/Admin/components/SettingsFields.tsx
-import { Globe as Globe2, Shield as Shield4, Mail as Mail9, Bell as Bell2, Server } from "lucide-react";
+import { Globe as Globe4, Shield as Shield4, Mail as Mail9, Bell as Bell2, Server } from "lucide-react";
 var settingsTabs = [
-  { id: "general", label: "General", icon: Globe2 },
+  { id: "general", label: "General", icon: Globe4 },
   { id: "security", label: "Security", icon: Shield4 },
   { id: "email", label: "Email", icon: Mail9 },
   { id: "notifications", label: "Notifications", icon: Bell2 },
@@ -35099,7 +35152,7 @@ function SystemHealth({
 }
 
 // src/components/features/Performance/components/PerformanceMetricCard.tsx
-import { TrendingUp as TrendingUp9, TrendingDown as TrendingDown2, Activity as Activity2, Cpu, Monitor, HardDrive, Wifi, Database as Database2, Globe as Globe3 } from "lucide-react";
+import { TrendingUp as TrendingUp9, TrendingDown as TrendingDown2, Activity as Activity2, Cpu, Monitor, HardDrive, Wifi, Database as Database2, Globe as Globe5 } from "lucide-react";
 import { jsx as jsx219, jsxs as jsxs200 } from "react/jsx-runtime";
 var getCategoryIcon = (category) => {
   switch (category) {
@@ -35114,7 +35167,7 @@ var getCategoryIcon = (category) => {
     case "DATABASE":
       return Database2;
     case "API":
-      return Globe3;
+      return Globe5;
     default:
       return Activity2;
   }
@@ -36326,7 +36379,7 @@ var ApiKeyCard_default = ApiKeyCard;
 
 // src/components/features/ApiManagement/components/ApiEndpointCard.tsx
 import {
-  Globe as Globe4,
+  Globe as Globe6,
   Settings as Settings8,
   User as User18
 } from "lucide-react";
@@ -36367,7 +36420,7 @@ function ApiEndpointCard({
   return /* @__PURE__ */ jsxs209(Card, { className: "hover:shadow-md transition-shadow", children: [
     /* @__PURE__ */ jsxs209(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
       /* @__PURE__ */ jsxs209("div", { className: "flex items-center space-x-2", children: [
-        /* @__PURE__ */ jsx232(Globe4, { className: "h-4 w-4 text-text-tertiary" }),
+        /* @__PURE__ */ jsx232(Globe6, { className: "h-4 w-4 text-text-tertiary" }),
         /* @__PURE__ */ jsx232(CardTitle, { className: "text-sm font-medium text-text-primary font-mono", children: endpoint.path })
       ] }),
       /* @__PURE__ */ jsxs209("div", { className: "flex items-center space-x-2", children: [
@@ -36488,7 +36541,7 @@ function ApiEndpointsGrid({
 import {
   Eye as Eye28,
   User as User19,
-  Globe as Globe5,
+  Globe as Globe7,
   Info as Info10,
   CheckCircle as CheckCircle29,
   AlertTriangle as AlertTriangle16,
@@ -36599,7 +36652,7 @@ function LogEntryCard({
             /* @__PURE__ */ jsx235("span", { children: log.userId })
           ] }),
           log.ipAddress && /* @__PURE__ */ jsxs210("div", { className: "flex items-center space-x-1", children: [
-            /* @__PURE__ */ jsx235(Globe5, { className: "h-3 w-3" }),
+            /* @__PURE__ */ jsx235(Globe7, { className: "h-3 w-3" }),
             /* @__PURE__ */ jsx235("span", { children: log.ipAddress })
           ] })
         ] }),
@@ -36771,7 +36824,7 @@ import {
   Shield as Shield6,
   Eye as Eye29,
   User as User20,
-  Globe as Globe6,
+  Globe as Globe8,
   AlertTriangle as AlertTriangle17,
   CheckCircle as CheckCircle30,
   XCircle as XCircle21,
@@ -36905,7 +36958,7 @@ function SecurityEventCard({
             /* @__PURE__ */ jsx238("span", { children: event.userId })
           ] }),
           event.ipAddress && /* @__PURE__ */ jsxs213("div", { className: "flex items-center space-x-1", children: [
-            /* @__PURE__ */ jsx238(Globe6, { className: "h-3 w-3" }),
+            /* @__PURE__ */ jsx238(Globe8, { className: "h-3 w-3" }),
             /* @__PURE__ */ jsx238("span", { children: event.ipAddress })
           ] })
         ] }),

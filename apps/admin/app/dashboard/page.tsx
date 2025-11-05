@@ -52,6 +52,7 @@ import {
 
 interface SystemMetrics {
   totalMerchants: number;
+  totalTenants: number; // Alias for totalMerchants (multi-tenant)
   totalOutlets: number;
   totalUsers: number;
   totalProducts: number;
@@ -59,8 +60,11 @@ interface SystemMetrics {
   totalOrders: number;
   totalRevenue: number;
   activeMerchants: number;
+  activeTenants: number; // Alias for activeMerchants (multi-tenant)
   newMerchantsThisMonth: number;
+  newTenantsThisMonth: number; // Alias for newMerchantsThisMonth (multi-tenant)
   newMerchantsThisYear: number;
+  newTenantsThisYear: number; // Alias for newMerchantsThisYear (multi-tenant)
 }
 
 interface MerchantTrend {
@@ -211,6 +215,7 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<SystemMetrics>({
     totalMerchants: 0,
+    totalTenants: 0,
     totalOutlets: 0,
     totalUsers: 0,
     totalProducts: 0,
@@ -218,8 +223,11 @@ export default function AdminDashboard() {
     totalOrders: 0,
     totalRevenue: 0,
     activeMerchants: 0,
+    activeTenants: 0,
     newMerchantsThisMonth: 0,
-    newMerchantsThisYear: 0
+    newTenantsThisMonth: 0,
+    newMerchantsThisYear: 0,
+    newTenantsThisYear: 0
   });
   const [merchantTrends, setMerchantTrends] = useState<MerchantTrend[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);

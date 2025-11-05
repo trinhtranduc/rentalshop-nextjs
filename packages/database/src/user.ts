@@ -21,12 +21,6 @@ export async function findUserById(id: number) {
   return await prisma.user.findUnique({
     where: { id },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       outlet: {
         select: {
           id: true,
@@ -44,12 +38,6 @@ export async function getUserById(id: number) {
   return await prisma.user.findUnique({
     where: { id },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       outlet: {
         select: {
           id: true,
@@ -76,18 +64,6 @@ export async function createUser(input: UserCreateInput): Promise<any> {
   });
   const nextPublicId = (lastUser?.id || 0) + 1;
 
-  // Find merchant by id if provided
-  let merchantId: number | undefined;
-  if (input.merchantId) {
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: input.merchantId }
-    });
-    if (!merchant) {
-      throw new Error(`Merchant with id ${input.merchantId} not found`);
-    }
-    merchantId = merchant.id;
-  }
-
   // Find outlet by id if provided
   let outletId: number | undefined;
   if (input.outletId) {
@@ -101,6 +77,7 @@ export async function createUser(input: UserCreateInput): Promise<any> {
   }
 
   // Create user
+  // Note: merchantId removed - tenant databases are already isolated per tenant
   const user = await prisma.user.create({
     data: {
       id: nextPublicId,
@@ -111,16 +88,9 @@ export async function createUser(input: UserCreateInput): Promise<any> {
       phone: input.phone,
       role: input.role,
       isActive: true,
-      merchantId,
       outletId,
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       outlet: {
         select: {
           id: true,
@@ -165,29 +135,6 @@ export async function updateUser(
     where: { id },
     data: updateData,
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          address: true,
-          city: true,
-          state: true,
-          zipCode: true,
-          country: true,
-          businessType: true,
-          taxId: true,
-          website: true,
-          description: true,
-          isActive: true,
-          planId: true,
-          // subscriptionStatus removed - use subscription.status
-          totalRevenue: true,
-          createdAt: true,
-          lastActiveAt: true,
-        }
-      },
       outlet: {
         select: {
           id: true,
@@ -198,12 +145,6 @@ export async function updateUser(
           isActive: true,
           isDefault: true,
           createdAt: true,
-          merchant: {
-            select: {
-              id: true,
-              name: true,
-            }
-          }
         }
       },
     },
@@ -217,28 +158,12 @@ export async function updateUser(
 // ============================================================================
 
 /**
- * Get users by merchant - follows dual ID system
+ * Get all users
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-export async function getUsersByMerchant(merchantId: number) {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function getAllUsers() {
   return await prisma.user.findMany({
-    where: { merchantId: merchant.id },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       outlet: {
         select: {
           id: true,
@@ -267,12 +192,6 @@ export async function getUsersByOutlet(outletId: number) {
   return await prisma.user.findMany({
     where: { outletId: outlet.id },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       outlet: {
         select: {
           id: true,
@@ -315,12 +234,6 @@ export async function softDeleteUser(id: number): Promise<any> {
       deletedAt: new Date(),
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       outlet: {
         select: {
           id: true,
@@ -360,12 +273,6 @@ export async function restoreUser(id: number): Promise<any> {
       deletedAt: null,
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       outlet: {
         select: {
           id: true,
@@ -390,30 +297,6 @@ export const simplifiedUsers = {
     return await prisma.user.findUnique({
       where: { id },
       include: {
-        merchant: { 
-          select: { 
-            id: true, 
-            name: true,
-            email: true,
-            phone: true,
-            address: true,
-            city: true,
-            state: true,
-            zipCode: true,
-            country: true,
-            businessType: true,
-            pricingType: true,
-            taxId: true,
-            website: true,
-            description: true,
-            isActive: true,
-            planId: true,
-            // subscriptionStatus removed - use subscription.status
-            totalRevenue: true,
-            createdAt: true,
-            lastActiveAt: true
-          } 
-        },
         outlet: { 
           select: { 
             id: true, 
@@ -424,12 +307,6 @@ export const simplifiedUsers = {
             isActive: true,
             isDefault: true,
             createdAt: true,
-            merchant: {
-              select: {
-                id: true,
-                name: true,
-              }
-            }
           } 
         }
       }
@@ -455,10 +332,8 @@ export const simplifiedUsers = {
         emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true,
-        merchantId: true,
         outletId: true,
         deletedAt: true,
-        merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }
     });
@@ -471,7 +346,6 @@ export const simplifiedUsers = {
     return await prisma.user.findFirst({
       where,
       include: {
-        merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }
     });
@@ -486,40 +360,21 @@ export const simplifiedUsers = {
       
       // Password should already be hashed when passed to this function
       const userData = { ...data };
-
-      // Validate merchantId exists if provided
-      if (userData.merchantId && typeof userData.merchantId === 'number') {
-        const merchant = await prisma.merchant.findUnique({
-          where: { id: userData.merchantId },
-          select: { id: true, name: true }
-        });
-        
-        if (!merchant) {
-          throw new Error(`Merchant with id ${userData.merchantId} not found`);
-        }
-        
-        console.log('✅ Merchant found:', merchant);
-        // Keep the number ID as-is since schema uses Int IDs
-      }
+      
+      // Note: merchantId removed - tenant databases are already isolated per tenant
 
       // Validate outletId exists if provided
       if (userData.outletId && typeof userData.outletId === 'number') {
         const outlet = await prisma.outlet.findUnique({
           where: { id: userData.outletId },
-          select: { id: true, name: true, merchantId: true }
+          select: { id: true, name: true }
         });
         
         if (!outlet) {
           throw new Error(`Outlet with id ${userData.outletId} not found`);
         }
         
-        // Validate outlet belongs to the same merchant
-        if (userData.merchantId && outlet.merchantId !== userData.merchantId) {
-          throw new Error(`Outlet ${userData.outletId} does not belong to merchant ${userData.merchantId}`);
-        }
-        
         console.log('✅ Outlet found:', outlet);
-        // Keep the number ID as-is since schema uses Int IDs
       }
 
       // Check for duplicate email globally
@@ -534,18 +389,17 @@ export const simplifiedUsers = {
         }
       }
 
-      // Check for duplicate phone within merchant
-      if (userData.phone && userData.merchantId) {
+      // Check for duplicate phone (tenant databases are already isolated)
+      if (userData.phone) {
         const existingPhone = await prisma.user.findFirst({
           where: { 
             phone: userData.phone,
-            merchantId: userData.merchantId
           },
-          select: { id: true, phone: true, merchantId: true }
+          select: { id: true, phone: true }
         });
         
         if (existingPhone) {
-          throw new Error(`Phone number ${userData.phone} is already registered in this merchant`);
+          throw new Error(`Phone number ${userData.phone} is already registered`);
         }
       }
 
@@ -560,29 +414,6 @@ export const simplifiedUsers = {
       const user = await prisma.user.create({
         data: userData,
         include: {
-          merchant: { 
-            select: { 
-              id: true, 
-              name: true,
-              email: true,
-              phone: true,
-              address: true,
-              city: true,
-              state: true,
-              zipCode: true,
-              country: true,
-              businessType: true,
-              taxId: true,
-              website: true,
-              description: true,
-              isActive: true,
-              planId: true,
-              // subscriptionStatus removed - use subscription.status
-              totalRevenue: true,
-              createdAt: true,
-              lastActiveAt: true
-            } 
-          },
           outlet: { 
             select: { 
               id: true, 
@@ -593,12 +424,6 @@ export const simplifiedUsers = {
               isActive: true,
               isDefault: true,
               createdAt: true,
-              merchant: {
-                select: {
-                  id: true,
-                  name: true,
-                }
-              }
             } 
           }
         }
@@ -620,7 +445,6 @@ export const simplifiedUsers = {
       where: { id },
       data,
       include: {
-        merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }
     });
@@ -655,7 +479,7 @@ export const simplifiedUsers = {
     // Build where clause
     const where: any = {};
     
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
     if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
     
@@ -688,7 +512,6 @@ export const simplifiedUsers = {
       prisma.user.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           outlet: { select: { id: true, name: true } }
         },
         orderBy, // ✅ Dynamic sorting

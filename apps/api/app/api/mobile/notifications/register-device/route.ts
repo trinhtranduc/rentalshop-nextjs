@@ -1,6 +1,6 @@
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError } from '@rentalshop/utils/api';
 import { NextRequest, NextResponse } from 'next/server';
-import { apiConfig } from '@rentalshop/utils';
+import { apiConfig } from '@rentalshop/utils/api';
 import {API} from '@rentalshop/constants';
 
 /**

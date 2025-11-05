@@ -629,12 +629,11 @@ interface MerchantFilters {
  * Main Outlet interface - consolidated from multiple sources
  * Combines outlet-data.ts and outlets/outlet.ts definitions
  */
-interface Outlet extends BaseEntityWithMerchant, Address, ContactInfo {
+interface Outlet extends BaseEntity, Address, ContactInfo {
     name: string;
     description?: string;
     isActive: boolean;
     isDefault?: boolean;
-    merchant?: MerchantReference;
 }
 /**
  * Outlet creation input
@@ -649,7 +648,6 @@ interface OutletCreateInput extends BaseFormInput {
     zipCode?: string;
     country?: string;
     description?: string;
-    merchantId: number;
 }
 /**
  * Outlet update input
@@ -698,11 +696,6 @@ interface OutletSearchResult {
     isDefault?: boolean;
     createdAt: Date | string;
     updatedAt: Date | string;
-    merchantId: number;
-    merchant: {
-        id: number;
-        name: string;
-    };
 }
 /**
  * Outlet search response
@@ -2241,7 +2234,6 @@ interface SubscriptionPeriod {
 }
 interface Subscription {
     id: number;
-    merchantId: number;
     planId: number;
     status: SubscriptionStatus;
     billingInterval: BillingInterval;
@@ -2251,15 +2243,9 @@ interface Subscription {
     createdAt: Date;
     updatedAt: Date;
     subscriptionPeriod?: SubscriptionPeriod;
-    merchant: {
-        id: number;
-        name: string;
-        email: string;
-    };
     plan: Plan;
 }
 interface SubscriptionCreateInput {
-    merchantId: number;
     planId: number;
     billingInterval?: BillingInterval;
     status?: SubscriptionStatus;
@@ -2273,7 +2259,6 @@ interface SubscriptionUpdateInput {
     endDate?: Date | string;
 }
 interface SubscriptionFilters {
-    merchantId?: number;
     planId?: number;
     status?: string;
     startDate?: Date | string;
@@ -3611,6 +3596,9 @@ var login = {
 	subtitle: "Sign in to your account",
 	email: "Email Address",
 	password: "Password",
+	storeName: "Store name",
+	storeNamePlaceholder: "your-shop-name",
+	storeNameRequired: "Store name is required",
 	rememberMe: "Remember me",
 	forgotPassword: "Forgot password?",
 	loginButton: "Sign In",
@@ -3754,7 +3742,9 @@ var register = {
 	contactInfo: "Contact Information",
 	accountSecurity: "Account Security",
 	businessInfo: "Business Information",
-	businessAddress: "Business Address"
+	businessAddress: "Business Address",
+	shopUrl: "Your shop URL:",
+	shopSubdomain: "Your shop subdomain:"
 };
 var forgotPassword = {
 	title: "Forgot Password",

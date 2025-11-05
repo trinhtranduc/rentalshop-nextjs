@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
 import { z } from 'zod';
-import { getTenantDbFromRequest, handleApiError, getUTCDateKey, ResponseBuilder } from '@rentalshop/utils';
-import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
+import { getTenantDbFromRequest, handleApiError, getUTCDateKey, ResponseBuilder } from '@rentalshop/utils/api';
+import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils/api';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

@@ -14,8 +14,7 @@
 
 import { PlanLimitError } from '../core';
 import { ErrorCode } from './errors';
-import { getSubscriptionByMerchantId } from '@rentalshop/database';
-import { prisma } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { API } from '@rentalshop/constants';
 import type { AuthUser, Subscription, SubscriptionStatus } from '@rentalshop/types';
 
@@ -110,12 +109,13 @@ export class SubscriptionManager {
 
   /**
    * Check if user has valid subscription
+   * Note: In multi-tenant system, tenant DBs are already isolated per tenant
    */
   static async checkStatus(user: any): Promise<boolean> {
     try {
-      if (!user?.merchant?.id) {
-        console.log('🔍 SUBSCRIPTION: No merchant found for user');
-        return true; // No merchant = no subscription check needed
+      // ADMIN users bypass subscription checks
+      if (user?.role === 'ADMIN') {
+        return true;
       }
 
       const subscriptionError = await this.getError(user);
@@ -128,11 +128,13 @@ export class SubscriptionManager {
 
   /**
    * Check if subscription error should be thrown
+   * Note: In multi-tenant system, tenant DBs are already isolated per tenant
    */
   static async shouldThrowError(user: any): Promise<boolean> {
     try {
-      if (!user?.merchant?.id) {
-        return false; // No merchant = no subscription check needed
+      // ADMIN users bypass subscription checks
+      if (user?.role === 'ADMIN') {
+        return false;
       }
 
       const subscriptionError = await this.getError(user);
@@ -145,32 +147,19 @@ export class SubscriptionManager {
 
   /**
    * Get subscription error if any
+   * Note: In multi-tenant system, tenant DBs are already isolated per tenant
+   * No need for merchantId - just query active subscription from tenant DB
    */
   static async getError(user: any): Promise<PlanLimitError | null> {
     try {
-      if (!user?.merchant?.id) {
-        return null; // No merchant = no subscription check needed
+      // ADMIN users bypass subscription checks
+      if (user?.role === 'ADMIN') {
+        return null;
       }
 
-      let merchantId: string | number = user.merchant.id;
-
-      // Handle string to numeric ID conversion
-      if (typeof merchantId === 'string') {
-        console.log('🔍 SUBSCRIPTION: Merchant ID is string, converting to numeric id');
-        
-        const numericId = parseInt(merchantId);
-        if (isNaN(numericId)) {
-          console.log('🔍 SUBSCRIPTION: Invalid merchant ID:', merchantId);
-          return new PlanLimitError('Invalid merchant ID', 'SUBSCRIPTION_NOT_FOUND');
-        }
-        
-        merchantId = numericId;
-        console.log('🔍 SUBSCRIPTION: Converted string to id:', merchantId);
-      }
-
-      console.log('🔍 SUBSCRIPTION: Using merchantId:', merchantId, 'type:', typeof merchantId);
-
-      const subscription = await getSubscriptionByMerchantId(merchantId);
+      // In multi-tenant system, tenant DBs are isolated
+      // Query active subscription directly from tenant DB (no merchantId needed)
+      const subscription = await db.subscriptions.findActive();
       
       console.log('🔍 SUBSCRIPTION: Subscription data:', {
         found: !!subscription,
@@ -179,7 +168,7 @@ export class SubscriptionManager {
       });
 
       if (!subscription) {
-        console.log('🔍 SUBSCRIPTION: No subscription found for merchant');
+        console.log('🔍 SUBSCRIPTION: No active subscription found for tenant');
         return new PlanLimitError('No active subscription found', 'SUBSCRIPTION_NOT_FOUND');
       }
 
@@ -242,24 +231,15 @@ export class SubscriptionManager {
     } = options;
 
     try {
-      // Check if user has merchant
-      if (!user?.merchant?.id) {
+      // ADMIN users bypass subscription checks
+      if (user?.role === 'ADMIN') {
         return {
-          isValid: false,
-          error: 'User not associated with any merchant',
-          statusCode: 400
+          isValid: true,
         };
       }
 
-      // Check merchant status
-      if (checkMerchantStatus && user.merchant.status !== 'active') {
-        return {
-          isValid: false,
-          error: `Merchant account is ${user.merchant.status}`,
-          statusCode: 403,
-          merchant: user.merchant
-        };
-      }
+      // Note: In multi-tenant system, merchant status check is not needed
+      // Tenant databases are already isolated per tenant
 
       // Check active subscription
       if (checkSubscriptionStatus && requireActiveSubscription) {

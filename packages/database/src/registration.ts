@@ -75,7 +75,9 @@ export async function registerUser(
       const registrationType = determineRegistrationType(data);
 
       if (registrationType === 'MERCHANT') {
-        return await registerMerchant(tx, data);
+        // Legacy registerMerchant removed - use registerTenantWithTrial instead
+        // This function should not be called directly - use registerTenantWithTrial for tenant registration
+        throw new Error('MERCHANT registration is deprecated. Use registerTenantWithTrial for tenant registration instead.');
       } else if (registrationType === 'OUTLET_ADMIN' || registrationType === 'OUTLET_STAFF') {
         return await registerOutletUser(tx, data);
       } else {
@@ -117,271 +119,42 @@ function determineRegistrationType(data: RegistrationInput): 'MERCHANT' | 'OUTLE
 }
 
 /**
- * Register merchant with auto-created default outlet
+ * LEGACY: Register merchant function removed
+ * Use registerTenantWithTrial instead for tenant registration
+ * Tenant databases don't have merchant model anymore
  */
-async function registerMerchant(tx: any, data: RegistrationInput) {
-  // 1. Check if merchant email already exists
-  const existingMerchant = await tx.merchant.findUnique({
-    where: { email: data.email }
-  });
-
-  if (existingMerchant) {
-    throw new Error('Merchant with this email already exists');
-  }
-
-  // 2. Get or create trial plan (modern SaaS pattern)
-  let trialPlan = await tx.plan.findFirst({
-    where: { 
-      name: 'Trial',
-      isActive: true 
-    }
-  });
-
-  if (!trialPlan) {
-    // Auto-create trial plan if none exists (modern SaaS pattern)
-    console.log('Creating trial plan automatically...');
-    
-    trialPlan = await tx.plan.create({
-      data: {
-        name: 'Trial',
-        description: 'Free trial plan for new merchants to test the platform',
-        basePrice: 0, // Free
-        currency: 'USD',
-        trialDays: 14,
-        limits: JSON.stringify({
-          outlets: 1,
-          users: 2,
-          products: 25,
-          customers: 50
-        }),
-        features: JSON.stringify([
-          'Basic inventory management',
-          'Customer management',
-          'Order processing (limited)',
-          'Basic reporting',
-          'Email support',
-          'Mobile app access',
-          '14-day free trial'
-        ]),
-        isActive: true,
-        isPopular: false,
-        sortOrder: 0 // Show first
-      }
-    });
-    console.log('✅ Trial plan created automatically');
-  }
-
-  // 3. Create merchant (let DB autoincrement id)
-  const merchant = await tx.merchant.create({
-    data: {
-      name: data.businessName || `${data.name}'s Business`,
-      email: data.email,
-      phone: data.phone,
-      address: data.address,
-      city: data.city,
-      state: data.state,
-      zipCode: data.zipCode,
-      country: data.country,
-      isActive: true
-      // subscriptionStatus removed - will be set in subscription.status
-    }
-  });
-
-  // 4. Create default outlet with merchant information FIRST
-  const outlet = await tx.outlet.create({
-    data: {
-      name: data.outletName || 'Main Store',
-      // Always use merchant's information as primary source, with user input as fallback
-      address: merchant.address || data.address || 'Address to be updated',
-      phone: merchant.phone || data.phone,
-      city: merchant.city || data.city,
-      state: merchant.state || data.state,
-      zipCode: merchant.zipCode || data.zipCode,
-      country: merchant.country || data.country,
-      description: 'Default outlet created during registration',
-      merchantId: merchant.id,
-      isActive: true,
-      isDefault: true
-    }
-  });
-
-  // 5. Create default category for merchant
-  const defaultCategory = await tx.category.create({
-    data: {
-      name: 'General',
-      description: 'Default category for general products',
-      merchantId: merchant.id,
-      isActive: true
-    }
-  });
-
-  // 6. Create merchant user with outlet assignment
-  const hashedPassword = await hashPassword(data.password);
-  const user = await tx.user.create({
-    data: {
-      email: data.email,
-      password: hashedPassword,
-      firstName: data.name.split(' ')[0] || '',
-      lastName: data.name.split(' ').slice(1).join(' ') || '',
-      phone: data.phone,
-      role: 'MERCHANT',
-      merchantId: merchant.id,
-      outletId: outlet.id, // Assign default outlet to merchant user
-      isActive: true,
-      emailVerified: false, // Email needs to be verified after registration
-      emailVerifiedAt: null
-    }
-  });
-
-  // 7. Create trial subscription
-  const subscriptionStartDate = new Date();
-  const endDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
-  const subscription = await tx.subscription.create({
-    data: {
-      merchantId: merchant.id,
-      planId: trialPlan.id,
-      status: 'trial',
-      amount: 0, // Free trial
-      currency: 'USD',
-      interval: 'month', // Default to monthly for trial
-      intervalCount: 1, // 1 month intervals
-      currentPeriodStart: subscriptionStartDate,
-      currentPeriodEnd: endDate,
-      trialStart: subscriptionStartDate,
-      trialEnd: endDate,
-      cancelAtPeriodEnd: false
-    }
-  });
-
-  return {
-    success: true,
-    user: {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      merchant: {
-        id: merchant.id,
-        name: merchant.name
-      },
-      outlet: {
-        id: outlet.id,
-        name: outlet.name
-      }
-    },
-    token: '', // Will be generated by auth service
-    message: 'Merchant account created successfully with default outlet'
-  };
-}
+// Note: registerMerchant function removed - tenant DBs don't have merchant model
+// Use registerTenantWithTrial instead
 
 /**
- * Register merchant with trial plan (wrapper function for API)
+ * LEGACY: Register merchant with trial plan removed
+ * Use registerTenantWithTrial instead
  */
-export async function registerMerchantWithTrial(data: any) {
-  // Transform API data to RegistrationInput format
-  const registrationData: RegistrationInput = {
-    email: data.userEmail,
-    password: data.userPassword,
-    name: `${data.userFirstName} ${data.userLastName}`,
-    phone: data.userPhone,
-    role: 'MERCHANT',
-    businessName: data.merchantName,
-    outletName: data.outletName,
-    address: data.outletAddress
-  };
-
-  const result = await registerUser(registrationData);
-  
-  if (!result.success) {
-    throw new Error(result.message);
-  }
-
-  // Transform result to match expected API format
-  return {
-    merchant: {
-      id: result.user.merchant?.id,
-      name: result.user.merchant?.name,
-      email: result.user.email
-    },
-    user: {
-      id: result.user.id,
-      email: result.user.email,
-      firstName: result.user.firstName,
-      lastName: result.user.lastName,
-      role: result.user.role
-    },
-    outlet: {
-      id: result.user.outlet?.id,
-      name: result.user.outlet?.name
-    },
-    subscription: {
-      planName: 'Trial',
-      trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days from now
-    }
-  };
-}
+// Note: registerMerchantWithTrial function removed
+// Use registerTenantWithTrial instead for tenant registration
 
 /**
- * Register outlet admin/staff with merchant/outlet lookup
+ * Register outlet admin/staff
+ * Note: Tenant databases don't have merchant model - outlet lookup only
  */
 async function registerOutletUser(tx: any, data: RegistrationInput) {
-  if (!data.merchantCode) {
-    throw new Error('Merchant code is required for outlet user registration');
+  // Note: merchantCode removed - tenant DBs don't have merchant model
+  // Use outletCode instead to find outlet directly
+  
+  if (!data.outletCode) {
+    throw new Error('Outlet code is required for outlet user registration');
   }
 
-  // 1. Find merchant by code (assuming merchantCode is the merchant's id)
-  const merchant = await tx.merchant.findUnique({
-    where: { id: parseInt(data.merchantCode) }
+  // Find outlet by code (assuming outletCode is the outlet's id)
+  const outlet = await tx.outlet.findUnique({
+    where: { id: parseInt(data.outletCode) }
   });
 
-  if (!merchant) {
-    throw new Error('Invalid merchant code. Please check with your manager.');
+  if (!outlet) {
+    throw new Error('Invalid outlet code. Please check with your manager.');
   }
 
-  // 2. Find outlet if outletCode provided
-  let outlet = null;
-  if (data.outletCode) {
-    outlet = await tx.outlet.findUnique({
-      where: { 
-        id: parseInt(data.outletCode),
-        merchantId: merchant.id 
-      }
-    });
-
-    if (!outlet) {
-      throw new Error('Invalid outlet code. Please check with your manager.');
-    }
-  } else {
-    // Find default outlet for this merchant
-    outlet = await tx.outlet.findFirst({
-      where: { 
-        merchantId: merchant.id,
-        isDefault: true 
-      }
-    });
-
-    if (!outlet) {
-      // Create a default outlet if none exists
-      outlet = await tx.outlet.create({
-        data: {
-          name: `${merchant.name} - Main Store`,
-          address: merchant.address || 'Address to be updated',
-          phone: merchant.phone,
-          city: merchant.city,
-          state: merchant.state,
-          zipCode: merchant.zipCode,
-          country: merchant.country,
-          description: 'Default outlet for staff',
-          merchantId: merchant.id,
-          isActive: true,
-          isDefault: true
-        }
-      });
-    }
-  }
-
-  // 3. Create outlet user
+  // Create outlet user
   const hashedPassword = await hashPassword(data.password);
   const user = await tx.user.create({
     data: {
@@ -391,7 +164,6 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
       lastName: data.name.split(' ').slice(1).join(' ') || '',
       phone: data.phone,
       role: data.role || 'OUTLET_STAFF',
-      merchantId: merchant.id,
       outletId: outlet.id,
       isActive: true
     }
@@ -405,10 +177,6 @@ async function registerOutletUser(tx: any, data: RegistrationInput) {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
-      merchant: {
-        id: merchant.id,
-        name: merchant.name
-      },
       outlet: {
         id: outlet.id,
         name: outlet.name
@@ -447,5 +215,252 @@ async function registerBasicUser(tx: any, data: RegistrationInput) {
     },
     token: '', // Will be generated by auth service
     message: 'User account created successfully'
+  };
+}
+
+/**
+ * Register tenant with trial plan (Multi-tenant version)
+ * Creates tenant in Main DB, creates isolated database, and sets up initial user
+ */
+export async function registerTenantWithTrial(data: {
+  businessName: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  subdomain?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  taxId?: string;
+  businessType?: string;
+  website?: string;
+  description?: string;
+  outletName?: string;
+}): Promise<{
+  tenant: {
+    id: string;
+    subdomain: string;
+    name: string;
+    email: string;
+  };
+  user: {
+    id: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+  outlet: {
+    id: number;
+    name: string;
+  };
+  subscription: {
+    planName: string;
+    trialEnd: Date;
+  };
+  tenantUrl: string;
+}> {
+  // Import multi-tenant utilities
+  const {
+    createTenant,
+    subdomainExists,
+    tenantEmailExists,
+    getDefaultPlan
+  } = await import('./main-db');
+  const { getTenantDb, createTenantDatabase } = await import('./tenant-db');
+  const { 
+    sanitizeSubdomain: sanitize, 
+    validateSubdomain: validate,
+    buildTenantUrl: buildUrl
+  } = await import('./subdomain-utils');
+  
+  // Generate subdomain if not provided
+  const subdomain = data.subdomain 
+    ? sanitize(data.subdomain) 
+    : sanitize(data.businessName);
+
+  // Validate subdomain
+  if (!validate(subdomain)) {
+    throw new Error('Invalid subdomain format');
+  }
+
+  // Check if subdomain or email already exists
+  if (await subdomainExists(subdomain)) {
+    throw new Error('Subdomain already taken');
+  }
+
+  if (await tenantEmailExists(data.email)) {
+    throw new Error('Email already registered');
+  }
+
+  // Get default plan from Main DB
+  const defaultPlan = await getDefaultPlan();
+  const planId = defaultPlan?.id || undefined;
+
+  // Calculate trial end date
+  const trialDays = defaultPlan?.trialDays || 14;
+  const trialStart = new Date();
+  const trialEnd = new Date(trialStart.getTime() + (trialDays * 24 * 60 * 60 * 1000));
+
+  // Create tenant database first (this takes time)
+  console.log(`Creating database for tenant: ${subdomain}`);
+  const databaseUrl = await createTenantDatabase(subdomain);
+
+  // Create tenant in Main DB
+  const tenant = await createTenant({
+    subdomain,
+    name: data.businessName,
+    email: data.email,
+    phone: data.phone,
+    address: data.address,
+    city: data.city,
+    state: data.state,
+    zipCode: data.zipCode,
+    country: data.country,
+    taxId: data.taxId,
+    businessType: data.businessType,
+    website: data.website,
+    description: data.description,
+    databaseUrl,
+    status: 'active',
+    planId: planId || undefined,
+    subscriptionStatus: 'trial',
+    trialStart,
+    trialEnd
+  });
+
+  // Get tenant DB connection
+  const tenantDb = await getTenantDb(subdomain);
+
+  // Setup initial data in tenant database
+  const result = await tenantDb.$transaction(async (tx: any) => {
+    // 1. Get or create trial plan in tenant DB (if needed for reference)
+    let trialPlan = await tx.plan.findFirst({
+      where: { 
+        name: 'Trial',
+        isActive: true 
+      }
+    });
+
+    if (!trialPlan && defaultPlan) {
+      trialPlan = await tx.plan.create({
+        data: {
+          name: defaultPlan.name,
+          description: defaultPlan.description,
+          basePrice: defaultPlan.basePrice,
+          currency: defaultPlan.currency,
+          trialDays: defaultPlan.trialDays,
+          limits: defaultPlan.limits,
+          features: defaultPlan.features,
+          isActive: defaultPlan.isActive,
+          isPopular: defaultPlan.isPopular,
+          sortOrder: defaultPlan.sortOrder
+        }
+      });
+    }
+
+    // 2. Create default outlet
+    const outlet = await tx.outlet.create({
+      data: {
+        name: data.outletName || 'Main Store',
+        address: data.address || 'Address to be updated',
+        phone: data.phone,
+        city: data.city,
+        state: data.state,
+        zipCode: data.zipCode,
+        country: data.country,
+        description: 'Default outlet created during registration',
+        isActive: true,
+        isDefault: true
+      }
+    });
+
+    // 3. Create default category
+    const defaultCategory = await tx.category.create({
+      data: {
+        name: 'General',
+        description: 'Default category for general products',
+        isActive: true,
+        isDefault: false
+      }
+    });
+
+    // 4. Create tenant owner user (MERCHANT role)
+    const hashedPassword = await hashPassword(data.password);
+    const user = await tx.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        role: 'MERCHANT',
+        outletId: outlet.id,
+        isActive: true,
+        emailVerified: false,
+        emailVerifiedAt: null
+      }
+    });
+
+    // 5. Create trial subscription (if plan exists)
+    let subscription = null;
+    if (trialPlan && trialPlan.id) {
+      subscription = await tx.subscription.create({
+        data: {
+          planId: trialPlan.id,
+          status: 'trial',
+          currentPeriodStart: trialStart,
+          currentPeriodEnd: trialEnd,
+          trialStart,
+          trialEnd,
+          amount: 0,
+          currency: trialPlan.currency || 'USD',
+          interval: 'month',
+          intervalCount: 1,
+          period: 1,
+          discount: 0,
+          savings: 0
+        }
+      });
+    }
+
+    return {
+      user,
+      outlet,
+      subscription,
+      plan: trialPlan
+    };
+  });
+
+  // Build tenant URL
+  const tenantUrl = buildUrl(subdomain);
+
+  return {
+    tenant: {
+      id: tenant.id,
+      subdomain: tenant.subdomain,
+      name: tenant.name,
+      email: tenant.email
+    },
+    user: {
+      id: result.user.id,
+      email: result.user.email,
+      firstName: result.user.firstName,
+      lastName: result.user.lastName,
+      role: result.user.role
+    },
+    outlet: {
+      id: result.outlet.id,
+      name: result.outlet.name
+    },
+    subscription: {
+      planName: result.plan?.name || 'Trial',
+      trialEnd: result.subscription?.trialEnd || trialEnd
+    },
+    tenantUrl
   };
 }

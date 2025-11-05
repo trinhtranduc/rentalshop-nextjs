@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 import { API } from '@rentalshop/constants';
 
 /**

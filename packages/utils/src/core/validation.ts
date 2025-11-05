@@ -8,6 +8,7 @@ import { AuthUser } from '@rentalshop/types';
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  subdomain: z.string().optional(), // Optional for admin login, required for tenant login
 });
 
 export const registerSchema = z.object({

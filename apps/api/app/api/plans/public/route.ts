@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError } from '@rentalshop/utils/api';
 import type { Plan } from '@rentalshop/types';
 
 /**

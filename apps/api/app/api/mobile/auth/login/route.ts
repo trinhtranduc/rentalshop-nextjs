@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loginUser } from '@rentalshop/auth';
-import { loginSchema, handleApiError } from '@rentalshop/utils';
-import { apiConfig } from '@rentalshop/utils';
+import { loginSchema, handleApiError } from '@rentalshop/utils/api';
+import { apiConfig } from '@rentalshop/utils/api';
 import {API} from '@rentalshop/constants';
 
 /**

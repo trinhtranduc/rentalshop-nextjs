@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { 
-  getMainDb, 
-  getTenantDb, 
-  createTenantDatabase,
-  generateSubdomain,
-  validateSubdomain,
-  createEmailVerification
+  registerTenantWithTrial,
+  getTenantDb
 } from '@rentalshop/database';
-import { registerSchema, sendVerificationEmail } from '@rentalshop/utils';
-import { hashPassword } from '@rentalshop/auth';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { registerSchema, sendVerificationEmail } from '@rentalshop/utils/api';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
+import { randomBytes } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -26,81 +22,10 @@ export async function POST(request: NextRequest) {
 
     if (isMerchantRegistration) {
       // ============================================================================
-      // MERCHANT REGISTRATION FLOW (Multi-tenant)
+      // TENANT REGISTRATION FLOW (Multi-tenant)
       // ============================================================================
       
-      // Generate subdomain from business name
-      const subdomain = body.subdomain || generateSubdomain(validatedData.businessName!);
-      
-      // Validate subdomain format
-      if (!validateSubdomain(subdomain)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_SUBDOMAIN', 'Invalid subdomain format'),
-          { status: 400 }
-        );
-      }
-      
-      // Check if subdomain already exists in Main DB
-      const mainDb = await getMainDb();
-      await mainDb.connect();
-      
-      let merchantId: number;
-      
-      try {
-        const existingTenant = await mainDb.query(
-          'SELECT id FROM "Tenant" WHERE subdomain = $1',
-          [subdomain]
-        );
-        
-        if (existingTenant.rows.length > 0) {
-          await mainDb.end();
-          return NextResponse.json(
-            ResponseBuilder.error('SUBDOMAIN_ALREADY_EXISTS', 'Subdomain already taken'),
-            { status: 409 }
-          );
-        }
-        
-        // Check if merchant email already exists
-        const existingMerchant = await mainDb.query(
-          'SELECT id FROM "Merchant" WHERE email = $1',
-          [validatedData.email]
-        );
-        
-        if (existingMerchant.rows.length > 0) {
-          await mainDb.end();
-          return NextResponse.json(
-            ResponseBuilder.error('EMAIL_ALREADY_EXISTS', 'Email already exists'),
-            { status: 409 }
-          );
-        }
-        
-        // Create merchant in Main DB
-        const merchantResult = await mainDb.query(
-          'INSERT INTO "Merchant" (name, email, phone, "createdAt", "updatedAt") VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id',
-          [validatedData.businessName, validatedData.email, validatedData.phone]
-        );
-        
-        merchantId = merchantResult.rows[0].id;
-        
-        // Create tenant database
-        const databaseUrl = await createTenantDatabase(subdomain, merchantId);
-        
-        // Create tenant record in Main DB
-        await mainDb.query(
-          'INSERT INTO "Tenant" (id, subdomain, name, "merchantId", "databaseUrl", status, "createdAt", "updatedAt") VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, NOW(), NOW())',
-          [subdomain, validatedData.businessName, merchantId, databaseUrl, 'active']
-        );
-        
-        console.log('✅ Tenant created:', { subdomain, merchantId });
-        
-      } finally {
-        await mainDb.end();
-      }
-      
-      // Get tenant DB and create initial entities
-      const tenantDb = await getTenantDb(subdomain);
-      
-      // Process name
+      // Process name - get firstName and lastName
       let firstName = validatedData.firstName || '';
       let lastName = validatedData.lastName || '';
       
@@ -110,57 +35,77 @@ export async function POST(request: NextRequest) {
         lastName = nameParts.slice(1).join(' ') || '';
       }
       
-      // Create default outlet
-      const outlet = await tenantDb.outlet.create({
-        data: {
-          name: `${validatedData.businessName} - Main Store`,
-          address: validatedData.address || 'Address to be updated',
-          phone: validatedData.phone,
-          isDefault: true
-        } as any
-      });
-      
-      // Create default category
-      const category = await tenantDb.category.create({
-        data: {
-          name: 'General',
-          description: 'Default category for general products',
-          isDefault: true
-        } as any
-      });
-      
-      // Create merchant user in tenant DB as OUTLET_ADMIN
-      const hashedPassword = await hashPassword(validatedData.password);
-      const user = await tenantDb.user.create({
-        data: {
-          email: validatedData.email,
-          password: hashedPassword,
-          firstName: firstName,
-          lastName: lastName,
-          phone: validatedData.phone,
-          role: 'OUTLET_ADMIN', // Tenant DB only has OUTLET_ADMIN and OUTLET_STAFF
-          outletId: outlet.id
-        }
-      });
-      
-      console.log('✅ Merchant registration complete:', { subdomain, merchantId });
-      
-      // Create email verification and send email
-      try {
-        const verification = await createEmailVerification(
-          user.id,
-          user.email,
-          24 // 24 hours expiry
+      if (!firstName || !lastName) {
+        return NextResponse.json(
+          ResponseBuilder.error('NAME_REQUIRED', 'First name and last name are required'),
+          { status: 400 }
         );
+      }
+      
+      // Register tenant (creates tenant + database + initial setup)
+      const result = await registerTenantWithTrial({
+        businessName: validatedData.businessName!,
+        email: validatedData.email,
+        password: validatedData.password,
+        firstName,
+        lastName,
+        phone: validatedData.phone,
+        subdomain: body.subdomain, // Optional custom subdomain
+        address: validatedData.address,
+        city: validatedData.city,
+        state: validatedData.state,
+        zipCode: validatedData.zipCode,
+        country: validatedData.country,
+        businessType: validatedData.businessType,
+        outletName: `${validatedData.businessName} - Main Store`
+      });
+      
+      console.log('✅ Tenant registration complete:', { subdomain: result.tenant.subdomain });
+      
+      // Create email verification in tenant DB and send email
+      try {
+        const tenantDb = await getTenantDb(result.tenant.subdomain);
+        const token = randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
         
-        const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+        // Invalidate existing unverified tokens first (using raw query to avoid merchantId issues)
+        await tenantDb.$executeRaw`
+          UPDATE "EmailVerification"
+          SET verified = true, "verifiedAt" = NOW()
+          WHERE "userId" = ${result.user.id}
+            AND verified = false
+            AND "expiresAt" > NOW()
+        `;
+        
+        // Create new verification token (don't include user relation)
+        const verification = await tenantDb.emailVerification.create({
+          data: {
+            userId: result.user.id,
+            token,
+            email: result.user.email,
+            expiresAt,
+            verified: false
+          },
+          select: {
+            id: true,
+            userId: true,
+            token: true,
+            email: true,
+            verified: true,
+            expiresAt: true,
+            createdAt: true,
+          }
+        });
+        
+        const userName = `${result.user.firstName} ${result.user.lastName}`.trim() || result.user.email;
         await sendVerificationEmail(
-          user.email,
+          result.user.email,
           userName,
           verification.token
         );
         
-        console.log('✅ Verification email sent to:', user.email);
+        console.log('✅ Verification email sent to:', result.user.email);
       } catch (emailError) {
         console.error('⚠️ Failed to send verification email:', emailError);
         // Don't fail registration if email fails
@@ -168,28 +113,32 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         success: true,
-        code: 'MERCHANT_ACCOUNT_CREATED',
-        message: 'Merchant account created successfully',
+        code: 'TENANT_REGISTERED_SUCCESS',
+        message: 'Tenant registered successfully',
         data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            subdomain
+          tenant: {
+            id: result.tenant.id,
+            subdomain: result.tenant.subdomain,
+            name: result.tenant.name,
+            email: result.tenant.email,
+            url: result.tenantUrl
           },
-          merchant: {
-            subdomain,
-            url: `${subdomain}.anyrent.shop`
-          }
+          user: {
+            id: result.user.id,
+            email: result.user.email,
+            firstName: result.user.firstName,
+            lastName: result.user.lastName,
+            role: result.user.role
+          },
+          outlet: result.outlet,
+          subscription: result.subscription
         }
       }, { status: 201 });
       
     } else {
       // Basic user registration (not implemented for multi-tenant)
       return NextResponse.json(
-        ResponseBuilder.error('REGISTRATION_NOT_SUPPORTED', 'User registration not supported in multi-tenant mode'),
+        ResponseBuilder.error('REGISTRATION_NOT_SUPPORTED', 'Only merchant/tenant registration is supported in multi-tenant mode'),
         { status: 400 }
       );
     }

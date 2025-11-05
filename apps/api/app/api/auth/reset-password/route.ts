@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError } from '@rentalshop/utils/api';
 import {API} from '@rentalshop/constants';
 
 const resetPasswordSchema = z.object({

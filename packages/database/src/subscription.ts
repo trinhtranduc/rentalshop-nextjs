@@ -164,27 +164,15 @@ export function calculatePeriodEnd(startDate: Date, billingInterval: BillingInte
 // SUBSCRIPTION QUERIES
 // ============================================================================
 
-export async function getSubscriptionByMerchantId(merchantId: number): Promise<Subscription | null> {
-  // Find the merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    return null;
-  }
-  
+/**
+ * Get subscription by ID
+ * Note: In multi-tenant setup, subscriptions are in the main database, not tenant databases
+ * This function is kept for backward compatibility but should use main DB functions instead
+ */
+export async function getSubscriptionById(subscriptionId: number): Promise<Subscription | null> {
   const subscription = await prisma.subscription.findUnique({
-    where: { merchantId: merchant.id },
+    where: { id: subscriptionId },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
       plan: true
     }
   });
@@ -193,7 +181,6 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
 
   return {
     id: subscription.id,
-    merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
     billingInterval: subscription.interval as BillingInterval,
@@ -202,21 +189,17 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
     amount: subscription.amount,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
     plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
 
+/**
+ * Get all subscriptions
+ * Note: In multi-tenant setup, subscriptions are in the main database
+ */
 export async function getAllSubscriptions(): Promise<Subscription[]> {
   const subscriptions = await prisma.subscription.findMany({
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
       plan: true
     },
     orderBy: { createdAt: 'desc' }
@@ -224,7 +207,6 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
 
   return subscriptions.map((sub: any) => ({
     id: sub.id,
-    merchantId: sub.merchantId,
     planId: sub.planId,
     status: sub.status as SubscriptionStatus,
     billingInterval: sub.interval as BillingInterval,
@@ -233,7 +215,6 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
     amount: sub.amount,
     createdAt: sub.createdAt,
     updatedAt: sub.updatedAt,
-    merchant: sub.merchant,
     plan: convertPrismaPlanToPlan(sub.plan)
   }));
 }
@@ -244,7 +225,7 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
 
 export async function searchSubscriptions(filters: {
   search?: string;
-  merchantId?: number;
+  // Note: merchantId removed - tenant databases are already isolated per tenant
   planId?: number;
   status?: string;
   startDate?: Date;
@@ -254,20 +235,8 @@ export async function searchSubscriptions(filters: {
 }): Promise<{ subscriptions: Subscription[]; total: number; hasMore: boolean }> {
   const where: any = {};
 
-  // Apply search filter (merchant name)
-  if (filters.search) {
-    where.merchant = {
-      name: {
-        contains: filters.search,
-        mode: 'insensitive'
-      }
-    };
-  }
-
-  // Apply filters
-  if (filters.merchantId) {
-    where.merchantId = filters.merchantId;
-  }
+  // Note: merchantId filtering removed - tenant databases are already isolated per tenant
+  // Search functionality removed as subscriptions don't have merchant relations in tenant DBs
 
   if (filters.planId) {
     where.planId = filters.planId;
@@ -290,13 +259,6 @@ export async function searchSubscriptions(filters: {
   const subscriptions = await prisma.subscription.findMany({
     where,
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
       plan: true
     },
     orderBy: { createdAt: 'desc' },
@@ -309,7 +271,6 @@ export async function searchSubscriptions(filters: {
   return {
     subscriptions: subscriptions.map((sub: any) => ({
       id: sub.id,
-      merchantId: sub.merchantId,
       planId: sub.planId,
       status: sub.status as SubscriptionStatus,
       billingInterval: sub.interval as BillingInterval,
@@ -318,7 +279,6 @@ export async function searchSubscriptions(filters: {
       amount: sub.amount,
       createdAt: sub.createdAt,
       updatedAt: sub.updatedAt,
-      merchant: sub.merchant,
       plan: {
         id: sub.plan.id,
         name: sub.plan.name,
@@ -345,15 +305,13 @@ export async function searchSubscriptions(filters: {
 // SUBSCRIPTION MUTATIONS
 // ============================================================================
 
+/**
+ * Create subscription
+ * Note: In multi-tenant setup, subscriptions should be in the main database
+ * This function is kept for backward compatibility
+ */
 export async function createSubscription(data: SubscriptionCreateInput): Promise<Subscription> {
-  // Get merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: data.merchantId }
-  });
-
-  if (!merchant) {
-    throw new Error('Merchant not found');
-  }
+  // Note: merchantId removed - subscriptions don't have merchant relations in tenant DBs
 
   // Get plan by id
   const plan = await prisma.plan.findUnique({
@@ -362,15 +320,6 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
 
   if (!plan) {
     throw new Error('Plan not found');
-  }
-
-  // Check if merchant already has a subscription
-  const existingSubscription = await prisma.subscription.findUnique({
-    where: { merchantId: merchant.id }
-  });
-
-  if (existingSubscription) {
-    throw new Error('Merchant already has a subscription');
   }
 
   // Calculate pricing based on billing interval
@@ -384,7 +333,6 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
 
   const subscription = await prisma.subscription.create({
     data: {
-      merchantId: merchant.id,
       planId: plan.id,
       status: data.status || 'trial',
       interval: billingInterval,
@@ -393,28 +341,12 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
       amount: amount
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
       plan: true
-    }
-  });
-
-  // Update merchant subscription status
-  await prisma.merchant.update({
-    where: { id: merchant.id },
-    data: {
-      // // subscriptionStatus: (removed - use subscription.status) (removed - use subscription.status) subscription.status
     }
   });
 
   return {
     id: subscription.id,
-    merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
     billingInterval: subscription.interval as BillingInterval,
@@ -423,7 +355,6 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
     amount: subscription.amount,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
     plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
@@ -513,8 +444,9 @@ export async function changePlan(
   const periodDays = getPeriodDays(billingInterval);
   const newPeriodEnd = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000);
 
+  // Note: merchantId removed - tenant databases are already isolated per tenant
   const updatedSubscription = await prisma.subscription.update({
-    where: { merchantId: subscription.merchantId },
+    where: { id: subscription.id },
     data: {
       planId: plan.id,
       interval: billingInterval,
@@ -524,22 +456,12 @@ export async function changePlan(
       updatedAt: new Date()
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
       plan: true
     }
   });
 
-  // No need to update merchant - subscription.status is the single source of truth
-
   return {
     id: updatedSubscription.id,
-    merchantId: updatedSubscription.merchantId,
     planId: updatedSubscription.planId,
     status: updatedSubscription.status as SubscriptionStatus,
     billingInterval: updatedSubscription.interval as BillingInterval,
@@ -557,7 +479,6 @@ export async function changePlan(
       daysRemaining: Math.ceil((updatedSubscription.currentPeriodEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
       nextBillingDate: updatedSubscription.currentPeriodEnd
     },
-    merchant: updatedSubscription.merchant,
     plan: convertPrismaPlanToPlan(updatedSubscription.plan)
   };
 }
@@ -570,20 +491,12 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
       updatedAt: new Date()
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
       plan: true
     }
   });
 
   return {
     id: subscription.id,
-    merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
     billingInterval: subscription.interval as BillingInterval,
@@ -592,7 +505,6 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
     amount: subscription.amount,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
     plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
@@ -605,20 +517,12 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
       updatedAt: new Date()
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
       plan: true
     }
   });
 
   return {
     id: subscription.id,
-    merchantId: subscription.merchantId,
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
     billingInterval: subscription.interval as BillingInterval,
@@ -627,7 +531,6 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
     amount: subscription.amount,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
     plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
@@ -641,20 +544,12 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
         updatedAt: new Date()
       },
       include: {
-        merchant: {
-          select: {
-      id: true,
-            name: true,
-            email: true,
-          }
-        },
         plan: true
       }
     });
 
     const result: Subscription = {
       id: subscription.id,
-      merchantId: subscriptionId,
       planId: subscription.planId,
       status: subscription.status as SubscriptionStatus,
       billingInterval: subscription.interval as BillingInterval,
@@ -663,7 +558,6 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
       amount: subscription.amount,
       createdAt: subscription.createdAt,
       updatedAt: subscription.updatedAt,
-      merchant: subscription.merchant,
       plan: {
         id: subscription.plan.id,
         name: subscription.plan.name,
@@ -714,13 +608,7 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
       }
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
+      // Note: merchant removed - tenant databases don't have merchant model
       plan: true
     },
     orderBy: { currentPeriodEnd: 'asc' }
@@ -728,7 +616,7 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
 
   return subscriptions.map((sub: any) => ({
     id: sub.id,
-    merchantId: sub.merchantId,
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     planId: sub.planId,
     status: sub.status as SubscriptionStatus,
     billingInterval: sub.interval as BillingInterval,
@@ -737,43 +625,12 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
     amount: sub.amount,
     createdAt: sub.createdAt,
     updatedAt: sub.updatedAt,
-    merchant: sub.merchant,
+    // Note: merchant removed - tenant databases don't have merchant model
     plan: convertPrismaPlanToPlan(sub.plan)
   }));
 }
 
-export async function getSubscriptionById(id: number): Promise<Subscription | null> {
-  const subscription = await prisma.subscription.findUnique({
-    where: { id },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
-      plan: true
-    }
-  });
-
-  if (!subscription) return null;
-
-  return {
-    id: subscription.id,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status as SubscriptionStatus,
-    billingInterval: subscription.interval as BillingInterval,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    amount: subscription.amount,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: convertPrismaPlanToPlan(subscription.plan)
-  };
-}
+// Duplicate function removed - using getSubscriptionById above (line 172)
 
 export async function updateSubscription(
   subscriptionId: number, 
@@ -791,20 +648,14 @@ export async function updateSubscription(
       updatedAt: new Date()
     },
     include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
-      },
+      // Note: merchant removed - tenant databases don't have merchant model
       plan: true
     }
   });
 
   return {
     id: subscription.id,
-    merchantId: subscription.merchantId,
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     planId: subscription.planId,
     status: subscription.status as SubscriptionStatus,
     billingInterval: subscription.interval as BillingInterval,
@@ -813,7 +664,7 @@ export async function updateSubscription(
     amount: subscription.amount,
     createdAt: subscription.createdAt,
     updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
+    // Note: merchant removed - tenant databases don't have merchant model
     plan: convertPrismaPlanToPlan(subscription.plan)
   };
 }
@@ -989,11 +840,11 @@ export async function renewSubscription(
   subscription: Subscription;
   payment: SubscriptionPayment;
 }> {
-  // 1. Get subscription with merchant
+  // 1. Get subscription
+  // Note: merchant removed - tenant databases are already isolated per tenant
   const subscription = await prisma.subscription.findUnique({
     where: { id: subscriptionId },
     include: {
-      merchant: true,
       plan: true
     }
   });
@@ -1014,10 +865,10 @@ export async function renewSubscription(
   // 4. Use database transaction to ensure atomicity
   const result = await prisma.$transaction(async (tx) => {
     // Create payment record
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     const payment = await tx.payment.create({
       data: {
         subscriptionId: subscription.id,
-        merchantId: subscriptionId,
         amount: subscription.amount,
         currency: subscription.currency,
         method: paymentData.method,
@@ -1031,8 +882,9 @@ export async function renewSubscription(
     });
 
     // Update subscription period
+    // Note: merchantId removed - tenant databases are already isolated per tenant
     const updatedSubscription = await tx.subscription.update({
-      where: { merchantId: subscription.merchantId },
+      where: { id: subscription.id },
       data: {
         currentPeriodStart: newPeriodStart,
         currentPeriodEnd: newPeriodEnd,
@@ -1040,23 +892,7 @@ export async function renewSubscription(
         updatedAt: new Date()
       },
       include: {
-        merchant: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          }
-        },
         plan: true
-      }
-    });
-
-    // Update merchant status
-    await tx.merchant.update({
-      where: { id: subscription.merchantId },
-      data: {
-        // subscriptionStatus removed - use subscription.status instead
-        lastActiveAt: new Date()
       }
     });
 
@@ -1067,7 +903,6 @@ export async function renewSubscription(
   return {
     subscription: {
       id: result.updatedSubscription.id,
-      merchantId: result.updatedSubscription.merchantId,
       planId: result.updatedSubscription.planId,
       status: result.updatedSubscription.status as SubscriptionStatus,
       billingInterval: result.updatedSubscription.interval as BillingInterval,
@@ -1076,7 +911,6 @@ export async function renewSubscription(
       amount: result.updatedSubscription.amount,
       createdAt: result.updatedSubscription.createdAt,
       updatedAt: result.updatedSubscription.updatedAt,
-      merchant: result.updatedSubscription.merchant,
       plan: convertPrismaPlanToPlan(result.updatedSubscription.plan)
     },
     payment: {
@@ -1106,7 +940,6 @@ export const simplifiedSubscriptions = {
     return await prisma.subscription.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } },
         payments: {
           orderBy: { createdAt: 'desc' },
@@ -1117,16 +950,15 @@ export const simplifiedSubscriptions = {
   },
 
   /**
-   * Find subscription by merchant ID (simplified API)
+   * Find active subscription (simplified API)
+   * Note: findByMerchantId removed - tenant databases are already isolated per tenant
    */
-  findByMerchantId: async (merchantId: number) => {
+  findActive: async () => {
     return await prisma.subscription.findFirst({
       where: { 
-        merchantId,
         status: { not: 'CANCELLED' }
       },
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } },
         payments: {
           orderBy: { createdAt: 'desc' },
@@ -1143,7 +975,6 @@ export const simplifiedSubscriptions = {
     return await prisma.subscription.create({
       data,
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } }
       }
     });
@@ -1157,7 +988,6 @@ export const simplifiedSubscriptions = {
       where: { id },
       data,
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } }
       }
     });
@@ -1186,17 +1016,8 @@ export const simplifiedSubscriptions = {
     // Build where clause
     const where: any = {};
     
-    // Apply search filter (merchant name)
-    if (whereFilters.search) {
-      where.merchant = {
-        name: {
-          contains: whereFilters.search,
-          mode: 'insensitive'
-        }
-      };
-    }
-    
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    // Note: merchant search removed - tenant databases are already isolated per tenant
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (whereFilters.planId) where.planId = whereFilters.planId;
     if (whereFilters.isActive !== undefined) {
       if (whereFilters.isActive) {
@@ -1218,7 +1039,6 @@ export const simplifiedSubscriptions = {
       prisma.subscription.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           plan: { select: { id: true, name: true } },
           payments: {
             orderBy: { createdAt: 'desc' },
@@ -1250,7 +1070,6 @@ export const simplifiedSubscriptions = {
     return await prisma.subscription.findFirst({
       where,
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } },
         payments: {
           orderBy: { createdAt: 'desc' },
@@ -1290,7 +1109,6 @@ export const simplifiedSubscriptions = {
         ]
       },
       include: {
-        merchant: { select: { id: true, name: true } },
         plan: { select: { id: true, name: true } }
       },
       orderBy: { currentPeriodEnd: 'asc' }

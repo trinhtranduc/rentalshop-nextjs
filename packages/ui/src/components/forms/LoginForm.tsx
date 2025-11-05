@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Globe } from "lucide-react";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Logo } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
 import { LanguageSwitcher } from "../layout/LanguageSwitcher";
@@ -12,6 +12,7 @@ import { LanguageSwitcher } from "../layout/LanguageSwitcher";
 interface LoginFormData {
   email: string;
   password: string;
+  subdomain?: string;
 }
 
 interface LoginFormProps {
@@ -42,6 +43,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
     password: Yup.string()
       .min(6, t('login.invalidPassword'))
       .required(t('login.invalidPassword')),
+    subdomain: isAdmin 
+      ? Yup.string().optional()
+      : Yup.string()
+          .min(1, t('login.storeNameRequired'))
+          .required(t('login.storeNameRequired')),
   });
 
   const validation = useFormik<LoginFormData>({
@@ -49,6 +55,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
     initialValues: {
       email: "",
       password: "",
+      subdomain: "",
     },
     validationSchema: validationSchema,
     onSubmit: async (values: LoginFormData) => {
@@ -169,6 +176,43 @@ const LoginForm: React.FC<LoginFormProps> = ({
               )}
 
               <div className="space-y-4">
+                {/* Store Name Field (only for tenant login, hidden for admin) */}
+                {!isAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('login.storeName')}
+                    </label>
+                    <div className="relative">
+                      <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        type="text"
+                        placeholder={t('login.storeNamePlaceholder')}
+                        className="pl-10 pr-32"
+                        onChange={(e) => {
+                          validation.handleChange(e);
+                          onInputChange?.();
+                        }}
+                        onBlur={validation.handleBlur}
+                        value={validation.values.subdomain || ""}
+                        name="subdomain"
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <span className="text-sm text-gray-400 font-mono">
+                          .{typeof window !== 'undefined' 
+                            ? (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'anyrent.shop')
+                            : 'anyrent.shop'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                    {validation.touched.subdomain && validation.errors.subdomain && (
+                      <p className="mt-2 text-sm text-red-600">
+                        {validation.errors.subdomain}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Email Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

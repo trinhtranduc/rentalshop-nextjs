@@ -19,34 +19,23 @@ import type {
 // ============================================================================
 
 /**
- * Get default outlet for merchant
+ * Get default outlet
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-export async function getDefaultOutlet(merchantId: number): Promise<any> {
-  // First find merchant by public ID to get CUID
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function getDefaultOutlet(): Promise<any> {
   const outlet = await prisma.outlet.findFirst({
     where: {
-      merchantId: merchant.id, // Use CUID
       isDefault: true,
       isActive: true
     },
     select: {
       id: true,
       name: true,
-      merchantId: true
     }
   });
 
   if (!outlet) {
-    throw new Error(`No default outlet found for merchant ${merchantId}`);
+    throw new Error(`No default outlet found`);
   }
 
   return outlet;
@@ -58,7 +47,6 @@ export async function getDefaultOutlet(merchantId: number): Promise<any> {
  */
 export async function searchOutlets(filters: OutletSearchFilter): Promise<OutletSearchResponse> {
   const {
-    merchantId,
     outletId, // Add outletId filter for outlet-level users
     isActive,
     search,
@@ -71,17 +59,7 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
   // Build where clause
   const where: any = {};
 
-  if (merchantId) {
-    // Find merchant by id
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantId },
-      select: { id: true }
-    });
-    
-    if (merchant) {
-      where.merchantId = merchant.id;
-    }
-  }
+  // Note: merchantId filtering removed - tenant databases are already isolated per tenant
 
   // Outlet-level filtering: Users can only see their assigned outlet
   if (outletId) {
@@ -125,12 +103,6 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
       isDefault: true,
       createdAt: true,
       updatedAt: true,
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      }
     },
     orderBy: { createdAt: 'desc' },
     take: limit,
@@ -148,11 +120,6 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
     isDefault: outlet.isDefault || false,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.id, // Return merchant id
-    merchant: {
-      id: outlet.merchant.id,
-      name: outlet.merchant.name
-    }
   }));
 
   return {
@@ -166,21 +133,11 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
 }
 
 /**
- * Get outlets by merchant - follows dual ID system
+ * Get all outlets
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-export async function getOutletsByMerchant(merchantId: number) {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function getAllOutlets() {
   const outlets = await prisma.outlet.findMany({
-    where: { merchantId: merchant.id },
     select: {
       id: true,
       name: true,
@@ -191,12 +148,6 @@ export async function getOutletsByMerchant(merchantId: number) {
       isDefault: true,
       createdAt: true,
       updatedAt: true,
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      }
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -212,11 +163,6 @@ export async function getOutletsByMerchant(merchantId: number) {
     isDefault: outlet.isDefault || false,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.id, // Return merchant id
-    merchant: {
-      id: outlet.merchant.id,
-      name: outlet.merchant.name
-    }
   }));
 }
 
@@ -235,12 +181,6 @@ export async function getOutletByPublicId(id: number) {
       isActive: true,
       createdAt: true,
       updatedAt: true,
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      }
     }
   });
 
@@ -256,28 +196,14 @@ export async function getOutletByPublicId(id: number) {
     isActive: outlet.isActive,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.id, // Return merchant id
-    merchant: {
-      id: outlet.merchant.id,
-      name: outlet.merchant.name
-    }
   };
 }
 
 /**
- * Create outlet - follows dual ID system
+ * Create outlet
+ * Note: In multi-tenant setup, tenant databases are already isolated per tenant
  */
-export async function createOutlet(input: OutletCreateInput, merchantId: number) {
-  // Find merchant by id
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { id: true }
-  });
-  
-  if (!merchant) {
-    throw new Error(`Merchant with id ${merchantId} not found`);
-  }
-
+export async function createOutlet(input: OutletCreateInput) {
   // Generate unique id
   const id = Math.floor(Math.random() * 1000000) + 100000;
 
@@ -288,7 +214,6 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
       address: input.address?.trim(),
       phone: input.phone?.trim(),
       description: input.description?.trim(),
-      merchantId: merchant.id,
       isActive: true
     },
     select: {
@@ -300,12 +225,6 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
       isActive: true,
       createdAt: true,
       updatedAt: true,
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      }
     }
   });
 
@@ -319,11 +238,6 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
     isActive: outlet.isActive,
     createdAt: outlet.createdAt,
     updatedAt: outlet.updatedAt,
-    merchantId: outlet.merchant.id, // Return merchant id
-    merchant: {
-      id: outlet.merchant.id,
-      name: outlet.merchant.name
-    }
   };
 }
 
@@ -333,7 +247,7 @@ export async function createOutlet(input: OutletCreateInput, merchantId: number)
 export async function updateOutlet(id: number, input: OutletUpdateInput) {
   const outlet = await prisma.outlet.findUnique({
     where: { id },
-    select: { id: true, merchantId: true, name: true, isDefault: true }
+    select: { id: true, name: true, isDefault: true }
   });
 
   if (!outlet) {
@@ -358,14 +272,6 @@ export async function updateOutlet(id: number, input: OutletUpdateInput) {
       ...(input.description !== undefined && { description: input.description?.trim() }),
       ...(input.isActive !== undefined && { isActive: input.isActive })
     },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true
-        }
-      }
-    }
   });
 
   // Transform to match expected types
@@ -382,11 +288,6 @@ export async function updateOutlet(id: number, input: OutletUpdateInput) {
     isActive: updatedOutlet.isActive,
     createdAt: updatedOutlet.createdAt,
     updatedAt: updatedOutlet.updatedAt,
-    merchantId: updatedOutlet.merchant.id, // Return merchant id
-    merchant: {
-      id: updatedOutlet.merchant.id,
-      name: updatedOutlet.merchant.name
-    }
   };
 }
 
@@ -422,7 +323,6 @@ export const simplifiedOutlets = {
     return await prisma.outlet.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true } },
         _count: {
           select: { 
             users: true,
@@ -441,26 +341,11 @@ export const simplifiedOutlets = {
     try {
       console.log('🔍 simplifiedOutlets.create called with data:', data);
       
-      // Validate that merchant exists if merchant connection is provided
-      if (data.merchant && data.merchant.connect && data.merchant.connect.id) {
-        const merchantId = data.merchant.connect.id;
-        const merchant = await prisma.merchant.findUnique({
-          where: { id: merchantId },
-          select: { id: true }
-        });
-        
-        if (!merchant) {
-          throw new Error(`Merchant with id ${merchantId} not found`);
-        }
-        
-        console.log('✅ Merchant found:', merchant);
-      }
+      // Remove merchant connection if present (not needed in tenant DBs)
+      const { merchant, ...outletData } = data;
       
       const outlet = await prisma.outlet.create({
-        data,
-        include: {
-          merchant: { select: { id: true, name: true } }
-        }
+        data: outletData,
       });
       
       console.log('✅ Outlet created successfully:', outlet);
@@ -475,12 +360,11 @@ export const simplifiedOutlets = {
    * Update outlet (simplified API)
    */
   update: async (id: number, data: any) => {
+    // Remove merchant connection if present (not needed in tenant DBs)
+    const { merchant, ...outletData } = data;
     return await prisma.outlet.update({
       where: { id },
-      data,
-      include: {
-        merchant: { select: { id: true, name: true } }
-      }
+      data: outletData,
     });
   },
 
@@ -491,7 +375,6 @@ export const simplifiedOutlets = {
     return await prisma.outlet.findFirst({
       where,
       include: {
-        merchant: { select: { id: true, name: true } },
         _count: {
           select: { 
             users: true,
@@ -533,7 +416,7 @@ export const simplifiedOutlets = {
     // Build where clause
     const where: any = {};
     
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
+    // Note: merchantId filtering removed - tenant databases are already isolated per tenant
     if (whereFilters.outletId) where.id = whereFilters.outletId;
     if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
     if (whereFilters.status) where.status = whereFilters.status;
@@ -571,7 +454,6 @@ export const simplifiedOutlets = {
       prisma.outlet.findMany({
         where,
         include: {
-          merchant: { select: { id: true, name: true } },
           _count: {
             select: { 
               users: true,

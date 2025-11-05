@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
-import { getTenantDbFromRequest } from '@rentalshop/utils';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { getTenantDbFromRequest } from '@rentalshop/utils/api';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils/api';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
