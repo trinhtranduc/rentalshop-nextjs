@@ -1,6 +1,6 @@
-import { authenticatedFetch, parseApiResponse } from '../core';
+import { authenticatedFetch, parseApiResponse } from '../core/server';
 import { apiUrls } from '../config/api';
-import type { ApiResponse } from '../core';
+import type { ApiResponse } from '../core/server';
 
 // ============================================================================
 // TYPES

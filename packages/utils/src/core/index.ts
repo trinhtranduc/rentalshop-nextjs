@@ -121,7 +121,9 @@ export {
   type PricingConfig
 } from './pricing-calculator';
 
-// UI utilities
+// UI utilities (client-side only - contain React components)
+// NOTE: These are NOT exported from '@rentalshop/utils/api' to avoid React imports in server-side code
+// Import from '@rentalshop/utils' for client-side usage only
 export * from './badge-utils';
 export * from './customer-utils';
 export * from './product-utils';

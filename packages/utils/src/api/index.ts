@@ -1,5 +1,5 @@
 // ============================================================================
-// API CLIENT EXPORTS
+// API CLIENT EXPORTS - SERVER-SIDE ONLY
 // ============================================================================
 
 // Core API utilities are exported from the main utils package
@@ -19,6 +19,10 @@ export type {
 // Validation (server-only - imports PostgreSQL)
 export * from '../core/validation';
 export { assertPlanLimit } from '../core/validation';
+
+// Server-safe utilities (no React imports)
+// Re-export from server-safe core module
+export * from '../core/server';
 
 // Domain-specific API clients
 export * from './auth';

@@ -2,7 +2,7 @@
 // BILLING CYCLES API CLIENT
 // ============================================================================
 
-import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../core';
+import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../core/server';
 import { apiUrls } from '../config/api';
 
 // ============================================================================

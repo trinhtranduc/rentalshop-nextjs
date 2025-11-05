@@ -2,7 +2,7 @@
 // PLANS API CLIENT
 // ============================================================================
 
-import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../core';
+import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../core/server';
 import { apiUrls } from '../config/api';
 import type { Plan, PlanCreateInput, PlanUpdateInput, PlanFilters } from '@rentalshop/types';
 

@@ -1,4 +1,4 @@
-import { authenticatedFetch, parseApiResponse, ApiResponse } from '../core';
+import { authenticatedFetch, parseApiResponse, ApiResponse } from '../core/server';
 import { apiUrls } from '../config/api';
 import type { Category, CategoryFilters } from '@rentalshop/types';
 

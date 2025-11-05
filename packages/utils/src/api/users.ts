@@ -1,5 +1,5 @@
 import { User, UserCreateInput } from '@rentalshop/types';
-import { authenticatedFetch, parseApiResponse } from '../core';
+import { authenticatedFetch, parseApiResponse } from '../core/server';
 import { apiUrls } from '../config/api';
 
 // ============================================================================
