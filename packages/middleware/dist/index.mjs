@@ -1079,7 +1079,7 @@ async function manualExpiryCheck() {
 
 // src/subscription-middleware.ts
 import { NextResponse as NextResponse4 } from "next/server";
-import { validateSubscriptionAccess as validateSubscriptionAccess2 } from "@rentalshop/utils";
+import { validateSubscriptionAccess as validateSubscriptionAccess2 } from "@rentalshop/utils/api";
 var subscriptionRequiredRoutes = [
   "/api/orders",
   "/api/products",
