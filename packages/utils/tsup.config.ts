@@ -84,9 +84,43 @@ const removeReactImports = (outDir: string) => {
     content = content.replace(/import\s+.*from\s+['"]react\/[^'"]*['"];?\n?/g, '');
     
     // Any import from lucide-react (including partial lines like "} from 'lucide-react'")
+    // First, remove complete import statements
     content = content.replace(/import\s+.*from\s+['"]lucide-react['"];?\n?/g, '');
+    
+    // Remove closing braces and "from 'lucide-react'" lines
     content = content.replace(/}\s+from\s+['"]lucide-react['"];?\n?/g, '');
     content = content.replace(/,\s*\}\s+from\s+['"]lucide-react['"];?\n?/g, '');
+    
+    // Remove orphaned icon names that were part of lucide-react imports
+    // Pattern: sequences of PascalCase identifiers (icon names) followed by an import statement
+    // This catches cases like "TrendingUp,\nTrendingDown,\nAlertTriangle\nimport { ... }"
+    // where we've already removed the "} from 'lucide-react'" part
+    content = content.replace(/(?:^\s*[A-Z][a-zA-Z0-9]+(?:\s+as\s+[A-Z][a-zA-Z0-9]+)?\s*,?\s*\n)+/gm, (match, offset, string) => {
+      // Check if this sequence is followed by an import statement (orphaned icons)
+      const afterMatch = string.substring(offset + match.length);
+      const nextNonEmptyLine = afterMatch.split('\n').find(line => line.trim()) || '';
+      if (/^\s*import\s+/.test(nextNonEmptyLine)) {
+        return ''; // Remove orphaned icon names
+      }
+      return match; // Keep if it's part of valid code
+    });
+    
+    // Replace icon references in object properties (e.g., icon: TrendingUp -> icon: null)
+    // This handles cases where icons are used in code but the import was removed
+    const iconNames = [
+      'TrendingUp', 'TrendingDown', 'AlertTriangle', 'UserCheck', 'UserX',
+      'CheckCircle', 'XCircle', 'MapPin', 'Building2', 'Store', 'UserIcon',
+      'Shield', 'Package', 'DollarSign', 'ShoppingCart', 'User', 'Phone',
+      'Mail', 'Calendar', 'FileText'
+    ];
+    iconNames.forEach(iconName => {
+      // Replace icon: IconName, with icon: null,
+      content = content.replace(new RegExp(`icon:\\s*${iconName}\\s*,`, 'g'), 'icon: null,');
+      // Replace icon: IconName\n with icon: null\n
+      content = content.replace(new RegExp(`icon:\\s*${iconName}\\s*\\n`, 'g'), 'icon: null\n');
+      // Replace icon: IconName} with icon: null}
+      content = content.replace(new RegExp(`icon:\\s*${iconName}\\s*\\}`, 'g'), 'icon: null}');
+    });
     
     // Dynamic imports: import('react')
     content = content.replace(/import\(['"]react['"]\)/g, 'Promise.resolve({})');
