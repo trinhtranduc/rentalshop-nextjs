@@ -107,6 +107,7 @@ const removeReactImports = (outDir: string) => {
     
     // Replace icon references in object properties (e.g., icon: TrendingUp -> icon: null)
     // This handles cases where icons are used in code but the import was removed
+    // Also handles renamed icons (e.g., TrendingUp2, XCircle2) from esbuild
     const iconNames = [
       'TrendingUp', 'TrendingDown', 'AlertTriangle', 'UserCheck', 'UserX',
       'CheckCircle', 'XCircle', 'MapPin', 'Building2', 'Store', 'UserIcon',
@@ -114,12 +115,12 @@ const removeReactImports = (outDir: string) => {
       'Mail', 'Calendar', 'FileText'
     ];
     iconNames.forEach(iconName => {
-      // Replace icon: IconName, with icon: null,
-      content = content.replace(new RegExp(`icon:\\s*${iconName}\\s*,`, 'g'), 'icon: null,');
+      // Replace icon: IconName, with icon: null, (including renamed variants like IconName2)
+      content = content.replace(new RegExp(`icon:\\s*${iconName}\\d*\\s*,`, 'g'), 'icon: null,');
       // Replace icon: IconName\n with icon: null\n
-      content = content.replace(new RegExp(`icon:\\s*${iconName}\\s*\\n`, 'g'), 'icon: null\n');
+      content = content.replace(new RegExp(`icon:\\s*${iconName}\\d*\\s*\\n`, 'g'), 'icon: null\n');
       // Replace icon: IconName} with icon: null}
-      content = content.replace(new RegExp(`icon:\\s*${iconName}\\s*\\}`, 'g'), 'icon: null}');
+      content = content.replace(new RegExp(`icon:\\s*${iconName}\\d*\\s*\\}`, 'g'), 'icon: null}');
     });
     
     // Dynamic imports: import('react')
