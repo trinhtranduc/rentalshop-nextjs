@@ -33,14 +33,19 @@ export function SubscriptionPeriodCard({
   const formatted = formatSubscriptionPeriod(period);
   const statusBadge = getSubscriptionStatusBadge(period.isActive ? 'active' : 'inactive', period.daysRemaining);
   
+  // Determine icon based on status and days remaining
   const getStatusIcon = () => {
-    switch (statusBadge.icon) {
-      case 'clock': return <Clock className="w-4 h-4" />;
-      case 'alert-triangle': return <AlertTriangle className="w-4 h-4" />;
-      case 'check-circle': return <CheckCircle className="w-4 h-4" />;
-      case 'pause': return <Pause className="w-4 h-4" />;
-      case 'x-circle': return <XCircle className="w-4 h-4" />;
-      default: return <MinusCircle className="w-4 h-4" />;
+    if (!period.isActive) {
+      return <XCircle className="w-4 h-4" />;
+    }
+    
+    // Active subscription
+    if (period.daysRemaining <= 0) {
+      return <AlertTriangle className="w-4 h-4" />;
+    } else if (period.daysRemaining <= 7) {
+      return <Clock className="w-4 h-4" />;
+    } else {
+      return <CheckCircle className="w-4 h-4" />;
     }
   };
 

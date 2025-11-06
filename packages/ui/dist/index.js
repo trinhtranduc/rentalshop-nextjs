@@ -24552,19 +24552,15 @@ function SubscriptionPeriodCard({
   const formatted = (0, import_utils32.formatSubscriptionPeriod)(period);
   const statusBadge = (0, import_utils32.getSubscriptionStatusBadge)(period.isActive ? "active" : "inactive", period.daysRemaining);
   const getStatusIcon5 = () => {
-    switch (statusBadge.icon) {
-      case "clock":
-        return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.Clock, { className: "w-4 h-4" });
-      case "alert-triangle":
-        return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.AlertTriangle, { className: "w-4 h-4" });
-      case "check-circle":
-        return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.CheckCircle, { className: "w-4 h-4" });
-      case "pause":
-        return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.Pause, { className: "w-4 h-4" });
-      case "x-circle":
-        return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.XCircle, { className: "w-4 h-4" });
-      default:
-        return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.MinusCircle, { className: "w-4 h-4" });
+    if (!period.isActive) {
+      return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.XCircle, { className: "w-4 h-4" });
+    }
+    if (period.daysRemaining <= 0) {
+      return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.AlertTriangle, { className: "w-4 h-4" });
+    } else if (period.daysRemaining <= 7) {
+      return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.Clock, { className: "w-4 h-4" });
+    } else {
+      return /* @__PURE__ */ (0, import_jsx_runtime132.jsx)(import_lucide_react62.CheckCircle, { className: "w-4 h-4" });
     }
   };
   return /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)(Card, { className: `${className}`, children: [

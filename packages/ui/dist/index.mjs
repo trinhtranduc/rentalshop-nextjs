@@ -24550,9 +24550,7 @@ import {
   Clock as Clock12,
   AlertTriangle as AlertTriangle9,
   CheckCircle as CheckCircle15,
-  Pause as Pause2,
-  XCircle as XCircle9,
-  MinusCircle
+  XCircle as XCircle9
 } from "lucide-react";
 import { formatSubscriptionPeriod, getSubscriptionStatusBadge } from "@rentalshop/utils";
 import { jsx as jsx131, jsxs as jsxs115 } from "react/jsx-runtime";
@@ -24566,19 +24564,15 @@ function SubscriptionPeriodCard({
   const formatted = formatSubscriptionPeriod(period);
   const statusBadge = getSubscriptionStatusBadge(period.isActive ? "active" : "inactive", period.daysRemaining);
   const getStatusIcon5 = () => {
-    switch (statusBadge.icon) {
-      case "clock":
-        return /* @__PURE__ */ jsx131(Clock12, { className: "w-4 h-4" });
-      case "alert-triangle":
-        return /* @__PURE__ */ jsx131(AlertTriangle9, { className: "w-4 h-4" });
-      case "check-circle":
-        return /* @__PURE__ */ jsx131(CheckCircle15, { className: "w-4 h-4" });
-      case "pause":
-        return /* @__PURE__ */ jsx131(Pause2, { className: "w-4 h-4" });
-      case "x-circle":
-        return /* @__PURE__ */ jsx131(XCircle9, { className: "w-4 h-4" });
-      default:
-        return /* @__PURE__ */ jsx131(MinusCircle, { className: "w-4 h-4" });
+    if (!period.isActive) {
+      return /* @__PURE__ */ jsx131(XCircle9, { className: "w-4 h-4" });
+    }
+    if (period.daysRemaining <= 0) {
+      return /* @__PURE__ */ jsx131(AlertTriangle9, { className: "w-4 h-4" });
+    } else if (period.daysRemaining <= 7) {
+      return /* @__PURE__ */ jsx131(Clock12, { className: "w-4 h-4" });
+    } else {
+      return /* @__PURE__ */ jsx131(CheckCircle15, { className: "w-4 h-4" });
     }
   };
   return /* @__PURE__ */ jsxs115(Card, { className: `${className}`, children: [
