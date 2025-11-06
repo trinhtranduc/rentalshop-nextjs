@@ -220,11 +220,47 @@ const removeReactImports = (outDir: string) => {
     return content;
   };
   
+  // Ensure critical subscription functions are in export list
+  const ensureSubscriptionExports = (content: string): string => {
+    // Check if getSubscriptionError and getPlanLimitError are in the export statement
+    const exportMatch = content.match(/export\s*\{([^}]+)\}/s);
+    if (exportMatch) {
+      const exportList = exportMatch[1];
+      const hasGetSubscriptionError = /getSubscriptionError/.test(exportList);
+      const hasGetPlanLimitError = /getPlanLimitError/.test(exportList);
+      const hasValidateSubscriptionAccess = /validateSubscriptionAccess/.test(exportList);
+      
+      // If any are missing, add them to the export list
+      if (!hasGetSubscriptionError || !hasGetPlanLimitError || !hasValidateSubscriptionAccess) {
+        // Find the closing brace of the export statement
+        const exportEnd = content.indexOf('};', exportMatch.index! + exportMatch[0].length);
+        if (exportEnd > 0) {
+          // Insert missing exports before the closing brace
+          const beforeClose = content.substring(0, exportEnd);
+          const afterClose = content.substring(exportEnd);
+          const additions: string[] = [];
+          if (!hasGetSubscriptionError) additions.push('getSubscriptionError');
+          if (!hasGetPlanLimitError) additions.push('getPlanLimitError');
+          if (!hasValidateSubscriptionAccess) additions.push('validateSubscriptionAccess');
+          
+          if (additions.length > 0) {
+            // Add comma if export list doesn't end with comma or newline
+            const needsComma = !beforeClose.trim().endsWith(',') && !beforeClose.trim().endsWith('\n');
+            const insertText = (needsComma ? ',' : '') + '\n  ' + additions.join(',\n  ') + ',';
+            return beforeClose + insertText + afterClose;
+          }
+        }
+      }
+    }
+    return content;
+  };
+
   // Remove from ESM output
   try {
     let content = readFileSync(esmPath, 'utf-8');
     const originalContent = content;
     content = removeESMImports(content);
+    content = ensureSubscriptionExports(content);
     
     // Only write if content changed (avoid unnecessary file writes)
     if (content !== originalContent) {

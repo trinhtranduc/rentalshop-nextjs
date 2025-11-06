@@ -9,24 +9,42 @@
 export { getTenantDbFromRequest, withTenantDb } from '../core/tenant-utils';
 
 // Subscription manager (server-only - imports PostgreSQL)
-// Export directly from source to ensure they're included in build
-export {
-  SubscriptionManager,
-  validateSubscriptionAccess,
-  checkSubscriptionStatus,
-  shouldThrowPlanLimitError,
-  getPlanLimitError,
-  getSubscriptionError,
-  canPerformOperation,
-  getPlanLimitErrorMessage,
-  getAllowedOperations,
-  calculateSubscriptionPeriod,
-  calculateNewBillingDate,
-  isSubscriptionExpired,
-  isGracePeriodExceeded,
-  validateForRenewal,
-  getSubscriptionStatusPriority
+// Import all functions explicitly
+import {
+  SubscriptionManager as SM,
+  validateSubscriptionAccess as _validateSubscriptionAccess,
+  checkSubscriptionStatus as _checkSubscriptionStatus,
+  shouldThrowPlanLimitError as _shouldThrowPlanLimitError,
+  getPlanLimitError as _getPlanLimitError,
+  getSubscriptionError as _getSubscriptionError,
+  canPerformOperation as _canPerformOperation,
+  getPlanLimitErrorMessage as _getPlanLimitErrorMessage,
+  getAllowedOperations as _getAllowedOperations,
+  calculateSubscriptionPeriod as _calculateSubscriptionPeriod,
+  calculateNewBillingDate as _calculateNewBillingDate,
+  isSubscriptionExpired as _isSubscriptionExpired,
+  isGracePeriodExceeded as _isGracePeriodExceeded,
+  validateForRenewal as _validateForRenewal,
+  getSubscriptionStatusPriority as _getSubscriptionStatusPriority
 } from '../core/subscription-manager';
+
+// Re-export with explicit names to ensure they're included in final bundle
+// Using explicit assignments forces esbuild to include them even if they point to the same function
+export const SubscriptionManager = SM;
+export const validateSubscriptionAccess = _validateSubscriptionAccess;
+export const checkSubscriptionStatus = _checkSubscriptionStatus;
+export const shouldThrowPlanLimitError = _shouldThrowPlanLimitError;
+export const getPlanLimitError = _getPlanLimitError;
+export const getSubscriptionError = _getSubscriptionError;
+export const canPerformOperation = _canPerformOperation;
+export const getPlanLimitErrorMessage = _getPlanLimitErrorMessage;
+export const getAllowedOperations = _getAllowedOperations;
+export const calculateSubscriptionPeriod = _calculateSubscriptionPeriod;
+export const calculateNewBillingDate = _calculateNewBillingDate;
+export const isSubscriptionExpired = _isSubscriptionExpired;
+export const isGracePeriodExceeded = _isGracePeriodExceeded;
+export const validateForRenewal = _validateForRenewal;
+export const getSubscriptionStatusPriority = _getSubscriptionStatusPriority;
 
 // Note: formatSubscriptionPeriod and getSubscriptionStatusBadge are client-only
 // and exported from main package (@rentalshop/utils), not from API package
