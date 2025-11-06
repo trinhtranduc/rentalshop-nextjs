@@ -3,9 +3,9 @@ import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
 // ============================================================================
-// ESBUILD PLUGIN: Exclude React from server-side bundle
+// ESBUILD PLUGIN: Exclude React and UI utilities from server-side bundle
 // ============================================================================
-// This intercepts React imports at build time and replaces them with empty modules
+// This intercepts React imports and UI utility files at build time
 const excludeReactPlugin = {
   name: 'exclude-react',
   setup(build) {
@@ -27,9 +27,32 @@ const excludeReactPlugin = {
       }));
     });
     
+    // Exclude UI utility files (contain React components)
+    // These should only be used in client-side code
+    // Use more specific filters to avoid matching everything
+    const uiUtilityFiles = [
+      /badge-utils\.tsx?$/,
+      /customer-utils\.tsx?$/,
+      /product-utils\.tsx?$/,
+      /user-utils\.tsx?$/,
+    ];
+    
+    uiUtilityFiles.forEach(filter => {
+      build.onResolve({ filter }, () => ({
+        path: 'ui-stub',
+        namespace: 'ui-stub',
+      }));
+    });
+    
     // Provide empty module for React stubs
     build.onLoad({ filter: /.*/, namespace: 'react-stub' }, () => ({
       contents: '// React excluded for server-side bundle',
+      loader: 'js',
+    }));
+    
+    // Provide empty module for UI utility stubs
+    build.onLoad({ filter: /.*/, namespace: 'ui-stub' }, () => ({
+      contents: '// UI utilities excluded for server-side bundle',
       loader: 'js',
     }));
   },
@@ -42,7 +65,7 @@ const postProcessApiBundle = (outDir: string) => {
   const esmPath = join(outDir, 'index.mjs');
   const cjsPath = join(outDir, 'index.js');
   
-  // Simple cleanup: Remove any remaining React import statements
+  // Simple cleanup: Remove any remaining React import statements and UI utilities
   const cleanup = (content: string): string => {
     // Remove React imports
     content = content.replace(/import\s+.*from\s+['"]react['"];?\n?/g, '');
@@ -50,6 +73,30 @@ const postProcessApiBundle = (outDir: string) => {
     content = content.replace(/import\s+.*from\s+['"]lucide-react['"];?\n?/g, '');
     content = content.replace(/require\(['"]react['"]\)[^;]*;?\n?/g, '');
     content = content.replace(/require\(['"]lucide-react['"]\)[^;]*;?\n?/g, '');
+    
+    // Remove UI utility file blocks (badge-utils, customer-utils, product-utils, user-utils)
+    // These contain React components and should not be in server-side bundle
+    const uiUtilityPatterns = [
+      /\/\/ src\/core\/badge-utils\.tsx[\s\S]*?(?=\/\/ src\/core\/|\nvar [a-zA-Z]|$)/g,
+      /\/\/ src\/core\/customer-utils\.tsx[\s\S]*?(?=\/\/ src\/core\/|\nvar [a-zA-Z]|$)/g,
+      /\/\/ src\/core\/product-utils\.tsx[\s\S]*?(?=\/\/ src\/core\/|\nvar [a-zA-Z]|$)/g,
+      /\/\/ src\/core\/user-utils\.tsx[\s\S]*?(?=\/\/ src\/core\/|\nvar [a-zA-Z]|$)/g,
+    ];
+    uiUtilityPatterns.forEach(pattern => {
+      content = content.replace(pattern, '');
+    });
+    
+    // Remove functions from UI utilities from export list
+    const uiUtilityExports = [
+      'getStatusBadgeConfig', 'getStatusBadge', 'getRoleBadgeConfig', 'getRoleBadge',
+      'getLocationBadgeConfig', 'getLocationBadge', 'getAvailabilityBadgeConfig', 'getAvailabilityBadge',
+      'getPriceTrendBadgeConfig', 'getPriceTrendBadge', 'getCustomerStatusBadge', 'getCustomerLocationBadge',
+      'getProductStatusBadge', 'getUserStatusBadge'
+    ];
+    uiUtilityExports.forEach(exportName => {
+      // Remove from export list: "exportName," or ",exportName" or "exportName\n"
+      content = content.replace(new RegExp(`\\s*${exportName}\\s*,?\\n?`, 'g'), '');
+    });
     
     // Remove incomplete import blocks (leftover from lucide-react cleanup)
     content = content.replace(/^import\s+\{\s*$/gm, (match, offset, string) => {
@@ -65,14 +112,27 @@ const postProcessApiBundle = (outDir: string) => {
     return content;
   };
   
-  // Note: Exports are already included by tsup with treeshake: false
-  // This function is kept for safety but should not be needed
+  // Ensure critical exports are included in export statement
   const ensureExports = (content: string): string => {
-    // Check if critical exports exist
-    const hasExports = /getSubscriptionError|getPlanLimitError|validateSubscriptionAccess/.test(content);
-    if (!hasExports) {
-      console.warn('⚠️  Warning: Critical exports may be missing from API bundle');
+    // Find the export statement
+    const exportMatch = content.match(/export\s*\{([\s\S]*?)\};/);
+    if (!exportMatch) return content;
+    
+    const exportList = exportMatch[1];
+    const requiredExports = ['getSubscriptionError', 'getPlanLimitError', 'validateSubscriptionAccess'];
+    const missing = requiredExports.filter(name => !new RegExp(`\\b${name}\\b`).test(exportList));
+    
+    if (missing.length > 0) {
+      // Find the closing brace position
+      const insertPos = exportMatch.index! + exportMatch[0].lastIndexOf('}');
+      const beforeClose = content.substring(0, insertPos);
+      const afterClose = content.substring(insertPos);
+      
+      // Add missing exports before closing brace
+      const additions = missing.map(name => `  ${name}`).join(',\n');
+      return beforeClose + ',\n' + additions + '\n' + afterClose;
     }
+    
     return content;
   };
   
