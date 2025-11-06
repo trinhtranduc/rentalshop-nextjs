@@ -131,6 +131,62 @@ const removeReactImports = (outDir: string) => {
     content = content.replace(/export\s+\*\s+from\s+['"]react['"];?\n?/g, '');
     content = content.replace(/export\s+\*\s+from\s+['"]react\/[^'"]*['"];?\n?/g, '');
     
+    // Remove incomplete import statements (e.g., "import {\nimport { ... }" -> "import { ... }")
+    // This handles cases where icon names were removed, leaving behind "import {"
+    content = content.replace(/^import\s+\{\s*\n\s*import\s+/gm, 'import ');
+    
+    // Remove incomplete import blocks: "import {\n  IconName\nvar ..." -> "var ..."
+    // These are leftover from lucide-react imports where we removed the "} from 'lucide-react'" part
+    // Match: import { followed by icon names (PascalCase) and then code
+    const lines = content.split('\n');
+    const cleanedLines: string[] = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      // Check if this is an incomplete "import {" line
+      if (/^import\s+\{\s*$/.test(line)) {
+        // Look ahead to see what follows
+        let foundIcon = false;
+        let j = i + 1;
+        // Skip empty lines and look for icon names or code
+        while (j < lines.length && j < i + 10) {
+          const nextLine = lines[j].trim();
+          if (!nextLine) {
+            j++;
+            continue;
+          }
+          // If we find code (var, let, const, function, class, export), this is incomplete
+          if (/^(var|let|const|function|class|export|\/\/)/.test(nextLine)) {
+            // Remove the incomplete import and icon names, keep the code
+            i = j; // Skip to the code line
+            foundIcon = true;
+            break;
+          }
+          // If we find another import, remove this incomplete one
+          if (/^import\s+/.test(nextLine)) {
+            i = j; // Skip to the next import
+            foundIcon = true;
+            break;
+          }
+          // If it's an icon name (PascalCase), continue
+          if (/^[A-Z][a-zA-Z0-9]+/.test(nextLine)) {
+            j++;
+            continue;
+          }
+          // Otherwise, might be valid, keep it
+          break;
+        }
+        if (!foundIcon) {
+          cleanedLines.push(line);
+          i++;
+        }
+      } else {
+        cleanedLines.push(line);
+        i++;
+      }
+    }
+    content = cleanedLines.join('\n');
+    
     return content;
   };
 
