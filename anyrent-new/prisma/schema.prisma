@@ -1,0 +1,48 @@
+// ✅ THIS IS THE ONLY GENERATOR IN THE ENTIRE PROJECT
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")  // Will be dynamically set per tenant
+}
+
+// Tenant DB Schema - Each tenant gets this schema in their isolated database
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  firstName String
+  lastName  String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  orders    Order[]
+  
+  @@index([email])
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([name])
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  orderNumber String   @unique
+  status      String   @default("pending")
+  totalAmount Float
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+}

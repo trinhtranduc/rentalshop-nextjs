@@ -1,0 +1,27 @@
+// ❌ NO GENERATOR BLOCK! This is documentation only
+// Main DB uses Raw SQL via pg Client, NO Prisma client generation
+
+datasource db {
+  provider = "postgresql"
+  url      = env("MAIN_DATABASE_URL")
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  subdomain   String   @unique
+  name        String
+  merchantId  Int      @unique
+  databaseUrl String
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Merchant {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

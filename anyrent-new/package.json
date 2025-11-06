@@ -1,0 +1,39 @@
+{
+  "name": "anyrent-new",
+  "version": "1.0.0",
+  "description": "Multi-tenant demo POC for anyrent.shop",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:all": "turbo run dev",
+    "dev:api": "turbo run dev --filter=@demo/api",
+    "dev:admin": "turbo run dev --filter=@demo/admin",
+    "dev:client": "turbo run dev --filter=@demo/client",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "db:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "db:push": "prisma db push --schema=./prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
+    "db:setup-main": "node scripts/setup-main-db.js",
+    "setup": "yarn db:setup-main && yarn db:generate",
+    "verify": "node scripts/verify-setup.js",
+    "test:client": "bash scripts/test-client.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "turbo": "^1.10.0",
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "yarn@1.22.0",
+  "dependencies": {
+    "@prisma/client": "^6.16.3",
+    "prisma": "6.16.2",
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  }
+}

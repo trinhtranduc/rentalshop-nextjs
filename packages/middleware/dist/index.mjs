@@ -1079,7 +1079,6 @@ async function manualExpiryCheck() {
 
 // src/subscription-middleware.ts
 import { NextResponse as NextResponse4 } from "next/server";
-import { validateSubscriptionAccess as validateSubscriptionAccess2 } from "@rentalshop/utils/api";
 var subscriptionRequiredRoutes = [
   "/api/orders",
   "/api/products",
@@ -1114,7 +1113,7 @@ async function validateSubscriptionForRoute(user, pathname) {
     merchantId: user.merchantId
   });
   try {
-    const subscriptionResult = await validateSubscriptionAccess2(user, {
+    const subscriptionResult = await validateSubscriptionAccess(user, {
       requireActiveSubscription: true,
       allowedStatuses: ["active"],
       checkMerchantStatus: true,
