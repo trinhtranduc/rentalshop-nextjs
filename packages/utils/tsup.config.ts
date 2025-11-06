@@ -222,8 +222,8 @@ const removeReactImports = (outDir: string) => {
   
   // Ensure critical subscription functions are in export list
   const ensureSubscriptionExports = (content: string): string => {
-    // Check if getSubscriptionError and getPlanLimitError are in the export statement
-    const exportMatch = content.match(/export\s*\{([^}]+)\}/s);
+    // Find the export statement - it spans multiple lines
+    const exportMatch = content.match(/export\s*\{([\s\S]*?)\};/);
     if (exportMatch) {
       const exportList = exportMatch[1];
       const hasGetSubscriptionError = /getSubscriptionError/.test(exportList);
@@ -232,23 +232,22 @@ const removeReactImports = (outDir: string) => {
       
       // If any are missing, add them to the export list
       if (!hasGetSubscriptionError || !hasGetPlanLimitError || !hasValidateSubscriptionAccess) {
-        // Find the closing brace of the export statement
-        const exportEnd = content.indexOf('};', exportMatch.index! + exportMatch[0].length);
-        if (exportEnd > 0) {
-          // Insert missing exports before the closing brace
-          const beforeClose = content.substring(0, exportEnd);
-          const afterClose = content.substring(exportEnd);
-          const additions: string[] = [];
-          if (!hasGetSubscriptionError) additions.push('getSubscriptionError');
-          if (!hasGetPlanLimitError) additions.push('getPlanLimitError');
-          if (!hasValidateSubscriptionAccess) additions.push('validateSubscriptionAccess');
-          
-          if (additions.length > 0) {
-            // Add comma if export list doesn't end with comma or newline
-            const needsComma = !beforeClose.trim().endsWith(',') && !beforeClose.trim().endsWith('\n');
-            const insertText = (needsComma ? ',' : '') + '\n  ' + additions.join(',\n  ') + ',';
-            return beforeClose + insertText + afterClose;
-          }
+        // Find the last item before the closing brace
+        const lastItemMatch = exportList.match(/(\w+),?\s*$/m);
+        const insertPosition = exportMatch.index! + exportMatch[0].indexOf('}');
+        
+        const beforeClose = content.substring(0, insertPosition);
+        const afterClose = content.substring(insertPosition);
+        
+        const additions: string[] = [];
+        if (!hasGetSubscriptionError) additions.push('getSubscriptionError');
+        if (!hasGetPlanLimitError) additions.push('getPlanLimitError');
+        if (!hasValidateSubscriptionAccess) additions.push('validateSubscriptionAccess');
+        
+        if (additions.length > 0) {
+          // Insert before closing brace with proper formatting
+          const insertText = ',\n  ' + additions.join(',\n  ') + '\n';
+          return beforeClose + insertText + afterClose;
         }
       }
     }
