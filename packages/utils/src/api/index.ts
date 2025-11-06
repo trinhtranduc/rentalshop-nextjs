@@ -9,12 +9,60 @@
 export { getTenantDbFromRequest, withTenantDb } from '../core/tenant-utils';
 
 // Subscription manager (server-only - imports PostgreSQL)
-export * from '../core/subscription-manager';
-export type {
+// Import and re-export to ensure it's included in build
+import {
+  SubscriptionManager,
+  validateSubscriptionAccess,
+  checkSubscriptionStatus,
+  shouldThrowPlanLimitError,
+  getPlanLimitError,
+  getSubscriptionError,
+  canPerformOperation,
+  getPlanLimitErrorMessage,
+  getAllowedOperations,
+  calculateSubscriptionPeriod,
+  formatSubscriptionPeriod,
+  getSubscriptionStatusBadge,
+  calculateNewBillingDate,
+  isSubscriptionExpired,
+  isGracePeriodExceeded,
+  validateForRenewal,
+  getSubscriptionStatusPriority
+} from '../core/subscription-manager';
+
+import type {
+  SubscriptionPeriod,
   SubscriptionRenewalConfig,
   SubscriptionRenewalResult,
   RenewalStats
 } from '../core/subscription-manager';
+
+export {
+  SubscriptionManager,
+  validateSubscriptionAccess,
+  checkSubscriptionStatus,
+  shouldThrowPlanLimitError,
+  getPlanLimitError,
+  getSubscriptionError,
+  canPerformOperation,
+  getPlanLimitErrorMessage,
+  getAllowedOperations,
+  calculateSubscriptionPeriod,
+  formatSubscriptionPeriod,
+  getSubscriptionStatusBadge,
+  calculateNewBillingDate,
+  isSubscriptionExpired,
+  isGracePeriodExceeded,
+  validateForRenewal,
+  getSubscriptionStatusPriority
+};
+
+export type {
+  SubscriptionPeriod,
+  SubscriptionRenewalConfig,
+  SubscriptionRenewalResult,
+  RenewalStats
+};
 
 // Validation (server-only - imports PostgreSQL)
 export * from '../core/validation';

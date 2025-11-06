@@ -12,8 +12,7 @@
  * - subscription-check.ts
  */
 
-import { PlanLimitError } from '../core';
-import { ErrorCode } from './errors';
+import { PlanLimitError, ErrorCode } from './errors';
 import { db, prisma } from '@rentalshop/database';
 import { API } from '@rentalshop/constants';
 import type { AuthUser, Subscription, SubscriptionStatus } from '@rentalshop/types';
