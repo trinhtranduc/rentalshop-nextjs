@@ -17,7 +17,7 @@
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "build#@rentalshop/admin": {
-      "dependsOn": [],
+      "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "lint": {
