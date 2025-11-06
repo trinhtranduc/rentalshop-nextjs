@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
+import { cn } from '../../lib/cn';
+import { Button } from '../ui/button';
 import { 
   ChevronLeft, 
   ChevronRight, 
