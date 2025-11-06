@@ -121,6 +121,14 @@ const removeReactImports = (outDir: string) => {
       content = content.replace(new RegExp(`icon:\\s*${iconName}\\d*\\s*\\n`, 'g'), 'icon: null\n');
       // Replace icon: IconName} with icon: null}
       content = content.replace(new RegExp(`icon:\\s*${iconName}\\d*\\s*\\}`, 'g'), 'icon: null}');
+      
+      // Replace icon variable assignments (e.g., Icon = CheckCircle -> Icon = null)
+      // This handles cases like "Icon = isActive ? CheckCircle : XCircle"
+      content = content.replace(new RegExp(`(Icon|icon)\\s*=\\s*${iconName}\\d*`, 'g'), '$1 = null');
+      // Replace in ternary expressions (e.g., Icon = condition ? CheckCircle : XCircle)
+      content = content.replace(new RegExp(`\\?\\s*${iconName}\\d*\\s*:`, 'g'), '? null :');
+      content = content.replace(new RegExp(`:\\s*${iconName}\\d*\\s*;`, 'g'), ': null;');
+      content = content.replace(new RegExp(`:\\s*${iconName}\\d*\\s*\\)`, 'g'), ': null)');
     });
     
     // Dynamic imports: import('react')
