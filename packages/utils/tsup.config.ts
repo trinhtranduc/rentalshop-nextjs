@@ -58,18 +58,18 @@ const removeReactImports = (outDir: string) => {
   
   // Comprehensive ESM import removal patterns
   const removeESMImports = (content: string): string => {
-    // Default imports: import React from 'react'
-    content = content.replace(/import\s+React\s+from\s+['"]react['"];?\n?/g, '');
-    
-    // Named imports: import { useState, useEffect } from 'react'
-    content = content.replace(/import\s+\{[^}]*\}\s+from\s+['"]react['"];?\n?/g, '');
-    
-    // Mixed imports: import React, { useState } from 'react'
-    content = content.replace(/import\s+React\s*,\s*\{[^}]*\}\s+from\s+['"]react['"];?\n?/g, '');
-    content = content.replace(/import\s+\{[^}]*\}\s*,\s*React\s+from\s+['"]react['"];?\n?/g, '');
-    
-    // Any import with React in it: import * as React from 'react'
-    content = content.replace(/import\s+.*\bReact\b.*from\s+['"]react['"];?\n?/g, '');
+        // Default imports: import React from 'react' or import React2 from 'react'
+        content = content.replace(/import\s+React\d*\s+from\s+['"]react['"];?\n?/g, '');
+        
+        // Named imports: import { useState, useEffect } from 'react'
+        content = content.replace(/import\s+\{[^}]*\}\s+from\s+['"]react['"];?\n?/g, '');
+        
+        // Mixed imports: import React, { useState } from 'react'
+        content = content.replace(/import\s+React\d*\s*,\s*\{[^}]*\}\s+from\s+['"]react['"];?\n?/g, '');
+        content = content.replace(/import\s+\{[^}]*\}\s*,\s*React\d*\s+from\s+['"]react['"];?\n?/g, '');
+        
+        // Any import with React in it: import * as React from 'react'
+        content = content.replace(/import\s+.*\bReact\d*\b.*from\s+['"]react['"];?\n?/g, '');
     
     // Side-effect imports: import 'react' or import 'react/jsx-runtime'
     content = content.replace(/import\s+['"]react['"];?\n?/g, '');
@@ -83,8 +83,10 @@ const removeReactImports = (outDir: string) => {
     // Any import from react/* paths
     content = content.replace(/import\s+.*from\s+['"]react\/[^'"]*['"];?\n?/g, '');
     
-    // Any import from lucide-react
+    // Any import from lucide-react (including partial lines like "} from 'lucide-react'")
     content = content.replace(/import\s+.*from\s+['"]lucide-react['"];?\n?/g, '');
+    content = content.replace(/}\s+from\s+['"]lucide-react['"];?\n?/g, '');
+    content = content.replace(/,\s*\}\s+from\s+['"]lucide-react['"];?\n?/g, '');
     
     // Dynamic imports: import('react')
     content = content.replace(/import\(['"]react['"]\)/g, 'Promise.resolve({})');
@@ -99,21 +101,21 @@ const removeReactImports = (outDir: string) => {
 
   // Comprehensive CJS require removal patterns
   const removeCJSRequires = (content: string): string => {
-    // const React = require('react')
-    content = content.replace(/const\s+React\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
+    // const React = require('react') or const React2 = require('react')
+    content = content.replace(/const\s+React\d*\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
     
     // const { useState } = require('react')
     content = content.replace(/const\s+\{[^}]*\}\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
     
     // const React = require('react'), { useState } = require('react')
-    content = content.replace(/const\s+.*\bReact\b.*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
+    content = content.replace(/const\s+.*\bReact\d*\b.*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
     
-    // var React = require('react')
-    content = content.replace(/var\s+React\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
+    // var React = require('react') or var React2 = require('react')
+    content = content.replace(/var\s+React\d*\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
     content = content.replace(/var\s+\{[^}]*\}\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
     
-    // let React = require('react')
-    content = content.replace(/let\s+React\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
+    // let React = require('react') or let React2 = require('react')
+    content = content.replace(/let\s+React\d*\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
     content = content.replace(/let\s+\{[^}]*\}\s*=\s*require\(['"]react['"]\)[^;]*;?\n?/g, '');
     
     // Standalone require('react')
@@ -254,7 +256,8 @@ export default defineConfig([
     ],
     sourcemap: true,
     minify: false,
-    treeshake: true, // Keep tree-shaking but exports are included via direct export from source
+    treeshake: false, // Disable tree-shaking to ensure all exports are included (fixes Railway build)
+    // Note: React imports are still excluded via esbuild plugin and post-processing
     // Use esbuild plugin to exclude React at build time (official solution)
     // This intercepts React imports and replaces them with empty modules
     esbuildOptions(options) {
