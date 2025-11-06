@@ -254,7 +254,7 @@ export default defineConfig([
     ],
     sourcemap: true,
     minify: false,
-    treeshake: true,
+    treeshake: true, // Keep tree-shaking but exports are included via direct export from source
     // Use esbuild plugin to exclude React at build time (official solution)
     // This intercepts React imports and replaces them with empty modules
     esbuildOptions(options) {

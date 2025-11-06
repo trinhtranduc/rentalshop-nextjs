@@ -84,6 +84,19 @@ export {
 // Exported from '@rentalshop/utils/api' instead of root exports
 // export * from './subscription-manager'; // MOVED TO api/index.ts
 
+// Client-safe subscription utilities (pure functions - no database dependencies)
+// These can be used in client-side code
+export {
+  formatSubscriptionPeriod,
+  getSubscriptionStatusBadge,
+  calculateSubscriptionPeriod,
+  calculateNewBillingDate,
+  isSubscriptionExpired,
+  isGracePeriodExceeded,
+  getSubscriptionStatusPriority,
+  type SubscriptionPeriod
+} from './subscription-manager';
+
 // Subscription renewal functionality (now consolidated in subscription-manager.ts)
 // Note: Moved to server-only exports (api/index.ts)
 // export type {
