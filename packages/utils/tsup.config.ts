@@ -114,36 +114,32 @@ const postProcessApiBundle = (outDir: string) => {
       const allClientOnly = [...clientOnlyFunctions, ...uiUtilityExports];
       
       // Remove each client-only function from export list
-      allClientOnly.forEach(exportName => {
-        // Remove: "exportName," or ",exportName" or standalone "exportName"
-        // Match with word boundaries to avoid partial matches
-        const patterns = [
-          new RegExp(`^\\s*${exportName}\\s*,?\\s*$`, 'gm'), // Standalone on line
-          new RegExp(`,\\s*${exportName}\\s*,`, 'g'), // Between commas
-          new RegExp(`,\\s*${exportName}\\s*$`, 'gm'), // At end of line
-          new RegExp(`^\\s*${exportName}\\s*,`, 'gm'), // At start of line
-        ];
-        
-        patterns.forEach(pattern => {
-          exportList = exportList.replace(pattern, (match) => {
-            // If match contains comma, return comma only if it's between items
-            if (match.includes(',')) {
-              // If it's ",exportName," return ","
-              if (match.startsWith(',') && match.endsWith(',')) {
-                return ',';
-              }
-              // If it's ",exportName" or "exportName,", return empty
-              return '';
-            }
-            return '';
-          });
-        });
-      });
+      // Process line by line to preserve comma structure
+      const lines = exportList.split('\n');
+      const filteredLines: string[] = [];
       
-      // Clean up: remove double commas, trailing/leading commas on lines
-      exportList = exportList.replace(/,\s*,/g, ','); // Double commas
-      exportList = exportList.replace(/,\s*$/gm, ''); // Trailing comma on line
-      exportList = exportList.replace(/^\s*,/gm, ''); // Leading comma on line
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        
+        // Check if this line contains a client-only function
+        const isClientOnly = allClientOnly.some(name => {
+          // Match: "  exportName," or "  exportName" (with or without comma)
+          return new RegExp(`^\\s*${name}\\s*,?\\s*$`).test(trimmed);
+        });
+        
+        if (!isClientOnly) {
+          filteredLines.push(line);
+        }
+        // If it's client-only, skip the line entirely
+      }
+      
+      exportList = filteredLines.join('\n');
+      
+      // Clean up: remove double commas, empty lines
+      exportList = exportList.replace(/,\s*,/g, ','); // Double commas -> single comma
+      exportList = exportList.replace(/\n\s*\n+/g, '\n'); // Multiple empty lines -> single
+      exportList = exportList.trim(); // Remove leading/trailing whitespace
       
       // Update content if export list changed
       if (exportList !== exportMatch[1]) {
