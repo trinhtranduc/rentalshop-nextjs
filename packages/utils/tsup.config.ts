@@ -86,6 +86,19 @@ const postProcessApiBundle = (outDir: string) => {
       content = content.replace(pattern, '');
     });
     
+    // Remove client-only functions (should not be in API bundle)
+    // These are exported from main package (@rentalshop/utils), not from API package
+    const clientOnlyFunctions = [
+      'formatSubscriptionPeriod',
+      'getSubscriptionStatusBadge'
+    ];
+    
+    // Remove entire variable definition lines for client-only functions
+    clientOnlyFunctions.forEach(funcName => {
+      // Match: var funcName = ...; (entire line)
+      content = content.replace(new RegExp(`^var\\s+${funcName}\\s*=.*?;\\s*$`, 'gm'), '');
+    });
+    
     // Remove functions from UI utilities from export list
     const uiUtilityExports = [
       'getStatusBadgeConfig', 'getStatusBadge', 'getRoleBadgeConfig', 'getRoleBadge',
@@ -93,10 +106,50 @@ const postProcessApiBundle = (outDir: string) => {
       'getPriceTrendBadgeConfig', 'getPriceTrendBadge', 'getCustomerStatusBadge', 'getCustomerLocationBadge',
       'getProductStatusBadge', 'getUserStatusBadge'
     ];
-    uiUtilityExports.forEach(exportName => {
-      // Remove from export list: "exportName," or ",exportName" or "exportName\n"
-      content = content.replace(new RegExp(`\\s*${exportName}\\s*,?\\n?`, 'g'), '');
-    });
+    
+    // Remove client-only functions from export list (only within export statement)
+    const exportMatch = content.match(/export\s*\{([\s\S]*?)\};/);
+    if (exportMatch) {
+      let exportList = exportMatch[1];
+      const allClientOnly = [...clientOnlyFunctions, ...uiUtilityExports];
+      
+      // Remove each client-only function from export list
+      allClientOnly.forEach(exportName => {
+        // Remove: "exportName," or ",exportName" or standalone "exportName"
+        // Match with word boundaries to avoid partial matches
+        const patterns = [
+          new RegExp(`^\\s*${exportName}\\s*,?\\s*$`, 'gm'), // Standalone on line
+          new RegExp(`,\\s*${exportName}\\s*,`, 'g'), // Between commas
+          new RegExp(`,\\s*${exportName}\\s*$`, 'gm'), // At end of line
+          new RegExp(`^\\s*${exportName}\\s*,`, 'gm'), // At start of line
+        ];
+        
+        patterns.forEach(pattern => {
+          exportList = exportList.replace(pattern, (match) => {
+            // If match contains comma, return comma only if it's between items
+            if (match.includes(',')) {
+              // If it's ",exportName," return ","
+              if (match.startsWith(',') && match.endsWith(',')) {
+                return ',';
+              }
+              // If it's ",exportName" or "exportName,", return empty
+              return '';
+            }
+            return '';
+          });
+        });
+      });
+      
+      // Clean up: remove double commas, trailing/leading commas on lines
+      exportList = exportList.replace(/,\s*,/g, ','); // Double commas
+      exportList = exportList.replace(/,\s*$/gm, ''); // Trailing comma on line
+      exportList = exportList.replace(/^\s*,/gm, ''); // Leading comma on line
+      
+      // Update content if export list changed
+      if (exportList !== exportMatch[1]) {
+        content = content.replace(exportMatch[0], `export {${exportList}};`);
+      }
+    }
     
     // Remove incomplete import blocks (leftover from lucide-react cleanup)
     content = content.replace(/^import\s+\{\s*$/gm, (match, offset, string) => {
