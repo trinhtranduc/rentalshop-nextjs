@@ -1,5 +1,8 @@
 'use client';
 
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 

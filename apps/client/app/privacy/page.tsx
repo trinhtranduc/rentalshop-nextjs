@@ -1,5 +1,8 @@
 'use client'
 
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
+
 import React from 'react'
 import { useLocale } from 'next-intl'
 import { LanguageSwitcher } from '@rentalshop/ui'

@@ -1,5 +1,8 @@
 'use client';
 
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
+
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ForgetPasswordForm, LanguageSwitcher } from '@rentalshop/ui';

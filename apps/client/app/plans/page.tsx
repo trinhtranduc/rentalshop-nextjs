@@ -1,5 +1,8 @@
 'use client'
 
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import { plansApi, subscriptionsApi } from '@rentalshop/utils';
 import { useToast } from '@rentalshop/ui';

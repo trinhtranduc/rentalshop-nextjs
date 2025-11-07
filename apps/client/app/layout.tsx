@@ -6,6 +6,9 @@ import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
 import Script from 'next/script'
 
+// Disable static generation for root layout
+export const dynamic = 'force-dynamic';
+
 // Static imports - All locale files (build-time optimization)
 import enCommon from '../../../locales/en/common.json';
 import enAuth from '../../../locales/en/auth.json';

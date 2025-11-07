@@ -1,5 +1,8 @@
 'use client';
 
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
+
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RegisterForm, LanguageSwitcher } from '@rentalshop/ui';
 
