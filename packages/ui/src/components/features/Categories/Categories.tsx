@@ -3,10 +3,10 @@
 import React from 'react';
 import { 
   Pagination,
-  EmptyState,
   Card,
   CardContent
 } from '@rentalshop/ui/base';
+import EmptyState from '../Admin/components/EmptyState';
 import { CategoryTable, CategorySearch } from './components';
 import { FolderOpen } from 'lucide-react';
 import type { Category, CategoryFilters } from '@rentalshop/types';

@@ -3,10 +3,10 @@
 import React from 'react';
 import { 
   Pagination,
-  EmptyState,
   Card,
   CardContent
 } from '@rentalshop/ui/base';
+import EmptyState from '../Admin/components/EmptyState';
 import { OutletTable, OutletSearch } from './components';
 import { Building2 } from 'lucide-react';
 import type { Outlet, OutletFilters } from '@rentalshop/types';

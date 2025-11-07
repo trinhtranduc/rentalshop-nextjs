@@ -13,8 +13,8 @@ import {
   CardHeader,
   CardTitle,
   Badge,
-  EmptyState
 } from '@rentalshop/ui/base';
+import EmptyState from '../../Admin/components/EmptyState';
 import { 
   ShoppingCart, 
   Calendar, 
