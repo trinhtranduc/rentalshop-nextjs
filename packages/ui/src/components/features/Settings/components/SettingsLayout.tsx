@@ -4,13 +4,10 @@ import React, { useState } from 'react';
 import { 
   Card, 
   CardContent,
-  PageWrapper,
-  PageHeader,
-  PageTitle,
-  PageContent,
   Button
 } from '@rentalshop/ui/base';
 import { ChevronRight } from 'lucide-react';
+import { PageWrapper, PageHeader, PageTitle, PageContent } from '../../../layout/PageWrapper';
 import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
