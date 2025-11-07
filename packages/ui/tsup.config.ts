@@ -5,7 +5,8 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   dts: false, // Temporarily disable DTS to avoid circular import issues
   external: [
-    '@rentalshop/ui',
+    // Don't externalize @rentalshop/ui - it causes circular dependency issues
+    // '@rentalshop/ui', // REMOVED - causes undefined component issues in Docker
     '@rentalshop/auth', 
     '@rentalshop/database',
     '@rentalshop/utils',
