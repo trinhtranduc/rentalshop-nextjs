@@ -5,8 +5,10 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   dts: false, // Temporarily disable DTS to avoid circular import issues
   external: [
-    // Don't externalize @rentalshop/ui - it causes circular dependency issues
-    // '@rentalshop/ui', // REMOVED - causes undefined component issues in Docker
+    // Externalize @rentalshop/ui to prevent circular dependency during build
+    // Components inside @rentalshop/ui can import from @rentalshop/ui,
+    // but tsup will treat it as external and resolve it at runtime
+    '@rentalshop/ui',
     '@rentalshop/auth', 
     '@rentalshop/database',
     '@rentalshop/utils',
