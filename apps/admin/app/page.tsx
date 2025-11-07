@@ -1,11 +1,13 @@
 'use client';
 
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@rentalshop/hooks';
 
 // Disable prerendering to avoid module resolution issues
-export const dynamic = 'force-dynamic';
 
 export default function AdminHomePage() {
   const router = useRouter();

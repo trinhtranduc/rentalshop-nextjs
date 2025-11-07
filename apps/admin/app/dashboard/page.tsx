@@ -3,6 +3,8 @@
 // Disable prerendering to avoid module resolution issues
 export const dynamic = 'force-dynamic';
 
+// Disable prerendering to avoid module resolution issues
+
 import React, { useState, useEffect } from 'react';
 import { CardClean, 
   CardHeaderClean, 

@@ -1,6 +1,8 @@
 'use client';
+
 // Disable prerendering to avoid module resolution issues
 export const dynamic = 'force-dynamic';
+// Disable prerendering to avoid module resolution issues
 
 import React, { useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';

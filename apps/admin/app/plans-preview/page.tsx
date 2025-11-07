@@ -4,6 +4,11 @@
 
 'use client';
 
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
+
+// Disable prerendering to avoid module resolution issues
+
 import React from 'react';
 import { SubscriptionPreviewPage, PageWrapper, Breadcrumb } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';

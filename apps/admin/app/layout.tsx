@@ -7,6 +7,9 @@ import AdminLayout from './components/AdminLayout'
 import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
 
+// Disable static generation for root layout
+export const dynamic = 'force-dynamic';
+
 const inter = Inter({ 
   subsets: ['latin'],
   variable: '--font-inter',

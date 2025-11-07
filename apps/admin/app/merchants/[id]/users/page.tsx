@@ -1,5 +1,10 @@
 'use client';
 
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
+
+// Disable prerendering to avoid module resolution issues
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
