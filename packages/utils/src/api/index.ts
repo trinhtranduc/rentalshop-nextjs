@@ -90,10 +90,4 @@ export * from './calendar';
 export * from './upload';
 export * from './aws-s3';
 export * from './response-builder';
-import {
-  getTenantDbFromRequest as _getTenantDbFromRequest,
-  withTenantDb as _withTenantDb
-} from './tenant-utils';
-
-export const getTenantDbFromRequest = _getTenantDbFromRequest;
-export const withTenantDb = _withTenantDb;
+export { getTenantDbFromRequest, withTenantDb } from './tenant-utils';

@@ -168,7 +168,7 @@ const postProcessApiBundle = (outDir: string) => {
     if (!exportMatch) return content;
     
     const exportList = exportMatch[1];
-    const requiredExports = ['getSubscriptionError', 'getPlanLimitError', 'validateSubscriptionAccess'];
+    const requiredExports = ['getSubscriptionError', 'getPlanLimitError', 'validateSubscriptionAccess', 'getTenantDbFromRequest', 'withTenantDb'];
     const missing = requiredExports.filter(name => !new RegExp(`\\b${name}\\b`).test(exportList));
     
     if (missing.length > 0) {
