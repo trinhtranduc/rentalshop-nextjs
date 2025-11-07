@@ -3,6 +3,8 @@
 // ============================================================================
 
 'use client';
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
 import { SubscriptionList, PageWrapper, Breadcrumb } from '@rentalshop/ui';

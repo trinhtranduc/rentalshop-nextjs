@@ -12,6 +12,8 @@ const nextConfig = {
   // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines'],
+    // Optimize package imports to help with module resolution
+    optimizePackageImports: ['@rentalshop/ui'],
   },
   
   transpilePackages: [

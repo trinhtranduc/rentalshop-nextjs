@@ -44,7 +44,10 @@
     "db:push:railway": "railway run --service apis yarn db:push:tenant --accept-data-loss",
     "env:verify": "node scripts/verify-env.js",
     "verify:multi-tenant": "node scripts/verify-multi-tenant.js",
-    "verify:railway": "railway run --service apis node scripts/verify-multi-tenant.js"
+    "verify:railway": "railway run --service apis node scripts/verify-multi-tenant.js",
+    "test:build": "node scripts/test-build-local.js",
+    "test:build:quick": "node scripts/test-build-local.js --skip-clean",
+    "test:build:full": "node scripts/test-build-local.js --test-start"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

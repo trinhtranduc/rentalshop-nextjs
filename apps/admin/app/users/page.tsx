@@ -1,4 +1,6 @@
 'use client';
+// Disable prerendering to avoid module resolution issues
+export const dynamic = 'force-dynamic';
 
 import React, { useCallback, useMemo } from 'react';
 import { Users, PageWrapper } from '@rentalshop/ui';

@@ -5,6 +5,13 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./src/index.tsx",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./src/index.tsx"
+    }
+  },
   "sideEffects": false,
   "license": "MIT",
   "files": [
