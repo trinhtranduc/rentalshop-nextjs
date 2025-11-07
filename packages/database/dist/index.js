@@ -559,6 +559,7 @@ __export(index_exports, {
   getDefaultOutlet: () => getDefaultOutlet,
   getDefaultPlan: () => getDefaultPlan,
   getExpiredSubscriptions: () => getExpiredSubscriptions,
+  getMainDb: () => getMainDb,
   getMainDbClient: () => getMainDbClient,
   getOutletOrderStats: () => getOutletOrderStats,
   getPlanById: () => getPlanById,
@@ -5020,6 +5021,22 @@ async function deleteExpiredTokens() {
 
 // src/index.ts
 init_tenant_db();
+
+// src/tenant-db-manager.ts
+var import_client18 = require("@prisma/client");
+var import_pg3 = require("pg");
+async function getMainDb() {
+  const url = new URL(process.env.MAIN_DATABASE_URL);
+  return new import_pg3.Client({
+    host: url.hostname,
+    port: parseInt(url.port || "5432"),
+    user: url.username,
+    password: url.password,
+    database: url.pathname.slice(1)
+  });
+}
+
+// src/index.ts
 init_main_db();
 init_subdomain_utils();
 var db = {
@@ -5154,6 +5171,7 @@ var generateOrderNumber2 = async (outletId) => {
   getDefaultOutlet,
   getDefaultPlan,
   getExpiredSubscriptions,
+  getMainDb,
   getMainDbClient,
   getOutletOrderStats,
   getPlanById,

@@ -245,6 +245,9 @@ export {
   getCachedTenants
 } from './tenant-db';
 
+// Export getMainDb from tenant-db-manager
+export { getMainDb } from './tenant-db-manager';
+
 // Main DB functions
 export {
   getMainDbClient,

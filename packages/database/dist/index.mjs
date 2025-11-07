@@ -4459,6 +4459,20 @@ async function deleteExpiredTokens() {
   return result.count;
 }
 
+// src/tenant-db-manager.ts
+import { PrismaClient as PrismaClient2 } from "@prisma/client";
+import { Client } from "pg";
+async function getMainDb() {
+  const url = new URL(process.env.MAIN_DATABASE_URL);
+  return new Client({
+    host: url.hostname,
+    port: parseInt(url.port || "5432"),
+    user: url.username,
+    password: url.password,
+    database: url.pathname.slice(1)
+  });
+}
+
 // src/index.ts
 var db = {
   // ============================================================================
@@ -4591,6 +4605,7 @@ export {
   getDefaultOutlet,
   getDefaultPlan,
   getExpiredSubscriptions,
+  getMainDb,
   getMainDbClient,
   getOutletOrderStats,
   getPlanById,

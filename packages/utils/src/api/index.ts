@@ -6,7 +6,10 @@
 
 // Server-side only utilities (cannot be used in client-side code)
 // These utilities import PostgreSQL and other Node.js-only modules
-export { getTenantDbFromRequest, withTenantDb } from '../core/tenant-utils';
+// Explicit exports to ensure they're included in build
+import { getTenantDbFromRequest as _getTenantDbFromRequest, withTenantDb as _withTenantDb } from '../core/tenant-utils';
+export const getTenantDbFromRequest = _getTenantDbFromRequest;
+export const withTenantDb = _withTenantDb;
 
 // Subscription manager (server-only - imports PostgreSQL)
 // Import all functions explicitly
@@ -58,7 +61,14 @@ export type {
 
 // Validation (server-only - imports PostgreSQL)
 export * from '../core/validation';
-export { assertPlanLimit } from '../core/validation';
+export { 
+  assertPlanLimit,
+  usersQuerySchema,
+  userCreateSchema,
+  userUpdateSchema,
+  subscriptionCreateSchema,
+  subscriptionUpdateSchema
+} from '../core/validation';
 
 // Server-safe utilities (no React imports)
 // Re-export from server-safe core module
