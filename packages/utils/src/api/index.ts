@@ -4,13 +4,6 @@
 
 // Core API utilities are exported from the main utils package
 
-// Server-side only utilities (cannot be used in client-side code)
-// These utilities import PostgreSQL and other Node.js-only modules
-// Explicit exports to ensure they're included in build
-import { getTenantDbFromRequest as _getTenantDbFromRequest, withTenantDb as _withTenantDb } from '../core/tenant-utils';
-export const getTenantDbFromRequest = _getTenantDbFromRequest;
-export const withTenantDb = _withTenantDb;
-
 // Subscription manager (server-only - imports PostgreSQL)
 // Import all functions explicitly
 import {
@@ -97,3 +90,10 @@ export * from './calendar';
 export * from './upload';
 export * from './aws-s3';
 export * from './response-builder';
+import {
+  getTenantDbFromRequest as _getTenantDbFromRequest,
+  withTenantDb as _withTenantDb
+} from './tenant-utils';
+
+export const getTenantDbFromRequest = _getTenantDbFromRequest;
+export const withTenantDb = _withTenantDb;

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { Input, Button } from '@rentalshop/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
-import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
+import { Input, Button } from '@rentalshop/ui/base';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui/base';
+import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui/base';
 import { ProductFilters as ProductFiltersType } from '@rentalshop/types';
 import { useOutletsData, useCategoriesData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Search } from 'lucide-react';

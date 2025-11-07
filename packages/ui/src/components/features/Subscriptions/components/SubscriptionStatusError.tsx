@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Button } from '../../../ui';
+import { Card, CardContent, CardHeader, CardTitle, Button } from '@rentalshop/ui/base';
 import { AlertTriangle, Clock, XCircle, RefreshCw, CreditCard } from 'lucide-react';
 import type { Subscription } from '@rentalshop/types';
 

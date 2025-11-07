@@ -7,7 +7,7 @@ import {
   Button,
   Card,
   CardContent
-} from '../ui';
+} from '@rentalshop/ui/base';
 import { 
   AlertTriangle,
   CheckCircle,

@@ -17,7 +17,7 @@ import { Card,
   formatDate,
   formatCurrency,
   SearchableSelect,
-  useToast  } from '@rentalshop/ui';
+  useToast  } from '@rentalshop/ui/base';
 import type { 
   OrderInput, 
   OrderItemInput, 

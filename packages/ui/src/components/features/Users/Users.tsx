@@ -9,7 +9,7 @@ import {
   Button,
   Card,
   CardContent
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { UserPageHeader, UserFilters as UserFiltersComponent, UserTable } from './components';
 import { 
   User as UserIcon, 

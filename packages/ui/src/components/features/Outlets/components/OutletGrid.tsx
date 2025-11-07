@@ -6,7 +6,7 @@ import {
   CardTitle,
   Button,
   StatusBadge
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   Building2, 
   MapPin, 

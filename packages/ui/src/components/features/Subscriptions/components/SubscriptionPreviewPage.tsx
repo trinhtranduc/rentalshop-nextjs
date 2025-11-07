@@ -11,7 +11,7 @@ import {
   Button,
   Badge,
   cn
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { publicPlansApi, formatCurrency } from '@rentalshop/utils';
 import type { Plan, CurrencyCode } from '@rentalshop/types';
 import { 

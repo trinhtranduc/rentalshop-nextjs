@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent } from '@rentalshop/ui';
+import { Card, CardContent } from '@rentalshop/ui/base';
 import { Shirt, Car, Wrench, Package } from 'lucide-react';
 import { BUSINESS_TYPE_LABELS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_DEFAULTS } from '@rentalshop/constants';
 import type { BusinessType } from '@rentalshop/types';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Package, Hash, Image as ImageIcon, Calendar } from 'lucide-react';
-import { formatCurrency } from '@rentalshop/ui';
+import { formatCurrency } from '@rentalshop/ui/base';
 import { OrderData } from '@rentalshop/types';
 
 interface OrderItemsProps {

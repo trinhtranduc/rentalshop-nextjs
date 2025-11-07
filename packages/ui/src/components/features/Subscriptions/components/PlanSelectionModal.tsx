@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
   Separator
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   Check, 
   CreditCard, 

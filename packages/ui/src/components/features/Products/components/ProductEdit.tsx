@@ -7,8 +7,8 @@ import {
   CardTitle,
   CardContent,
   Button
-} from '@rentalshop/ui';
-import { useToast } from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
+import { useToast } from '@rentalshop/ui/base';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';

@@ -8,7 +8,7 @@ import {
   CardContent,
   Badge,
   Button
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { formatDate, formatCurrency } from '@rentalshop/utils';
 import { 
   Clock,

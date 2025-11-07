@@ -10,7 +10,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   User,
   Calendar,

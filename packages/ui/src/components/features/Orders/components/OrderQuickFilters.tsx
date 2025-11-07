@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Badge } from '../../../ui';
+import { Button, Badge } from '@rentalshop/ui/base';
 import { Calendar, Clock, TrendingUp, AlertCircle } from 'lucide-react';
 
 export interface QuickFilterOption {

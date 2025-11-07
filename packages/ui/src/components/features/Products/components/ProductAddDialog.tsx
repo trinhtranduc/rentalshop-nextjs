@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
   Button
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { ProductAddForm } from './ProductAddForm';
 import type { Category, Outlet, ProductWithDetails } from '@rentalshop/types';
 

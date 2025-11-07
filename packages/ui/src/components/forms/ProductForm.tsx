@@ -22,7 +22,7 @@ import {
   TableRow, 
   TableCell, 
   NumericInput
-} from '../ui';
+} from '@rentalshop/ui/base';
 import { formatCurrency } from '../../lib';
 import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';

@@ -11,7 +11,7 @@ import {
   ExternalLink,
   X
 } from 'lucide-react';
-import { Button, Card, CardContent, Badge } from '@rentalshop/ui';
+import { Button, Card, CardContent, Badge } from '@rentalshop/ui/base';
 import { Subscription } from '@rentalshop/types';
 
 // ============================================================================

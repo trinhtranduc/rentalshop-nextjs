@@ -7,7 +7,7 @@ import {
   Badge,
   Button,
   StatusBadge
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   Calendar,
   Edit,

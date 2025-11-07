@@ -14,7 +14,7 @@ import {
   StatusBadge,
   Switch,
   Label
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   Calendar,
   Percent,

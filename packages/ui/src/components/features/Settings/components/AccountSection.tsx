@@ -6,7 +6,7 @@ import {
   CardContent,
   Button,
   Separator
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { LogOut, Trash2, Key } from 'lucide-react';
 import { useSettingsTranslations } from '@rentalshop/hooks';
 

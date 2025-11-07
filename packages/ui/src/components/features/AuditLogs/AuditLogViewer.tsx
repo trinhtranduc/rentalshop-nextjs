@@ -11,7 +11,7 @@ import { Card,
   SelectTrigger,
   SelectValue,
   Badge,
-  useToast,  } from '@rentalshop/ui';
+  useToast,  } from '@rentalshop/ui/base';
 import { AuditLogDetail } from './AuditLogDetail';
 import { 
   Search,

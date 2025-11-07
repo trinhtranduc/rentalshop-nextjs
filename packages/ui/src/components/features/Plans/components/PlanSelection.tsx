@@ -11,7 +11,7 @@ import {
   RadioGroup,
   RadioGroupItem,
   Label
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   CheckCircle,
   Star,

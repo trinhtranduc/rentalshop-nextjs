@@ -7,7 +7,7 @@ import {
   Label,
   Textarea,
   Switch
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 
 // Local type definitions
 interface BillingCycle {

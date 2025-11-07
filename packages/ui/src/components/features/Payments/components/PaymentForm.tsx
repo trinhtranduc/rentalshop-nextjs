@@ -17,7 +17,7 @@ import {
   CardTitle,
   Switch,
   SearchableSelect
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { merchantsApi } from '@rentalshop/utils';
 import { Calendar, DollarSign, CreditCard, User, Package } from 'lucide-react';
 

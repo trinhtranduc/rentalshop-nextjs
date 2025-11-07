@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
-import { Button, Input, Label, Textarea, Card, CardContent } from '@rentalshop/ui';
+import { Button, Input, Label, Textarea, Card, CardContent } from '@rentalshop/ui/base';
 import type { OutletCreateInput } from '@rentalshop/types';
 import { useOutletsTranslations, useCommonTranslations } from '@rentalshop/hooks';
 

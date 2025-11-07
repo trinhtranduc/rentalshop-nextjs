@@ -10,7 +10,7 @@ import {
   Label,
   Badge,
   SearchableCountrySelect
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { CheckCircle2, DollarSign } from 'lucide-react';
 import { merchantsApi, formatCurrency, getCurrency } from '@rentalshop/utils';
 import { 

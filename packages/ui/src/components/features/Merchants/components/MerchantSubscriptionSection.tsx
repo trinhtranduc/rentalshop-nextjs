@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { SubscriptionActivityTimeline } from '../../Subscriptions';
 import { formatDate, formatCurrency } from '@rentalshop/utils';
 import { 

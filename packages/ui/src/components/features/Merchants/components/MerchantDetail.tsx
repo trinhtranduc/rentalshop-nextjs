@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { MerchantHeader } from './MerchantHeader';
 import { MerchantPlanManagement } from './MerchantPlanManagement';
 import { MerchantSubscriptionSection } from './MerchantSubscriptionSection';
-import { Button, Card, CardContent, CardHeader, CardTitle } from '../../../ui';
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui/base';
 import { Building2, Users, Package, ShoppingCart } from 'lucide-react';
 import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
 

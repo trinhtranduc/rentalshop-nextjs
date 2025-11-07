@@ -5,7 +5,7 @@ import {
   Button,
   Input,
   Label
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { Eye, EyeOff } from 'lucide-react';
 import { useSettingsTranslations } from '@rentalshop/hooks';
 

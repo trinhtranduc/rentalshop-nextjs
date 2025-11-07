@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Button } from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui/base';
 
 interface CustomerPageHeaderProps {
   title: string;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@rentalshop/ui';
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@rentalshop/ui/base';
 import { Mail, Phone, Calendar, Building, User as UserIcon } from 'lucide-react';
 import type { User } from '@rentalshop/types';
 

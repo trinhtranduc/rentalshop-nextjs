@@ -6,7 +6,7 @@ import {
   CardContent,
   Button,
   Badge
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   CreditCard, 
   CheckCircle,

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Input, Button, SearchableSelect } from '@rentalshop/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
-import { Card, CardContent } from '@rentalshop/ui';
+import { Input, Button, SearchableSelect } from '@rentalshop/ui/base';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui/base';
+import { Card, CardContent } from '@rentalshop/ui/base';
 import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
 import { outletsApi } from '@rentalshop/utils';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';

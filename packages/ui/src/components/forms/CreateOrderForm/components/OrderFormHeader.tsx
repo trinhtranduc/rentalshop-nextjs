@@ -3,8 +3,8 @@
  */
 
 import React from 'react';
-import { Badge, Breadcrumb } from '@rentalshop/ui';
-import type { BreadcrumbItem } from '@rentalshop/ui';
+import { Badge, Breadcrumb } from '@rentalshop/ui/base';
+import type { BreadcrumbItem } from '@rentalshop/ui/base';
 import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface OrderFormHeaderProps {

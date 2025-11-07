@@ -7,7 +7,7 @@ import {
   DialogHeader, 
   DialogTitle,
   DialogDescription
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { PlanForm } from '../../../forms/PlanForm';
 import type { 
   PlanCreateInput, 

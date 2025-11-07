@@ -5,7 +5,7 @@ import {
   Card, 
   CardContent,
   Button
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { Shield } from 'lucide-react';
 
 // ============================================================================

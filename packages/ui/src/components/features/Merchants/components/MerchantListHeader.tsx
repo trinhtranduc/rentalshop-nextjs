@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent } from '../../../ui';
+import { Card, CardContent } from '@rentalshop/ui/base';
 import { Users, Building2, CreditCard, TrendingUp } from 'lucide-react';
 
 interface MerchantListStats {

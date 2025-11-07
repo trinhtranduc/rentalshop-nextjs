@@ -15,11 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
   DateRangePicker,
-  RentalPeriodSelector,
   Textarea,
   Skeleton,
   Button
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
+import { RentalPeriodSelector } from '../../../features/Orders/RentalPeriodSelector';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { 
   User, 

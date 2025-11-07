@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
+import { Button, Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui/base';
 import { SubscriptionEditDialog } from './SubscriptionEditDialog';
 import type { Subscription, Plan, Merchant, SubscriptionUpdateInput } from '@rentalshop/types';
 

@@ -4,7 +4,7 @@ import React from 'react';
 import { 
   Card, 
   CardContent
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   Package,
   Star,

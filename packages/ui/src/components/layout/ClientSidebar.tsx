@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@rentalshop/ui';
-import { Button, Logo } from '@rentalshop/ui';
+import { cn } from '@rentalshop/ui/base';
+import { Button, Logo } from '@rentalshop/ui/base';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useCommonTranslations } from '@rentalshop/hooks';
 import { 

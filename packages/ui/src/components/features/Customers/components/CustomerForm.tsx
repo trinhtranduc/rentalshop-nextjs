@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Save, X } from 'lucide-react';
-import { Button } from '@rentalshop/ui';
-import { Input } from '@rentalshop/ui';
-import { Label } from '@rentalshop/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
-import { Card, CardContent } from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui/base';
+import { Input } from '@rentalshop/ui/base';
+import { Label } from '@rentalshop/ui/base';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui/base';
+import { Card, CardContent } from '@rentalshop/ui/base';
 import type { Customer, CustomerCreateInput, CustomerUpdateInput } from '@rentalshop/types';
 
 interface CustomerFormProps {

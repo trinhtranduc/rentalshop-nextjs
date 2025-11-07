@@ -1,6 +1,6 @@
 import React from 'react';
 import { DollarSign } from 'lucide-react';
-import { formatCurrency } from '@rentalshop/ui';
+import { formatCurrency } from '@rentalshop/ui/base';
 import { OrderData, SettingsForm } from '@rentalshop/types';
 import { calculateCollectionAmount, getCollectionTitle } from '../utils';
 

@@ -10,7 +10,7 @@ import {
   CardContent,
   Button,
   useFormatCurrency
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { 
   CheckCircle, 

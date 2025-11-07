@@ -8,7 +8,7 @@ import {
   Button,
   Input,
   Label
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================

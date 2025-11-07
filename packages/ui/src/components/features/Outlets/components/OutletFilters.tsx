@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
   Button
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import type { OutletFilters as OutletFiltersType } from '@rentalshop/types';
 
 interface OutletFiltersProps {

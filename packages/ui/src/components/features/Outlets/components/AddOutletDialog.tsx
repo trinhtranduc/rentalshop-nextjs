@@ -6,7 +6,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { AddOutletForm } from './AddOutletForm';
 import type { OutletCreateInput } from '@rentalshop/types';
 import { useOutletsTranslations } from '@rentalshop/hooks';

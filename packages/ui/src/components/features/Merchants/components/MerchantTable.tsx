@@ -8,7 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { 
   Eye, 
   Edit,

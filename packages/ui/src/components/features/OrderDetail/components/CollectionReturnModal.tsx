@@ -7,9 +7,9 @@ import {
   DialogFooter,
   Button,
   Badge
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { Calculator, Info, DollarSign, Package, RotateCcw } from 'lucide-react';
-import { formatCurrency } from '@rentalshop/ui';
+import { formatCurrency } from '@rentalshop/ui/base';
 import { OrderWithDetails } from '@rentalshop/types';
 
 // Define SettingsForm interface locally

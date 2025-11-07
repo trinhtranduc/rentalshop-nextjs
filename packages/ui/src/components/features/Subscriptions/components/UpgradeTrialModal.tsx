@@ -11,7 +11,7 @@ import {
   Button,
   Label,
   Card
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { formatDate, formatCurrency } from '@rentalshop/utils';
 import { Check, CreditCard, Building2, Sparkles } from 'lucide-react';
 

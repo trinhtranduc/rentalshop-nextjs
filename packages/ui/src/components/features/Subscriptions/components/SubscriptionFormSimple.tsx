@@ -19,7 +19,7 @@ import {
   Badge,
   StatusBadge,
   SearchableSelect
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { 
   Calendar, 
   DollarSign, 

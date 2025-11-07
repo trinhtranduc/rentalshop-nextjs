@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useToast } from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui/base';
 import { customersApi, handleApiError } from '@rentalshop/utils';
 import { BUSINESS, VALIDATION } from '@rentalshop/constants';
 import type { 

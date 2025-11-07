@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui';
-import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
-import { Badge } from '@rentalshop/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui/base';
+import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui/base';
+import { Badge } from '@rentalshop/ui/base';
 import type { CustomerWithMerchant } from '@rentalshop/types';
 import { Package, Calendar, DollarSign, User, MapPin, Clock } from 'lucide-react';
 import { ORDER_STATUS_COLORS } from '@rentalshop/constants';

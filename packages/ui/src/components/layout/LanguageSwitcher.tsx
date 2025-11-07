@@ -21,7 +21,7 @@
 import React, { useTransition } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Button } from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui/base';
 import { Globe } from 'lucide-react';
 
 type SupportedLocale = 'en' | 'vi';

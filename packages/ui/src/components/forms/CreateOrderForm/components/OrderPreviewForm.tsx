@@ -43,7 +43,7 @@ import {
   TableCell,
   Button,
   Skeleton
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { formatCurrency } from '@rentalshop/utils';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { 

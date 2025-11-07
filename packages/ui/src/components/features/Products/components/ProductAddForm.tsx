@@ -7,10 +7,10 @@ import {
   CardTitle, 
   CardContent,
   Button
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { ArrowLeft, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
-import { useToast } from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui/base';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { Category, Outlet, ProductCreateInput } from '@rentalshop/types';
 

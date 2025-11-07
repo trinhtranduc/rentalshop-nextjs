@@ -13,8 +13,8 @@ import {
   CardContent,
   Badge,
   Separator
-} from '@rentalshop/ui';
-import { formatDate, formatCurrency } from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
+import { formatDate, formatCurrency } from '@rentalshop/ui/base';
 import { 
   Pause, 
   Play, 

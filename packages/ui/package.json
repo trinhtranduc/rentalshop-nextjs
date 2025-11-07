@@ -10,6 +10,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "types": "./src/index.tsx"
+    },
+    "./base": {
+      "import": "./dist/base.mjs",
+      "require": "./dist/base.js",
+      "types": "./src/base.ts"
     }
   },
   "sideEffects": false,

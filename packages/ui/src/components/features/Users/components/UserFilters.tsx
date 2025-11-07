@@ -7,7 +7,7 @@ import {
   SelectTrigger, 
   SelectValue,
   Button
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import type { UserFilters } from '@rentalshop/types';
 
 interface UserFiltersProps {

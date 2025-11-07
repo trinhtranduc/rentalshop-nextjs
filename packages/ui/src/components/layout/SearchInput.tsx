@@ -2,8 +2,8 @@
 
 import React, { useEffect } from 'react';
 import { Search, X } from 'lucide-react';
-import { cn } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
+import { cn } from '@rentalshop/ui/base';
+import { Button } from '@rentalshop/ui/base';
 import { useThrottledSearch } from '@rentalshop/hooks';
 
 export interface SearchInputProps {

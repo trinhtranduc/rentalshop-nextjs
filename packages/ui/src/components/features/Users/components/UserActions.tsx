@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../ui/button';
-import { ConfirmationDialog } from '@rentalshop/ui';
+import { ConfirmationDialog } from '@rentalshop/ui/base';
 import { UserDetailDialog } from './UserDetailDialog';
 import type { User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 // formatPublicId removed - using single id system

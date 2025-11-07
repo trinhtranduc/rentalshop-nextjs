@@ -16,7 +16,7 @@ import {
   Label,
   Input,
   Badge
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { Calendar, AlertCircle } from 'lucide-react';
 
 export interface DateRangeOption {

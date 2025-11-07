@@ -6,7 +6,7 @@ import {
   EmptyState,
   Card,
   CardContent
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { CategoryTable, CategorySearch } from './components';
 import { FolderOpen } from 'lucide-react';
 import type { Category, CategoryFilters } from '@rentalshop/types';

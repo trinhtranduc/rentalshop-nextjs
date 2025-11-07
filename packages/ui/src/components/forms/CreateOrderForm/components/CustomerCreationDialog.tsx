@@ -8,7 +8,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle 
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { AddCustomerForm } from '../../../features/Customers/components/AddCustomerForm';
 import type { CustomerCreateInput, CustomerSearchResult } from '@rentalshop/types';
 

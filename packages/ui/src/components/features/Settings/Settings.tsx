@@ -13,7 +13,7 @@ import {
 import type { CurrencyCode } from '@rentalshop/types';
 import { useAuth, useSettingsTranslations } from '@rentalshop/hooks';
 import { usersApi, authApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
-import { useToast } from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui/base';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 
 // Import components

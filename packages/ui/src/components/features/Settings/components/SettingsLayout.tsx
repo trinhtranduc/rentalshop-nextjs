@@ -9,7 +9,7 @@ import {
   PageTitle,
   PageContent,
   Button
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { ChevronRight } from 'lucide-react';
 import { useSettingsTranslations } from '@rentalshop/hooks';
 

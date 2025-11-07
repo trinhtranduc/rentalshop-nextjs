@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button, Card, CardHeader, CardTitle, CardContent } from '../ui';
+import { Button, Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui/base';
 import { useErrorHandler, useToasts } from '@rentalshop/hooks';
 
 /**

@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
   Button
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 
 interface PlanFiltersProps {
   searchTerm: string;

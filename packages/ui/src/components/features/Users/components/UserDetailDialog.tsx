@@ -8,9 +8,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter
-} from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
-import { ConfirmationDialog } from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
+import { Button } from '@rentalshop/ui/base';
+import { ConfirmationDialog } from '@rentalshop/ui/base';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { UserDisplayInfo } from './UserDisplayInfo';
 import { usersApi } from '@rentalshop/utils';

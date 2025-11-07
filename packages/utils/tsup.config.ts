@@ -188,6 +188,11 @@ const postProcessApiBundle = (outDir: string) => {
   // Process ESM
   try {
     let content = readFileSync(esmPath, 'utf-8');
+    if (content.includes('getTenantDbFromRequest')) {
+      console.log('🔍 Pre-cleanup: getTenantDbFromRequest present in ESM bundle');
+    } else {
+      console.warn('⚠️ Pre-cleanup: getTenantDbFromRequest missing in ESM bundle');
+    }
     const original = content;
     content = cleanup(content);
     content = ensureExports(content);
@@ -201,6 +206,11 @@ const postProcessApiBundle = (outDir: string) => {
   // Process CJS
   try {
     let content = readFileSync(cjsPath, 'utf-8');
+    if (content.includes('getTenantDbFromRequest')) {
+      console.log('🔍 Pre-cleanup: getTenantDbFromRequest present in CJS bundle');
+    } else {
+      console.warn('⚠️ Pre-cleanup: getTenantDbFromRequest missing in CJS bundle');
+    }
     const original = content;
     content = cleanup(content);
     if (content !== original) {
@@ -236,7 +246,10 @@ const verifyNoReact = (outDir: string) => {
 export default defineConfig([
   // API subpath (server-only utilities) - Build FIRST to avoid circular dependencies
   {
-    entry: { index: 'src/api/index.ts' },
+    entry: {
+      index: 'src/api/index.ts',
+      'tenant-utils': 'src/api/tenant-utils.ts'
+    },
     outDir: 'dist/api',
     format: ['esm', 'cjs'],
     dts: false,
@@ -248,7 +261,7 @@ export default defineConfig([
       'react-dom/client',
       'react-dom/server',
       'lucide-react',
-      'next',
+      // 'next' removed - need to bundle NextRequest/NextResponse for getTenantDbFromRequest
       'zod',
       'date-fns',
       '@prisma/client',
@@ -260,11 +273,19 @@ export default defineConfig([
     sourcemap: true,
     minify: false,
     treeshake: false, // Keep all exports for Railway build
+    noExternal: ['next/server'], // Bundle next/server to include NextRequest/NextResponse
     esbuildOptions(options) {
       options.plugins = options.plugins || [];
       options.plugins.push(excludeReactPlugin);
       options.external = options.external || [];
       options.external.push('react', 'react-dom', 'react/jsx-runtime', 'lucide-react');
+      // Don't externalize 'next' or 'next/server' - need to bundle NextRequest/NextResponse
+      // Remove 'next' and 'next/server' from external if present
+      if (options.external) {
+        options.external = options.external.filter(
+          (ext: string) => ext !== 'next' && ext !== 'next/server'
+        );
+      }
       return options;
     },
     onSuccess: async () => {

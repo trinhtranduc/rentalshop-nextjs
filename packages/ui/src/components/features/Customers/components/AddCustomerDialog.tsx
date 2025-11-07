@@ -6,7 +6,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { AddCustomerForm } from './AddCustomerForm';
 import type { Customer, CustomerCreateInput } from '@rentalshop/types';
 import { useCustomerTranslations } from '@rentalshop/hooks';

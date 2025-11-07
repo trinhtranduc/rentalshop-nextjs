@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Input, Button } from '@rentalshop/ui';
+import { Input, Button } from '@rentalshop/ui/base';
 import { CustomerFilters } from '@rentalshop/types';
 import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 

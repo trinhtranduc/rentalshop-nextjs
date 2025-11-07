@@ -13,14 +13,14 @@ import {
   Skeleton,
   Button,
   useFormatCurrency
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { useOrderTranslations, useProductTranslations } from '@rentalshop/hooks';
 import { 
   Search, 
   Package, 
   Trash2 
 } from 'lucide-react';
-import { ProductAvailabilityAsyncDisplay } from '@rentalshop/ui';
+import { ProductAvailabilityAsyncDisplay } from '@rentalshop/ui/base';
 import type { 
   OrderItemFormData, 
   ProductWithStock,

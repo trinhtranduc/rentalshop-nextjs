@@ -14,7 +14,7 @@ import {
   CardTitle,
   Button,
   Badge,
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 
 // Currency options for selection
 const CURRENCY_OPTIONS: Array<{ value: CurrencyCode; label: string; symbol: string; name: string }> = [

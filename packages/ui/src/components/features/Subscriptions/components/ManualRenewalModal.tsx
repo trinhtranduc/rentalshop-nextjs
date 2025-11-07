@@ -18,7 +18,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { formatDate, formatCurrency } from '@rentalshop/utils';
 import { 
   RENEWAL_DURATIONS,

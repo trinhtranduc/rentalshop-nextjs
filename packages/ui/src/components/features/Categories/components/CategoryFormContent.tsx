@@ -6,7 +6,7 @@ import {
   Input,
   Textarea,
   Label
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Save, Loader2 } from 'lucide-react';
 import type { Category } from '@rentalshop/types';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Separator } from '@rentalshop/ui';
+import { Separator } from '@rentalshop/ui/base';
 import { OrderDetailData } from '@rentalshop/types';
 import { 
   User, 

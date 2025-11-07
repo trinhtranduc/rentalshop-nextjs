@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch } from '@rentalshop/ui';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch } from '@rentalshop/ui/base';
 import { useAuth } from '@rentalshop/hooks';
 import { merchantsApi, PricingValidator } from '@rentalshop/utils';
 import { BUSINESS_TYPE_DEFAULTS, PRICING_TYPE_LABELS, BUSINESS_TYPE_LABELS, PRICING_TYPE_DESCRIPTIONS } from '@rentalshop/constants';

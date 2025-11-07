@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge } from '@rentalshop/ui';
+import { Badge } from '@rentalshop/ui/base';
 import { OrderDetailData } from '@rentalshop/types';
 import { 
   Clock, 

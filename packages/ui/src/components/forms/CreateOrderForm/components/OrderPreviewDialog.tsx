@@ -8,7 +8,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle 
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { OrderPreviewForm } from './OrderPreviewForm';
 import { ShoppingCart } from 'lucide-react';
 import type { 

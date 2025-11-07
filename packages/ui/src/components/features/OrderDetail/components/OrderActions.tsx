@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, ConfirmationDialog } from '@rentalshop/ui';
+import { Button, ConfirmationDialog } from '@rentalshop/ui/base';
 import { X, Printer, Package, RotateCcw } from 'lucide-react';
 import { OrderWithDetails } from '@rentalshop/types';
 

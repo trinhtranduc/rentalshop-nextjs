@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input } from "@rentalshop/ui";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input } from "@rentalshop/ui/base";
 import { useAuthTranslations } from "@rentalshop/hooks";
 
 // Types for the forget password form

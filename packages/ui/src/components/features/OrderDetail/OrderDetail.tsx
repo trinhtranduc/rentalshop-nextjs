@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
   ConfirmationDialog
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { useFormattedFullDate } from '@rentalshop/utils';
 import { 
   Info, 
@@ -38,7 +38,7 @@ import {
   Edit,
   Calculator
 } from 'lucide-react';
-import { useFormatCurrency, useToast } from '@rentalshop/ui';
+import { useFormatCurrency, useToast } from '@rentalshop/ui/base';
 import { ORDER_STATUS_COLORS, ORDER_TYPE_COLORS, ORDER_TYPES, ORDER_STATUSES } from '@rentalshop/constants';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import type { OrderWithDetails } from '@rentalshop/types';

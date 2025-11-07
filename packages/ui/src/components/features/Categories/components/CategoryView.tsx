@@ -9,7 +9,7 @@ import {
   DialogDescription,
   Button,
   Label
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { useLocale } from 'next-intl';
 import { formatDateWithLocale } from '@rentalshop/utils';

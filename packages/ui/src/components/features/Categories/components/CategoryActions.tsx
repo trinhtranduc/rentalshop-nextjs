@@ -5,7 +5,7 @@ import {
   Card, 
   CardContent,
   Button
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { Plus, Download, Upload, Edit3 } from 'lucide-react';
 import { useUserRole } from '@rentalshop/hooks';
 import { AddCategoryDialog } from './AddCategoryDialog';

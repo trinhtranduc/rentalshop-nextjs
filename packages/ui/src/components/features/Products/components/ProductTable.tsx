@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
-import { useFormatCurrency } from '@rentalshop/ui';
+import { useFormatCurrency } from '@rentalshop/ui/base';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
 import { getProductImageUrl } from '@rentalshop/utils';

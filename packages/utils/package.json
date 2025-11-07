@@ -5,7 +5,10 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "sideEffects": false,
+  "sideEffects": [
+    "**/api/index.ts",
+    "**/api/tenant-utils.ts"
+  ],
   "exports": {
     ".": {
       "import": "./dist/index.mjs",

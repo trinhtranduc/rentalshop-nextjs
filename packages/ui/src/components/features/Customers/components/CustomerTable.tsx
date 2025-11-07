@@ -1,13 +1,13 @@
 import React from 'react';
-import { Button } from '@rentalshop/ui';
-import { Card, CardContent } from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui/base';
+import { Card, CardContent } from '@rentalshop/ui/base';
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { Customer } from '@rentalshop/types';
 import { Eye, Edit, Trash2, ShoppingBag, MoreVertical } from 'lucide-react';
 import { useCustomerTranslations } from '@rentalshop/hooks';

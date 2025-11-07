@@ -33,7 +33,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useToast, ToastContainer } from '@rentalshop/ui';
+import { useToast, ToastContainer } from '@rentalshop/ui/base';
 import { AddCustomerForm } from '../../features/Customers/components/AddCustomerForm';
 
 import { customersApi, productsApi, handleApiError, formatCurrency, type ProductAvailabilityRequest } from '@rentalshop/utils';

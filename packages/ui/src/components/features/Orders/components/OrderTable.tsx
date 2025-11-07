@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
-import { useFormatCurrency } from '@rentalshop/ui';
+import { useFormatCurrency } from '@rentalshop/ui/base';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils';
 import { ORDER_STATUS_COLORS, ORDER_TYPE_COLORS } from '@rentalshop/constants';

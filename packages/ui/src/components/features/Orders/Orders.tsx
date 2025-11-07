@@ -9,7 +9,7 @@ import {
   OrderTable,
   OrderStats
 } from './components';
-import { Pagination, Card, CardContent } from '@rentalshop/ui';
+import { Pagination, Card, CardContent } from '@rentalshop/ui/base';
 import { AlertCircle } from 'lucide-react';
 import type { OrdersData, OrderFilters } from '@rentalshop/types';
 import { useOrderTranslations } from '@rentalshop/hooks';

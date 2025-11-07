@@ -22,7 +22,7 @@ import {
   Textarea,
   Separator,
   Badge
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   Calendar, 
   DollarSign,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Badge } from '@rentalshop/ui';
+import { Button, Badge } from '@rentalshop/ui/base';
 import { Edit } from 'lucide-react';
 import { OrderDetailData } from '@rentalshop/types';
 

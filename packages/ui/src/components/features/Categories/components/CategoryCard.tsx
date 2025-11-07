@@ -8,7 +8,7 @@ import {
   CardContent,
   Button,
   Badge
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { Edit, Tag, Calendar, MoreHorizontal, Eye } from 'lucide-react';
 import type { Category } from '@rentalshop/types';
 

@@ -4,7 +4,7 @@ import {
   MerchantFilters,
   MerchantTable
 } from './components';
-import { Pagination, Card, CardContent } from '../../ui';
+import { Pagination, Card, CardContent } from '@rentalshop/ui/base';
 import type { Merchant } from '@rentalshop/types';
 
 interface MerchantFiltersData {

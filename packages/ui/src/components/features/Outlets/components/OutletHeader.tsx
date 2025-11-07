@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   Building2, 
   Grid, 

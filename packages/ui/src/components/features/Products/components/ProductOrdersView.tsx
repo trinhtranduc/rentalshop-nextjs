@@ -14,7 +14,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { 
   Package, 
   DollarSign, 
@@ -40,7 +40,7 @@ import {
   OrderFilters as OrderFiltersComponent,
   OrderTable
 } from '../../Orders/components';
-import { Pagination } from '@rentalshop/ui';
+import { Pagination } from '@rentalshop/ui/base';
 import { ordersApi } from '@rentalshop/utils';
 import type { 
   OrderWithDetails, 

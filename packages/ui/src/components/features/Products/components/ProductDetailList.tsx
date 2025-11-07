@@ -9,7 +9,7 @@ import {
   CardContent, 
   Button, 
   Badge 
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { getProductImageUrl } from '@rentalshop/utils';
 import { 

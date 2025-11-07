@@ -7,14 +7,13 @@ import {
   ProductTable
 } from './components';
 import { 
-  PageWrapper,
-  PageContent,
   Pagination,
-  EmptyState,
   Button,
   Card,
   CardContent
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
+import { PageWrapper, PageContent } from '../../layout/PageWrapper';
+import EmptyState from '../Admin/components/EmptyState';
 import { 
   ProductSearchResult as ProductData, 
   ProductFilters as ProductFiltersType

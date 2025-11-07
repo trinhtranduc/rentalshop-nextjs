@@ -6,7 +6,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { useCategoriesTranslations } from '@rentalshop/hooks';
 import { CategoryFormContent } from './CategoryFormContent';
 import type { Category } from '@rentalshop/types';

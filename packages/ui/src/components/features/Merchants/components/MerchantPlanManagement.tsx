@@ -21,7 +21,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { ManualRenewalModal } from '../../Subscriptions';
 import { SubscriptionHistoryDialog } from '../../Subscriptions/components/SubscriptionHistoryDialog';
 import { 

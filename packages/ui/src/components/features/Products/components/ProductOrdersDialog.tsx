@@ -14,7 +14,7 @@ import {
   CardTitle,
   Badge,
   EmptyState
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   ShoppingCart, 
   Calendar, 

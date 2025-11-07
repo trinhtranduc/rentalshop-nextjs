@@ -8,7 +8,7 @@ import {
   CardContent,
   Badge,
   Button
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   Package, 
   Users, 

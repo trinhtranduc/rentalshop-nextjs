@@ -13,10 +13,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { Settings, Save, Edit } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { useFormatCurrency } from '@rentalshop/ui';
+import { useFormatCurrency } from '@rentalshop/ui/base';
 import type { OrderWithDetails } from '@rentalshop/types';
 
 interface SettingsForm {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui/base';
 import { CustomerStats } from '@rentalshop/types';
 
 interface CustomerHeaderProps {

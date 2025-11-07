@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Input, Button } from '@rentalshop/ui';
+import { Input, Button } from '@rentalshop/ui/base';
 import type { CategorySearchParams as CategoryFiltersType } from '@rentalshop/types';
 
 interface CategoryFiltersProps {

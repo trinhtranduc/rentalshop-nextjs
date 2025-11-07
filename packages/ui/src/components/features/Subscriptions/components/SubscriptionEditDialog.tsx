@@ -13,7 +13,7 @@ import {
   CardContent,
   Badge,
   cn
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { SubscriptionFormSimple } from './SubscriptionFormSimple';
 import { formatCurrency } from '@rentalshop/utils';
 import { DollarSign, TrendingUp, Calendar, Percent } from 'lucide-react';

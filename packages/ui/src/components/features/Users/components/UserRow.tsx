@@ -3,7 +3,7 @@ import {
   Card,
   CardContent,
   Button
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { 
   Eye, 
   Edit, 

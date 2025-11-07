@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label, Badge, Alert, AlertDescription, DateRangePicker } from '@rentalshop/ui';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label, Badge, Alert, AlertDescription, DateRangePicker } from '@rentalshop/ui/base';
 import { PricingResolver, PricingValidator, formatCurrency } from '@rentalshop/utils';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import type { Product, Merchant } from '@rentalshop/types';

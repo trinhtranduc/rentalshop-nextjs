@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui';
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui/base';
 
 interface MerchantFiltersData {
   search: string;

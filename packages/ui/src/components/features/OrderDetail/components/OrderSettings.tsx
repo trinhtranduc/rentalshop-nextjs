@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Label, Textarea } from '@rentalshop/ui';
+import { Button, Input, Label, Textarea } from '@rentalshop/ui/base';
 import { Save, X, Edit } from 'lucide-react';
 import { SettingsForm } from '@rentalshop/types';
 

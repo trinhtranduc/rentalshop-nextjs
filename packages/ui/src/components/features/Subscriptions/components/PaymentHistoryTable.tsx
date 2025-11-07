@@ -9,7 +9,7 @@ import {
   Button,
   Badge,
   Pagination
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 import { formatDate, formatCurrency } from '@rentalshop/utils';
 import { Download, FileText, Eye, Filter } from 'lucide-react';
 

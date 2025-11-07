@@ -16,8 +16,8 @@ import {
   Label,
   Alert,
   AlertDescription
-} from '@rentalshop/ui';
-import { formatDate, formatCurrency } from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
+import { formatDate, formatCurrency } from '@rentalshop/ui/base';
 import { AlertTriangle, Calendar, DollarSign } from 'lucide-react';
 import type { Subscription } from '@rentalshop/types';
 

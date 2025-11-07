@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
   useToast
-} from "@rentalshop/ui";
+} from "@rentalshop/ui/base";
 import { useAuthTranslations } from "@rentalshop/hooks";
 import { sanitizeSubdomain } from "@rentalshop/database";
 

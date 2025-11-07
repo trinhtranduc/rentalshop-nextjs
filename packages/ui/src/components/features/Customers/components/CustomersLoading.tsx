@@ -3,7 +3,7 @@ import {
   SearchSkeleton, 
   PaginationSkeleton,
   StatsSkeleton 
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
 
 export function CustomersLoading() {
   return (

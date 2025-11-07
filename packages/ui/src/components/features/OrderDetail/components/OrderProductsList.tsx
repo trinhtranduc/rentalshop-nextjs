@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { Package } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { useFormatCurrency } from '@rentalshop/ui';
+import { useFormatCurrency } from '@rentalshop/ui/base';
 import type { OrderWithDetails } from '@rentalshop/types';
 
 interface OrderProductsListProps {

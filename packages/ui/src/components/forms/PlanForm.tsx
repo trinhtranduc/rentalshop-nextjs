@@ -18,7 +18,7 @@ import {
   Switch,
   Label,
   LimitInput
-} from '../ui';
+} from '@rentalshop/ui/base';
 import { 
   Package, 
   DollarSign, 

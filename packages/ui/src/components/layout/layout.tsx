@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { Menu } from 'lucide-react'
-import { Button, Sidebar } from '@rentalshop/ui'
+import { Button } from '@rentalshop/ui/base'
+import { Sidebar } from './sidebar'
 
 interface LayoutProps {
   variant?: 'client' | 'admin'

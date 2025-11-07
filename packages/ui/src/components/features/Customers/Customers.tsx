@@ -2,14 +2,13 @@
 
 import React from 'react';
 import { 
-  PageWrapper,
-  PageContent,
   Pagination,
-  EmptyState,
   Button,
   Card,
   CardContent
-} from '@rentalshop/ui';
+} from '@rentalshop/ui/base';
+import { PageWrapper, PageContent } from '../../layout/PageWrapper';
+import EmptyState from '../Admin/components/EmptyState';
 import { CustomerPageHeader, CustomerSearch, CustomerTable } from './components';
 import { 
   User as UserIcon, 

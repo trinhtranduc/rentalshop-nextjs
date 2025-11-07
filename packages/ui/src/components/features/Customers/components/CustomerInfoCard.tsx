@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui/base';
+import { Button } from '@rentalshop/ui/base';
 import { 
   User, 
   Mail, 

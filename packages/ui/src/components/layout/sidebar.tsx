@@ -3,8 +3,8 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { cn } from '@rentalshop/ui';
-import { Button, Card } from '@rentalshop/ui';
+import { cn } from '@rentalshop/ui/base';
+import { Button, Card } from '@rentalshop/ui/base';
 import { ChevronLeft, ChevronRight, Home, Users, Package, ShoppingCart, Building2, Settings } from 'lucide-react';
 // @ts-ignore - hooks package doesn't have type declarations yet
 import { useOptimisticNavigation } from '@rentalshop/hooks';

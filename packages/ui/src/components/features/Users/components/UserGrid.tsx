@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserCard } from './UserCard';
-import { Card, CardContent } from '@rentalshop/ui';
+import { Card, CardContent } from '@rentalshop/ui/base';
 import type { User } from '@rentalshop/types';
 import { useUsersTranslations } from '@rentalshop/hooks';
 

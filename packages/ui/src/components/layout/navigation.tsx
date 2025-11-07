@@ -16,7 +16,7 @@ import {
   ShoppingCart,
   Building2
 } from 'lucide-react'
-import { Button } from '@rentalshop/ui'
+import { Button } from '@rentalshop/ui/base'
 
 interface NavigationProps {
   variant?: 'client' | 'admin'

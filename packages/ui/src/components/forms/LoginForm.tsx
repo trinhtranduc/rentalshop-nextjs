@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Eye, EyeOff, Mail, Lock, Globe } from "lucide-react";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Logo } from "@rentalshop/ui";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Logo } from "@rentalshop/ui/base";
 import { useAuthTranslations } from "@rentalshop/hooks";
 import { LanguageSwitcher } from "../layout/LanguageSwitcher";
 

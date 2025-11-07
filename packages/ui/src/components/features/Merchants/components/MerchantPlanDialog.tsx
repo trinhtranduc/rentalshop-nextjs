@@ -19,7 +19,7 @@ import {
   CardContent,
   Badge,
   StatusBadge
-} from '../../../ui';
+} from '@rentalshop/ui/base';
 import { Calendar, CreditCard, Users, Package, Building2 } from 'lucide-react';
 import type { Plan } from '@rentalshop/types';
 
