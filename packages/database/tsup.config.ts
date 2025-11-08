@@ -59,5 +59,16 @@ export default defineConfig({
   splitting: false,
   treeshake: false,
   target: 'es2020',
-  external: ['@prisma/client', 'pg', ...nodeBuiltins]
+  external: [
+    '@prisma/client',
+    'pg',
+    '@rentalshop/utils',
+    '@rentalshop/utils/api',
+    '@rentalshop/auth',
+    '@rentalshop/constants',
+    '@rentalshop/env',
+    '@rentalshop/errors',
+    '@rentalshop/validation',
+    ...nodeBuiltins
+  ]
 });
