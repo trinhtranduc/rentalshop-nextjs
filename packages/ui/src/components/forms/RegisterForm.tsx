@@ -27,9 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
   useToast
-} from "@rentalshop/ui/base";
+} from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
-import { sanitizeSubdomain } from "@rentalshop/database";
+import { sanitizeSubdomain } from "../../lib/subdomain";
 
 // Types for the registration form
 interface RegisterFormData {
