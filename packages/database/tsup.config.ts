@@ -1,14 +1,63 @@
-import { createBaseConfig } from '../../tsup.config.base';
+import { defineConfig } from 'tsup';
 
-// Node.js built-in modules that should not be bundled
-const nodeBuiltins = ['fs', 'path', 'child_process', 'crypto', 'util', 'os', 'stream', 'dns', 'net', 'tls', 'http', 'https', 'url', 'querystring', 'buffer', 'events', 'zlib'];
+const nodeBuiltins = [
+  'fs',
+  'path',
+  'child_process',
+  'crypto',
+  'util',
+  'os',
+  'stream',
+  'dns',
+  'net',
+  'tls',
+  'http',
+  'https',
+  'url',
+  'querystring',
+  'buffer',
+  'events',
+  'zlib'
+];
 
-export default createBaseConfig(
-  'src/index.ts',
-  ['@prisma/client', 'pg', ...nodeBuiltins],
-  {
-    dts: false,
-    splitting: false,
-    treeshake: false
-  }
-);
+const entries = [
+  'index',
+  'client',
+  'main-db',
+  'tenant-db',
+  'tenant-db-manager',
+  'subdomain-utils',
+  'registration',
+  'audit-logs',
+  'audit',
+  'category',
+  'customer',
+  'email-verification',
+  'order-items',
+  'order-number-generator',
+  'order-optimized',
+  'order',
+  'outlet',
+  'payment',
+  'plan',
+  'product',
+  'sessions',
+  'subscription-activity',
+  'subscription',
+  'types',
+  'user',
+  'utils'
+];
+
+export default defineConfig({
+  entry: Object.fromEntries(entries.map((name) => [name, `src/${name}.ts`])),
+  format: ['esm', 'cjs'],
+  dts: false,
+  sourcemap: true,
+  minify: false,
+  clean: true,
+  splitting: false,
+  treeshake: false,
+  target: 'es2020',
+  external: ['@prisma/client', 'pg', ...nodeBuiltins]
+});
