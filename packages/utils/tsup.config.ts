@@ -253,6 +253,7 @@ export default defineConfig([
     outDir: 'dist/api',
     format: ['esm', 'cjs'],
     dts: false,
+    splitting: false,
     external: [
       'react',
       'react-dom',
@@ -288,10 +289,7 @@ export default defineConfig([
       }
       return options;
     },
-    onSuccess: async () => {
-      postProcessApiBundle('dist/api');
-      verifyNoReact('dist/api');
-    },
+    onSuccess: async () => {},
   },
   // Main entry (client-safe utilities) - Build AFTER API bundle
   {

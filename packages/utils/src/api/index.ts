@@ -4,6 +4,28 @@
 
 // Core API utilities are exported from the main utils package
 
+import {
+  getTenantDbFromRequest as _getTenantDbFromRequest,
+  withTenantDb as _withTenantDb,
+} from './tenant-utils';
+
+export const getTenantDbFromRequest = _getTenantDbFromRequest;
+export const withTenantDb = _withTenantDb;
+
+// Core configuration helpers needed by API routes
+export {
+  apiConfig,
+  apiEnvironment,
+  apiUrls,
+  getApiBaseUrl,
+  getApiCorsOrigins,
+  getApiDatabaseUrl,
+  getApiJwtSecret
+} from '../config/api';
+
+// Email helpers used by registration flows
+export { sendVerificationEmail } from '../services/email';
+
 // Subscription manager (server-only - imports PostgreSQL)
 // Import all functions explicitly
 import {
@@ -90,4 +112,4 @@ export * from './calendar';
 export * from './upload';
 export * from './aws-s3';
 export * from './response-builder';
-export { getTenantDbFromRequest, withTenantDb } from './tenant-utils';
+
