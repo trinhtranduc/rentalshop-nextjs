@@ -20,44 +20,16 @@ const nodeBuiltins = [
   'zlib'
 ];
 
-const entries = [
-  'index',
-  'client',
-  'main-db',
-  'tenant-db',
-  'tenant-db-manager',
-  'subdomain-utils',
-  'registration',
-  'audit-logs',
-  'audit',
-  'category',
-  'customer',
-  'email-verification',
-  'order-items',
-  'order-number-generator',
-  'order-optimized',
-  'order',
-  'outlet',
-  'payment',
-  'plan',
-  'product',
-  'sessions',
-  'subscription-activity',
-  'subscription',
-  'types',
-  'user',
-  'utils'
-];
-
 export default defineConfig({
-  entry: Object.fromEntries(entries.map((name) => [name, `src/${name}.ts`])),
+  entry: ['src/**/*.ts'],
+  outDir: 'dist',
   format: ['esm', 'cjs'],
+  bundle: false,
+  splitting: false,
   dts: false,
   sourcemap: true,
   minify: false,
   clean: true,
-  splitting: false,
-  treeshake: false,
   target: 'es2020',
   external: [
     '@prisma/client',
