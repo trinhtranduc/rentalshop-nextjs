@@ -12,6 +12,10 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
+    "build#@rentalshop/database": {
+      "cache": false,
+      "outputs": ["dist/**"]
+    },
     "build#@rentalshop/client": {
       "dependsOn": [],
       "outputs": [".next/**", "!.next/cache/**"]
