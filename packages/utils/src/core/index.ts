@@ -116,12 +116,6 @@ export {
   type PricingConfig
 } from './pricing-calculator';
 
-// UI utilities
-export * from './badge-utils';
-export * from './customer-utils';
-export * from './product-utils';
-export * from './user-utils';
-
 // Validation (plan limits validation now consolidated in validation.ts)
 export * from './validation';
 
