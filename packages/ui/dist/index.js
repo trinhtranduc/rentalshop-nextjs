@@ -14093,10 +14093,10 @@ var RegisterForm = ({
     password: create$6().min(6, t2("register.passwordMinLength")).max(25, t2("register.passwordMaxLength")).required(t2("register.passwordRequired")),
     confirmPassword: create$6().oneOf([create$9("password")], t2("register.passwordMismatch")).required(t2("register.confirmPasswordRequired")),
     firstName: create$6().min(1, t2("register.firstNameRequired")).required(t2("register.firstNameRequired")),
-    lastName: create$6().min(1, t2("register.lastNameRequired")).required(t2("register.lastNameRequired")),
-    phone: create$6().matches(/^[0-9+\-\s()]+$/, t2("register.phoneInvalid")).min(10, t2("register.phoneMinLength")).required(t2("register.phoneRequired"))
+    lastName: create$6().min(1, t2("register.lastNameRequired")).required(t2("register.lastNameRequired"))
   });
   const step2ValidationSchema = create$3({
+    phone: create$6().matches(/^[0-9+\-\s()]+$/, t2("register.phoneInvalid")).min(10, t2("register.phoneMinLength")).required(t2("register.phoneRequired")),
     businessName: create$6().min(2, t2("register.businessNameMinLength")).required(t2("register.businessNameRequired")),
     // businessType and pricingType are hidden and defaulted, no validation required
     address: create$6().min(5, t2("register.addressMinLength")).required(t2("register.addressRequired")),
@@ -14140,7 +14140,6 @@ var RegisterForm = ({
           confirmPassword: values.confirmPassword,
           firstName: values.firstName,
           lastName: values.lastName,
-          phone: values.phone,
           role: values.role
         });
         setCurrentStep(2);
@@ -14267,56 +14266,30 @@ var RegisterForm = ({
               formik.errors.lastName && formik.touched.lastName && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.lastName })
             ] })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-4", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "login", className: "text-sm font-medium text-gray-700", children: [
-                t2("register.email"),
-                " ",
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-red-500", children: "*" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "relative", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.Mail, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
-                  import_ui15.Input,
-                  {
-                    id: "login",
-                    name: "login",
-                    type: "email",
-                    placeholder: t2("register.enterYourEmail"),
-                    value: formik.values.login,
-                    onChange: formik.handleChange,
-                    onBlur: formik.handleBlur,
-                    className: `pl-10 ${formik.errors.login && formik.touched.login ? "border-red-500" : ""}`
-                  }
-                )
-              ] }),
-              formik.errors.login && formik.touched.login && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.login })
+          /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "login", className: "text-sm font-medium text-gray-700", children: [
+              t2("register.email"),
+              " ",
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-red-500", children: "*" })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "phone", className: "text-sm font-medium text-gray-700", children: [
-                t2("register.phone"),
-                " ",
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-red-500", children: "*" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "relative", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.Phone, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
-                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
-                  import_ui15.Input,
-                  {
-                    id: "phone",
-                    name: "phone",
-                    type: "tel",
-                    placeholder: t2("register.enterPhoneNumber"),
-                    value: formik.values.phone,
-                    onChange: formik.handleChange,
-                    onBlur: formik.handleBlur,
-                    className: `pl-10 ${formik.errors.phone && formik.touched.phone ? "border-red-500" : ""}`
-                  }
-                )
-              ] }),
-              formik.errors.phone && formik.touched.phone && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.phone })
-            ] })
-          ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "relative", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.Mail, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+                import_ui15.Input,
+                {
+                  id: "login",
+                  name: "login",
+                  type: "email",
+                  placeholder: t2("register.enterYourEmail"),
+                  value: formik.values.login,
+                  onChange: formik.handleChange,
+                  onBlur: formik.handleBlur,
+                  className: `pl-10 ${formik.errors.login && formik.touched.login ? "border-red-500" : ""}`
+                }
+              )
+            ] }),
+            formik.errors.login && formik.touched.login && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.login })
+          ] }) }),
           /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-4", children: [
             /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "password", className: "text-sm font-medium text-gray-700", children: [
@@ -14400,30 +14373,56 @@ var RegisterForm = ({
           )
         ] }),
         currentStep === 2 && /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(import_jsx_runtime54.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "space-y-4", children: /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "businessName", className: "text-sm font-medium text-gray-700", children: [
-              t2("register.businessName"),
-              " ",
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-red-500", children: "*" })
+          /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-4", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "businessName", className: "text-sm font-medium text-gray-700", children: [
+                t2("register.businessName"),
+                " ",
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-red-500", children: "*" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "relative", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.Store, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+                  import_ui15.Input,
+                  {
+                    id: "businessName",
+                    name: "businessName",
+                    type: "text",
+                    placeholder: t2("register.enterBusinessName"),
+                    value: formik.values.businessName,
+                    onChange: formik.handleChange,
+                    onBlur: formik.handleBlur,
+                    className: `pl-10 ${formik.errors.businessName && formik.touched.businessName ? "border-red-500" : ""}`
+                  }
+                )
+              ] }),
+              formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.businessName })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "relative", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.Store, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
-              /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
-                import_ui15.Input,
-                {
-                  id: "businessName",
-                  name: "businessName",
-                  type: "text",
-                  placeholder: t2("register.enterBusinessName"),
-                  value: formik.values.businessName,
-                  onChange: formik.handleChange,
-                  onBlur: formik.handleBlur,
-                  className: `pl-10 ${formik.errors.businessName && formik.touched.businessName ? "border-red-500" : ""}`
-                }
-              )
-            ] }),
-            formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.businessName })
-          ] }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "phone", className: "text-sm font-medium text-gray-700", children: [
+                t2("register.phone"),
+                " ",
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { className: "text-red-500", children: "*" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "relative", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_lucide_react26.Phone, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+                  import_ui15.Input,
+                  {
+                    id: "phone",
+                    name: "phone",
+                    type: "tel",
+                    placeholder: t2("register.enterPhoneNumber"),
+                    value: formik.values.phone,
+                    onChange: formik.handleChange,
+                    onBlur: formik.handleBlur,
+                    className: `pl-10 ${formik.errors.phone && formik.touched.phone ? "border-red-500" : ""}`
+                  }
+                )
+              ] }),
+              formik.errors.phone && formik.touched.phone && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.phone })
+            ] })
+          ] }),
           /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-4", children: [
             /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "address", className: "text-sm font-medium text-gray-700", children: [

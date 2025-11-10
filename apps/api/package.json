@@ -12,7 +12,7 @@
     "migrate:generate": "npx prisma generate --schema=../../prisma/schema.prisma"
   },
   "dependencies": {
-    "@prisma/client": "6.16.2",
+    "@prisma/client": "6.16.3",
     "@rentalshop/auth": "file:../../packages/auth",
     "@rentalshop/database": "file:../../packages/database",
     "@rentalshop/errors": "file:../../packages/errors",
@@ -22,7 +22,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "jsonwebtoken": "^9.0.2",
     "next": "^14.0.0",
-    "prisma": "6.16.2",
+    "prisma": "6.16.3",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "swagger-ui-react": "^5.29.5",

@@ -18,7 +18,7 @@
     "clean": "rm -rf dist coverage .jest-cache"
   },
   "dependencies": {
-    "@prisma/client": "^6.16.2",
+    "@prisma/client": "^6.16.3",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
