@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 import { z } from 'zod';
+import { enforceTenantPlanLimit } from '../../../lib/tenant-plan';
 
 /**
  * GET /api/products
  * Get products with filtering and pagination using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const GET = withManagementAuth(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 GET /api/products - User: ${user.email} (${user.role})`);
   
   try {
@@ -193,7 +195,8 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  * REFACTORED: Now uses unified withAuth pattern
  * Requires active subscription
  */
-export const POST = withManagementAuth(async (request, { user, userScope }) => {
+export const POST = withManagementAuth(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 POST /api/products - User: ${user.email} (${user.role})`);
   
   // Store parsed data for potential cleanup
@@ -302,7 +305,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
           productDataFromRequest.images = productDataFromRequest.images
             .split(',')
             .filter(Boolean)
-            .map(url => url.trim());
+            .map((url: string) => url.trim());
         }
         
         if (productDataFromRequest.images.length === 0) {
@@ -362,17 +365,11 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 
     console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
 
-    // Check plan limits before creating product
-    try {
-      await assertPlanLimit(merchantId, 'products');
-      console.log('✅ Plan limit check passed for products');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for products:', error.message);
-      return NextResponse.json(
-        ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for products'),
-        { status: 403 }
-      );
+    const planLimitResponse = await enforceTenantPlanLimit(authContext, 'products', { merchantId });
+    if (planLimitResponse) {
+      return planLimitResponse;
     }
+    console.log('✅ Plan limit check passed for products');
 
     // Find merchant by publicId to get CUID
     const merchant = await db.merchants.findById(merchantId);
@@ -557,7 +554,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
         imageUrls = product.images.split(',').filter(Boolean);
       }
     } else if (Array.isArray(product.images)) {
-      imageUrls = product.images;
+      imageUrls = (product.images as unknown[])
+        .filter((value): value is string => typeof value === 'string');
     }
 
     // Return product with parsed images

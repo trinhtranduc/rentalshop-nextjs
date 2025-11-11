@@ -24,14 +24,23 @@ export default function LoginPage() {
     }
   }, [user]);
 
-  const handleLogin = async (data: any) => {
+  const handleLogin = async (data: { email: string; password: string; tenantKey: string }) => {
     try {
       console.log('🔐 Login attempt started with:', { email: data.email });
       setLocalError(null);
       // Note: Don't clear authError here - let useAuth handle it
       
       console.log('📞 Calling login function from useAuth hook...');
-      const success = await login(data.email, data.password);
+      const loginWithTenant = login as (
+        email: string,
+        password: string,
+        tenantKey?: string
+      ) => Promise<any>;
+      const success = await loginWithTenant(
+        data.email,
+        data.password,
+        data.tenantKey || undefined
+      );
       console.log('📥 Login result received:', success);
       
       if (success) {

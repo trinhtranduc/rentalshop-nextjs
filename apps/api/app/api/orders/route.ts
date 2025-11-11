@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, ResponseBuilder } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, PricingResolver, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
+import { enforceTenantPlanLimit } from '../../../lib/tenant-plan';
 
 /**
  * GET /api/orders
  * Get orders with filtering, pagination
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const GET = withManagementAuth(async (request, { user, userScope }) => {
+export const GET = withManagementAuth(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 GET /api/orders - User: ${user.email} (${user.role})`);
   console.log(`🔍 GET /api/orders - UserScope:`, userScope);
   
@@ -160,7 +162,8 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
  * Create a new order using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const POST = withManagementAuth(async (request, { user, userScope }) => {
+export const POST = withManagementAuth(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 POST /api/orders - User: ${user.email} (${user.role})`);
   
   try {
@@ -191,17 +194,11 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Check plan limits before creating order (optional - orders are typically unlimited)
-    try {
-      await assertPlanLimit(outlet.merchantId, 'orders');
-      console.log('✅ Plan limit check passed for orders');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for orders:', error.message);
-      return NextResponse.json(
-        ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for orders'),
-        { status: 403 }
-      );
+    const planLimitResponse = await enforceTenantPlanLimit(authContext, 'orders', { merchantId: outlet.merchantId });
+    if (planLimitResponse) {
+      return planLimitResponse;
     }
+    console.log('✅ Plan limit check passed for orders');
 
     // Generate order number using the outlet's ID
     const orderNumber = `${parsed.data.outletId.toString().padStart(3, '0')}-${Date.now().toString().slice(-6)}`;
@@ -407,7 +404,8 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
  * Update an order using simplified database API  
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const PUT = withManagementAuth(async (request, { user, userScope }) => {
+export const PUT = withManagementAuth(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 PUT /api/orders - User: ${user.email} (${user.role})`);
   
   try {

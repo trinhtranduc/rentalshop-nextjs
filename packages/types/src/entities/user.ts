@@ -129,6 +129,7 @@ export interface UserSession {
 export interface LoginCredentials {
   email: string;
   password: string;
+  tenantKey?: string;
 }
 
 /**
@@ -143,6 +144,7 @@ export interface RegisterData {
   role: UserRole;
   merchantId?: number;
   outletId?: number;
+  tenantKey?: string;
   // Additional fields for merchant registration
   businessName?: string;
   outletName?: string;

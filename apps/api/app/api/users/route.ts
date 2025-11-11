@@ -7,9 +7,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
+import { withTenantFromRequest } from '../../../lib/tenant-context';
+import { enforceTenantPlanLimit } from '../../../lib/tenant-plan';
 
 export interface UserFilters {
   role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
@@ -30,7 +32,10 @@ export interface UserListOptions {
  * REFACTORED: Uses unified withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']) pattern
  * Note: OUTLET_STAFF cannot access user management
  */
-export const GET = withManagementAuth(async (request, { user, userScope }) => {
+export const GET = withManagementAuth((request, authContext) =>
+  withTenantFromRequest(request, authContext, async () => {
+    const { user, userScope } = authContext;
+
   try {
     console.log(`🔍 GET /api/users - User: ${user.email} (${user.role})`);
 
@@ -134,7 +139,8 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
       { status: 500 }
     );
   }
-});
+  })
+);
 
 /**
  * POST /api/users
@@ -142,7 +148,10 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
  * REFACTORED: Uses unified withAuth pattern
  * Note: OUTLET_STAFF cannot create users
  */
-export const POST = withManagementAuth(async (request, { user, userScope }) => {
+export const POST = withManagementAuth((request, authContext) =>
+  withTenantFromRequest(request, authContext, async () => {
+    const { user, userScope } = authContext;
+
   try {
     console.log(`➕ POST /api/users - User: ${user.email} (${user.role})`);
 
@@ -184,17 +193,12 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     console.log('🔍 POST /api/users: merchantId:', merchantId, 'outletId:', outletId);
 
     // Check plan limits before creating user (only for non-ADMIN users)
-    if (parsed.data.role !== 'ADMIN' && merchantId) {
-      try {
-        await assertPlanLimit(merchantId, 'users');
+      if (parsed.data.role !== 'ADMIN') {
+        const limitResponse = await enforceTenantPlanLimit(authContext, 'users');
+        if (limitResponse) {
+          return limitResponse;
+        }
         console.log('✅ Plan limit check passed for users');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for users:', error.message);
-        return NextResponse.json(
-          ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for users'),
-          { status: 403 }
-        );
-      }
     }
 
     const newUser = await db.users.create(userData);
@@ -215,14 +219,18 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
-});
+  })
+);
 
 /**
  * PUT /api/users
  * Update an existing user
  * REFACTORED: Uses unified withAuth pattern
  */
-export const PUT = withManagementAuth(async (request, { user, userScope }) => {
+export const PUT = withManagementAuth((request, authContext) =>
+  withTenantFromRequest(request, authContext, async () => {
+    const { user, userScope } = authContext;
+
   try {
     console.log(`✏️ PUT /api/users - User: ${user.email} (${user.role})`);
 
@@ -282,14 +290,18 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
       { status: 500 }
     );
   }
-});
+  })
+);
 
 /**
  * DELETE /api/users
  * Delete/deactivate a user
  * REFACTORED: Uses unified withAuth pattern
  */
-export const DELETE = withManagementAuth(async (request, { user, userScope }) => {
+export const DELETE = withManagementAuth((request, authContext) =>
+  withTenantFromRequest(request, authContext, async () => {
+    const { user, userScope } = authContext;
+
   try {
     console.log(`🗑️ DELETE /api/users - User: ${user.email} (${user.role})`);
 
@@ -338,4 +350,5 @@ export const DELETE = withManagementAuth(async (request, { user, userScope }) =>
       { status: 500 }
     );
   }
-});
+  })
+);

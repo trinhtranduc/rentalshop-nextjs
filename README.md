@@ -1,3 +1,173 @@
+![Rental Shop Banner](https://rentalshop-assets.s3.amazonaws.com/branding/rentalshop-cover.png)
+
+# Rental Shop Next.js Monorepo
+
+Multi-tenant equipment rental platform built on a Next.js monorepo. The repository hosts three production applications (`apps/api`, `apps/admin`, `apps/client`) and a full suite of shared packages (`@rentalshop/ui`, `@rentalshop/auth`, `@rentalshop/database`, `@rentalshop/types`, `@rentalshop/utils`, `@rentalshop/hooks`). Everything is wired for tenant-aware routing, plan enforcement, and shared UI/logic.
+
+---
+
+## Contents
+- [Project Overview](#project-overview)
+- [Build & Run Locally](#build--run-locally)
+- [Railway Environment Variables](#railway-environment-variables)
+- [Database Seeding & Bootstrap](#database-seeding--bootstrap)
+- [Database Migrations](#database-migrations)
+- [Default Accounts](#default-accounts)
+- [Further Documentation](#further-documentation)
+
+---
+
+## Project Overview
+- **Monorepo** with Turbo + Yarn workspaces.
+- **Three apps**:
+  - `apps/api`: Next.js App Router acting as the backend API.
+  - `apps/admin`: system admin dashboard (platform-level operations).
+  - `apps/client`: merchant/staff portal (daily rental workflows).
+- **Shared packages** for UI, auth, Prisma, types, hooks, utilities.
+- **Multi-tenant model**: 
+  - `dev-main-database` (registry): stores tenants, plans, subscriptions, audit logs.
+  - `dev-tenant-database` (shared tenant DB): stores merchants, outlets, users, inventory, orders.
+  - Registry entry points to the tenant DB via `databaseUrl`, letting you move a tenant to its own database later without code changes.
+
+---
+
+## Build & Run Locally
+
+```bash
+# 1. Install dependencies
+yarn install
+
+# 2. Start everything (admin, client, api) in watch mode
+yarn dev:all
+
+#    or start individual apps
+yarn dev:client     # http://localhost:3000
+yarn dev:admin      # http://localhost:3001
+yarn dev:api        # http://localhost:3002
+
+# 3. Production build (all workspaces)
+yarn build
+
+#    build a single workspace
+yarn workspace @rentalshop/ui build
+```
+
+> **Tip:** Prisma commands read connection strings from the shell environment. Export the same variables noted in the Railway section before running any Prisma CLI locally.
+
+---
+
+## Railway Environment Variables
+
+Each Railway service needs a small set of variables. Use **internal URLs** (the ones ending with `.railway.internal`) for services running *inside* Railway, and **public proxy URLs** (the ones ending with `.proxy.rlwy.net`) when running scripts from your laptop.
+
+| Variable | Purpose | Example Value | Required On |
+|----------|---------|---------------|-------------|
+| `DATABASE_URL` | Shared tenant DB (merchants, outlets, inventory, orders). | `postgresql://postgres:***@postgres-tenant.railway.internal:5432/railway` | `dev-apis`, `dev-admin`, `dev-client` |
+| `MAIN_DATABASE_URL` | Registry DB (tenants, plans, subscriptions, audit logs). | `postgresql://postgres:***@postgres-registry.railway.internal:5432/railway` | `dev-apis` |
+| `DATABASE_PUBLIC_URL` | Public proxy for tenant DB (optional, for local scripts). | `postgresql://postgres:***@shuttle.proxy.rlwy.net:25662/railway?sslmode=require` | Local `.env` only |
+| `MAIN_DATABASE_PUBLIC_URL` | Public proxy for registry DB (optional, for local scripts). | `postgresql://postgres:***@tramway.proxy.rlwy.net:55099/railway?sslmode=require` | Local `.env` only |
+| `SEED_TENANT_DATABASE_URL` | Overrides `databaseUrl` stored on the seeded tenant. Defaults to `DATABASE_URL`. | same as `DATABASE_PUBLIC_URL` | Optional |
+| `SEED_TENANT_KEY` | Bootstrap slug for the default tenant. | `demo` | Optional |
+| `SEED_TENANT_NAME` | Human name for the default tenant. | `Demo Tenant` | Optional |
+
+**Steps on Railway Dashboard**
+1. Create two Postgres services: `dev-main-database` and `dev-tenant-database`.
+2. For each service, copy the **Internal URL** into the appropriate environment variable in the consuming services (API, Admin, Client).
+3. Copy the **Public URL** to your local `.env` so you can run Prisma commands from your laptop:
+   ```env
+   DATABASE_URL="postgresql://postgres:...@shuttle.proxy.rlwy.net:25662/railway?sslmode=require"
+   MAIN_DATABASE_URL="postgresql://postgres:...@tramway.proxy.rlwy.net:55099/railway?sslmode=require"
+   SEED_TENANT_DATABASE_URL="${DATABASE_URL}"
+   ```
+4. Redeploy `dev-apis` (and any other service that consumes the new variables).
+
+---
+
+## Database Seeding & Bootstrap
+
+Use the single bootstrap command to provision both databases, seed demo data, and ensure the super admin exists.
+
+```bash
+# Make sure the public proxy URLs are exported locally
+export DATABASE_URL="postgresql://postgres:...@shuttle.proxy.rlwy.net:25662/railway?sslmode=require"
+export MAIN_DATABASE_URL="postgresql://postgres:...@tramway.proxy.rlwy.net:55099/railway?sslmode=require"
+export SEED_TENANT_DATABASE_URL="$DATABASE_URL"   # optional but recommended
+
+# Seed plans, registry tenant, merchants, outlets, users, products, orders
+yarn bootstrap:multi-tenant \
+  --tenant-key=demo \
+  --tenant-name="Demo Tenant"
+```
+
+What the command does:
+1. Generates Prisma clients for the registry and tenant schemas.
+2. Pushes the registry schema to `MAIN_DATABASE_URL` and seeds plans + tenant mapping.
+3. Pushes the tenant schema to `DATABASE_URL` and regenerates the demo dataset (merchants, outlets, users, products, orders, payments).
+4. Runs the super-admin creation script (idempotent).
+
+Run the same command again any time you want a clean data set.
+
+---
+
+## Database Migrations
+
+This repository uses two Prisma schemas:
+
+| Schema | Path | Database | Notes |
+|--------|------|----------|-------|
+| Registry | `prisma/main/schema.prisma` | `MAIN_DATABASE_URL` | Contains `Tenant`, `Plan`, `Subscription`, `AuditLog`. |
+| Tenant | `prisma/schema.prisma` | `DATABASE_URL` | Main business schema: merchants, outlets, inventory, customers, orders, payments, etc. |
+
+### Apply schema changes (development)
+```bash
+# Registry (main) schema
+export MAIN_DATABASE_URL="postgresql://...proxy.rlwy.net:55099/railway?sslmode=require"
+npx prisma db push --schema prisma/main/schema.prisma
+
+# Tenant schema
+export DATABASE_URL="postgresql://...proxy.rlwy.net:25662/railway?sslmode=require"
+npx prisma db push --schema prisma/schema.prisma
+```
+
+### Generate migrations (if you plan to track them)
+```bash
+# Registry
+export MAIN_DATABASE_URL="..."
+npx prisma migrate dev --schema prisma/main/schema.prisma --name add-some-field
+
+# Tenant
+export DATABASE_URL="..."
+npx prisma migrate dev --schema prisma/schema.prisma --name add-new-table
+```
+
+> When deploying to Railway, use `prisma migrate deploy` (or `prisma db push` if you prefer declarative) with the *internal* URLs inside the CI/CD workflow.
+
+---
+
+## Default Accounts
+
+After running `yarn bootstrap:multi-tenant` (or `yarn db:regenerate-system`), the following accounts exist in the tenant database:
+
+| Role | Email | Password | Notes |
+|------|-------|----------|-------|
+| Super Admin | `admin@rentalshop.com` | `admin123` | System-wide access, plan management. |
+| Merchant 1 | `merchant1@example.com` | `merchant123` | Full access to Merchant 1 and its outlets. |
+| Merchant 2 | `merchant2@example.com` | `merchant123` | Full access to Merchant 2 and its outlets. |
+| Outlet Admins | `admin.outlet{1-4}@example.com` | `admin123` | Manage specific outlet (inventory, staff). |
+| Outlet Staff | `staff.outlet{1-4}@example.com` | `staff123` | Limited operational access. |
+
+Use these accounts to explore the Admin and Client applications.
+
+---
+
+## Further Documentation
+- **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)** – step-by-step Railway deployment guide.
+- **[.cursorrules](.cursorrules)** – coding standards, API guidelines, and security rules enforced in this repo.
+- **packages/\*/README.md** – additional package-level details (UI, auth, database, etc.).
+
+---
+
+Happy building! If you run into issues seeding or running migrations, double-check environment variables first—the dual-database setup relies entirely on the correct `DATABASE_URL` and `MAIN_DATABASE_URL`.
 # Rental Shop Next.js Monorepo
 
 A comprehensive rental shop management system built with Next.js, featuring a monorepo architecture with shared packages for authentication, database operations, UI components, and business logic.
@@ -23,17 +193,23 @@ This single command will create:
 - ✅ 60 products (30 per merchant)
 - ✅ 120 orders (30 per outlet)
 
-### **Alternative Setup Options**
+### **Quick Bootstrap (All Databases)**
+Once `DATABASE_URL` and `MAIN_DATABASE_URL` are configured, run a single command to provision everything (registry + tenant data + super admin):
+
 ```bash
-# Reset and seed database
-yarn db:reset
-
-# Just seed (without reset)
-yarn db:seed
-
-# Reset only orders
-yarn db:reset-orders
+yarn bootstrap:multi-tenant
 ```
+
+This will:
+- Push the registry schema (`MAIN_DATABASE_URL`) and seed plans/tenant mapping
+- Push the tenant schema (`DATABASE_URL`) and regenerate the full demo dataset
+- Ensure the super admin account exists
+
+Environment variables used by these commands:
+
+- `MAIN_DATABASE_URL` → Connection string for the tenant registry database.
+- `SEED_TENANT_DATABASE_URL` (optional) → Overrides the tenant database URL registered during seeding. Defaults to `DATABASE_URL`.
+- `SEED_TENANT_KEY` / `SEED_TENANT_NAME` (optional) → Customize the bootstrap tenant identifier.
 
 ## 🔑 Default Login Credentials
 

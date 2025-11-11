@@ -4,7 +4,7 @@
 // This is the new, simplified version that replaces the complex dual ID system
 // Goal: Reduce from 139 exports to ~10 simple functions
 
-import { prisma } from './client';
+import { prisma, runWithPrismaClient } from './client';
 import { simplifiedUsers } from './user';
 import { simplifiedCustomers } from './customer';
 import { simplifiedProducts } from './product';
@@ -20,6 +20,17 @@ import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
 import { simplifiedOrderItems } from './order-items';
 import { sessions } from './sessions';
+import {
+  tenantManager,
+  TenantManager,
+  TenantManagerError,
+  TenantNotFoundError,
+  TenantInactiveError,
+  TenantSubscriptionError,
+  TenantContext,
+} from './tenant-manager';
+import type { TenantIdentifier } from './tenant-manager';
+import type { TenantWithSubscription, SubscriptionRecord, PlanRecord } from './main';
 
 // Optimized order functions (temporarily disabled due to type issues)
 // export { 
@@ -212,6 +223,31 @@ const generateOrderNumber = async (outletId: number): Promise<string> => {
 // ============================================================================
 
 export { db, checkDatabaseConnection, generateOrderNumber };
+
+export {
+  tenantManager,
+  TenantManager,
+  TenantManagerError,
+  TenantNotFoundError,
+  TenantInactiveError,
+  TenantSubscriptionError,
+};
+
+export type {
+  TenantContext,
+  TenantIdentifier,
+  TenantWithSubscription,
+  SubscriptionRecord,
+  PlanRecord,
+};
+
+export const withTenantContext = async <T>(
+  identifier: TenantIdentifier,
+  callback: (context: TenantContext) => Promise<T>
+): Promise<T> => {
+  const context = await tenantManager.getTenantContext(identifier);
+  return runWithPrismaClient(context.prisma, () => callback(context));
+};
 
 // Export payment functions
 export { simplifiedPayments } from './payment';

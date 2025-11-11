@@ -13479,7 +13479,7 @@ FieldArrayInner.defaultProps = {
 };
 
 // src/components/forms/LoginForm.tsx
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Building2 as Building22 } from "lucide-react";
 import { Button as Button8, Card as Card7, CardContent as CardContent7, Input as Input5, Logo as Logo2 } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
 
@@ -13578,6 +13578,15 @@ var LanguageSwitcher = ({
 
 // src/components/forms/LoginForm.tsx
 import { jsx as jsx52, jsxs as jsxs38 } from "react/jsx-runtime";
+var SHOP_DOMAIN_SUFFIX = ".anyrent.shop";
+var normalizeTenantKey = (value) => {
+  let sanitized = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  sanitized = sanitized.replace(/đ/g, "d");
+  sanitized = sanitized.replace(/^https?:\/\//, "");
+  sanitized = sanitized.replace(/\.anyrent\.shop.*/g, "");
+  sanitized = sanitized.replace(/[^a-z0-9]/g, "");
+  return sanitized.slice(0, 50);
+};
 var LoginForm = ({
   onLogin,
   onNavigate,
@@ -13590,13 +13599,15 @@ var LoginForm = ({
   const t2 = useAuthTranslations();
   const validationSchema = create$3({
     email: create$6().email(t2("login.invalidEmail")).required(t2("login.invalidEmail")),
-    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword"))
+    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword")),
+    tenantKey: create$6().matches(/^[a-z0-9]+$/, t2("login.shopDomainInvalid")).required(t2("login.shopDomainRequired"))
   });
   const validation = useFormik({
     enableReinitialize: true,
     initialValues: {
       email: "",
-      password: ""
+      password: "",
+      tenantKey: ""
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -13617,6 +13628,11 @@ var LoginForm = ({
   };
   const togglePasswordVisibility = () => {
     setViewPass(!viewPass);
+  };
+  const handleTenantKeyInput = (value) => {
+    const sanitized = normalizeTenantKey(value);
+    validation.setFieldValue("tenantKey", sanitized);
+    onInputChange?.();
   };
   return /* @__PURE__ */ jsxs38("div", { className: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden", children: [
     /* @__PURE__ */ jsx52("style", { children: `
@@ -13690,6 +13706,28 @@ var LoginForm = ({
           error
         ] }),
         /* @__PURE__ */ jsxs38("div", { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs38("div", { children: [
+            /* @__PURE__ */ jsx52("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.shopDomain") }),
+            /* @__PURE__ */ jsxs38("div", { className: "flex rounded-lg shadow-sm border border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/40", children: [
+              /* @__PURE__ */ jsxs38("div", { className: "relative flex-1", children: [
+                /* @__PURE__ */ jsx52(Building22, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+                /* @__PURE__ */ jsx52(
+                  Input5,
+                  {
+                    type: "text",
+                    placeholder: t2("login.shopDomainPlaceholder"),
+                    className: "pl-10 pr-28 rounded-r-none",
+                    value: validation.values.tenantKey,
+                    name: "tenantKey",
+                    onBlur: validation.handleBlur,
+                    onChange: (e2) => handleTenantKeyInput(e2.target.value)
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ jsx52("span", { className: "inline-flex items-center px-3 text-sm text-gray-600 border border-l-0 border-gray-200 bg-gray-50 rounded-r-lg", children: SHOP_DOMAIN_SUFFIX })
+            ] }),
+            validation.touched.tenantKey && validation.errors.tenantKey && /* @__PURE__ */ jsx52("p", { className: "mt-2 text-sm text-red-600", children: validation.errors.tenantKey })
+          ] }),
           /* @__PURE__ */ jsxs38("div", { children: [
             /* @__PURE__ */ jsx52("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.email") }),
             /* @__PURE__ */ jsxs38("div", { className: "relative", children: [
@@ -13813,7 +13851,7 @@ var LoginForm = ({
 var LoginForm_default = LoginForm;
 
 // src/components/forms/RegisterForm.tsx
-import { useState as useState23 } from "react";
+import { useMemo as useMemo4, useState as useState23 } from "react";
 import { useRouter as useRouter2 } from "next/navigation";
 import { Eye as Eye2, EyeOff as EyeOff2, Mail as Mail2, Lock as Lock2, User as User3, Store, Phone, CheckCircle as CheckCircle10, MapPin } from "lucide-react";
 import { authApi } from "@rentalshop/utils";
@@ -13838,6 +13876,15 @@ import {
 } from "@rentalshop/ui";
 import { useAuthTranslations as useAuthTranslations2 } from "@rentalshop/hooks";
 import { Fragment as Fragment8, jsx as jsx53, jsxs as jsxs39 } from "react/jsx-runtime";
+var SHOP_DOMAIN_SUFFIX2 = ".anyrent.shop";
+var generateTenantKey = (value) => {
+  let sanitized = (value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  sanitized = sanitized.replace(/đ/g, "d");
+  sanitized = sanitized.replace(/^https?:\/\//, "");
+  sanitized = sanitized.replace(/\.anyrent\.shop.*/g, "");
+  sanitized = sanitized.replace(/[^a-z0-9]/g, "");
+  return sanitized.slice(0, 50);
+};
 var RegisterForm = ({
   onRegister,
   onNavigate,
@@ -13894,7 +13941,8 @@ var RegisterForm = ({
       zipCode: "",
       country: getDefaultCountry().name,
       acceptTermsAndPrivacy: false,
-      role: "MERCHANT"
+      role: "MERCHANT",
+      tenantKey: ""
     },
     validationSchema: currentStep === 1 ? step1ValidationSchema : step2ValidationSchema,
     onSubmit: async (values) => {
@@ -13905,7 +13953,8 @@ var RegisterForm = ({
           confirmPassword: values.confirmPassword,
           firstName: values.firstName,
           lastName: values.lastName,
-          role: values.role
+          role: values.role,
+          tenantKey: normalizedTenantKey
         });
         setCurrentStep(2);
         onNavigate?.("/register/step-2");
@@ -13935,7 +13984,8 @@ var RegisterForm = ({
           city: values.city,
           state: values.state,
           zipCode: values.zipCode,
-          country: values.country
+          country: values.country,
+          tenantKey: normalizedTenantKey || void 0
         };
         const result = await authApi.register(registrationData);
         if (!result.success) {
@@ -13967,6 +14017,12 @@ var RegisterForm = ({
       }
     }
   });
+  const tenantKey = useMemo4(
+    () => generateTenantKey(formik.values.businessName || ""),
+    [formik.values.businessName]
+  );
+  const normalizedTenantKey = tenantKey.replace(/-/g, "");
+  const tenantDomain = normalizedTenantKey ? `${normalizedTenantKey}${SHOP_DOMAIN_SUFFIX2}` : t2("register.shopDomainPlaceholder");
   return /* @__PURE__ */ jsxs39("div", { className: "w-full max-w-md mx-auto relative z-10", children: [
     /* @__PURE__ */ jsxs39(Card8, { className: "shadow-2xl border-0 bg-white/80 backdrop-blur-sm", children: [
       /* @__PURE__ */ jsxs39(CardHeader8, { className: "text-center", children: [
@@ -14161,7 +14217,11 @@ var RegisterForm = ({
                   }
                 )
               ] }),
-              formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ jsx53("p", { className: "text-red-500 text-sm", children: formik.errors.businessName })
+              formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ jsx53("p", { className: "text-red-500 text-sm", children: formik.errors.businessName }),
+              /* @__PURE__ */ jsxs39("div", { className: "mt-3 space-y-1", children: [
+                /* @__PURE__ */ jsx53("div", { className: "text-xs text-gray-500", children: t2("register.shopDomainHint") }),
+                /* @__PURE__ */ jsx53("div", { className: "rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700", children: tenantDomain })
+              ] })
             ] }),
             /* @__PURE__ */ jsxs39("div", { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs39("label", { htmlFor: "phone", className: "text-sm font-medium text-gray-700", children: [
@@ -15588,7 +15648,7 @@ import Link2 from "next/link";
 import { useRouter as useRouter3 } from "next/navigation";
 import { cn as cn3 } from "@rentalshop/ui";
 import { Button as Button11, Card as Card10 } from "@rentalshop/ui";
-import { ChevronLeft as ChevronLeft2, ChevronRight as ChevronRight3, Building2 as Building22 } from "lucide-react";
+import { ChevronLeft as ChevronLeft2, ChevronRight as ChevronRight3, Building2 as Building23 } from "lucide-react";
 import { useOptimisticNavigation } from "@rentalshop/hooks";
 import { Fragment as Fragment9, jsx as jsx72, jsxs as jsxs58 } from "react/jsx-runtime";
 var menuItems = [
@@ -15619,7 +15679,7 @@ var menuItems = [
   {
     label: "Outlets",
     href: "/outlets",
-    icon: /* @__PURE__ */ jsx72(Building22, { className: "w-5 h-5" })
+    icon: /* @__PURE__ */ jsx72(Building23, { className: "w-5 h-5" })
   },
   {
     label: "Users",
@@ -21409,7 +21469,7 @@ var RentalPeriodSelector2 = ({
 import React81 from "react";
 
 // src/components/features/Merchants/components/MerchantHeader.tsx
-import { Users as Users4, Building2 as Building23, TrendingUp as TrendingUp4 } from "lucide-react";
+import { Users as Users4, Building2 as Building24, TrendingUp as TrendingUp4 } from "lucide-react";
 import { jsx as jsx117, jsxs as jsxs101 } from "react/jsx-runtime";
 function MerchantHeader({ merchant, stats }) {
   return /* @__PURE__ */ jsxs101("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: [
@@ -21419,7 +21479,7 @@ function MerchantHeader({ merchant, stats }) {
       /* @__PURE__ */ jsx117("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: merchant.email })
     ] }) }) }),
     /* @__PURE__ */ jsx117(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx117(CardContent, { className: "p-6", children: /* @__PURE__ */ jsxs101("div", { className: "text-center", children: [
-      /* @__PURE__ */ jsx117(Building23, { className: "w-6 h-6 text-blue-700 mx-auto mb-2" }),
+      /* @__PURE__ */ jsx117(Building24, { className: "w-6 h-6 text-blue-700 mx-auto mb-2" }),
       /* @__PURE__ */ jsx117("p", { className: "text-xs font-medium text-gray-600 dark:text-gray-400", children: "Total Outlets" }),
       /* @__PURE__ */ jsx117("p", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: stats.totalOutlets }),
       /* @__PURE__ */ jsx117("p", { className: "text-xs text-gray-500 dark:text-gray-400", children: "Business locations" })
@@ -24835,7 +24895,7 @@ import {
   calculateSavings,
   getDiscountPercentage
 } from "@rentalshop/utils";
-import { CreditCard as CreditCard9, Building2 as Building24, AlertCircle as AlertCircle13 } from "lucide-react";
+import { CreditCard as CreditCard9, Building2 as Building25, AlertCircle as AlertCircle13 } from "lucide-react";
 import { jsx as jsx134, jsxs as jsxs118 } from "react/jsx-runtime";
 function ManualRenewalModal({
   isOpen,
@@ -24996,7 +25056,7 @@ function ManualRenewalModal({
               onClick: () => setMethod("TRANSFER"),
               className: `p-3 border-2 rounded-lg text-left transition-all justify-start h-auto ${method === "TRANSFER" ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`,
               children: /* @__PURE__ */ jsxs118("div", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ jsx134(Building24, { className: "w-5 h-5 text-gray-600" }),
+                /* @__PURE__ */ jsx134(Building25, { className: "w-5 h-5 text-gray-600" }),
                 /* @__PURE__ */ jsx134("span", { className: "font-medium", children: "Bank Transfer" })
               ] })
             }
@@ -25083,7 +25143,7 @@ import {
   Card as Card36
 } from "@rentalshop/ui";
 import { formatDate as formatDate9, formatCurrency as formatCurrency15 } from "@rentalshop/utils";
-import { Check as Check6, CreditCard as CreditCard10, Building2 as Building25, Sparkles } from "lucide-react";
+import { Check as Check6, CreditCard as CreditCard10, Building2 as Building26, Sparkles } from "lucide-react";
 import { Fragment as Fragment27, jsx as jsx135, jsxs as jsxs119 } from "react/jsx-runtime";
 function UpgradeTrialModal({
   isOpen,
@@ -25331,7 +25391,7 @@ function UpgradeTrialModal({
                   }
                 ),
                 /* @__PURE__ */ jsxs119(Label9, { className: "flex items-center gap-2 cursor-pointer flex-1", children: [
-                  /* @__PURE__ */ jsx135(Building25, { className: "w-4 h-4" }),
+                  /* @__PURE__ */ jsx135(Building26, { className: "w-4 h-4" }),
                   /* @__PURE__ */ jsx135("span", { children: "Bank Transfer" })
                 ] })
               ]
@@ -26706,7 +26766,7 @@ function MerchantSubscriptionSection({
 }
 
 // src/components/features/Merchants/components/MerchantDetail.tsx
-import { Building2 as Building26, Users as Users8, Package as Package14, ShoppingCart as ShoppingCart7 } from "lucide-react";
+import { Building2 as Building27, Users as Users8, Package as Package14, ShoppingCart as ShoppingCart7 } from "lucide-react";
 import { jsx as jsx141, jsxs as jsxs124 } from "react/jsx-runtime";
 function MerchantDetail({
   data,
@@ -26804,7 +26864,7 @@ function MerchantDetail({
       /* @__PURE__ */ jsxs124(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: [
         /* @__PURE__ */ jsxs124(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
           /* @__PURE__ */ jsx141(CardTitle, { className: "text-sm font-medium", children: "Manage Outlets" }),
-          /* @__PURE__ */ jsx141(Building26, { className: "w-5 h-5 text-blue-700" })
+          /* @__PURE__ */ jsx141(Building27, { className: "w-5 h-5 text-blue-700" })
         ] }),
         /* @__PURE__ */ jsx141(CardContent, { children: /* @__PURE__ */ jsx141(
           Button,
@@ -28482,7 +28542,7 @@ import { Save as Save5, X as X13 } from "lucide-react";
 
 // src/components/features/Users/components/UserFormFields.tsx
 import { useState as useState64 } from "react";
-import { Eye as Eye14, EyeOff as EyeOff4, Building2 as Building27, Store as Store4 } from "lucide-react";
+import { Eye as Eye14, EyeOff as EyeOff4, Building2 as Building28, Store as Store4 } from "lucide-react";
 import { Fragment as Fragment33, jsx as jsx159, jsxs as jsxs142 } from "react/jsx-runtime";
 var FormField = ({
   id,
@@ -28580,7 +28640,7 @@ var MerchantSelect = ({
 }) => {
   return /* @__PURE__ */ jsxs142("div", { className: "space-y-2", children: [
     /* @__PURE__ */ jsxs142(Label2, { htmlFor: "merchant", className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ jsx159(Building27, { className: "w-4 h-4" }),
+      /* @__PURE__ */ jsx159(Building28, { className: "w-4 h-4" }),
       "Merchant ",
       canSelect ? "*" : "(Read-only)"
     ] }),
@@ -29770,7 +29830,7 @@ import {
   Button as Button43
 } from "@rentalshop/ui";
 import {
-  Building2 as Building210,
+  Building2 as Building211,
   Grid as Grid2,
   List as List2,
   Plus as Plus9
@@ -29787,7 +29847,7 @@ function OutletHeader({
   const t2 = useOutletsTranslations();
   return /* @__PURE__ */ jsx166(Card43, { children: /* @__PURE__ */ jsxs149(CardHeader31, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
     /* @__PURE__ */ jsx166("div", { className: "flex items-center space-x-4", children: /* @__PURE__ */ jsxs149(CardTitle31, { className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ jsx166(Building210, { className: "w-5 h-5" }),
+      /* @__PURE__ */ jsx166(Building211, { className: "w-5 h-5" }),
       t2("title"),
       " (",
       totalOutlets,
@@ -29913,7 +29973,7 @@ import {
   StatusBadge as StatusBadge2
 } from "@rentalshop/ui";
 import {
-  Building2 as Building211,
+  Building2 as Building212,
   MapPin as MapPin6,
   Phone as Phone5,
   Edit as Edit12,
@@ -29926,7 +29986,7 @@ function OutletGrid({
 }) {
   if (outlets.length === 0) {
     return /* @__PURE__ */ jsx168(Card44, { children: /* @__PURE__ */ jsxs151(CardContent43, { className: "text-center py-8 text-gray-500 dark:text-gray-400", children: [
-      /* @__PURE__ */ jsx168(Building211, { className: "w-12 h-12 mx-auto mb-4 text-gray-300" }),
+      /* @__PURE__ */ jsx168(Building212, { className: "w-12 h-12 mx-auto mb-4 text-gray-300" }),
       /* @__PURE__ */ jsx168("h3", { className: "text-lg font-medium mb-2", children: "No Outlets Found" }),
       /* @__PURE__ */ jsx168("p", { className: "text-sm", children: "No outlets match your current filters." })
     ] }) });
@@ -29934,7 +29994,7 @@ function OutletGrid({
   return /* @__PURE__ */ jsx168("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: outlets.map((outlet) => /* @__PURE__ */ jsxs151(Card44, { className: "hover:shadow-lg transition-shadow", children: [
     /* @__PURE__ */ jsx168(CardHeader32, { children: /* @__PURE__ */ jsxs151("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsxs151(CardTitle32, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx168(Building211, { className: "w-5 h-5" }),
+        /* @__PURE__ */ jsx168(Building212, { className: "w-5 h-5" }),
         outlet.name,
         outlet.isDefault && /* @__PURE__ */ jsx168(
           StatusBadge2,
@@ -30011,7 +30071,7 @@ function OutletGrid({
 
 // src/components/features/Outlets/components/OutletTable.tsx
 import React93 from "react";
-import { Eye as Eye18, Edit as Edit13, XCircle as XCircle13, CheckCircle as CheckCircle19, MoreVertical as MoreVertical6, Building2 as Building212 } from "lucide-react";
+import { Eye as Eye18, Edit as Edit13, XCircle as XCircle13, CheckCircle as CheckCircle19, MoreVertical as MoreVertical6, Building2 as Building213 } from "lucide-react";
 import { useOutletsTranslations as useOutletsTranslations2, useCommonTranslations as useCommonTranslations18 } from "@rentalshop/hooks";
 import { Fragment as Fragment36, jsx as jsx169, jsxs as jsxs152 } from "react/jsx-runtime";
 function OutletTable({
@@ -30026,7 +30086,7 @@ function OutletTable({
   const [openDropdownId, setOpenDropdownId] = React93.useState(null);
   if (outlets.length === 0) {
     return /* @__PURE__ */ jsx169(Card, { className: "shadow-sm border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsx169(CardContent, { className: "text-center py-12", children: /* @__PURE__ */ jsxs152("div", { className: "text-gray-500 dark:text-gray-400", children: [
-      /* @__PURE__ */ jsx169(Building212, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
+      /* @__PURE__ */ jsx169(Building213, { className: "w-16 h-16 mx-auto mb-4 text-gray-400" }),
       /* @__PURE__ */ jsx169("h3", { className: "text-lg font-medium mb-2", children: t2("messages.noOutlets") }),
       /* @__PURE__ */ jsx169("p", { className: "text-sm", children: t2("messages.tryAdjustingSearch") })
     ] }) }) });
@@ -30468,7 +30528,7 @@ var AddOutletDialog = ({
 };
 
 // src/components/features/Outlets/Outlets.tsx
-import { Building2 as Building213 } from "lucide-react";
+import { Building2 as Building214 } from "lucide-react";
 import { useOutletsTranslations as useOutletsTranslations6 } from "@rentalshop/hooks";
 import { jsx as jsx174, jsxs as jsxs156 } from "react/jsx-runtime";
 var Outlets = ({
@@ -30516,7 +30576,7 @@ var Outlets = ({
     ) : /* @__PURE__ */ jsx174(
       EmptyState5,
       {
-        icon: Building213,
+        icon: Building214,
         title: t2("messages.noOutlets"),
         description: filters.q ? t2("messages.tryAdjustingSearch") : t2("messages.getStarted")
       }
@@ -34926,7 +34986,7 @@ function MetricCard({
 }
 
 // src/components/features/Admin/components/ActivityFeed.tsx
-import { User as User13, Settings as Settings6, Database, CreditCard as CreditCard20, ShoppingCart as ShoppingCart8, Building2 as Building214, AlertCircle as AlertCircle17, CheckCircle as CheckCircle24, Info as Info9 } from "lucide-react";
+import { User as User13, Settings as Settings6, Database, CreditCard as CreditCard20, ShoppingCart as ShoppingCart8, Building2 as Building215, AlertCircle as AlertCircle17, CheckCircle as CheckCircle24, Info as Info9 } from "lucide-react";
 import { jsx as jsx216, jsxs as jsxs197 } from "react/jsx-runtime";
 function ActivityFeed({
   title,
@@ -34951,7 +35011,7 @@ function ActivityFeed({
   const getDefaultIcon = (action, type) => {
     const actionLower = action.toLowerCase();
     if (actionLower.includes("create") || actionLower.includes("add")) {
-      return Building214;
+      return Building215;
     } else if (actionLower.includes("update") || actionLower.includes("edit")) {
       return Settings6;
     } else if (actionLower.includes("delete") || actionLower.includes("remove")) {
@@ -39218,7 +39278,7 @@ import {
   User as User23,
   CreditCard as CreditCard22,
   Settings as SettingsIcon,
-  Building2 as Building215,
+  Building2 as Building216,
   Store as Store7,
   Languages as Languages2
 } from "lucide-react";
@@ -40311,7 +40371,7 @@ var createSettingsMenuItems = (t2) => [
   {
     id: "merchant",
     label: t2("menuItems.merchant.label"),
-    icon: Building215,
+    icon: Building216,
     description: t2("menuItems.merchant.description"),
     roles: ["MERCHANT"]
   },
@@ -41062,7 +41122,7 @@ import {
   Settings as Settings10,
   ShoppingCart as ShoppingCart9,
   Store as Store8,
-  Building2 as Building216,
+  Building2 as Building217,
   Bell as Bell4,
   User as User24,
   LogOut as LogOut2,
@@ -41095,7 +41155,7 @@ function TopNavigation({
   ];
   const adminNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home3 },
-    { href: "/merchants", label: "Merchants", icon: Building216 },
+    { href: "/merchants", label: "Merchants", icon: Building217 },
     {
       href: "/plans",
       label: "Plans",
@@ -41921,7 +41981,7 @@ import {
   ChevronRight as ChevronRight6,
   Tag as Tag6,
   ShoppingCart as ShoppingCart11,
-  Building2 as Building217
+  Building2 as Building218
 } from "lucide-react";
 import { Button as Button76 } from "@rentalshop/ui";
 import { jsx as jsx274, jsxs as jsxs249 } from "react/jsx-runtime";
@@ -41945,7 +42005,7 @@ function Navigation({
   const adminNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home5 },
     { href: "/users", label: "Users", icon: Users15 },
-    { href: "/outlets", label: "Outlets", icon: Building217 },
+    { href: "/outlets", label: "Outlets", icon: Building218 },
     { href: "/products", label: "Products", icon: Store10 },
     { href: "/categories", label: "Categories", icon: Tag6 },
     { href: "/orders", label: "Orders", icon: ShoppingCart11 },
@@ -42049,7 +42109,7 @@ import {
   Users as Users16,
   Package as Package27,
   ShoppingCart as ShoppingCart12,
-  Building2 as Building218,
+  Building2 as Building219,
   Settings as Settings13,
   CreditCard as CreditCard25,
   Clock as Clock34,
@@ -42067,7 +42127,7 @@ var adminMenuItems = [
   {
     label: "Merchants",
     href: "/merchants",
-    icon: Building218
+    icon: Building219
   },
   {
     label: "Subscription",
@@ -42274,7 +42334,7 @@ import {
   Users as Users17,
   Package as Package28,
   ShoppingCart as ShoppingCart13,
-  Building2 as Building219,
+  Building2 as Building220,
   Settings as Settings14,
   Calendar as Calendar36,
   Tag as Tag7,
@@ -42325,7 +42385,7 @@ var getClientMenuItems = (t2) => [
   {
     label: t2("navigation.outlets"),
     href: "/outlets",
-    icon: Building219
+    icon: Building220
   },
   {
     label: t2("navigation.calendar"),

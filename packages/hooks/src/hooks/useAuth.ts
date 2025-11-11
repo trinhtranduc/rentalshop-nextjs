@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getAuthToken, getStoredUser, clearAuthData, storeAuthData } from '@rentalshop/utils';
+import { getAuthToken, getStoredUser, clearAuthData, storeAuthData, authApi } from '@rentalshop/utils';
 import type { User } from '@rentalshop/types';
 import { useErrorTranslations } from './useTranslation';
+import { useToastHandler } from './useToast';
 
 // ============================================================================
 // TYPES
@@ -41,8 +42,9 @@ export function useAuth() {
     error: null,
   });
   
-  // Use translation hook for error messages
+  // Use translation + toast helpers
   const t = useErrorTranslations();
+  const { showSuccess, showError } = useToastHandler();
 
   // Helper function to translate error from API response
   const translateError = useCallback((errorData: any): string => {
@@ -75,61 +77,41 @@ export function useAuth() {
   // AUTH FUNCTIONS
   // ============================================================================
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    try {
+  const login = useCallback(
+    async (email: string, password: string, tenantKey?: string) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
+      try {
+        const result = await authApi.login({ email, password, tenantKey });
 
-      const { apiUrls } = await import('@rentalshop/utils');
-      const response = await fetch(apiUrls.auth.login, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      // Handle non-200 responses
-      if (!response.ok) {
-        const errorData = await response.json();
-        const translatedError = translateError(errorData);
-        setState(prev => ({ 
-          ...prev, 
-          error: translatedError,
-          loading: false 
-        }));
-        return false;
+        if (!result.success || !result.data) {
+          const message = result.message || translateError(result);
+          throw new Error(message || 'Login failed');
       }
 
-      const data: LoginResponse = await response.json();
+        const { token, user } = result.data;
+        // Persist to local storage
+        storeAuthData(token, user);
 
-      if (data.success && data.data?.token) {
-        storeAuthData(data.data.token, data.data.user);
-        setState(prev => ({ 
-          ...prev, 
-          user: data.data.user, 
+        setState({
+          user,
           loading: false,
-          error: null 
-        }));
-        return true;
-      } else {
-        const translatedError = translateError(data);
-        setState(prev => ({ 
-          ...prev, 
-          error: translatedError,
-          loading: false 
-        }));
-        return false;
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t('UNKNOWN_ERROR');
-      setState(prev => ({ 
-        ...prev, 
-        error: errorMessage,
-        loading: false 
-      }));
-      return false;
+          error: null,
+        });
+
+        showSuccess(t('login.success'));
+        return result;
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : translateError(err);
+
+        setState(prev => ({ ...prev, loading: false, error: message }));
+        showError(t('login.failed', { defaultValue: 'Login failed' }), message);
+
+        throw err;
     }
-  }, [translateError, t]);
+    },
+    [showError, showSuccess, t, translateError]
+  );
 
   const logout = useCallback(() => {
     clearAuthData();

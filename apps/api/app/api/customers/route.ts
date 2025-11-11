@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 import crypto from 'crypto';
+import { enforceTenantPlanLimit } from '../../../lib/tenant-plan';
 
 /**
  * GET /api/customers
  * Get customers with filtering and pagination using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 GET /api/customers - User: ${user.email} (${user.role})`);
   
   try {
@@ -140,7 +142,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
  * Create a new customer using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 POST /api/customers - User: ${user.email} (${user.role})`);
   
   try {
@@ -210,21 +213,11 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       }
     }
 
-    // Check plan limits before creating customer
-    try {
-      await assertPlanLimit(merchantId, 'customers');
-      console.log('✅ Plan limit check passed for customers');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for customers:', error.message);
-      return NextResponse.json(
-        { 
-          success: false, 
-          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for customers',
-          error: 'PLAN_LIMIT_EXCEEDED'
-        },
-        { status: 403 }
-      );
+    const planLimitResponse = await enforceTenantPlanLimit(authContext, 'customers', { merchantId });
+    if (planLimitResponse) {
+      return planLimitResponse;
     }
+    console.log('✅ Plan limit check passed for customers');
 
     // Find merchant by publicId to get CUID
     const merchant = await db.merchants.findById(merchantId);
@@ -275,7 +268,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
  * Update a customer using simplified database API  
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 PUT /api/customers - User: ${user.email} (${user.role})`);
   
   try {

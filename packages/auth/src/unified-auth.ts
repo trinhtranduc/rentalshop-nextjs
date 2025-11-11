@@ -5,8 +5,18 @@
 // Goal: Replace 14+ auth wrappers with 1 unified approach
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, getUserScope, hasAnyRole } from './core';
-import { db } from '@rentalshop/database';
+import { authenticateRequest, getUserScope } from './core';
+import { hasAnyRole } from './permissions';
+import {
+  db,
+  withTenantContext,
+  TenantManagerError,
+  TenantNotFoundError,
+  TenantInactiveError,
+  TenantSubscriptionError,
+  type TenantContext as DatabaseTenantContext,
+  type TenantIdentifier,
+} from '@rentalshop/database';
 import { SUBSCRIPTION_STATUS, USER_ROLE, type UserRole } from '@rentalshop/constants';
 
 // ============================================================================
@@ -19,6 +29,9 @@ export type { UserRole } from '@rentalshop/constants';
 export interface AuthContext {
   user: any;
   userScope: any;
+  tenant?: DatabaseTenantContext['tenant'];
+  tenantSubscription?: DatabaseTenantContext['subscription'];
+  tenantPlan?: DatabaseTenantContext['plan'];
 }
 
 export interface AuthOptions {
@@ -236,6 +249,89 @@ async function checkSubscriptionStatus(user: any): Promise<{ success: boolean; r
   return { success: true };
 }
 
+function resolveTenantIdentifier(request: NextRequest, user: any): TenantIdentifier | null {
+  const headerTenantId = request.headers.get('x-tenant-id') ?? undefined;
+  const headerTenantKey =
+    request.headers.get('x-tenant-key') ??
+    request.headers.get('x-tenant') ??
+    undefined;
+
+  const userTenantId =
+    (user?.tenantId as string | undefined) ??
+    (user?.tenant?.id as string | undefined);
+  const userTenantKey =
+    (user?.tenantKey as string | undefined) ??
+    (user?.tenant?.tenantKey as string | undefined);
+
+  const fallbackTenantKey =
+    process.env.DEFAULT_TENANT_KEY ?? undefined;
+
+  const tenantId = headerTenantId ?? userTenantId ?? undefined;
+  const tenantKey = headerTenantKey ?? userTenantKey ?? fallbackTenantKey ?? undefined;
+
+  if (!tenantId && !tenantKey) {
+    return null;
+  }
+
+  return {
+    tenantId: tenantId ?? undefined,
+    tenantKey: tenantKey ?? undefined,
+  };
+}
+
+function mapTenantErrorToResponse(error: TenantManagerError): NextResponse {
+  if (error instanceof TenantNotFoundError) {
+    return NextResponse.json(
+      {
+        success: false,
+        code: error.code,
+        message: 'Tenant not found',
+        details: {
+          message: error.message,
+        },
+      },
+      { status: 404 }
+    );
+  }
+
+  if (error instanceof TenantInactiveError) {
+    return NextResponse.json(
+      {
+        success: false,
+        code: error.code,
+        message: 'Tenant is inactive',
+        details: {
+          message: error.message,
+        },
+      },
+      { status: 403 }
+    );
+  }
+
+  if (error instanceof TenantSubscriptionError) {
+    return NextResponse.json(
+      {
+        success: false,
+        code: error.code,
+        message: 'Tenant subscription is not active',
+        details: {
+          message: error.message,
+        },
+      },
+      { status: 402 }
+    );
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      code: error.code || 'TENANT_ERROR',
+      message: 'Failed to establish tenant context',
+    },
+    { status: 500 }
+  );
+}
+
 // ============================================================================
 // UNIFIED AUTH WRAPPER
 // ============================================================================
@@ -295,7 +391,9 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
           console.log(`✅ Role authorized: ${user.role}`);
         }
 
-        // Step 3: Check subscription status if required
+        const tenantIdentifier = resolveTenantIdentifier(request, user);
+
+        const executeHandler = async (tenantContext?: DatabaseTenantContext) => {
         if (requireSubscription) {
           console.log('🔍 Checking subscription status...');
           const subscriptionCheck = await checkSubscriptionStatus(user);
@@ -306,12 +404,52 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
           console.log('✅ Subscription is active');
         }
 
-        // Step 4: Get user scope for context
         const userScope = getUserScope(user);
+          const context: AuthContext = {
+            user,
+            userScope,
+            tenant: tenantContext?.tenant,
+            tenantSubscription: tenantContext?.subscription,
+            tenantPlan: tenantContext?.plan,
+          };
+          return handler(request, context);
+        };
 
-        // Step 5: Call the handler with authenticated context
-        const context: AuthContext = { user, userScope };
-        return await handler(request, context);
+        if (tenantIdentifier) {
+          try {
+            return await withTenantContext(tenantIdentifier, async (tenantContext) =>
+              executeHandler(tenantContext)
+            );
+          } catch (error) {
+            if (error instanceof TenantManagerError) {
+              console.error('❌ Tenant context establishment failed:', error);
+              return mapTenantErrorToResponse(error);
+            }
+            console.error('❌ Unexpected tenant context error:', error);
+            return NextResponse.json(
+              {
+                success: false,
+                code: 'TENANT_CONTEXT_ERROR',
+                message: 'Failed to establish tenant context',
+              },
+              { status: 500 }
+            );
+          }
+        }
+
+        if (user.role !== USER_ROLE.ADMIN) {
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'TENANT_IDENTIFIER_REQUIRED',
+              message: 'Tenant identifier is required for this operation',
+            },
+            { status: 400 }
+          );
+        }
+
+        // System admins can operate without tenant context (main DB operations)
+        return executeHandler();
 
       } catch (error) {
         console.error('🚨 Auth wrapper error:', error);

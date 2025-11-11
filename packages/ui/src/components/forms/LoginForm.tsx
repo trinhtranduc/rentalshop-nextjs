@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Building2 } from "lucide-react";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Logo } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
 import { LanguageSwitcher } from "../layout/LanguageSwitcher";
@@ -12,7 +12,23 @@ import { LanguageSwitcher } from "../layout/LanguageSwitcher";
 interface LoginFormData {
   email: string;
   password: string;
+  tenantKey: string;
 }
+
+const SHOP_DOMAIN_SUFFIX = '.anyrent.shop';
+
+const normalizeTenantKey = (value: string): string => {
+  let sanitized = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+  sanitized = sanitized.replace(/đ/g, 'd');
+  sanitized = sanitized.replace(/^https?:\/\//, '');
+  sanitized = sanitized.replace(/\.anyrent\.shop.*/g, '');
+  sanitized = sanitized.replace(/[^a-z0-9]/g, '');
+  return sanitized.slice(0, 50);
+};
 
 interface LoginFormProps {
   onLogin?: (data: LoginFormData) => Promise<void>;
@@ -42,6 +58,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
     password: Yup.string()
       .min(6, t('login.invalidPassword'))
       .required(t('login.invalidPassword')),
+    tenantKey: Yup.string()
+      .matches(/^[a-z0-9]+$/, t('login.shopDomainInvalid'))
+      .required(t('login.shopDomainRequired')),
   });
 
   const validation = useFormik<LoginFormData>({
@@ -49,6 +68,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
     initialValues: {
       email: "",
       password: "",
+      tenantKey: "",
     },
     validationSchema: validationSchema,
     onSubmit: async (values: LoginFormData) => {
@@ -72,6 +92,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   const togglePasswordVisibility = () => {
     setViewPass(!viewPass);
+  };
+
+  const handleTenantKeyInput = (value: string) => {
+    const sanitized = normalizeTenantKey(value);
+    validation.setFieldValue('tenantKey', sanitized);
+    onInputChange?.();
   };
 
   return (
@@ -169,6 +195,35 @@ const LoginForm: React.FC<LoginFormProps> = ({
               )}
 
               <div className="space-y-4">
+                {/* Shop Domain Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('login.shopDomain')}
+                  </label>
+                    <div className="flex rounded-lg shadow-sm border border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/40">
+                      <div className="relative flex-1">
+                        <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <Input
+                          type="text"
+                          placeholder={t('login.shopDomainPlaceholder')}
+                          className="pl-10 pr-28 rounded-r-none"
+                          value={validation.values.tenantKey}
+                          name="tenantKey"
+                          onBlur={validation.handleBlur}
+                          onChange={(e) => handleTenantKeyInput(e.target.value)}
+                        />
+                      </div>
+                      <span className="inline-flex items-center px-3 text-sm text-gray-600 border border-l-0 border-gray-200 bg-gray-50 rounded-r-lg">
+                        {SHOP_DOMAIN_SUFFIX}
+                      </span>
+                    </div>
+                  {validation.touched.tenantKey && validation.errors.tenantKey && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {validation.errors.tenantKey}
+                    </p>
+                  )}
+                </div>
+
                 {/* Email Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

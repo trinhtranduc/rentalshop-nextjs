@@ -1,5 +1,6 @@
 {
   "_comment": "Error codes for API responses - English version",
+  "errors.login.failed": "Login failed. Please try again.",
   
   "UNAUTHORIZED": "Authentication required",
   "FORBIDDEN": "Access denied",

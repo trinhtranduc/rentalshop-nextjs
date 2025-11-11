@@ -13830,6 +13830,15 @@ var LanguageSwitcher = ({
 
 // src/components/forms/LoginForm.tsx
 var import_jsx_runtime53 = require("react/jsx-runtime");
+var SHOP_DOMAIN_SUFFIX = ".anyrent.shop";
+var normalizeTenantKey = (value) => {
+  let sanitized = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  sanitized = sanitized.replace(/đ/g, "d");
+  sanitized = sanitized.replace(/^https?:\/\//, "");
+  sanitized = sanitized.replace(/\.anyrent\.shop.*/g, "");
+  sanitized = sanitized.replace(/[^a-z0-9]/g, "");
+  return sanitized.slice(0, 50);
+};
 var LoginForm = ({
   onLogin,
   onNavigate,
@@ -13842,13 +13851,15 @@ var LoginForm = ({
   const t2 = (0, import_hooks11.useAuthTranslations)();
   const validationSchema = create$3({
     email: create$6().email(t2("login.invalidEmail")).required(t2("login.invalidEmail")),
-    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword"))
+    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword")),
+    tenantKey: create$6().matches(/^[a-z0-9]+$/, t2("login.shopDomainInvalid")).required(t2("login.shopDomainRequired"))
   });
   const validation = useFormik({
     enableReinitialize: true,
     initialValues: {
       email: "",
-      password: ""
+      password: "",
+      tenantKey: ""
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -13869,6 +13880,11 @@ var LoginForm = ({
   };
   const togglePasswordVisibility = () => {
     setViewPass(!viewPass);
+  };
+  const handleTenantKeyInput = (value) => {
+    const sanitized = normalizeTenantKey(value);
+    validation.setFieldValue("tenantKey", sanitized);
+    onInputChange?.();
   };
   return /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden", children: [
     /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("style", { children: `
@@ -13942,6 +13958,28 @@ var LoginForm = ({
           error
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "space-y-4", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.shopDomain") }),
+            /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "flex rounded-lg shadow-sm border border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/40", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "relative flex-1", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(import_lucide_react25.Building2, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
+                /* @__PURE__ */ (0, import_jsx_runtime53.jsx)(
+                  import_ui14.Input,
+                  {
+                    type: "text",
+                    placeholder: t2("login.shopDomainPlaceholder"),
+                    className: "pl-10 pr-28 rounded-r-none",
+                    value: validation.values.tenantKey,
+                    name: "tenantKey",
+                    onBlur: validation.handleBlur,
+                    onChange: (e2) => handleTenantKeyInput(e2.target.value)
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("span", { className: "inline-flex items-center px-3 text-sm text-gray-600 border border-l-0 border-gray-200 bg-gray-50 rounded-r-lg", children: SHOP_DOMAIN_SUFFIX })
+            ] }),
+            validation.touched.tenantKey && validation.errors.tenantKey && /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("p", { className: "mt-2 text-sm text-red-600", children: validation.errors.tenantKey })
+          ] }),
           /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.email") }),
             /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { className: "relative", children: [
@@ -14073,6 +14111,15 @@ var import_constants8 = require("@rentalshop/constants");
 var import_ui15 = require("@rentalshop/ui");
 var import_hooks12 = require("@rentalshop/hooks");
 var import_jsx_runtime54 = require("react/jsx-runtime");
+var SHOP_DOMAIN_SUFFIX2 = ".anyrent.shop";
+var generateTenantKey = (value) => {
+  let sanitized = (value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  sanitized = sanitized.replace(/đ/g, "d");
+  sanitized = sanitized.replace(/^https?:\/\//, "");
+  sanitized = sanitized.replace(/\.anyrent\.shop.*/g, "");
+  sanitized = sanitized.replace(/[^a-z0-9]/g, "");
+  return sanitized.slice(0, 50);
+};
 var RegisterForm = ({
   onRegister,
   onNavigate,
@@ -14129,7 +14176,8 @@ var RegisterForm = ({
       zipCode: "",
       country: (0, import_constants8.getDefaultCountry)().name,
       acceptTermsAndPrivacy: false,
-      role: "MERCHANT"
+      role: "MERCHANT",
+      tenantKey: ""
     },
     validationSchema: currentStep === 1 ? step1ValidationSchema : step2ValidationSchema,
     onSubmit: async (values) => {
@@ -14140,7 +14188,8 @@ var RegisterForm = ({
           confirmPassword: values.confirmPassword,
           firstName: values.firstName,
           lastName: values.lastName,
-          role: values.role
+          role: values.role,
+          tenantKey: normalizedTenantKey
         });
         setCurrentStep(2);
         onNavigate?.("/register/step-2");
@@ -14170,7 +14219,8 @@ var RegisterForm = ({
           city: values.city,
           state: values.state,
           zipCode: values.zipCode,
-          country: values.country
+          country: values.country,
+          tenantKey: normalizedTenantKey || void 0
         };
         const result = await import_utils17.authApi.register(registrationData);
         if (!result.success) {
@@ -14202,6 +14252,12 @@ var RegisterForm = ({
       }
     }
   });
+  const tenantKey = (0, import_react30.useMemo)(
+    () => generateTenantKey(formik.values.businessName || ""),
+    [formik.values.businessName]
+  );
+  const normalizedTenantKey = tenantKey.replace(/-/g, "");
+  const tenantDomain = normalizedTenantKey ? `${normalizedTenantKey}${SHOP_DOMAIN_SUFFIX2}` : t2("register.shopDomainPlaceholder");
   return /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "w-full max-w-md mx-auto relative z-10", children: [
     /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(import_ui15.Card, { className: "shadow-2xl border-0 bg-white/80 backdrop-blur-sm", children: [
       /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(import_ui15.CardHeader, { className: "text-center", children: [
@@ -14396,7 +14452,11 @@ var RegisterForm = ({
                   }
                 )
               ] }),
-              formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.businessName })
+              formik.errors.businessName && formik.touched.businessName && /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("p", { className: "text-red-500 text-sm", children: formik.errors.businessName }),
+              /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "mt-3 space-y-1", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "text-xs text-gray-500", children: t2("register.shopDomainHint") }),
+                /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { className: "rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700", children: tenantDomain })
+              ] })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { className: "space-y-2", children: [
               /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("label", { htmlFor: "phone", className: "text-sm font-medium text-gray-700", children: [

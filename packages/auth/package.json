@@ -23,6 +23,11 @@
       "import": "./dist/client.mjs",
       "require": "./dist/client.js"
     },
+    "./permissions": {
+      "types": "./dist/permissions.d.ts",
+      "import": "./dist/permissions.mjs",
+      "require": "./dist/permissions.js"
+    },
     "./admin": {
       "types": "./dist/admin.d.ts",
       "import": "./dist/admin.mjs",

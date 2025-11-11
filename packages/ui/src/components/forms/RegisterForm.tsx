@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
@@ -50,7 +50,23 @@ interface RegisterFormData {
   acceptTermsAndPrivacy: boolean;
   // Role is always MERCHANT for public registration
   role: 'MERCHANT';
+  tenantKey?: string;
 }
+
+const SHOP_DOMAIN_SUFFIX = '.anyrent.shop';
+
+const generateTenantKey = (value: string): string => {
+  let sanitized = (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+  sanitized = sanitized.replace(/đ/g, 'd');
+  sanitized = sanitized.replace(/^https?:\/\//, '');
+  sanitized = sanitized.replace(/\.anyrent\.shop.*/g, '');
+  sanitized = sanitized.replace(/[^a-z0-9]/g, '');
+  return sanitized.slice(0, 50);
+};
 
 interface RegisterFormProps {
   onRegister?: (data: RegisterFormData) => Promise<void>;
@@ -148,6 +164,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       country: getDefaultCountry().name,
       acceptTermsAndPrivacy: false,
       role: 'MERCHANT',
+      tenantKey: "",
     },
     validationSchema: currentStep === 1 ? step1ValidationSchema : step2ValidationSchema,
     onSubmit: async (values: RegisterFormData) => {
@@ -161,6 +178,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           firstName: values.firstName,
           lastName: values.lastName,
           role: values.role,
+          tenantKey: normalizedTenantKey,
         });
         setCurrentStep(2);
         onNavigate?.('/register/step-2');
@@ -199,6 +217,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           state: values.state,
           zipCode: values.zipCode,
           country: values.country,
+          tenantKey: normalizedTenantKey || undefined,
         };
         
         const result = await authApi.register(registrationData);
@@ -242,6 +261,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       }
     },
   });
+
+  const tenantKey = useMemo(
+    () => generateTenantKey(formik.values.businessName || ''),
+    [formik.values.businessName]
+  );
+  const normalizedTenantKey = tenantKey.replace(/-/g, '');
+  const tenantDomain = normalizedTenantKey
+    ? `${normalizedTenantKey}${SHOP_DOMAIN_SUFFIX}`
+    : t('register.shopDomainPlaceholder');
 
   return (
     <div className="w-full max-w-md mx-auto relative z-10">
@@ -469,6 +497,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     {formik.errors.businessName && formik.touched.businessName && (
                       <p className="text-red-500 text-sm">{formik.errors.businessName}</p>
                     )}
+                    <div className="mt-3 space-y-1">
+                      <div className="text-xs text-gray-500">
+                        {t('register.shopDomainHint')}
+                      </div>
+                      <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700">
+                        {tenantDomain}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Phone Field */}

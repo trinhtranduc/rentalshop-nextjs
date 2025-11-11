@@ -92,8 +92,8 @@ __export(src_exports, {
 module.exports = __toCommonJS(src_exports);
 
 // src/hooks/useAuth.ts
-var import_react4 = require("react");
-var import_utils = require("@rentalshop/utils");
+var import_react5 = require("react");
+var import_utils2 = require("@rentalshop/utils");
 
 // ../../node_modules/tslib/tslib.es6.mjs
 var extendStatics = function(d3, b) {
@@ -3750,15 +3750,147 @@ function useErrorTranslations() {
   return e2("errors");
 }
 
+// src/hooks/useToast.ts
+var import_react4 = require("react");
+var import_utils = require("@rentalshop/utils");
+var import_ui = require("@rentalshop/ui");
+var useErrorHandler = (options = {}) => {
+  const {
+    onLogin,
+    onRetry,
+    onDismiss,
+    autoHandleAuth = true
+  } = options;
+  const [isLoading, setIsLoading] = (0, import_react4.useState)(false);
+  const { addToast } = (0, import_ui.useToasts)();
+  const handleError = (0, import_react4.useCallback)((error) => {
+    const errorInfo = (0, import_utils.analyzeError)(error);
+    return errorInfo;
+  }, []);
+  const showErrorToast = (0, import_react4.useCallback)((error) => {
+    const errorInfo = (0, import_utils.analyzeError)(error);
+    const toastType = (0, import_utils.getToastType)(errorInfo.type);
+    let toastMessage = errorInfo.message;
+    if (errorInfo.showLoginButton) {
+      if (errorInfo.type === "auth") {
+        toastMessage += " Click to log in again.";
+      } else if (errorInfo.type === "permission") {
+        toastMessage += " Click to log in with a different account.";
+      } else if (errorInfo.type === "subscription") {
+        toastMessage += " Click to log in and upgrade your plan.";
+      } else {
+        toastMessage += " Click to log in.";
+      }
+    }
+    addToast(toastType, errorInfo.title, toastMessage, 0);
+  }, [addToast]);
+  const handleApiCall = (0, import_react4.useCallback)(async (apiCall) => {
+    setIsLoading(true);
+    try {
+      const result = await (0, import_utils.withErrorHandlingForUI)(apiCall);
+      if (result.error) {
+        showErrorToast(result.error);
+      }
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showErrorToast]);
+  const retry = (0, import_react4.useCallback)(() => {
+    if (onRetry) {
+      onRetry();
+    }
+  }, [onRetry]);
+  const login = (0, import_react4.useCallback)(() => {
+    if (onLogin) {
+      onLogin();
+    } else if (typeof window !== "undefined") {
+    }
+  }, [onLogin]);
+  return {
+    isLoading,
+    handleError,
+    handleApiCall,
+    retry,
+    login,
+    showErrorToast
+  };
+};
+var useSimpleErrorHandler = () => {
+  const { addToast } = (0, import_ui.useToasts)();
+  const handleError = (0, import_react4.useCallback)((error) => {
+    const errorInfo = (0, import_utils.analyzeError)(error);
+    const toastType = (0, import_utils.getToastType)(errorInfo.type);
+    let toastMessage = errorInfo.message;
+    if (errorInfo.showLoginButton) {
+      if (errorInfo.type === "auth") {
+        toastMessage += " Click to log in again.";
+      } else if (errorInfo.type === "permission") {
+        toastMessage += " Click to log in with a different account.";
+      } else if (errorInfo.type === "subscription") {
+        toastMessage += " Click to log in and upgrade your plan.";
+      } else {
+        toastMessage += " Click to log in.";
+      }
+    }
+    addToast(toastType, errorInfo.title, toastMessage, 0);
+    return errorInfo;
+  }, [addToast]);
+  return {
+    handleError
+  };
+};
+var useToastHandler = () => {
+  const { addToast } = (0, import_ui.useToasts)();
+  const showError = (0, import_react4.useCallback)((title, message) => {
+    addToast("error", title, message, 0);
+  }, [addToast]);
+  const showSuccess = (0, import_react4.useCallback)((title, message) => {
+    addToast("success", title, message, 5e3);
+  }, [addToast]);
+  const showWarning = (0, import_react4.useCallback)((title, message) => {
+    addToast("warning", title, message, 5e3);
+  }, [addToast]);
+  const showInfo = (0, import_react4.useCallback)((title, message) => {
+    addToast("info", title, message, 5e3);
+  }, [addToast]);
+  const handleError = (0, import_react4.useCallback)((error) => {
+    const errorInfo = (0, import_utils.analyzeError)(error);
+    const toastType = (0, import_utils.getToastType)(errorInfo.type);
+    let toastMessage = errorInfo.message;
+    if (errorInfo.showLoginButton) {
+      if (errorInfo.type === "auth") {
+        toastMessage += " Click to log in again.";
+      } else if (errorInfo.type === "permission") {
+        toastMessage += " Click to log in with a different account.";
+      } else if (errorInfo.type === "subscription") {
+        toastMessage += " Click to log in and upgrade your plan.";
+      } else {
+        toastMessage += " Click to log in.";
+      }
+    }
+    addToast(toastType, errorInfo.title, toastMessage, 0);
+    return errorInfo;
+  }, [addToast]);
+  return {
+    showError,
+    showSuccess,
+    showWarning,
+    showInfo,
+    handleError
+  };
+};
+
 // src/hooks/useAuth.ts
 function useAuth() {
-  const [state, setState] = (0, import_react4.useState)({
+  const [state, setState] = (0, import_react5.useState)({
     user: null,
     loading: true,
     error: null
   });
   const t3 = useErrorTranslations();
-  const translateError = (0, import_react4.useCallback)((errorData) => {
+  const { showSuccess, showError } = useToastHandler();
+  const translateError = (0, import_react5.useCallback)((errorData) => {
     if (errorData?.code) {
       const translated = t3(errorData.code);
       if (translated !== errorData.code) {
@@ -3776,70 +3908,47 @@ function useAuth() {
     }
     return t3("UNKNOWN_ERROR");
   }, [t3]);
-  const login = (0, import_react4.useCallback)(async (email, password) => {
-    try {
+  const login = (0, import_react5.useCallback)(
+    async (email, password, tenantKey) => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
-      const { apiUrls } = await import("@rentalshop/utils");
-      const response = await fetch(apiUrls.auth.login, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        const translatedError = translateError(errorData);
-        setState((prev) => ({
-          ...prev,
-          error: translatedError,
-          loading: false
-        }));
-        return false;
-      }
-      const data = await response.json();
-      if (data.success && data.data?.token) {
-        (0, import_utils.storeAuthData)(data.data.token, data.data.user);
-        setState((prev) => ({
-          ...prev,
-          user: data.data.user,
+      try {
+        const result = await import_utils2.authApi.login({ email, password, tenantKey });
+        if (!result.success || !result.data) {
+          const message = result.message || translateError(result);
+          throw new Error(message || "Login failed");
+        }
+        const { token, user } = result.data;
+        (0, import_utils2.storeAuthData)(token, user);
+        setState({
+          user,
           loading: false,
           error: null
-        }));
-        return true;
-      } else {
-        const translatedError = translateError(data);
-        setState((prev) => ({
-          ...prev,
-          error: translatedError,
-          loading: false
-        }));
-        return false;
+        });
+        showSuccess(t3("login.success"));
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : translateError(err);
+        setState((prev) => ({ ...prev, loading: false, error: message }));
+        showError(t3("login.failed", { defaultValue: "Login failed" }), message);
+        throw err;
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t3("UNKNOWN_ERROR");
-      setState((prev) => ({
-        ...prev,
-        error: errorMessage,
-        loading: false
-      }));
-      return false;
-    }
-  }, [translateError, t3]);
-  const logout = (0, import_react4.useCallback)(() => {
-    (0, import_utils.clearAuthData)();
+    },
+    [showError, showSuccess, t3, translateError]
+  );
+  const logout = (0, import_react5.useCallback)(() => {
+    (0, import_utils2.clearAuthData)();
     setState({
       user: null,
       loading: false,
       error: null
     });
   }, []);
-  const clearError = (0, import_react4.useCallback)(() => {
+  const clearError = (0, import_react5.useCallback)(() => {
     setState((prev) => ({ ...prev, error: null }));
   }, []);
-  const refreshUser = (0, import_react4.useCallback)(async () => {
+  const refreshUser = (0, import_react5.useCallback)(async () => {
     try {
-      const token = (0, import_utils.getAuthToken)();
+      const token = (0, import_utils2.getAuthToken)();
       if (!token) {
         setState((prev) => ({ ...prev, user: null, loading: false }));
         return;
@@ -3867,9 +3976,9 @@ function useAuth() {
       setState((prev) => ({ ...prev, loading: false }));
     }
   }, [logout]);
-  (0, import_react4.useEffect)(() => {
-    const token = (0, import_utils.getAuthToken)();
-    const storedUser = (0, import_utils.getStoredUser)();
+  (0, import_react5.useEffect)(() => {
+    const token = (0, import_utils2.getAuthToken)();
+    const storedUser = (0, import_utils2.getStoredUser)();
     if (token && storedUser) {
       setState((prev) => ({
         ...prev,
@@ -3892,14 +4001,14 @@ function useAuth() {
 }
 
 // src/hooks/useAuthErrorHandler.ts
-var import_react5 = require("react");
-var import_utils2 = require("@rentalshop/utils");
+var import_react6 = require("react");
+var import_utils3 = require("@rentalshop/utils");
 var useAuthErrorHandler = () => {
-  const handleAuthError = (0, import_react5.useCallback)((error) => {
+  const handleAuthError = (0, import_react6.useCallback)((error) => {
     console.error("Authentication error detected:", error);
     if (error?.message?.includes("Authentication required") || error?.message?.includes("Unauthorized") || error?.message?.includes("Invalid token") || error?.message?.includes("Token expired") || error?.status === 401) {
       console.log("\u{1F504} Authentication error detected, logging out user");
-      (0, import_utils2.clearAuthData)();
+      (0, import_utils3.clearAuthData)();
       if (typeof window !== "undefined") {
       }
     }
@@ -3908,27 +4017,27 @@ var useAuthErrorHandler = () => {
 };
 
 // src/hooks/useCanPerform.ts
-var import_react7 = require("react");
+var import_react8 = require("react");
 
 // src/hooks/useSubscriptionStatusInfo.ts
-var import_react6 = require("react");
+var import_react7 = require("react");
 function useSubscriptionStatusInfo(options = {}) {
   const { checkInterval = 5 * 60 * 1e3 } = options;
   const { user } = useAuth();
-  const [loading, setLoading] = (0, import_react6.useState)(true);
-  const [hasActiveSubscription, setHasActiveSubscription] = (0, import_react6.useState)(false);
-  const [isExpired, setIsExpired] = (0, import_react6.useState)(false);
-  const [isExpiringSoon, setIsExpiringSoon] = (0, import_react6.useState)(false);
-  const [daysUntilExpiry, setDaysUntilExpiry] = (0, import_react6.useState)(null);
-  const [subscriptionType, setSubscriptionType] = (0, import_react6.useState)(null);
-  const [hasSubscription, setHasSubscription] = (0, import_react6.useState)(false);
-  const [subscription, setSubscription] = (0, import_react6.useState)(null);
-  const [status, setStatus] = (0, import_react6.useState)("");
-  const [isTrial, setIsTrial] = (0, import_react6.useState)(false);
-  const [isActive, setIsActive] = (0, import_react6.useState)(false);
-  const [planName, setPlanName] = (0, import_react6.useState)("");
-  const [error, setError] = (0, import_react6.useState)(null);
-  const fetchSubscriptionStatus = (0, import_react6.useCallback)(async () => {
+  const [loading, setLoading] = (0, import_react7.useState)(true);
+  const [hasActiveSubscription, setHasActiveSubscription] = (0, import_react7.useState)(false);
+  const [isExpired, setIsExpired] = (0, import_react7.useState)(false);
+  const [isExpiringSoon, setIsExpiringSoon] = (0, import_react7.useState)(false);
+  const [daysUntilExpiry, setDaysUntilExpiry] = (0, import_react7.useState)(null);
+  const [subscriptionType, setSubscriptionType] = (0, import_react7.useState)(null);
+  const [hasSubscription, setHasSubscription] = (0, import_react7.useState)(false);
+  const [subscription, setSubscription] = (0, import_react7.useState)(null);
+  const [status, setStatus] = (0, import_react7.useState)("");
+  const [isTrial, setIsTrial] = (0, import_react7.useState)(false);
+  const [isActive, setIsActive] = (0, import_react7.useState)(false);
+  const [planName, setPlanName] = (0, import_react7.useState)("");
+  const [error, setError] = (0, import_react7.useState)(null);
+  const fetchSubscriptionStatus = (0, import_react7.useCallback)(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -4001,19 +4110,19 @@ function useSubscriptionStatusInfo(options = {}) {
       setLoading(false);
     }
   }, [user]);
-  const canAccessFeature = (0, import_react6.useCallback)((feature) => {
+  const canAccessFeature = (0, import_react7.useCallback)((feature) => {
     if (!hasActiveSubscription || isExpired) {
       return false;
     }
     return true;
   }, [hasActiveSubscription, isExpired]);
-  const refreshStatus = (0, import_react6.useCallback)(async () => {
+  const refreshStatus = (0, import_react7.useCallback)(async () => {
     await fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     if (!user)
       return;
     const interval = setInterval(fetchSubscriptionStatus, checkInterval);
@@ -4069,7 +4178,7 @@ function useSubscriptionStatusInfo(options = {}) {
 function useCanPerform(action) {
   const { user } = useAuth();
   const { hasActiveSubscription, isExpired, canAccessFeature } = useSubscriptionStatusInfo();
-  const checkPermission = (0, import_react7.useCallback)((action2) => {
+  const checkPermission = (0, import_react8.useCallback)((action2) => {
     if (!user) {
       return false;
     }
@@ -4182,54 +4291,54 @@ function useCanPerform(action) {
 }
 
 // src/hooks/useCurrency.tsx
-var import_react8 = require("react");
-var import_utils3 = require("@rentalshop/utils");
-var CurrencyContext = (0, import_react8.createContext)(void 0);
+var import_react9 = require("react");
+var import_utils4 = require("@rentalshop/utils");
+var CurrencyContext = (0, import_react9.createContext)(void 0);
 function CurrencyProvider({
   children,
   initialSettings = {}
 }) {
-  const [settings, setSettings] = (0, import_react8.useState)({
-    ...import_utils3.DEFAULT_CURRENCY_SETTINGS,
+  const [settings, setSettings] = (0, import_react9.useState)({
+    ...import_utils4.DEFAULT_CURRENCY_SETTINGS,
     ...initialSettings
   });
-  const currentCurrency = (0, import_utils3.getCurrentCurrency)(settings);
-  const setCurrency = (0, import_react8.useCallback)((currencyCode) => {
+  const currentCurrency = (0, import_utils4.getCurrentCurrency)(settings);
+  const setCurrency = (0, import_react9.useCallback)((currencyCode) => {
     setSettings((prev) => ({
       ...prev,
       currentCurrency: currencyCode
     }));
     localStorage.setItem("rentalshop-currency", currencyCode);
   }, []);
-  const toggleSymbol = (0, import_react8.useCallback)(() => {
+  const toggleSymbol = (0, import_react9.useCallback)(() => {
     setSettings((prev) => ({
       ...prev,
       showSymbol: !prev.showSymbol
     }));
     localStorage.setItem("rentalshop-show-symbol", (!settings.showSymbol).toString());
   }, [settings.showSymbol]);
-  const toggleCode = (0, import_react8.useCallback)(() => {
+  const toggleCode = (0, import_react9.useCallback)(() => {
     setSettings((prev) => ({
       ...prev,
       showCode: !prev.showCode
     }));
     localStorage.setItem("rentalshop-show-code", (!settings.showCode).toString());
   }, [settings.showCode]);
-  const getCurrencyByCode = (0, import_react8.useCallback)((code) => {
-    return (0, import_utils3.getCurrency)(code);
+  const getCurrencyByCode = (0, import_react9.useCallback)((code) => {
+    return (0, import_utils4.getCurrency)(code);
   }, []);
-  const convertAmount = (0, import_react8.useCallback)((amount, from, to) => {
+  const convertAmount = (0, import_react9.useCallback)((amount, from, to) => {
     if (from === to)
       return amount;
-    const fromCurrency = (0, import_utils3.getCurrency)(from);
-    const toCurrency = (0, import_utils3.getCurrency)(to);
+    const fromCurrency = (0, import_utils4.getCurrency)(from);
+    const toCurrency = (0, import_utils4.getCurrency)(to);
     if (!fromCurrency || !toCurrency) {
       throw new Error(`Invalid currency code: ${from} or ${to}`);
     }
     const amountInUSD = amount / fromCurrency.exchangeRate;
     return amountInUSD * toCurrency.exchangeRate;
   }, []);
-  (0, import_react8.useEffect)(() => {
+  (0, import_react9.useEffect)(() => {
     try {
       const savedCurrency = localStorage.getItem("rentalshop-currency");
       const savedShowSymbol = localStorage.getItem("rentalshop-show-symbol");
@@ -4259,7 +4368,7 @@ function CurrencyProvider({
   return /* @__PURE__ */ React.createElement(CurrencyContext.Provider, { value: contextValue }, children);
 }
 function useCurrency() {
-  const context = (0, import_react8.useContext)(CurrencyContext);
+  const context = (0, import_react9.useContext)(CurrencyContext);
   if (context === void 0) {
     throw new Error("useCurrency must be used within a CurrencyProvider");
   }
@@ -4270,7 +4379,7 @@ function isValidCurrencyCode(code) {
 }
 
 // src/utils/useDedupedApi.ts
-var import_react9 = require("react");
+var import_react10 = require("react");
 var requestCache = /* @__PURE__ */ new Map();
 var dataCache = /* @__PURE__ */ new Map();
 function useDedupedApi(options) {
@@ -4286,17 +4395,17 @@ function useDedupedApi(options) {
     refetchOnMount = true
     // Default to true for backwards compatibility
   } = options;
-  const [data, setData] = (0, import_react9.useState)(null);
-  const [loading, setLoading] = (0, import_react9.useState)(true);
-  const [error, setError] = (0, import_react9.useState)(null);
-  const [isStale, setIsStale] = (0, import_react9.useState)(false);
-  const [refetchTrigger, setRefetchTrigger] = (0, import_react9.useState)(0);
-  const fetchIdRef = (0, import_react9.useRef)(0);
-  const filtersRef = (0, import_react9.useRef)("");
-  const fetchFnRef = (0, import_react9.useRef)(fetchFn);
+  const [data, setData] = (0, import_react10.useState)(null);
+  const [loading, setLoading] = (0, import_react10.useState)(true);
+  const [error, setError] = (0, import_react10.useState)(null);
+  const [isStale, setIsStale] = (0, import_react10.useState)(false);
+  const [refetchTrigger, setRefetchTrigger] = (0, import_react10.useState)(0);
+  const fetchIdRef = (0, import_react10.useRef)(0);
+  const filtersRef = (0, import_react10.useRef)("");
+  const fetchFnRef = (0, import_react10.useRef)(fetchFn);
   fetchFnRef.current = fetchFn;
   const cacheKey = JSON.stringify(filters);
-  (0, import_react9.useEffect)(() => {
+  (0, import_react10.useEffect)(() => {
     if (!enabled) {
       setLoading(false);
       return;
@@ -4396,7 +4505,7 @@ function useDedupedApi(options) {
       requestCache.delete(cacheKey);
     });
   }, [cacheKey, enabled, staleTime, cacheTime, refetchTrigger]);
-  (0, import_react9.useEffect)(() => {
+  (0, import_react10.useEffect)(() => {
     if (!refetchOnWindowFocus || !enabled)
       return;
     const handleFocus = () => {
@@ -4414,7 +4523,7 @@ function useDedupedApi(options) {
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [refetchOnWindowFocus, enabled, cacheKey, staleTime]);
-  const refetch = (0, import_react9.useCallback)(async () => {
+  const refetch = (0, import_react10.useCallback)(async () => {
     if (!enabled)
       return;
     console.log("\u{1F504} Manual refetch triggered");
@@ -4445,14 +4554,14 @@ function getApiCacheStats() {
 }
 
 // src/hooks/useCustomersData.ts
-var import_utils4 = require("@rentalshop/utils");
+var import_utils5 = require("@rentalshop/utils");
 function useCustomersData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F465} useCustomersData: Fetching with filters:", filters2);
-      const response = await import_utils4.customersApi.searchCustomers(filters2);
+      const response = await import_utils5.customersApi.searchCustomers(filters2);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch customers");
       }
@@ -4485,14 +4594,14 @@ function useCustomersData(options) {
 }
 
 // src/hooks/useMerchantsData.ts
-var import_utils5 = require("@rentalshop/utils");
+var import_utils6 = require("@rentalshop/utils");
 function useMerchantsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F3E2} useMerchantsData: Fetching with filters:", filters2);
-      const response = await import_utils5.merchantsApi.getMerchants();
+      const response = await import_utils6.merchantsApi.getMerchants();
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch merchants");
       }
@@ -4563,14 +4672,14 @@ function useMerchantsData(options) {
 }
 
 // src/hooks/useOrdersData.ts
-var import_utils6 = require("@rentalshop/utils");
+var import_utils7 = require("@rentalshop/utils");
 function useOrdersData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4E6} useOrdersData: Fetching with filters:", filters2);
-      const response = await import_utils6.ordersApi.searchOrders(filters2);
+      const response = await import_utils7.ordersApi.searchOrders(filters2);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch orders");
       }
@@ -4603,11 +4712,11 @@ function useOrdersData(options) {
 }
 
 // src/hooks/usePagination.ts
-var import_react10 = require("react");
+var import_react11 = require("react");
 var import_constants = require("@rentalshop/constants");
 function usePagination(config = {}) {
   const { initialLimit = import_constants.PAGINATION.DEFAULT_PAGE_SIZE, initialOffset = 0 } = config;
-  const [pagination, setPaginationState] = (0, import_react10.useState)({
+  const [pagination, setPaginationState] = (0, import_react11.useState)({
     total: 0,
     limit: initialLimit,
     offset: initialOffset,
@@ -4615,7 +4724,7 @@ function usePagination(config = {}) {
     currentPage: 1,
     totalPages: 1
   });
-  const setPagination = (0, import_react10.useCallback)((newPagination) => {
+  const setPagination = (0, import_react11.useCallback)((newPagination) => {
     setPaginationState((prev) => ({
       ...prev,
       ...newPagination,
@@ -4623,14 +4732,14 @@ function usePagination(config = {}) {
       totalPages: Math.ceil((newPagination.total ?? prev.total) / (newPagination.limit ?? prev.limit))
     }));
   }, []);
-  const handlePageChange = (0, import_react10.useCallback)((page) => {
+  const handlePageChange = (0, import_react11.useCallback)((page) => {
     const newOffset = (page - 1) * pagination.limit;
     setPagination({
       offset: newOffset,
       currentPage: page
     });
   }, [pagination.limit, setPagination]);
-  const resetPagination = (0, import_react10.useCallback)(() => {
+  const resetPagination = (0, import_react11.useCallback)(() => {
     setPagination({
       total: 0,
       offset: initialOffset,
@@ -4639,7 +4748,7 @@ function usePagination(config = {}) {
       totalPages: 1
     });
   }, [initialOffset, setPagination]);
-  const updatePaginationFromResponse = (0, import_react10.useCallback)((response) => {
+  const updatePaginationFromResponse = (0, import_react11.useCallback)((response) => {
     setPagination({
       total: response.total,
       limit: response.limit,
@@ -4659,14 +4768,14 @@ function usePagination(config = {}) {
 }
 
 // src/hooks/usePaymentsData.ts
-var import_utils7 = require("@rentalshop/utils");
+var import_utils8 = require("@rentalshop/utils");
 function usePaymentsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4B0} usePaymentsData: Fetching with filters:", filters2);
-      const response = await import_utils7.paymentsApi.getPayments();
+      const response = await import_utils8.paymentsApi.getPayments();
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch payments");
       }
@@ -4746,14 +4855,14 @@ function usePaymentsData(options) {
 }
 
 // src/hooks/usePlansData.ts
-var import_utils8 = require("@rentalshop/utils");
+var import_utils9 = require("@rentalshop/utils");
 function usePlansData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4CB} usePlansData: Fetching with filters:", filters2);
-      const response = await import_utils8.plansApi.getPlans();
+      const response = await import_utils9.plansApi.getPlans();
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch plans");
       }
@@ -4819,10 +4928,10 @@ function usePlansData(options) {
 }
 
 // src/hooks/useProductAvailability.ts
-var import_react11 = require("react");
-var import_utils9 = require("@rentalshop/utils");
+var import_react12 = require("react");
+var import_utils10 = require("@rentalshop/utils");
 function useProductAvailability() {
-  const calculateAvailability = (0, import_react11.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const calculateAvailability = (0, import_react12.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const pickup = new Date(pickupDate);
     const return_ = new Date(returnDate);
     if (pickup >= return_) {
@@ -4865,16 +4974,16 @@ function useProductAvailability() {
       message
     };
   }, []);
-  const isProductAvailable = (0, import_react11.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const isProductAvailable = (0, import_react12.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const status = calculateAvailability(product, pickupDate, returnDate, requestedQuantity, existingOrders);
     return status.available;
   }, [calculateAvailability]);
-  const getAvailabilityForDateRange = (0, import_react11.useCallback)((product, startDate, endDate, existingOrders = []) => {
+  const getAvailabilityForDateRange = (0, import_react12.useCallback)((product, startDate, endDate, existingOrders = []) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const results = [];
     for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      const dateStr = (0, import_utils9.getUTCDateKey)(date);
+      const dateStr = (0, import_utils10.getUTCDateKey)(date);
       const status = calculateAvailability(
         product,
         dateStr,
@@ -4898,14 +5007,14 @@ function useProductAvailability() {
 }
 
 // src/hooks/useProductsData.ts
-var import_utils10 = require("@rentalshop/utils");
+var import_utils11 = require("@rentalshop/utils");
 function useProductsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4E6} useProductsData: Fetching with filters:", filters2);
-      const response = await import_utils10.productsApi.searchProducts(filters2);
+      const response = await import_utils11.productsApi.searchProducts(filters2);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch products");
       }
@@ -4938,14 +5047,14 @@ function useProductsData(options) {
 }
 
 // src/hooks/useSubscriptionsData.ts
-var import_utils11 = require("@rentalshop/utils");
+var import_utils12 = require("@rentalshop/utils");
 function useSubscriptionsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4B3} useSubscriptionsData: Fetching with filters:", filters2);
-      const response = await import_utils11.subscriptionsApi.search({
+      const response = await import_utils12.subscriptionsApi.search({
         limit: filters2.limit || 20,
         offset: filters2.offset || (filters2.page ? (filters2.page - 1) * (filters2.limit || 20) : 0)
       });
@@ -4999,12 +5108,12 @@ function useSubscriptionsData(options) {
 }
 
 // src/hooks/useSubscriptionError.ts
-var import_react12 = require("react");
-var import_ui = require("@rentalshop/ui");
+var import_react13 = require("react");
+var import_ui2 = require("@rentalshop/ui");
 function useSubscriptionError() {
-  const [error, setError] = (0, import_react12.useState)(null);
-  const { addToast } = (0, import_ui.useToasts)();
-  const handleSubscriptionError = (0, import_react12.useCallback)((error2) => {
+  const [error, setError] = (0, import_react13.useState)(null);
+  const { addToast } = (0, import_ui2.useToasts)();
+  const handleSubscriptionError = (0, import_react13.useCallback)((error2) => {
     console.error("Subscription error:", error2);
     if (error2?.error === "SUBSCRIPTION_ERROR" || error2?.code === "SUBSCRIPTION_REQUIRED") {
       const subscriptionError = {
@@ -5019,7 +5128,7 @@ function useSubscriptionError() {
       addToast("error", "Error", error2?.message || "An error occurred");
     }
   }, [addToast]);
-  const showSubscriptionError = (0, import_react12.useCallback)((error2) => {
+  const showSubscriptionError = (0, import_react13.useCallback)((error2) => {
     const { subscriptionStatus, merchantStatus } = error2;
     let message = error2.message;
     let action = "";
@@ -5043,7 +5152,7 @@ function useSubscriptionError() {
 
 ${action}` : message, 8e3);
   }, [addToast]);
-  const clearError = (0, import_react12.useCallback)(() => {
+  const clearError = (0, import_react13.useCallback)(() => {
     setError(null);
   }, []);
   return {
@@ -5055,19 +5164,19 @@ ${action}` : message, 8e3);
 }
 
 // src/hooks/useThrottledSearch.ts
-var import_react13 = require("react");
+var import_react14 = require("react");
 function useThrottledSearch(options) {
   const { delay, minLength, onSearch } = options;
-  const [query, setQuery] = (0, import_react13.useState)("");
-  const [isSearching, setIsSearching] = (0, import_react13.useState)(false);
-  const timeoutRef = (0, import_react13.useRef)(null);
-  const isSearchingRef = (0, import_react13.useRef)(false);
-  const isInitialRender = (0, import_react13.useRef)(true);
-  const onSearchRef = (0, import_react13.useRef)(onSearch);
-  (0, import_react13.useEffect)(() => {
+  const [query, setQuery] = (0, import_react14.useState)("");
+  const [isSearching, setIsSearching] = (0, import_react14.useState)(false);
+  const timeoutRef = (0, import_react14.useRef)(null);
+  const isSearchingRef = (0, import_react14.useRef)(false);
+  const isInitialRender = (0, import_react14.useRef)(true);
+  const onSearchRef = (0, import_react14.useRef)(onSearch);
+  (0, import_react14.useEffect)(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
-  const handleSearchChange = (0, import_react13.useCallback)((value) => {
+  const handleSearchChange = (0, import_react14.useCallback)((value) => {
     console.log("\u{1F50D} useThrottledSearch: handleSearchChange called with:", value);
     setQuery(value);
     if (timeoutRef.current) {
@@ -5096,7 +5205,7 @@ function useThrottledSearch(options) {
       isSearchingRef.current = false;
     }
   }, [delay, minLength]);
-  const clearSearch = (0, import_react13.useCallback)(() => {
+  const clearSearch = (0, import_react14.useCallback)(() => {
     setQuery("");
     setIsSearching(false);
     isSearchingRef.current = false;
@@ -5107,12 +5216,12 @@ function useThrottledSearch(options) {
       onSearchRef.current("");
     }
   }, []);
-  const cleanup = (0, import_react13.useCallback)(() => {
+  const cleanup = (0, import_react14.useCallback)(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
   }, []);
-  (0, import_react13.useEffect)(() => {
+  (0, import_react14.useEffect)(() => {
     isInitialRender.current = false;
     return cleanup;
   }, [cleanup]);
@@ -5125,137 +5234,6 @@ function useThrottledSearch(options) {
     setQuery
   };
 }
-
-// src/hooks/useToast.ts
-var import_react14 = require("react");
-var import_utils12 = require("@rentalshop/utils");
-var import_ui2 = require("@rentalshop/ui");
-var useErrorHandler = (options = {}) => {
-  const {
-    onLogin,
-    onRetry,
-    onDismiss,
-    autoHandleAuth = true
-  } = options;
-  const [isLoading, setIsLoading] = (0, import_react14.useState)(false);
-  const { addToast } = (0, import_ui2.useToasts)();
-  const handleError = (0, import_react14.useCallback)((error) => {
-    const errorInfo = (0, import_utils12.analyzeError)(error);
-    return errorInfo;
-  }, []);
-  const showErrorToast = (0, import_react14.useCallback)((error) => {
-    const errorInfo = (0, import_utils12.analyzeError)(error);
-    const toastType = (0, import_utils12.getToastType)(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
-    }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-  }, [addToast]);
-  const handleApiCall = (0, import_react14.useCallback)(async (apiCall) => {
-    setIsLoading(true);
-    try {
-      const result = await (0, import_utils12.withErrorHandlingForUI)(apiCall);
-      if (result.error) {
-        showErrorToast(result.error);
-      }
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showErrorToast]);
-  const retry = (0, import_react14.useCallback)(() => {
-    if (onRetry) {
-      onRetry();
-    }
-  }, [onRetry]);
-  const login = (0, import_react14.useCallback)(() => {
-    if (onLogin) {
-      onLogin();
-    } else if (typeof window !== "undefined") {
-    }
-  }, [onLogin]);
-  return {
-    isLoading,
-    handleError,
-    handleApiCall,
-    retry,
-    login,
-    showErrorToast
-  };
-};
-var useSimpleErrorHandler = () => {
-  const { addToast } = (0, import_ui2.useToasts)();
-  const handleError = (0, import_react14.useCallback)((error) => {
-    const errorInfo = (0, import_utils12.analyzeError)(error);
-    const toastType = (0, import_utils12.getToastType)(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
-    }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
-  return {
-    handleError
-  };
-};
-var useToastHandler = () => {
-  const { addToast } = (0, import_ui2.useToasts)();
-  const showError = (0, import_react14.useCallback)((title, message) => {
-    addToast("error", title, message, 0);
-  }, [addToast]);
-  const showSuccess = (0, import_react14.useCallback)((title, message) => {
-    addToast("success", title, message, 5e3);
-  }, [addToast]);
-  const showWarning = (0, import_react14.useCallback)((title, message) => {
-    addToast("warning", title, message, 5e3);
-  }, [addToast]);
-  const showInfo = (0, import_react14.useCallback)((title, message) => {
-    addToast("info", title, message, 5e3);
-  }, [addToast]);
-  const handleError = (0, import_react14.useCallback)((error) => {
-    const errorInfo = (0, import_utils12.analyzeError)(error);
-    const toastType = (0, import_utils12.getToastType)(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
-    }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
-  return {
-    showError,
-    showSuccess,
-    showWarning,
-    showInfo,
-    handleError
-  };
-};
 
 // src/hooks/useLocale.ts
 var import_navigation = require("next/navigation");

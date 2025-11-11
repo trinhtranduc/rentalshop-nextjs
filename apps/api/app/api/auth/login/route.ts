@@ -10,7 +10,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validate input
-    const validatedData = loginSchema.parse(body);
+    const headerTenantKey = request.headers.get('x-tenant-key') || undefined;
+    const validatedData = loginSchema.parse({
+      ...body,
+      tenantKey: body?.tenantKey ?? headerTenantKey,
+    });
+    const tenantKey = validatedData.tenantKey;
     
     // Find user in database by email
     const user = await db.users.findByEmail(validatedData.email);
@@ -19,6 +24,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_CREDENTIALS'),
         { status: 401 }
+      );
+    }
+
+    if (!tenantKey && user.role !== 'ADMIN') {
+      return NextResponse.json(
+        ResponseBuilder.error('SHOP_DOMAIN_REQUIRED', 'Shop domain is required'),
+        { status: 400 }
       );
     }
 

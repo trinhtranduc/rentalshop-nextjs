@@ -1111,6 +1111,12 @@ async function main() {
     console.log(`  • ${SYSTEM_CONFIG.SUBSCRIPTIONS} merchant subscriptions`);
     console.log('');
     
+    if (process.env.MAIN_DATABASE_URL) {
+      console.log('🏢 MAIN_DATABASE_URL detected – remember to run `yarn db:seed-main` after this script to register the tenant with the central registry.\n');
+    } else {
+      console.log('⚠️ MAIN_DATABASE_URL is not set. Multi-tenant registry seeding will be skipped. Set MAIN_DATABASE_URL and run `yarn db:seed-main` to register this tenant.\n');
+    }
+    
     // Step 0: Test database connection
     const schemaExists = await testDatabaseConnection();
     

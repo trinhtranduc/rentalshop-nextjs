@@ -1,5 +1,6 @@
 {
   "_comment": "Mã lỗi cho API responses - Phiên bản tiếng Việt",
+  "errors.login.failed": "Đăng nhập không thành công. Vui lòng kiểm tra thông tin và thử lại.",
   
   "UNAUTHORIZED": "Yêu cầu xác thực",
   "FORBIDDEN": "Truy cập bị từ chối",

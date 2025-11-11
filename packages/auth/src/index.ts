@@ -21,7 +21,18 @@ export {
   canAccessResource,
   createAuthError,
   createScopeError,
-  createPermissionError,
+  createPermissionError
+} from './core';
+
+export {
+  hasAnyRole,
+  isMerchantLevel,
+  isOutletTeam,
+  canManageUsers,
+  assertAnyRole,
+  canManageOutlets,
+  canManageProducts,
+  canAccessUserManagement,
   canCreateOrders,
   canViewOrders,
   canUpdateOrders,
@@ -29,10 +40,8 @@ export {
   canManageOrders,
   canExportOrders,
   canExportProducts,
-  canExportCustomers,
-  assertAnyRole,
-  hasAnyRole
-} from './core';
+  canExportCustomers
+} from './permissions';
 
 export {
   withAuth,

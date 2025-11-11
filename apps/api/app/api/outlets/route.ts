@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { enforceTenantPlanLimit } from '../../../lib/tenant-plan';
 
 /**
  * GET /api/outlets
  * Get outlets with filtering and pagination
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 GET /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -98,7 +100,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
  * Create a new outlet using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 POST /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -156,21 +159,11 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
       );
     }
 
-    // Check plan limits before creating outlet
-    try {
-      await assertPlanLimit(merchantId, 'outlets');
-      console.log('✅ Plan limit check passed for outlets');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for outlets:', error.message);
-      return NextResponse.json(
-        { 
-          success: false, 
-          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for outlets',
-          error: 'PLAN_LIMIT_EXCEEDED'
-        },
-        { status: 403 }
-      );
+    const planLimitResponse = await enforceTenantPlanLimit(authContext, 'outlets', { merchantId });
+    if (planLimitResponse) {
+      return planLimitResponse;
     }
+    console.log('✅ Plan limit check passed for outlets');
 
     // Create outlet with proper relations
     const outletData = {
@@ -219,7 +212,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
  * Update an outlet using simplified database API  
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, authContext) => {
+  const { user, userScope } = authContext;
   console.log(`🔍 PUT /api/outlets - User: ${user.email} (${user.role})`);
   
   try {

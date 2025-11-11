@@ -18,7 +18,7 @@ import { ProductDetail } from '@rentalshop/ui';
 
 import { Edit, ArrowLeft, Package, BarChart3, Trash2 } from 'lucide-react';
 import { useAuth, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { canManageProducts } from '@rentalshop/auth';
+import { canManageProducts } from '@rentalshop/auth/permissions';
 import { 
   productsApi, 
   categoriesApi, 

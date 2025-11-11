@@ -312,6 +312,7 @@ interface UserSession {
 interface LoginCredentials {
     email: string;
     password: string;
+    tenantKey?: string;
 }
 /**
  * Registration data
@@ -325,6 +326,7 @@ interface RegisterData {
     role: UserRole$1;
     merchantId?: number;
     outletId?: number;
+    tenantKey?: string;
     businessName?: string;
     outletName?: string;
     merchantCode?: string;
@@ -3619,7 +3621,13 @@ var login = {
 	success: "Logged in successfully",
 	failed: "Login failed. Please check your credentials.",
 	invalidEmail: "Please enter a valid email address",
-	invalidPassword: "Password must be at least 6 characters"
+	invalidPassword: "Password must be at least 6 characters",
+	shopDomain: "Shop Domain",
+	shopDomainPlaceholder: "yourshop",
+	shopDomainHelp: "Enter the name of your shop. We will append .anyrent.shop automatically.",
+	shopDomainInvalid: "Shop domain can only contain lowercase letters and numbers",
+	shopDomainRequired: "Shop domain is required",
+	shopDomainExample: "your-shop.anyrent.shop"
 };
 var register = {
 	title: "Create Account",
@@ -3754,7 +3762,9 @@ var register = {
 	contactInfo: "Contact Information",
 	accountSecurity: "Account Security",
 	businessInfo: "Business Information",
-	businessAddress: "Business Address"
+	businessAddress: "Business Address",
+	shopDomainHint: "Your shop domain will look like:",
+	shopDomainPlaceholder: "yourshop.anyrent.shop"
 };
 var forgotPassword = {
 	title: "Forgot Password",

@@ -1,6 +1,6 @@
 // src/hooks/useAuth.ts
-import { useState, useEffect, useCallback } from "react";
-import { getAuthToken, getStoredUser, clearAuthData, storeAuthData } from "@rentalshop/utils";
+import { useState as useState2, useEffect, useCallback as useCallback2 } from "react";
+import { getAuthToken, getStoredUser, clearAuthData, storeAuthData, authApi } from "@rentalshop/utils";
 
 // ../../node_modules/tslib/tslib.es6.mjs
 var extendStatics = function(d3, b) {
@@ -3657,15 +3657,151 @@ function useErrorTranslations() {
   return e2("errors");
 }
 
+// src/hooks/useToast.ts
+import { useState, useCallback } from "react";
+import {
+  analyzeError,
+  withErrorHandlingForUI,
+  getToastType
+} from "@rentalshop/utils";
+import { useToasts } from "@rentalshop/ui";
+var useErrorHandler = (options = {}) => {
+  const {
+    onLogin,
+    onRetry,
+    onDismiss,
+    autoHandleAuth = true
+  } = options;
+  const [isLoading, setIsLoading] = useState(false);
+  const { addToast } = useToasts();
+  const handleError = useCallback((error) => {
+    const errorInfo = analyzeError(error);
+    return errorInfo;
+  }, []);
+  const showErrorToast = useCallback((error) => {
+    const errorInfo = analyzeError(error);
+    const toastType = getToastType(errorInfo.type);
+    let toastMessage = errorInfo.message;
+    if (errorInfo.showLoginButton) {
+      if (errorInfo.type === "auth") {
+        toastMessage += " Click to log in again.";
+      } else if (errorInfo.type === "permission") {
+        toastMessage += " Click to log in with a different account.";
+      } else if (errorInfo.type === "subscription") {
+        toastMessage += " Click to log in and upgrade your plan.";
+      } else {
+        toastMessage += " Click to log in.";
+      }
+    }
+    addToast(toastType, errorInfo.title, toastMessage, 0);
+  }, [addToast]);
+  const handleApiCall = useCallback(async (apiCall) => {
+    setIsLoading(true);
+    try {
+      const result = await withErrorHandlingForUI(apiCall);
+      if (result.error) {
+        showErrorToast(result.error);
+      }
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showErrorToast]);
+  const retry = useCallback(() => {
+    if (onRetry) {
+      onRetry();
+    }
+  }, [onRetry]);
+  const login = useCallback(() => {
+    if (onLogin) {
+      onLogin();
+    } else if (typeof window !== "undefined") {
+    }
+  }, [onLogin]);
+  return {
+    isLoading,
+    handleError,
+    handleApiCall,
+    retry,
+    login,
+    showErrorToast
+  };
+};
+var useSimpleErrorHandler = () => {
+  const { addToast } = useToasts();
+  const handleError = useCallback((error) => {
+    const errorInfo = analyzeError(error);
+    const toastType = getToastType(errorInfo.type);
+    let toastMessage = errorInfo.message;
+    if (errorInfo.showLoginButton) {
+      if (errorInfo.type === "auth") {
+        toastMessage += " Click to log in again.";
+      } else if (errorInfo.type === "permission") {
+        toastMessage += " Click to log in with a different account.";
+      } else if (errorInfo.type === "subscription") {
+        toastMessage += " Click to log in and upgrade your plan.";
+      } else {
+        toastMessage += " Click to log in.";
+      }
+    }
+    addToast(toastType, errorInfo.title, toastMessage, 0);
+    return errorInfo;
+  }, [addToast]);
+  return {
+    handleError
+  };
+};
+var useToastHandler = () => {
+  const { addToast } = useToasts();
+  const showError = useCallback((title, message) => {
+    addToast("error", title, message, 0);
+  }, [addToast]);
+  const showSuccess = useCallback((title, message) => {
+    addToast("success", title, message, 5e3);
+  }, [addToast]);
+  const showWarning = useCallback((title, message) => {
+    addToast("warning", title, message, 5e3);
+  }, [addToast]);
+  const showInfo = useCallback((title, message) => {
+    addToast("info", title, message, 5e3);
+  }, [addToast]);
+  const handleError = useCallback((error) => {
+    const errorInfo = analyzeError(error);
+    const toastType = getToastType(errorInfo.type);
+    let toastMessage = errorInfo.message;
+    if (errorInfo.showLoginButton) {
+      if (errorInfo.type === "auth") {
+        toastMessage += " Click to log in again.";
+      } else if (errorInfo.type === "permission") {
+        toastMessage += " Click to log in with a different account.";
+      } else if (errorInfo.type === "subscription") {
+        toastMessage += " Click to log in and upgrade your plan.";
+      } else {
+        toastMessage += " Click to log in.";
+      }
+    }
+    addToast(toastType, errorInfo.title, toastMessage, 0);
+    return errorInfo;
+  }, [addToast]);
+  return {
+    showError,
+    showSuccess,
+    showWarning,
+    showInfo,
+    handleError
+  };
+};
+
 // src/hooks/useAuth.ts
 function useAuth() {
-  const [state, setState] = useState({
+  const [state, setState] = useState2({
     user: null,
     loading: true,
     error: null
   });
   const t3 = useErrorTranslations();
-  const translateError = useCallback((errorData) => {
+  const { showSuccess, showError } = useToastHandler();
+  const translateError = useCallback2((errorData) => {
     if (errorData?.code) {
       const translated = t3(errorData.code);
       if (translated !== errorData.code) {
@@ -3683,57 +3819,34 @@ function useAuth() {
     }
     return t3("UNKNOWN_ERROR");
   }, [t3]);
-  const login = useCallback(async (email, password) => {
-    try {
+  const login = useCallback2(
+    async (email, password, tenantKey) => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
-      const { apiUrls } = await import("@rentalshop/utils");
-      const response = await fetch(apiUrls.auth.login, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        const translatedError = translateError(errorData);
-        setState((prev) => ({
-          ...prev,
-          error: translatedError,
-          loading: false
-        }));
-        return false;
-      }
-      const data = await response.json();
-      if (data.success && data.data?.token) {
-        storeAuthData(data.data.token, data.data.user);
-        setState((prev) => ({
-          ...prev,
-          user: data.data.user,
+      try {
+        const result = await authApi.login({ email, password, tenantKey });
+        if (!result.success || !result.data) {
+          const message = result.message || translateError(result);
+          throw new Error(message || "Login failed");
+        }
+        const { token, user } = result.data;
+        storeAuthData(token, user);
+        setState({
+          user,
           loading: false,
           error: null
-        }));
-        return true;
-      } else {
-        const translatedError = translateError(data);
-        setState((prev) => ({
-          ...prev,
-          error: translatedError,
-          loading: false
-        }));
-        return false;
+        });
+        showSuccess(t3("login.success"));
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : translateError(err);
+        setState((prev) => ({ ...prev, loading: false, error: message }));
+        showError(t3("login.failed", { defaultValue: "Login failed" }), message);
+        throw err;
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t3("UNKNOWN_ERROR");
-      setState((prev) => ({
-        ...prev,
-        error: errorMessage,
-        loading: false
-      }));
-      return false;
-    }
-  }, [translateError, t3]);
-  const logout = useCallback(() => {
+    },
+    [showError, showSuccess, t3, translateError]
+  );
+  const logout = useCallback2(() => {
     clearAuthData();
     setState({
       user: null,
@@ -3741,10 +3854,10 @@ function useAuth() {
       error: null
     });
   }, []);
-  const clearError = useCallback(() => {
+  const clearError = useCallback2(() => {
     setState((prev) => ({ ...prev, error: null }));
   }, []);
-  const refreshUser = useCallback(async () => {
+  const refreshUser = useCallback2(async () => {
     try {
       const token = getAuthToken();
       if (!token) {
@@ -3799,10 +3912,10 @@ function useAuth() {
 }
 
 // src/hooks/useAuthErrorHandler.ts
-import { useCallback as useCallback2 } from "react";
+import { useCallback as useCallback3 } from "react";
 import { clearAuthData as clearAuthData2 } from "@rentalshop/utils";
 var useAuthErrorHandler = () => {
-  const handleAuthError = useCallback2((error) => {
+  const handleAuthError = useCallback3((error) => {
     console.error("Authentication error detected:", error);
     if (error?.message?.includes("Authentication required") || error?.message?.includes("Unauthorized") || error?.message?.includes("Invalid token") || error?.message?.includes("Token expired") || error?.status === 401) {
       console.log("\u{1F504} Authentication error detected, logging out user");
@@ -3815,27 +3928,27 @@ var useAuthErrorHandler = () => {
 };
 
 // src/hooks/useCanPerform.ts
-import { useCallback as useCallback4 } from "react";
+import { useCallback as useCallback5 } from "react";
 
 // src/hooks/useSubscriptionStatusInfo.ts
-import { useState as useState2, useEffect as useEffect2, useCallback as useCallback3 } from "react";
+import { useState as useState3, useEffect as useEffect2, useCallback as useCallback4 } from "react";
 function useSubscriptionStatusInfo(options = {}) {
   const { checkInterval = 5 * 60 * 1e3 } = options;
   const { user } = useAuth();
-  const [loading, setLoading] = useState2(true);
-  const [hasActiveSubscription, setHasActiveSubscription] = useState2(false);
-  const [isExpired, setIsExpired] = useState2(false);
-  const [isExpiringSoon, setIsExpiringSoon] = useState2(false);
-  const [daysUntilExpiry, setDaysUntilExpiry] = useState2(null);
-  const [subscriptionType, setSubscriptionType] = useState2(null);
-  const [hasSubscription, setHasSubscription] = useState2(false);
-  const [subscription, setSubscription] = useState2(null);
-  const [status, setStatus] = useState2("");
-  const [isTrial, setIsTrial] = useState2(false);
-  const [isActive, setIsActive] = useState2(false);
-  const [planName, setPlanName] = useState2("");
-  const [error, setError] = useState2(null);
-  const fetchSubscriptionStatus = useCallback3(async () => {
+  const [loading, setLoading] = useState3(true);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState3(false);
+  const [isExpired, setIsExpired] = useState3(false);
+  const [isExpiringSoon, setIsExpiringSoon] = useState3(false);
+  const [daysUntilExpiry, setDaysUntilExpiry] = useState3(null);
+  const [subscriptionType, setSubscriptionType] = useState3(null);
+  const [hasSubscription, setHasSubscription] = useState3(false);
+  const [subscription, setSubscription] = useState3(null);
+  const [status, setStatus] = useState3("");
+  const [isTrial, setIsTrial] = useState3(false);
+  const [isActive, setIsActive] = useState3(false);
+  const [planName, setPlanName] = useState3("");
+  const [error, setError] = useState3(null);
+  const fetchSubscriptionStatus = useCallback4(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -3908,13 +4021,13 @@ function useSubscriptionStatusInfo(options = {}) {
       setLoading(false);
     }
   }, [user]);
-  const canAccessFeature = useCallback3((feature) => {
+  const canAccessFeature = useCallback4((feature) => {
     if (!hasActiveSubscription || isExpired) {
       return false;
     }
     return true;
   }, [hasActiveSubscription, isExpired]);
-  const refreshStatus = useCallback3(async () => {
+  const refreshStatus = useCallback4(async () => {
     await fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
   useEffect2(() => {
@@ -3976,7 +4089,7 @@ function useSubscriptionStatusInfo(options = {}) {
 function useCanPerform(action) {
   const { user } = useAuth();
   const { hasActiveSubscription, isExpired, canAccessFeature } = useSubscriptionStatusInfo();
-  const checkPermission = useCallback4((action2) => {
+  const checkPermission = useCallback5((action2) => {
     if (!user) {
       return false;
     }
@@ -4089,7 +4202,7 @@ function useCanPerform(action) {
 }
 
 // src/hooks/useCurrency.tsx
-import { createContext, useContext, useState as useState3, useCallback as useCallback5, useEffect as useEffect3 } from "react";
+import { createContext, useContext, useState as useState4, useCallback as useCallback6, useEffect as useEffect3 } from "react";
 import {
   DEFAULT_CURRENCY_SETTINGS,
   getCurrency,
@@ -4100,36 +4213,36 @@ function CurrencyProvider({
   children,
   initialSettings = {}
 }) {
-  const [settings, setSettings] = useState3({
+  const [settings, setSettings] = useState4({
     ...DEFAULT_CURRENCY_SETTINGS,
     ...initialSettings
   });
   const currentCurrency = getCurrentCurrency(settings);
-  const setCurrency = useCallback5((currencyCode) => {
+  const setCurrency = useCallback6((currencyCode) => {
     setSettings((prev) => ({
       ...prev,
       currentCurrency: currencyCode
     }));
     localStorage.setItem("rentalshop-currency", currencyCode);
   }, []);
-  const toggleSymbol = useCallback5(() => {
+  const toggleSymbol = useCallback6(() => {
     setSettings((prev) => ({
       ...prev,
       showSymbol: !prev.showSymbol
     }));
     localStorage.setItem("rentalshop-show-symbol", (!settings.showSymbol).toString());
   }, [settings.showSymbol]);
-  const toggleCode = useCallback5(() => {
+  const toggleCode = useCallback6(() => {
     setSettings((prev) => ({
       ...prev,
       showCode: !prev.showCode
     }));
     localStorage.setItem("rentalshop-show-code", (!settings.showCode).toString());
   }, [settings.showCode]);
-  const getCurrencyByCode = useCallback5((code) => {
+  const getCurrencyByCode = useCallback6((code) => {
     return getCurrency(code);
   }, []);
-  const convertAmount = useCallback5((amount, from, to) => {
+  const convertAmount = useCallback6((amount, from, to) => {
     if (from === to)
       return amount;
     const fromCurrency = getCurrency(from);
@@ -4181,7 +4294,7 @@ function isValidCurrencyCode(code) {
 }
 
 // src/utils/useDedupedApi.ts
-import { useState as useState4, useEffect as useEffect4, useRef, useCallback as useCallback6 } from "react";
+import { useState as useState5, useEffect as useEffect4, useRef, useCallback as useCallback7 } from "react";
 var requestCache = /* @__PURE__ */ new Map();
 var dataCache = /* @__PURE__ */ new Map();
 function useDedupedApi(options) {
@@ -4197,11 +4310,11 @@ function useDedupedApi(options) {
     refetchOnMount = true
     // Default to true for backwards compatibility
   } = options;
-  const [data, setData] = useState4(null);
-  const [loading, setLoading] = useState4(true);
-  const [error, setError] = useState4(null);
-  const [isStale, setIsStale] = useState4(false);
-  const [refetchTrigger, setRefetchTrigger] = useState4(0);
+  const [data, setData] = useState5(null);
+  const [loading, setLoading] = useState5(true);
+  const [error, setError] = useState5(null);
+  const [isStale, setIsStale] = useState5(false);
+  const [refetchTrigger, setRefetchTrigger] = useState5(0);
   const fetchIdRef = useRef(0);
   const filtersRef = useRef("");
   const fetchFnRef = useRef(fetchFn);
@@ -4325,7 +4438,7 @@ function useDedupedApi(options) {
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [refetchOnWindowFocus, enabled, cacheKey, staleTime]);
-  const refetch = useCallback6(async () => {
+  const refetch = useCallback7(async () => {
     if (!enabled)
       return;
     console.log("\u{1F504} Manual refetch triggered");
@@ -4514,11 +4627,11 @@ function useOrdersData(options) {
 }
 
 // src/hooks/usePagination.ts
-import { useState as useState5, useCallback as useCallback7 } from "react";
+import { useState as useState6, useCallback as useCallback8 } from "react";
 import { PAGINATION } from "@rentalshop/constants";
 function usePagination(config = {}) {
   const { initialLimit = PAGINATION.DEFAULT_PAGE_SIZE, initialOffset = 0 } = config;
-  const [pagination, setPaginationState] = useState5({
+  const [pagination, setPaginationState] = useState6({
     total: 0,
     limit: initialLimit,
     offset: initialOffset,
@@ -4526,7 +4639,7 @@ function usePagination(config = {}) {
     currentPage: 1,
     totalPages: 1
   });
-  const setPagination = useCallback7((newPagination) => {
+  const setPagination = useCallback8((newPagination) => {
     setPaginationState((prev) => ({
       ...prev,
       ...newPagination,
@@ -4534,14 +4647,14 @@ function usePagination(config = {}) {
       totalPages: Math.ceil((newPagination.total ?? prev.total) / (newPagination.limit ?? prev.limit))
     }));
   }, []);
-  const handlePageChange = useCallback7((page) => {
+  const handlePageChange = useCallback8((page) => {
     const newOffset = (page - 1) * pagination.limit;
     setPagination({
       offset: newOffset,
       currentPage: page
     });
   }, [pagination.limit, setPagination]);
-  const resetPagination = useCallback7(() => {
+  const resetPagination = useCallback8(() => {
     setPagination({
       total: 0,
       offset: initialOffset,
@@ -4550,7 +4663,7 @@ function usePagination(config = {}) {
       totalPages: 1
     });
   }, [initialOffset, setPagination]);
-  const updatePaginationFromResponse = useCallback7((response) => {
+  const updatePaginationFromResponse = useCallback8((response) => {
     setPagination({
       total: response.total,
       limit: response.limit,
@@ -4730,10 +4843,10 @@ function usePlansData(options) {
 }
 
 // src/hooks/useProductAvailability.ts
-import { useCallback as useCallback8 } from "react";
+import { useCallback as useCallback9 } from "react";
 import { getUTCDateKey } from "@rentalshop/utils";
 function useProductAvailability() {
-  const calculateAvailability = useCallback8((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const calculateAvailability = useCallback9((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const pickup = new Date(pickupDate);
     const return_ = new Date(returnDate);
     if (pickup >= return_) {
@@ -4776,11 +4889,11 @@ function useProductAvailability() {
       message
     };
   }, []);
-  const isProductAvailable = useCallback8((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const isProductAvailable = useCallback9((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const status = calculateAvailability(product, pickupDate, returnDate, requestedQuantity, existingOrders);
     return status.available;
   }, [calculateAvailability]);
-  const getAvailabilityForDateRange = useCallback8((product, startDate, endDate, existingOrders = []) => {
+  const getAvailabilityForDateRange = useCallback9((product, startDate, endDate, existingOrders = []) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const results = [];
@@ -4910,12 +5023,12 @@ function useSubscriptionsData(options) {
 }
 
 // src/hooks/useSubscriptionError.ts
-import { useState as useState6, useCallback as useCallback9 } from "react";
-import { useToasts } from "@rentalshop/ui";
+import { useState as useState7, useCallback as useCallback10 } from "react";
+import { useToasts as useToasts2 } from "@rentalshop/ui";
 function useSubscriptionError() {
-  const [error, setError] = useState6(null);
-  const { addToast } = useToasts();
-  const handleSubscriptionError = useCallback9((error2) => {
+  const [error, setError] = useState7(null);
+  const { addToast } = useToasts2();
+  const handleSubscriptionError = useCallback10((error2) => {
     console.error("Subscription error:", error2);
     if (error2?.error === "SUBSCRIPTION_ERROR" || error2?.code === "SUBSCRIPTION_REQUIRED") {
       const subscriptionError = {
@@ -4930,7 +5043,7 @@ function useSubscriptionError() {
       addToast("error", "Error", error2?.message || "An error occurred");
     }
   }, [addToast]);
-  const showSubscriptionError = useCallback9((error2) => {
+  const showSubscriptionError = useCallback10((error2) => {
     const { subscriptionStatus, merchantStatus } = error2;
     let message = error2.message;
     let action = "";
@@ -4954,7 +5067,7 @@ function useSubscriptionError() {
 
 ${action}` : message, 8e3);
   }, [addToast]);
-  const clearError = useCallback9(() => {
+  const clearError = useCallback10(() => {
     setError(null);
   }, []);
   return {
@@ -4966,11 +5079,11 @@ ${action}` : message, 8e3);
 }
 
 // src/hooks/useThrottledSearch.ts
-import { useState as useState7, useEffect as useEffect5, useCallback as useCallback10, useRef as useRef2 } from "react";
+import { useState as useState8, useEffect as useEffect5, useCallback as useCallback11, useRef as useRef2 } from "react";
 function useThrottledSearch(options) {
   const { delay, minLength, onSearch } = options;
-  const [query, setQuery] = useState7("");
-  const [isSearching, setIsSearching] = useState7(false);
+  const [query, setQuery] = useState8("");
+  const [isSearching, setIsSearching] = useState8(false);
   const timeoutRef = useRef2(null);
   const isSearchingRef = useRef2(false);
   const isInitialRender = useRef2(true);
@@ -4978,7 +5091,7 @@ function useThrottledSearch(options) {
   useEffect5(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
-  const handleSearchChange = useCallback10((value) => {
+  const handleSearchChange = useCallback11((value) => {
     console.log("\u{1F50D} useThrottledSearch: handleSearchChange called with:", value);
     setQuery(value);
     if (timeoutRef.current) {
@@ -5007,7 +5120,7 @@ function useThrottledSearch(options) {
       isSearchingRef.current = false;
     }
   }, [delay, minLength]);
-  const clearSearch = useCallback10(() => {
+  const clearSearch = useCallback11(() => {
     setQuery("");
     setIsSearching(false);
     isSearchingRef.current = false;
@@ -5018,7 +5131,7 @@ function useThrottledSearch(options) {
       onSearchRef.current("");
     }
   }, []);
-  const cleanup = useCallback10(() => {
+  const cleanup = useCallback11(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -5036,141 +5149,6 @@ function useThrottledSearch(options) {
     setQuery
   };
 }
-
-// src/hooks/useToast.ts
-import { useState as useState8, useCallback as useCallback11 } from "react";
-import {
-  analyzeError,
-  withErrorHandlingForUI,
-  getToastType
-} from "@rentalshop/utils";
-import { useToasts as useToasts2 } from "@rentalshop/ui";
-var useErrorHandler = (options = {}) => {
-  const {
-    onLogin,
-    onRetry,
-    onDismiss,
-    autoHandleAuth = true
-  } = options;
-  const [isLoading, setIsLoading] = useState8(false);
-  const { addToast } = useToasts2();
-  const handleError = useCallback11((error) => {
-    const errorInfo = analyzeError(error);
-    return errorInfo;
-  }, []);
-  const showErrorToast = useCallback11((error) => {
-    const errorInfo = analyzeError(error);
-    const toastType = getToastType(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
-    }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-  }, [addToast]);
-  const handleApiCall = useCallback11(async (apiCall) => {
-    setIsLoading(true);
-    try {
-      const result = await withErrorHandlingForUI(apiCall);
-      if (result.error) {
-        showErrorToast(result.error);
-      }
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showErrorToast]);
-  const retry = useCallback11(() => {
-    if (onRetry) {
-      onRetry();
-    }
-  }, [onRetry]);
-  const login = useCallback11(() => {
-    if (onLogin) {
-      onLogin();
-    } else if (typeof window !== "undefined") {
-    }
-  }, [onLogin]);
-  return {
-    isLoading,
-    handleError,
-    handleApiCall,
-    retry,
-    login,
-    showErrorToast
-  };
-};
-var useSimpleErrorHandler = () => {
-  const { addToast } = useToasts2();
-  const handleError = useCallback11((error) => {
-    const errorInfo = analyzeError(error);
-    const toastType = getToastType(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
-    }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
-  return {
-    handleError
-  };
-};
-var useToastHandler = () => {
-  const { addToast } = useToasts2();
-  const showError = useCallback11((title, message) => {
-    addToast("error", title, message, 0);
-  }, [addToast]);
-  const showSuccess = useCallback11((title, message) => {
-    addToast("success", title, message, 5e3);
-  }, [addToast]);
-  const showWarning = useCallback11((title, message) => {
-    addToast("warning", title, message, 5e3);
-  }, [addToast]);
-  const showInfo = useCallback11((title, message) => {
-    addToast("info", title, message, 5e3);
-  }, [addToast]);
-  const handleError = useCallback11((error) => {
-    const errorInfo = analyzeError(error);
-    const toastType = getToastType(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
-    }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
-  return {
-    showError,
-    showSuccess,
-    showWarning,
-    showInfo,
-    handleError
-  };
-};
 
 // src/hooks/useLocale.ts
 import { useRouter, usePathname } from "next/navigation";

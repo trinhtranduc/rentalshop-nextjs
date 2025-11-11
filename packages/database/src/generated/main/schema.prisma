@@ -1,0 +1,111 @@
+generator mainClient {
+  provider = "prisma-client-js"
+  output   = "../../packages/database/src/generated/main"
+}
+
+datasource main {
+  provider = "postgresql"
+  url      = env("MAIN_DATABASE_URL")
+}
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+enum BillingInterval {
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+  YEARLY
+}
+
+model Tenant {
+  id            String         @id @default(cuid())
+  tenantKey     String         @unique
+  name          String
+  description   String?
+  primaryDomain String?        @unique
+  status        TenantStatus   @default(ACTIVE)
+  databaseUrl   String
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+  auditLogs     AuditLog[]
+
+  @@index([tenantKey])
+  @@index([status])
+}
+
+model Plan {
+  id              String          @id @default(cuid())
+  code            String          @unique
+  name            String
+  description     String?
+  price           Int             @default(0) // stored in smallest currency unit
+  currency        String          @default("VND")
+  interval        BillingInterval @default(MONTHLY)
+  trialPeriodDays Int?            @default(14)
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+  limits          Json?
+  features        Json?
+  metadata        Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  subscriptions   Subscription[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  tenantId           String
+  planId             String
+  status             SubscriptionStatus @default(TRIAL)
+  trialEndsAt        DateTime?
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  cancelledAt        DateTime?
+  renewedAt          DateTime?
+  lastCheckedAt      DateTime?          @default(now())
+  metadata           Json?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, planId])
+  @@index([tenantId])
+  @@index([planId])
+  @@index([status])
+  @@index([currentPeriodEnd])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String?
+  actorId   String?
+  actorType String?
+  action    String
+  target    String?
+  details   Json?
+  createdAt DateTime @default(now())
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([action])
+  @@index([createdAt])
+}

@@ -5,10 +5,33 @@ import { API, PlanLimits, getPlan, hasWebAccess, hasMobileAccess, getPlanPlatfor
 import { AuthUser } from '@rentalshop/types';
 
 // Auth validation schemas
-export const loginSchema = z.object({
+const normalizeTenantKey = (value?: string | null): string | undefined => {
+  if (!value) return undefined;
+  let normalized = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+  normalized = normalized.replace(/đ/g, 'd');
+  normalized = normalized.replace(/^https?:\/\//, '');
+  normalized = normalized.replace(/\.anyrent\.shop.*/g, '');
+  normalized = normalized.replace(/[^a-z0-9]/g, '');
+  return normalized || undefined;
+};
+
+export const loginSchema = z
+  .object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-});
+    tenantKey: z
+      .string()
+      .optional()
+      .transform((val) => normalizeTenantKey(val)),
+  })
+  .transform((data) => ({
+    ...data,
+    tenantKey: data.tenantKey,
+  }));
 
 export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -33,6 +56,10 @@ export const registerSchema = z.object({
   // For outlet staff registration
   merchantCode: z.string().optional(),
   outletCode: z.string().optional(),
+  tenantKey: z
+    .string()
+    .optional()
+    .transform((val) => normalizeTenantKey(val)),
 }).refine((data) => {
   // Either 'name' or both 'firstName' and 'lastName' must be provided
   return data.name || (data.firstName && data.lastName);
@@ -46,7 +73,10 @@ export const registerSchema = z.object({
   return true;
 }, {
   message: "Business type and pricing type are required for merchant registration"
-});
+}).transform((data) => ({
+  ...data,
+  tenantKey: normalizeTenantKey(data.tenantKey || data.businessName),
+}));
 
 // Product validation schemas (aligned with API routes and DB types)
 const outletStockItemSchema = z.object({

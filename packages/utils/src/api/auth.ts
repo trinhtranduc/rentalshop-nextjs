@@ -31,6 +31,11 @@ export const authApi = {
     try {
       const response = await publicFetch(apiUrls.auth.login, {
         method: 'POST',
+        headers: credentials.tenantKey
+          ? {
+              'x-tenant-key': credentials.tenantKey,
+            }
+          : undefined,
         body: JSON.stringify(credentials),
       });
       return await parseApiResponse<AuthResponse>(response);
