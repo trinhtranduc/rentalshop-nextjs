@@ -3800,7 +3800,7 @@ function useAuth() {
     error: null
   });
   const t3 = useErrorTranslations();
-  const { showSuccess, showError } = useToastHandler();
+  const { showSuccess } = useToastHandler();
   const translateError = useCallback2((errorData) => {
     if (errorData?.code) {
       const translated = t3(errorData.code);
@@ -3825,8 +3825,11 @@ function useAuth() {
       try {
         const result = await authApi.login({ email, password, tenantKey });
         if (!result.success || !result.data) {
-          const message = result.message || translateError(result);
-          throw new Error(message || "Login failed");
+          const errorCode = result.code || "INVALID_CREDENTIALS";
+          const message = result.message || translateError({ code: errorCode });
+          const error = new Error(message || "Login failed");
+          error.code = errorCode;
+          throw error;
         }
         const { token, user } = result.data;
         storeAuthData(token, user);
@@ -3838,13 +3841,16 @@ function useAuth() {
         showSuccess(t3("login.success"));
         return result;
       } catch (err) {
+        const code = err?.code;
         const message = err instanceof Error ? err.message : translateError(err);
-        setState((prev) => ({ ...prev, loading: false, error: message }));
-        showError(t3("login.failed", { defaultValue: "Login failed" }), message);
+        const description = code ? t3(code, { defaultValue: message }) : message;
+        const fallbackTitle = t3("login.failed", { defaultValue: "Login failed" });
+        const finalMessage = description || fallbackTitle;
+        setState((prev) => ({ ...prev, loading: false, error: finalMessage }));
         throw err;
       }
     },
-    [showError, showSuccess, t3, translateError]
+    [showSuccess, t3, translateError]
   );
   const logout = useCallback2(() => {
     clearAuthData();

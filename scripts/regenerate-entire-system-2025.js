@@ -161,14 +161,6 @@ const PAYMENT_STATUSES = ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED', 'CANCELL
 // Subscription statuses
 const SUBSCRIPTION_STATUSES = ['ACTIVE', 'TRIAL', 'CANCELLED', 'EXPIRED', 'PAUSED'];
 
-// Global counter for public IDs
-let idCounter = 1000; // Start from 1000 to avoid conflicts
-
-// Helper function to get next public ID
-function getNextPublicId() {
-  return ++idCounter;
-}
-
 // Helper function to generate random date within range
 function randomDate(start, end) {
   return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
@@ -182,6 +174,38 @@ function pickRandom(array) {
 // Helper function to hash password
 async function hashPassword(password) {
   return await bcrypt.hash(password, 10);
+}
+
+async function resetSequences() {
+  const tableSequenceMap = [
+    { table: '"User"', sequence: '"User_id_seq"' },
+    { table: '"Merchant"', sequence: '"Merchant_id_seq"' },
+    { table: '"Outlet"', sequence: '"Outlet_id_seq"' },
+    { table: '"Category"', sequence: '"Category_id_seq"' },
+    { table: '"Product"', sequence: '"Product_id_seq"' },
+    { table: '"Customer"', sequence: '"Customer_id_seq"' },
+    { table: '"Order"', sequence: '"Order_id_seq"' },
+    { table: '"BillingCycle"', sequence: '"BillingCycle_id_seq"' },
+    { table: '"Plan"', sequence: '"Plan_id_seq"' },
+    { table: '"Subscription"', sequence: '"Subscription_id_seq"' },
+    { table: '"Payment"', sequence: '"Payment_id_seq"' },
+  ];
+
+  for (const { table, sequence } of tableSequenceMap) {
+    try {
+      await prisma.$executeRawUnsafe(
+        `SELECT setval('${sequence}', COALESCE((SELECT MAX("id") FROM ${table}), 0) + 1, false);`
+      );
+      console.log(`✅ Reset sequence for ${table.replace(/"/g, '')}`);
+    } catch (error) {
+      // 42P01 = undefined_table (sequence or table missing). Skip silently for non-existent tables.
+      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        console.log(`⚠️  Sequence reset skipped for ${table.replace(/"/g, '')} (table or sequence missing)`);
+      } else {
+        throw error;
+      }
+    }
+  }
 }
 
 // Step 1: Reset entire database
@@ -304,6 +328,8 @@ async function resetDatabase() {
       '✅ Deleted all merchants'
     );
     
+    await resetSequences();
+
     console.log('🎉 Database reset completed successfully!');
   } catch (error) {
     console.error('❌ Error resetting database:', error);
@@ -316,7 +342,6 @@ async function createMerchants() {
   console.log('\n🏢 Creating merchants with default outlets...');
   
   const merchants = [];
-  let outletId = 1;
   
   // Sample business data for realistic merchant information
   const businessData = [
@@ -433,7 +458,6 @@ async function createMerchantAccounts(merchants) {
     const merchantPassword = await hashPassword('merchant123');
     const merchantUser = await prisma.user.create({
       data: {
-        id: getNextPublicId(),
         email: `merchant${merchant.id}@example.com`,
         password: merchantPassword,
         firstName: `Merchant`,
@@ -459,7 +483,6 @@ async function createSuperAdmin() {
   const adminPassword = await hashPassword('admin123');
   const superAdmin = await prisma.user.create({
     data: {
-      id: getNextPublicId(),
       email: 'admin@rentalshop.com',
       password: adminPassword,
       firstName: 'Super',
@@ -523,7 +546,6 @@ async function createOutletUsers(outlets) {
     const adminPassword = await hashPassword('admin123');
     const adminUser = await prisma.user.create({
       data: {
-        id: getNextPublicId(),
         email: `admin.outlet${outlet.id}@example.com`,
         password: adminPassword,
         firstName: `Admin`,
@@ -540,7 +562,6 @@ async function createOutletUsers(outlets) {
     const staffPassword = await hashPassword('staff123');
     const staffUser = await prisma.user.create({
       data: {
-        id: getNextPublicId(),
         email: `staff.outlet${outlet.id}@example.com`,
         password: staffPassword,
         firstName: `Staff`,
@@ -568,7 +589,7 @@ async function createCategories(merchants) {
   console.log('\n📂 Creating product categories...');
   
   const categories = [];
-  let categoryId = 1;
+  let categoryCounter = 0;
   
   const categoryNames = [
     'Electronics', 'Tools', 'Furniture', 'Sports Equipment', 'Party Supplies',
@@ -582,11 +603,12 @@ async function createCategories(merchants) {
   
   for (const merchant of merchants) {
     for (let i = 0; i < SYSTEM_CONFIG.PRODUCTS_PER_MERCHANT; i++) {
+      categoryCounter += 1;
+      const categoryIndex = categoryCounter;
       const category = await prisma.category.create({
         data: {
-          id: categoryId++,
           name: categoryNames[i % categoryNames.length],
-          description: `Category ${i + 1} for ${merchant.name}`,
+          description: `Category ${categoryIndex} for ${merchant.name}`,
           isActive: true,
           merchantId: merchant.id
         }
@@ -605,15 +627,16 @@ async function createProducts(categories, outlets) {
   console.log('\n📦 Creating products...');
   
   const products = [];
-  let productId = 1;
+  let productCounter = 0;
   
   for (const category of categories) {
+    productCounter += 1;
+    const productIndex = productCounter;
     const product = await prisma.product.create({
       data: {
-        id: productId++,
-        name: `Product ${productId} - ${category.name}`,
-        description: `Description for Product ${productId} in category ${category.name}`,
-        barcode: `BAR${String(productId).padStart(6, '0')}`,
+        name: `Product ${productIndex} - ${category.name}`,
+        description: `Description for Product ${productIndex} in category ${category.name}`,
+        barcode: `BAR${String(productIndex).padStart(6, '0')}`,
         totalStock: Math.floor(Math.random() * 50) + 10,
         rentPrice: Math.floor(Math.random() * 100) + 20,
         salePrice: Math.floor(Math.random() * 200) + 50,
@@ -666,7 +689,6 @@ async function createCustomers(merchants) {
   console.log('\n👥 Creating customers...');
   
   const customers = [];
-  let customerId = 1;
   
   const firstNames = [
     'John', 'Emma', 'Michael', 'Sarah', 'David', 'Lisa', 'James', 'Jennifer',
@@ -690,7 +712,6 @@ async function createCustomers(merchants) {
       
       const customer = await prisma.customer.create({
         data: {
-          id: customerId++,
           firstName,
           lastName,
           email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i + 1}@example.com`,
@@ -718,7 +739,6 @@ async function createOrders(outlets, customers, products, outletUsers) {
   console.log('\n📋 Creating orders...');
   
   const orders = [];
-  let orderPublicId = 1;
   
   for (const outlet of outlets) {
     console.log(`\n🏪 Creating orders for outlet: ${outlet.name}`);
@@ -823,7 +843,6 @@ async function createOrders(outlets, customers, products, outletUsers) {
         // Create the order
         const order = await prisma.order.create({
           data: {
-            id: orderPublicId++,
             orderNumber,
             orderType,
             status,
@@ -901,7 +920,6 @@ async function createBillingCycles() {
   console.log('\n💳 Creating billing cycles...');
   
   const billingCycles = [];
-  let cycleId = 1;
   
   const cycleData = [
     { name: 'Monthly', value: 'monthly', months: 1, discount: 0, sortOrder: 1 },
@@ -913,7 +931,6 @@ async function createBillingCycles() {
   for (const cycle of cycleData) {
     const billingCycle = await prisma.billingCycle.create({
       data: {
-        id: cycleId++,
         name: cycle.name,
         value: cycle.value,
         months: cycle.months,
@@ -936,7 +953,6 @@ async function createPlans() {
   console.log('\n📋 Creating modern subscription plans...');
   
   const plans = [];
-  let planId = 1;
   
   // Convert SUBSCRIPTION_PLANS to database format
   const planData = Object.values(SUBSCRIPTION_PLANS).map(plan => ({
@@ -1002,7 +1018,6 @@ async function createSubscriptions(merchants, plans, planVariants) {
   console.log('\n🔄 Creating modern merchant subscriptions...');
   
   const subscriptions = [];
-  let subscriptionId = 1;
   
   // Modern pricing configuration
   const PRICING_CONFIG = {
@@ -1052,7 +1067,6 @@ async function createSubscriptions(merchants, plans, planVariants) {
     
     const subscription = await prisma.subscription.create({
       data: {
-        id: subscriptionId++,
         merchantId: merchant.id,
         planId: plan.id,
         status: status,
@@ -1193,6 +1207,9 @@ async function main() {
     // Step 14: Skip subscription payments (using unified Payment model)
     // const subscriptionPayments = await createSubscriptionPayments(subscriptions);
     
+    // Final safety check: ensure database sequences align with inserted IDs
+    await resetSequences();
+
     console.log('\n🎉 Complete system regeneration completed successfully!');
     console.log('\n📊 Final Summary:');
     console.log(`  ✅ ${plans.length} modern subscription plans created`);
@@ -1291,16 +1308,9 @@ async function createSubscriptionPayments(subscriptions) {
   
   for (const subscription of subscriptions) {
     try {
-      // Get next payment public ID
-      const lastPayment = await prisma.payment.findFirst({
-        orderBy: { id: 'desc' }
-      });
-      const paymentPublicId = (lastPayment?.id || 0) + 1;
-      
       // Create payment record for subscription
       const payment = await prisma.payment.create({
         data: {
-          id: paymentPublicId,
           subscriptionId: subscription.id,
           merchantId: subscription.merchantId,
           amount: subscription.amount,
@@ -1309,7 +1319,7 @@ async function createSubscriptionPayments(subscriptions) {
           type: 'SUBSCRIPTION_PAYMENT',
           status: 'COMPLETED',
           reference: `sub_${subscription.id}_${Date.now()}`,
-          description: `Payment for ${subscription.plan?.name} subscription`,
+          description: `Payment for subscription ${subscription.id}`,
           processedAt: new Date()
         }
       });

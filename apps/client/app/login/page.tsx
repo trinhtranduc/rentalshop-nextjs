@@ -1,14 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { LoginForm } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 
 export default function LoginPage() {
   const router = useRouter();
   const { user, login, error: authError, loading: authLoading, clearError } = useAuth();
-  const [localError, setLocalError] = useState<string | null>(null);
 
   // Redirect to dashboard if user is already logged in
   useEffect(() => {
@@ -27,9 +26,6 @@ export default function LoginPage() {
   const handleLogin = async (data: { email: string; password: string; tenantKey: string }) => {
     try {
       console.log('🔐 Login attempt started with:', { email: data.email });
-      setLocalError(null);
-      // Note: Don't clear authError here - let useAuth handle it
-      
       console.log('📞 Calling login function from useAuth hook...');
       const loginWithTenant = login as (
         email: string,
@@ -55,7 +51,7 @@ export default function LoginPage() {
       
     } catch (error: any) {
       console.error('💥 Login error caught:', error);
-      setLocalError(error.message || 'Login failed. Please try again.');
+      // Error state handled inside useAuth
     }
   };
 
@@ -67,11 +63,10 @@ export default function LoginPage() {
     <LoginForm
       onLogin={handleLogin}
       onNavigate={handleNavigate}
-      error={authError || localError}
+      error={authError}
       loading={authLoading}
       onInputChange={() => {
         clearError();
-        setLocalError(null);
       }}
     />
   );

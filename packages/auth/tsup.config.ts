@@ -16,7 +16,12 @@ export default defineConfig({
     '@rentalshop/utils',
     'bcryptjs',
     'jsonwebtoken', 
-    'next-auth'
+    'next-auth',
+    'next',
+    'next/server',
+    'next/navigation',
+    'next/headers',
+    'next/cache'
   ],
   clean: true,
   sourcemap: true,
