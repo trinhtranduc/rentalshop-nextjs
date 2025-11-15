@@ -15,6 +15,46 @@
 
 import { useErrorTranslations } from './useTranslation';
 
+// ErrorResponse interface
+type ErrorResponse = {
+  success: false;
+  code: string;
+  message: string;
+  error?: string;
+  details?: any;
+};
+
+// Helper: Check if response is ErrorResponse format
+function isErrorResponse(response: any): response is ErrorResponse {
+  return response?.success === false && 
+         typeof response?.code === 'string' && 
+         typeof response?.message === 'string';
+}
+
+// Helper: Get error code from response
+function getErrorCode(response: any): string | null {
+  if (isErrorResponse(response)) {
+    return response.code;
+  }
+  
+  if (response?.code && typeof response.code === 'string') {
+    return response.code;
+  }
+  
+  if (response?.errorCode && typeof response.errorCode === 'string') {
+    return response.errorCode;
+  }
+  
+  if (response?.error && typeof response.error === 'string') {
+    const errorStr = response.error.trim();
+    if (/^[A-Z_]+$/.test(errorStr)) {
+      return errorStr;
+    }
+  }
+  
+  return null;
+}
+
 interface ApiResponse {
   success: boolean;
   code?: string;
@@ -28,36 +68,74 @@ export function useApiError() {
 
   /**
    * Translate error response từ API
-   * Ưu tiên dùng code để translate, fallback sang message
+   * Sử dụng ErrorResponse interface chuẩn để translate dựa vào code
    */
   const translateError = (response: any): string => {
+    console.log('🔍 translateError: Input response:', JSON.stringify(response, null, 2));
+    
     // Handle axios error response
     if (response?.response?.data) {
       return translateError(response.response.data);
     }
 
-    // Handle API error response với code
-    if (response?.code) {
-      const translated = t(response.code);
-      // Nếu translation key không tồn tại, fallback sang message
-      if (translated === response.code && response.message) {
-        return response.message;
+    // Normalize to ErrorResponse format
+    const errorResponse: ErrorResponse | null = isErrorResponse(response) 
+      ? response 
+      : null;
+
+    console.log('🔍 translateError: isErrorResponse?', !!errorResponse);
+    console.log('🔍 translateError: errorResponse?.code:', errorResponse?.code);
+
+    // Priority 1: Translate dựa vào code từ ErrorResponse
+    if (errorResponse && errorResponse.code) {
+      console.log('📝 translateError: Translating code:', errorResponse.code);
+      const translated = t(errorResponse.code);
+      console.log('📝 translateError: Translation result:', translated, '(original:', errorResponse.code + ')');
+      
+      // next-intl trả về chính key nếu không tìm thấy translation
+      // Nếu translated !== code thì không tìm thấy, dùng message
+      if (translated !== errorResponse.code) {
+        // Translation tìm thấy - dùng translation
+        console.log('✅ translateError: Using translated message:', translated);
+        return translated;
       }
-      return translated;
+      
+      // Translation không tìm thấy - dùng message từ ErrorResponse
+      console.warn('⚠️ translateError: Translation not found, using message:', errorResponse.message);
+      return errorResponse.message || errorResponse.code;
     }
 
-    // Handle error object với message
+    // Fallback: Try to get code from response using helper
+    console.log('⚠️ translateError: Not ErrorResponse format, trying getErrorCode helper...');
+    const errorCode = getErrorCode(response);
+    console.log('⚠️ translateError: getErrorCode result:', errorCode);
+    
+    if (errorCode) {
+      const translated = t(errorCode);
+      console.log('📝 translateError: Translation from helper:', translated);
+      if (translated !== errorCode) {
+        return translated;
+      }
+      // Use message from response if available
+      if (response?.message) {
+        return response.message;
+      }
+      return errorCode;
+    }
+
+    // Priority 2: Dùng message nếu có
     if (response?.message) {
+      console.warn('⚠️ translateError: No code found, using message:', response.message);
       return response.message;
     }
 
-    // Handle string error
+    // Priority 3: Handle string error
     if (typeof response === 'string') {
       return response;
     }
 
-    // Default fallback
-    return t('UNKNOWN_ERROR');
+    // Priority 4: Default fallback
+    return t('UNKNOWN_ERROR') || 'An unknown error occurred';
   };
 
   /**

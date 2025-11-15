@@ -234,11 +234,34 @@ export async function POST(request: NextRequest) {
         const verification = await createEmailVerification(user.id, user.email);
         const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
         
-        // Send verification email
+        // Generate subdomain from tenantKey or businessName
+        // Use tenantKey from validatedData if available, otherwise generate from businessName
+        let tenantKey = validatedData.tenantKey;
+        if (!tenantKey && validatedData.businessName) {
+          // Generate tenantKey from businessName (same logic as frontend)
+          tenantKey = validatedData.businessName
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim()
+            .replace(/đ/g, 'd')
+            .replace(/^https?:\/\//, '')
+            .replace(/\.anyrent\.shop.*/g, '')
+            .replace(/[^a-z0-9]/g, '')
+            .slice(0, 50);
+        }
+        const subdomain = tenantKey ? `${tenantKey}.anyrent.shop` : undefined;
+        const shopName = merchant.name;
+        
+        // Send verification email with subdomain info
         const emailResult = await sendVerificationEmail(
           user.email,
           userName,
-          verification.token
+          verification.token,
+          {
+            subdomain,
+            shopName,
+          }
         );
 
         if (!emailResult.success) {

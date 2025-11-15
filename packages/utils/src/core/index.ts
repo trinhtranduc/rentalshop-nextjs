@@ -27,16 +27,21 @@ export {
 // Export unified ApiResponse type from errors.ts (re-exported from response-builder)
 export type { 
   ApiResponse,
-  ErrorCode
+  ErrorCode,
+  ErrorResponse
 } from './errors';
 
 // Export types from common.ts
 export type { StoredUser } from './common';
 
-// Export type guards for type-safe response handling
+// Export type guards and helpers for type-safe response handling
 export { 
   isSuccessResponse, 
-  isErrorResponse 
+  isErrorResponse,
+  hasErrorCode,
+  parseErrorResponse,
+  getErrorCode,
+  getErrorMessage
 } from './errors';
 
 // Export error analysis and handling (now consolidated in errors.ts)

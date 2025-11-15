@@ -75,18 +75,169 @@ export enum ErrorCode {
 }
 
 // ============================================================================
+// ERROR RESPONSE INTERFACE - Standardized Format
+// ============================================================================
+
+/**
+ * Standardized Error Response Interface
+ * Tất cả error responses phải follow format này để dễ translate và maintain
+ */
+export interface ErrorResponse {
+  success: false;
+  code: ErrorCode | string;  // Required - error code for translation
+  message: string;           // Required - fallback English message
+  error?: string;            // Optional - additional error information
+  details?: any;             // Optional - additional error details
+}
+
+// ============================================================================
 // RE-EXPORT ApiResponse from response-builder (SINGLE SOURCE OF TRUTH)
 // ============================================================================
 
 export type { ApiResponse } from '../api/response-builder';
 
-// Simplified type guards compatible with ResponseBuilder's ApiResponse
+// ============================================================================
+// TYPE GUARDS - Error Response Helpers
+// ============================================================================
+
+/**
+ * Type guard: Check if response is error response
+ */
+export function isErrorResponse(response: any): response is ErrorResponse {
+  return response?.success === false && 
+         typeof response?.code === 'string' && 
+         typeof response?.message === 'string';
+}
+
+/**
+ * Type guard: Check if response has specific error code
+ */
+export function hasErrorCode(response: any, code: ErrorCode | string): boolean {
+  return isErrorResponse(response) && response.code === code;
+}
+
+/**
+ * Type guard: Check if response is success response
+ */
 export function isSuccessResponse<T>(response: ResponseBuilderApiResponse<T>): response is ResponseBuilderApiResponse<T> & { success: true } {
   return response.success === true;
 }
 
-export function isErrorResponse(response: ResponseBuilderApiResponse<any>): response is ResponseBuilderApiResponse<any> & { success: false } {
-  return response.success === false;
+// ============================================================================
+// ERROR RESPONSE HELPERS - Parse and Translate
+// ============================================================================
+
+/**
+ * Parse error response from any format to standardized ErrorResponse
+ * Normalizes error responses to ErrorResponse format
+ */
+export function parseErrorResponse(data: any): ErrorResponse | null {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  // Must have success: false
+  if (data.success !== false) {
+    return null;
+  }
+
+  // Priority 1: Already in ErrorResponse format
+  if (isErrorResponse(data)) {
+    return data;
+  }
+
+  // Priority 2: Standard format with code and message (most common)
+  // Check for code field first - this is the key field for translation
+  if (typeof data.code === 'string' && data.code.trim().length > 0 && 
+      typeof data.message === 'string' && data.message.trim().length > 0) {
+    return {
+      success: false,
+      code: data.code.trim(),
+      message: data.message.trim(),
+      error: data.error || data.message.trim(),
+      details: data.details,
+    };
+  }
+
+  // Priority 3: Format with errorCode field
+  if (typeof data.errorCode === 'string' && data.errorCode.trim().length > 0) {
+    return {
+      success: false,
+      code: data.errorCode.trim(),
+      message: (typeof data.message === 'string' ? data.message.trim() : null) || 
+               (typeof data.error === 'string' ? data.error.trim() : null) || 
+               'An error occurred',
+      error: (typeof data.error === 'string' ? data.error.trim() : null) || data.errorCode.trim(),
+      details: data.details,
+    };
+  }
+
+  // Priority 4: Check if error field is a valid error code
+  if (typeof data.error === 'string' && data.error.trim().length > 0) {
+    const errorStr = data.error.trim();
+    const isErrorCode = /^[A-Z_]+$/.test(errorStr);
+    
+    if (isErrorCode) {
+      return {
+        success: false,
+        code: errorStr,
+        message: (typeof data.message === 'string' ? data.message.trim() : null) || errorStr,
+        error: errorStr,
+        details: data.details,
+      };
+    }
+  }
+
+  // Priority 5: Fallback - try to create from available fields
+  const code = (typeof data.code === 'string' && data.code.trim()) || 
+               (typeof data.errorCode === 'string' && data.errorCode.trim()) || 
+               'UNKNOWN_ERROR';
+  const message = (typeof data.message === 'string' && data.message.trim()) || 
+                  (typeof data.error === 'string' && data.error.trim()) || 
+                  'An unknown error occurred';
+
+  return {
+    success: false,
+    code,
+    message,
+    error: (typeof data.error === 'string' ? data.error.trim() : null) || message,
+    details: data.details,
+  };
+}
+
+/**
+ * Get error code from error response (for translation)
+ * Returns the code field which can be used for translation
+ */
+export function getErrorCode(response: ErrorResponse | any): string | null {
+  const errorResponse = parseErrorResponse(response);
+  return errorResponse?.code || null;
+}
+
+/**
+ * Get error message from error response
+ * Returns the message field, or falls back to code if message is not available
+ */
+export function getErrorMessage(response: ErrorResponse | any): string {
+  const errorResponse = parseErrorResponse(response);
+  if (errorResponse) {
+    return errorResponse.message || errorResponse.code || 'An unknown error occurred';
+  }
+  
+  // Fallback for non-standard error formats
+  if (typeof response === 'string') {
+    return response;
+  }
+  
+  if (response?.message) {
+    return response.message;
+  }
+  
+  if (response?.error) {
+    return typeof response.error === 'string' ? response.error : 'An error occurred';
+  }
+  
+  return 'An unknown error occurred';
 }
 
 // ============================================================================

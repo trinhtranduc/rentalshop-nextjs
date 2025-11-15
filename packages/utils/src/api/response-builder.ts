@@ -3,6 +3,8 @@
  * Chuẩn hóa response format với error codes để client có thể translate
  */
 
+import type { ErrorResponse } from '../core/errors';
+
 export interface ApiResponse<T = any> {
   success: boolean;
   code?: string;           // Error/Success code for translation
@@ -16,6 +18,9 @@ export interface ApiResponse<T = any> {
     hasMore?: boolean;
   };
 }
+
+// Type for error responses - extends ErrorResponse interface
+export type ErrorApiResponse = ErrorResponse;
 
 /**
  * Error code to default English message mapping
@@ -211,33 +216,42 @@ export class ResponseBuilder {
 
   /**
    * Build error response
+   * Returns standardized ErrorResponse format for easy translation
    * @param code - Error code (e.g., 'INVALID_CREDENTIALS')
-   * @param error - Optional error details
+   * @param error - Optional error details (string or object)
    */
-  static error(code: string, error?: any): ApiResponse {
-    // Ensure error is always a string
-    let errorString: string;
+  static error(code: string, error?: any): ErrorResponse {
+    // Ensure message is always a string
+    let message: string;
+    let errorString: string | undefined;
+    let details: any;
     
     if (typeof error === 'string') {
+      message = error;
       errorString = error;
     } else if (error && typeof error === 'object') {
       // Convert object to readable string
       if (error.message) {
-        errorString = error.message;
+        message = error.message;
       } else if (error.details) {
-        errorString = error.details;
+        message = error.details;
+        details = error.details;
       } else {
-        errorString = JSON.stringify(error);
+        message = JSON.stringify(error);
+        details = error;
       }
+      errorString = error.message || error.error || message;
     } else {
-      errorString = getDefaultMessage(code);
+      message = getDefaultMessage(code);
+      errorString = message;
     }
     
     return {
       success: false,
       code,
-      message: errorString,
-      error: errorString
+      message,
+      error: errorString,
+      details
     };
   }
 
@@ -275,8 +289,9 @@ export class ResponseBuilder {
 /**
  * Helper: Extract error code from error object
  * Hữu ích khi catch errors và cần extract code
+ * Note: Use getErrorCode from @rentalshop/utils/core/errors for ErrorResponse parsing
  */
-export function getErrorCode(error: any): string {
+export function extractErrorCode(error: any): string {
   if (typeof error === 'string') return error;
   if (error?.code) return error.code;
   if (error?.name === 'ZodError') return 'VALIDATION_ERROR';
@@ -324,7 +339,7 @@ export function createErrorResponse(error: any): ApiResponse {
   }
 
   // Standard errors
-  const code = getErrorCode(error);
+  const code = extractErrorCode(error);
   return ResponseBuilder.error(code, {
     message: error?.message,
     stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
@@ -336,7 +351,7 @@ export function createErrorResponse(error: any): ApiResponse {
  * Helps determine appropriate status code for error responses
  */
 export function getErrorStatusCode(error: any, defaultCode: number = 500): number {
-  const code = getErrorCode(error);
+  const code = extractErrorCode(error);
   
   // Validation errors (400)
   if (error?.name === 'ZodError') return 400;

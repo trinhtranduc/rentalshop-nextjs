@@ -1,6 +1,7 @@
 import CONSTANTS from '@rentalshop/constants';
 import type { User, LoginCredentials } from '@rentalshop/types';
-import type { ApiResponse, ErrorCode } from './errors';
+import type { ApiResponse, ErrorCode, ErrorResponse } from './errors';
+import { parseErrorResponse, isErrorResponse } from './errors';
 import { analyzeError } from './errors'; // Import analyzeError for handleApiErrorForUI
 
 const API = CONSTANTS.API;
@@ -274,143 +275,43 @@ export const authenticatedFetch = async (
  * 
  * This allows frontend to access user data directly via response.data
  * instead of response.data.data
+ * 
+ * Note: This function only parses responses. It does NOT handle authentication
+ * errors (401) or redirects. Those should be handled by the calling layer.
  */
 export const parseApiResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
-  console.log('🔍 DEBUG: parseApiResponse called with status:', response.status);
-  console.log('🔍 DEBUG: Response OK:', response.ok);
-  console.log('🔍 DEBUG: Response URL:', response.url);
-  
-  // Subscription status checking is now handled in authenticatedFetch
-  
   if (!response.ok) {
-    console.error('❌ DEBUG: parseApiResponse - Response not OK, status:', response.status);
-    console.error('❌ DEBUG: parseApiResponse - Response statusText:', response.statusText);
-    console.error('❌ DEBUG: parseApiResponse - Response URL:', response.url);
-    
-    // Handle unauthorized responses by redirecting to login
-    if (response.status === API.STATUS.UNAUTHORIZED) {
-      if (typeof window !== 'undefined') {
-        console.error('🚨 DEBUG: parseApiResponse - UNAUTHORIZED RESPONSE!');
-        console.error('🚨 DEBUG: This will trigger auto-redirect to login page!');
-        console.error('🔒 parseApiResponse: Unauthorized access - token may be expired or invalid');
-        console.error('🔒 parseApiResponse: Response status:', response.status);
-        console.error('🔒 parseApiResponse: Response URL:', response.url);
-        
-        // Try to get response body for more details
-        try {
-          const responseText = await response.clone().text();
-          console.error('🔒 parseApiResponse - Response body:', responseText);
-        } catch (e) {
-          console.error('🔒 parseApiResponse - Could not read response body:', e);
-        }
-        
-        clearAuthData();
-        // Immediate redirect on 401 error
-        console.error('🚨 DEBUG: parseApiResponse - REDIRECTING TO LOGIN PAGE NOW!');
-        // window.location.href = '/login';
-      }
-      throw new Error('Unauthorized access - redirecting to login');
-    }
-    
     const errorText = await response.text();
-    console.log('🔍 parseApiResponse: Error response text:', errorText);
     
     try {
       const errorData = JSON.parse(errorText);
-      console.log('🔍 parseApiResponse: Parsed error data:', errorData);
+      console.log('🔍 parseApiResponse: Raw errorData:', JSON.stringify(errorData, null, 2));
       
-      // Handle structured error responses that include both message and error code
-      if (errorData.success === false && errorData.message && errorData.error) {
-        console.log('🔍 parseApiResponse: Structured error response detected');
-        const result = {
-          success: false as const,
-          message: errorData.message, // Use the user-friendly message
-          error: errorData.error as ErrorCode, // Preserve the error code for specific handling
-        };
-        console.log('🔍 parseApiResponse: Returning structured error:', result);
-        return result;
+      // Use parseErrorResponse helper to normalize to ErrorResponse format
+      const errorResponse = parseErrorResponse(errorData);
+      console.log('🔍 parseApiResponse: Parsed errorResponse:', JSON.stringify(errorResponse, null, 2));
+      
+      if (errorResponse) {
+        console.log('✅ parseApiResponse: Returning ErrorResponse with code:', errorResponse.code);
+        return errorResponse;
       }
       
-      // Handle API error responses with error field (most common case)
-      if (errorData.success === false && errorData.error) {
-        console.log('🔍 parseApiResponse: API error response detected');
-        
-        // Check if this is a subscription-related "Invalid token" error
-        const isSubscriptionInvalidToken = (
-          errorData.error === 'Invalid token' && (
-            // Check for subscription-related context
-            errorData.subscriptionError === true ||
-            errorData.context === 'subscription' ||
-            errorData.context === 'plan' ||
-            errorData.subscriptionStatus === 'cancelled' ||
-            errorData.subscriptionStatus === 'expired' ||
-            // Check if this came from a subscription-related endpoint
-            response.url.includes('/subscription') ||
-            response.url.includes('/plan') ||
-            response.url.includes('/billing') ||
-            // Check for subscription-specific error codes
-            errorData.errorCode === 'SUBSCRIPTION_CANCELLED' ||
-            errorData.errorCode === 'PLAN_CANCELLED' ||
-            errorData.errorCode === 'SUBSCRIPTION_EXPIRED'
-          )
-        );
-        
-        const result = {
-          success: false as const,
-          message: errorData.error, // Use the error message directly
-          error: errorData.errorCode as ErrorCode || 'INTERNAL_SERVER_ERROR',
-          // Add subscription context if detected
-          ...(isSubscriptionInvalidToken && {
-            details: 'subscription'
-          })
-        };
-        console.log('🔍 parseApiResponse: Returning API error:', result);
-        return result;
-      }
-      
-      // Handle legacy error responses
-      console.log('🔍 parseApiResponse: Legacy error response detected');
-      
-      // Check if this is a subscription-related "Invalid token" error using message field
-      const isSubscriptionInvalidTokenMessage = (
-        errorData.message === 'Invalid token' && (
-          // Check for subscription-related context
-          errorData.subscriptionError === true ||
-          errorData.context === 'subscription' ||
-          errorData.context === 'plan' ||
-          errorData.subscriptionStatus === 'cancelled' ||
-          errorData.subscriptionStatus === 'expired' ||
-          // Check if this came from a subscription-related endpoint
-          response.url.includes('/subscription') ||
-          response.url.includes('/plan') ||
-          response.url.includes('/billing') ||
-          // Check for subscription-specific error codes
-          errorData.errorCode === 'SUBSCRIPTION_CANCELLED' ||
-          errorData.errorCode === 'PLAN_CANCELLED' ||
-          errorData.errorCode === 'SUBSCRIPTION_EXPIRED'
-        )
-      );
-      
-      const result = {
+      // Fallback: Failed to parse as ErrorResponse - return generic error
+      console.warn('⚠️ parseApiResponse: Failed to parse as ErrorResponse');
+      return {
         success: false as const,
+        code: 'INTERNAL_SERVER_ERROR',
         message: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
-        error: errorData.errorCode as ErrorCode || 'INTERNAL_SERVER_ERROR',
-        // Add subscription context if detected
-        ...(isSubscriptionInvalidTokenMessage && {
-          details: 'subscription'
-        })
+        error: 'INTERNAL_SERVER_ERROR',
       };
-      console.log('🔍 parseApiResponse: Returning legacy error:', result);
-      return result;
     } catch {
-      console.log('🔍 parseApiResponse: Failed to parse error JSON, using fallback');
-      const result = {
+      // Failed to parse JSON - return generic error
+      return {
         success: false as const,
+        code: 'INTERNAL_SERVER_ERROR',
         message: `HTTP ${response.status}: ${response.statusText}`,
-        error: 'INTERNAL_SERVER_ERROR' as ErrorCode,
+        error: 'INTERNAL_SERVER_ERROR',
       };
-      console.log('🔍 parseApiResponse: Returning fallback error:', result);
-      return result;
     }
   }
 

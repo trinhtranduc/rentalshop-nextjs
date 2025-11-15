@@ -5,6 +5,7 @@ import { getAuthToken, getStoredUser, clearAuthData, storeAuthData, authApi } fr
 import type { User } from '@rentalshop/types';
 import { useErrorTranslations } from './useTranslation';
 import { useToastHandler } from './useToast';
+import { useApiError } from './useApiError';
 
 // ============================================================================
 // TYPES
@@ -45,33 +46,7 @@ export function useAuth() {
   // Use translation + toast helpers
   const t = useErrorTranslations();
   const { showSuccess } = useToastHandler();
-
-  // Helper function to translate error from API response
-  const translateError = useCallback((errorData: any): string => {
-    // If error has a code, use it for translation
-    if (errorData?.code) {
-      const translated = t(errorData.code);
-      // If translation exists (not the same as code), use it
-      if (translated !== errorData.code) {
-        return translated;
-      }
-    }
-    
-    // Fallback to message if available
-    if (errorData?.message) {
-      // Check if message is an error code (all caps)
-      if (typeof errorData.message === 'string' && /^[A-Z_]+$/.test(errorData.message)) {
-        const translated = t(errorData.message);
-        if (translated !== errorData.message) {
-          return translated;
-        }
-      }
-      return errorData.message;
-    }
-    
-    // Default fallback
-    return t('UNKNOWN_ERROR');
-  }, [t]);
+  const { translateError } = useApiError(); // Use centralized error translation
 
   // ============================================================================
   // AUTH FUNCTIONS
@@ -83,17 +58,16 @@ export function useAuth() {
       try {
         const result = await authApi.login({ email, password, tenantKey });
 
+        // Handle error response from API
         if (!result.success || !result.data) {
-          const errorCode = result.code || 'INVALID_CREDENTIALS';
-          const message =
-            result.message || translateError({ code: errorCode });
-          const error = new Error(message || 'Login failed');
-          (error as any).code = errorCode;
-          throw error;
+          // Translate error dựa vào code từ API response
+          const errorMessage = translateError(result) || result.message || 'Login failed';
+          setState(prev => ({ ...prev, loading: false, error: errorMessage }));
+          throw new Error(errorMessage);
         }
 
+        // Handle success response
         const { token, user } = result.data;
-        // Persist to local storage
         storeAuthData(token, user);
 
         setState({
@@ -105,15 +79,9 @@ export function useAuth() {
         showSuccess(t('login.success'));
         return result;
       } catch (err: unknown) {
-        const code = (err as any)?.code as string | undefined;
-        const message =
-          err instanceof Error ? err.message : translateError(err);
-        const description = code ? t(code, { defaultValue: message }) : message;
-        const fallbackTitle = t('login.failed', { defaultValue: 'Login failed' });
-        const finalMessage = description || fallbackTitle;
-
-        setState(prev => ({ ...prev, loading: false, error: finalMessage }));
-
+        // Extract error message from exception
+        const errorMessage = err instanceof Error ? err.message : 'Login failed';
+        setState(prev => ({ ...prev, loading: false, error: errorMessage }));
         throw err;
       }
     },

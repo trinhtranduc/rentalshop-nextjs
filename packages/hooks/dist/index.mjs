@@ -3792,6 +3792,127 @@ var useToastHandler = () => {
   };
 };
 
+// src/hooks/useApiError.ts
+function isErrorResponse(response) {
+  return response?.success === false && typeof response?.code === "string" && typeof response?.message === "string";
+}
+function useApiError() {
+  const t3 = useErrorTranslations();
+  const translateError = (response) => {
+    console.log("\u{1F50D} translateError: Input response:", JSON.stringify(response, null, 2));
+    if (response?.response?.data) {
+      return translateError(response.response.data);
+    }
+    const errorResponse = isErrorResponse(response) ? response : null;
+    console.log("\u{1F50D} translateError: isErrorResponse?", !!errorResponse);
+    console.log("\u{1F50D} translateError: errorResponse?.code:", errorResponse?.code);
+    if (errorResponse && errorResponse.code) {
+      console.log("\u{1F4DD} translateError: Translating code:", errorResponse.code);
+      const translated = t3(errorResponse.code);
+      console.log("\u{1F4DD} translateError: Translation result:", translated, "(original:", errorResponse.code + ")");
+      if (translated !== errorResponse.code) {
+        console.log("\u2705 translateError: Using translated message:", translated);
+        return translated;
+      }
+      console.warn("\u26A0\uFE0F translateError: Translation not found, using message:", errorResponse.message);
+      return errorResponse.message || errorResponse.code;
+    }
+    console.log("\u26A0\uFE0F translateError: Not ErrorResponse format, trying getErrorCode helper...");
+    const errorCode = getErrorCode(response);
+    console.log("\u26A0\uFE0F translateError: getErrorCode result:", errorCode);
+    if (errorCode) {
+      const translated = t3(errorCode);
+      console.log("\u{1F4DD} translateError: Translation from helper:", translated);
+      if (translated !== errorCode) {
+        return translated;
+      }
+      if (response?.message) {
+        return response.message;
+      }
+      return errorCode;
+    }
+    if (response?.message) {
+      console.warn("\u26A0\uFE0F translateError: No code found, using message:", response.message);
+      return response.message;
+    }
+    if (typeof response === "string") {
+      return response;
+    }
+    return t3("UNKNOWN_ERROR") || "An unknown error occurred";
+  };
+  const translateSuccess = (response) => {
+    if (response?.code) {
+      const translated = t3(response.code);
+      if (translated === response.code && response.message) {
+        return response.message;
+      }
+      return translated;
+    }
+    if (response?.message) {
+      return response.message;
+    }
+    return t3("UNKNOWN_ERROR");
+  };
+  const translateResponse = (response) => {
+    if (response?.success === false) {
+      return translateError(response);
+    }
+    return translateSuccess(response);
+  };
+  const isError = (response) => {
+    return response?.success === false || !!response?.error || !!response?.response?.data?.error;
+  };
+  const getErrorCode = (response) => {
+    if (response?.response?.data?.code) {
+      return response.response.data.code;
+    }
+    if (response?.code) {
+      return response.code;
+    }
+    return null;
+  };
+  return {
+    translateError,
+    translateSuccess,
+    translateResponse,
+    isError,
+    getErrorCode
+  };
+}
+function extractErrorMessage(error) {
+  if (error?.response?.data) {
+    const data = error.response.data;
+    return data.message || data.error || "An error occurred";
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return "An unknown error occurred";
+}
+function extractErrorCode(error) {
+  if (error?.response?.data?.code) {
+    return error.response.data.code;
+  }
+  if (error?.code) {
+    return error.code;
+  }
+  return null;
+}
+function isErrorCode(error, code) {
+  return extractErrorCode(error) === code;
+}
+var ErrorCheckers = {
+  isUnauthorized: (error) => isErrorCode(error, "UNAUTHORIZED") || isErrorCode(error, "INVALID_TOKEN"),
+  isForbidden: (error) => isErrorCode(error, "FORBIDDEN"),
+  isNotFound: (error) => isErrorCode(error, "NOT_FOUND") || extractErrorCode(error)?.includes("_NOT_FOUND"),
+  isValidationError: (error) => isErrorCode(error, "VALIDATION_ERROR"),
+  isDuplicateEntry: (error) => isErrorCode(error, "DUPLICATE_ENTRY") || extractErrorCode(error)?.includes("_EXISTS"),
+  isNetworkError: (error) => isErrorCode(error, "NETWORK_ERROR") || error?.message?.includes("Network")
+};
+
 // src/hooks/useAuth.ts
 function useAuth() {
   const [state, setState] = useState2({
@@ -3801,35 +3922,16 @@ function useAuth() {
   });
   const t3 = useErrorTranslations();
   const { showSuccess } = useToastHandler();
-  const translateError = useCallback2((errorData) => {
-    if (errorData?.code) {
-      const translated = t3(errorData.code);
-      if (translated !== errorData.code) {
-        return translated;
-      }
-    }
-    if (errorData?.message) {
-      if (typeof errorData.message === "string" && /^[A-Z_]+$/.test(errorData.message)) {
-        const translated = t3(errorData.message);
-        if (translated !== errorData.message) {
-          return translated;
-        }
-      }
-      return errorData.message;
-    }
-    return t3("UNKNOWN_ERROR");
-  }, [t3]);
+  const { translateError } = useApiError();
   const login = useCallback2(
     async (email, password, tenantKey) => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const result = await authApi.login({ email, password, tenantKey });
         if (!result.success || !result.data) {
-          const errorCode = result.code || "INVALID_CREDENTIALS";
-          const message = result.message || translateError({ code: errorCode });
-          const error = new Error(message || "Login failed");
-          error.code = errorCode;
-          throw error;
+          const errorMessage = translateError(result) || result.message || "Login failed";
+          setState((prev) => ({ ...prev, loading: false, error: errorMessage }));
+          throw new Error(errorMessage);
         }
         const { token, user } = result.data;
         storeAuthData(token, user);
@@ -3841,12 +3943,8 @@ function useAuth() {
         showSuccess(t3("login.success"));
         return result;
       } catch (err) {
-        const code = err?.code;
-        const message = err instanceof Error ? err.message : translateError(err);
-        const description = code ? t3(code, { defaultValue: message }) : message;
-        const fallbackTitle = t3("login.failed", { defaultValue: "Login failed" });
-        const finalMessage = description || fallbackTitle;
-        setState((prev) => ({ ...prev, loading: false, error: finalMessage }));
+        const errorMessage = err instanceof Error ? err.message : "Login failed";
+        setState((prev) => ({ ...prev, loading: false, error: errorMessage }));
         throw err;
       }
     },
@@ -5326,101 +5424,6 @@ function useOptimisticNavigation(options = {}) {
     isNavigating: navigatingTo !== null
   };
 }
-
-// src/hooks/useApiError.ts
-function useApiError() {
-  const t3 = useErrorTranslations();
-  const translateError = (response) => {
-    if (response?.response?.data) {
-      return translateError(response.response.data);
-    }
-    if (response?.code) {
-      const translated = t3(response.code);
-      if (translated === response.code && response.message) {
-        return response.message;
-      }
-      return translated;
-    }
-    if (response?.message) {
-      return response.message;
-    }
-    if (typeof response === "string") {
-      return response;
-    }
-    return t3("UNKNOWN_ERROR");
-  };
-  const translateSuccess = (response) => {
-    if (response?.code) {
-      const translated = t3(response.code);
-      if (translated === response.code && response.message) {
-        return response.message;
-      }
-      return translated;
-    }
-    if (response?.message) {
-      return response.message;
-    }
-    return t3("UNKNOWN_ERROR");
-  };
-  const translateResponse = (response) => {
-    if (response?.success === false) {
-      return translateError(response);
-    }
-    return translateSuccess(response);
-  };
-  const isError = (response) => {
-    return response?.success === false || !!response?.error || !!response?.response?.data?.error;
-  };
-  const getErrorCode = (response) => {
-    if (response?.response?.data?.code) {
-      return response.response.data.code;
-    }
-    if (response?.code) {
-      return response.code;
-    }
-    return null;
-  };
-  return {
-    translateError,
-    translateSuccess,
-    translateResponse,
-    isError,
-    getErrorCode
-  };
-}
-function extractErrorMessage(error) {
-  if (error?.response?.data) {
-    const data = error.response.data;
-    return data.message || data.error || "An error occurred";
-  }
-  if (error?.message) {
-    return error.message;
-  }
-  if (typeof error === "string") {
-    return error;
-  }
-  return "An unknown error occurred";
-}
-function extractErrorCode(error) {
-  if (error?.response?.data?.code) {
-    return error.response.data.code;
-  }
-  if (error?.code) {
-    return error.code;
-  }
-  return null;
-}
-function isErrorCode(error, code) {
-  return extractErrorCode(error) === code;
-}
-var ErrorCheckers = {
-  isUnauthorized: (error) => isErrorCode(error, "UNAUTHORIZED") || isErrorCode(error, "INVALID_TOKEN"),
-  isForbidden: (error) => isErrorCode(error, "FORBIDDEN"),
-  isNotFound: (error) => isErrorCode(error, "NOT_FOUND") || extractErrorCode(error)?.includes("_NOT_FOUND"),
-  isValidationError: (error) => isErrorCode(error, "VALIDATION_ERROR"),
-  isDuplicateEntry: (error) => isErrorCode(error, "DUPLICATE_ENTRY") || extractErrorCode(error)?.includes("_EXISTS"),
-  isNetworkError: (error) => isErrorCode(error, "NETWORK_ERROR") || error?.message?.includes("Network")
-};
 
 // src/hooks/useFiltersData.ts
 import { outletsApi, categoriesApi } from "@rentalshop/utils";

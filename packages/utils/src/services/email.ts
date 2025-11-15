@@ -22,6 +22,8 @@ export interface EmailVerificationData {
   name: string;
   email: string;
   verificationUrl: string;
+  subdomain?: string; // e.g., "abc.anyrent.shop"
+  shopName?: string; // e.g., "ABC Shop"
 }
 
 // ============================================================================
@@ -255,7 +257,7 @@ function stripHtml(html: string): string {
  * Generate email verification email HTML
  */
 export function generateVerificationEmail(data: EmailVerificationData): string {
-  const { name, email, verificationUrl } = data;
+  const { name, email, verificationUrl, subdomain, shopName } = data;
   
   return `
 <!DOCTYPE html>
@@ -299,6 +301,14 @@ export function generateVerificationEmail(data: EmailVerificationData): string {
       ${verificationUrl}
     </p>
     
+    ${subdomain ? `
+    <p style="color: #374151; font-size: 16px; margin-top: 30px; padding: 16px; background-color: #f3f4f6; border-radius: 6px; border-left: 4px solid #2563eb;">
+      <strong style="color: #111827;">Thông tin đăng nhập:</strong><br>
+      ${shopName ? `<span style="color: #374151;">Tên shop: <strong>${shopName}</strong></span><br>` : ''}
+      <span style="color: #374151;">Đăng nhập tại: <strong style="color: #2563eb;">${subdomain}</strong></span>
+    </p>
+    ` : ''}
+    
     <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
       <strong>Lưu ý:</strong> Liên kết này sẽ hết hạn sau 24 giờ. Nếu bạn không tạo tài khoản này, 
       vui lòng bỏ qua email này.
@@ -321,7 +331,11 @@ export function generateVerificationEmail(data: EmailVerificationData): string {
 export async function sendVerificationEmail(
   email: string,
   name: string,
-  verificationToken: string
+  verificationToken: string,
+  options?: {
+    subdomain?: string; // e.g., "abc.anyrent.shop"
+    shopName?: string; // e.g., "ABC Shop"
+  }
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // Lazy load env to avoid initialization issues in browser
   const { env } = await import('@rentalshop/env');
@@ -333,6 +347,8 @@ export async function sendVerificationEmail(
     name,
     email,
     verificationUrl,
+    subdomain: options?.subdomain,
+    shopName: options?.shopName,
   });
 
   return await sendEmail({

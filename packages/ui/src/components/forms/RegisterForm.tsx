@@ -28,7 +28,7 @@ import {
   SelectValue,
   useToast
 } from "@rentalshop/ui";
-import { useAuthTranslations } from "@rentalshop/hooks";
+import { useAuthTranslations, useApiError } from "@rentalshop/hooks";
 
 // Types for the registration form
 interface RegisterFormData {
@@ -91,6 +91,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, toastError, removeToast } = useToast();
   const t = useAuthTranslations();
+  const { translateError } = useApiError();
 
   // Step 1 validation schema (Account Information)
   const step1ValidationSchema = Yup.object({
@@ -223,7 +224,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         const result = await authApi.register(registrationData);
         
         if (!result.success) {
-          throw new Error(result.message || result.error || 'Registration failed');
+          // If API message contains dynamic info (phone/email), prefer it
+          // Otherwise translate error code
+          let errorMessage: string;
+          if (result.message && (result.message.includes('(') || result.message.includes('092') || result.message.includes('@'))) {
+            // Message has dynamic info (phone/email), use it directly
+            errorMessage = result.message;
+          } else {
+            // Translate error code
+            errorMessage = translateError(result) || result.message || 'Registration failed';
+          }
+          throw new Error(errorMessage);
         }
 
         // Registration successful - ALWAYS redirect to email verification page
@@ -252,9 +263,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           router.replace(redirectUrl);
         }
       } catch (error: any) {
+        // Translate error message if it's an error code
+        const errorMessage = error.message || t('register.somethingWentWrong');
         toastError(
           t('register.registrationFailed'),
-          error.message || t('register.somethingWentWrong')
+          errorMessage
         );
       } finally {
         setIsSubmitting(false);

@@ -28,21 +28,16 @@ export const authApi = {
    * Login user
    */
   async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
-    try {
-      const response = await publicFetch(apiUrls.auth.login, {
-        method: 'POST',
-        headers: credentials.tenantKey
-          ? {
-              'x-tenant-key': credentials.tenantKey,
-            }
-          : undefined,
-        body: JSON.stringify(credentials),
-      });
-      return await parseApiResponse<AuthResponse>(response);
-    } catch (error) {
-      console.error('Login error:', error);
-      throw new Error('Failed to login');
-    }
+    const response = await publicFetch(apiUrls.auth.login, {
+      method: 'POST',
+      headers: credentials.tenantKey
+        ? {
+            'x-tenant-key': credentials.tenantKey,
+          }
+        : undefined,
+      body: JSON.stringify(credentials),
+    });
+    return await parseApiResponse<AuthResponse>(response);
   },
 
   /**

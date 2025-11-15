@@ -14135,6 +14135,7 @@ var RegisterForm = ({
   const [isSubmitting, setIsSubmitting] = (0, import_react30.useState)(false);
   const { toastSuccess, toastError, removeToast } = (0, import_ui15.useToast)();
   const t2 = (0, import_hooks12.useAuthTranslations)();
+  const { translateError } = (0, import_hooks12.useApiError)();
   const step1ValidationSchema = create$3({
     login: create$6().email(t2("login.invalidEmail")).required(t2("register.emailRequired")),
     password: create$6().min(6, t2("register.passwordMinLength")).max(25, t2("register.passwordMaxLength")).required(t2("register.passwordRequired")),
@@ -14224,7 +14225,13 @@ var RegisterForm = ({
         };
         const result = await import_utils17.authApi.register(registrationData);
         if (!result.success) {
-          throw new Error(result.message || result.error || "Registration failed");
+          let errorMessage;
+          if (result.message && (result.message.includes("(") || result.message.includes("092") || result.message.includes("@"))) {
+            errorMessage = result.message;
+          } else {
+            errorMessage = translateError(result) || result.message || "Registration failed";
+          }
+          throw new Error(errorMessage);
         }
         const resultData = result.data;
         const userEmail = resultData?.user?.email || completeData.login || registrationData.email;
@@ -14243,9 +14250,10 @@ var RegisterForm = ({
           router.replace(redirectUrl);
         }
       } catch (error) {
+        const errorMessage = error.message || t2("register.somethingWentWrong");
         toastError(
           t2("register.registrationFailed"),
-          error.message || t2("register.somethingWentWrong")
+          errorMessage
         );
       } finally {
         setIsSubmitting(false);
