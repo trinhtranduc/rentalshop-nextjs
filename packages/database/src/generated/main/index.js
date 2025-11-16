@@ -225,6 +225,10 @@ const config = {
         "fromEnvVar": null,
         "value": "darwin-arm64",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "linux-musl-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -242,6 +246,7 @@ const config = {
     "main"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "main": {
       "url": {
@@ -250,8 +255,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator mainClient {\n  provider = \"prisma-client-js\"\n  output   = \"../../packages/database/src/generated/main\"\n}\n\ndatasource main {\n  provider = \"postgresql\"\n  url      = env(\"MAIN_DATABASE_URL\")\n}\n\nenum TenantStatus {\n  ACTIVE\n  INACTIVE\n  SUSPENDED\n}\n\nenum SubscriptionStatus {\n  TRIAL\n  ACTIVE\n  PAST_DUE\n  CANCELLED\n}\n\nenum BillingInterval {\n  MONTHLY\n  QUARTERLY\n  SEMI_ANNUAL\n  YEARLY\n}\n\nmodel Tenant {\n  id            String         @id @default(cuid())\n  tenantKey     String         @unique\n  name          String\n  description   String?\n  primaryDomain String?        @unique\n  status        TenantStatus   @default(ACTIVE)\n  databaseUrl   String\n  metadata      Json?\n  createdAt     DateTime       @default(now())\n  updatedAt     DateTime       @updatedAt\n  subscriptions Subscription[]\n  auditLogs     AuditLog[]\n\n  @@index([tenantKey])\n  @@index([status])\n}\n\nmodel Plan {\n  id              String          @id @default(cuid())\n  code            String          @unique\n  name            String\n  description     String?\n  price           Int             @default(0) // stored in smallest currency unit\n  currency        String          @default(\"VND\")\n  interval        BillingInterval @default(MONTHLY)\n  trialPeriodDays Int?            @default(14)\n  isActive        Boolean         @default(true)\n  sortOrder       Int             @default(0)\n  limits          Json?\n  features        Json?\n  metadata        Json?\n  createdAt       DateTime        @default(now())\n  updatedAt       DateTime        @updatedAt\n  subscriptions   Subscription[]\n\n  @@index([code])\n  @@index([isActive])\n  @@index([sortOrder])\n}\n\nmodel Subscription {\n  id                 String             @id @default(cuid())\n  tenantId           String\n  planId             String\n  status             SubscriptionStatus @default(TRIAL)\n  trialEndsAt        DateTime?\n  currentPeriodStart DateTime\n  currentPeriodEnd   DateTime\n  cancelAtPeriodEnd  Boolean            @default(false)\n  cancelledAt        DateTime?\n  renewedAt          DateTime?\n  lastCheckedAt      DateTime?          @default(now())\n  metadata           Json?\n  createdAt          DateTime           @default(now())\n  updatedAt          DateTime           @updatedAt\n  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)\n  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)\n\n  @@unique([tenantId, planId])\n  @@index([tenantId])\n  @@index([planId])\n  @@index([status])\n  @@index([currentPeriodEnd])\n}\n\nmodel AuditLog {\n  id        String   @id @default(cuid())\n  tenantId  String?\n  actorId   String?\n  actorType String?\n  action    String\n  target    String?\n  details   Json?\n  createdAt DateTime @default(now())\n  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)\n\n  @@index([tenantId])\n  @@index([action])\n  @@index([createdAt])\n}\n",
-  "inlineSchemaHash": "1d5d9596fe2487e5804ad615233ee223a185a45599b17ac3971f8b0ca8d15b07",
+  "inlineSchema": "generator mainClient {\n  provider      = \"prisma-client-js\"\n  // Include binaries for local dev (\"native\") and Railway runtime (\"linux-musl-openssl-3.0.x\")\n  // This fixes: \"Prisma Client could not locate the Query Engine for runtime \\\"linux-musl-openssl-3.0.x\\\"\"\n  binaryTargets = [\"native\", \"linux-musl-openssl-3.0.x\"]\n  output        = \"../../packages/database/src/generated/main\"\n}\n\ndatasource main {\n  provider = \"postgresql\"\n  url      = env(\"MAIN_DATABASE_URL\")\n}\n\nenum TenantStatus {\n  ACTIVE\n  INACTIVE\n  SUSPENDED\n}\n\nenum SubscriptionStatus {\n  TRIAL\n  ACTIVE\n  PAST_DUE\n  CANCELLED\n}\n\nenum BillingInterval {\n  MONTHLY\n  QUARTERLY\n  SEMI_ANNUAL\n  YEARLY\n}\n\nmodel Tenant {\n  id            String         @id @default(cuid())\n  tenantKey     String         @unique\n  name          String\n  description   String?\n  primaryDomain String?        @unique\n  status        TenantStatus   @default(ACTIVE)\n  databaseUrl   String\n  metadata      Json?\n  createdAt     DateTime       @default(now())\n  updatedAt     DateTime       @updatedAt\n  subscriptions Subscription[]\n  auditLogs     AuditLog[]\n\n  @@index([tenantKey])\n  @@index([status])\n}\n\nmodel Plan {\n  id              String          @id @default(cuid())\n  code            String          @unique\n  name            String\n  description     String?\n  price           Int             @default(0) // stored in smallest currency unit\n  currency        String          @default(\"VND\")\n  interval        BillingInterval @default(MONTHLY)\n  trialPeriodDays Int?            @default(14)\n  isActive        Boolean         @default(true)\n  sortOrder       Int             @default(0)\n  limits          Json?\n  features        Json?\n  metadata        Json?\n  createdAt       DateTime        @default(now())\n  updatedAt       DateTime        @updatedAt\n  subscriptions   Subscription[]\n\n  @@index([code])\n  @@index([isActive])\n  @@index([sortOrder])\n}\n\nmodel Subscription {\n  id                 String             @id @default(cuid())\n  tenantId           String\n  planId             String\n  status             SubscriptionStatus @default(TRIAL)\n  trialEndsAt        DateTime?\n  currentPeriodStart DateTime\n  currentPeriodEnd   DateTime\n  cancelAtPeriodEnd  Boolean            @default(false)\n  cancelledAt        DateTime?\n  renewedAt          DateTime?\n  lastCheckedAt      DateTime?          @default(now())\n  metadata           Json?\n  createdAt          DateTime           @default(now())\n  updatedAt          DateTime           @updatedAt\n  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)\n  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)\n\n  @@unique([tenantId, planId])\n  @@index([tenantId])\n  @@index([planId])\n  @@index([status])\n  @@index([currentPeriodEnd])\n}\n\nmodel AuditLog {\n  id        String   @id @default(cuid())\n  tenantId  String?\n  actorId   String?\n  actorType String?\n  action    String\n  target    String?\n  details   Json?\n  createdAt DateTime @default(now())\n  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)\n\n  @@index([tenantId])\n  @@index([action])\n  @@index([createdAt])\n}\n",
+  "inlineSchemaHash": "4a748b9387123ae87bca4fd72b98df63f3227a44e981ec3a2f365607de94ad5a",
   "copyEngine": true
 }
 
@@ -292,6 +297,10 @@ Object.assign(exports, Prisma)
 // file annotations for bundling tools to include these files
 path.join(__dirname, "libquery_engine-darwin-arm64.dylib.node");
 path.join(process.cwd(), "packages/database/src/generated/main/libquery_engine-darwin-arm64.dylib.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-linux-musl-openssl-3.0.x.so.node");
+path.join(process.cwd(), "packages/database/src/generated/main/libquery_engine-linux-musl-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "packages/database/src/generated/main/schema.prisma")

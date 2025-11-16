@@ -5913,6 +5913,10 @@ var require_main = __commonJS({
             "fromEnvVar": null,
             "value": "darwin-arm64",
             "native": true
+          },
+          {
+            "fromEnvVar": null,
+            "value": "linux-musl-openssl-3.0.x"
           }
         ],
         "previewFeatures": [],
@@ -5930,6 +5934,7 @@ var require_main = __commonJS({
         "main"
       ],
       "activeProvider": "postgresql",
+      "postinstall": false,
       "inlineDatasources": {
         "main": {
           "url": {
@@ -5938,8 +5943,8 @@ var require_main = __commonJS({
           }
         }
       },
-      "inlineSchema": 'generator mainClient {\n  provider = "prisma-client-js"\n  output   = "../../packages/database/src/generated/main"\n}\n\ndatasource main {\n  provider = "postgresql"\n  url      = env("MAIN_DATABASE_URL")\n}\n\nenum TenantStatus {\n  ACTIVE\n  INACTIVE\n  SUSPENDED\n}\n\nenum SubscriptionStatus {\n  TRIAL\n  ACTIVE\n  PAST_DUE\n  CANCELLED\n}\n\nenum BillingInterval {\n  MONTHLY\n  QUARTERLY\n  SEMI_ANNUAL\n  YEARLY\n}\n\nmodel Tenant {\n  id            String         @id @default(cuid())\n  tenantKey     String         @unique\n  name          String\n  description   String?\n  primaryDomain String?        @unique\n  status        TenantStatus   @default(ACTIVE)\n  databaseUrl   String\n  metadata      Json?\n  createdAt     DateTime       @default(now())\n  updatedAt     DateTime       @updatedAt\n  subscriptions Subscription[]\n  auditLogs     AuditLog[]\n\n  @@index([tenantKey])\n  @@index([status])\n}\n\nmodel Plan {\n  id              String          @id @default(cuid())\n  code            String          @unique\n  name            String\n  description     String?\n  price           Int             @default(0) // stored in smallest currency unit\n  currency        String          @default("VND")\n  interval        BillingInterval @default(MONTHLY)\n  trialPeriodDays Int?            @default(14)\n  isActive        Boolean         @default(true)\n  sortOrder       Int             @default(0)\n  limits          Json?\n  features        Json?\n  metadata        Json?\n  createdAt       DateTime        @default(now())\n  updatedAt       DateTime        @updatedAt\n  subscriptions   Subscription[]\n\n  @@index([code])\n  @@index([isActive])\n  @@index([sortOrder])\n}\n\nmodel Subscription {\n  id                 String             @id @default(cuid())\n  tenantId           String\n  planId             String\n  status             SubscriptionStatus @default(TRIAL)\n  trialEndsAt        DateTime?\n  currentPeriodStart DateTime\n  currentPeriodEnd   DateTime\n  cancelAtPeriodEnd  Boolean            @default(false)\n  cancelledAt        DateTime?\n  renewedAt          DateTime?\n  lastCheckedAt      DateTime?          @default(now())\n  metadata           Json?\n  createdAt          DateTime           @default(now())\n  updatedAt          DateTime           @updatedAt\n  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)\n  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)\n\n  @@unique([tenantId, planId])\n  @@index([tenantId])\n  @@index([planId])\n  @@index([status])\n  @@index([currentPeriodEnd])\n}\n\nmodel AuditLog {\n  id        String   @id @default(cuid())\n  tenantId  String?\n  actorId   String?\n  actorType String?\n  action    String\n  target    String?\n  details   Json?\n  createdAt DateTime @default(now())\n  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)\n\n  @@index([tenantId])\n  @@index([action])\n  @@index([createdAt])\n}\n',
-      "inlineSchemaHash": "1d5d9596fe2487e5804ad615233ee223a185a45599b17ac3971f8b0ca8d15b07",
+      "inlineSchema": 'generator mainClient {\n  provider      = "prisma-client-js"\n  // Include binaries for local dev ("native") and Railway runtime ("linux-musl-openssl-3.0.x")\n  // This fixes: "Prisma Client could not locate the Query Engine for runtime \\"linux-musl-openssl-3.0.x\\""\n  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]\n  output        = "../../packages/database/src/generated/main"\n}\n\ndatasource main {\n  provider = "postgresql"\n  url      = env("MAIN_DATABASE_URL")\n}\n\nenum TenantStatus {\n  ACTIVE\n  INACTIVE\n  SUSPENDED\n}\n\nenum SubscriptionStatus {\n  TRIAL\n  ACTIVE\n  PAST_DUE\n  CANCELLED\n}\n\nenum BillingInterval {\n  MONTHLY\n  QUARTERLY\n  SEMI_ANNUAL\n  YEARLY\n}\n\nmodel Tenant {\n  id            String         @id @default(cuid())\n  tenantKey     String         @unique\n  name          String\n  description   String?\n  primaryDomain String?        @unique\n  status        TenantStatus   @default(ACTIVE)\n  databaseUrl   String\n  metadata      Json?\n  createdAt     DateTime       @default(now())\n  updatedAt     DateTime       @updatedAt\n  subscriptions Subscription[]\n  auditLogs     AuditLog[]\n\n  @@index([tenantKey])\n  @@index([status])\n}\n\nmodel Plan {\n  id              String          @id @default(cuid())\n  code            String          @unique\n  name            String\n  description     String?\n  price           Int             @default(0) // stored in smallest currency unit\n  currency        String          @default("VND")\n  interval        BillingInterval @default(MONTHLY)\n  trialPeriodDays Int?            @default(14)\n  isActive        Boolean         @default(true)\n  sortOrder       Int             @default(0)\n  limits          Json?\n  features        Json?\n  metadata        Json?\n  createdAt       DateTime        @default(now())\n  updatedAt       DateTime        @updatedAt\n  subscriptions   Subscription[]\n\n  @@index([code])\n  @@index([isActive])\n  @@index([sortOrder])\n}\n\nmodel Subscription {\n  id                 String             @id @default(cuid())\n  tenantId           String\n  planId             String\n  status             SubscriptionStatus @default(TRIAL)\n  trialEndsAt        DateTime?\n  currentPeriodStart DateTime\n  currentPeriodEnd   DateTime\n  cancelAtPeriodEnd  Boolean            @default(false)\n  cancelledAt        DateTime?\n  renewedAt          DateTime?\n  lastCheckedAt      DateTime?          @default(now())\n  metadata           Json?\n  createdAt          DateTime           @default(now())\n  updatedAt          DateTime           @updatedAt\n  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)\n  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)\n\n  @@unique([tenantId, planId])\n  @@index([tenantId])\n  @@index([planId])\n  @@index([status])\n  @@index([currentPeriodEnd])\n}\n\nmodel AuditLog {\n  id        String   @id @default(cuid())\n  tenantId  String?\n  actorId   String?\n  actorType String?\n  action    String\n  target    String?\n  details   Json?\n  createdAt DateTime @default(now())\n  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)\n\n  @@index([tenantId])\n  @@index([action])\n  @@index([createdAt])\n}\n',
+      "inlineSchemaHash": "4a748b9387123ae87bca4fd72b98df63f3227a44e981ec3a2f365607de94ad5a",
       "copyEngine": true
     };
     var fs = require("fs");
@@ -5969,6 +5974,8 @@ var require_main = __commonJS({
     Object.assign(exports2, Prisma);
     path.join(__dirname, "libquery_engine-darwin-arm64.dylib.node");
     path.join(process.cwd(), "packages/database/src/generated/main/libquery_engine-darwin-arm64.dylib.node");
+    path.join(__dirname, "libquery_engine-linux-musl-openssl-3.0.x.so.node");
+    path.join(process.cwd(), "packages/database/src/generated/main/libquery_engine-linux-musl-openssl-3.0.x.so.node");
     path.join(__dirname, "schema.prisma");
     path.join(process.cwd(), "packages/database/src/generated/main/schema.prisma");
   }
@@ -11249,49 +11256,90 @@ async function createEmailVerification(userId, email, expiresInHours = 24) {
   return verification;
 }
 async function verifyEmailByToken(token) {
-  const verification = await prisma.emailVerification.findUnique({
-    where: { token },
-    include: { user: true }
-  });
-  if (!verification) {
+  try {
+    const verification = await prisma.emailVerification.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+    if (!verification) {
+      console.log("\u274C Email verification: Token not found:", token);
+      return {
+        success: false,
+        error: "Token kh\xF4ng h\u1EE3p l\u1EC7 ho\u1EB7c kh\xF4ng t\u1ED3n t\u1EA1i"
+      };
+    }
+    if (verification.verified) {
+      console.log("\u274C Email verification: Token already used:", token);
+      return {
+        success: false,
+        error: "Token \u0111\xE3 \u0111\u01B0\u1EE3c s\u1EED d\u1EE5ng"
+      };
+    }
+    if (/* @__PURE__ */ new Date() > verification.expiresAt) {
+      console.log("\u274C Email verification: Token expired:", token);
+      return {
+        success: false,
+        error: "Token \u0111\xE3 h\u1EBFt h\u1EA1n. Vui l\xF2ng y\xEAu c\u1EA7u g\u1EEDi l\u1EA1i email x\xE1c th\u1EF1c"
+      };
+    }
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedVerification = await tx.emailVerification.update({
+        where: { id: verification.id },
+        data: {
+          verified: true,
+          verifiedAt: /* @__PURE__ */ new Date()
+        }
+      });
+      console.log("\u2705 Email verification: Verification record updated:", updatedVerification.id);
+      const user = await tx.user.update({
+        where: { id: verification.userId },
+        data: {
+          emailVerified: true,
+          emailVerifiedAt: /* @__PURE__ */ new Date()
+        },
+        select: {
+          id: true,
+          email: true,
+          emailVerified: true,
+          emailVerifiedAt: true
+        }
+      });
+      console.log("\u2705 Email verification: User updated:", {
+        userId: user.id,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        emailVerifiedAt: user.emailVerifiedAt
+      });
+      if (!user.emailVerified) {
+        throw new Error(`Failed to update emailVerified for user ${user.id}`);
+      }
+      return user;
+    });
+    return {
+      success: true,
+      user: {
+        id: result.id,
+        email: result.email
+      }
+    };
+  } catch (error) {
+    console.error("\u274C Email verification error:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+    if (error.code === "P2025") {
+      return {
+        success: false,
+        error: "Kh\xF4ng t\xECm th\u1EA5y user ho\u1EB7c verification record"
+      };
+    }
     return {
       success: false,
-      error: "Token kh\xF4ng h\u1EE3p l\u1EC7 ho\u1EB7c kh\xF4ng t\u1ED3n t\u1EA1i"
+      error: error.message || "L\u1ED7i x\xE1c th\u1EF1c email. Vui l\xF2ng th\u1EED l\u1EA1i sau."
     };
   }
-  if (verification.verified) {
-    return {
-      success: false,
-      error: "Token \u0111\xE3 \u0111\u01B0\u1EE3c s\u1EED d\u1EE5ng"
-    };
-  }
-  if (/* @__PURE__ */ new Date() > verification.expiresAt) {
-    return {
-      success: false,
-      error: "Token \u0111\xE3 h\u1EBFt h\u1EA1n. Vui l\xF2ng y\xEAu c\u1EA7u g\u1EEDi l\u1EA1i email x\xE1c th\u1EF1c"
-    };
-  }
-  await prisma.emailVerification.update({
-    where: { id: verification.id },
-    data: {
-      verified: true,
-      verifiedAt: /* @__PURE__ */ new Date()
-    }
-  });
-  const user = await prisma.user.update({
-    where: { id: verification.userId },
-    data: {
-      emailVerified: true,
-      emailVerifiedAt: /* @__PURE__ */ new Date()
-    }
-  });
-  return {
-    success: true,
-    user: {
-      id: user.id,
-      email: user.email
-    }
-  };
 }
 async function getVerificationTokenByUserId(userId) {
   const verification = await prisma.emailVerification.findFirst({

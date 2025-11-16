@@ -115,9 +115,12 @@ EOF
 
 echo "✅ Database setup completed (currency + UserSession)"
 
-# Generate Prisma Client (in case it's not generated)
-echo "🔄 Ensuring Prisma Client is generated..."
-npx prisma generate --schema=../../prisma/schema.prisma
+# Generate Prisma Clients (in case they are not generated in this runtime environment)
+echo "🔄 Ensuring main application Prisma Client is generated..."
+npx prisma generate --schema=../../prisma/schema.prisma || echo "⚠️ Failed to generate main Prisma client (prisma/schema.prisma)"
+
+echo "🔄 Ensuring tenant registry Prisma Client is generated..."
+npx prisma generate --schema=../../prisma/main/schema.prisma || echo "⚠️ Failed to generate tenant main Prisma client (prisma/main/schema.prisma)"
 
 # ✨ Run database migrations (apply all pending migrations)
 echo "📦 Running database migrations..."
