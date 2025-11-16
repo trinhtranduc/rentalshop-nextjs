@@ -25,6 +25,7 @@ export interface MerchantCreateData {
   name: string;
   email: string;
   phone?: string;
+  tenantKey?: string;
   address?: string;
   city?: string;
   state?: string;

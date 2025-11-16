@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, createEmailVerification } from '@rentalshop/database';
-import { registerSchema, sendVerificationEmail } from '@rentalshop/utils';
+import { registerSchema, sendVerificationEmail, generateTenantKeyFromName } from '@rentalshop/utils';
 import { generateToken, hashPassword } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, getDefaultPricingConfig, type BusinessType, type PricingType } from '@rentalshop/constants';
@@ -48,32 +48,49 @@ export async function POST(request: NextRequest) {
       );
 
       if (existingMerchant) {
-        const duplicateField = existingMerchant.email === validatedData.email ? 'email' : 'phone number';
-        const duplicateValue = existingMerchant.email === validatedData.email ? validatedData.email : validatedData.phone;
-        
-        console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
-        return NextResponse.json({
-          success: false,
-          code: 'MERCHANT_DUPLICATE',
-          message: `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
-        }, { status: 409 });
+        const duplicateField =
+          existingMerchant.email === validatedData.email ? 'email' : 'phone number';
+        const duplicateValue =
+          existingMerchant.email === validatedData.email
+            ? validatedData.email
+            : validatedData.phone;
+
+        console.log('❌ Merchant duplicate found:', {
+          field: duplicateField,
+          value: duplicateValue,
+        });
+        return NextResponse.json(
+          ResponseBuilder.error(
+            'MERCHANT_DUPLICATE',
+            `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+          ),
+          { status: 409 }
+        );
       }
 
       // 2. Check if user email already exists
       const existingUser = await db.users.findByEmail(validatedData.email);
       if (existingUser) {
         console.log('❌ User email already exists:', validatedData.email);
-        return NextResponse.json({
-          success: false,
-          code: 'EMAIL_EXISTS',
-          message: `A user with email ${validatedData.email} already exists. Please use a different email.`
-        }, { status: 409 });
+        return NextResponse.json(
+          ResponseBuilder.error(
+            'EMAIL_EXISTS',
+            `A user with email ${validatedData.email} already exists. Please use a different email.`
+          ),
+          { status: 409 }
+        );
       }
 
       // ALL CHECKS PASSED - Start transaction for atomic creation
       console.log('🔄 Starting transaction for merchant registration...');
       
       const result = await db.prisma.$transaction(async (tx) => {
+        // Generate tenantKey from businessName if not provided
+        const tenantKey =
+          validatedData.tenantKey && validatedData.tenantKey.trim().length > 0
+            ? validatedData.tenantKey.trim()
+            : generateTenantKeyFromName(validatedData.businessName || '');
+
         // 3. Create merchant with business configuration
         console.log('📝 Step 1: Creating merchant with data:', {
           name: validatedData.businessName,
@@ -86,6 +103,8 @@ export async function POST(request: NextRequest) {
             name: validatedData.businessName!,
             email: validatedData.email,
             phone: validatedData.phone,
+            // New tenantKey field (used for future multi-tenant routing)
+            ...(tenantKey ? { tenantKey } : {}),
             address: validatedData.address,
             city: validatedData.city,
             state: validatedData.state,
@@ -101,17 +120,29 @@ export async function POST(request: NextRequest) {
                     defaultPricingType: validatedData.pricingType,
                     businessRules: {
                       requireRentalDates: validatedData.pricingType !== 'FIXED',
-                      showPricingOptions: ['VEHICLE'].includes(validatedData.businessType)
+                      showPricingOptions: ['VEHICLE'].includes(validatedData.businessType),
                     },
                     durationLimits: {
                       minDuration: validatedData.pricingType === 'HOURLY' ? 1 : 1,
-                      maxDuration: validatedData.pricingType === 'HOURLY' ? 168 : validatedData.pricingType === 'DAILY' ? 30 : 1,
-                      defaultDuration: validatedData.pricingType === 'HOURLY' ? 4 : validatedData.pricingType === 'DAILY' ? 3 : 1
-                    }
+                      maxDuration:
+                        validatedData.pricingType === 'HOURLY'
+                          ? 168
+                          : validatedData.pricingType === 'DAILY'
+                          ? 30
+                          : 1,
+                      defaultDuration:
+                        validatedData.pricingType === 'HOURLY'
+                          ? 4
+                          : validatedData.pricingType === 'DAILY'
+                          ? 3
+                          : 1,
+                    },
                   }
-                : getDefaultPricingConfig(validatedData.businessType as BusinessType || 'GENERAL')
-            )
-          }
+                : getDefaultPricingConfig(
+                    (validatedData.businessType as BusinessType) || 'GENERAL'
+                  )
+            ),
+          } as any,
         });
 
         console.log('✅ Step 1 Complete: Merchant created:', { id: merchant.id, name: merchant.name });
@@ -253,11 +284,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Don't generate JWT token yet - user must verify email first
-      return NextResponse.json({
-        success: true,
-        code: 'MERCHANT_ACCOUNT_CREATED_PENDING_VERIFICATION', 
-        message: 'Merchant account created successfully. Please check your email to verify your account before logging in.',
-        data: {
+      return NextResponse.json(
+        ResponseBuilder.success('MERCHANT_ACCOUNT_CREATED_PENDING_VERIFICATION', {
           user: {
             id: user.id,
             email: user.email,
@@ -269,21 +297,24 @@ export async function POST(request: NextRequest) {
               id: merchant.id,
               name: merchant.name,
               businessType: merchant.businessType,
-              pricingType: merchant.pricingType
+              pricingType: merchant.pricingType,
             },
             outlet: {
               id: outlet.id,
-              name: outlet.name
-            }
+              name: outlet.name,
+            },
           },
           subscription: {
             planName: trialPlan.name,
             trialEnd: trialEndDate,
-            daysRemaining: Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+            daysRemaining: Math.ceil(
+              (trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+            ),
           },
-          requiresEmailVerification: true
-        }
-      }, { status: 201 });
+          requiresEmailVerification: true,
+        }),
+        { status: 201 }
+      );
 
     } else {
       // ============================================================================
@@ -322,22 +353,20 @@ export async function POST(request: NextRequest) {
       }
 
       // Don't generate JWT token yet - user must verify email first
-      return NextResponse.json({
-        success: true,
-        code: 'USER_ACCOUNT_CREATED_PENDING_VERIFICATION',
-        message: 'User account created successfully. Please check your email to verify your account before logging in.',
-        data: {
+      return NextResponse.json(
+        ResponseBuilder.success('USER_ACCOUNT_CREATED_PENDING_VERIFICATION', {
           user: {
             id: user.id,
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
-            emailVerified: false
+            emailVerified: false,
           },
-          requiresEmailVerification: true
-        }
-      }, { status: 201 });
+          requiresEmailVerification: true,
+        }),
+        { status: 201 }
+      );
     }
     
   } catch (error: any) {

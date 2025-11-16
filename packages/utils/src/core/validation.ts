@@ -21,6 +21,8 @@ export const registerSchema = z.object({
   role: z.enum(['CLIENT', 'SHOP_OWNER', 'ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']).optional(),
   // For merchant registration
   businessName: z.string().optional(),
+  // Optional tenant key (domain-like identifier) for future multi-tenant routing
+  tenantKey: z.string().min(1).max(50).regex(/^[a-z0-9\-]+$/i, 'Tenant key must be alphanumeric').optional(),
   // Business configuration (required for merchants)
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
