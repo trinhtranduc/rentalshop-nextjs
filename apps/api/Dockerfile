@@ -51,8 +51,13 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy entire source code (needed for monorepo build)
 COPY . .
 
-# Generate Prisma Client with all binary targets
+# Generate Prisma Clients with all required binary targets
+# 1) Main application database client (@prisma/client)
 RUN npx prisma generate --schema=./prisma/schema.prisma
+# 2) Tenant registry (main) database client (packages/database/src/generated/main)
+#    This must run inside the Linux (Alpine) build image so the generated
+#    Prisma Query Engine includes the `linux-musl-openssl-3.0.x` binary.
+RUN npx prisma generate --schema=./prisma/main/schema.prisma
 
 # Run database migrations (if DATABASE_URL is available at build time)
 # This ensures database schema is up to date before build
