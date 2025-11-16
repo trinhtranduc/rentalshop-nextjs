@@ -75,57 +75,107 @@ export async function createEmailVerification(
 export async function verifyEmailByToken(
   token: string
 ): Promise<{ success: boolean; user?: { id: number; email: string }; error?: string }> {
-  const verification = await prisma.emailVerification.findUnique({
-    where: { token },
-    include: { user: true },
-  });
+  try {
+    const verification = await prisma.emailVerification.findUnique({
+      where: { token },
+      include: { user: true },
+    });
 
-  if (!verification) {
+    if (!verification) {
+      console.log('❌ Email verification: Token not found:', token);
+      return {
+        success: false,
+        error: 'Token không hợp lệ hoặc không tồn tại',
+      };
+    }
+
+    if (verification.verified) {
+      console.log('❌ Email verification: Token already used:', token);
+      return {
+        success: false,
+        error: 'Token đã được sử dụng',
+      };
+    }
+
+    if (new Date() > verification.expiresAt) {
+      console.log('❌ Email verification: Token expired:', token);
+      return {
+        success: false,
+        error: 'Token đã hết hạn. Vui lòng yêu cầu gửi lại email xác thực',
+      };
+    }
+
+    // Use transaction to ensure both updates succeed or fail together
+    const result = await prisma.$transaction(async (tx) => {
+      // Update verification record
+      const updatedVerification = await tx.emailVerification.update({
+        where: { id: verification.id },
+        data: {
+          verified: true,
+          verifiedAt: new Date(),
+        },
+      });
+
+      console.log('✅ Email verification: Verification record updated:', updatedVerification.id);
+
+      // Update user email verified status
+      const user = await tx.user.update({
+        where: { id: verification.userId },
+        data: {
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+        },
+        select: {
+          id: true,
+          email: true,
+          emailVerified: true,
+          emailVerifiedAt: true,
+        },
+      });
+
+      console.log('✅ Email verification: User updated:', {
+        userId: user.id,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        emailVerifiedAt: user.emailVerifiedAt,
+      });
+
+      // Verify that emailVerified was actually updated
+      if (!user.emailVerified) {
+        throw new Error(`Failed to update emailVerified for user ${user.id}`);
+      }
+
+      return user;
+    });
+
+    return {
+      success: true,
+      user: {
+        id: result.id,
+        email: result.email,
+      },
+    };
+  } catch (error: any) {
+    console.error('❌ Email verification error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+    });
+
+    // Check for Prisma-specific errors
+    if (error.code === 'P2025') {
+      return {
+        success: false,
+        error: 'Không tìm thấy user hoặc verification record',
+      };
+    }
+
     return {
       success: false,
-      error: 'Token không hợp lệ hoặc không tồn tại',
+      error: error.message || 'Lỗi xác thực email. Vui lòng thử lại sau.',
     };
   }
-
-  if (verification.verified) {
-    return {
-      success: false,
-      error: 'Token đã được sử dụng',
-    };
-  }
-
-  if (new Date() > verification.expiresAt) {
-    return {
-      success: false,
-      error: 'Token đã hết hạn. Vui lòng yêu cầu gửi lại email xác thực',
-    };
-  }
-
-  // Update verification record
-  await prisma.emailVerification.update({
-    where: { id: verification.id },
-    data: {
-      verified: true,
-      verifiedAt: new Date(),
-    },
-  });
-
-  // Update user email verified status
-  const user = await prisma.user.update({
-    where: { id: verification.userId },
-    data: {
-      emailVerified: true,
-      emailVerifiedAt: new Date(),
-    } as any,
-  });
-
-  return {
-    success: true,
-    user: {
-      id: user.id,
-      email: user.email,
-    },
-  };
 }
 
 /**

@@ -339,9 +339,22 @@ export async function sendVerificationEmail(
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // Lazy load env to avoid initialization issues in browser
   const { env } = await import('@rentalshop/env');
-  
-  const clientUrl = env.CLIENT_URL;
-  const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
+
+  /**
+   * IMPORTANT:
+   * - Verification MUST hit the API first so that the backend can:
+   *   1) Mark emailVerified = true in the database
+   *   2) Then redirect back to CLIENT_URL with success/error
+   *
+   * - Therefore the verification link in the email should point to the API URL:
+   *   {API_URL}/api/auth/verify-email?token=...
+   *
+   * - The API GET /api/auth/verify-email handler will:
+   *   - Call verifyEmailByToken(token) → update User.emailVerified
+   *   - Redirect to {CLIENT_URL}/verify-email?... for UI display
+   */
+  const apiUrl = env.API_URL;
+  const verificationUrl = `${apiUrl}/api/auth/verify-email?token=${verificationToken}`;
 
   const html = generateVerificationEmail({
     name,
