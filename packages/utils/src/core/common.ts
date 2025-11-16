@@ -3,6 +3,7 @@ import type { User, LoginCredentials } from '@rentalshop/types';
 import type { ApiResponse, ErrorCode, ErrorResponse } from './errors';
 import { parseErrorResponse, isErrorResponse } from './errors';
 import { analyzeError } from './errors'; // Import analyzeError for handleApiErrorForUI
+import { getTenantKeyFromHost } from './tenant';
 
 const API = CONSTANTS.API;
 
@@ -77,6 +78,16 @@ export const publicFetch = async (
     'X-App-Version': '1.0.0',
     'X-Device-Type': 'browser',
   };
+
+  // Multi-tenant support: infer tenantKey from browser hostname (web),
+  // so all public API calls (login, register, etc.) automatically include it.
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const tenantKey = getTenantKeyFromHost(host);
+    if (tenantKey) {
+      headers['X-Tenant-Key'] = tenantKey;
+    }
+  }
 
   // Create full URL
   const fullUrl = createApiUrl(url);
@@ -181,6 +192,16 @@ export const authenticatedFetch = async (
     'X-Device-Type': 'browser',
     ...(options.headers as Record<string, string>),
   };
+
+  // Multi-tenant support: infer tenantKey from browser hostname (web),
+  // so all authenticated API calls automatically include it unless explicitly overridden.
+  if (typeof window !== 'undefined' && !headers['X-Tenant-Key'] && !headers['x-tenant-key']) {
+    const host = window.location.hostname;
+    const tenantKey = getTenantKeyFromHost(host);
+    if (tenantKey) {
+      headers['X-Tenant-Key'] = tenantKey;
+    }
+  }
   
   // Add authorization header if token exists
   if (token) {

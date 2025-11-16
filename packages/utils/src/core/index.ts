@@ -44,6 +44,9 @@ export {
   getErrorMessage
 } from './errors';
 
+// Tenant helpers (multi-tenant support)
+export { getTenantKeyFromHost, getTenantKeyFromRequest } from './tenant';
+
 // Export error analysis and handling (now consolidated in errors.ts)
 export { 
   analyzeError,

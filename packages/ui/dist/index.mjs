@@ -13479,7 +13479,7 @@ FieldArrayInner.defaultProps = {
 };
 
 // src/components/forms/LoginForm.tsx
-import { Eye, EyeOff, Mail, Lock, Building2 as Building22 } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button as Button8, Card as Card7, CardContent as CardContent7, Input as Input5, Logo as Logo2 } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
 
@@ -13578,15 +13578,6 @@ var LanguageSwitcher = ({
 
 // src/components/forms/LoginForm.tsx
 import { jsx as jsx52, jsxs as jsxs38 } from "react/jsx-runtime";
-var SHOP_DOMAIN_SUFFIX = ".anyrent.shop";
-var normalizeTenantKey = (value) => {
-  let sanitized = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-  sanitized = sanitized.replace(/đ/g, "d");
-  sanitized = sanitized.replace(/^https?:\/\//, "");
-  sanitized = sanitized.replace(/\.anyrent\.shop.*/g, "");
-  sanitized = sanitized.replace(/[^a-z0-9]/g, "");
-  return sanitized.slice(0, 50);
-};
 var LoginForm = ({
   onLogin,
   onNavigate,
@@ -13599,8 +13590,7 @@ var LoginForm = ({
   const t2 = useAuthTranslations();
   const validationSchema = create$3({
     email: create$6().email(t2("login.invalidEmail")).required(t2("login.invalidEmail")),
-    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword")),
-    tenantKey: create$6().matches(/^[a-z0-9]+$/, t2("login.shopDomainInvalid")).required(t2("login.shopDomainRequired"))
+    password: create$6().min(6, t2("login.invalidPassword")).required(t2("login.invalidPassword"))
   });
   const validation = useFormik({
     enableReinitialize: true,
@@ -13628,11 +13618,6 @@ var LoginForm = ({
   };
   const togglePasswordVisibility = () => {
     setViewPass(!viewPass);
-  };
-  const handleTenantKeyInput = (value) => {
-    const sanitized = normalizeTenantKey(value);
-    validation.setFieldValue("tenantKey", sanitized);
-    onInputChange?.();
   };
   return /* @__PURE__ */ jsxs38("div", { className: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden", children: [
     /* @__PURE__ */ jsx52("style", { children: `
@@ -13706,28 +13691,6 @@ var LoginForm = ({
           error
         ] }),
         /* @__PURE__ */ jsxs38("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ jsxs38("div", { children: [
-            /* @__PURE__ */ jsx52("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.shopDomain") }),
-            /* @__PURE__ */ jsxs38("div", { className: "flex rounded-lg shadow-sm border border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/40", children: [
-              /* @__PURE__ */ jsxs38("div", { className: "relative flex-1", children: [
-                /* @__PURE__ */ jsx52(Building22, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" }),
-                /* @__PURE__ */ jsx52(
-                  Input5,
-                  {
-                    type: "text",
-                    placeholder: t2("login.shopDomainPlaceholder"),
-                    className: "pl-10 pr-28 rounded-r-none",
-                    value: validation.values.tenantKey,
-                    name: "tenantKey",
-                    onBlur: validation.handleBlur,
-                    onChange: (e2) => handleTenantKeyInput(e2.target.value)
-                  }
-                )
-              ] }),
-              /* @__PURE__ */ jsx52("span", { className: "inline-flex items-center px-3 text-sm text-gray-600 border border-l-0 border-gray-200 bg-gray-50 rounded-r-lg", children: SHOP_DOMAIN_SUFFIX })
-            ] }),
-            validation.touched.tenantKey && validation.errors.tenantKey && /* @__PURE__ */ jsx52("p", { className: "mt-2 text-sm text-red-600", children: validation.errors.tenantKey })
-          ] }),
           /* @__PURE__ */ jsxs38("div", { children: [
             /* @__PURE__ */ jsx52("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t2("login.email") }),
             /* @__PURE__ */ jsxs38("div", { className: "relative", children: [
@@ -13876,7 +13839,7 @@ import {
 } from "@rentalshop/ui";
 import { useAuthTranslations as useAuthTranslations2, useApiError } from "@rentalshop/hooks";
 import { Fragment as Fragment8, jsx as jsx53, jsxs as jsxs39 } from "react/jsx-runtime";
-var SHOP_DOMAIN_SUFFIX2 = ".anyrent.shop";
+var SHOP_DOMAIN_SUFFIX = ".anyrent.shop";
 var generateTenantKey = (value) => {
   let sanitized = (value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   sanitized = sanitized.replace(/đ/g, "d");
@@ -14030,7 +13993,7 @@ var RegisterForm = ({
     [formik.values.businessName]
   );
   const normalizedTenantKey = tenantKey.replace(/-/g, "");
-  const tenantDomain = normalizedTenantKey ? `${normalizedTenantKey}${SHOP_DOMAIN_SUFFIX2}` : t2("register.shopDomainPlaceholder");
+  const tenantDomain = normalizedTenantKey ? `${normalizedTenantKey}${SHOP_DOMAIN_SUFFIX}` : t2("register.shopDomainPlaceholder");
   return /* @__PURE__ */ jsxs39("div", { className: "w-full max-w-md mx-auto relative z-10", children: [
     /* @__PURE__ */ jsxs39(Card8, { className: "shadow-2xl border-0 bg-white/80 backdrop-blur-sm", children: [
       /* @__PURE__ */ jsxs39(CardHeader8, { className: "text-center", children: [
