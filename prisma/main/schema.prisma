@@ -1,6 +1,9 @@
 generator mainClient {
-  provider = "prisma-client-js"
-  output   = "../../packages/database/src/generated/main"
+  provider      = "prisma-client-js"
+  // Include binaries for local dev ("native") and Railway runtime ("linux-musl-openssl-3.0.x")
+  // This fixes: "Prisma Client could not locate the Query Engine for runtime \"linux-musl-openssl-3.0.x\""
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  output        = "../../packages/database/src/generated/main"
 }
 
 datasource main {
