@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { comparePassword, generateToken } from '@rentalshop/auth';
-import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
+import { loginSchema, ResponseBuilder, getTenantKeyFromRequest } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -9,11 +9,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Validate input
+    // Infer tenant from:
+    // 1) Subdomain (production/staging)
+    // 2) x-tenant-key header (dev/stress tools)
+    // 3) ?tenant= query param (dev-only convenience)
+    const url = new URL(request.url);
+    const tenantFromQuery = url.searchParams.get('tenant') || undefined;
+    const inferredTenantKey = getTenantKeyFromRequest(request);
     const headerTenantKey = request.headers.get('x-tenant-key') || undefined;
+
+    // Validate input
     const validatedData = loginSchema.parse({
       ...body,
-      tenantKey: body?.tenantKey ?? headerTenantKey,
+      tenantKey: body?.tenantKey ?? headerTenantKey ?? inferredTenantKey ?? tenantFromQuery,
     });
     const tenantKey = validatedData.tenantKey;
     

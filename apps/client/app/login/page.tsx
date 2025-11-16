@@ -23,20 +23,16 @@ export default function LoginPage() {
     }
   }, [user]);
 
-  const handleLogin = async (data: { email: string; password: string; tenantKey: string }) => {
+  const handleLogin = async (data: { email: string; password: string; tenantKey?: string }) => {
     try {
       console.log('🔐 Login attempt started with:', { email: data.email });
       console.log('📞 Calling login function from useAuth hook...');
-      const loginWithTenant = login as (
-        email: string,
-        password: string,
-        tenantKey?: string
-      ) => Promise<any>;
-      const success = await loginWithTenant(
-        data.email,
-        data.password,
-        data.tenantKey || undefined
-      );
+      const loginWithTenant = login as (email: string, password: string, tenantKey?: string) => Promise<any>;
+
+      // In production: tenant is derived from subdomain on the backend,
+      // so we only pass email + password here. tenantKey is kept for
+      // potential dev-only flows, but not required.
+      const success = await loginWithTenant(data.email, data.password, data.tenantKey || undefined);
       console.log('📥 Login result received:', success);
       
       if (success) {

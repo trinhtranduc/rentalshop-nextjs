@@ -72,10 +72,10 @@ export async function middleware(request: NextRequest) {
   // Get allowed origins from environment
   const corsOrigins = (process.env.CORS_ORIGINS || '')
     .split(',')
-    .map(s => s.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
-  
-  // Add localhost, Railway domains, and custom domains
+
+  // Base allowed origins (exact matches)
   const allowedOrigins = [
     ...corsOrigins,
     // Local development
@@ -90,17 +90,44 @@ export async function middleware(request: NextRequest) {
     // Custom domains - anyrent.shop (development)
     'https://dev.anyrent.shop',
     'https://dev-api.anyrent.shop', // Development API
-    'https://dev-admin.anyrent.shop'
+    'https://dev-admin.anyrent.shop',
   ];
-  
+
   // Get request origin
   const requestOrigin = request.headers.get('origin') || '';
-  
-  // SECURITY: Exact match only - no startsWith to prevent subdomain attacks
-  const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
-  
+
+  // Helper: check if origin is allowed (supports subdomains)
+  const isAllowedOrigin = (origin: string): boolean => {
+    if (!origin) return false;
+
+    try {
+      const url = new URL(origin);
+      const host = url.hostname; // e.g. aodaipham1.anyrent.shop
+
+      // 1) Exact match with configured origins
+      if (allowedOrigins.includes(origin)) {
+        return true;
+      }
+
+      // 2) Allow all subdomains of anyrent.shop (production + dev)
+      if (host.endsWith('.anyrent.shop')) {
+        return true;
+      }
+
+      // 3) Allow all subdomains of anyrent.local for local development
+      if (host.endsWith('.anyrent.local')) {
+        return true;
+      }
+
+      return false;
+    } catch {
+      // Invalid origin format
+      return false;
+    }
+  };
+
   // Use request origin if allowed, otherwise null (reject)
-  const allowOrigin = isAllowedOrigin ? requestOrigin : 'null';
+  const allowOrigin = isAllowedOrigin(requestOrigin) ? requestOrigin : 'null';
   
   console.log('🔍 MIDDLEWARE: CORS check:', {
     requestOrigin,
