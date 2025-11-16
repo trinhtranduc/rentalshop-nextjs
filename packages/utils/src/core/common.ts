@@ -36,10 +36,12 @@ export const createApiUrl = (endpoint: string): string => {
     // Use centralized API URL configuration
     try {
       const { apiUrls } = require('../config/api');
+      console.log('🔍 createApiUrl using apiUrls.base:', apiUrls.base, 'endpoint:', cleanEndpoint);
       return `${apiUrls.base}/${cleanEndpoint}`;
     } catch {
       // Fallback to environment variable if centralized config not available
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
+      console.log('🔍 createApiUrl fallback baseUrl:', baseUrl, 'endpoint:', cleanEndpoint, 'NODE_ENV:', process.env.NODE_ENV);
       return `${baseUrl}/${cleanEndpoint}`;
     }
   }

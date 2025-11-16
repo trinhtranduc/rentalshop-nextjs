@@ -1,7 +1,7 @@
 import type { CustomerWithMerchant, CustomerInput, CustomerUpdateInput } from '@rentalshop/database';
 import { getAuthToken } from '@rentalshop/utils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
 
 export interface CustomerApiResponse<T> {
   success: boolean;

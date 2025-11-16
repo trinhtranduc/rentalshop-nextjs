@@ -485,7 +485,7 @@ export async function uploadImage(
     formData.append('image', fileToUpload);
     formData.append('folder', folder);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
     const uploadUrl = `${apiUrl}/api/upload/image`;
 
     const result = await uploadWithProgress(uploadUrl, formData, token, onProgress);
