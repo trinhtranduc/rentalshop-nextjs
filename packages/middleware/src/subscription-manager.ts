@@ -80,7 +80,7 @@ export async function validateSubscriptionAccess(
         id: true,
         name: true,
         email: true,
-        subscriptionStatus: true,
+        // subscriptionStatus removed - use subscription.status instead
         subscription: {
           include: {
             plan: true
@@ -97,9 +97,9 @@ export async function validateSubscriptionAccess(
       };
     }
 
-    // Check merchant subscription status
+    // Check merchant subscription status (use subscription.status instead of subscriptionStatus)
     if (checkMerchantStatus) {
-      const merchantStatus = merchant.subscriptionStatus?.toLowerCase();
+      const merchantStatus = merchant.subscription?.status?.toLowerCase();
       if (merchantStatus && !allowedStatuses.includes(merchantStatus)) {
         return {
           isValid: false,

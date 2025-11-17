@@ -1,8 +1,8 @@
-import { MerchantPricingConfig, SubscriptionStatus, BillingInterval as BillingInterval$1, PricingType, PlanLimits as PlanLimits$1 } from '@rentalshop/constants';
+import { SubscriptionStatus, BillingInterval as BillingInterval$1, MerchantPricingConfig, PricingType, PlanLimits as PlanLimits$1 } from '@rentalshop/constants';
 import { S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import * as react_jsx_runtime from 'react/jsx-runtime';
-import React from 'react';
+import React$1 from 'react';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 
@@ -279,6 +279,158 @@ interface RegisterData {
     outletCode?: string;
 }
 
+interface PlanLimits {
+    outlets: number;
+    users: number;
+    products: number;
+    customers: number;
+    orders: number;
+    allowWebAccess?: boolean;
+    allowMobileAccess?: boolean;
+}
+interface PlanPricing {
+    price: number;
+    discount: number;
+    savings: number;
+}
+interface Plan {
+    id: number;
+    name: string;
+    description: string;
+    basePrice: number;
+    currency: string;
+    trialDays: number;
+    limits: PlanLimits;
+    features: string[];
+    isActive: boolean;
+    isPopular: boolean;
+    sortOrder: number;
+    pricing: {
+        monthly: PlanPricing;
+        quarterly: PlanPricing;
+        sixMonths: PlanPricing;
+        yearly: PlanPricing;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt?: Date;
+}
+interface PlanCreateInput$1 {
+    name: string;
+    description: string;
+    basePrice: number;
+    currency?: string;
+    trialDays: number;
+    limits: PlanLimits;
+    features: string[];
+    isActive?: boolean;
+    isPopular?: boolean;
+    sortOrder?: number;
+}
+interface PlanUpdateInput$1 {
+    name?: string;
+    description?: string;
+    basePrice?: number;
+    currency?: string;
+    trialDays?: number;
+    limits?: Partial<PlanLimits>;
+    features?: string[];
+    pricing?: {
+        monthly?: PlanPricing;
+        quarterly?: PlanPricing;
+        sixMonths?: PlanPricing;
+        yearly?: PlanPricing;
+    };
+    isActive?: boolean;
+    isPopular?: boolean;
+    sortOrder?: number;
+}
+interface PlanFilters {
+    search?: string;
+    isActive?: boolean;
+    isPopular?: boolean;
+    limit?: number;
+    offset?: number;
+    sortBy?: 'name' | 'price' | 'basePrice' | 'createdAt' | 'sortOrder';
+    sortOrder?: 'asc' | 'desc';
+}
+
+interface SubscriptionPeriod$1 {
+    startDate: Date;
+    endDate: Date;
+    duration: string;
+    isActive: boolean;
+    daysRemaining: number;
+    nextBillingDate: Date;
+    isTrial?: boolean;
+}
+/**
+ * Complete Subscription interface matching Prisma model
+ * This is the single source of truth for subscription data
+ */
+interface Subscription {
+    id: number;
+    merchantId: number;
+    planId: number;
+    status: SubscriptionStatus;
+    billingInterval: BillingInterval$1;
+    currentPeriodStart: Date | string;
+    currentPeriodEnd: Date | string;
+    trialStart?: Date | string;
+    trialEnd?: Date | string;
+    amount: number;
+    currency: string;
+    interval: string;
+    intervalCount: number;
+    period: number;
+    discount: number;
+    savings: number;
+    cancelAtPeriodEnd: boolean;
+    canceledAt?: Date | string;
+    cancelReason?: string;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    subscriptionPeriod?: SubscriptionPeriod$1;
+    merchant?: {
+        id: number;
+        name: string;
+        email: string;
+    };
+    plan?: Plan;
+}
+interface SubscriptionCreateInput$1 {
+    merchantId: number;
+    planId: number;
+    billingInterval?: BillingInterval$1;
+    status?: SubscriptionStatus;
+    startDate?: Date;
+}
+interface SubscriptionUpdateInput$1 {
+    id: number;
+    planId?: number;
+    billingInterval?: BillingInterval$1;
+    status?: SubscriptionStatus;
+    endDate?: Date | string;
+}
+interface SubscriptionFilters {
+    merchantId?: number;
+    planId?: number;
+    status?: SubscriptionStatus;
+    startDate?: Date | string;
+    endDate?: Date | string;
+    limit?: number;
+    offset?: number;
+}
+interface SubscriptionsResponse {
+    data: Subscription[];
+    pagination: {
+        total: number;
+        hasMore: boolean;
+        limit: number;
+        offset: number;
+    };
+}
+
 /**
  * Main Merchant interface - consolidated from multiple sources
  * Combines merchants.ts and merchants/merchant.ts definitions
@@ -297,7 +449,7 @@ interface Merchant extends BaseEntity, Address, ContactInfo {
     lastActiveAt?: Date | string;
     pricingConfig?: MerchantPricingConfig | string;
     plan?: PlanDetails;
-    subscription?: CurrentSubscription;
+    subscription?: Subscription;
     outlets?: OutletReference[];
     users?: UserReference[];
     customers?: CustomerReference[];
@@ -322,35 +474,6 @@ interface PlanDetails {
     features: string[];
     isActive: boolean;
     isPopular: boolean;
-}
-/**
- * Current subscription interface
- * Used for active subscription information
- */
-interface CurrentSubscription {
-    id: number;
-    status: string;
-    currentPeriodStart: Date | string;
-    currentPeriodEnd: Date | string;
-    trialStart?: Date | string;
-    trialEnd?: Date | string;
-    amount: number;
-    currency: string;
-    interval: string;
-    period: number;
-    discount: number;
-    savings: number;
-    cancelAtPeriodEnd: boolean;
-    canceledAt?: Date | string;
-    cancelReason?: string;
-    plan?: {
-        id: number;
-        name: string;
-        description: string;
-        basePrice: number;
-        currency: string;
-        trialDays: number;
-    };
 }
 
 /**
@@ -861,143 +984,6 @@ interface CategoryFilters {
     sortOrder?: 'asc' | 'desc';
 }
 
-interface PlanLimits {
-    outlets: number;
-    users: number;
-    products: number;
-    customers: number;
-    orders: number;
-    allowWebAccess?: boolean;
-    allowMobileAccess?: boolean;
-}
-interface PlanPricing {
-    price: number;
-    discount: number;
-    savings: number;
-}
-interface Plan {
-    id: number;
-    name: string;
-    description: string;
-    basePrice: number;
-    currency: string;
-    trialDays: number;
-    limits: PlanLimits;
-    features: string[];
-    isActive: boolean;
-    isPopular: boolean;
-    sortOrder: number;
-    pricing: {
-        monthly: PlanPricing;
-        quarterly: PlanPricing;
-        sixMonths: PlanPricing;
-        yearly: PlanPricing;
-    };
-    createdAt: Date;
-    updatedAt: Date;
-    deletedAt?: Date;
-}
-interface PlanCreateInput$1 {
-    name: string;
-    description: string;
-    basePrice: number;
-    currency?: string;
-    trialDays: number;
-    limits: PlanLimits;
-    features: string[];
-    isActive?: boolean;
-    isPopular?: boolean;
-    sortOrder?: number;
-}
-interface PlanUpdateInput$1 {
-    name?: string;
-    description?: string;
-    basePrice?: number;
-    currency?: string;
-    trialDays?: number;
-    limits?: Partial<PlanLimits>;
-    features?: string[];
-    pricing?: {
-        monthly?: PlanPricing;
-        quarterly?: PlanPricing;
-        sixMonths?: PlanPricing;
-        yearly?: PlanPricing;
-    };
-    isActive?: boolean;
-    isPopular?: boolean;
-    sortOrder?: number;
-}
-interface PlanFilters {
-    search?: string;
-    isActive?: boolean;
-    isPopular?: boolean;
-    limit?: number;
-    offset?: number;
-    sortBy?: 'name' | 'price' | 'basePrice' | 'createdAt' | 'sortOrder';
-    sortOrder?: 'asc' | 'desc';
-}
-
-interface SubscriptionPeriod$1 {
-    startDate: Date;
-    endDate: Date;
-    duration: string;
-    isActive: boolean;
-    daysRemaining: number;
-    nextBillingDate: Date;
-    isTrial?: boolean;
-}
-interface Subscription {
-    id: number;
-    merchantId: number;
-    planId: number;
-    status: SubscriptionStatus;
-    billingInterval: BillingInterval$1;
-    currentPeriodStart: Date;
-    currentPeriodEnd: Date;
-    amount: number;
-    createdAt: Date;
-    updatedAt: Date;
-    subscriptionPeriod?: SubscriptionPeriod$1;
-    merchant: {
-        id: number;
-        name: string;
-        email: string;
-    };
-    plan: Plan;
-}
-interface SubscriptionCreateInput$1 {
-    merchantId: number;
-    planId: number;
-    billingInterval?: BillingInterval$1;
-    status?: SubscriptionStatus;
-    startDate?: Date;
-}
-interface SubscriptionUpdateInput$1 {
-    id: number;
-    planId?: number;
-    billingInterval?: BillingInterval$1;
-    status?: SubscriptionStatus;
-    endDate?: Date | string;
-}
-interface SubscriptionFilters {
-    merchantId?: number;
-    planId?: number;
-    status?: string;
-    startDate?: Date | string;
-    endDate?: Date | string;
-    limit?: number;
-    offset?: number;
-}
-interface SubscriptionsResponse {
-    data: Subscription[];
-    pagination: {
-        total: number;
-        hasMore: boolean;
-        limit: number;
-        offset: number;
-    };
-}
-
 var required = "This field is required";
 var email = "Please enter a valid email address";
 var phone = "Please enter a valid phone number";
@@ -1082,30 +1068,7 @@ declare const _________locales_en_validation_json_required: typeof required;
 declare const _________locales_en_validation_json_unique: typeof unique;
 declare const _________locales_en_validation_json_url: typeof url;
 declare namespace _________locales_en_validation_json {
-  export {
-    _________locales_en_validation_json_custom as custom,
-    _________locales_en_validation_json_date as date,
-    _________locales_en_validation_json_dateRange as dateRange,
-    validation$1 as default,
-    _________locales_en_validation_json_email as email,
-    _________locales_en_validation_json_exists as exists,
-    _________locales_en_validation_json_file as file,
-    _________locales_en_validation_json_integer as integer,
-    _________locales_en_validation_json_max as max,
-    _________locales_en_validation_json_maxLength as maxLength,
-    _________locales_en_validation_json_min as min,
-    _________locales_en_validation_json_minLength as minLength,
-    _________locales_en_validation_json_negative as negative,
-    _________locales_en_validation_json_number as number,
-    _________locales_en_validation_json_password as password,
-    _________locales_en_validation_json_pattern as pattern,
-    _________locales_en_validation_json_phone as phone,
-    _________locales_en_validation_json_positive as positive,
-    _________locales_en_validation_json_required as required,
-    time$1 as time,
-    _________locales_en_validation_json_unique as unique,
-    _________locales_en_validation_json_url as url,
-  };
+  export { _________locales_en_validation_json_custom as custom, _________locales_en_validation_json_date as date, _________locales_en_validation_json_dateRange as dateRange, validation$1 as default, _________locales_en_validation_json_email as email, _________locales_en_validation_json_exists as exists, _________locales_en_validation_json_file as file, _________locales_en_validation_json_integer as integer, _________locales_en_validation_json_max as max, _________locales_en_validation_json_maxLength as maxLength, _________locales_en_validation_json_min as min, _________locales_en_validation_json_minLength as minLength, _________locales_en_validation_json_negative as negative, _________locales_en_validation_json_number as number, _________locales_en_validation_json_password as password, _________locales_en_validation_json_pattern as pattern, _________locales_en_validation_json_phone as phone, _________locales_en_validation_json_positive as positive, _________locales_en_validation_json_required as required, time$1 as time, _________locales_en_validation_json_unique as unique, _________locales_en_validation_json_url as url };
 }
 
 var title$4 = "Settings";
@@ -1443,27 +1406,7 @@ declare const _________locales_en_settings_json_security: typeof security;
 declare const _________locales_en_settings_json_subscription: typeof subscription;
 declare const _________locales_en_settings_json_tabs: typeof tabs;
 declare namespace _________locales_en_settings_json {
-  export {
-    _________locales_en_settings_json_account as account,
-    _________locales_en_settings_json_billing as billing,
-    changePassword$1 as changePassword,
-    _________locales_en_settings_json_currency as currency,
-    settings as default,
-    _________locales_en_settings_json_deleteAccountDialog as deleteAccountDialog,
-    _________locales_en_settings_json_language as language,
-    _________locales_en_settings_json_loading as loading,
-    _________locales_en_settings_json_menuItems as menuItems,
-    _________locales_en_settings_json_merchant as merchant,
-    messages$4 as messages,
-    _________locales_en_settings_json_notifications as notifications,
-    _________locales_en_settings_json_outlet as outlet,
-    profile$1 as profile,
-    _________locales_en_settings_json_security as security,
-    _________locales_en_settings_json_subscription as subscription,
-    subtitle$1 as subtitle,
-    _________locales_en_settings_json_tabs as tabs,
-    title$4 as title,
-  };
+  export { _________locales_en_settings_json_account as account, _________locales_en_settings_json_billing as billing, changePassword$1 as changePassword, _________locales_en_settings_json_currency as currency, settings as default, _________locales_en_settings_json_deleteAccountDialog as deleteAccountDialog, _________locales_en_settings_json_language as language, _________locales_en_settings_json_loading as loading, _________locales_en_settings_json_menuItems as menuItems, _________locales_en_settings_json_merchant as merchant, messages$4 as messages, _________locales_en_settings_json_notifications as notifications, _________locales_en_settings_json_outlet as outlet, profile$1 as profile, _________locales_en_settings_json_security as security, _________locales_en_settings_json_subscription as subscription, subtitle$1 as subtitle, _________locales_en_settings_json_tabs as tabs, title$4 as title };
 }
 
 var title$3 = "Customers";
@@ -1663,36 +1606,7 @@ declare const _________locales_en_customers_json_validation: typeof validation;
 declare const _________locales_en_customers_json_viewCustomer: typeof viewCustomer;
 declare const _________locales_en_customers_json_viewCustomerInfo: typeof viewCustomerInfo;
 declare namespace _________locales_en_customers_json {
-  export {
-    actions$2 as actions,
-    _________locales_en_customers_json_addressInformation as addressInformation,
-    _________locales_en_customers_json_createCustomer as createCustomer,
-    _________locales_en_customers_json_customerDetails as customerDetails,
-    _________locales_en_customers_json_customerInformation as customerInformation,
-    _________locales_en_customers_json_customerOverview as customerOverview,
-    customers as default,
-    _________locales_en_customers_json_deleting as deleting,
-    _________locales_en_customers_json_editCustomer as editCustomer,
-    fields$1 as fields,
-    filters$2 as filters,
-    messages$3 as messages,
-    _________locales_en_customers_json_noDataAvailable as noDataAvailable,
-    orders$1 as orders,
-    _________locales_en_customers_json_pageTitle as pageTitle,
-    _________locales_en_customers_json_personalInformation as personalInformation,
-    _________locales_en_customers_json_placeholders as placeholders,
-    _________locales_en_customers_json_profile as profile,
-    search$2 as search,
-    stats$3 as stats,
-    status$2 as status,
-    _________locales_en_customers_json_subtitle as subtitle,
-    title$3 as title,
-    _________locales_en_customers_json_updateCustomer as updateCustomer,
-    _________locales_en_customers_json_updating as updating,
-    _________locales_en_customers_json_validation as validation,
-    _________locales_en_customers_json_viewCustomer as viewCustomer,
-    _________locales_en_customers_json_viewCustomerInfo as viewCustomerInfo,
-  };
+  export { actions$2 as actions, _________locales_en_customers_json_addressInformation as addressInformation, _________locales_en_customers_json_createCustomer as createCustomer, _________locales_en_customers_json_customerDetails as customerDetails, _________locales_en_customers_json_customerInformation as customerInformation, _________locales_en_customers_json_customerOverview as customerOverview, customers as default, _________locales_en_customers_json_deleting as deleting, _________locales_en_customers_json_editCustomer as editCustomer, fields$1 as fields, filters$2 as filters, messages$3 as messages, _________locales_en_customers_json_noDataAvailable as noDataAvailable, orders$1 as orders, _________locales_en_customers_json_pageTitle as pageTitle, _________locales_en_customers_json_personalInformation as personalInformation, _________locales_en_customers_json_placeholders as placeholders, _________locales_en_customers_json_profile as profile, search$2 as search, stats$3 as stats, status$2 as status, _________locales_en_customers_json_subtitle as subtitle, title$3 as title, _________locales_en_customers_json_updateCustomer as updateCustomer, _________locales_en_customers_json_updating as updating, _________locales_en_customers_json_validation as validation, _________locales_en_customers_json_viewCustomer as viewCustomer, _________locales_en_customers_json_viewCustomerInfo as viewCustomerInfo };
 }
 
 var title$2 = "Products";
@@ -1884,31 +1798,7 @@ declare const _________locales_en_products_json_selectedProducts: typeof selecte
 declare const _________locales_en_products_json_stock: typeof stock;
 declare const _________locales_en_products_json_viewProduct: typeof viewProduct;
 declare namespace _________locales_en_products_json {
-  export {
-    actions$1 as actions,
-    _________locales_en_products_json_availability as availability,
-    _________locales_en_products_json_createProduct as createProduct,
-    products as default,
-    _________locales_en_products_json_editProduct as editProduct,
-    _________locales_en_products_json_fields as fields,
-    filters$1 as filters,
-    _________locales_en_products_json_inventory as inventory,
-    messages$2 as messages,
-    _________locales_en_products_json_noProductsSelected as noProductsSelected,
-    _________locales_en_products_json_price as price,
-    _________locales_en_products_json_pricing as pricing,
-    _________locales_en_products_json_productDetails as productDetails,
-    _________locales_en_products_json_productId as productId,
-    _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable,
-    _________locales_en_products_json_productName as productName,
-    search$1 as search,
-    _________locales_en_products_json_selectedProducts as selectedProducts,
-    stats$2 as stats,
-    status$1 as status,
-    _________locales_en_products_json_stock as stock,
-    title$2 as title,
-    _________locales_en_products_json_viewProduct as viewProduct,
-  };
+  export { actions$1 as actions, _________locales_en_products_json_availability as availability, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_noProductsSelected as noProductsSelected, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productId as productId, _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable, _________locales_en_products_json_productName as productName, search$1 as search, _________locales_en_products_json_selectedProducts as selectedProducts, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, title$2 as title, _________locales_en_products_json_viewProduct as viewProduct };
 }
 
 var title$1 = "Orders";
@@ -2206,29 +2096,7 @@ declare const _________locales_en_orders_json_search: typeof search;
 declare const _________locales_en_orders_json_status: typeof status;
 declare const _________locales_en_orders_json_viewOrder: typeof viewOrder;
 declare namespace _________locales_en_orders_json {
-  export {
-    _________locales_en_orders_json_actions as actions,
-    _________locales_en_orders_json_amount as amount,
-    _________locales_en_orders_json_createOrder as createOrder,
-    _________locales_en_orders_json_customer as customer,
-    _________locales_en_orders_json_dates as dates,
-    orders as default,
-    _________locales_en_orders_json_detail as detail,
-    _________locales_en_orders_json_editOrder as editOrder,
-    _________locales_en_orders_json_filters as filters,
-    _________locales_en_orders_json_items as items,
-    messages$1 as messages,
-    _________locales_en_orders_json_orderDetails as orderDetails,
-    _________locales_en_orders_json_orderNumber as orderNumber,
-    _________locales_en_orders_json_orderType as orderType,
-    _________locales_en_orders_json_payment as payment,
-    _________locales_en_orders_json_productOrders as productOrders,
-    _________locales_en_orders_json_search as search,
-    stats$1 as stats,
-    _________locales_en_orders_json_status as status,
-    title$1 as title,
-    _________locales_en_orders_json_viewOrder as viewOrder,
-  };
+  export { _________locales_en_orders_json_actions as actions, _________locales_en_orders_json_amount as amount, _________locales_en_orders_json_createOrder as createOrder, _________locales_en_orders_json_customer as customer, _________locales_en_orders_json_dates as dates, orders as default, _________locales_en_orders_json_detail as detail, _________locales_en_orders_json_editOrder as editOrder, _________locales_en_orders_json_filters as filters, _________locales_en_orders_json_items as items, messages$1 as messages, _________locales_en_orders_json_orderDetails as orderDetails, _________locales_en_orders_json_orderNumber as orderNumber, _________locales_en_orders_json_orderType as orderType, _________locales_en_orders_json_payment as payment, _________locales_en_orders_json_productOrders as productOrders, _________locales_en_orders_json_search as search, stats$1 as stats, _________locales_en_orders_json_status as status, title$1 as title, _________locales_en_orders_json_viewOrder as viewOrder };
 }
 
 var title = "Dashboard";
@@ -2356,20 +2224,7 @@ declare const _________locales_en_dashboard_json_tooltips: typeof tooltips;
 declare const _________locales_en_dashboard_json_upcomingReturns: typeof upcomingReturns;
 declare const _________locales_en_dashboard_json_welcome: typeof welcome;
 declare namespace _________locales_en_dashboard_json {
-  export {
-    _________locales_en_dashboard_json_chartTitles as chartTitles,
-    _________locales_en_dashboard_json_charts as charts,
-    dashboard as default,
-    _________locales_en_dashboard_json_orderStatuses as orderStatuses,
-    _________locales_en_dashboard_json_overview as overview,
-    _________locales_en_dashboard_json_quickActions as quickActions,
-    _________locales_en_dashboard_json_recentActivity as recentActivity,
-    _________locales_en_dashboard_json_stats as stats,
-    _________locales_en_dashboard_json_title as title,
-    _________locales_en_dashboard_json_tooltips as tooltips,
-    _________locales_en_dashboard_json_upcomingReturns as upcomingReturns,
-    _________locales_en_dashboard_json_welcome as welcome,
-  };
+  export { _________locales_en_dashboard_json_chartTitles as chartTitles, _________locales_en_dashboard_json_charts as charts, dashboard as default, _________locales_en_dashboard_json_orderStatuses as orderStatuses, _________locales_en_dashboard_json_overview as overview, _________locales_en_dashboard_json_quickActions as quickActions, _________locales_en_dashboard_json_recentActivity as recentActivity, _________locales_en_dashboard_json_stats as stats, _________locales_en_dashboard_json_title as title, _________locales_en_dashboard_json_tooltips as tooltips, _________locales_en_dashboard_json_upcomingReturns as upcomingReturns, _________locales_en_dashboard_json_welcome as welcome };
 }
 
 var login = {
@@ -2588,15 +2443,7 @@ declare const _________locales_en_auth_json_login: typeof login;
 declare const _________locales_en_auth_json_logout: typeof logout;
 declare const _________locales_en_auth_json_register: typeof register;
 declare namespace _________locales_en_auth_json {
-  export {
-    _________locales_en_auth_json_changePassword as changePassword,
-    _________locales_en_auth_json_checkEmail as checkEmail,
-    auth as default,
-    _________locales_en_auth_json_forgotPassword as forgotPassword,
-    _________locales_en_auth_json_login as login,
-    _________locales_en_auth_json_logout as logout,
-    _________locales_en_auth_json_register as register,
-  };
+  export { _________locales_en_auth_json_changePassword as changePassword, _________locales_en_auth_json_checkEmail as checkEmail, auth as default, _________locales_en_auth_json_forgotPassword as forgotPassword, _________locales_en_auth_json_login as login, _________locales_en_auth_json_logout as logout, _________locales_en_auth_json_register as register };
 }
 
 var buttons = {
@@ -2752,16 +2599,7 @@ declare const _________locales_en_common_json_pagination: typeof pagination;
 declare const _________locales_en_common_json_periods: typeof periods;
 declare const _________locales_en_common_json_time: typeof time;
 declare namespace _________locales_en_common_json {
-  export {
-    _________locales_en_common_json_buttons as buttons,
-    common as default,
-    _________locales_en_common_json_labels as labels,
-    _________locales_en_common_json_messages as messages,
-    _________locales_en_common_json_navigation as navigation,
-    _________locales_en_common_json_pagination as pagination,
-    _________locales_en_common_json_periods as periods,
-    _________locales_en_common_json_time as time,
-  };
+  export { _________locales_en_common_json_buttons as buttons, common as default, _________locales_en_common_json_labels as labels, _________locales_en_common_json_messages as messages, _________locales_en_common_json_navigation as navigation, _________locales_en_common_json_pagination as pagination, _________locales_en_common_json_periods as periods, _________locales_en_common_json_time as time };
 }
 
 /**
@@ -3532,7 +3370,7 @@ declare function formatProration(proration: ProrationCalculation): string;
 
 interface BadgeConfig {
     color: string;
-    icon: React.ComponentType<{
+    icon: React$1.ComponentType<{
         className?: string;
     }>;
     text: string;
@@ -4874,9 +4712,9 @@ declare const planCreateSchema: z.ZodObject<{
     sortOrder: number;
     isActive: boolean;
     name: string;
+    basePrice: number;
     description: string;
     currency: string;
-    basePrice: number;
     trialDays: number;
     limits: {
         outlets: number;
@@ -4888,8 +4726,8 @@ declare const planCreateSchema: z.ZodObject<{
     isPopular: boolean;
 }, {
     name: string;
-    description: string;
     basePrice: number;
+    description: string;
     trialDays: number;
     limits: {
         outlets: number;
@@ -4933,9 +4771,9 @@ declare const planUpdateSchema: z.ZodObject<{
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
     name?: string | undefined;
+    basePrice?: number | undefined;
     description?: string | undefined;
     currency?: string | undefined;
-    basePrice?: number | undefined;
     trialDays?: number | undefined;
     limits?: {
         outlets: number;
@@ -4949,9 +4787,9 @@ declare const planUpdateSchema: z.ZodObject<{
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
     name?: string | undefined;
+    basePrice?: number | undefined;
     description?: string | undefined;
     currency?: string | undefined;
-    basePrice?: number | undefined;
     trialDays?: number | undefined;
     limits?: {
         outlets: number;
@@ -4971,7 +4809,7 @@ declare const plansQuerySchema: z.ZodObject<{
     sortBy: z.ZodDefault<z.ZodEnum<["name", "price", "basePrice", "createdAt", "sortOrder"]>>;
     sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
-    sortBy: "sortOrder" | "name" | "createdAt" | "price" | "basePrice";
+    sortBy: "sortOrder" | "name" | "price" | "basePrice" | "createdAt";
     sortOrder: "asc" | "desc";
     limit: number;
     offset: number;
@@ -4980,7 +4818,7 @@ declare const plansQuerySchema: z.ZodObject<{
     isPopular?: boolean | undefined;
 }, {
     search?: string | undefined;
-    sortBy?: "sortOrder" | "name" | "createdAt" | "price" | "basePrice" | undefined;
+    sortBy?: "sortOrder" | "name" | "price" | "basePrice" | "createdAt" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     isActive?: boolean | undefined;
     limit?: number | undefined;
@@ -5005,8 +4843,8 @@ declare const planVariantCreateSchema: z.ZodObject<{
     isActive: boolean;
     name: string;
     planId: string;
-    isPopular: boolean;
     discount: number;
+    isPopular: boolean;
     duration: number;
     price?: number | undefined;
     basePrice?: number | undefined;
@@ -5018,8 +4856,8 @@ declare const planVariantCreateSchema: z.ZodObject<{
     isActive?: boolean | undefined;
     price?: number | undefined;
     basePrice?: number | undefined;
-    isPopular?: boolean | undefined;
     discount?: number | undefined;
+    isPopular?: boolean | undefined;
 }>;
 declare const planVariantUpdateSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
@@ -5036,21 +4874,21 @@ declare const planVariantUpdateSchema: z.ZodObject<{
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
     name?: string | undefined;
-    planId?: string | undefined;
     price?: number | undefined;
     basePrice?: number | undefined;
-    isPopular?: boolean | undefined;
+    planId?: string | undefined;
     discount?: number | undefined;
+    isPopular?: boolean | undefined;
     duration?: number | undefined;
 }, {
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
     name?: string | undefined;
-    planId?: string | undefined;
     price?: number | undefined;
     basePrice?: number | undefined;
-    isPopular?: boolean | undefined;
+    planId?: string | undefined;
     discount?: number | undefined;
+    isPopular?: boolean | undefined;
     duration?: number | undefined;
 }>;
 declare const planVariantsQuerySchema: z.ZodObject<{
@@ -5066,7 +4904,7 @@ declare const planVariantsQuerySchema: z.ZodObject<{
     sortBy: z.ZodDefault<z.ZodEnum<["name", "price", "duration", "discount", "createdAt", "sortOrder"]>>;
     sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
-    sortBy: "sortOrder" | "name" | "createdAt" | "price" | "discount" | "duration";
+    sortBy: "sortOrder" | "name" | "price" | "createdAt" | "discount" | "duration";
     sortOrder: "asc" | "desc";
     limit: number;
     offset: number;
@@ -5079,7 +4917,7 @@ declare const planVariantsQuerySchema: z.ZodObject<{
     duration?: number | undefined;
 }, {
     search?: string | undefined;
-    sortBy?: "sortOrder" | "name" | "createdAt" | "price" | "discount" | "duration" | undefined;
+    sortBy?: "sortOrder" | "name" | "price" | "createdAt" | "discount" | "duration" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     isActive?: boolean | undefined;
     planId?: string | undefined;
@@ -5113,13 +4951,13 @@ declare const subscriptionCreateSchema: z.ZodObject<{
     status: "active" | "trial" | "expired" | "cancelled" | "paused" | "past_due";
     currency: string;
     planId: string;
+    billingInterval: "month" | "quarter" | "year" | "semiAnnual";
     amount: number;
     cancelAtPeriodEnd: boolean;
-    billingInterval: "month" | "quarter" | "year" | "semiAnnual";
     planVariantId: string;
-    notes?: string | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
+    notes?: string | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
     cancelledAt?: Date | undefined;
@@ -5130,11 +4968,11 @@ declare const subscriptionCreateSchema: z.ZodObject<{
     planVariantId: string;
     status?: "active" | "trial" | "expired" | "cancelled" | "paused" | "past_due" | undefined;
     currency?: string | undefined;
-    notes?: string | undefined;
+    billingInterval?: "month" | "quarter" | "year" | "semiAnnual" | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
     cancelAtPeriodEnd?: boolean | undefined;
-    billingInterval?: "month" | "quarter" | "year" | "semiAnnual" | undefined;
+    notes?: string | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
     cancelledAt?: Date | undefined;
@@ -5162,12 +5000,12 @@ declare const subscriptionUpdateSchema: z.ZodObject<{
     currency?: string | undefined;
     planId?: string | undefined;
     id?: number | undefined;
-    amount?: number | undefined;
-    notes?: string | undefined;
+    billingInterval?: "month" | "quarter" | "year" | "semiAnnual" | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
+    amount?: number | undefined;
     cancelAtPeriodEnd?: boolean | undefined;
-    billingInterval?: "month" | "quarter" | "year" | "semiAnnual" | undefined;
+    notes?: string | undefined;
     planVariantId?: string | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
@@ -5178,12 +5016,12 @@ declare const subscriptionUpdateSchema: z.ZodObject<{
     currency?: string | undefined;
     planId?: string | undefined;
     id?: number | undefined;
-    amount?: number | undefined;
-    notes?: string | undefined;
+    billingInterval?: "month" | "quarter" | "year" | "semiAnnual" | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
+    amount?: number | undefined;
     cancelAtPeriodEnd?: boolean | undefined;
-    billingInterval?: "month" | "quarter" | "year" | "semiAnnual" | undefined;
+    notes?: string | undefined;
     planVariantId?: string | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
@@ -5200,7 +5038,7 @@ declare const subscriptionsQuerySchema: z.ZodObject<{
     sortBy: z.ZodDefault<z.ZodEnum<["createdAt", "currentPeriodEnd", "amount", "status"]>>;
     sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
-    sortBy: "status" | "createdAt" | "amount" | "currentPeriodEnd";
+    sortBy: "status" | "createdAt" | "currentPeriodEnd" | "amount";
     sortOrder: "asc" | "desc";
     limit: number;
     offset: number;
@@ -5211,7 +5049,7 @@ declare const subscriptionsQuerySchema: z.ZodObject<{
     planVariantId?: string | undefined;
 }, {
     search?: string | undefined;
-    sortBy?: "status" | "createdAt" | "amount" | "currentPeriodEnd" | undefined;
+    sortBy?: "status" | "createdAt" | "currentPeriodEnd" | "amount" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     merchantId?: number | undefined;
     status?: "active" | "inactive" | "suspended" | "expired" | "cancelled" | "paused" | "past_due" | undefined;
@@ -6236,7 +6074,7 @@ interface MerchantSearchFilters {
     status?: string;
     plan?: string;
     isActive?: boolean;
-    subscriptionStatus?: string;
+    subscriptionStatus?: SubscriptionStatus;
     minRevenue?: number;
     maxRevenue?: number;
     startDate?: string;
@@ -8094,6 +7932,134 @@ declare function isDevelopmentEnvironment(): boolean;
 declare function isProductionEnvironment(): boolean;
 declare const databaseConfig: DatabaseConfig;
 
+/**
+ * Error Display Utilities
+ *
+ * Utilities for displaying translated error messages in the UI.
+ * This file provides helpers to convert API error responses into user-friendly translated messages.
+ */
+/**
+ * Get error message for display
+ *
+ * This function extracts the error code from an API error response
+ * and returns it so it can be translated client-side.
+ *
+ * Usage with translation hook:
+ * ```typescript
+ * const te = useErrorTranslations();
+ * const errorKey = getDisplayErrorKey(error);
+ * const translatedMessage = te(errorKey);
+ * ```
+ *
+ * @param error - API error response or error object
+ * @returns Error code to use as translation key
+ */
+declare function getDisplayErrorKey(error: any): string;
+/**
+ * Check if error has a translatable error code
+ *
+ * @param error - Error object
+ * @returns true if error has a valid error code
+ */
+declare function hasTranslatableError(error: any): boolean;
+/**
+ * Extract error details for additional context
+ *
+ * @param error - Error object
+ * @returns Error details string if available
+ */
+declare function getErrorDetails(error: any): string | undefined;
+
+/**
+ * Breadcrumb Helper Utilities
+ *
+ * Centralized breadcrumb generators for consistent navigation across the app
+ */
+interface BreadcrumbItem {
+    label: string;
+    href?: string;
+    icon?: React.ReactNode;
+}
+/**
+ * Products Module Breadcrumbs
+ */
+declare const productBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (productName: string, productId: number) => BreadcrumbItem[];
+    edit: (productName: string, productId: number) => BreadcrumbItem[];
+    orders: (productName: string, productId: number) => BreadcrumbItem[];
+};
+/**
+ * Orders Module Breadcrumbs
+ */
+declare const orderBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (orderNumber: string) => BreadcrumbItem[];
+    edit: (orderNumber: string, orderId: string) => BreadcrumbItem[];
+    create: () => BreadcrumbItem[];
+};
+/**
+ * Customers Module Breadcrumbs
+ */
+declare const customerBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (customerName: string, customerId: number) => BreadcrumbItem[];
+    edit: (customerName: string, customerId: number) => BreadcrumbItem[];
+    orders: (customerName: string, customerId: number) => BreadcrumbItem[];
+};
+/**
+ * Users Module Breadcrumbs
+ */
+declare const userBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (userName: string, userId: number) => BreadcrumbItem[];
+    edit: (userName: string, userId: number) => BreadcrumbItem[];
+};
+/**
+ * Outlets Module Breadcrumbs
+ */
+declare const outletBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (outletName: string, outletId: number) => BreadcrumbItem[];
+};
+/**
+ * Subscriptions Module Breadcrumbs (Admin)
+ */
+declare const subscriptionBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (subscriptionId: number, merchantName?: string) => BreadcrumbItem[];
+};
+/**
+ * Merchants Module Breadcrumbs (Admin)
+ */
+declare const merchantBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (merchantName: string, merchantId: number) => BreadcrumbItem[];
+    orders: (merchantName: string, merchantId: number) => BreadcrumbItem[];
+    orderDetail: (merchantName: string, merchantId: number, orderNumber: string, orderId: string) => BreadcrumbItem[];
+    orderEdit: (merchantName: string, merchantId: number, orderNumber: string, orderId: string) => BreadcrumbItem[];
+};
+/**
+ * Categories Module Breadcrumbs
+ */
+declare const categoryBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+};
+/**
+ * Reports Module Breadcrumbs
+ */
+declare const reportBreadcrumbs: {
+    list: () => BreadcrumbItem[];
+    detail: (reportType: string) => BreadcrumbItem[];
+};
+/**
+ * Settings Module Breadcrumbs
+ */
+declare const settingsBreadcrumbs: {
+    main: () => BreadcrumbItem[];
+    section: (sectionName: string) => BreadcrumbItem[];
+};
+
 interface PerformanceMetrics {
     queryName: string;
     duration: number;
@@ -8198,4 +8164,38 @@ declare class APIMonitor {
     static measureEndpoint<T>(method: string, path: string, handler: () => Promise<T>): Promise<T>;
 }
 
-export { APIMonitor, API_BASE_URL, AnalyticsFilters, ApiConfig, ApiError, ApiResponse, ApiUrls, AuditConfig, AuditEntityConfig, AuditHelper, AuditHelperContext, AuditLog, AuditLogFilter, AuditLogResponse, AuditLogStats, AuditLogStatsResponse, AuditPerformanceMonitor, AuthResponse, AvailabilityBadgeProps, BUCKET_NAME, BackupInfo, BackupSchedule, BackupVerification, BadgeConfig, BillingCycle, BillingCycleCreateInput, BillingCycleFilters, BillingCycleUpdateInput, BillingCyclesResponse, BillingInterval, BillingSettings, CLOUDFRONT_DOMAIN, CalculatedPricing, CalendarApiResponse, CalendarDay, CalendarMeta, CalendarOrderItem, CalendarOrderSummary, CalendarQuery, CalendarResponse, CategoriesResponse, CustomerAnalytics, CustomerApiResponse, CustomerListResponse, CustomerSearchResponse, DEFAULT_CURRENCIES, DEFAULT_CURRENCY_SETTINGS, DatabaseConfig, DatabaseMonitor, DateFormatOptions, DayOrders, DuplicateError, ERROR_MESSAGES, ERROR_STATUS_CODES, Environment, ErrorCode, ErrorInfo, ErrorType, ForbiddenError, ImageDimensions, ImageValidationResult, LocationBadgeProps, LoginInput, ManualPayment, ManualPaymentCreateInput, MemoryMonitor, MerchantCurrencyUpdate, MerchantSearchFilters, MerchantSettings, MerchantsResponse, NotFoundError, Notification, NotificationFilters, NotificationsResponse, OrderCreateInput, OrderUpdatePayload, OrdersQuery, OrdersResponse, OutletCreateInput, OutletSettings, OutletUpdateInput, OutletsQuery, OutletsResponse, PaymentFilters, PaymentGatewayConfig, PaymentGatewayManager, PaymentsResponse, PerformanceMetrics, PerformanceMonitor, PlanCreateInput, PlanLimitError, PlanLimitsInfo, PlanLimitsValidationResult, PlanStats, PlanUpdateInput, PlanVariantCreateInput, PlanVariantUpdateInput, PlanVariantsQuery, PlansQuery, PlansResponse, PricingBreakdown, PricingConfig, PricingInfo, PricingResolver, PricingValidator, ProductAnalytics, ProductAvailabilityRequest, ProductAvailabilityResponse, ProductCreateInput, ProductUpdateInput, ProductsQuery, ProductsResponse, ProrationCalculation, RegisterInput, RegisterResponse, RenewalConfig, RenewalResult, RenewalStats, RentalInput, RentalPeriodValidation, ResponseBuilder, RevenueData, RoleBadgeProps, S3StreamUploadOptions, S3UploadOptions, S3UploadResponse, StatusBadgeProps, StoredUser, SubscriptionCreateInput, SubscriptionManager, SubscriptionPeriod, SubscriptionRenewalConfig, SubscriptionRenewalResult, SubscriptionUpdateInput, SubscriptionValidationOptions, SubscriptionValidationResult, SubscriptionsQuery, SystemStats, UnauthorizedError, UploadOptions, UploadProgress, UploadResponse, UserApiResponse, UserCreateInput, UserProfile, UserUpdateInput, UsersQuery, ValidationError, ValidationResult, addDaysToDate, analyticsApi, analyzeError, apiConfig, apiEnvironment, apiUrls, assertPlanLimit, auditPerformanceMonitor, authApi, authenticatedFetch, billingCyclesApi, buildApiUrl, calculateCustomerStats, calculateDiscountedPrice, calculateNewBillingDate, calculateProductStats, calculateProratedAmount, calculateProration, calculateRenewalPrice, calculateSavings, calculateStockPercentage, calculateSubscriptionPeriod, calculateSubscriptionPrice, calculateUserStats, calendarApi, canCreateUsers, canPerformOperation, canRentProduct, canSellProduct, capitalizeWords, categoriesApi, categoriesQuerySchema, checkSubscriptionStatus, cleanupStagingFiles, clearAuthData, commitStagingFiles, compareOrderNumberFormats, compressImage, convertCurrency, createApiUrl, createAuditHelper, createErrorResponse, createPaymentGatewayManager, createS3Client, createUploadController, customerCreateSchema, customerUpdateSchema, customersApi, customersQuerySchema, databaseConfig, debounce, defaultAuditConfig, delay, deleteFromS3, exportAuditLogs, extractS3KeyFromUrl, fileToBase64, filterCustomers, filterProducts, filterUsers, formatBillingCycle, formatChartPeriod, formatCurrency, formatCurrencyAdvanced, formatCustomerForDisplay, formatDailyByLocale, formatDate, formatDateByLocale, formatDateLong, formatDateShort, formatDateTime, formatDateTimeByLocale, formatDateTimeLong, formatDateTimeShort, formatDateWithLocale, formatFullDateByLocale, formatMonthOnlyByLocale, formatPhoneNumber, formatProductPrice, formatProration, formatSubscriptionPeriod, formatTimeByLocale, generateAccessUrl, generatePresignedUrl, generateRandomString, generateSlug, generateTenantKeyFromName, getAdminUrl, getAllPricingOptions, getAllowedOperations, getApiBaseUrl, getApiCorsOrigins, getApiDatabaseUrl, getApiJwtSecret, getApiUrl, getAuditConfig, getAuditEntityConfig, getAuditLogStats, getAuditLogs, getAuthToken, getAvailabilityBadge, getAvailabilityBadgeConfig, getBillingCycleDiscount, getClientUrl, getCurrency, getCurrencyDisplay, getCurrentCurrency, getCurrentDate, getCurrentEntityCounts, getCurrentEnvironment, getCurrentUser, getCustomerAddress, getCustomerAge, getCustomerContactInfo, getCustomerFullName, getCustomerIdTypeBadge, getCustomerLocationBadge, getCustomerStatusBadge, getDatabaseConfig, getDateLocale, getDaysDifference, getDiscountPercentage, getEnvironmentUrls, getErrorCode, getErrorStatusCode, getErrorTranslationKey, getExchangeRate, getFormatRecommendations, getImageDimensions, getInitials, getLocalDate, getLocalDateKey, getLocationBadge, getLocationBadgeConfig, getMobileUrl, getOutletStats, getPlanLimitError, getPlanLimitErrorMessage, getPlanLimitsInfo, getPriceTrendBadge, getPriceTrendBadgeConfig, getPricingBreakdown, getPricingComparison, getProductAvailabilityBadge, getProductCategoryName, getProductDisplayName, getProductImageUrl, getProductOutletName, getProductStatusBadge, getProductStockStatus, getProductTypeBadge, getRoleBadge, getRoleBadgeConfig, getStatusBadge, getStatusBadgeConfig, getStoredUser, getSubscriptionError, getSubscriptionStatusBadge, getSubscriptionStatusPriority, getToastType, getTomorrow, getUTCDateKey, getUserFullName, getUserRoleBadge, getUserStatusBadge, handleApiError, handleApiErrorForUI, handleApiResponse, handleBusinessError, handlePrismaError, handleValidationError, isAuthError, isAuthenticated, isBrowser, isDateAfter, isDateBefore, isDev, isDevelopment, isDevelopmentEnvironment, isEmpty, isErrorResponse, isGracePeriodExceeded, isLocal, isLocalEnvironment, isNetworkError, isPermissionError, isProd, isProduction, isProductionEnvironment, isS3Url, isServer, isSubscriptionExpired, isSuccessResponse, isTest, isValidCurrencyCode, isValidEmail, isValidErrorCode, isValidPhone, isValidationError, loginSchema, memoize, merchantsApi, migrateOrderNumbers, normalizeImageKeyToJpg, normalizeImageUrlToJpg, normalizeWhitespace, notificationsApi, once, orderCreateSchema, orderUpdateSchema, ordersApi, ordersQuerySchema, outletCreateSchema, outletUpdateSchema, outletsApi, outletsQuerySchema, parseApiResponse, parseCurrency, paymentsApi, planCreateSchema, planUpdateSchema, planVariantCreateSchema, planVariantUpdateSchema, planVariantsQuerySchema, plansApi, plansQuerySchema, pricingCalculator, processProductImages, productCreateSchema, productUpdateSchema, productsApi, productsQuerySchema, profileApi, publicFetch, publicPlansApi, quickAuditLog, registerSchema, rentalSchema, resizeImage, retry, s3Client, sanitizeFieldValue, settingsApi, shouldApplyProration, shouldLogEntity, shouldLogField, shouldSample, shouldThrowPlanLimitError, sortProducts, sortSubscriptionsByStatus, storeAuthData, subscriptionCreateSchema, subscriptionNeedsAttention, subscriptionUpdateSchema, subscriptionsApi, subscriptionsQuerySchema, systemApi, throttle, timeout, truncateText, uploadImage, uploadImages, uploadStreamToS3, uploadToS3, useFormattedChartPeriod, useFormattedDaily, useFormattedDate, useFormattedDateTime, useFormattedFullDate, useFormattedMonthOnly, userCreateSchema, userUpdateSchema, usersApi, usersQuerySchema, validateCustomer, validateForRenewal, validateImage, validateOrderNumberFormat, validatePlanLimits, validatePlatformAccess, validateProductPublicCheckAccess, validateSubscriptionAccess, withErrorHandlingForUI };
+interface EmailOptions {
+    to: string;
+    subject: string;
+    html: string;
+    text?: string;
+    from?: string;
+    fromName?: string;
+}
+interface EmailVerificationData {
+    name: string;
+    email: string;
+    verificationUrl: string;
+}
+/**
+ * Send email using AWS SES or console (for development)
+ */
+declare function sendEmail(options: EmailOptions): Promise<{
+    success: boolean;
+    messageId?: string;
+    error?: string;
+}>;
+/**
+ * Generate email verification email HTML
+ */
+declare function generateVerificationEmail(data: EmailVerificationData): string;
+/**
+ * Send email verification email
+ */
+declare function sendVerificationEmail(email: string, name: string, verificationToken: string): Promise<{
+    success: boolean;
+    messageId?: string;
+    error?: string;
+}>;
+
+export { APIMonitor, API_BASE_URL, type AnalyticsFilters, type ApiConfig, ApiError, type ApiResponse, type ApiUrls, type AuditConfig, type AuditEntityConfig, AuditHelper, type AuditHelperContext, type AuditLog, type AuditLogFilter, type AuditLogResponse, type AuditLogStats, type AuditLogStatsResponse, AuditPerformanceMonitor, type AuthResponse, type AvailabilityBadgeProps, BUCKET_NAME, type BackupInfo, type BackupSchedule, type BackupVerification, type BadgeConfig, type BillingCycle, type BillingCycleCreateInput, type BillingCycleFilters, type BillingCycleUpdateInput, type BillingCyclesResponse, type BillingInterval, type BillingSettings, type BreadcrumbItem, CLOUDFRONT_DOMAIN, type CalculatedPricing, type CalendarApiResponse, type CalendarDay, type CalendarMeta, type CalendarOrderItem, type CalendarOrderSummary, type CalendarQuery, type CalendarResponse, type CategoriesResponse, type CustomerAnalytics, type CustomerApiResponse, type CustomerListResponse, type CustomerSearchResponse, DEFAULT_CURRENCIES, DEFAULT_CURRENCY_SETTINGS, type DatabaseConfig, DatabaseMonitor, type DateFormatOptions, type DayOrders, DuplicateError, ERROR_MESSAGES, ERROR_STATUS_CODES, type EmailOptions, type EmailVerificationData, type Environment, ErrorCode, type ErrorInfo, type ErrorType, ForbiddenError, type ImageDimensions, type ImageValidationResult, type LocationBadgeProps, type LoginInput, type ManualPayment, type ManualPaymentCreateInput, MemoryMonitor, type MerchantCurrencyUpdate, type MerchantSearchFilters, type MerchantSettings, type MerchantsResponse, NotFoundError, type Notification, type NotificationFilters, type NotificationsResponse, type OrderCreateInput, type OrderUpdatePayload, type OrdersQuery, type OrdersResponse, type OutletCreateInput, type OutletSettings, type OutletUpdateInput, type OutletsQuery, type OutletsResponse, type PaymentFilters, type PaymentGatewayConfig, type PaymentGatewayManager, type PaymentsResponse, type PerformanceMetrics, PerformanceMonitor, type PlanCreateInput, PlanLimitError, type PlanLimitsInfo, type PlanLimitsValidationResult, type PlanStats, type PlanUpdateInput, type PlanVariantCreateInput, type PlanVariantUpdateInput, type PlanVariantsQuery, type PlansQuery, type PlansResponse, type PricingBreakdown, type PricingConfig, type PricingInfo, PricingResolver, PricingValidator, type ProductAnalytics, type ProductAvailabilityRequest, type ProductAvailabilityResponse, type ProductCreateInput, type ProductUpdateInput, type ProductsQuery, type ProductsResponse, type ProrationCalculation, type RegisterInput, type RegisterResponse, type RenewalConfig, type RenewalResult, type RenewalStats, type RentalInput, type RentalPeriodValidation, ResponseBuilder, type RevenueData, type RoleBadgeProps, type S3StreamUploadOptions, type S3UploadOptions, type S3UploadResponse, type StatusBadgeProps, type StoredUser, type SubscriptionCreateInput, SubscriptionManager, type SubscriptionPeriod, type SubscriptionRenewalConfig, type SubscriptionRenewalResult, type SubscriptionUpdateInput, type SubscriptionValidationOptions, type SubscriptionValidationResult, type SubscriptionsQuery, type SystemStats, UnauthorizedError, type UploadOptions, type UploadProgress, type UploadResponse, type UserApiResponse, type UserCreateInput, type UserProfile, type UserUpdateInput, type UsersQuery, ValidationError, type ValidationResult, addDaysToDate, analyticsApi, analyzeError, apiConfig, apiEnvironment, apiUrls, assertPlanLimit, auditPerformanceMonitor, authApi, authenticatedFetch, billingCyclesApi, buildApiUrl, calculateCustomerStats, calculateDiscountedPrice, calculateNewBillingDate, calculateProductStats, calculateProratedAmount, calculateProration, calculateRenewalPrice, calculateSavings, calculateStockPercentage, calculateSubscriptionPeriod, calculateSubscriptionPrice, calculateUserStats, calendarApi, canCreateUsers, canPerformOperation, canRentProduct, canSellProduct, capitalizeWords, categoriesApi, categoriesQuerySchema, categoryBreadcrumbs, checkSubscriptionStatus, cleanupStagingFiles, clearAuthData, commitStagingFiles, compareOrderNumberFormats, compressImage, convertCurrency, createApiUrl, createAuditHelper, createErrorResponse, createPaymentGatewayManager, createS3Client, createUploadController, customerBreadcrumbs, customerCreateSchema, customerUpdateSchema, customersApi, customersQuerySchema, databaseConfig, debounce, defaultAuditConfig, delay, deleteFromS3, exportAuditLogs, extractS3KeyFromUrl, fileToBase64, filterCustomers, filterProducts, filterUsers, formatBillingCycle, formatChartPeriod, formatCurrency, formatCurrencyAdvanced, formatCustomerForDisplay, formatDailyByLocale, formatDate, formatDateByLocale, formatDateLong, formatDateShort, formatDateTime, formatDateTimeByLocale, formatDateTimeLong, formatDateTimeShort, formatDateWithLocale, formatFullDateByLocale, formatMonthOnlyByLocale, formatPhoneNumber, formatProductPrice, formatProration, formatSubscriptionPeriod, formatTimeByLocale, generateAccessUrl, generatePresignedUrl, generateRandomString, generateSlug, generateTenantKeyFromName, generateVerificationEmail, getAdminUrl, getAllPricingOptions, getAllowedOperations, getApiBaseUrl, getApiCorsOrigins, getApiDatabaseUrl, getApiJwtSecret, getApiUrl, getAuditConfig, getAuditEntityConfig, getAuditLogStats, getAuditLogs, getAuthToken, getAvailabilityBadge, getAvailabilityBadgeConfig, getBillingCycleDiscount, getClientUrl, getCurrency, getCurrencyDisplay, getCurrentCurrency, getCurrentDate, getCurrentEntityCounts, getCurrentEnvironment, getCurrentUser, getCustomerAddress, getCustomerAge, getCustomerContactInfo, getCustomerFullName, getCustomerIdTypeBadge, getCustomerLocationBadge, getCustomerStatusBadge, getDatabaseConfig, getDateLocale, getDaysDifference, getDiscountPercentage, getDisplayErrorKey, getEnvironmentUrls, getErrorCode, getErrorDetails, getErrorStatusCode, getErrorTranslationKey, getExchangeRate, getFormatRecommendations, getImageDimensions, getInitials, getLocalDate, getLocalDateKey, getLocationBadge, getLocationBadgeConfig, getMobileUrl, getOutletStats, getPlanLimitError, getPlanLimitErrorMessage, getPlanLimitsInfo, getPriceTrendBadge, getPriceTrendBadgeConfig, getPricingBreakdown, getPricingComparison, getProductAvailabilityBadge, getProductCategoryName, getProductDisplayName, getProductImageUrl, getProductOutletName, getProductStatusBadge, getProductStockStatus, getProductTypeBadge, getRoleBadge, getRoleBadgeConfig, getStatusBadge, getStatusBadgeConfig, getStoredUser, getSubscriptionError, getSubscriptionStatusBadge, getSubscriptionStatusPriority, getToastType, getTomorrow, getUTCDateKey, getUserFullName, getUserRoleBadge, getUserStatusBadge, handleApiError, handleApiErrorForUI, handleApiResponse, handleBusinessError, handlePrismaError, handleValidationError, hasTranslatableError, isAuthError, isAuthenticated, isBrowser, isDateAfter, isDateBefore, isDev, isDevelopment, isDevelopmentEnvironment, isEmpty, isErrorResponse, isGracePeriodExceeded, isLocal, isLocalEnvironment, isNetworkError, isPermissionError, isProd, isProduction, isProductionEnvironment, isS3Url, isServer, isSubscriptionExpired, isSuccessResponse, isTest, isValidCurrencyCode, isValidEmail, isValidErrorCode, isValidPhone, isValidationError, loginSchema, memoize, merchantBreadcrumbs, merchantsApi, migrateOrderNumbers, normalizeImageKeyToJpg, normalizeImageUrlToJpg, normalizeWhitespace, notificationsApi, once, orderBreadcrumbs, orderCreateSchema, orderUpdateSchema, ordersApi, ordersQuerySchema, outletBreadcrumbs, outletCreateSchema, outletUpdateSchema, outletsApi, outletsQuerySchema, parseApiResponse, parseCurrency, paymentsApi, planCreateSchema, planUpdateSchema, planVariantCreateSchema, planVariantUpdateSchema, planVariantsQuerySchema, plansApi, plansQuerySchema, pricingCalculator, processProductImages, productBreadcrumbs, productCreateSchema, productUpdateSchema, productsApi, productsQuerySchema, profileApi, publicFetch, publicPlansApi, quickAuditLog, registerSchema, rentalSchema, reportBreadcrumbs, resizeImage, retry, s3Client, sanitizeFieldValue, sendEmail, sendVerificationEmail, settingsApi, settingsBreadcrumbs, shouldApplyProration, shouldLogEntity, shouldLogField, shouldSample, shouldThrowPlanLimitError, sortProducts, sortSubscriptionsByStatus, storeAuthData, subscriptionBreadcrumbs, subscriptionCreateSchema, subscriptionNeedsAttention, subscriptionUpdateSchema, subscriptionsApi, subscriptionsQuerySchema, systemApi, throttle, timeout, truncateText, uploadImage, uploadImages, uploadStreamToS3, uploadToS3, useFormattedChartPeriod, useFormattedDaily, useFormattedDate, useFormattedDateTime, useFormattedFullDate, useFormattedMonthOnly, userBreadcrumbs, userCreateSchema, userUpdateSchema, usersApi, usersQuerySchema, validateCustomer, validateForRenewal, validateImage, validateOrderNumberFormat, validatePlanLimits, validatePlatformAccess, validateProductPublicCheckAccess, validateSubscriptionAccess, withErrorHandlingForUI };

@@ -3,24 +3,24 @@ import { useState, useEffect, useCallback } from "react";
 import { getAuthToken, getStoredUser, clearAuthData, storeAuthData } from "@rentalshop/utils";
 
 // ../../node_modules/tslib/tslib.es6.mjs
-var extendStatics = function(d3, b) {
-  extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d4, b2) {
-    d4.__proto__ = b2;
-  } || function(d4, b2) {
-    for (var p2 in b2)
-      if (Object.prototype.hasOwnProperty.call(b2, p2))
-        d4[p2] = b2[p2];
+var extendStatics = function(d3, b2) {
+  extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d4, b3) {
+    d4.__proto__ = b3;
+  } || function(d4, b3) {
+    for (var p2 in b3)
+      if (Object.prototype.hasOwnProperty.call(b3, p2))
+        d4[p2] = b3[p2];
   };
-  return extendStatics(d3, b);
+  return extendStatics(d3, b2);
 };
-function __extends(d3, b) {
-  if (typeof b !== "function" && b !== null)
-    throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-  extendStatics(d3, b);
+function __extends(d3, b2) {
+  if (typeof b2 !== "function" && b2 !== null)
+    throw new TypeError("Class extends value " + String(b2) + " is not a constructor or null");
+  extendStatics(d3, b2);
   function __() {
     this.constructor = d3;
   }
-  d3.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  d3.prototype = b2 === null ? Object.create(b2) : (__.prototype = b2.prototype, new __());
 }
 var __assign = function() {
   __assign = Object.assign || function __assign2(t3) {
@@ -326,8 +326,8 @@ function parseNumberSkeletonFromString(skeleton) {
   if (skeleton.length === 0) {
     throw new Error("Number skeleton cannot be empty");
   }
-  var stringTokens = skeleton.split(WHITE_SPACE_REGEX).filter(function(x) {
-    return x.length > 0;
+  var stringTokens = skeleton.split(WHITE_SPACE_REGEX).filter(function(x2) {
+    return x2.length > 0;
   });
   var tokens = [];
   for (var _i = 0, stringTokens_1 = stringTokens; _i < stringTokens_1.length; _i++) {
@@ -2150,8 +2150,8 @@ var fromEntries = (
     function fromEntries2(entries) {
       var obj = {};
       for (var _i = 0, entries_1 = entries; _i < entries_1.length; _i++) {
-        var _a2 = entries_1[_i], k2 = _a2[0], v2 = _a2[1];
-        obj[k2] = v2;
+        var _a2 = entries_1[_i], k = _a2[0], v2 = _a2[1];
+        obj[k] = v2;
       }
       return obj;
     }
@@ -2897,9 +2897,9 @@ function pruneLocation(els) {
   els.forEach(function(el) {
     delete el.location;
     if (isSelectElement(el) || isPluralElement(el)) {
-      for (var k2 in el.options) {
-        delete el.options[k2].location;
-        pruneLocation(el.options[k2].value);
+      for (var k in el.options) {
+        delete el.options[k].location;
+        pruneLocation(el.options[k].value);
       }
     } else if (isNumberElement(el) && isNumberSkeleton(el.style)) {
       delete el.style.location;
@@ -3127,8 +3127,8 @@ function mergeConfig(c1, c2) {
   if (!c2) {
     return c1;
   }
-  return __assign(__assign(__assign({}, c1 || {}), c2 || {}), Object.keys(c1).reduce(function(all, k2) {
-    all[k2] = __assign(__assign({}, c1[k2]), c2[k2] || {});
+  return __assign(__assign(__assign({}, c1 || {}), c2 || {}), Object.keys(c1).reduce(function(all, k) {
+    all[k] = __assign(__assign({}, c1[k]), c2[k] || {});
     return all;
   }, {}));
 }
@@ -3136,8 +3136,8 @@ function mergeConfigs(defaultConfig, configs) {
   if (!configs) {
     return defaultConfig;
   }
-  return Object.keys(defaultConfig).reduce(function(all, k2) {
-    all[k2] = mergeConfig(defaultConfig[k2], configs[k2]);
+  return Object.keys(defaultConfig).reduce(function(all, k) {
+    all[k] = mergeConfig(defaultConfig[k], configs[k]);
     return all;
   }, __assign({}, defaultConfig));
 }
@@ -3345,7 +3345,7 @@ var IntlMessageFormat = (
   }()
 );
 
-// ../../node_modules/use-intl/dist/esm/production/initializeConfig-JxT5lzW-.js
+// ../../node_modules/use-intl/dist/esm/production/initializeConfig-CzP0yD8_.js
 import { isValidElement as t, cloneElement as r } from "react";
 var a = class extends Error {
   constructor(e3, t3) {
@@ -3393,62 +3393,68 @@ function I(e3, t3, r3, n3) {
   }), a2;
 }
 function E(n3) {
-  const o3 = function(e3, t3, r3, n4 = c) {
+  const o3 = function(e3, t3, r3) {
     try {
       if (!t3)
         throw new Error(void 0);
-      const n5 = r3 ? I(e3, t3, r3) : t3;
-      if (!n5)
+      const n4 = r3 ? I(e3, t3, r3) : t3;
+      if (!n4)
         throw new Error(r3);
-      return n5;
+      return n4;
     } catch (e4) {
-      const t4 = new a(s.MISSING_MESSAGE, e4.message);
-      return n4(t4), t4;
+      return new a(s.MISSING_MESSAGE, e4.message);
     }
-  }(n3.locale, n3.messages, n3.namespace, n3.onError);
+  }(n3.locale, n3.messages, n3.namespace);
   return function({ cache: n4, formats: o4, formatters: i2, getMessageFallback: c2 = u, locale: m2, messagesOrError: l2, namespace: g3, onError: E3, timeZone: S2 }) {
     const T2 = l2 instanceof a;
-    function N2(e3, t3, r3) {
-      const n5 = new a(t3, r3);
-      return E3(n5), c2({ error: n5, key: e3, namespace: g3 });
+    function N2(e3, t3, r3, n5) {
+      const o5 = new a(t3, r3);
+      return E3(o5), n5 ?? c2({ error: o5, key: e3, namespace: g3 });
     }
-    function y2(a2, u2, E4) {
-      if (T2)
-        return c2({ error: l2, key: a2, namespace: g3 });
-      const y3 = l2;
-      let A3, M3;
-      try {
-        A3 = I(m2, y3, a2, g3);
-      } catch (e3) {
-        return N2(a2, s.MISSING_MESSAGE, e3.message);
+    function y2(a2, u2, y3, A3) {
+      const M3 = A3;
+      let F3, R2;
+      if (T2) {
+        if (!M3)
+          return E3(l2), c2({ error: l2, key: a2, namespace: g3 });
+        F3 = M3;
+      } else {
+        const e3 = l2;
+        try {
+          F3 = I(m2, e3, a2, g3);
+        } catch (e4) {
+          if (!M3)
+            return N2(a2, s.MISSING_MESSAGE, e4.message, M3);
+          F3 = M3;
+        }
       }
-      if ("object" == typeof A3) {
+      if ("object" == typeof F3) {
         let e3, t3;
-        return e3 = Array.isArray(A3) ? s.INVALID_MESSAGE : s.INSUFFICIENT_PATH, N2(a2, e3, t3);
+        return e3 = Array.isArray(F3) ? s.INVALID_MESSAGE : s.INSUFFICIENT_PATH, N2(a2, e3, t3);
       }
-      const F3 = function(e3, t3) {
+      const d3 = function(e3, t3) {
         return t3 || /'[{}]/.test(e3) ? void 0 : e3;
-      }(A3, u2);
-      if (F3)
-        return F3;
+      }(F3, u2);
+      if (d3)
+        return d3;
       i2.getMessageFormat || (i2.getMessageFormat = function(t3, r3) {
         return f((...t4) => new IntlMessageFormat(t4[0], t4[1], t4[2], { formatters: r3, ...t4[3] }), t3.message);
       }(n4, i2));
       try {
-        M3 = i2.getMessageFormat(A3, m2, function(t3, r3, n5) {
+        R2 = i2.getMessageFormat(F3, m2, function(t3, r3, n5) {
           const o5 = IntlMessageFormat.formats.date, a3 = IntlMessageFormat.formats.time, s2 = { ...t3?.dateTime, ...r3?.dateTime }, i3 = { date: { ...o5, ...s2 }, time: { ...a3, ...s2 }, number: { ...t3?.number, ...r3?.number } };
           return n5 && ["date", "time"].forEach((e3) => {
             const t4 = i3[e3];
             for (const [e4, r4] of Object.entries(t4))
               t4[e4] = { timeZone: n5, ...r4 };
           }), i3;
-        }(o4, E4, S2), { formatters: { ...i2, getDateTimeFormat: (e3, t3) => i2.getDateTimeFormat(e3, { timeZone: S2, ...t3 }) } });
+        }(o4, y3, S2), { formatters: { ...i2, getDateTimeFormat: (e3, t3) => i2.getDateTimeFormat(e3, { timeZone: S2, ...t3 }) } });
       } catch (e3) {
         const t3 = e3;
-        return N2(a2, s.INVALID_MESSAGE, t3.message);
+        return N2(a2, s.INVALID_MESSAGE, t3.message, M3);
       }
       try {
-        const e3 = M3.format(u2 ? function(e4) {
+        const e3 = R2.format(u2 ? function(e4) {
           const n5 = {};
           return Object.keys(e4).forEach((o5) => {
             let a3 = 0;
@@ -3464,16 +3470,16 @@ function E(n3) {
           throw new Error(void 0);
         return t(e3) || Array.isArray(e3) || "string" == typeof e3 ? e3 : String(e3);
       } catch (e3) {
-        return N2(a2, s.FORMATTING_ERROR, e3.message);
+        return N2(a2, s.FORMATTING_ERROR, e3.message, M3);
       }
     }
-    function A2(e3, t3, r3) {
-      const n5 = y2(e3, t3, r3);
-      return "string" != typeof n5 ? N2(e3, s.INVALID_MESSAGE, void 0) : n5;
+    function A2(e3, t3, r3, n5) {
+      const o5 = y2(e3, t3, r3, n5);
+      return "string" != typeof o5 ? N2(e3, s.INVALID_MESSAGE, void 0) : o5;
     }
-    return A2.rich = y2, A2.markup = (e3, t3, r3) => y2(e3, t3, r3), A2.raw = (e3) => {
+    return A2.rich = y2, A2.markup = (e3, t3, r3, n5) => y2(e3, t3, r3, n5), A2.raw = (e3) => {
       if (T2)
-        return c2({ error: l2, key: e3, namespace: g3 });
+        return E3(l2), c2({ error: l2, key: e3, namespace: g3 });
       const t3 = l2;
       try {
         return I(m2, t3, e3, g3);
@@ -3572,29 +3578,29 @@ function d(e3) {
 }
 
 // ../../node_modules/use-intl/dist/esm/production/react.js
-import { createContext as e, useContext as r2, useMemo as o, useState as t2, useEffect as n } from "react";
+import { createContext as e, useContext as r2, useMemo as t2, useState as o, useEffect as n } from "react";
 import { jsx as g2 } from "react/jsx-runtime";
 var d2 = e(void 0);
-function v() {
+function w() {
   const e3 = r2(d2);
   if (!e3)
     throw new Error(void 0);
   return e3;
 }
-var E2 = false;
-var h2 = "undefined" == typeof window;
-function p(e3) {
-  return function(e4, r3, t3) {
-    const { cache: n3, formats: a2, formatters: s2, getMessageFallback: c2, locale: u2, onError: g3, timeZone: d3 } = v(), w2 = e4[t3], p2 = S(r3, t3);
-    return d3 || E2 || !h2 || (E2 = true, g3(new a(s.ENVIRONMENT_FALLBACK, void 0))), o(() => E({ cache: n3, formatters: s2, getMessageFallback: c2, messages: w2, namespace: p2, onError: g3, formats: a2, locale: u2, timeZone: d3 }), [n3, s2, c2, w2, p2, g3, a2, u2, d3]);
-  }({ "!": v().messages }, e3 ? `!.${e3}` : "!", "!");
+var h2 = false;
+var p = "undefined" == typeof window;
+function E2(e3) {
+  return function(e4, r3, o3) {
+    const { cache: n3, formats: a2, formatters: s2, getMessageFallback: c2, locale: l2, onError: g3, timeZone: d3 } = w(), v2 = e4[o3], E3 = S(r3, o3);
+    return d3 || h2 || !p || (h2 = true, g3(new a(s.ENVIRONMENT_FALLBACK, void 0))), t2(() => E({ cache: n3, formatters: s2, getMessageFallback: c2, messages: v2, namespace: E3, onError: g3, formats: a2, locale: l2, timeZone: d3 }), [n3, s2, c2, v2, E3, g3, a2, l2, d3]);
+  }({ "!": w().messages }, e3 ? `!.${e3}` : "!", "!");
 }
 function Z() {
-  return v().locale;
+  return w().locale;
 }
 function I2() {
-  const { formats: e3, formatters: r3, locale: t3, now: n3, onError: a2, timeZone: s2 } = v();
-  return o(() => d({ formats: e3, locale: t3, now: n3, onError: a2, timeZone: s2, _formatters: r3 }), [e3, r3, n3, t3, a2, s2]);
+  const { formats: e3, formatters: r3, locale: o3, now: n3, onError: a2, timeZone: s2 } = w();
+  return t2(() => d({ formats: e3, locale: o3, now: n3, onError: a2, timeZone: s2, _formatters: r3 }), [e3, r3, n3, o3, a2, s2]);
 }
 
 // ../../node_modules/next-intl/dist/esm/production/react-client/index.js
@@ -3607,54 +3613,54 @@ function o2(r3, t3) {
     }
   };
 }
-var e2 = o2(0, p);
-var n2 = o2(0, I2);
+var n2 = o2(0, E2);
+var e2 = o2(0, I2);
 
 // src/hooks/useTranslation.ts
 function useCommonTranslations() {
-  return e2("common");
+  return n2("common");
 }
 function useAuthTranslations() {
-  return e2("auth");
+  return n2("auth");
 }
 function useDashboardTranslations() {
-  return e2("dashboard");
+  return n2("dashboard");
 }
 function useOrderTranslations() {
-  return e2("orders");
+  return n2("orders");
 }
 function useProductTranslations() {
-  return e2("products");
+  return n2("products");
 }
 function useCustomerTranslations() {
-  return e2("customers");
+  return n2("customers");
 }
 function useSettingsTranslations() {
-  return e2("settings");
+  return n2("settings");
 }
 function useValidationTranslations() {
-  return e2("validation");
+  return n2("validation");
 }
 function useUsersTranslations() {
-  return e2("users");
+  return n2("users");
 }
 function useOutletsTranslations() {
-  return e2("outlets");
+  return n2("outlets");
 }
 function useCategoriesTranslations() {
-  return e2("categories");
+  return n2("categories");
 }
 function useCalendarTranslations() {
-  return e2("calendar");
+  return n2("calendar");
 }
 function usePlansTranslations() {
-  return e2("plans");
+  return n2("plans");
 }
 function useSubscriptionTranslations() {
-  return e2("subscription");
+  return n2("subscription");
 }
 function useErrorTranslations() {
-  return e2("errors");
+  return n2("errors");
 }
 
 // src/hooks/useAuth.ts
@@ -4433,9 +4439,9 @@ function useMerchantsData(options) {
         );
       }
       if (filters2.sortBy) {
-        filteredMerchants.sort((a2, b) => {
+        filteredMerchants.sort((a2, b2) => {
           const aVal = a2[filters2.sortBy];
-          const bVal = b[filters2.sortBy];
+          const bVal = b2[filters2.sortBy];
           const order = filters2.sortOrder === "desc" ? -1 : 1;
           return (aVal > bVal ? 1 : -1) * order;
         });
@@ -4616,9 +4622,9 @@ function usePaymentsData(options) {
         });
       }
       if (filters2.sortBy) {
-        filteredPayments.sort((a2, b) => {
+        filteredPayments.sort((a2, b2) => {
           const aVal = a2[filters2.sortBy];
-          const bVal = b[filters2.sortBy];
+          const bVal = b2[filters2.sortBy];
           const order = filters2.sortOrder === "desc" ? -1 : 1;
           return (aVal > bVal ? 1 : -1) * order;
         });
@@ -4689,9 +4695,9 @@ function usePlansData(options) {
         );
       }
       if (filters2.sortBy) {
-        filteredPlans.sort((a2, b) => {
+        filteredPlans.sort((a2, b2) => {
           const aVal = a2[filters2.sortBy];
-          const bVal = b[filters2.sortBy];
+          const bVal = b2[filters2.sortBy];
           const order = filters2.sortOrder === "desc" ? -1 : 1;
           return (aVal > bVal ? 1 : -1) * order;
         });

@@ -3,9 +3,10 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 // Force TypeScript refresh - address field added
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import {API, SUBSCRIPTION_STATUS, normalizeSubscriptionStatus} from '@rentalshop/constants';
 import { getDefaultPricingConfig } from '@rentalshop/constants';
 import type { BusinessType } from '@rentalshop/types';
+import type { SubscriptionStatus } from '@rentalshop/constants';
 
 export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user }) => {
   try {
@@ -50,11 +51,18 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
     }
 
     // Subscription status filtering (stored for post-processing)
-    let subscriptionStatusFilter: string | null = null;
+    // Validate against enum values for type safety using normalizeSubscriptionStatus
+    let subscriptionStatusFilter: SubscriptionStatus | null = null;
     if (subscriptionStatus && subscriptionStatus !== 'all') {
-      subscriptionStatusFilter = subscriptionStatus;
+      // Use normalizeSubscriptionStatus for type-safe validation
+      subscriptionStatusFilter = normalizeSubscriptionStatus(subscriptionStatus);
     } else if (status === 'trial' || status === 'expired') {
-      subscriptionStatusFilter = status;
+      // Map legacy status values to enum
+      if (status === 'trial') {
+        subscriptionStatusFilter = SUBSCRIPTION_STATUS.TRIAL;
+      } else if (status === 'expired') {
+        subscriptionStatusFilter = SUBSCRIPTION_STATUS.EXPIRED;
+      }
     }
 
     // Active status filtering
@@ -127,9 +135,10 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
 
     // Apply subscription status filter (post-processing)
     if (subscriptionStatusFilter) {
-      merchants = merchants.filter((m: any) => 
-        m.subscription?.status?.toLowerCase() === subscriptionStatusFilter.toLowerCase()
-      );
+      merchants = merchants.filter((m: any) => {
+        const merchantStatus = m.subscription?.status?.toUpperCase();
+        return merchantStatus === subscriptionStatusFilter;
+      });
       total = merchants.length;
     }
 
@@ -229,7 +238,8 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
   try {
 
     const body = await request.json();
-    const { name, email, phone, address, planId, subscriptionStatus, businessType } = body;
+    const { name, email, phone, address, planId, businessType } = body;
+    // subscriptionStatus removed - subscription status is managed via Subscription model
 
     // Validate required fields
     if (!name || !email || !phone || !planId) {

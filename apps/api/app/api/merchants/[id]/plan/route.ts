@@ -97,8 +97,8 @@ export async function PUT(
 
       // Update merchant plan
       const updatedMerchant = await db.merchants.update(merchantPublicId, {
-        planId,
-        subscriptionStatus: 'active' // Change from trial to active when upgrading
+        planId
+        // subscriptionStatus removed - subscription status is managed via Subscription model
       });
 
       // Also update the subscription record if it exists

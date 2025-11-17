@@ -186,7 +186,7 @@ declare function findById$1(id: number): Promise<({
         createdAt: Date;
         updatedAt: Date;
         merchantId: number;
-        status: string;
+        status: _prisma_client.$Enums.SubscriptionStatus;
         planId: number;
         currency: string;
         amount: number;
@@ -227,7 +227,6 @@ declare function findById$1(id: number): Promise<({
     taxId: string | null;
     website: string | null;
     planId: number | null;
-    subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
     pricingConfig: string | null;
@@ -243,7 +242,7 @@ declare function findByEmail(email: string): Promise<({
         createdAt: Date;
         updatedAt: Date;
         merchantId: number;
-        status: string;
+        status: _prisma_client.$Enums.SubscriptionStatus;
         planId: number;
         currency: string;
         amount: number;
@@ -295,7 +294,6 @@ declare function findByEmail(email: string): Promise<({
     taxId: string | null;
     website: string | null;
     planId: number | null;
-    subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
     pricingConfig: string | null;
@@ -315,7 +313,7 @@ declare function create(data: MerchantCreateData): Promise<{
         createdAt: Date;
         updatedAt: Date;
         merchantId: number;
-        status: string;
+        status: _prisma_client.$Enums.SubscriptionStatus;
         planId: number;
         currency: string;
         amount: number;
@@ -367,7 +365,6 @@ declare function create(data: MerchantCreateData): Promise<{
     taxId: string | null;
     website: string | null;
     planId: number | null;
-    subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
     pricingConfig: string | null;
@@ -383,7 +380,7 @@ declare function update(id: number, data: MerchantUpdateData): Promise<{
         createdAt: Date;
         updatedAt: Date;
         merchantId: number;
-        status: string;
+        status: _prisma_client.$Enums.SubscriptionStatus;
         planId: number;
         currency: string;
         amount: number;
@@ -435,7 +432,6 @@ declare function update(id: number, data: MerchantUpdateData): Promise<{
     taxId: string | null;
     website: string | null;
     planId: number | null;
-    subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
     pricingConfig: string | null;
@@ -464,7 +460,6 @@ declare function remove(id: number): Promise<{
     taxId: string | null;
     website: string | null;
     planId: number | null;
-    subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
     pricingConfig: string | null;
@@ -510,7 +505,6 @@ declare function checkDuplicate(email?: string, phone?: string, excludeId?: numb
     taxId: string | null;
     website: string | null;
     planId: number | null;
-    subscriptionStatus: string;
     totalRevenue: number;
     lastActiveAt: Date | null;
     pricingConfig: string | null;
@@ -535,8 +529,8 @@ declare function createPayment(data: any): Promise<{
         createdAt: Date;
         updatedAt: Date;
         orderNumber: string;
-        orderType: string;
-        status: string;
+        orderType: _prisma_client.$Enums.OrderType;
+        status: _prisma_client.$Enums.OrderStatus;
         totalAmount: number;
         depositAmount: number;
         securityDeposit: number;
@@ -567,14 +561,14 @@ declare function createPayment(data: any): Promise<{
     createdAt: Date;
     updatedAt: Date;
     merchantId: number | null;
-    status: string;
+    status: _prisma_client.$Enums.PaymentStatus;
     notes: string | null;
     subscriptionId: number | null;
-    type: string;
+    type: _prisma_client.$Enums.PaymentType;
     metadata: string | null;
     currency: string;
     amount: number;
-    method: string;
+    method: _prisma_client.$Enums.PaymentMethod;
     reference: string | null;
     transactionId: string | null;
     invoiceNumber: string | null;
@@ -600,8 +594,8 @@ declare function findById(id: number): Promise<({
         createdAt: Date;
         updatedAt: Date;
         orderNumber: string;
-        orderType: string;
-        status: string;
+        orderType: _prisma_client.$Enums.OrderType;
+        status: _prisma_client.$Enums.OrderStatus;
         totalAmount: number;
         depositAmount: number;
         securityDeposit: number;
@@ -632,14 +626,14 @@ declare function findById(id: number): Promise<({
     createdAt: Date;
     updatedAt: Date;
     merchantId: number | null;
-    status: string;
+    status: _prisma_client.$Enums.PaymentStatus;
     notes: string | null;
     subscriptionId: number | null;
-    type: string;
+    type: _prisma_client.$Enums.PaymentType;
     metadata: string | null;
     currency: string;
     amount: number;
-    method: string;
+    method: _prisma_client.$Enums.PaymentMethod;
     reference: string | null;
     transactionId: string | null;
     invoiceNumber: string | null;
@@ -659,14 +653,14 @@ declare function findBySubscriptionId(subscriptionId: number, options?: {
     createdAt: Date;
     updatedAt: Date;
     merchantId: number | null;
-    status: string;
+    status: _prisma_client.$Enums.PaymentStatus;
     notes: string | null;
     subscriptionId: number | null;
-    type: string;
+    type: _prisma_client.$Enums.PaymentType;
     metadata: string | null;
     currency: string;
     amount: number;
-    method: string;
+    method: _prisma_client.$Enums.PaymentMethod;
     reference: string | null;
     transactionId: string | null;
     invoiceNumber: string | null;
@@ -689,14 +683,14 @@ declare function searchPayments(filters: any): Promise<{
         createdAt: Date;
         updatedAt: Date;
         merchantId: number | null;
-        status: string;
+        status: _prisma_client.$Enums.PaymentStatus;
         notes: string | null;
         subscriptionId: number | null;
-        type: string;
+        type: _prisma_client.$Enums.PaymentType;
         metadata: string | null;
         currency: string;
         amount: number;
-        method: string;
+        method: _prisma_client.$Enums.PaymentMethod;
         reference: string | null;
         transactionId: string | null;
         invoiceNumber: string | null;
@@ -742,14 +736,14 @@ declare const simplifiedPayments: {
         createdAt: Date;
         updatedAt: Date;
         merchantId: number | null;
-        status: string;
+        status: _prisma_client.$Enums.PaymentStatus;
         notes: string | null;
         subscriptionId: number | null;
-        type: string;
+        type: _prisma_client.$Enums.PaymentType;
         metadata: string | null;
         currency: string;
         amount: number;
-        method: string;
+        method: _prisma_client.$Enums.PaymentMethod;
         reference: string | null;
         transactionId: string | null;
         invoiceNumber: string | null;
@@ -807,9 +801,9 @@ declare const simplifiedPayments: {
             id?: number | null | undefined;
             amount?: number | null | undefined;
             currency?: string | null | undefined;
-            method?: string | null | undefined;
-            type?: string | null | undefined;
-            status?: string | null | undefined;
+            method?: _prisma_client.$Enums.PaymentMethod | null | undefined;
+            type?: _prisma_client.$Enums.PaymentType | null | undefined;
+            status?: _prisma_client.$Enums.PaymentStatus | null | undefined;
             reference?: string | null | undefined;
             transactionId?: string | null | undefined;
             invoiceNumber?: string | null | undefined;
@@ -829,9 +823,9 @@ declare const simplifiedPayments: {
             id?: number | null | undefined;
             amount?: number | null | undefined;
             currency?: string | null | undefined;
-            method?: string | null | undefined;
-            type?: string | null | undefined;
-            status?: string | null | undefined;
+            method?: _prisma_client.$Enums.PaymentMethod | null | undefined;
+            type?: _prisma_client.$Enums.PaymentType | null | undefined;
+            status?: _prisma_client.$Enums.PaymentStatus | null | undefined;
             reference?: string | null | undefined;
             transactionId?: string | null | undefined;
             invoiceNumber?: string | null | undefined;
@@ -882,6 +876,87 @@ declare const BILLING_INTERVAL: {
     readonly YEARLY: "yearly";
 };
 type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];
+
+interface PlanLimits {
+    outlets: number;
+    users: number;
+    products: number;
+    customers: number;
+    orders: number;
+    allowWebAccess?: boolean;
+    allowMobileAccess?: boolean;
+}
+interface PlanPricing {
+    price: number;
+    discount: number;
+    savings: number;
+}
+interface Plan {
+    id: number;
+    name: string;
+    description: string;
+    basePrice: number;
+    currency: string;
+    trialDays: number;
+    limits: PlanLimits;
+    features: string[];
+    isActive: boolean;
+    isPopular: boolean;
+    sortOrder: number;
+    pricing: {
+        monthly: PlanPricing;
+        quarterly: PlanPricing;
+        sixMonths: PlanPricing;
+        yearly: PlanPricing;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt?: Date;
+}
+
+interface SubscriptionPeriod {
+    startDate: Date;
+    endDate: Date;
+    duration: string;
+    isActive: boolean;
+    daysRemaining: number;
+    nextBillingDate: Date;
+    isTrial?: boolean;
+}
+/**
+ * Complete Subscription interface matching Prisma model
+ * This is the single source of truth for subscription data
+ */
+interface Subscription {
+    id: number;
+    merchantId: number;
+    planId: number;
+    status: SubscriptionStatus;
+    billingInterval: BillingInterval;
+    currentPeriodStart: Date | string;
+    currentPeriodEnd: Date | string;
+    trialStart?: Date | string;
+    trialEnd?: Date | string;
+    amount: number;
+    currency: string;
+    interval: string;
+    intervalCount: number;
+    period: number;
+    discount: number;
+    savings: number;
+    cancelAtPeriodEnd: boolean;
+    canceledAt?: Date | string;
+    cancelReason?: string;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    subscriptionPeriod?: SubscriptionPeriod;
+    merchant?: {
+        id: number;
+        name: string;
+        email: string;
+    };
+    plan?: Plan;
+}
 
 /**
  * Order types - simplified to RENT and SALE only
@@ -976,72 +1051,6 @@ interface OrderSearchFilter {
     offset?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
-}
-
-interface PlanLimits {
-    outlets: number;
-    users: number;
-    products: number;
-    customers: number;
-    orders: number;
-    allowWebAccess?: boolean;
-    allowMobileAccess?: boolean;
-}
-interface PlanPricing {
-    price: number;
-    discount: number;
-    savings: number;
-}
-interface Plan {
-    id: number;
-    name: string;
-    description: string;
-    basePrice: number;
-    currency: string;
-    trialDays: number;
-    limits: PlanLimits;
-    features: string[];
-    isActive: boolean;
-    isPopular: boolean;
-    sortOrder: number;
-    pricing: {
-        monthly: PlanPricing;
-        quarterly: PlanPricing;
-        sixMonths: PlanPricing;
-        yearly: PlanPricing;
-    };
-    createdAt: Date;
-    updatedAt: Date;
-    deletedAt?: Date;
-}
-
-interface SubscriptionPeriod {
-    startDate: Date;
-    endDate: Date;
-    duration: string;
-    isActive: boolean;
-    daysRemaining: number;
-    nextBillingDate: Date;
-    isTrial?: boolean;
-}
-interface Subscription {
-    id: number;
-    merchantId: number;
-    planId: number;
-    status: SubscriptionStatus;
-    billingInterval: BillingInterval;
-    currentPeriodStart: Date;
-    currentPeriodEnd: Date;
-    amount: number;
-    createdAt: Date;
-    updatedAt: Date;
-    subscriptionPeriod?: SubscriptionPeriod;
-    merchant: {
-        id: number;
-        name: string;
-        email: string;
-    };
-    plan: Plan;
 }
 
 var required = "This field is required";
@@ -3064,7 +3073,7 @@ declare const db: {
             password: string;
             firstName: string;
             lastName: string;
-            role: string;
+            role: _prisma_client.$Enums.UserRole;
             emailVerified: boolean;
             emailVerifiedAt: Date | null;
             deletedAt: Date | null;
@@ -3089,7 +3098,7 @@ declare const db: {
             password: string;
             firstName: string;
             lastName: string;
-            role: string;
+            role: _prisma_client.$Enums.UserRole;
             emailVerified: boolean;
             emailVerifiedAt: Date | null;
             deletedAt: Date | null;
@@ -3115,7 +3124,7 @@ declare const db: {
             password: string;
             firstName: string;
             lastName: string;
-            role: string;
+            role: _prisma_client.$Enums.UserRole;
             emailVerified: boolean;
             emailVerifiedAt: Date | null;
             deletedAt: Date | null;
@@ -3167,7 +3176,7 @@ declare const db: {
             password: string;
             firstName: string;
             lastName: string;
-            role: string;
+            role: _prisma_client.$Enums.UserRole;
             emailVerified: boolean;
             emailVerifiedAt: Date | null;
             deletedAt: Date | null;
@@ -3193,7 +3202,7 @@ declare const db: {
             password: string;
             firstName: string;
             lastName: string;
-            role: string;
+            role: _prisma_client.$Enums.UserRole;
             emailVerified: boolean;
             emailVerifiedAt: Date | null;
             deletedAt: Date | null;
@@ -3210,7 +3219,7 @@ declare const db: {
             password: string;
             firstName: string;
             lastName: string;
-            role: string;
+            role: _prisma_client.$Enums.UserRole;
             emailVerified: boolean;
             emailVerifiedAt: Date | null;
             deletedAt: Date | null;
@@ -3237,7 +3246,7 @@ declare const db: {
                 password: string;
                 firstName: string;
                 lastName: string;
-                role: string;
+                role: _prisma_client.$Enums.UserRole;
                 emailVerified: boolean;
                 emailVerifiedAt: Date | null;
                 deletedAt: Date | null;
@@ -3259,7 +3268,7 @@ declare const db: {
                 id: number;
                 createdAt: Date;
                 orderNumber: string;
-                status: string;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
             }[];
             merchant: {
@@ -3704,14 +3713,14 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number | null;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 subscriptionId: number | null;
-                type: string;
+                type: _prisma_client.$Enums.PaymentType;
                 metadata: string | null;
                 currency: string;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 transactionId: string | null;
                 invoiceNumber: string | null;
@@ -3725,8 +3734,8 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             orderNumber: string;
-            orderType: string;
-            status: string;
+            orderType: _prisma_client.$Enums.OrderType;
+            status: _prisma_client.$Enums.OrderStatus;
             totalAmount: number;
             depositAmount: number;
             securityDeposit: number;
@@ -3794,14 +3803,14 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number | null;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 subscriptionId: number | null;
-                type: string;
+                type: _prisma_client.$Enums.PaymentType;
                 metadata: string | null;
                 currency: string;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 transactionId: string | null;
                 invoiceNumber: string | null;
@@ -3815,8 +3824,8 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             orderNumber: string;
-            orderType: string;
-            status: string;
+            orderType: _prisma_client.$Enums.OrderType;
+            status: _prisma_client.$Enums.OrderStatus;
             totalAmount: number;
             depositAmount: number;
             securityDeposit: number;
@@ -3879,14 +3888,14 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number | null;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 subscriptionId: number | null;
-                type: string;
+                type: _prisma_client.$Enums.PaymentType;
                 metadata: string | null;
                 currency: string;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 transactionId: string | null;
                 invoiceNumber: string | null;
@@ -3900,8 +3909,8 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             orderNumber: string;
-            orderType: string;
-            status: string;
+            orderType: _prisma_client.$Enums.OrderType;
+            status: _prisma_client.$Enums.OrderStatus;
             totalAmount: number;
             depositAmount: number;
             securityDeposit: number;
@@ -3932,8 +3941,8 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             orderNumber: string;
-            orderType: string;
-            status: string;
+            orderType: _prisma_client.$Enums.OrderType;
+            status: _prisma_client.$Enums.OrderStatus;
             totalAmount: number;
             depositAmount: number;
             securityDeposit: number;
@@ -3976,8 +3985,8 @@ declare const db: {
                     };
                 };
                 orderNumber: string;
-                orderType: string;
-                status: string;
+                orderType: _prisma_client.$Enums.OrderType;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
                 depositAmount: number;
                 pickupPlanAt: Date | null;
@@ -4040,8 +4049,8 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             orderNumber: string;
-            orderType: string;
-            status: string;
+            orderType: _prisma_client.$Enums.OrderType;
+            status: _prisma_client.$Enums.OrderStatus;
             totalAmount: number;
             depositAmount: number;
             securityDeposit: number;
@@ -4131,8 +4140,8 @@ declare const db: {
             _min: {
                 id?: number | null | undefined;
                 orderNumber?: string | null | undefined;
-                orderType?: string | null | undefined;
-                status?: string | null | undefined;
+                orderType?: _prisma_client.$Enums.OrderType | null | undefined;
+                status?: _prisma_client.$Enums.OrderStatus | null | undefined;
                 totalAmount?: number | null | undefined;
                 depositAmount?: number | null | undefined;
                 securityDeposit?: number | null | undefined;
@@ -4162,8 +4171,8 @@ declare const db: {
             _max: {
                 id?: number | null | undefined;
                 orderNumber?: string | null | undefined;
-                orderType?: string | null | undefined;
-                status?: string | null | undefined;
+                orderType?: _prisma_client.$Enums.OrderType | null | undefined;
+                status?: _prisma_client.$Enums.OrderStatus | null | undefined;
                 totalAmount?: number | null | undefined;
                 depositAmount?: number | null | undefined;
                 securityDeposit?: number | null | undefined;
@@ -4248,8 +4257,8 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 orderNumber: string;
-                orderType: string;
-                status: string;
+                orderType: _prisma_client.$Enums.OrderType;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
                 depositAmount: number;
                 securityDeposit: number;
@@ -4295,8 +4304,8 @@ declare const db: {
             data: {
                 id: number;
                 orderNumber: string;
-                orderType: string;
-                status: string;
+                orderType: _prisma_client.$Enums.OrderType;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
                 depositAmount: number;
                 notes: string | null;
@@ -4342,8 +4351,8 @@ declare const db: {
             data: {
                 id: number;
                 orderNumber: string;
-                orderType: string;
-                status: string;
+                orderType: _prisma_client.$Enums.OrderType;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
                 depositAmount: number;
                 securityDeposit: number;
@@ -4432,8 +4441,8 @@ declare const db: {
                 };
             };
             orderNumber: string;
-            orderType: string;
-            status: string;
+            orderType: _prisma_client.$Enums.OrderType;
+            status: _prisma_client.$Enums.OrderStatus;
             totalAmount: number;
             depositAmount: number;
             securityDeposit: number;
@@ -4465,7 +4474,7 @@ declare const db: {
                 email: string;
                 firstName: string;
                 lastName: string;
-                role: string;
+                role: _prisma_client.$Enums.UserRole;
             };
             customer: {
                 id: number;
@@ -4516,10 +4525,10 @@ declare const db: {
                 id: number;
                 createdAt: Date;
                 updatedAt: Date;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 processedAt: Date | null;
             }[];
@@ -4536,14 +4545,14 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number | null;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 subscriptionId: number | null;
-                type: string;
+                type: _prisma_client.$Enums.PaymentType;
                 metadata: string | null;
                 currency: string;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 transactionId: string | null;
                 invoiceNumber: string | null;
@@ -4557,14 +4566,14 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number | null;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 subscriptionId: number | null;
-                type: string;
+                type: _prisma_client.$Enums.PaymentType;
                 metadata: string | null;
                 currency: string;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 transactionId: string | null;
                 invoiceNumber: string | null;
@@ -4604,14 +4613,14 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number | null;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 subscriptionId: number | null;
-                type: string;
+                type: _prisma_client.$Enums.PaymentType;
                 metadata: string | null;
                 currency: string;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 transactionId: string | null;
                 invoiceNumber: string | null;
@@ -4667,8 +4676,8 @@ declare const db: {
                     };
                 };
                 orderNumber: string;
-                orderType: string;
-                status: string;
+                orderType: _prisma_client.$Enums.OrderType;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
                 depositAmount: number;
                 securityDeposit: number;
@@ -4743,8 +4752,8 @@ declare const db: {
                 id: number;
                 createdAt: Date;
                 orderNumber: string;
-                orderType: string;
-                status: string;
+                orderType: _prisma_client.$Enums.OrderType;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
                 customer: {
                     id: number;
@@ -4772,14 +4781,14 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number | null;
-            status: string;
+            status: _prisma_client.$Enums.PaymentStatus;
             notes: string | null;
             subscriptionId: number | null;
-            type: string;
+            type: _prisma_client.$Enums.PaymentType;
             metadata: string | null;
             currency: string;
             amount: number;
-            method: string;
+            method: _prisma_client.$Enums.PaymentMethod;
             reference: string | null;
             transactionId: string | null;
             invoiceNumber: string | null;
@@ -4831,9 +4840,9 @@ declare const db: {
                 id?: number | null | undefined;
                 amount?: number | null | undefined;
                 currency?: string | null | undefined;
-                method?: string | null | undefined;
-                type?: string | null | undefined;
-                status?: string | null | undefined;
+                method?: _prisma_client.$Enums.PaymentMethod | null | undefined;
+                type?: _prisma_client.$Enums.PaymentType | null | undefined;
+                status?: _prisma_client.$Enums.PaymentStatus | null | undefined;
                 reference?: string | null | undefined;
                 transactionId?: string | null | undefined;
                 invoiceNumber?: string | null | undefined;
@@ -4853,9 +4862,9 @@ declare const db: {
                 id?: number | null | undefined;
                 amount?: number | null | undefined;
                 currency?: string | null | undefined;
-                method?: string | null | undefined;
-                type?: string | null | undefined;
-                status?: string | null | undefined;
+                method?: _prisma_client.$Enums.PaymentMethod | null | undefined;
+                type?: _prisma_client.$Enums.PaymentType | null | undefined;
+                status?: _prisma_client.$Enums.PaymentStatus | null | undefined;
                 reference?: string | null | undefined;
                 transactionId?: string | null | undefined;
                 invoiceNumber?: string | null | undefined;
@@ -5168,7 +5177,7 @@ declare const db: {
             subscriptions: {
                 id: number;
                 merchantId: number;
-                status: string;
+                status: _prisma_client.$Enums.SubscriptionStatus;
             }[];
         } | null>;
         getStats: () => Promise<{
@@ -5316,7 +5325,7 @@ declare const db: {
                 email: string;
                 firstName: string;
                 lastName: string;
-                role: string;
+                role: _prisma_client.$Enums.UserRole;
             } | null;
         } & {
             id: number;
@@ -5334,7 +5343,7 @@ declare const db: {
                 email: string;
                 firstName: string;
                 lastName: string;
-                role: string;
+                role: _prisma_client.$Enums.UserRole;
             } | null;
         } & {
             id: number;
@@ -5374,8 +5383,8 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 orderNumber: string;
-                orderType: string;
-                status: string;
+                orderType: _prisma_client.$Enums.OrderType;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
                 depositAmount: number;
                 securityDeposit: number;
@@ -5436,8 +5445,8 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 orderNumber: string;
-                orderType: string;
-                status: string;
+                orderType: _prisma_client.$Enums.OrderType;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
                 depositAmount: number;
                 securityDeposit: number;
@@ -5498,8 +5507,8 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 orderNumber: string;
-                orderType: string;
-                status: string;
+                orderType: _prisma_client.$Enums.OrderType;
+                status: _prisma_client.$Enums.OrderStatus;
                 totalAmount: number;
                 depositAmount: number;
                 securityDeposit: number;
@@ -5645,14 +5654,14 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number | null;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 subscriptionId: number | null;
-                type: string;
+                type: _prisma_client.$Enums.PaymentType;
                 metadata: string | null;
                 currency: string;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 transactionId: string | null;
                 invoiceNumber: string | null;
@@ -5670,7 +5679,7 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
-            status: string;
+            status: _prisma_client.$Enums.SubscriptionStatus;
             planId: number;
             currency: string;
             amount: number;
@@ -5698,14 +5707,14 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number | null;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 subscriptionId: number | null;
-                type: string;
+                type: _prisma_client.$Enums.PaymentType;
                 metadata: string | null;
                 currency: string;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 transactionId: string | null;
                 invoiceNumber: string | null;
@@ -5723,7 +5732,7 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
-            status: string;
+            status: _prisma_client.$Enums.SubscriptionStatus;
             planId: number;
             currency: string;
             amount: number;
@@ -5754,7 +5763,7 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
-            status: string;
+            status: _prisma_client.$Enums.SubscriptionStatus;
             planId: number;
             currency: string;
             amount: number;
@@ -5785,7 +5794,7 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
-            status: string;
+            status: _prisma_client.$Enums.SubscriptionStatus;
             planId: number;
             currency: string;
             amount: number;
@@ -5807,7 +5816,7 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
-            status: string;
+            status: _prisma_client.$Enums.SubscriptionStatus;
             planId: number;
             currency: string;
             amount: number;
@@ -5836,14 +5845,14 @@ declare const db: {
                     createdAt: Date;
                     updatedAt: Date;
                     merchantId: number | null;
-                    status: string;
+                    status: _prisma_client.$Enums.PaymentStatus;
                     notes: string | null;
                     subscriptionId: number | null;
-                    type: string;
+                    type: _prisma_client.$Enums.PaymentType;
                     metadata: string | null;
                     currency: string;
                     amount: number;
-                    method: string;
+                    method: _prisma_client.$Enums.PaymentMethod;
                     reference: string | null;
                     transactionId: string | null;
                     invoiceNumber: string | null;
@@ -5861,7 +5870,7 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
-                status: string;
+                status: _prisma_client.$Enums.SubscriptionStatus;
                 planId: number;
                 currency: string;
                 amount: number;
@@ -5894,14 +5903,14 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number | null;
-                status: string;
+                status: _prisma_client.$Enums.PaymentStatus;
                 notes: string | null;
                 subscriptionId: number | null;
-                type: string;
+                type: _prisma_client.$Enums.PaymentType;
                 metadata: string | null;
                 currency: string;
                 amount: number;
-                method: string;
+                method: _prisma_client.$Enums.PaymentMethod;
                 reference: string | null;
                 transactionId: string | null;
                 invoiceNumber: string | null;
@@ -5919,7 +5928,7 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
-            status: string;
+            status: _prisma_client.$Enums.SubscriptionStatus;
             planId: number;
             currency: string;
             amount: number;
@@ -5951,7 +5960,7 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
-            status: string;
+            status: _prisma_client.$Enums.SubscriptionStatus;
             planId: number;
             currency: string;
             amount: number;

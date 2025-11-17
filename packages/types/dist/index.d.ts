@@ -1,4 +1,4 @@
-import { MerchantPricingConfig, SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
+import { SubscriptionStatus, BillingInterval, MerchantPricingConfig } from '@rentalshop/constants';
 export { BillingInterval, BusinessType, MerchantPricingConfig, PricingBusinessRules, PricingDurationLimits, PricingType, SubscriptionStatus } from '@rentalshop/constants';
 
 /**
@@ -430,6 +430,270 @@ interface UserSearchFilter {
 }
 type UserFilters = UserSearchFilter;
 
+interface PlanLimits {
+    outlets: number;
+    users: number;
+    products: number;
+    customers: number;
+    orders: number;
+    allowWebAccess?: boolean;
+    allowMobileAccess?: boolean;
+}
+interface PlanPricing {
+    price: number;
+    discount: number;
+    savings: number;
+}
+interface Plan {
+    id: number;
+    name: string;
+    description: string;
+    basePrice: number;
+    currency: string;
+    trialDays: number;
+    limits: PlanLimits;
+    features: string[];
+    isActive: boolean;
+    isPopular: boolean;
+    sortOrder: number;
+    pricing: {
+        monthly: PlanPricing;
+        quarterly: PlanPricing;
+        sixMonths: PlanPricing;
+        yearly: PlanPricing;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt?: Date;
+}
+type BillingCycle = 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
+interface BillingCycleOption {
+    value: BillingCycle;
+    label: string;
+    months: number;
+    description: string;
+}
+interface PlanCreateInput {
+    name: string;
+    description: string;
+    basePrice: number;
+    currency?: string;
+    trialDays: number;
+    limits: PlanLimits;
+    features: string[];
+    isActive?: boolean;
+    isPopular?: boolean;
+    sortOrder?: number;
+}
+interface PlanUpdateInput {
+    name?: string;
+    description?: string;
+    basePrice?: number;
+    currency?: string;
+    trialDays?: number;
+    limits?: Partial<PlanLimits>;
+    features?: string[];
+    pricing?: {
+        monthly?: PlanPricing;
+        quarterly?: PlanPricing;
+        sixMonths?: PlanPricing;
+        yearly?: PlanPricing;
+    };
+    isActive?: boolean;
+    isPopular?: boolean;
+    sortOrder?: number;
+}
+interface PlanFilters {
+    search?: string;
+    isActive?: boolean;
+    isPopular?: boolean;
+    limit?: number;
+    offset?: number;
+    sortBy?: 'name' | 'price' | 'basePrice' | 'createdAt' | 'sortOrder';
+    sortOrder?: 'asc' | 'desc';
+}
+interface PlanFeature {
+    id: number;
+    name: string;
+    description: string;
+    icon: string;
+    isIncluded: boolean;
+}
+interface PlanComparison {
+    basic: Plan;
+    professional: Plan;
+    enterprise: Plan;
+}
+/**
+ * Plan variant interface
+ * Used for plan variants in admin/client apps
+ */
+interface PlanVariant {
+    id: number;
+    name: string;
+    planId: number;
+    duration: number;
+    price: number;
+    discount: number;
+    savings: number;
+    isActive: boolean;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    plan?: Plan;
+}
+/**
+ * Plan variant create input
+ * Used for creating plan variants
+ */
+interface PlanVariantCreateInput {
+    name: string;
+    planId: number;
+    duration: number;
+    price: number;
+    discount: number;
+    isActive?: boolean;
+}
+/**
+ * Plan variant update input
+ * Used for updating plan variants
+ */
+interface PlanVariantUpdateInput {
+    name?: string;
+    duration?: number;
+    price?: number;
+    discount?: number;
+    isActive?: boolean;
+}
+/**
+ * Plan variant filters
+ * Used for filtering plan variants
+ */
+interface PlanVariantFilters {
+    planId?: number;
+    isActive?: boolean;
+    search?: string;
+    limit?: number;
+    offset?: number;
+}
+
+type BillingPeriod = 1 | 3 | 6 | 12;
+interface SubscriptionPeriod {
+    startDate: Date;
+    endDate: Date;
+    duration: string;
+    isActive: boolean;
+    daysRemaining: number;
+    nextBillingDate: Date;
+    isTrial?: boolean;
+}
+/**
+ * Complete Subscription interface matching Prisma model
+ * This is the single source of truth for subscription data
+ */
+interface Subscription {
+    id: number;
+    merchantId: number;
+    planId: number;
+    status: SubscriptionStatus;
+    billingInterval: BillingInterval;
+    currentPeriodStart: Date | string;
+    currentPeriodEnd: Date | string;
+    trialStart?: Date | string;
+    trialEnd?: Date | string;
+    amount: number;
+    currency: string;
+    interval: string;
+    intervalCount: number;
+    period: number;
+    discount: number;
+    savings: number;
+    cancelAtPeriodEnd: boolean;
+    canceledAt?: Date | string;
+    cancelReason?: string;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    subscriptionPeriod?: SubscriptionPeriod;
+    merchant?: {
+        id: number;
+        name: string;
+        email: string;
+    };
+    plan?: Plan;
+}
+interface SubscriptionCreateInput {
+    merchantId: number;
+    planId: number;
+    billingInterval?: BillingInterval;
+    status?: SubscriptionStatus;
+    startDate?: Date;
+}
+interface SubscriptionUpdateInput {
+    id: number;
+    planId?: number;
+    billingInterval?: BillingInterval;
+    status?: SubscriptionStatus;
+    endDate?: Date | string;
+}
+interface SubscriptionFilters {
+    merchantId?: number;
+    planId?: number;
+    status?: SubscriptionStatus;
+    startDate?: Date | string;
+    endDate?: Date | string;
+    limit?: number;
+    offset?: number;
+}
+interface SubscriptionsResponse {
+    data: Subscription[];
+    pagination: {
+        total: number;
+        hasMore: boolean;
+        limit: number;
+        offset: number;
+    };
+}
+interface SubscriptionAction {
+    type: 'change_plan' | 'pause' | 'resume' | 'cancel' | 'reactivate';
+    planId?: number;
+    reason?: string;
+}
+interface PricingCalculation {
+    basePrice: number;
+    discount: number;
+    finalPrice: number;
+    savings: number;
+    monthlyEquivalent: number;
+    interval: BillingInterval;
+    intervalCount: number;
+}
+declare const PRICING_CONFIG: {
+    readonly DISCOUNTS: {
+        readonly monthly: 0;
+        readonly quarterly: 10;
+        readonly sixMonths: 15;
+        readonly yearly: 20;
+    };
+    readonly INTERVALS: {
+        readonly monthly: {
+            readonly interval: "monthly";
+            readonly intervalCount: 1;
+        };
+        readonly quarterly: {
+            readonly interval: "quarterly";
+            readonly intervalCount: 3;
+        };
+        readonly sixMonths: {
+            readonly interval: "sixMonths";
+            readonly intervalCount: 6;
+        };
+        readonly yearly: {
+            readonly interval: "yearly";
+            readonly intervalCount: 1;
+        };
+    };
+};
+declare function calculatePricing(basePrice: number, period: BillingPeriod): PricingCalculation;
+
 /**
  * Main Merchant interface - consolidated from multiple sources
  * Combines merchants.ts and merchants/merchant.ts definitions
@@ -448,7 +712,7 @@ interface Merchant extends BaseEntity, Address, ContactInfo {
     lastActiveAt?: Date | string;
     pricingConfig?: MerchantPricingConfig | string;
     plan?: PlanDetails;
-    subscription?: CurrentSubscription;
+    subscription?: Subscription;
     outlets?: OutletReference[];
     users?: UserReference[];
     customers?: CustomerReference[];
@@ -475,33 +739,13 @@ interface PlanDetails {
     isPopular: boolean;
 }
 /**
- * Current subscription interface
- * Used for active subscription information
+ * @deprecated Use Subscription from @rentalshop/types instead
+ * This type is kept for backward compatibility but will be removed
+ *
+ * CurrentSubscription is now merged into Subscription interface
+ * which matches the Prisma model exactly.
  */
-interface CurrentSubscription {
-    id: number;
-    status: string;
-    currentPeriodStart: Date | string;
-    currentPeriodEnd: Date | string;
-    trialStart?: Date | string;
-    trialEnd?: Date | string;
-    amount: number;
-    currency: string;
-    interval: string;
-    period: number;
-    discount: number;
-    savings: number;
-    cancelAtPeriodEnd: boolean;
-    canceledAt?: Date | string;
-    cancelReason?: string;
-    plan?: {
-        id: number;
-        name: string;
-        description: string;
-        basePrice: number;
-        currency: string;
-        trialDays: number;
-    };
+interface CurrentSubscription extends Omit<Subscription, 'merchantId' | 'planId' | 'billingInterval' | 'createdAt' | 'updatedAt' | 'merchant'> {
 }
 /**
  * Merchant creation input
@@ -543,6 +787,7 @@ interface MerchantUpdateInput extends BaseUpdateInput {
  */
 interface MerchantSearchParams extends BaseSearchParams {
     status?: 'ACTIVE' | 'INACTIVE' | 'TRIAL' | 'EXPIRED';
+    subscriptionStatus?: SubscriptionStatus;
     plan?: string;
     businessType?: string;
     country?: string;
@@ -616,6 +861,7 @@ type MerchantAction = 'create' | 'edit' | 'view' | 'delete' | 'activate' | 'deac
 interface MerchantFilters {
     search?: string;
     status?: string;
+    subscriptionStatus?: SubscriptionStatus;
     planId?: number;
     businessType?: string;
     country?: string;
@@ -2082,255 +2328,6 @@ interface PermissionResult {
 }
 type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'manage' | 'view';
 type PermissionResource = 'users' | 'outlets' | 'products' | 'orders' | 'customers' | 'analytics' | 'settings';
-
-interface PlanLimits {
-    outlets: number;
-    users: number;
-    products: number;
-    customers: number;
-    orders: number;
-    allowWebAccess?: boolean;
-    allowMobileAccess?: boolean;
-}
-interface PlanPricing {
-    price: number;
-    discount: number;
-    savings: number;
-}
-interface Plan {
-    id: number;
-    name: string;
-    description: string;
-    basePrice: number;
-    currency: string;
-    trialDays: number;
-    limits: PlanLimits;
-    features: string[];
-    isActive: boolean;
-    isPopular: boolean;
-    sortOrder: number;
-    pricing: {
-        monthly: PlanPricing;
-        quarterly: PlanPricing;
-        sixMonths: PlanPricing;
-        yearly: PlanPricing;
-    };
-    createdAt: Date;
-    updatedAt: Date;
-    deletedAt?: Date;
-}
-type BillingCycle = 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
-interface BillingCycleOption {
-    value: BillingCycle;
-    label: string;
-    months: number;
-    description: string;
-}
-interface PlanCreateInput {
-    name: string;
-    description: string;
-    basePrice: number;
-    currency?: string;
-    trialDays: number;
-    limits: PlanLimits;
-    features: string[];
-    isActive?: boolean;
-    isPopular?: boolean;
-    sortOrder?: number;
-}
-interface PlanUpdateInput {
-    name?: string;
-    description?: string;
-    basePrice?: number;
-    currency?: string;
-    trialDays?: number;
-    limits?: Partial<PlanLimits>;
-    features?: string[];
-    pricing?: {
-        monthly?: PlanPricing;
-        quarterly?: PlanPricing;
-        sixMonths?: PlanPricing;
-        yearly?: PlanPricing;
-    };
-    isActive?: boolean;
-    isPopular?: boolean;
-    sortOrder?: number;
-}
-interface PlanFilters {
-    search?: string;
-    isActive?: boolean;
-    isPopular?: boolean;
-    limit?: number;
-    offset?: number;
-    sortBy?: 'name' | 'price' | 'basePrice' | 'createdAt' | 'sortOrder';
-    sortOrder?: 'asc' | 'desc';
-}
-interface PlanFeature {
-    id: number;
-    name: string;
-    description: string;
-    icon: string;
-    isIncluded: boolean;
-}
-interface PlanComparison {
-    basic: Plan;
-    professional: Plan;
-    enterprise: Plan;
-}
-/**
- * Plan variant interface
- * Used for plan variants in admin/client apps
- */
-interface PlanVariant {
-    id: number;
-    name: string;
-    planId: number;
-    duration: number;
-    price: number;
-    discount: number;
-    savings: number;
-    isActive: boolean;
-    createdAt: Date | string;
-    updatedAt: Date | string;
-    plan?: Plan;
-}
-/**
- * Plan variant create input
- * Used for creating plan variants
- */
-interface PlanVariantCreateInput {
-    name: string;
-    planId: number;
-    duration: number;
-    price: number;
-    discount: number;
-    isActive?: boolean;
-}
-/**
- * Plan variant update input
- * Used for updating plan variants
- */
-interface PlanVariantUpdateInput {
-    name?: string;
-    duration?: number;
-    price?: number;
-    discount?: number;
-    isActive?: boolean;
-}
-/**
- * Plan variant filters
- * Used for filtering plan variants
- */
-interface PlanVariantFilters {
-    planId?: number;
-    isActive?: boolean;
-    search?: string;
-    limit?: number;
-    offset?: number;
-}
-
-type BillingPeriod = 1 | 3 | 6 | 12;
-interface SubscriptionPeriod {
-    startDate: Date;
-    endDate: Date;
-    duration: string;
-    isActive: boolean;
-    daysRemaining: number;
-    nextBillingDate: Date;
-    isTrial?: boolean;
-}
-interface Subscription {
-    id: number;
-    merchantId: number;
-    planId: number;
-    status: SubscriptionStatus;
-    billingInterval: BillingInterval;
-    currentPeriodStart: Date;
-    currentPeriodEnd: Date;
-    amount: number;
-    createdAt: Date;
-    updatedAt: Date;
-    subscriptionPeriod?: SubscriptionPeriod;
-    merchant: {
-        id: number;
-        name: string;
-        email: string;
-    };
-    plan: Plan;
-}
-interface SubscriptionCreateInput {
-    merchantId: number;
-    planId: number;
-    billingInterval?: BillingInterval;
-    status?: SubscriptionStatus;
-    startDate?: Date;
-}
-interface SubscriptionUpdateInput {
-    id: number;
-    planId?: number;
-    billingInterval?: BillingInterval;
-    status?: SubscriptionStatus;
-    endDate?: Date | string;
-}
-interface SubscriptionFilters {
-    merchantId?: number;
-    planId?: number;
-    status?: string;
-    startDate?: Date | string;
-    endDate?: Date | string;
-    limit?: number;
-    offset?: number;
-}
-interface SubscriptionsResponse {
-    data: Subscription[];
-    pagination: {
-        total: number;
-        hasMore: boolean;
-        limit: number;
-        offset: number;
-    };
-}
-interface SubscriptionAction {
-    type: 'change_plan' | 'pause' | 'resume' | 'cancel' | 'reactivate';
-    planId?: number;
-    reason?: string;
-}
-interface PricingCalculation {
-    basePrice: number;
-    discount: number;
-    finalPrice: number;
-    savings: number;
-    monthlyEquivalent: number;
-    interval: BillingInterval;
-    intervalCount: number;
-}
-declare const PRICING_CONFIG: {
-    readonly DISCOUNTS: {
-        readonly monthly: 0;
-        readonly quarterly: 10;
-        readonly sixMonths: 15;
-        readonly yearly: 20;
-    };
-    readonly INTERVALS: {
-        readonly monthly: {
-            readonly interval: "monthly";
-            readonly intervalCount: 1;
-        };
-        readonly quarterly: {
-            readonly interval: "quarterly";
-            readonly intervalCount: 3;
-        };
-        readonly sixMonths: {
-            readonly interval: "sixMonths";
-            readonly intervalCount: 6;
-        };
-        readonly yearly: {
-            readonly interval: "yearly";
-            readonly intervalCount: 1;
-        };
-    };
-};
-declare function calculatePricing(basePrice: number, period: BillingPeriod): PricingCalculation;
 
 interface PersonalProfileUpdate {
     firstName: string;

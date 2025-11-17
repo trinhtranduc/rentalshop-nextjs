@@ -22,6 +22,59 @@ enum PricingType {
   DAILY
 }
 
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum OrderStatus {
+  RESERVED
+  PICKUPED
+  RETURNED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderType {
+  RENT
+  SALE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  STRIPE
+  TRANSFER
+  MANUAL
+  CASH
+  CHECK
+  PAYPAL
+}
+
+enum PaymentType {
+  ORDER_PAYMENT
+  SUBSCRIPTION_PAYMENT
+  PLAN_CHANGE
+  PLAN_EXTENSION
+}
+
+enum UserRole {
+  ADMIN
+  MERCHANT
+  OUTLET_ADMIN
+  OUTLET_STAFF
+}
+
 model User {
   id                     Int                    @id @default(autoincrement())
   email                  String                 @unique
@@ -29,7 +82,7 @@ model User {
   firstName              String
   lastName               String
   phone                  String?
-  role                   String                 @default("OUTLET_STAFF")
+  role                   UserRole               @default(OUTLET_STAFF) // ✅ Type safe with enum
   isActive               Boolean                @default(true)
   emailVerified          Boolean                @default(false)
   emailVerifiedAt        DateTime?
@@ -90,7 +143,7 @@ model Merchant {
   website            String?
   description        String?
   planId             Int?
-  subscriptionStatus String        @default("trial")
+  // subscriptionStatus removed - use subscription.status instead (single source of truth)
   totalRevenue       Float         @default(0)
   lastActiveAt       DateTime?
   isActive           Boolean       @default(true)
@@ -111,7 +164,7 @@ model Merchant {
   @@index([name])
   @@index([email])
   @@index([planId])
-  @@index([subscriptionStatus])
+  // Index removed - subscriptionStatus field removed
 }
 
 model Outlet {
@@ -227,8 +280,8 @@ model Customer {
 model Order {
   id                Int         @id @default(autoincrement())
   orderNumber       String      @unique
-  orderType         String
-  status            String      @default("RESERVED")
+  orderType         OrderType   // ✅ Type safe with enum
+  status            OrderStatus @default(RESERVED) // ✅ Type safe with enum
   totalAmount       Float
   depositAmount     Float       @default(0)
   securityDeposit   Float       @default(0)
@@ -298,9 +351,9 @@ model Payment {
   id             Int           @id @default(autoincrement())
   amount         Float
   currency       String        @default("USD")
-  method         String
-  type           String
-  status         String        @default("PENDING")
+  method         PaymentMethod // ✅ Type safe with enum
+  type           PaymentType   // ✅ Type safe with enum
+  status         PaymentStatus @default(PENDING) // ✅ Type safe with enum
   reference      String?
   transactionId  String?
   invoiceNumber  String?
@@ -355,7 +408,7 @@ model Subscription {
   id                 Int                    @id @default(autoincrement())
   merchantId         Int                    @unique
   planId             Int
-  status             String                 @default("trial")
+  status             SubscriptionStatus     @default(TRIAL) // ✅ Type safe with enum
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   trialStart         DateTime?

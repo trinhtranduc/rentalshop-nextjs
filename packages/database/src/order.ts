@@ -1,5 +1,6 @@
 import { prisma } from './client';
 import type { Prisma } from '@prisma/client';
+import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
 import type { 
   OrderSearchFilter,
   OrderSearchResult,
@@ -285,8 +286,8 @@ export async function createOrder(data: {
   const order = await prisma.order.create({
     data: {
       orderNumber: data.orderNumber,
-      orderType: data.orderType,
-      status: data.status ?? 'RESERVED',
+      orderType: data.orderType as any, // ✅ Type safe with Prisma enum
+      status: (data.status ?? ORDER_STATUS.RESERVED) as any, // ✅ Type safe with Prisma enum
       totalAmount: data.totalAmount,
       depositAmount: data.depositAmount ?? 0,
       securityDeposit: data.securityDeposit ?? 0,

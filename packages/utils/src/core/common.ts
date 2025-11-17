@@ -342,8 +342,8 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
             errorData.subscriptionError === true ||
             errorData.context === 'subscription' ||
             errorData.context === 'plan' ||
-            errorData.subscriptionStatus === 'cancelled' ||
-            errorData.subscriptionStatus === 'expired' ||
+            errorData.subscriptionStatus === 'CANCELLED' ||
+            errorData.subscriptionStatus === 'EXPIRED' ||
             // Check if this came from a subscription-related endpoint
             response.url.includes('/subscription') ||
             response.url.includes('/plan') ||
@@ -378,8 +378,8 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
           errorData.subscriptionError === true ||
           errorData.context === 'subscription' ||
           errorData.context === 'plan' ||
-          errorData.subscriptionStatus === 'cancelled' ||
-          errorData.subscriptionStatus === 'expired' ||
+          errorData.subscriptionStatus === 'CANCELLED' ||
+          errorData.subscriptionStatus === 'EXPIRED' ||
           // Check if this came from a subscription-related endpoint
           response.url.includes('/subscription') ||
           response.url.includes('/plan') ||

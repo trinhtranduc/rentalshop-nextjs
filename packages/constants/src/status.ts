@@ -180,6 +180,25 @@ export function isSubscriptionActive(status: SubscriptionStatus): boolean {
 }
 
 /**
+ * Type guard to validate if a string is a valid SubscriptionStatus
+ * Useful for runtime validation when receiving data from API
+ */
+export function isValidSubscriptionStatus(value: string): value is SubscriptionStatus {
+  const validStatuses = Object.values(SUBSCRIPTION_STATUS);
+  return validStatuses.includes(value.toUpperCase() as SubscriptionStatus);
+}
+
+/**
+ * Normalize a string to SubscriptionStatus enum value
+ * Returns the enum value if valid, or null if invalid
+ */
+export function normalizeSubscriptionStatus(value: string | null | undefined): SubscriptionStatus | null {
+  if (!value) return null;
+  const normalized = value.toUpperCase();
+  return isValidSubscriptionStatus(normalized) ? normalized : null;
+}
+
+/**
  * Check if an order status is completed (returned for rent, completed for sale)
  */
 export function isOrderCompleted(status: OrderStatus, orderType: OrderType): boolean {
