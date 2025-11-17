@@ -15,6 +15,7 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const { SUBSCRIPTION_PLANS } = require('../packages/constants/src/subscription.ts');
+const { SUBSCRIPTION_STATUS, PAYMENT_STATUS, PAYMENT_METHOD, PAYMENT_TYPE } = require('../packages/constants/src/status.ts');
 
 const prisma = new PrismaClient();
 
@@ -248,11 +249,10 @@ async function resetDatabase() {
       try {
         await prisma.merchant.updateMany({
           data: {
-            planId: null,
-            subscriptionStatus: 'trial'
+            planId: null
           }
         });
-        console.log('✅ Reset merchant plans and subscription status');
+        console.log('✅ Reset merchant plans');
       } catch (error) {
         // Ignore if columns don't exist yet
         console.log('⚠️  Could not reset merchant plans (columns may not exist)');
@@ -390,8 +390,7 @@ async function createMerchants() {
             defaultDuration: business.businessType === 'EQUIPMENT' ? 3 : 1
           }
         }),
-        isActive: true,
-        subscriptionStatus: 'trial' // Ensure all merchants start with trial status
+        isActive: true
       }
     });
     
@@ -1019,7 +1018,7 @@ async function createSubscriptions(merchants, plans, planVariants) {
   }
   
   const billingPeriods = [1, 3, 12]; // Monthly, Quarterly, Yearly
-  const statuses = ['trial', 'active', 'past_due', 'cancelled', 'paused'];
+  const statuses = [SUBSCRIPTION_STATUS.TRIAL, SUBSCRIPTION_STATUS.ACTIVE, SUBSCRIPTION_STATUS.PAST_DUE, SUBSCRIPTION_STATUS.CANCELLED, SUBSCRIPTION_STATUS.PAUSED];
   
   for (let i = 0; i < merchants.length; i++) {
     const merchant = merchants[i];
@@ -1042,7 +1041,7 @@ async function createSubscriptions(merchants, plans, planVariants) {
         id: subscriptionId++,
         merchantId: merchant.id,
         planId: plan.id,
-        status: status,
+        status: status, // Prisma will auto-convert string to enum
         currentPeriodStart,
         currentPeriodEnd,
         trialStart,
@@ -1054,9 +1053,9 @@ async function createSubscriptions(merchants, plans, planVariants) {
         period: period,
         discount: pricing.discount,
         savings: pricing.savings,
-        cancelAtPeriodEnd: status === 'cancelled',
-        canceledAt: status === 'cancelled' ? now : null,
-        cancelReason: status === 'cancelled' ? 'Sample cancellation' : null
+        cancelAtPeriodEnd: status === SUBSCRIPTION_STATUS.CANCELLED,
+        canceledAt: status === SUBSCRIPTION_STATUS.CANCELLED ? now : null,
+        cancelReason: status === SUBSCRIPTION_STATUS.CANCELLED ? 'Sample cancellation' : null
       }
     });
     
@@ -1064,8 +1063,7 @@ async function createSubscriptions(merchants, plans, planVariants) {
     await prisma.merchant.update({
       where: { id: merchant.id },
       data: {
-        planId: plan.id,
-        subscriptionStatus: status
+        planId: plan.id
       }
     });
     
@@ -1279,9 +1277,9 @@ async function createSubscriptionPayments(subscriptions) {
           merchantId: subscription.merchantId,
           amount: subscription.amount,
           currency: subscription.currency,
-          method: 'STRIPE', // Default to Stripe for demo
-          type: 'SUBSCRIPTION_PAYMENT',
-          status: 'COMPLETED',
+          method: PAYMENT_METHOD.STRIPE, // Prisma will auto-convert string to enum
+          type: PAYMENT_TYPE.SUBSCRIPTION_PAYMENT, // Prisma will auto-convert string to enum
+          status: PAYMENT_STATUS.COMPLETED, // Prisma will auto-convert string to enum
           reference: `sub_${subscription.id}_${Date.now()}`,
           description: `Payment for ${subscription.plan?.name} subscription`,
           processedAt: new Date()
