@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_STATUS } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -159,7 +160,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         // Get future income (pending orders with future return dates)
         const futureIncome = await db.orders.aggregate({
           where: {
-            status: { in: ['RESERVED', 'ACTIVE'] },
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] },
             returnPlanAt: {
               gte: startOfMonth,
               lte: endOfMonth
@@ -178,7 +179,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
               gte: startOfMonth,
               lte: endOfMonth
             },
-            status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED'] },
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any, ORDER_STATUS.COMPLETED as any] },
             ...orderWhereClause
           }
         });
@@ -322,7 +323,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         // Get future income (pending orders with future return dates)
         const futureIncome = await db.orders.aggregate({
           where: {
-            status: { in: ['RESERVED', 'ACTIVE'] },
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] },
             returnPlanAt: {
               gte: startOfDay,
               lte: endOfDay
@@ -341,7 +342,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
               gte: startOfDay,
               lte: endOfDay
             },
-            status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED'] },
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any, ORDER_STATUS.COMPLETED as any] },
             ...orderWhereClause
           }
         });

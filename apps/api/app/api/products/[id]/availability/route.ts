@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { z } from 'zod';
 
@@ -245,9 +246,9 @@ export async function GET(
       
       const conflictingOrders = await db.prisma.order.findMany({
         where: {
-          orderType: 'RENT',
+          orderType: ORDER_TYPE.RENT as any,
           status: {
-            in: ['RESERVED', 'PICKUPED'] // Active rental orders
+            in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] // Active rental orders
           },
           // CRITICAL FIX: Filter by specific outlet, not all merchant outlets
           outletId: finalOutletId,
@@ -338,7 +339,7 @@ export async function GET(
         }
         
         // Only count active rental orders
-        if (order.orderType !== 'RENT' || !['RESERVED', 'PICKUPED'].includes(order.status)) {
+        if (order.orderType !== ORDER_TYPE.RENT || ![ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED].includes(order.status as any)) {
           console.warn(`Order ${order.orderNumber} is not an active rental order (type: ${order.orderType}, status: ${order.status})`);
           return; // Skip this order
         }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_STATUS } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
@@ -59,7 +60,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Calculate revenue and average order value
     const allOrdersResult = await db.orders.search({ 
       ...filters, 
-      status: { in: ['COMPLETED', 'RETURNED'] },
+      status: { in: [ORDER_STATUS.COMPLETED as any, ORDER_STATUS.RETURNED as any] },
       limit: 1000 // Get recent completed orders for calculation
     });
     

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_STATUS } from '@rentalshop/constants';
 import { customerUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
@@ -177,7 +178,7 @@ export async function DELETE(
       // Check if customer has active orders (RESERVED or PICKUPED)
       const activeOrders = await db.orders.getStats({
         customerId: customerId,
-        status: { in: ['RESERVED', 'PICKUPED'] }
+        status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] }
       });
 
       if (activeOrders > 0) {
