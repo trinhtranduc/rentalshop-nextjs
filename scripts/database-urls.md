@@ -24,12 +24,12 @@ DATABASE_URL='postgresql://postgres:kWGqYPjEgJLKSmDroFFSsnVjKsUFcnmv@shuttle.pro
 
 **Public URL:**
 ```
-postgresql://postgres:xYocaMvGeJwUwTRpmryvmnipaUZWJjLw@metro.proxy.rlwy.net:39416/railway
+postgresql://postgres:rcoiKvDAztXzqINtiUYlxZaPDpqrtRLg@maglev.proxy.rlwy.net:46280/railway
 ```
 
 **Details:**
-- Host: `metro.proxy.rlwy.net`
-- Port: `39416`
+- Host: `maglev.proxy.rlwy.net`
+- Port: `46280`
 - Database: `railway`
 - Access: Railway network only (not accessible from local)
 
