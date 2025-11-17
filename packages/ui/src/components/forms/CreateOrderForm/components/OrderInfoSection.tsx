@@ -19,8 +19,10 @@ import {
   DateRangePicker,
   RentalPeriodSelector,
   Textarea,
-  Skeleton
+  Skeleton,
+  Button
 } from '@rentalshop/ui';
+import { useOrderTranslations } from '@rentalshop/hooks';
 import { 
   User, 
   Search, 
@@ -33,6 +35,85 @@ import type {
   OrderFormData, 
   CustomerSearchResult 
 } from '../types';
+
+// ============================================================================
+// NUMBER INPUT WITH THOUSAND SEPARATOR
+// ============================================================================
+
+interface NumberInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  className?: string;
+  placeholder?: string;
+  decimals?: number;
+}
+
+const NumberInput: React.FC<NumberInputProps> = ({
+  value,
+  onChange,
+  min = 0,
+  max,
+  step = 1,
+  className = '',
+  placeholder = '',
+  decimals = 0
+}) => {
+  const [displayValue, setDisplayValue] = React.useState('');
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isFocused) {
+      if (value === 0 || value === null || value === undefined) {
+        setDisplayValue('');
+      } else {
+        const formatted = new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }).format(value);
+        setDisplayValue(formatted);
+      }
+    }
+  }, [value, isFocused, decimals]);
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    setDisplayValue(value ? value.toString() : '');
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    const numValue = parseFloat(displayValue.replace(/,/g, '')) || 0;
+    const bounded = max !== undefined ? Math.min(max, numValue) : numValue;
+    const final = Math.max(min, bounded);
+    onChange(final);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    if (input === '' || /^[\d\.]*$/.test(input)) {
+      setDisplayValue(input);
+    }
+  };
+
+  return (
+    <Input
+      type="text"
+      value={displayValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      className={className}
+      placeholder={placeholder}
+    />
+  );
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 interface OrderInfoSectionProps {
   formData: OrderFormData;
@@ -69,21 +150,132 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   onShowAddCustomerDialog,
   onUpdateRentalDates
 }) => {
+  const t = useOrderTranslations();
   const [showManualCustomerInput, setShowManualCustomerInput] = useState(false);
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <User className="w-4 h-4" />
-          Order Information
+        <CardTitle className="text-base flex items-center gap-2">
+          {t('detail.orderInformation')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* 1. Outlet Selection */}
+        {/* 1. Order Type Toggle */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
-            Outlet <span className="text-red-500">*</span>
+            {t('messages.orderType')}
+            {isEditMode && (
+              <span className="ml-2 text-xs text-gray-500 font-normal">
+                ({t('messages.cannotChangeWhenEditing')})
+              </span>
+            )}
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={formData.orderType === 'RENT' ? 'default' : 'outline'}
+              disabled={isEditMode}
+              onClick={() => {
+                if (!isEditMode) {
+                  onFormDataChange('orderType', 'RENT');
+                }
+              }}
+              className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {t('orderType.RENT')}
+            </Button>
+            <Button
+              type="button"
+              variant={formData.orderType === 'SALE' ? 'default' : 'outline'}
+              disabled={isEditMode}
+              onClick={() => {
+                if (!isEditMode) {
+                  onFormDataChange('orderType', 'SALE');
+                  onFormDataChange('pickupPlanAt', '');
+                  onFormDataChange('returnPlanAt', '');
+                  onFormDataChange('depositAmount', 0);
+                }
+              }}
+              className={`h-10 px-4 py-2 ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {t('orderType.SALE')}
+            </Button>
+          </div>
+        </div>
+
+        {/* 2. Rental Period Selection - Smart pricing based on merchant configuration */}
+        {formData.orderType === 'RENT' && (
+          <div className="space-y-2 w-full">
+            {/* Debug logs */}
+            {console.log('🔍 OrderInfoSection - Rental Period Check:', {
+              orderType: formData.orderType,
+              hasMerchantData: !!merchantData,
+              pricingType: merchantData?.pricingType,
+              businessType: merchantData?.businessType
+            })}
+            
+            {merchantData ? (
+              <RentalPeriodSelector
+                product={{
+                  id: 0, // Placeholder - will be updated when product is selected
+                  name: t('messages.rentalPeriod'),
+                  rentPrice: 0, // Will be calculated based on merchant pricing
+                  deposit: 0
+                }}
+                merchant={merchantData}
+                initialStartDate={formData.pickupPlanAt}
+                initialEndDate={formData.returnPlanAt}
+                onPeriodChange={(startAt, endAt) => {
+                  const startDate = startAt.toISOString().split('T')[0];
+                  const endDate = endAt.toISOString().split('T')[0];
+                  
+                  onFormDataChange('pickupPlanAt', startDate);
+                  onFormDataChange('returnPlanAt', endDate);
+                  
+                  onUpdateRentalDates(startDate, endDate);
+                }}
+                onPriceChange={(pricing) => {
+                  // Update pricing information when period changes
+                  console.log('Pricing updated:', pricing);
+                }}
+              />
+            ) : (
+              // Fallback to basic DateRangePicker if no merchant data
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">
+                  {t('messages.rentalPeriod')} <span className="text-red-500">*</span>
+                </label>
+                <DateRangePicker
+                  value={{
+                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
+                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
+                  }}
+                  onChange={(range) => {
+                    const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
+                    const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
+                    
+                    onFormDataChange('pickupPlanAt', startDate);
+                    onFormDataChange('returnPlanAt', endDate);
+                    
+                    if (startDate && endDate) {
+                      onUpdateRentalDates(startDate, endDate);
+                    }
+                  }}
+                  placeholder={t('messages.selectRentalPeriod')}
+                  minDate={new Date()}
+                  showPresets={false}
+                  format="long"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 3. Outlet Selection */}
+        <div className="space-y-2 w-full">
+          <label className="text-sm font-medium text-text-primary">
+            {t('messages.outlet')} <span className="text-red-500">*</span>
           </label>
           <Select
             value={formData.outletId ? String(formData.outletId) : undefined}
@@ -112,133 +304,16 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           </Select>
         </div>
 
-        {/* 2. Order Type Toggle */}
-        <div className="space-y-2 w-full">
-          <label className="text-sm font-medium text-text-primary">
-            Order Type
-            {isEditMode && (
-              <span className="ml-2 text-xs text-gray-500 font-normal">
-                (Cannot be changed when editing)
-              </span>
-            )}
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={isEditMode}
-              onClick={() => {
-                if (!isEditMode) {
-                  onFormDataChange('orderType', 'RENT');
-                }
-              }}
-              className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
-                formData.orderType === 'RENT' 
-                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              Rent
-            </button>
-            <button
-              type="button"
-              disabled={isEditMode}
-              onClick={() => {
-                if (!isEditMode) {
-                  onFormDataChange('orderType', 'SALE');
-                  onFormDataChange('pickupPlanAt', '');
-                  onFormDataChange('returnPlanAt', '');
-                  onFormDataChange('depositAmount', 0);
-                }
-              }}
-              className={`h-10 px-4 py-2 rounded-lg border transition-colors ${
-                formData.orderType === 'SALE' 
-                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              Sale
-            </button>
-          </div>
-        </div>
-
-        {/* 3. Rental Period Selection - Smart pricing based on merchant configuration */}
-        {formData.orderType === 'RENT' && (
-          <div className="space-y-2 w-full">
-            {/* Debug logs */}
-            {console.log('🔍 OrderInfoSection - Rental Period Check:', {
-              orderType: formData.orderType,
-              hasMerchantData: !!merchantData,
-              pricingType: merchantData?.pricingType,
-              businessType: merchantData?.businessType
-            })}
-            
-            {merchantData ? (
-              <RentalPeriodSelector
-                product={{
-                  id: 0, // Placeholder - will be updated when product is selected
-                  name: 'Rental Period',
-                  rentPrice: 0, // Will be calculated based on merchant pricing
-                  deposit: 0
-                }}
-                merchant={merchantData}
-                initialStartDate={formData.pickupPlanAt}
-                initialEndDate={formData.returnPlanAt}
-                onPeriodChange={(startAt, endAt) => {
-                  const startDate = startAt.toISOString().split('T')[0];
-                  const endDate = endAt.toISOString().split('T')[0];
-                  
-                  onFormDataChange('pickupPlanAt', startDate);
-                  onFormDataChange('returnPlanAt', endDate);
-                  
-                  onUpdateRentalDates(startDate, endDate);
-                }}
-                onPriceChange={(pricing) => {
-                  // Update pricing information when period changes
-                  console.log('Pricing updated:', pricing);
-                }}
-              />
-            ) : (
-              // Fallback to basic DateRangePicker if no merchant data
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">
-                  Rental Period <span className="text-red-500">*</span>
-                </label>
-                <DateRangePicker
-                  value={{
-                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
-                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
-                  }}
-                  onChange={(range) => {
-                    const startDate = range.from ? range.from.toISOString().split('T')[0] : '';
-                    const endDate = range.to ? range.to.toISOString().split('T')[0] : '';
-                    
-                    onFormDataChange('pickupPlanAt', startDate);
-                    onFormDataChange('returnPlanAt', endDate);
-                    
-                    if (startDate && endDate) {
-                      onUpdateRentalDates(startDate, endDate);
-                    }
-                  }}
-                  placeholder="Select rental period"
-                  minDate={new Date()}
-                  showPresets={false}
-                  format="long"
-                />
-              </div>
-            )}
-          </div>
-        )}
-
         {/* 4. Customer Selection */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
-            Customer <span className="text-red-500">*</span>
+            {t('messages.customer')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search customers by name or phone..."
+                placeholder={t('messages.searchCustomers')}
                 value={selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName} - ${selectedCustomer.phone}` : searchQuery}
                 onFocus={() => {
                   // Show search results when focused if there's a query
@@ -267,66 +342,72 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 }`}
               />
               {selectedCustomer ? (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   onClick={onCustomerClear}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors duration-150"
-                  title="Clear selected customer"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors duration-150 h-6 w-6 p-0"
+                  title={t('messages.clearSelectedCustomer')}
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   onClick={() => {
                     if (searchQuery.trim()) {
                       onCustomerSearch(searchQuery);
                     }
                   }}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
                 >
                   <Search className="w-4 h-4" />
-                </button>
+                </Button>
               )}
               
               {/* Search Results Dropdown */}
               {!selectedCustomer && (customerSearchResults.length > 0 || searchQuery.trim()) && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                   {/* Add New Customer Button - Always at Top */}
-                  <button
+                  <Button
+                    variant="ghost"
                     type="button"
                     onClick={onShowAddCustomerDialog}
-                    className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 bg-blue-50/50 text-blue-700 font-medium"
+                    className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 bg-blue-50/50 text-blue-700 font-medium h-auto justify-start rounded-none"
                   >
                     <div className="flex items-center gap-2">
                       <Plus className="w-4 h-4" />
-                      <span>Add New Customer</span>
+                      <span>{t('messages.addNewCustomer')}</span>
                     </div>
                     {searchQuery.trim() && (
-                      <div className="text-xs text-blue-600 mt-1">
+                      <div className="text-xs text-blue-700 mt-1">
                         Create customer: "{searchQuery}"
                       </div>
                     )}
-                  </button>
+                  </Button>
 
                   {/* Customer Results */}
                   {customerSearchResults.length > 0 ? (
                     <>
                       {customerSearchResults.map((customer) => (
-                        <button
+                        <Button
+                          variant="ghost"
                           key={customer.id}
                           type="button"
                           onClick={() => {
                             onCustomerSelect(customer);
                             onSearchQueryChange(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
                           }}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 h-auto justify-start rounded-none"
                         >
                           <div className="font-medium text-gray-900">
                             {customer.firstName} {customer.lastName}
                           </div>
                           <div className="text-sm text-gray-600">{customer.phone}</div>
-                        </button>
+                        </Button>
                       ))}
                     </>
                   ) : (
@@ -336,7 +417,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                         No customers found for "{searchQuery}"
                       </div>
                       <div className="text-xs text-gray-400 mt-1">
-                        Use the "Add New Customer" button above to create one
+                        {t('messages.useAddNewCustomerButton')}
                       </div>
                     </div>
                   )}
@@ -355,15 +436,13 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         {/* 5. Deposit Amount - Only for RENT orders */}
         {formData.orderType === 'RENT' && (
           <div className="space-y-2 w-full">
-            <label className="text-sm font-medium text-text-primary">Deposit</label>
-            <Input
-              type="number"
+            <label className="text-sm font-medium text-text-primary">{t('messages.deposit')}</label>
+            <NumberInput
+              value={formData.depositAmount || 0}
+              onChange={(value) => onFormDataChange('depositAmount', value)}
+              min={0}
+              decimals={0}
               placeholder="Enter deposit amount..."
-              value={formData.depositAmount || ''}
-              onChange={(e) => {
-                const value = parseFloat(e.target.value) || 0;
-                onFormDataChange('depositAmount', value);
-              }}
               className="w-full"
             />
           </div>
@@ -371,17 +450,15 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
         {/* 6. Discount Section */}
         <div className="space-y-2 w-full">
-          <label className="text-sm font-medium text-text-primary">Discount</label>
+          <label className="text-sm font-medium text-text-primary">{t('messages.discount')}</label>
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
-              <Input
-                type="number"
-                placeholder="Discount amount..."
-                value={formData.discountValue || ''}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value) || 0;
-                  onFormDataChange('discountValue', value);
-                }}
+              <NumberInput
+                value={formData.discountValue || 0}
+                onChange={(value) => onFormDataChange('discountValue', value)}
+                min={0}
+                decimals={0}
+                placeholder={t('messages.discountAmount')}
                 className="w-full"
               />
             </div>
@@ -395,8 +472,8 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="amount">$</SelectItem>
-                <SelectItem value="percentage">%</SelectItem>
+                <SelectItem value="amount">{t('messages.amount')}</SelectItem>
+                <SelectItem value="percentage">{t('messages.percentage')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -404,9 +481,9 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
 
         {/* 7. Order Notes */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Order Notes</label>
+          <label className="text-sm font-medium text-text-primary">{t('messages.orderNotes')}</label>
           <Textarea
-            placeholder="Enter order notes..."
+            placeholder={t('messages.enterOrderNotes')}
             value={formData.notes}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
               onFormDataChange('notes', e.target.value)

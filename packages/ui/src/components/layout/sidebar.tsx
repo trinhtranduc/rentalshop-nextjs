@@ -1,10 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@rentalshop/ui';
 import { Button, Card } from '@rentalshop/ui';
 import { ChevronLeft, ChevronRight, Home, Users, Package, ShoppingCart, Building2, Settings } from 'lucide-react';
+// @ts-ignore - hooks package doesn't have type declarations yet
+import { useOptimisticNavigation } from '@rentalshop/hooks';
 
 export interface SidebarProps {
   user?: any;
@@ -99,6 +102,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed = false,
   onCollapseToggle,
 }) => {
+  const router = useRouter();
+  const { navigate, navigatingTo } = useOptimisticNavigation();
+
+  // Prefetch all pages on mount for instant navigation
+  useEffect(() => {
+    menuItems.forEach(item => {
+      router.prefetch(item.href);
+    });
+  }, [router]);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -108,6 +121,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={onToggle}
         />
       )}
+
+      {/* Navigation Loading Overlay - REMOVED for instant transitions */}
+      {/* Let Next.js loading.tsx handle skeleton loading instead */}
 
       {/* Sidebar */}
       <aside
@@ -120,14 +136,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-            <Link href="/dashboard" className="flex items-center space-x-2">
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            >
               <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">R</span>
+                <span className="text-white font-bold text-sm">A</span>
               </div>
               {!isCollapsed && (
-                <span className="font-bold text-2xl text-gray-900 leading-none">RentalShop</span>
+                <span className="font-bold text-2xl text-gray-900 leading-none">AnyRent</span>
               )}
-            </Link>
+            </button>
             
             <div className="flex items-center space-x-2">
               {/* Collapse Toggle Button */}
@@ -148,45 +167,67 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
               
               {/* Close button for mobile */}
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onToggle}
-                className="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none"
+                className="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none h-8 w-8 p-0"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {/* Hidden Links for Next.js prefetching */}
+            <div className="hidden">
+              {menuItems.map((item) => (
+                <Link key={`prefetch-${item.href}`} href={item.href} prefetch={true}>
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
             {menuItems.map((item) => {
               const isActive = currentPath === item.href;
+              const isNavigating = navigatingTo === item.href;
+              const shouldHighlight = isActive || isNavigating;
               
               return (
-                <Link
+                <button
                   key={item.href}
-                  href={item.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(item.href);
+                  }}
+                  onMouseEnter={() => {
+                    // Aggressive prefetch on hover
+                    router.prefetch(item.href);
+                  }}
                   className={cn(
-                    'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 group',
-                    isActive
+                    'w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group',
+                    shouldHighlight
                       ? 'bg-green-100 text-green-700 border-r-2 border-green-600'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900',
+                    // Add click feedback
+                    navigatingTo === item.href && 'bg-green-50 text-green-700 border-r-2 border-green-600'
                   )}
                   title={isCollapsed ? item.label : undefined}
                 >
                   <div className="flex items-center space-x-3">
                     <span className={cn(
-                      'flex-shrink-0',
-                      isActive ? 'text-green-600' : 'text-gray-500'
+                      'flex-shrink-0 transition-colors duration-150',
+                      shouldHighlight ? 'text-green-600' : 'text-slate-500'
                     )}>
                       {item.icon}
                     </span>
                     {!isCollapsed && (
                       <span className={cn(
-                        'text-base',
-                        isActive ? 'font-medium' : 'font-normal'
+                        'text-base transition-all duration-150',
+                        shouldHighlight ? 'font-medium' : 'font-normal'
                       )}>{item.label}</span>
                     )}
                   </div>
@@ -196,7 +237,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {item.badge}
                     </span>
                   )}
-                </Link>
+                </button>
               );
             })}
           </nav>
@@ -228,8 +269,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 
                 {!isCollapsed && (
                   <div className="mt-4 space-y-2">
-                    <Link
-                      href="/profile"
+                    <button
+                      onClick={() => navigate('/profile')}
                       className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
                     >
                       <div className="flex items-center space-x-2">
@@ -238,7 +279,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </svg>
                         <span>Profile</span>
                       </div>
-                    </Link>
+                    </button>
                     
                     <Button
                       onClick={onLogout}

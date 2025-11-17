@@ -1,4 +1,9 @@
 export { OrderHeader } from './OrderHeader';
+export { OrderInformation } from './OrderInformation';
+export { OrderProductsList } from './OrderProductsList';
+export { OrderSummaryCard } from './OrderSummaryCard';
+export { OrderSettingsCard } from './OrderSettingsCard';
+export { OrderActionsSection } from './OrderActionsSection';
 export { StatusBadges } from './StatusBadges';
 export { CollapsibleSection } from './CollapsibleSection';
 export { OrderOverview } from './OrderOverview';

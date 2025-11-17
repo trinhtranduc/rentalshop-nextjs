@@ -1764,3 +1764,275 @@ Since your monorepo is fully consolidated, focus on:
 5. **Documentation** - Keep the excellent structure documented
 
 **Your foundation is perfect** - now build amazing features on top of it! 🚀
+## 🎯 **API Standardization Rules (2024)**
+
+### **✅ API Quality Status: 100% Critical Compliance**
+
+All 97 API route files have been audited and standardized. Current status:
+- ✅ **0 Critical Errors** (100% compliance)
+- ⚠️ **183 Warnings** (error handling, input validation)
+- ℹ️ **104 Info** (response format consistency)
+
+### **1. Response Format Standardization**
+
+**ALWAYS use ResponseBuilder for consistent responses:**
+
+```typescript
+// ✅ CORRECT: Use ResponseBuilder for errors
+import { ResponseBuilder } from '@rentalshop/utils';
+
+return NextResponse.json(
+  ResponseBuilder.error('ERROR_CODE'),
+  { status: 400 }
+);
+
+// ✅ CORRECT: Use ResponseBuilder for success
+return NextResponse.json(
+  ResponseBuilder.success('SUCCESS_CODE', data)
+);
+
+// ✅ CORRECT: Use ResponseBuilder for validation errors
+return NextResponse.json(
+  ResponseBuilder.validationError(error.flatten()),
+  { status: 400 }
+);
+
+// ❌ WRONG: Inconsistent response format
+return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+```
+
+### **2. Error Handling Standardization**
+
+**ALWAYS use handleApiError in catch blocks:**
+
+```typescript
+// ✅ CORRECT: Unified error handling
+try {
+  // Operation
+} catch (error) {
+  console.error('Error context:', error);
+  
+  // Use unified error handling system
+  const { response, statusCode } = handleApiError(error);
+  return NextResponse.json(response, { status: statusCode });
+}
+
+// ❌ WRONG: Inconsistent error handling
+catch (error) {
+  return NextResponse.json({ error: 'Failed' }, { status: 500 });
+}
+```
+
+### **3. Input Validation**
+
+**ALWAYS validate POST/PUT/PATCH inputs with schemas:**
+
+```typescript
+// ✅ CORRECT: Input validation with Zod schema
+export const POST = withAuthRoles(['ADMIN'])(async (request, { user }) => {
+  try {
+    const body = await request.json();
+    
+    // Validate with schema
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        ResponseBuilder.validationError(parsed.error.flatten()),
+        { status: 400 }
+      );
+    }
+    
+    // Use validated data
+    const result = await db.create(parsed.data);
+    
+    return NextResponse.json(
+      ResponseBuilder.success('CREATE_SUCCESS', result)
+    );
+  } catch (error) {
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
+  }
+});
+
+// ❌ WRONG: No input validation
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const result = await db.create(body); // Unsafe!
+}
+```
+
+### **4. Authentication Middleware**
+
+**ALWAYS use withAuthRoles for protected endpoints:**
+
+```typescript
+// ✅ CORRECT: Use withAuthRoles
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(
+  async (request, { user, userScope }) => {
+    // user and userScope automatically available
+    const results = await db.search({
+      merchantId: userScope.merchantId
+    });
+    
+    return NextResponse.json(
+      ResponseBuilder.success('FETCH_SUCCESS', results)
+    );
+  }
+);
+
+// ❌ WRONG: No authentication
+export async function GET(request: NextRequest) {
+  // Anyone can access!
+}
+```
+
+### **5. Database Access Pattern**
+
+**ALWAYS use simplified db API from @rentalshop/database:**
+
+```typescript
+// ✅ CORRECT: Use simplified db API
+import { db } from '@rentalshop/database';
+
+const users = await db.users.search({ merchantId: 123 });
+const user = await db.users.findById(456);
+const newUser = await db.users.create(userData);
+
+// ❌ WRONG: Direct Prisma access
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+```
+
+### **6. API Audit Tools**
+
+**Use automated tools to maintain quality:**
+
+```bash
+# Audit all API files for standardization issues
+node scripts/audit-api-standardization.js
+
+# Auto-fix common issues
+node scripts/fix-api-standardization.js
+```
+
+### **7. Common Patterns**
+
+**Complete API Route Template:**
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { withAuthRoles } from '@rentalshop/auth';
+import { db } from '@rentalshop/database';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { createSchema, updateSchema } from '@rentalshop/utils';
+import { API } from '@rentalshop/constants';
+
+/**
+ * GET /api/resource
+ * Get resources with filtering and pagination
+ */
+export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(
+  async (request, { user, userScope }) => {
+    try {
+      const { searchParams } = new URL(request.url);
+      
+      // Parse and validate query parameters
+      const parsed = querySchema.safeParse(
+        Object.fromEntries(searchParams.entries())
+      );
+      if (!parsed.success) {
+        return NextResponse.json(
+          ResponseBuilder.validationError(parsed.error.flatten()),
+          { status: 400 }
+        );
+      }
+
+      // Use database API with role-based scope
+      const result = await db.resources.search({
+        ...parsed.data,
+        merchantId: userScope.merchantId
+      });
+
+      return NextResponse.json(
+        ResponseBuilder.success('RESOURCES_FOUND', result)
+      );
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  }
+);
+
+/**
+ * POST /api/resource
+ * Create a new resource
+ */
+export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(
+  async (request, { user, userScope }) => {
+    try {
+      const body = await request.json();
+      
+      // Validate input
+      const parsed = createSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          ResponseBuilder.validationError(parsed.error.flatten()),
+          { status: 400 }
+        );
+      }
+
+      // Create resource
+      const resource = await db.resources.create({
+        ...parsed.data,
+        merchantId: userScope.merchantId
+      });
+
+      return NextResponse.json(
+        ResponseBuilder.success('RESOURCE_CREATED_SUCCESS', resource),
+        { status: 201 }
+      );
+    } catch (error) {
+      console.error('Error creating resource:', error);
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  }
+);
+```
+
+### **API Standardization Checklist**
+
+Before submitting API changes:
+
+- [ ] **ResponseBuilder imported** if used
+- [ ] **handleApiError used** in catch blocks
+- [ ] **Input validation** with Zod schemas for POST/PUT/PATCH
+- [ ] **withAuthRoles used** for protected endpoints
+- [ ] **Simplified db API** used instead of direct Prisma
+- [ ] **Consistent response format** (success, data, code, message)
+- [ ] **Proper error handling** with descriptive messages
+- [ ] **No duplicate object keys** (code, message)
+- [ ] **Run audit script** to verify compliance
+
+### **Audit Script Usage**
+
+```bash
+# Run audit to check all API files
+yarn audit:api
+
+# Auto-fix common issues
+yarn fix:api
+
+# View audit report
+cat API_AUDIT_REPORT.txt
+```
+
+**Remember:** API standardization is not just about code style - it's about:
+- ✅ **Consistent error handling** for better debugging
+- ✅ **Input validation** for security
+- ✅ **Response format** for frontend predictability
+- ✅ **Authentication** for security
+- ✅ **Database patterns** for performance
+
+Keep all APIs following these standards for a maintainable, secure, and predictable system! 🎯

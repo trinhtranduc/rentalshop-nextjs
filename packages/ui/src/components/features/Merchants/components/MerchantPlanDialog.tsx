@@ -39,11 +39,14 @@ interface MerchantPlanDialogProps {
     id: number;
     name: string;
     email: string;
-    currentPlan?: {
-      id: number;
-      name: string;
-      price: number;
-      currency: string;
+    subscription?: {
+      status: string;
+      plan?: {
+        id: number;
+        name: string;
+        basePrice: number;
+        currency: string;
+      };
     } | null;
     subscriptionStatus: string;
   };
@@ -172,13 +175,13 @@ export function MerchantPlanDialog({
                     Current Plan
                   </h4>
                   <div className="flex items-center gap-2 mt-1">
-                    {merchant.currentPlan ? (
+                    {merchant.subscription?.plan ? (
                       <>
                         <span className="font-semibold text-lg">
-                          {merchant.currentPlan.name}
+                          {merchant.subscription.plan.name}
                         </span>
                         <span className="text-sm text-gray-500">
-                          {formatPrice(merchant.currentPlan.price, merchant.currentPlan.currency)}
+                          {formatPrice(merchant.subscription.plan.basePrice, merchant.subscription.plan.currency)}
                         </span>
                       </>
                     ) : (
@@ -187,7 +190,7 @@ export function MerchantPlanDialog({
                   </div>
                 </div>
                 <StatusBadge 
-                  status={getStatusColor(merchant.subscriptionStatus)} 
+                  status={merchant.subscription?.status} 
                   size="sm"
                 />
               </div>

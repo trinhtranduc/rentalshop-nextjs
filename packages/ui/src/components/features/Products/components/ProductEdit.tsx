@@ -9,6 +9,7 @@ import {
   Button
 } from '@rentalshop/ui';
 import { useToast } from '@rentalshop/ui';
+import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
 import type { ProductInput, ProductWithStock, Outlet, Category } from '@rentalshop/types';
@@ -34,14 +35,20 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, toastError } = useToast();
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
 
-  // Debug: Log product data structure
+  // Debug: Log product data structure and props
   useEffect(() => {
     console.log('🔍 ProductEdit - product data:', product);
     console.log('🔍 ProductEdit - product.category:', product.category);
     console.log('🔍 ProductEdit - product.outletStock:', product.outletStock);
     console.log('🔍 ProductEdit - outlets:', outlets);
-  }, [product, outlets]);
+    console.log('🔍 ProductEdit - onSave type:', typeof onSave);
+    console.log('🔍 ProductEdit - onSave:', onSave);
+    console.log('🔍 ProductEdit - onCancel type:', typeof onCancel);
+    console.log('🔍 ProductEdit - merchantId:', merchantId);
+  }, [product, outlets, onSave, onCancel, merchantId]);
 
   // Transform product data to form format
   const initialFormData = {
@@ -102,10 +109,14 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     setIsSubmitting(true);
 
     try {
+      if (typeof onSave !== 'function') {
+        throw new Error('onSave function is not provided or invalid');
+      }
       await onSave(data);
       // Parent component will handle success toast
     } catch (err) {
-      error('Error', err instanceof Error ? err.message : 'Failed to update product');
+      console.error('❌ ProductEdit: Error in handleSubmit:', err);
+      toastError(t('messages.updateFailed'), err instanceof Error ? err.message : 'Failed to update product');
     } finally {
       setIsSubmitting(false);
     }
@@ -136,7 +147,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
       {/* Action Buttons */}
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
-          Cancel
+          {tc('buttons.cancel')}
         </Button>
         <Button 
           type="submit" 
@@ -147,12 +158,12 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
           {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Updating...
+              {t('messages.updating')}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              Update Product
+              {t('messages.updateProduct')}
             </>
           )}
         </Button>

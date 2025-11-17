@@ -11,11 +11,46 @@ import { API } from '@rentalshop/constants';
  */
 export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
   try {
+    const { searchParams } = new URL(request.url);
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+    
+    // Use provided dates or default to today/thisMonth
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    let today: Date;
+    let thisMonth: Date;
+    let lastMonth: Date;
+    let lastMonthEnd: Date;
+    
+    if (startDateParam && endDateParam) {
+      // Use provided date range
+      const start = new Date(startDateParam);
+      const end = new Date(endDateParam);
+      
+      // For "today" view (same start and end date)
+      today = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      
+      // For "month" or "year" view
+      thisMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+      const endDate = new Date(end);
+      
+      // Calculate last period for comparison
+      if (start.getMonth() === end.getMonth()) {
+        // Same month - compare with last month
+        lastMonth = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+        lastMonthEnd = new Date(start.getFullYear(), start.getMonth(), 0, 23, 59, 59);
+      } else {
+        // Year view - compare with last year
+        lastMonth = new Date(start.getFullYear() - 1, 0, 1);
+        lastMonthEnd = new Date(start.getFullYear() - 1, 11, 31, 23, 59, 59);
+      }
+    } else {
+      // Default to current dates
+      today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    }
 
     // Apply role-based filtering (consistent with other APIs)
     let orderWhereClause: any = {};
@@ -65,24 +100,29 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           stock: { total: 0, available: 0, renting: 0 },
           growth: { revenue: 0 }
         },
+        code: 'NO_DATA_AVAILABLE',
         message: 'No data available - user not assigned to merchant/outlet'
       });
     }
 
-    // Get today's orders
+    // Determine date range based on parameters
+    const start = startDateParam ? new Date(startDateParam) : today;
+    const end = endDateParam ? new Date(endDateParam + 'T23:59:59') : new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    
+    // Get today's orders (for startDate to endDate range)
     const todayOrders = await db.orders.search({
       where: {
         ...orderWhereClause,
-        createdAt: { gte: today }
+        createdAt: { gte: start, lte: end }
       },
       limit: 1000
     });
 
-    // Get this month's orders
+    // Get this month/period's orders (same as today for the provided range)
     const thisMonthOrders = await db.orders.search({
       where: {
         ...orderWhereClause,
-        createdAt: { gte: thisMonth }
+        createdAt: { gte: start, lte: end }
       },
       limit: 1000
     });
@@ -96,11 +136,27 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       limit: 1000
     });
 
-    // Get active rentals
+    // Get active rentals - Orders that are currently being rented out
+    // This includes ALL orders with status PICKUPED (regardless of when they were picked up)
+    // This makes business sense because:
+    // - User wants to know total active rentals across all time
+    // - Not just rentals that started today
     const activeRentals = await db.orders.search({
       where: {
         ...orderWhereClause,
         status: 'PICKUPED'
+      },
+      limit: 1000
+    });
+    
+    // Get today's pickups - Orders that were picked up TODAY
+    const todayPickups = await db.orders.search({
+      where: {
+        ...orderWhereClause,
+        status: 'PICKUPED',
+        pickedUpAt: {
+          gte: new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        }
       },
       limit: 1000
     });
@@ -122,6 +178,18 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     const revenueGrowth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;
 
+    // Debug logs to trace the issue
+    console.log('🔍 Enhanced Dashboard Debug:', {
+      dateRange: { start, end },
+      todayOrdersTotal: todayOrders.total,
+      todayOrdersDataLength: todayOrders.data?.length,
+      todayRevenue,
+      thisMonthOrdersTotal: thisMonthOrders.total,
+      thisMonthOrdersDataLength: thisMonthOrders.data?.length,
+      thisMonthRevenue,
+      activeRentalsTotal: activeRentals.total
+    });
+
     const dashboardData = {
       today: {
         orders: todayOrders.total || 0,
@@ -131,7 +199,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         orders: thisMonthOrders.total || 0,
         revenue: thisMonthRevenue
       },
-      activeRentals: activeRentals.total || 0,
+      activeRentals: activeRentals.total || 0,  // Total active rentals (all time)
+      todayPickups: todayPickups.total || 0,    // Rentals picked up today
       stock: {
         total: stockMetrics._sum?.stock || 0,
         available: stockMetrics._sum?.available || 0,
@@ -145,7 +214,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json({
       success: true,
       data: dashboardData,
-      message: 'Enhanced dashboard data retrieved successfully'
+      code: 'DASHBOARD_DATA_SUCCESS',
+        message: 'Enhanced dashboard data retrieved successfully'
     });
 
   } catch (error) {

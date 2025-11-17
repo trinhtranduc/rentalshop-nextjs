@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
     console.error('Database health check failed:', error);
     
     const errorDetails = {
+      code: 'DATABASE_ERROR',
       message: error instanceof Error ? error.message : 'Unknown error',
       name: error instanceof Error ? error.name : 'Unknown error type',
       stack: error instanceof Error ? error.stack : 'No stack trace'

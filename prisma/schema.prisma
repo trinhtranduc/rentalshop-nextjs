@@ -1,11 +1,25 @@
 generator client {
-  provider = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Business domain enums
+enum BusinessType {
+  GENERAL
+  VEHICLE
+  CLOTHING
+  EQUIPMENT
+}
+
+enum PricingType {
+  FIXED
+  HOURLY
+  DAILY
 }
 
 model User {
@@ -17,6 +31,8 @@ model User {
   phone                  String?
   role                   String                 @default("OUTLET_STAFF")
   isActive               Boolean                @default(true)
+  emailVerified          Boolean                @default(false)
+  emailVerifiedAt        DateTime?
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   merchantId             Int?
@@ -25,8 +41,10 @@ model User {
   auditLogs              AuditLog[]
   createdOrders          Order[]
   subscriptionActivities SubscriptionActivity[]
-  outlet                 Outlet?                @relation(fields: [outletId], references: [id])
+  emailVerifications     EmailVerification[]
   merchant               Merchant?              @relation(fields: [merchantId], references: [id])
+  outlet                 Outlet?                @relation(fields: [outletId], references: [id])
+  sessions               UserSession[]
 
   @@unique([merchantId, email])
   @@unique([merchantId, phone])
@@ -34,6 +52,24 @@ model User {
   @@index([merchantId])
   @@index([outletId])
   @@index([deletedAt])
+  @@index([emailVerified])
+}
+
+model UserSession {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  sessionId     String    @unique
+  ipAddress     String?
+  userAgent     String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime
+  invalidatedAt DateTime?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([sessionId])
+  @@index([expiresAt])
 }
 
 model Merchant {
@@ -41,17 +77,18 @@ model Merchant {
   name               String
   email              String        @unique
   phone              String?
+  /// Human friendly tenant key (used for subdomain like aodaipham1.anyrent.shop)
+  /// Optional now to avoid breaking existing data, but should be filled for new merchants.
+  tenantKey          String?       @unique
   address            String?
   city               String?
   state              String?
   zipCode            String?
   country            String?
-  businessType       String?
-  pricingType        String?
+  businessType       BusinessType  @default(GENERAL)
   taxId              String?
   website            String?
   description        String?
-  pricingConfig      String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
   planId             Int?
   subscriptionStatus String        @default("trial")
   totalRevenue       Float         @default(0)
@@ -59,6 +96,9 @@ model Merchant {
   isActive           Boolean       @default(true)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
+  pricingConfig      String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
+  pricingType        PricingType   @default(FIXED)
+  currency           String        @default("USD")
   categories         Category[]
   customers          Customer[]
   Plan               Plan?         @relation(fields: [planId], references: [id])
@@ -70,8 +110,8 @@ model Merchant {
 
   @@index([name])
   @@index([email])
-  @@index([subscriptionStatus])
   @@index([planId])
+  @@index([subscriptionStatus])
 }
 
 model Outlet {
@@ -107,6 +147,7 @@ model Category {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   merchantId  Int
+  isDefault   Boolean   @default(false)
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products    Product[]
 
@@ -123,7 +164,7 @@ model Product {
   rentPrice   Float
   salePrice   Float?
   deposit     Float         @default(0)
-  images      String?
+  images      Json?
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -214,8 +255,8 @@ model Order {
   customerId        Int?
   createdById       Int
   createdBy         User        @relation(fields: [createdById], references: [id])
-  outlet            Outlet      @relation(fields: [outletId], references: [id])
   customer          Customer?   @relation(fields: [customerId], references: [id])
+  outlet            Outlet      @relation(fields: [outletId], references: [id])
   orderItems        OrderItem[]
   payments          Payment[]
 
@@ -224,29 +265,31 @@ model Order {
   @@index([pickupPlanAt, returnPlanAt])
   @@index([orderNumber])
   @@index([isReadyToDeliver, outletId])
-  
-  // Performance optimization indexes
-  @@index([createdAt])                          // Default sorting
-  @@index([outletId, createdAt])                // Outlet + date queries
-  @@index([orderType, status])                  // Type filtering
-  @@index([outletId, status, createdAt])        // Composite for complex queries
-  @@index([createdById, createdAt])             // User order history
-  @@index([totalAmount])                        // Financial reporting
-  @@index([status, orderType, createdAt])       // Status + type + date
+  @@index([createdAt])
+  @@index([outletId, createdAt])
+  @@index([orderType, status])
+  @@index([outletId, status, createdAt])
+  @@index([createdById, createdAt])
+  @@index([totalAmount])
+  @@index([status, orderType, createdAt])
 }
 
 model OrderItem {
-  id         Int     @id @default(autoincrement())
-  quantity   Int     @default(1)
-  unitPrice  Float
-  totalPrice Float
-  deposit    Float   @default(0)
-  orderId    Int
-  productId  Int
-  notes      String?
-  rentalDays Int?
-  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product    Product @relation(fields: [productId], references: [id])
+  id             Int     @id @default(autoincrement())
+  quantity       Int     @default(1)
+  unitPrice      Float
+  totalPrice     Float
+  deposit        Float   @default(0)
+  orderId        Int
+  productId      Int
+  notes          String?
+  rentalDays     Int?
+  // Snapshot fields - preserve product info even if product is deleted
+  productName    String?
+  productBarcode String?
+  productImages  Json? // Store as JSON array of URLs
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product @relation(fields: [productId], references: [id])
 
   @@index([orderId, productId])
 }
@@ -273,8 +316,8 @@ model Payment {
   subscriptionId Int?
   merchantId     Int?
   merchant       Merchant?     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([orderId, status])
   @@index([subscriptionId, status])
@@ -292,8 +335,8 @@ model Plan {
   basePrice     Float
   currency      String         @default("USD")
   trialDays     Int            @default(14)
-  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}") // JSON object: {"outlets": 5, "users": 10, "products": 100, "customers": 500}
-  features      String         @default("[]") // JSON array: ["feature1", "feature2", "feature3"]
+  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
+  features      String         @default("[]")
   isActive      Boolean        @default(true)
   isPopular     Boolean        @default(false)
   sortOrder     Int            @default(0)
@@ -309,49 +352,49 @@ model Plan {
 }
 
 model Subscription {
-  id                 Int       @id @default(autoincrement())
-  merchantId         Int       @unique
+  id                 Int                    @id @default(autoincrement())
+  merchantId         Int                    @unique
   planId             Int
-  status             String    @default("trial")
+  status             String                 @default("trial")
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   trialStart         DateTime?
   trialEnd           DateTime?
-  cancelAtPeriodEnd  Boolean   @default(false)
+  cancelAtPeriodEnd  Boolean                @default(false)
   canceledAt         DateTime?
   cancelReason       String?
   amount             Float
-  currency           String    @default("USD")
-  interval           String    @default("month")
-  intervalCount      Int       @default(1)
-  period             Int       @default(1)
-  discount           Float     @default(0)
-  savings            Float     @default(0)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  currency           String                 @default("USD")
+  interval           String                 @default("month")
+  intervalCount      Int                    @default(1)
+  period             Int                    @default(1)
+  discount           Float                  @default(0)
+  savings            Float                  @default(0)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
   payments           Payment[]
+  merchant           Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  plan               Plan                   @relation(fields: [planId], references: [id])
   activities         SubscriptionActivity[]
-  merchant           Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  plan               Plan      @relation(fields: [planId], references: [id])
 
   @@index([merchantId])
   @@index([planId])
   @@index([status])
+  @@index([currency])
 }
 
 model SubscriptionActivity {
-  id             Int      @id @default(autoincrement())
+  id             Int          @id @default(autoincrement())
   subscriptionId Int
-  type           String   // subscription_created, plan_changed, subscription_paused, etc.
+  type           String
   description    String
-  reason         String?  // Reason for the action (e.g., "Paused by admin", "Trial ended")
-  metadata       String?  // JSON metadata (SQLite doesn't need @db.Text)
-  performedBy    Int?     // User ID who performed the action
-  createdAt      DateTime @default(now())
-  
+  metadata       String?
+  performedBy    Int?
+  createdAt      DateTime     @default(now())
+  reason         String?
+  user           User?        @relation(fields: [performedBy], references: [id])
   subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  user           User?        @relation(fields: [performedBy], references: [id], onDelete: SetNull)
-  
+
   @@index([subscriptionId])
   @@index([type])
   @@index([createdAt])
@@ -375,4 +418,20 @@ model AuditLog {
   @@index([createdAt])
 }
 
+model EmailVerification {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  token      String    @unique
+  email      String
+  verified   Boolean   @default(false)
+  verifiedAt DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([token])
+  @@index([email])
+  @@index([expiresAt])
+  @@index([verified])
+}

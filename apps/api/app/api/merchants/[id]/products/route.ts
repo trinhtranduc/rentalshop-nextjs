@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError, createSuccessResponse } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -17,7 +17,7 @@ export async function GET(
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -25,7 +25,7 @@ export async function GET(
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -37,7 +37,7 @@ export async function GET(
       });
 
       // Return standardized response format matching general products API
-      return NextResponse.json(createSuccessResponse({
+      return NextResponse.json(ResponseBuilder.success('PRODUCTS_FOUND', {
         products: products.data || [],
         total: products.total || 0,
         page: products.page || 1,
@@ -49,7 +49,7 @@ export async function GET(
     } catch (error) {
       console.error('Error fetching merchant products:', error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error' },
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -69,7 +69,7 @@ export async function POST(
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -77,7 +77,7 @@ export async function POST(
       const merchant = await db.merchants.findById(merchantPublicId);
       if (!merchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }

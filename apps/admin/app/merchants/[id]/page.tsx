@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   MerchantDetail,
+  Breadcrumb,
   PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
   Button
 } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { 
   merchantsApi,
@@ -292,12 +294,7 @@ export default function MerchantDetailPage() {
   const merchantData = {
     merchant: {
       ...merchant,
-      currentSubscription: merchant.subscription ? {
-        ...merchant.subscription,
-        // Add aliases for date fields that component expects
-        startDate: merchant.subscription.currentPeriodStart,
-        endDate: merchant.subscription.currentPeriodEnd
-      } : null,
+      subscription: merchant.subscription,
       plan: merchant.subscription?.plan
     },
     stats: {
@@ -312,34 +309,16 @@ export default function MerchantDetailPage() {
     }
   };
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Merchants', href: '/merchants' },
+    { label: merchant?.merchant?.name || merchant?.name || 'Merchant' }
+  ];
+
   return (
     <PageWrapper>
-      <PageHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/merchants')}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Merchants
-            </Button>
-            <PageTitle subtitle={`Manage merchant: ${merchant?.merchant?.name || merchant?.name || 'Unknown'}`}>
-              Merchant Details
-            </PageTitle>
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/merchants/${merchantId}/edit`)}
-            >
-              Edit Merchant
-            </Button>
-          </div>
-        </div>
-      </PageHeader>
-
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageContent>
         <MerchantDetail
           data={merchantData}

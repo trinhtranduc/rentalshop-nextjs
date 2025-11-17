@@ -150,7 +150,7 @@ export const SubscriptionPreviewPage: React.FC<SubscriptionPreviewPageProps> = (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading subscription plans...</p>
           </div>
         </div>
@@ -229,13 +229,14 @@ export const SubscriptionPreviewPage: React.FC<SubscriptionPreviewPageProps> = (
               const discount = getDiscountForDuration(duration);
               const isSelected = selectedDuration === duration;
               return (
-                <button
+                <Button
+                  variant={isSelected ? "default" : "ghost"}
                   key={duration}
                   onClick={() => setSelectedDuration(duration)}
                   className={cn(
                     "px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 relative",
                     isSelected
-                      ? "bg-blue-600 text-white shadow-sm"
+                      ? "bg-blue-700 text-white shadow-sm"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   )}
                 >
@@ -264,7 +265,7 @@ export const SubscriptionPreviewPage: React.FC<SubscriptionPreviewPageProps> = (
                       </div>
                     </div>
                   )}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -288,7 +289,7 @@ export const SubscriptionPreviewPage: React.FC<SubscriptionPreviewPageProps> = (
               >
                 {plan.isPopular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium">
+                    <Badge className="bg-blue-700 text-white px-4 py-1 rounded-full text-sm font-medium">
                       Most Popular
                     </Badge>
                   </div>

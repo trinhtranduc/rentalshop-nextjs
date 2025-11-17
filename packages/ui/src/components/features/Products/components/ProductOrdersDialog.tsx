@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { Product, OrderWithDetails } from '@rentalshop/types';
 import { ordersApi } from '@rentalshop/utils';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface ProductOrdersDialogProps {
   open: boolean;
@@ -33,6 +34,7 @@ interface ProductOrdersDialogProps {
 }
 
 export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrdersDialogProps) {
+  const t = useOrderTranslations();
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,8 +168,8 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
           ) : orders.length === 0 ? (
             <EmptyState
               icon={ShoppingCart}
-              title="No Orders Found"
-              description="This product hasn't been ordered yet."
+              title={t('messages.noOrdersForProduct')}
+              description={t('messages.noOrdersForProductDescription')}
             />
           ) : (
             <div className="space-y-4">

@@ -17,6 +17,7 @@ import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { CreateOrderForm, 
+  Breadcrumb,
   FormSkeleton, 
   PageWrapper, 
   PageHeader,
@@ -24,6 +25,7 @@ import { CreateOrderForm,
   PageContent, 
   useToast,
   Button } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { customersApi, productsApi, outletsApi, ordersApi, categoriesApi } from '@rentalshop/utils';
 import type { OrderWithDetails, CustomerSearchResult, ProductWithStock, Category } from '@rentalshop/types';
@@ -65,12 +67,9 @@ export default function MerchantOrderEditPage() {
           return;
         }
 
-        // Try to fetch order by order number first (if it starts with ORD-) or by ID
-        let orderNumber = orderId;
-        if (!orderId.startsWith('ORD-')) {
-          // If it's just the order number part, construct the full order number
-          orderNumber = `ORD-${orderId}`;
-        }
+        // Remove ORD- prefix if present (database stores order numbers without ORD- prefix)
+        // Order numbers in database are like "001-757513" but URLs may have "ORD-001-757513"
+        let orderNumber = orderId.replace(/^ORD-/, '');
 
         console.log('🔍 Fetching order details for editing:', orderNumber);
 
@@ -80,11 +79,16 @@ export default function MerchantOrderEditPage() {
         if (result.success && result.data) {
           setOrder(result.data);
         } else {
-          // If by-number fails, try the direct order ID endpoint
-          const fallbackResult = await ordersApi.getOrderById(orderId);
-          
-          if (fallbackResult.success && fallbackResult.data) {
-            setOrder(fallbackResult.data);
+          // If by-number fails, try to parse as numeric ID
+          const numericId = parseInt(orderId);
+          if (!isNaN(numericId)) {
+            const fallbackResult = await ordersApi.getOrder(numericId);
+            
+            if (fallbackResult.success && fallbackResult.data) {
+              setOrder(fallbackResult.data);
+            } else {
+              setError('Failed to fetch order details');
+            }
           } else {
             setError('Failed to fetch order details');
           }
@@ -342,19 +346,22 @@ export default function MerchantOrderEditPage() {
     );
   }
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Merchants', href: '/merchants' },
+    { label: `Merchant ${merchantId}`, href: `/merchants/${merchantId}` },
+    { label: 'Orders', href: `/merchants/${merchantId}/orders` },
+    { label: order.orderNumber, href: `/merchants/${merchantId}/orders/${orderId}` },
+    { label: 'Edit' }
+  ];
+
   return (
     <PageWrapper>
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={handleBackToOrders}
-              variant="outline"
-              size="sm"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Orders
-            </Button>
+          <div>
             <PageTitle>Edit Order - {order.orderNumber}</PageTitle>
           </div>
         </div>

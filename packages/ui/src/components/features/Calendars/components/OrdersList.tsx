@@ -2,6 +2,7 @@ import React from 'react';
 import { Package, User, Mail, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import type { PickupOrder } from '@rentalshop/types';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface OrdersListProps {
   orders: PickupOrder[];
@@ -16,11 +17,13 @@ export function OrdersList({
   onOrderClick,
   className = '' 
 }: OrdersListProps) {
+  const t = useOrderTranslations();
+  
   if (orders.length === 0) {
     return (
       <div className={`text-center py-8 text-gray-500 ${className}`}>
         <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-        <p className="text-lg font-medium">No orders found</p>
+        <p className="text-lg font-medium">{t('messages.noOrders')}</p>
         {selectedDate && (
           <p className="text-sm">for {selectedDate.toLocaleDateString()}</p>
         )}
@@ -58,13 +61,18 @@ export function OrdersList({
             {/* Customer Information */}
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-blue-600" />
+                <User className="w-4 h-4 text-blue-700" />
               </div>
               <div>
                 <p className="font-medium text-gray-900">
-                  {order.customerName}
+                  {order.customerName || (order.customer ? 
+                    `${order.customer.firstName} ${order.customer.lastName}` : 
+                    'Unknown Customer'
+                  )}
                 </p>
-                <p className="text-sm text-gray-500">{(order as any).customerPhone || 'No phone'}</p>
+                <p className="text-sm text-gray-500">
+                  {order.customerPhone || order.customer?.phone || 'No phone'}
+                </p>
               </div>
             </div>
 

@@ -7,14 +7,28 @@ export * from './hooks/useAuth';
 export * from './hooks/useAuthErrorHandler';
 export * from './hooks/useCanPerform';
 export * from './hooks/useCurrency';
-export * from './hooks/useCustomerManagement';
-export * from './hooks/useOrderManagement';
+export * from './hooks/useCustomersData';
+export * from './hooks/useMerchantsData';
+export * from './hooks/useOrdersData';
 export * from './hooks/usePagination';
+export * from './hooks/usePaymentsData';
+export * from './hooks/usePlansData';
 export * from './hooks/useProductAvailability';
-export * from './hooks/useProductManagement';
+export * from './hooks/useProductsData';
+export * from './hooks/useSubscriptionsData';
 export * from './hooks/useSubscriptionError';
 export * from './hooks/useSubscriptionStatusInfo';
 export * from './hooks/useThrottledSearch';
 export * from './hooks/useToast';
-export * from './hooks/useUserManagement';
+export * from './hooks/useTranslation';
+export * from './hooks/useLocale';
 export * from './hooks/useUserRole';
+export * from './hooks/useUsersData';
+export * from './hooks/useOptimisticNavigation';
+export * from './hooks/useApiError';
+
+// Modern API utilities
+export * from './utils/useDedupedApi';
+
+// Modern filter data hooks
+export * from './hooks/useFiltersData';

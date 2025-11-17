@@ -1,79 +1,68 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // CRITICAL for Railway deployment - reduces bundle size by 90%
-  output: 'standalone',
+  // Enable standalone output for proper Prisma binary handling
+  // Only use standalone in production (Railway/Docker)
+  output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   
-  // CRITICAL for monorepo - enables Next.js to trace workspace dependencies
+  // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
   experimental: {
+    // Point to monorepo root for file tracing
     outputFileTracingRoot: require('path').join(__dirname, '../../'),
-    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
+    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines', 'prisma'],
   },
   
   transpilePackages: [
+    '@rentalshop/database',
     '@rentalshop/auth',
-    '@rentalshop/database', 
     '@rentalshop/middleware',
     '@rentalshop/utils',
     '@rentalshop/constants',
     '@rentalshop/types'
   ],
   eslint: {
+    // Temporarily disable ESLint during builds to allow development to continue
+    // TODO: Re-enable and fix ESLint errors incrementally
     ignoreDuringBuilds: true,
   },
   typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    // !! WARN !!
     ignoreBuildErrors: true,
   },
-  // Prevent webpack from bundling Prisma during build
+  // Webpack config for Prisma in monorepo  
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Mark Prisma as external to prevent bundling
-      const externals = config.externals || [];
-      config.externals = [
-        ...externals,
-        '@prisma/client',
-        '.prisma/client',
-        'prisma',
-      ];
-      
-      // Add alias to ensure Prisma Client is loaded from correct location
-      config.resolve = config.resolve || {};
+      // Ensure Prisma Client resolves to root node_modules
       config.resolve.alias = {
         ...config.resolve.alias,
-        '.prisma/client': require.resolve('@prisma/client'),
+        '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),
+        '@prisma/client': require('path').join(__dirname, '../../node_modules/@prisma/client'),
       };
     }
     return config;
   },
-  // CORS headers
   async headers() {
-    const csv = process.env.CORS_ORIGINS || '';
-    const envOrigins = csv
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const fallbacks = [
-      process.env.CLIENT_URL,
-      process.env.ADMIN_URL,
-      process.env.API_URL,
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-    ].filter(Boolean);
-    const origins = envOrigins.length ? envOrigins : fallbacks;
-    
-    const allowOrigin = process.env.NODE_ENV === 'development' 
-      ? '*' 
-      : (origins[0] || '*');
-      
+    // Note: CORS is handled dynamically in middleware.ts
+    // This static config is a fallback only
     return [
       {
         source: '/api/:path*',
         headers: [
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: allowOrigin },
           { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT,OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
         ],
+      },
+    ];
+  },
+  async rewrites() {
+    // Serve static files from uploads directory
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: '/apps/api/public/uploads/:path*',
       },
     ];
   },

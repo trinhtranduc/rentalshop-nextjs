@@ -29,9 +29,10 @@ const InfoSection: React.FC<{
   </div>
 );
 
-const CustomerInfo: React.FC<{ customer: OrderDetailData['customer']; customerName?: string }> = ({ 
+const CustomerInfo: React.FC<{ customer: OrderDetailData['customer']; customerName?: string; customerPhone?: string }> = ({ 
   customer, 
-  customerName 
+  customerName,
+  customerPhone
 }) => (
   <InfoSection
     icon={<User className="w-4 h-4 text-gray-600" />}
@@ -41,10 +42,10 @@ const CustomerInfo: React.FC<{ customer: OrderDetailData['customer']; customerNa
       <div className="font-medium text-gray-900">
         {customerName || (customer ? `${customer.firstName} ${customer.lastName}` : 'Guest Customer')}
       </div>
-      {customer?.phone && (
+      {(customerPhone || customer?.phone) && (
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <Phone className="w-4 h-4" />
-          <span>{customer.phone}</span>
+          <span>{customerPhone || customer?.phone}</span>
         </div>
       )}
       {/* Note: Email is not available in the customer type, using customerName from order instead */}
@@ -152,7 +153,8 @@ export const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <CustomerInfo 
         customer={order.customer} 
-        customerName={order.customerName} 
+        customerName={order.customerName}
+        customerPhone={order.customerPhone}
       />
       <OutletInfo outlet={order.outlet} />
     </div>

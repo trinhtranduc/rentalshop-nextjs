@@ -1,0 +1,76 @@
+{
+  "title": "Cửa hàng",
+  "addOutlet": "Thêm cửa hàng",
+  "editOutlet": "Sửa cửa hàng",
+  "outletDetails": "Chi tiết cửa hàng",
+  "fields": {
+    "name": "Tên cửa hàng",
+    "address": "Địa chỉ",
+    "city": "Thành phố",
+    "state": "Tỉnh/Thành",
+    "zipCode": "Mã bưu điện",
+    "country": "Quốc gia",
+    "phone": "Số điện thoại",
+    "description": "Mô tả",
+    "status": "Trạng thái",
+    "manager": "Quản lý",
+    "notAvailable": "Không có"
+  },
+  "labels": {
+    "default": "Mặc định"
+  },
+  "actions": {
+    "export": "Xuất danh sách",
+    "viewDetails": "Xem chi tiết",
+    "editOutlet": "Sửa cửa hàng",
+    "deleteOutlet": "Xóa cửa hàng",
+    "addOutlet": "Thêm cửa hàng",
+    "backToOutlets": "Quay lại danh sách",
+    "disableOutlet": "Vô hiệu hóa cửa hàng",
+    "enableOutlet": "Kích hoạt cửa hàng"
+  },
+  "stats": {
+    "totalOutlets": "Tổng số cửa hàng",
+    "activeOutlets": "Đang hoạt động",
+    "totalUsers": "Tổng số người dùng",
+    "totalProducts": "Tổng số sản phẩm"
+  },
+  "search": {
+    "placeholder": "Tìm kiếm theo tên, thành phố hoặc số điện thoại..."
+  },
+  "dialogs": {
+    "addOutletTitle": "Thêm cửa hàng mới",
+    "editOutletTitle": "Sửa cửa hàng",
+    "deleteOutletTitle": "Xóa cửa hàng",
+    "outletDetails": "Chi tiết cửa hàng",
+    "editOutletName": "Sửa cửa hàng: {name}"
+  },
+  "messages": {
+    "createSuccess": "Tạo cửa hàng thành công",
+    "createFailed": "Tạo cửa hàng thất bại",
+    "updateSuccess": "Cập nhật cửa hàng thành công",
+    "updateFailed": "Cập nhật cửa hàng thất bại",
+    "deleteSuccess": "Xóa cửa hàng thành công",
+    "deleteFailed": "Xóa cửa hàng thất bại",
+    "enableSuccess": "Kích hoạt cửa hàng thành công",
+    "enableFailed": "Kích hoạt cửa hàng thất bại",
+    "disableSuccess": "Vô hiệu hóa cửa hàng thành công",
+    "disableFailed": "Vô hiệu hóa cửa hàng thất bại",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa cửa hàng này?",
+    "noOutlets": "Không tìm thấy cửa hàng",
+    "tryAdjustingSearch": "Thử điều chỉnh tìm kiếm",
+    "getStarted": "Bắt đầu bằng cách thêm cửa hàng đầu tiên",
+    "loadingOutlets": "Đang tải danh sách cửa hàng..."
+  },
+  "placeholders": {
+    "enterOutletName": "Nhập tên cửa hàng",
+    "enterStreetAddress": "Nhập địa chỉ đường",
+    "enterCity": "Nhập thành phố",
+    "enterState": "Nhập tỉnh/thành",
+    "enterZipCode": "Nhập mã bưu điện",
+    "enterCountry": "Nhập quốc gia",
+    "enterOutletPhone": "Nhập số điện thoại cửa hàng",
+    "enterOutletDescription": "Nhập mô tả cửa hàng"
+  }
+}
+

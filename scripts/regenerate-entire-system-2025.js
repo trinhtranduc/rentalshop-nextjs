@@ -18,6 +18,112 @@ const { SUBSCRIPTION_PLANS } = require('../packages/constants/src/subscription.t
 
 const prisma = new PrismaClient();
 
+// Helper function to mask sensitive information in DATABASE_URL
+function maskDatabaseUrl(url) {
+  if (!url) return 'Not set';
+  try {
+    const urlObj = new URL(url);
+    if (urlObj.password) {
+      urlObj.password = '***';
+    }
+    return urlObj.toString();
+  } catch (e) {
+    return url.substring(0, 20) + '...';
+  }
+}
+
+// Check if database schema exists
+async function checkDatabaseSchema() {
+  try {
+    // Check if User table exists (one of the main tables)
+    const result = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'User'
+      );
+    `;
+    
+    const tableExists = result[0]?.exists;
+    
+    if (!tableExists) {
+      console.warn('\n⚠️  Database schema does not exist!');
+      console.warn('   Tables not found in the database.\n');
+      console.warn('💡 Script will skip reset operations and only create new data.\n');
+      console.warn('   To push schema first, run:\n');
+      console.warn('   Option 1: Using Prisma CLI');
+      console.warn('     npx prisma db push --accept-data-loss\n');
+      console.warn('   Option 2: On Railway');
+      console.warn('     railway run --service apis npx prisma db push --accept-data-loss\n');
+      console.warn('   Option 3: Using migrations');
+      console.warn('     npx prisma migrate deploy\n');
+      return false; // Return false instead of throwing - script can continue
+    }
+    
+    return true;
+  } catch (error) {
+    // If query fails for other reasons, schema might not exist
+    console.warn('\n⚠️  Could not verify database schema. Script will continue with graceful handling...\n');
+    return false;
+  }
+}
+
+// Test database connection
+async function testDatabaseConnection() {
+  console.log('\n🔍 Checking database connection...');
+  
+  const dbUrl = process.env.DATABASE_URL;
+  const maskedUrl = maskDatabaseUrl(dbUrl);
+  console.log(`📊 DATABASE_URL: ${maskedUrl}`);
+  
+  if (!dbUrl) {
+    throw new Error('DATABASE_URL environment variable is not set!\n' +
+      'Please ensure DATABASE_URL is configured:\n' +
+      '  - On Railway: railway variables --service apis\n' +
+      '  - Locally: Set DATABASE_URL in .env file');
+  }
+  
+  try {
+    // Test connection with a simple query
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('✅ Database connection successful');
+    
+    // Check if schema exists
+    const schemaExists = await checkDatabaseSchema();
+    
+    if (schemaExists) {
+      console.log('✅ Database schema exists\n');
+    } else {
+      console.log('⚠️  Database schema not found - script will handle gracefully\n');
+    }
+    
+    return schemaExists;
+  } catch (error) {
+    console.error('\n❌ Database connection or schema check failed!');
+    console.error(`Error: ${error.message}\n`);
+    
+    if (error.message.includes('Can\'t reach database server')) {
+      console.error('💡 Possible solutions:');
+      console.error('  1. Ensure PostgreSQL service is running on Railway');
+      console.error('  2. Check if DATABASE_URL is correct');
+      console.error('  3. Verify network connectivity to database');
+      console.error('  4. If running locally, ensure DATABASE_URL uses public URL, not internal Railway URL');
+      console.error('');
+      console.error('   For Railway, ensure you use:');
+      console.error('   railway run --service apis yarn db:regenerate-system');
+    } else if (error.message.includes('schema does not exist')) {
+      // Error message already shown by checkDatabaseSchema
+      throw error;
+    } else if (error.message.includes('authentication failed')) {
+      console.error('💡 Authentication failed - check database credentials in DATABASE_URL');
+    } else if (error.message.includes('database')) {
+      console.error('💡 Database may not exist - run: npx prisma db push');
+    }
+    
+    throw error;
+  }
+}
+
 // System configuration
 const SYSTEM_CONFIG = {
   MERCHANTS: 2,
@@ -86,50 +192,117 @@ async function resetDatabase() {
     // Delete in correct order due to foreign key constraints
     // Note: subscriptionPayment model was removed, using unified Payment model
     
-    await prisma.payment.deleteMany({});
-    console.log('✅ Deleted all payments');
+    // Check if Payment table exists before trying to delete
+    const paymentTableExists = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'Payment'
+      );
+    `;
     
-    await prisma.subscription.deleteMany({});
-    console.log('✅ Deleted all subscriptions');
+    if (paymentTableExists[0]?.exists) {
+      await prisma.payment.deleteMany({});
+      console.log('✅ Deleted all payments');
+    } else {
+      console.log('⚠️  Payment table does not exist, skipping');
+    }
     
-    await prisma.plan.deleteMany({});
-    console.log('✅ Deleted all plans');
-    
-    // Reset merchant plans and subscription status
-    await prisma.merchant.updateMany({
-      data: {
-        planId: null,
-        subscriptionStatus: 'trial'
+    // Helper function to safely delete from table
+    async function safeDeleteTable(tableName, deleteFunction, logMessage) {
+      try {
+        // Try to delete - if table doesn't exist, it will throw an error
+        await deleteFunction();
+        console.log(logMessage);
+      } catch (error) {
+        // Check if error is because table doesn't exist
+        if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+          console.log(`⚠️  ${tableName} table does not exist, skipping`);
+        } else {
+          // Re-throw other errors
+          throw error;
+        }
       }
-    });
-    console.log('✅ Reset merchant plans and subscription status');
+    }
     
-    await prisma.orderItem.deleteMany({});
-    console.log('✅ Deleted all order items');
+    await safeDeleteTable('Subscription', 
+      () => prisma.subscription.deleteMany({}),
+      '✅ Deleted all subscriptions'
+    );
     
-    await prisma.order.deleteMany({});
-    console.log('✅ Deleted all orders');
+    await safeDeleteTable('Plan',
+      () => prisma.plan.deleteMany({}),
+      '✅ Deleted all plans'
+    );
     
-    await prisma.outletStock.deleteMany({});
-    console.log('✅ Deleted all outlet stock');
+    // Reset merchant plans and subscription status (only if Merchant table exists)
+    const merchantTableExists = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'Merchant'
+      );
+    `;
     
-    await prisma.product.deleteMany({});
-    console.log('✅ Deleted all products');
+    if (merchantTableExists[0]?.exists) {
+      try {
+        await prisma.merchant.updateMany({
+          data: {
+            planId: null,
+            subscriptionStatus: 'trial'
+          }
+        });
+        console.log('✅ Reset merchant plans and subscription status');
+      } catch (error) {
+        // Ignore if columns don't exist yet
+        console.log('⚠️  Could not reset merchant plans (columns may not exist)');
+      }
+    }
     
-    await prisma.category.deleteMany({});
-    console.log('✅ Deleted all categories');
+    await safeDeleteTable('OrderItem',
+      () => prisma.orderItem.deleteMany({}),
+      '✅ Deleted all order items'
+    );
     
-    await prisma.customer.deleteMany({});
-    console.log('✅ Deleted all customers');
+    await safeDeleteTable('Order',
+      () => prisma.order.deleteMany({}),
+      '✅ Deleted all orders'
+    );
     
-    await prisma.user.deleteMany({});
-    console.log('✅ Deleted all users');
+    await safeDeleteTable('OutletStock',
+      () => prisma.outletStock.deleteMany({}),
+      '✅ Deleted all outlet stock'
+    );
     
-    await prisma.outlet.deleteMany({});
-    console.log('✅ Deleted all outlets');
+    await safeDeleteTable('Product',
+      () => prisma.product.deleteMany({}),
+      '✅ Deleted all products'
+    );
     
-    await prisma.merchant.deleteMany({});
-    console.log('✅ Deleted all merchants');
+    await safeDeleteTable('Category',
+      () => prisma.category.deleteMany({}),
+      '✅ Deleted all categories'
+    );
+    
+    await safeDeleteTable('Customer',
+      () => prisma.customer.deleteMany({}),
+      '✅ Deleted all customers'
+    );
+    
+    await safeDeleteTable('User',
+      () => prisma.user.deleteMany({}),
+      '✅ Deleted all users'
+    );
+    
+    await safeDeleteTable('Outlet',
+      () => prisma.outlet.deleteMany({}),
+      '✅ Deleted all outlets'
+    );
+    
+    await safeDeleteTable('Merchant',
+      () => prisma.merchant.deleteMany({}),
+      '✅ Deleted all merchants'
+    );
     
     console.log('🎉 Database reset completed successfully!');
   } catch (error) {
@@ -143,13 +316,12 @@ async function createMerchants() {
   console.log('\n🏢 Creating merchants with default outlets...');
   
   const merchants = [];
-  let outletId = 1;
   
   // Sample business data for realistic merchant information
   const businessData = [
     {
       name: 'Rental Shop Demo',
-      businessType: 'Equipment Rental',
+      businessType: 'EQUIPMENT',
       address: '123 Main Street',
       city: 'New York',
       state: 'NY',
@@ -162,7 +334,7 @@ async function createMerchants() {
     },
     {
       name: 'Outdoor Equipment Co.',
-      businessType: 'Outdoor Gear Rental',
+      businessType: 'EQUIPMENT',
       address: '456 Mountain View Drive',
       city: 'Denver',
       state: 'CO',
@@ -178,7 +350,7 @@ async function createMerchants() {
   for (let i = 1; i <= SYSTEM_CONFIG.MERCHANTS; i++) {
     const business = businessData[i - 1] || {
       name: `Merchant ${i}`,
-      businessType: 'General Rental',
+      businessType: 'GENERAL',
       address: `${i * 100} Business Ave`,
       city: 'City',
       state: 'ST',
@@ -192,7 +364,6 @@ async function createMerchants() {
     
     const merchant = await prisma.merchant.create({
       data: {
-        id: i,
         name: business.name,
         email: `merchant${i}@example.com`,
         phone: business.phone,
@@ -201,22 +372,22 @@ async function createMerchants() {
         state: business.state,
         zipCode: business.zipCode,
         country: business.country,
-        businessType: business.businessType,
-        pricingType: business.businessType === 'Equipment Rental' ? 'DAILY' : 'FIXED',
+        businessType: business.businessType, // enum: GENERAL | VEHICLE | CLOTHING | EQUIPMENT
+        pricingType: business.businessType === 'EQUIPMENT' ? 'DAILY' : 'FIXED',
         taxId: business.taxId,
         website: business.website,
         description: business.description,
         pricingConfig: JSON.stringify({
-          businessType: business.businessType === 'Equipment Rental' ? 'EQUIPMENT' : 'GENERAL',
-          defaultPricingType: business.businessType === 'Equipment Rental' ? 'DAILY' : 'FIXED',
+          businessType: business.businessType,
+          defaultPricingType: business.businessType === 'EQUIPMENT' ? 'DAILY' : 'FIXED',
           businessRules: {
-            requireRentalDates: business.businessType === 'Equipment Rental',
-            showPricingOptions: business.businessType === 'Equipment Rental'
+            requireRentalDates: business.businessType === 'EQUIPMENT',
+            showPricingOptions: business.businessType === 'EQUIPMENT'
           },
           durationLimits: {
-            minDuration: business.businessType === 'Equipment Rental' ? 1 : 1,
-            maxDuration: business.businessType === 'Equipment Rental' ? 30 : 1,
-            defaultDuration: business.businessType === 'Equipment Rental' ? 3 : 1
+            minDuration: business.businessType === 'EQUIPMENT' ? 1 : 1,
+            maxDuration: business.businessType === 'EQUIPMENT' ? 30 : 1,
+            defaultDuration: business.businessType === 'EQUIPMENT' ? 3 : 1
           }
         }),
         isActive: true,
@@ -229,7 +400,6 @@ async function createMerchants() {
     // Create default outlet for this merchant immediately with all merchant info
     const defaultOutlet = await prisma.outlet.create({
       data: {
-        id: outletId++,
         name: `${business.name} - Main Branch`,
         address: business.address,
         phone: business.phone,
@@ -262,7 +432,6 @@ async function createMerchantAccounts(merchants) {
     const merchantPassword = await hashPassword('merchant123');
     const merchantUser = await prisma.user.create({
       data: {
-        id: getNextPublicId(),
         email: `merchant${merchant.id}@example.com`,
         password: merchantPassword,
         firstName: `Merchant`,
@@ -288,7 +457,6 @@ async function createSuperAdmin() {
   const adminPassword = await hashPassword('admin123');
   const superAdmin = await prisma.user.create({
     data: {
-      id: getNextPublicId(),
       email: 'admin@rentalshop.com',
       password: adminPassword,
       firstName: 'Super',
@@ -311,17 +479,16 @@ async function createAdditionalOutlets(merchants) {
   console.log('\n🏪 Creating additional outlets...');
   
   const outlets = [];
-  let outletId = merchants.length + 1; // Start after default outlets
+  let outletPhoneCounter = 3000; // separate counter for outlet phones
   
   for (const merchant of merchants) {
     // Create additional outlets (excluding the default one already created)
     for (let i = 2; i <= SYSTEM_CONFIG.OUTLETS_PER_MERCHANT; i++) {
       const outlet = await prisma.outlet.create({
         data: {
-          id: outletId++,
           name: `Outlet ${i} - ${merchant.name}`,
           address: `Address for Outlet ${i} of ${merchant.name}`,
-          phone: `+1-555-${String(outletId).padStart(4, '0')}`,
+          phone: `+1-555-${String(outletPhoneCounter++).padStart(4, '0')}`,
           city: merchant.city,
           state: merchant.state,
           zipCode: merchant.zipCode,
@@ -398,7 +565,6 @@ async function createCategories(merchants) {
   console.log('\n📂 Creating product categories...');
   
   const categories = [];
-  let categoryId = 1;
   
   const categoryNames = [
     'Electronics', 'Tools', 'Furniture', 'Sports Equipment', 'Party Supplies',
@@ -414,7 +580,6 @@ async function createCategories(merchants) {
     for (let i = 0; i < SYSTEM_CONFIG.PRODUCTS_PER_MERCHANT; i++) {
       const category = await prisma.category.create({
         data: {
-          id: categoryId++,
           name: categoryNames[i % categoryNames.length],
           description: `Category ${i + 1} for ${merchant.name}`,
           isActive: true,
@@ -435,15 +600,13 @@ async function createProducts(categories, outlets) {
   console.log('\n📦 Creating products...');
   
   const products = [];
-  let productId = 1;
   
   for (const category of categories) {
     const product = await prisma.product.create({
       data: {
-        id: productId++,
-        name: `Product ${productId} - ${category.name}`,
-        description: `Description for Product ${productId} in category ${category.name}`,
-        barcode: `BAR${String(productId).padStart(6, '0')}`,
+        name: `Product ${products.length + 1} - ${category.name}`,
+        description: `Description for Product ${products.length + 1} in category ${category.name}`,
+        barcode: `BAR${String(products.length + 1).padStart(6, '0')}`,
         totalStock: Math.floor(Math.random() * 50) + 10,
         rentPrice: Math.floor(Math.random() * 100) + 20,
         salePrice: Math.floor(Math.random() * 200) + 50,
@@ -496,7 +659,6 @@ async function createCustomers(merchants) {
   console.log('\n👥 Creating customers...');
   
   const customers = [];
-  let customerId = 1;
   
   const firstNames = [
     'John', 'Emma', 'Michael', 'Sarah', 'David', 'Lisa', 'James', 'Jennifer',
@@ -520,7 +682,6 @@ async function createCustomers(merchants) {
       
       const customer = await prisma.customer.create({
         data: {
-          id: customerId++,
           firstName,
           lastName,
           email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i + 1}@example.com`,
@@ -548,7 +709,6 @@ async function createOrders(outlets, customers, products, outletUsers) {
   console.log('\n📋 Creating orders...');
   
   const orders = [];
-  let orderPublicId = 1;
   
   for (const outlet of outlets) {
     console.log(`\n🏪 Creating orders for outlet: ${outlet.name}`);
@@ -653,7 +813,6 @@ async function createOrders(outlets, customers, products, outletUsers) {
         // Create the order
         const order = await prisma.order.create({
           data: {
-            id: orderPublicId++,
             orderNumber,
             orderType,
             status,
@@ -731,7 +890,6 @@ async function createBillingCycles() {
   console.log('\n💳 Creating billing cycles...');
   
   const billingCycles = [];
-  let cycleId = 1;
   
   const cycleData = [
     { name: 'Monthly', value: 'monthly', months: 1, discount: 0, sortOrder: 1 },
@@ -743,7 +901,6 @@ async function createBillingCycles() {
   for (const cycle of cycleData) {
     const billingCycle = await prisma.billingCycle.create({
       data: {
-        id: cycleId++,
         name: cycle.name,
         value: cycle.value,
         months: cycle.months,
@@ -786,7 +943,6 @@ async function createPlans() {
   for (const plan of planData) {
     const subscriptionPlan = await prisma.plan.create({
       data: {
-        id: planId++,
         name: plan.name,
         description: plan.description,
         basePrice: plan.basePrice,
@@ -942,8 +1098,17 @@ async function main() {
     console.log(`  • ${SYSTEM_CONFIG.SUBSCRIPTIONS} merchant subscriptions`);
     console.log('');
     
-    // Step 1: Reset database
-    await resetDatabase();
+    // Step 0: Test database connection
+    const schemaExists = await testDatabaseConnection();
+    
+    // Step 1: Reset database (only if schema exists)
+    if (schemaExists) {
+      await resetDatabase();
+    } else {
+      console.log('\n⚠️  Skipping database reset - schema does not exist');
+      console.log('   Will proceed to create new data only\n');
+      console.log('💡 To push schema first, run: npx prisma db push --accept-data-loss\n');
+    }
     
     // Step 2: Create subscription plans FIRST
     console.log('📋 Creating subscription plans...');
@@ -1107,16 +1272,9 @@ async function createSubscriptionPayments(subscriptions) {
   
   for (const subscription of subscriptions) {
     try {
-      // Get next payment public ID
-      const lastPayment = await prisma.payment.findFirst({
-        orderBy: { id: 'desc' }
-      });
-      const paymentPublicId = (lastPayment?.id || 0) + 1;
-      
-      // Create payment record for subscription
+      // Create payment record for subscription (let DB auto-generate id)
       const payment = await prisma.payment.create({
         data: {
-          id: paymentPublicId,
           subscriptionId: subscription.id,
           merchantId: subscription.merchantId,
           amount: subscription.amount,

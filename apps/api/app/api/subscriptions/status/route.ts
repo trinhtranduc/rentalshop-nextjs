@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError, createSuccessResponse } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
       if (!merchantId) {
         return NextResponse.json(
-          { success: false, message: 'Merchant ID is required' },
+          ResponseBuilder.error('MERCHANT_ID_REQUIRED'),
           { status: 400 }
         );
       }
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       const merchant = await db.merchants.findById(merchantId);
       if (!merchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: 404 }
         );
       }
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       // Check if merchant has a subscription
       if (!merchant.subscription) {
         return NextResponse.json(
-          { success: false, message: 'No subscription found for this merchant' },
+          ResponseBuilder.error('NO_SUBSCRIPTION_FOUND'),
           { status: 404 }
         );
       }
@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
         features: plan?.features ? JSON.parse(plan.features) : []
       };
 
-      return NextResponse.json(createSuccessResponse(subscriptionStatus, 'Subscription status retrieved successfully'));
+      return NextResponse.json(ResponseBuilder.success('SUBSCRIPTION_STATUS_RETRIEVED', subscriptionStatus));
 
     } catch (error) {
       console.error('Error fetching subscription status:', error);

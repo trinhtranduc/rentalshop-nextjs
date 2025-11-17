@@ -1,0 +1,90 @@
+{
+  "title": "Đăng ký",
+  "mySubscription": "Đăng ký của tôi",
+  "currentPlan": "Gói hiện tại",
+  "planDetails": "Chi tiết gói",
+  "billingInformation": "Thông tin thanh toán",
+  "paymentHistory": "Lịch sử thanh toán",
+  "status": {
+    "active": "Hoạt động",
+    "trialing": "Dùng thử",
+    "past_due": "Quá hạn",
+    "canceled": "Đã hủy",
+    "unpaid": "Chưa thanh toán",
+    "paused": "Tạm dừng"
+  },
+  "billing": {
+    "cycle": "Chu kỳ thanh toán",
+    "amount": "Số tiền thanh toán",
+    "nextBilling": "Ngày thanh toán tiếp theo",
+    "lastBilling": "Ngày thanh toán cuối",
+    "method": "Phương thức thanh toán",
+    "monthly": "Hàng tháng",
+    "yearly": "Hàng năm",
+    "quarterly": "Hàng quý"
+  },
+  "trial": {
+    "status": "Trạng thái dùng thử",
+    "daysRemaining": "Số ngày còn lại",
+    "endsOn": "Kết thúc vào",
+    "expired": "Hết hạn dùng thử"
+  },
+  "actions": {
+    "upgrade": "Nâng cấp gói",
+    "downgrade": "Hạ cấp gói",
+    "cancel": "Hủy đăng ký",
+    "resume": "Tiếp tục đăng ký",
+    "updatePayment": "Cập nhật phương thức thanh toán",
+    "viewInvoices": "Xem hóa đơn",
+    "changePlan": "Thay đổi gói"
+  },
+  "modals": {
+    "upgrade": {
+      "title": "Nâng cấp đăng ký",
+      "description": "Chọn gói để nâng cấp",
+      "confirm": "Xác nhận nâng cấp",
+      "cancel": "Hủy"
+    },
+    "cancel": {
+      "title": "Hủy đăng ký",
+      "description": "Bạn có chắc chắn muốn hủy đăng ký?",
+      "reason": "Lý do hủy",
+      "confirm": "Xác nhận hủy",
+      "keepSubscription": "Giữ đăng ký"
+    },
+    "payment": {
+      "title": "Cập nhật phương thức thanh toán",
+      "cardNumber": "Số thẻ",
+      "expiryDate": "Ngày hết hạn",
+      "cvv": "CVV",
+      "save": "Lưu phương thức thanh toán"
+    }
+  },
+  "messages": {
+    "upgradeSuccess": "Nâng cấp đăng ký thành công",
+    "upgradeFailed": "Nâng cấp đăng ký thất bại",
+    "cancelSuccess": "Hủy đăng ký thành công",
+    "cancelFailed": "Hủy đăng ký thất bại",
+    "resumeSuccess": "Tiếp tục đăng ký thành công",
+    "resumeFailed": "Tiếp tục đăng ký thất bại",
+    "paymentUpdateSuccess": "Cập nhật phương thức thanh toán thành công",
+    "paymentUpdateFailed": "Cập nhật phương thức thanh toán thất bại"
+  },
+  "features": {
+    "title": "Tính năng gói",
+    "included": "Đã bao gồm",
+    "notIncluded": "Không bao gồm",
+    "unlimited": "Không giới hạn"
+  },
+  "usage": {
+    "title": "Mức sử dụng hiện tại",
+    "orders": "Đơn hàng",
+    "products": "Sản phẩm",
+    "customers": "Khách hàng",
+    "outlets": "Cửa hàng",
+    "limit": "Giới hạn",
+    "used": "Đã dùng",
+    "remaining": "Còn lại"
+  }
+}
+

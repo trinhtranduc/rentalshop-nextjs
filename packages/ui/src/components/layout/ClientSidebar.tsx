@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
+import { Button, Logo } from '@rentalshop/ui';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useCommonTranslations } from '@rentalshop/hooks';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -45,56 +47,57 @@ interface MenuItem {
   subItems?: MenuItem[];
 }
 
-const clientMenuItems: MenuItem[] = [
+// Function to get menu items with translations
+const getClientMenuItems = (t: any): MenuItem[] => [
   {
-    label: 'Dashboard',
+    label: t('navigation.dashboard'),
     href: '/dashboard',
     icon: Home,
   },
   {
-    label: 'Orders',
+    label: t('navigation.orders'),
     href: '/orders',
     icon: ShoppingCart,
   },
   {
-    label: 'Products',
+    label: t('navigation.products'),
     href: '/products',
     icon: Package,
     subItems: [
       { 
-        label: 'All Products', 
+        label: t('navigation.allProducts'), 
         href: '/products', 
         icon: Package 
       },
       { 
-        label: 'Categories', 
+        label: t('navigation.categories'), 
         href: '/categories', 
         icon: Tag 
       }
     ]
   },
   {
-    label: 'Customers',
+    label: t('navigation.customers'),
     href: '/customers',
     icon: Users,
   },
   {
-    label: 'Users',
+    label: t('navigation.users'),
     href: '/users',
     icon: User,
   },
   {
-    label: 'Outlets',
+    label: t('navigation.outlets'),
     href: '/outlets',
     icon: Building2,
   },
   {
-    label: 'Calendar',
+    label: t('navigation.calendar'),
     href: '/calendar',
     icon: Calendar,
   },
   {
-    label: 'Settings',
+    label: t('navigation.settings'),
     href: '/settings',
     icon: Settings,
   }
@@ -118,6 +121,9 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   const [clickedTab, setClickedTab] = useState<string | null>(null);
   const [localCurrentPage, setLocalCurrentPage] = useState(currentPath);
   const pathname = usePathname();
+  
+  // Get translations
+  const t = useCommonTranslations();
 
   // Filter menu items based on user role
   const filterMenuItemsByRole = (items: MenuItem[], userRole?: string) => {
@@ -146,12 +152,22 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
     return items;
   };
 
-  const menuItems = filterMenuItemsByRole(clientMenuItems, user?.role);
+  const menuItems = filterMenuItemsByRole(getClientMenuItems(t), user?.role);
 
-  // Update local state when prop changes
+  // Update local state when prop changes - prioritize pathname for immediate updates
   useEffect(() => {
-    setLocalCurrentPage(currentPath);
-  }, [currentPath]);
+    const actualPath = pathname || currentPath;
+    setLocalCurrentPage(actualPath);
+  }, [pathname, currentPath]);
+
+  // AGGRESSIVE PREFETCHING: Prefetch all pages on mount for instant navigation
+  useEffect(() => {
+    if (onPrefetch) {
+      menuItems.forEach(item => {
+        onPrefetch(item.href);
+      });
+    }
+  }, [menuItems, onPrefetch]);
 
   // Close submenu when clicking outside
   useEffect(() => {
@@ -178,26 +194,13 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   };
 
   const isActive = (href: string) => {
+    // Priority: 1. localCurrentPage (optimistic), 2. pathname (actual), 3. currentPath (fallback)
+    // This ensures immediate visual feedback on click before navigation completes
+    const currentPathToCheck = localCurrentPage || pathname || currentPath;
     if (href === '/dashboard') {
-      return localCurrentPage === '/dashboard';
+      return currentPathToCheck === '/dashboard';
     }
-    return localCurrentPage.startsWith(href);
-  };
-
-  const handleTabClick = (href: string) => {
-    // Immediately update local state for instant visual feedback
-    setLocalCurrentPage(href);
-    
-    // Set clicked state for visual feedback
-    setClickedTab(href);
-    
-    // Clear clicked state after a short delay
-    setTimeout(() => setClickedTab(null), 200);
-    
-    // Navigate
-    if (onNavigate) {
-      onNavigate(href);
-    }
+    return currentPathToCheck.startsWith(href);
   };
 
   const handleTabHover = (href: string) => {
@@ -213,71 +216,86 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
     const isExpanded = expandedItems.includes(item.href);
     const active = isActive(item.href);
     const isHovered = hoveredTab === item.href;
+    const isClicked = clickedTab === item.href;
     const Icon = item.icon;
+    
+    // Combined state for immediate visual feedback
+    const shouldHighlight = active;
 
     return (
       <div key={item.href} className="relative">
         {hasSubItems ? (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleExpanded(item.href);
-            }}
-            onMouseEnter={() => handleTabHover(item.href)}
-            onMouseLeave={() => setHoveredTab(null)}
-            className={cn(
-              'nav-item flex items-center justify-between w-full px-3 py-2 text-base font-medium rounded-md transition-all duration-150 ease-out relative',
-              active 
-                ? 'text-blue-600 bg-blue-50 shadow-sm' 
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50',
-              isHovered ? 'scale-105' : '',
-              clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <Icon className={cn(
-                'w-4 h-4',
-                active ? 'text-blue-600' : 'text-gray-500'
-              )} />
-              {!isCollapsed && (
-                <span>{item.label}</span>
+          <>
+            <Link
+              href={item.href}
+              className={cn(
+                'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative no-underline',
+                shouldHighlight
+                  ? 'nav-item-active text-blue-700 font-medium bg-blue-50/80' 
+                  : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary',
+                isHovered && !shouldHighlight ? 'hover:shadow-sm' : '',
+                isClicked ? 'scale-[0.98] transform' : ''
               )}
-            </div>
-            {!isCollapsed && (
-              <ChevronDown className={cn(
-                'w-4 h-4 transition-transform duration-200',
-                isExpanded ? 'rotate-180' : ''
-              )} />
-            )}
-            
-            {/* Hover effect */}
-            {isHovered && !active && (
-              <div className="absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200"></div>
-            )}
-          </button>
+              onClick={(e) => {
+                // Toggle submenu instead of navigating to parent href
+                e.preventDefault();
+                toggleExpanded(item.href);
+                setClickedTab(item.href);
+                setTimeout(() => setClickedTab(null), 150);
+              }}
+              onMouseEnter={() => {
+                handleTabHover(item.href);
+                setHoveredTab(item.href);
+              }}
+              onMouseLeave={() => setHoveredTab(null)}
+            >
+              <div className="flex items-center gap-2">
+                <Icon className={cn(
+                  'w-4 h-4 transition-colors duration-100',
+                  shouldHighlight ? 'text-blue-700' : 'text-text-secondary'
+                )} />
+                {!isCollapsed && (
+                  <span>{item.label}</span>
+                )}
+              </div>
+              {!isCollapsed && (
+                <ChevronDown className={cn(
+                  'w-4 h-4 transition-transform duration-200',
+                  isExpanded ? 'rotate-180' : ''
+                )} />
+              )}
+              
+              {/* Hover effect - only show when not currently active */}
+              {isHovered && !shouldHighlight && (
+                <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100 pointer-events-none"></div>
+              )}
+            </Link>
+          </>
         ) : (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTabClick(item.href);
-            }}
-            onMouseEnter={() => handleTabHover(item.href)}
-            onMouseLeave={() => setHoveredTab(null)}
+          <Link
+            href={item.href}
             className={cn(
-              'nav-item flex items-center justify-between w-full px-3 py-2 text-base font-medium rounded-md transition-all duration-150 ease-out relative',
-              active 
-                ? 'text-blue-600 bg-blue-50 shadow-sm' 
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50',
-              isHovered ? 'scale-105' : '',
-              clickedTab === item.href ? 'scale-95 bg-blue-100 shadow-md' : ''
+              'nav-item flex items-center justify-between w-full px-3 py-2.5 text-sm font-normal rounded-lg relative no-underline',
+              shouldHighlight
+                ? 'nav-item-active text-blue-700 font-medium bg-blue-50/80' 
+                : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary',
+              isHovered && !shouldHighlight ? 'hover:shadow-sm' : '',
+              isClicked ? 'scale-[0.98] transform' : ''
             )}
+            onClick={(e) => {
+              setClickedTab(item.href);
+              setTimeout(() => setClickedTab(null), 150);
+            }}
+            onMouseEnter={() => {
+              handleTabHover(item.href);
+              setHoveredTab(item.href);
+            }}
+            onMouseLeave={() => setHoveredTab(null)}
           >
             <div className="flex items-center gap-2">
               <Icon className={cn(
-                'w-4 h-4',
-                active ? 'text-blue-600' : 'text-gray-500'
+                'w-4 h-4 transition-colors duration-100',
+                shouldHighlight ? 'text-blue-700' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
@@ -289,11 +307,11 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
               </span>
             )}
             
-            {/* Hover effect */}
-            {isHovered && !active && (
-              <div className="absolute inset-0 bg-gray-50/50 rounded-md transition-all duration-200"></div>
+            {/* Hover effect - only show when not currently active */}
+            {isHovered && !shouldHighlight && (
+              <div className="absolute inset-0 bg-bg-secondary/50 rounded-lg transition-all duration-100 pointer-events-none"></div>
             )}
-          </button>
+          </Link>
         )}
 
         {/* Sub Items */}
@@ -302,27 +320,29 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             {item.subItems?.map((subItem) => {
               const SubIcon = subItem.icon;
               const subActive = isActive(subItem.href);
+              const subClicked = clickedTab === subItem.href;
+              const subShouldHighlight = subActive;
               
               return (
-                <button
+                <Link
                   key={subItem.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleTabClick(subItem.href);
-                    // Add small delay before closing submenu to ensure navigation processes
-                    setTimeout(() => {
-                      setExpandedItems([]);
-                    }, 100);
-                  }}
+                  href={subItem.href}
                   className={cn(
-                    'w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors rounded-md',
-                    subActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                    'w-full text-left px-4 py-2 text-sm font-normal flex items-center gap-2 hover:bg-bg-secondary transition-all duration-100 rounded-lg justify-start h-auto will-change-transform no-underline',
+                    subShouldHighlight ? 'text-blue-700 font-medium bg-blue-50/80' : 'text-text-primary hover:text-blue-700',
+                    subClicked ? 'scale-[0.99] transform' : ''
                   )}
+                  onClick={(e) => {
+                    setClickedTab(subItem.href);
+                    setTimeout(() => setClickedTab(null), 150);
+                  }}
                 >
-                  <SubIcon className="w-4 h-4" />
+                  <SubIcon className={cn(
+                    'w-4 h-4 transition-colors duration-100',
+                    subShouldHighlight ? 'text-blue-700' : 'text-text-secondary'
+                  )} />
                   {subItem.label}
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -333,33 +353,48 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
 
   return (
     <div className={cn(
-      'flex flex-col h-full bg-white border-r border-gray-200 shadow-sm transition-all duration-300',
+      'flex flex-col h-full bg-bg-card border-r border-border shadow-sm transition-all duration-300',
       isCollapsed ? 'w-16' : 'w-64'
     )}>
+      {/* Hidden Link components for Next.js automatic prefetching */}
+      <div className="hidden">
+        {menuItems.map(item => (
+          <Link key={item.href} href={item.href} />
+        ))}
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
+            <Logo 
+              size="sm" 
+              variant="custom" 
+              src="/anyrent-logo-light.svg" 
+              showBackground={false}
+              blueStroke={true}
+            />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">RentalShop</h1>
+              <h1 className="text-lg font-semibold text-text-primary">AnyRent</h1>
             </div>
           </div>
         )}
         
         {isCollapsed && (
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mx-auto shadow-sm">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
+          <Logo 
+            size="sm" 
+            variant="custom" 
+            src="/anyrent-logo-light.svg" 
+            showBackground={false}
+            blueStroke={true}
+          />
         )}
 
         <Button
           variant="ghost"
           size="icon"
           onClick={onCollapseToggle}
-          className="h-8 w-8 text-gray-500 hover:text-gray-900"
+          className="h-8 w-8 text-text-tertiary hover:text-text-primary"
         >
           {isCollapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -376,25 +411,25 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
       </nav>
 
       {/* User Profile & Actions */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-border">
         {user && !isCollapsed && (
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-base font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-text-primary truncate">
                 {user.name || user.email}
               </p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-text-tertiary truncate">
                 {user.role}
               </p>
             </div>
             <div className="flex items-center space-x-2">
               {cartItemsCount > 0 && (
                 <div className="relative">
-                  <ShoppingCart className="w-4 h-4 text-gray-500" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center">
+                  <ShoppingCart className="w-4 h-4 text-text-tertiary" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center">
                     {cartItemsCount}
                   </span>
                 </div>
@@ -411,16 +446,16 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             <div className="flex items-center space-x-1">
               {notificationsCount > 0 && (
                 <div className="relative">
-                  <Bell className="w-4 h-4 text-gray-500" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  <Bell className="w-4 h-4 text-text-tertiary" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-action-danger rounded-full text-xs text-white flex items-center justify-center">
                     {notificationsCount}
                   </span>
                 </div>
               )}
               {cartItemsCount > 0 && (
                 <div className="relative">
-                  <ShoppingCart className="w-4 h-4 text-gray-500" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center">
+                  <ShoppingCart className="w-4 h-4 text-text-tertiary" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-action-primary rounded-full text-xs text-white flex items-center justify-center">
                     {cartItemsCount}
                   </span>
                 </div>
@@ -434,12 +469,12 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
             variant="ghost"
             onClick={onLogout}
             className={cn(
-              'w-full justify-start text-gray-500 hover:text-gray-900 hover:bg-gray-50',
+              'w-full justify-start text-text-secondary hover:text-text-primary hover:bg-bg-secondary text-sm font-normal',
               isCollapsed && 'justify-center px-2'
             )}
           >
             <LogOut className="w-4 h-4" />
-            {!isCollapsed && <span className="ml-2">Logout</span>}
+            {!isCollapsed && <span className="ml-2">{t('navigation.logout')}</span>}
           </Button>
         )}
       </div>

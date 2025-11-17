@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 
 /**
  * GET /api/billing-cycles - Get billing cycles
@@ -12,13 +12,13 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
   try {
     // TODO: Implement billing cycle functionality when model is added to schema
     return NextResponse.json(
-      { success: false, message: 'Billing cycle functionality not yet implemented' },
+      ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
       { status: 501 }
     );
   } catch (error) {
     console.error('Error fetching billing cycles:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch billing cycles' },
+      ResponseBuilder.error('FETCH_BILLING_CYCLES_FAILED'),
       { status: 500 }
     );
   }
@@ -34,7 +34,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request, { user, userScope }
   try {
     // TODO: Implement billing cycle functionality when model is added to schema
     return NextResponse.json(
-      { success: false, message: 'Billing cycle functionality not yet implemented' },
+      ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
       { status: 501 }
     );
   } catch (error) {

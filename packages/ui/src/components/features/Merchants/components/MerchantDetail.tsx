@@ -80,27 +80,27 @@ export function MerchantDetail({
           <CardContent>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</label>
-                <p className="text-gray-900 dark:text-white">{data.merchant.name}</p>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Name</label>
+                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</label>
-                <p className="text-gray-900 dark:text-white">{data.merchant.email}</p>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Email</label>
+                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.email}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</label>
-                <p className="text-gray-900 dark:text-white">{data.merchant.phone || 'Not provided'}</p>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Phone</label>
+                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.phone || 'Not provided'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</label>
-                <p className="text-gray-900 dark:text-white">{data.merchant.address || 'Not provided'}</p>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Address</label>
+                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.address || 'Not provided'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</label>
-                <p className="text-gray-900 dark:text-white">{data.merchant.description || 'No description'}</p>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Description</label>
+                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.description || 'No description'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
                 <p className={`text-sm ${data.merchant.isActive ? 'text-green-600' : 'text-red-600'}`}>
                   {data.merchant.isActive ? 'Active' : 'Inactive'}
                 </p>
@@ -124,9 +124,9 @@ export function MerchantDetail({
               price: data.merchant.plan.basePrice,
               currency: data.merchant.plan.currency
             } : null,
-            subscriptionStatus: data.merchant.currentSubscription?.status || data.merchant.subscriptionStatus || 'unknown'
+            subscriptionStatus: data.merchant.subscription?.status || 'unknown'
           }}
-          subscriptions={data.merchant.currentSubscription ? [data.merchant.currentSubscription as any] : []}
+          subscriptions={data.merchant.subscription ? [data.merchant.subscription] : []}
           plans={plans}
           currentUserRole={currentUserRole}
           onPlanChange={onPlanChange}
@@ -138,10 +138,10 @@ export function MerchantDetail({
       )}
 
       {/* Activity Timeline - Add below plan management */}
-      {data.merchant.currentSubscription && (
+      {data.merchant.subscription && (
         <MerchantSubscriptionSection
           merchantId={data.merchant.id}
-          subscription={data.merchant.currentSubscription as any}
+          subscription={data.merchant.subscription}
         />
       )}
 
@@ -150,7 +150,7 @@ export function MerchantDetail({
         <Card className="shadow-sm border-gray-200 dark:border-gray-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Manage Outlets</CardTitle>
-            <Building2 className="w-5 h-5 text-blue-600" />
+            <Building2 className="w-5 h-5 text-blue-700" />
           </CardHeader>
           <CardContent>
             <Button 

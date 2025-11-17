@@ -218,7 +218,7 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
                         <Badge className="bg-blue-500">Most Popular</Badge>
                       )}
                     </div>
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-2xl font-bold text-blue-700">
                       {formatPrice(plan.price, plan.currency)}
                       <span className="text-sm font-normal text-gray-500">
                         /{plan.billingCycle}
@@ -329,7 +329,7 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
                   <Separator />
                   <div className="flex justify-between items-center text-lg font-bold">
                     <span>Total:</span>
-                    <span className="text-blue-600">
+                    <span className="text-blue-700">
                       {formatPrice(calculatedPrice, selectedPlan.currency)}
                     </span>
                   </div>
@@ -346,7 +346,7 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
             <Button 
               onClick={handleConfirm}
               disabled={!selectedPlan || loading}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-700 hover:bg-blue-700"
             >
               {loading ? 'Processing...' : 'Continue with Payment'}
             </Button>

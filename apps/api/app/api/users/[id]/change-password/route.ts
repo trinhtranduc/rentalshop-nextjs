@@ -1,6 +1,6 @@
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAnyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
 import {API} from '@rentalshop/constants';
@@ -19,7 +19,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
+  return withAnyAuth(async (request: NextRequest, { user, userScope }) => {
     try {
       console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', params.id);
       
@@ -33,7 +33,7 @@ export async function PATCH(
     const numericId = parseInt(id);
     if (isNaN(numericId) || numericId <= 0) {
       return NextResponse.json(
-        { success: false, message: 'Invalid user ID format' },
+          ResponseBuilder.error('INVALID_USER_ID_FORMAT'),
         { status: 400 }
       );
     }
@@ -41,7 +41,7 @@ export async function PATCH(
     // Validate input
     if (!newPassword || newPassword.length < 6) {
       return NextResponse.json(
-        { success: false, message: 'New password must be at least 6 characters' },
+          ResponseBuilder.error('PASSWORD_MIN_LENGTH'),
         { status: 400 }
       );
     }
@@ -50,7 +50,7 @@ export async function PATCH(
     // Admin password changes don't require confirmPassword
     if (confirmPassword && newPassword !== confirmPassword) {
       return NextResponse.json(
-        { success: false, message: 'New passwords do not match' },
+          ResponseBuilder.error('PASSWORD_MISMATCH'),
         { status: 400 }
       );
     }
@@ -60,7 +60,7 @@ export async function PATCH(
 
     if (!targetUser) {
       return NextResponse.json(
-        { success: false, message: 'User not found' },
+          ResponseBuilder.error('USER_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -95,12 +95,7 @@ export async function PATCH(
         targetUserOutletId: targetUser.outletId
       });
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Insufficient permissions to change password for this user',
-          required: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'],
-          current: currentUser.role
-        },
+        ResponseBuilder.error('INSUFFICIENT_PERMISSIONS', 'Insufficient permissions to change password for this user'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -119,16 +114,14 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      message: 'Password changed successfully'
+        code: 'PASSWORD_CHANGED_SUCCESS',
+        message: 'Password changed successfully'
     });
 
   } catch (error) {
       console.error('❌ Error changing password:', error);
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Failed to change password' 
-        },
+        ResponseBuilder.error('CHANGE_PASSWORD_FAILED', 'Failed to change password'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }

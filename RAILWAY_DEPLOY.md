@@ -1,505 +1,721 @@
-# 🚀 Railway Deployment Guide - Complete Setup
+# 🚂 Railway Deployment Guide
 
-## 📋 **Prerequisites**
-
-Trước khi deploy, đảm bảo:
-
-- ✅ Railway account created (https://railway.app)
-- ✅ GitHub repository pushed
-- ✅ File upload configuration (optional)
-- ✅ Local build successful (`yarn build`)
+Complete guide for deploying the Rental Shop Next.js monorepo to Railway with PostgreSQL.
 
 ---
 
-## 🎯 **Tại sao chọn Railway?**
+## 📋 Table of Contents
 
-### **Railway vs Vercel:**
-
-| Tính năng | Railway | Vercel |
-|-----------|---------|--------|
-| **Frontend hosting** | ✅ Yes | ✅ Yes |
-| **Backend API** | ✅ Full support | ⚠️ Serverless only |
-| **Database built-in** | ✅ PostgreSQL included | ❌ Need external |
-| **Persistent storage** | ✅ Volumes | ❌ Need external |
-| **Websockets** | ✅ Supported | ❌ Limited |
-| **Long-running jobs** | ✅ Supported | ❌ 10s timeout |
-| **Chi phí** | **$5-20/tháng** | $45+/tháng |
-
-### **✅ Lý do chọn Railway:**
-
-1. **All-in-One**: Database + hosting + storage trong 1 nơi
-2. **Full-stack**: Hỗ trợ cả frontend + backend phức tạp
-3. **Tiết kiệm**: $5-20/tháng vs $45+/tháng (Vercel + Supabase)
-4. **Dễ dàng**: Setup nhanh, không cần nhiều services
-5. **Flexible**: Chạy bất kỳ code gì (Node.js, Python, Go, etc.)
+1. [Quick Start](#-quick-start-15-minutes)
+2. [Why Railway](#-why-railway)
+3. [Architecture](#-architecture-overview)
+4. [Environment Setup](#-environment-setup)
+5. [Deployment Steps](#-deployment-steps)
+6. [Configuration](#-configuration-files)
+7. [Troubleshooting](#-troubleshooting)
+8. [Monitoring](#-monitoring--costs)
 
 ---
 
-## 📦 **Deployment Architecture**
+## ⚡ Quick Start (15 minutes)
 
+### 1. Install Railway CLI
+```bash
+npm install -g @railway/cli
+railway login
+```
+
+### 2. Create Project & Database
+```bash
+# Create project
+railway init
+
+# Add PostgreSQL
+railway add postgresql
+```
+
+### 3. Automated Setup (Recommended)
+```bash
+# Run setup script (generates secrets, sets env vars, pushes schema, seeds data)
+./scripts/setup-railway-env.sh
+```
+
+### 4. Deploy
+```bash
+# Push to GitHub to trigger automatic deployment
+git push
+
+# Or deploy directly
+railway up
+```
+
+### 5. Verify
+```bash
+# Check API health
+curl https://your-api.railway.app/api/health
+
+# View logs
+railway logs --service apis -f
+```
+
+**Done!** Your app is now live on Railway! 🎉
+
+---
+
+## 🎯 Why Railway?
+
+| Feature | Railway | Other Platforms |
+|---------|---------|----------------|
+| **Database** | ✅ Built-in PostgreSQL | ❌ Need external ($25/mo) |
+| **Backend** | ✅ Full Node.js support | ⚠️ Limited/Serverless |
+| **Storage** | ✅ Persistent volumes | ❌ Need external |
+| **Monorepo** | ✅ Native support | ⚠️ Complex setup |
+| **Cost** | **$5-20/month** | $45+/month |
+| **Setup** | ⚡ 15 minutes | 1+ hours |
+
+**Savings: $25-30/month** compared to Vercel + Supabase 💰
+
+---
+
+## 🏗️ Architecture Overview
+
+### Railway Project Structure
 ```
 ┌─────────────────────────────────────────────────────┐
 │                   RAILWAY PROJECT                    │
 ├─────────────────────────────────────────────────────┤
 │                                                      │
 │  ┌──────────────┐  ┌──────────────┐  ┌───────────┐ │
-│  │   DATABASE   │  │   API SERVER │  │  CLIENT   │ │
-│  │  PostgreSQL  │◄─│  (Port 3002) │◄─│(Port 3000)│ │
+│  │   DATABASE   │  │   API SERVER │  │   ADMIN   │ │
+│  │  PostgreSQL  │◄─│  (Port 3002) │◄─│(Port 3001)│ │
 │  └──────────────┘  └──────────────┘  └───────────┘ │
 │                            ▲                         │
 │                            │                         │
 │                    ┌───────────────┐                 │
-│                    │  ADMIN PANEL  │                 │
-│                    │  (Port 3001)  │                 │
+│                    │    CLIENT     │                 │
+│                    │  (Port 3000)  │                 │
 │                    └───────────────┘                 │
 │                                                      │
 └─────────────────────────────────────────────────────┘
 ```
 
-**Chúng ta sẽ deploy:**
-- 1 PostgreSQL database service
-- 3 web services (API, Client, Admin)
+### Services
+- **PostgreSQL**: Managed database (Railway)
+- **API**: Backend + API routes (Next.js)
+- **Admin**: Admin dashboard (Next.js)
+- **Client**: Customer-facing app (Next.js)
 
 ---
 
-## ⚡ **Quick Deploy (30 phút)**
+## 🔧 Environment Setup
 
-### **Step 1: Tạo Railway Project (2 phút)**
-
-1. **Đăng nhập Railway**: https://railway.app
-2. **Click "New Project"**
-3. **Choose "Deploy from GitHub repo"**
-4. **Select repository**: `rentalshop-nextjs`
-5. **Đặt tên project**: `rentalshop`
-
-**Railway sẽ tự động detect monorepo!**
-
----
-
-### **Step 2: Add PostgreSQL Database (1 phút)**
-
-1. **Trong Railway project dashboard**
-2. **Click "New" → "Database" → "Add PostgreSQL"**
-3. **Railway tự động provision database**
-4. **Copy DATABASE_URL** (sẽ dùng sau)
-
-**✅ Database URL format:**
-```
-postgresql://postgres:password@containers-us-west-1.railway.app:5432/railway
-```
-
----
-
-### **Step 3: Deploy API Service (5 phút)**
-
-1. **Click "New" → "GitHub Repo"**
-2. **Select `rentalshop-nextjs`**
-3. **Configure service:**
-
-**Settings → General:**
-- **Service Name**: `api`
-- **Root Directory**: `apps/api`
-- **Build Command**: `cd ../.. && yarn install && yarn build --filter=@rentalshop/api`
-- **Start Command**: `cd apps/api && yarn start`
-
-**Settings → Networking:**
-- **Generate Domain** (click để tạo public URL)
-- **Save URL**: `https://rentalshop-api.up.railway.app`
-
-**Settings → Variables:**
-Click "Add Variable" cho từng biến:
+### Option A: Automated Setup (Recommended)
 
 ```bash
-# Database (from Railway PostgreSQL service)
-DATABASE_URL=${{Postgres.DATABASE_URL}}
-
-# Authentication
-JWT_SECRET=generate-with-openssl-rand-base64-32
-JWT_EXPIRES_IN=1d
-NEXTAUTH_SECRET=generate-with-openssl-rand-base64-32
-NEXTAUTH_URL=https://rentalshop-api.up.railway.app
-
-# File uploads (optional - disabled by default)
-# UPLOAD_PROVIDER=local
-# MAX_FILE_SIZE=10485760
-
-# URLs (update sau khi deploy client/admin)
-API_URL=https://rentalshop-api.up.railway.app
-CLIENT_URL=https://rentalshop-client.up.railway.app
-ADMIN_URL=https://rentalshop-admin.up.railway.app
-CORS_ORIGINS=https://rentalshop-client.up.railway.app,https://rentalshop-admin.up.railway.app
-
-# Environment
-NODE_ENV=production
-LOG_LEVEL=warn
-HUSKY=0
-CI=true
+./scripts/setup-railway-env.sh
 ```
 
-**Generate secrets:**
+This script will:
+1. ✅ Generate secure JWT_SECRET and NEXTAUTH_SECRET (32+ chars)
+2. ✅ Set all environment variables for all services
+3. ✅ Push Prisma schema to Railway database
+4. ✅ Seed database with initial data
+
+### Option B: Manual Setup
+
+#### 1. Generate Secrets
 ```bash
-# Trên terminal local
-openssl rand -base64 32  # Copy cho JWT_SECRET
-openssl rand -base64 32  # Copy cho NEXTAUTH_SECRET
+# Generate JWT secret
+openssl rand -hex 32
+
+# Generate NextAuth secret
+openssl rand -hex 32
 ```
 
-4. **Click "Deploy"**
-5. **Chờ build complete** (~3-5 phút)
+#### 2. Set Environment Variables
+
+**API Service (Production):**
+```bash
+railway variables --set DATABASE_URL='${{Postgres.DATABASE_URL}}' --service apis
+railway variables --set NODE_ENV=production --service apis
+railway variables --set JWT_SECRET='your-secret-32-chars-min' --service apis
+railway variables --set JWT_EXPIRES_IN=1d --service apis
+railway variables --set NEXTAUTH_SECRET='your-secret-32-chars-min' --service apis
+railway variables --set NEXTAUTH_URL='https://api.anyrent.shop' --service apis
+railway variables --set API_URL='https://api.anyrent.shop' --service apis
+railway variables --set CLIENT_URL='https://anyrent.shop' --service apis
+railway variables --set ADMIN_URL='https://admin.anyrent.shop' --service apis
+railway variables --set CORS_ORIGINS='https://anyrent.shop,https://admin.anyrent.shop' --service apis
+```
+
+**API Service (Development):**
+```bash
+railway variables --set DATABASE_URL='${{Postgres.DATABASE_URL}}' --service dev-apis
+railway variables --set NODE_ENV=development --service dev-apis
+railway variables --set JWT_SECRET='your-secret-32-chars-min' --service dev-apis
+railway variables --set JWT_EXPIRES_IN=1d --service dev-apis
+railway variables --set NEXTAUTH_SECRET='your-secret-32-chars-min' --service dev-apis
+railway variables --set NEXTAUTH_URL='https://dev-api.anyrent.shop' --service dev-apis
+railway variables --set API_URL='https://dev-api.anyrent.shop' --service dev-apis
+railway variables --set CLIENT_URL='https://dev.anyrent.shop' --service dev-apis
+railway variables --set ADMIN_URL='https://dev-admin.anyrent.shop' --service dev-apis
+railway variables --set CORS_ORIGINS='https://dev.anyrent.shop,https://dev-admin.anyrent.shop' --service dev-apis
+```
+
+**Admin Service (Production):**
+```bash
+railway variables --set NODE_ENV=production --service admin
+railway variables --set NEXT_PUBLIC_API_URL='https://api.anyrent.shop' --service admin
+railway variables --set NEXTAUTH_SECRET='same-as-api-service' --service admin
+railway variables --set NEXTAUTH_URL='https://admin.anyrent.shop' --service admin
+```
+
+**Admin Service (Development):**
+```bash
+railway variables --set NODE_ENV=development --service dev-admin
+railway variables --set NEXT_PUBLIC_API_URL='https://dev-api.anyrent.shop' --service dev-admin
+railway variables --set NEXTAUTH_SECRET='same-as-api-service' --service dev-admin
+railway variables --set NEXTAUTH_URL='https://dev-admin.anyrent.shop' --service dev-admin
+```
+
+**Client Service (Production):**
+```bash
+railway variables --set NODE_ENV=production --service client
+railway variables --set NEXT_PUBLIC_API_URL='https://api.anyrent.shop' --service client
+railway variables --set NEXTAUTH_SECRET='same-as-api-service' --service client
+railway variables --set NEXTAUTH_URL='https://anyrent.shop' --service client
+```
+
+**Client Service (Development):**
+```bash
+railway variables --set NODE_ENV=development --service dev-client
+railway variables --set NEXT_PUBLIC_API_URL='https://dev-api.anyrent.shop' --service dev-client
+railway variables --set NEXTAUTH_SECRET='same-as-api-service' --service dev-client
+railway variables --set NEXTAUTH_URL='https://dev.anyrent.shop' --service dev-client
+```
 
 ---
 
-### **Step 4: Deploy Client Service (5 phút)**
+## 🚀 Deployment Steps
 
-1. **Click "New" → "GitHub Repo"**
-2. **Select `rentalshop-nextjs`**
-3. **Configure service:**
-
-**Settings → General:**
-- **Service Name**: `client`
-- **Root Directory**: `apps/client`
-- **Build Command**: `cd ../.. && yarn install && yarn build --filter=@rentalshop/client`
-- **Start Command**: `cd apps/client && yarn start`
-
-**Settings → Networking:**
-- **Generate Domain**
-- **Save URL**: `https://rentalshop-client.up.railway.app`
-
-**Settings → Variables:**
+### Step 1: Push Prisma Schema
 ```bash
-NEXT_PUBLIC_API_URL=https://rentalshop-api.up.railway.app
-# File uploads disabled by default
-NEXTAUTH_SECRET=same-as-api-service
-NEXTAUTH_URL=https://rentalshop-client.up.railway.app
-NODE_ENV=production
-HUSKY=0
-CI=true
-```
-
-4. **Click "Deploy"**
-
----
-
-### **Step 5: Deploy Admin Service (5 phút)**
-
-1. **Click "New" → "GitHub Repo"**
-2. **Select `rentalshop-nextjs`**
-3. **Configure service:**
-
-**Settings → General:**
-- **Service Name**: `admin`
-- **Root Directory**: `apps/admin`
-- **Build Command**: `cd ../.. && yarn install && yarn build --filter=@rentalshop/admin`
-- **Start Command**: `cd apps/admin && yarn start`
-
-**Settings → Networking:**
-- **Generate Domain**
-- **Save URL**: `https://rentalshop-admin.up.railway.app`
-
-**Settings → Variables:**
-```bash
-NEXT_PUBLIC_API_URL=https://rentalshop-api.up.railway.app
-# File uploads disabled by default
-NEXTAUTH_SECRET=same-as-api-service
-NEXTAUTH_URL=https://rentalshop-admin.up.railway.app
-NODE_ENV=production
-HUSKY=0
-CI=true
-```
-
-4. **Click "Deploy"**
-
----
-
-### **Step 6: Run Database Migrations (3 phút)**
-
-Sau khi API service deployed, chạy migrations:
-
-**Option 1: Railway CLI (Recommended)**
-
-```bash
-# Install Railway CLI
-npm i -g @railway/cli
-
-# Login
-railway login
-
-# Link to project
-railway link
-
-# Select API service
-railway service
-
-# Run migrations
-railway run npx prisma migrate deploy --schema=./prisma/schema.prisma
+# Push schema to Railway database
+railway run --service apis npx prisma db push --accept-data-loss
 
 # Generate Prisma client
-railway run npx prisma generate --schema=./prisma/schema.prisma
+railway run --service apis npx prisma generate
 ```
 
-**Option 2: Railway Dashboard**
-
-1. **API service → Settings → Deploy**
-2. **Add Custom Start Command**:
+### Step 2: Seed Database
 ```bash
-npx prisma migrate deploy --schema=../../prisma/schema.prisma && npx prisma generate --schema=../../prisma/schema.prisma && cd apps/api && yarn start
-```
-3. **Redeploy service**
-
----
-
-### **Step 7: Seed Database (Optional, 2 phút)**
-
-```bash
-# Using Railway CLI
-railway run node scripts/regenerate-entire-system-2025.js
+railway run --service apis yarn db:regenerate-system
 ```
 
-**Hoặc chạy local với Railway DATABASE_URL:**
-```bash
-# Copy DATABASE_URL từ Railway
-export DATABASE_URL="postgresql://postgres:..."
+This creates:
+- ✅ 2 merchants with subscription plans
+- ✅ 4 outlets (2 per merchant)
+- ✅ 8 users with different roles
+- ✅ 60 customers (30 per merchant)
+- ✅ 60 products with stock
+- ✅ 120 orders (30 per outlet)
 
-# Run seed script
-yarn db:regenerate-system
+### Step 3: Deploy Services
+```bash
+# Push to GitHub (Railway auto-deploys)
+git push
+
+# Or deploy directly via CLI
+railway up
+
+# Monitor deployment
+railway logs --service apis -f
 ```
 
----
-
-## ✅ **Step 8: Testing (5 phút)**
-
-### **Test API Health**
-
+### Step 4: Verify Deployment
 ```bash
-curl https://rentalshop-api.up.railway.app/api/health
-```
+# Check health endpoint
+curl https://api.anyrent.shop/api/health
 
-**Expected:** `{"status":"ok","timestamp":"..."}`
-
-### **Test Login**
-
-```bash
-curl -X POST https://rentalshop-api.up.railway.app/api/auth/login \
+# Test login
+curl -X POST https://api.anyrent.shop/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@rentalshop.com","password":"admin123"}'
 ```
 
-**Expected:** `{"success":true,"token":"...","user":{...}}`
+---
 
-### **Test Client App**
+## 🔑 Default Login Credentials
 
-1. **Open**: https://rentalshop-client.up.railway.app
-2. **Login**: `admin@rentalshop.com` / `admin123`
-3. **Check**: Dashboard loads, products visible
+After database seeding:
 
-### **Test Admin Dashboard**
+### 👑 Super Admin (System-wide Access)
+- Email: `admin@rentalshop.com`
+- Password: `admin123`
+- Access: Full system access
 
-1. **Open**: https://rentalshop-admin.up.railway.app
-2. **Login**: Same credentials
-3. **Test**: Create product, upload image
+### 🏢 Merchant Accounts (Business Owners)
+- Merchant 1: `merchant1@example.com` / `merchant123`
+- Merchant 2: `merchant2@example.com` / `merchant123`
+- Access: Organization-wide access
+
+### 🏪 Outlet Admins (Outlet Managers)
+- Outlet 1-4: `admin.outlet[1-4]@example.com` / `admin123`
+- Access: Full access to their outlet
+
+### 👥 Outlet Staff (Employees)
+- Outlet 1-4: `staff.outlet[1-4]@example.com` / `staff123`
+- Access: Limited outlet access
 
 ---
 
-## 🎯 **Deployment Checklist**
+## 👑 Tạo Super Admin Account
 
-### Pre-Deployment
-- [x] Railway account created
-- [x] GitHub repo pushed
-- [x] Cloudinary setup completed
-- [x] Secrets generated (`openssl rand -base64 32`)
+### Cách 1: Tự động (Khuyến nghị) - Chạy Script Seed
 
-### Deployment
-- [ ] PostgreSQL database added
-- [ ] API service deployed with env vars
-- [ ] Client service deployed with env vars
-- [ ] Admin service deployed with env vars
-- [ ] Database migrations run
-- [ ] Database seeded (optional)
+Script seed sẽ tự động tạo super admin cùng với dữ liệu mẫu:
 
-### Testing
-- [ ] API health check passed
-- [ ] Login working
-- [ ] Database connected
-- [ ] Image upload working
-- [ ] All 3 apps accessible
+```bash
+# Chạy script seed trên Railway
+railway run --service apis yarn db:regenerate-system
+```
+
+**Kết quả:**
+- ✅ Tự động tạo super admin: `admin@rentalshop.com` / `admin123`
+- ✅ Tạo 2 merchants + 4 outlets + 8 users
+- ✅ Tạo 60 customers + 60 products + 120 orders
+
+**Thông tin đăng nhập:**
+- Email: `admin@rentalshop.com`
+- Password: `admin123`
+- Role: `ADMIN` (Full system access)
+
+### Cách 2: Thủ công - Chạy Prisma Studio
+
+Nếu bạn muốn tạo admin account thủ công hoặc thay đổi thông tin:
+
+#### Bước 1: Mở Prisma Studio trên Railway
+
+```bash
+# Mở Prisma Studio với Railway database
+railway run --service apis npx prisma studio
+```
+
+#### Bước 2: Tạo User mới
+
+1. Trong Prisma Studio, chọn model `User`
+2. Click "Add record"
+3. Điền thông tin:
+   - `email`: Email của admin (ví dụ: `admin@rentalshop.com`)
+   - `password`: Mã hóa password bằng bcrypt
+   - `firstName`: Tên
+   - `lastName`: Họ
+   - `phone`: Số điện thoại
+   - `role`: `ADMIN`
+   - `isActive`: `true`
+   - `merchantId`: `null` (để trống - super admin không thuộc merchant nào)
+   - `outletId`: `null` (để trống - super admin không thuộc outlet nào)
+
+**⚠️ Lưu ý:** Password phải được hash bằng bcrypt. Xem Cách 3 để tạo script tự động hash password.
+
+### Cách 3: Tạo Script Tự Động
+
+Tạo script Node.js để tạo super admin với password đã hash:
+
+```bash
+# Chạy script tạo super admin
+railway run --service apis node -e "
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const prisma = new PrismaClient();
+
+async function createAdmin() {
+  const email = process.env.ADMIN_EMAIL || 'admin@rentalshop.com';
+  const password = process.env.ADMIN_PASSWORD || 'admin123';
+  const hashedPassword = await bcrypt.hash(password, 10);
+  
+  const admin = await prisma.user.create({
+    data: {
+      email: email,
+      password: hashedPassword,
+      firstName: 'Super',
+      lastName: 'Administrator',
+      phone: '+1-555-0001',
+      role: 'ADMIN',
+      isActive: true,
+      merchantId: null,
+      outletId: null
+    }
+  });
+  
+  console.log('✅ Created super admin:', admin.email);
+}
+
+createAdmin().catch(console.error).finally(() => prisma.\$disconnect());
+"
+```
+
+Hoặc với custom email/password:
+
+```bash
+# Tạo admin với email và password tùy chỉnh
+ADMIN_EMAIL="your-admin@example.com" \
+ADMIN_PASSWORD="your-secure-password" \
+railway run --service apis node -e "
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const prisma = new PrismaClient();
+
+async function createAdmin() {
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password) {
+    console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD required');
+    process.exit(1);
+  }
+  
+  // Check if admin already exists
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    console.log('⚠️  Admin already exists:', email);
+    process.exit(0);
+  }
+  
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const admin = await prisma.user.create({
+    data: {
+      email: email,
+      password: hashedPassword,
+      firstName: 'Super',
+      lastName: 'Administrator',
+      phone: '+1-555-0001',
+      role: 'ADMIN',
+      isActive: true,
+      merchantId: null,
+      outletId: null
+    }
+  });
+  
+  console.log('✅ Created super admin:', admin.email);
+}
+
+createAdmin().catch(console.error).finally(() => prisma.\$disconnect());
+"
+```
+
+### Cách 4: Sử dụng API Endpoint (Nếu có)
+
+Nếu bạn đã có API endpoint để tạo user:
+
+```bash
+# Tạo admin qua API (cần authentication token nếu API yêu cầu)
+curl -X POST https://your-api.railway.app/api/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "email": "admin@rentalshop.com",
+    "password": "admin123",
+    "firstName": "Super",
+    "lastName": "Administrator",
+    "phone": "+1-555-0001",
+    "role": "ADMIN"
+  }'
+```
+
+### ✅ Xác minh Super Admin đã được tạo
+
+Sau khi tạo, kiểm tra bằng cách đăng nhập:
+
+```bash
+# Test login với curl
+curl -X POST https://your-api.railway.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@rentalshop.com","password":"admin123"}'
+```
+
+Hoặc truy cập Admin Dashboard:
+- URL: `https://admin.anyrent.shop`
+- Email: `admin@rentalshop.com`
+- Password: `admin123`
 
 ---
 
-## 🚨 **Troubleshooting**
+## 📄 Configuration Files
 
-### **Issue: Build Failed**
+### railway.json
 
-```
-Error: Cannot find module '@rentalshop/ui'
-```
+Each service has configuration:
 
-**Solution:**
-
-Check Build Command includes monorepo root:
-```bash
-cd ../.. && yarn install && yarn build --filter=@rentalshop/api
-```
-
-### **Issue: Database Connection Failed**
-
-```
-Error: Can't reach database server
-```
-
-**Solution:**
-
-1. **Check DATABASE_URL** in API service env vars
-2. **Verify variable reference**: `${{Postgres.DATABASE_URL}}`
-3. **Restart API service**
-
-### **Issue: CORS Error**
-
-```
-CORS policy blocked
-```
-
-**Solution:**
-
-1. **Update CORS_ORIGINS** in API env vars:
-```bash
-CORS_ORIGINS=https://rentalshop-client.up.railway.app,https://rentalshop-admin.up.railway.app
-```
-2. **No spaces** between URLs!
-3. **Redeploy API service**
-
-### **Issue: Prisma Client Not Generated**
-
-```
-Error: @prisma/client not initialized
-```
-
-**Solution:**
-
-Add postinstall script in `apps/api/package.json`:
+**apps/api/railway.json:**
 ```json
 {
-  "scripts": {
-    "postinstall": "cd ../.. && npx prisma generate --schema=./prisma/schema.prisma"
+  "$schema": "https://railway.app/railway.schema.json",
+  "deploy": {
+    "startCommand": "cd apps/api && yarn start",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
   }
 }
 ```
 
-Redeploy API service.
+**apps/admin/railway.json & apps/client/railway.json:**
+```json
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "deploy": {
+    "startCommand": "cd apps/[service] && yarn start",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
+```
+
+### Dockerfile
+
+Each service uses a multi-stage Docker build:
+
+```dockerfile
+# Base stage
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat openssl
+WORKDIR /app
+
+# Dependencies
+FROM base AS deps
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+# Builder
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npx prisma generate
+RUN yarn build --filter=@rentalshop/[service]
+
+# Runner
+FROM base AS runner
+ENV NODE_ENV=production
+COPY --from=builder /app/apps/[service]/.next/standalone ./
+COPY --from=builder /app/apps/[service]/.next/static ./apps/[service]/.next/static
+EXPOSE [PORT]
+CMD ["node", "apps/[service]/server.js"]
+```
+
+### next.config.js
+
+Important monorepo configuration:
+
+```javascript
+module.exports = {
+  output: 'standalone',  // Required for Docker
+  
+  experimental: {
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+    serverComponentsExternalPackages: [
+      '@prisma/client', 
+      'prisma', 
+      '@rentalshop/database'
+    ],
+  },
+  
+  transpilePackages: [
+    '@rentalshop/database',
+    '@rentalshop/auth',
+    '@rentalshop/middleware',
+    '@rentalshop/utils',
+    '@rentalshop/constants',
+    '@rentalshop/types'
+  ],
+};
+```
 
 ---
 
-## 🔄 **Update Deployment**
+## 🔍 Troubleshooting
 
-### **Auto-Deploy (Recommended)**
+### Issue: DATABASE_URL not found
+**Error:** `DATABASE_URL is required`
 
-Railway auto-deploys khi push code:
+**Solution:**
+1. Verify PostgreSQL is added: `railway service list`
+2. Use variable reference: `${{Postgres.DATABASE_URL}}`
+3. Restart API service: `railway restart --service apis`
 
+### Issue: Can't reach database server (Internal Railway URL)
+**Error:** `Can't reach database server at postgres-xxx.railway.internal:5432`
+
+**Nguyên nhân:**
+- Script đang cố kết nối đến Railway internal hostname từ local machine
+- Internal URL chỉ hoạt động TRONG Railway network, không thể truy cập từ local
+
+**Giải pháp:**
+
+**Option 1: Đảm bảo script chạy TRÊN Railway (Khuyến nghị)**
 ```bash
-git add .
-git commit -m "feat: new feature"
-git push origin main
+# Kiểm tra service đang active
+railway status
+
+# Đảm bảo service được deploy
+railway up --service dev-apis
+
+# Chạy script trên Railway container
+railway run --service dev-apis yarn db:regenerate-system
 ```
 
-**Railway sẽ tự động:**
-1. Detect changes
-2. Rebuild affected services
-3. Deploy new version
-4. Zero-downtime deployment
-
-### **Manual Deploy**
-
-**Railway Dashboard:**
-1. **Select service** (API/Client/Admin)
-2. **Click "Deploy"**
-3. **Chọn "Redeploy"**
-
-**Railway CLI:**
+**Option 2: Kiểm tra DATABASE_URL variable**
 ```bash
-# Redeploy specific service
-railway service  # Select service
-railway up       # Deploy
+# Xem DATABASE_URL trên Railway
+railway variables --service dev-apis | grep DATABASE_URL
+
+# Nếu chưa set, set từ PostgreSQL service reference
+railway variables --set DATABASE_URL='${{Postgres.DATABASE_URL}}' --service dev-apis
 ```
+
+**Option 3: Đợi service khởi động hoàn toàn**
+```bash
+# Kiểm tra service status
+railway logs --service dev-apis --tail 50
+
+# Đợi service ready (thường mất 1-2 phút sau khi deploy)
+# Sau đó chạy lại script
+railway run --service dev-apis yarn db:regenerate-system
+```
+
+**Option 4: Sử dụng Railway Shell (Interactive)**
+```bash
+# Mở Railway shell để chạy command trong môi trường Railway
+railway shell --service dev-apis
+
+# Trong Railway shell:
+yarn db:regenerate-system
+# hoặc
+node scripts/regenerate-entire-system-2025.js
+```
+
+**Option 5: Sử dụng Public DATABASE_URL (Chạy từ Local)**
+Nếu bạn có **Public DATABASE_URL** (từ Railway Dashboard → PostgreSQL → Connect → Public Network), bạn có thể chạy script từ local machine:
+
+```bash
+# Set DATABASE_URL environment variable với public URL
+export DATABASE_URL="postgresql://postgres:password@host:port/railway"
+
+# Sau đó chạy script local
+yarn db:regenerate-system
+# hoặc
+node scripts/regenerate-entire-system-2025.js
+```
+
+**⚠️ Lưu ý bảo mật:**
+- Public URL có thể truy cập từ internet, cần bảo vệ tốt
+- Không commit public DATABASE_URL vào git
+- Chỉ dùng khi cần thiết, tốt nhất vẫn nên dùng Railway Shell
+
+**Để lấy Public DATABASE_URL:**
+1. Vào Railway Dashboard
+2. Chọn PostgreSQL service
+3. Vào tab "Connect"
+4. Copy "Public Network" URL
+
+### Issue: Prisma Client not found
+**Error:** `Cannot find module '@prisma/client'`
+
+**Solution:**
+```bash
+# Regenerate Prisma client
+railway run --service apis npx prisma generate
+```
+
+### Issue: Module resolution errors
+**Error:** `Can't resolve '@rentalshop/database'`
+
+**Solution:**
+Add to `transpilePackages` in `next.config.js`:
+```javascript
+transpilePackages: ['@rentalshop/database']
+```
+
+### Issue: CORS errors
+**Error:** `No 'Access-Control-Allow-Origin' header`
+
+**Solution:**
+1. Check `CORS_ORIGINS` includes all frontend URLs
+2. Use `https://` (not `http://`)
+3. No trailing slashes
+4. Restart: `railway restart --service apis`
+
+### Issue: Build timeout
+**Error:** `Build exceeded maximum time limit`
+
+**Solution:**
+1. Use `output: 'standalone'` in next.config.js
+2. Optimize Docker layers
+3. Contact Railway support for timeout increase
 
 ---
 
-## 💰 **Cost Estimation**
+## 📊 Monitoring & Costs
 
-### **Hobby Plan ($5/month)**
+### Cost Estimation
 
-**Included:**
-- $5 credit/month
-- Unlimited projects
-- PostgreSQL database
-- 3 web services
-
-**Usage:**
-- API service: ~$2/month
-- Client service: ~$1/month
-- Admin service: ~$1/month
-- PostgreSQL: ~$1/month
+**Hobby Plan ($5/month):**
+- API service: ~$2/mo
+- Client service: ~$1/mo
+- Admin service: ~$1/mo
+- PostgreSQL: ~$1/mo
 - **Total: ~$5/month** ✅
 
-### **Pro Plan ($20/month)**
-
-**Included:**
-- $20 credit/month
+**Pro Plan ($20/month):**
+- Higher resources (2GB RAM per service)
 - Priority support
 - Custom domains
-- Higher limits
+- **Total: ~$20/month**
 
----
+### Monitoring
 
-## 🌐 **Custom Domain (Optional)**
-
-### **Add Custom Domain**
-
-1. **Railway Dashboard → Service → Settings → Networking**
-2. **Click "Add Custom Domain"**
-3. **Enter domain**:
-   - API: `api.yourdomain.com`
-   - Client: `yourdomain.com`
-   - Admin: `admin.yourdomain.com`
-
-4. **Update DNS** records:
-```
-Type: CNAME
-Name: api (or @ for root)
-Value: your-service.up.railway.app
-```
-
-5. **Update environment variables** with new domains
-6. **Redeploy all services**
-
----
-
-## 📊 **Monitoring**
-
-### **Railway Dashboard**
-
-- **Metrics**: CPU, Memory, Network usage
-- **Logs**: Real-time application logs
-- **Deployments**: History and status
-- **Database**: Connection stats, size
-
-### **View Logs**
-
-**Railway Dashboard:**
-1. **Click service** (API/Client/Admin)
-2. **Click "Logs" tab**
-3. **Real-time logs** displayed
-
-**Railway CLI:**
+**View Logs:**
 ```bash
-railway logs  # View logs
-railway logs -f  # Follow logs (live)
+# Real-time logs
+railway logs --service apis -f
+
+# Specific service
+railway logs --service admin
+
+# Historical logs
+railway logs --service apis --limit 1000
+```
+
+**Check Status:**
+```bash
+# Service status
+railway status
+
+# Environment variables
+railway variables --service apis
+
+# Service metrics
+railway metrics --service apis
+```
+
+**Database Backup:**
+```bash
+# Export database
+railway run --service apis pg_dump $DATABASE_URL > backup.sql
+
+# Import database
+railway run --service apis psql $DATABASE_URL < backup.sql
 ```
 
 ---
 
-## 📚 **Useful Railway CLI Commands**
+## 📚 Useful Railway CLI Commands
 
 ```bash
-# Install CLI
-npm i -g @railway/cli
+# Install
+npm install -g @railway/cli
 
 # Login
 railway login
@@ -515,108 +731,90 @@ railway service
 
 # View logs
 railway logs
-railway logs -f  # Follow
+railway logs -f  # Follow mode
 
-# View variables
+# View/set environment variables
 railway variables
+railway variables --set KEY=value --service apis
 
 # Run command in Railway environment
-railway run <command>
+railway run --service apis <command>
 
 # Open dashboard
 railway open
 
 # Deploy
 railway up
+
+# Restart service
+railway restart --service apis
+
+# Delete service
+railway service delete
 ```
 
 ---
 
-## 🎉 **Success!**
+## ✅ Deployment Checklist
 
-Your RentalShop is now deployed on Railway!
+### Pre-deployment:
+- [ ] Railway account created
+- [ ] Railway CLI installed
+- [ ] PostgreSQL database added
+- [ ] Environment variables set (automated or manual)
+- [ ] Local build successful (`yarn build`)
 
-```
-✅ Database: PostgreSQL on Railway
-✅ API:      https://rentalshop-api.up.railway.app
-✅ Client:   https://rentalshop-client.up.railway.app
-✅ Admin:    https://rentalshop-admin.up.railway.app
-```
+### Deployment:
+- [ ] Prisma schema pushed
+- [ ] Database seeded
+- [ ] Services deployed
+- [ ] All services running
 
-**Stack:**
-- ☁️  Hosting: Railway ($5-20/month)
-- 🗄️  Database: Railway PostgreSQL (included)
-- 📁  Files: Local storage (or external service if needed)
+### Post-deployment:
+- [ ] Health checks passing
+- [ ] Login functionality works
+- [ ] CORS configured correctly
+- [ ] SSL/HTTPS enabled
+- [ ] Custom domains set up (optional)
+- [ ] Monitoring configured
 
-**Total Cost:** ~$5-20/month 💰
+### Testing:
+- [ ] API health endpoint responds
+- [ ] Admin login works
+- [ ] Client login works
+- [ ] Create product works
+- [ ] Create customer works
+- [ ] Create order works
+- [ ] Image upload works (if Cloudinary configured)
+
+---
+
+## 🎉 Done!
+
+Your Rental Shop is now deployed! 🚀
+
+**Your URLs:**
+- API: `https://api.anyrent.shop`
+- Admin: `https://admin.anyrent.shop`
+- Client: `https://anyrent.shop`
 
 **Default Login:**
 - Email: `admin@rentalshop.com`
 - Password: `admin123`
 
----
-
-## 💡 **Post-Deployment Tips**
-
-### **Enable Auto-Deploy**
-
-Railway auto-deploys by default. Để disable:
-1. **Service → Settings → Deploy**
-2. **Toggle "Watch Paths"**
-
-### **Monitor Usage**
-
-**Railway Dashboard → Usage:**
-- CPU/Memory usage
-- Network bandwidth
-- Database size
-- Monthly credit usage
-
-**Set up alerts** khi sắp hết credit.
-
-### **Backup Database**
-
-```bash
-# Export database
-railway run pg_dump $DATABASE_URL > backup.sql
-
-# Import database
-railway run psql $DATABASE_URL < backup.sql
-```
-
-### **Environment-Specific Deployments**
-
-**Create staging environment:**
-1. **Duplicate project**
-2. **Name it "rentalshop-staging"**
-3. **Deploy from `dev` branch**
-4. **Use separate database**
+**Total Setup Time:** ~15-30 minutes  
+**Monthly Cost:** ~$5-20
 
 ---
 
-## 🆚 **Railway vs Vercel Comparison**
-
-| Feature | Railway | Vercel |
-|---------|---------|--------|
-| **Setup time** | 30 phút | 30 phút |
-| **Database** | ✅ Built-in | ❌ External ($25/mo) |
-| **Storage** | ✅ Volumes | ❌ External |
-| **Backend** | ✅ Full support | ⚠️ Serverless only |
-| **Websockets** | ✅ Yes | ❌ No |
-| **Cost** | **$5-20/mo** | $45+/mo |
-| **Complexity** | ⭐⭐ Easy | ⭐⭐⭐ Medium |
-
-**Kết luận: Railway = Tốt hơn cho full-stack apps!** 🎯
-
----
-
-## 📞 **Support**
+## 📞 Support & Resources
 
 - **Railway Discord**: https://discord.gg/railway
 - **Railway Docs**: https://docs.railway.app
 - **Railway Status**: https://status.railway.app
+- **Prisma Railway Guide**: https://www.prisma.io/docs/guides/deployment/deployment-guides/deploying-to-railway
 
 ---
 
-**Congratulations! You're live on Railway! 🚀**
+*Last Updated: December 2024*
 

@@ -76,6 +76,13 @@ export interface Order extends BaseEntityWithOutlet {
   orderItems?: OrderItem[];
   payments?: Payment[];
   createdBy?: UserReference;
+  
+  // Flattened fields for API responses (when customer object is not included)
+  customerName?: string;
+  customerPhone?: string;
+  outletName?: string;
+  merchantName?: string;
+  createdByName?: string;
 }
 
 // ============================================================================
@@ -330,8 +337,69 @@ export interface OrderSearchResponse {
 // ============================================================================
 
 /**
- * Order with details
- * Used for detailed order views
+ * Order list item (minimal data for list views)
+ * Flattened structure for better performance
+ */
+export interface OrderListItem {
+  id: number;
+  orderNumber: string;
+  orderType: OrderType;
+  status: OrderStatus;
+  totalAmount: number;
+  depositAmount: number;
+  notes?: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  
+  // Flattened customer data (simplified)
+  customerId?: number;
+  customerName?: string;
+  customerPhone?: string;
+  
+  // Flattened outlet data (simplified)
+  outletId: number;
+  outletName?: string;
+  merchantName?: string;
+  
+  // Flattened createdBy data
+  createdById: number;
+  createdByName?: string;
+  
+  // Order items with flattened product data
+  orderItems: OrderItemFlattened[];
+  
+  // Calculated fields
+  itemCount: number;
+  paymentCount: number;
+  totalPaid: number;
+  
+  // Rental-specific fields for list view
+  pickupPlanAt?: Date | string;
+  returnPlanAt?: Date | string;
+}
+
+/**
+ * Order item with flattened product data
+ * Used for order list views with simplified structure
+ */
+export interface OrderItemFlattened {
+  id: number;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  notes?: string;
+  // Flattened product data
+  productId?: number;
+  productName?: string;
+  productBarcode?: string;
+  productImages?: string[];
+  productRentPrice?: number;
+  productDeposit?: number;
+}
+
+/**
+ * Order with details (full data for detail views)
+ * Includes nested objects for comprehensive information
  */
 export interface OrderWithDetails {
   id: number;           // Auto-incrementing integer ID
@@ -343,29 +411,60 @@ export interface OrderWithDetails {
   createdById: number;  // Integer ID of user who created the order
   totalAmount: number;
   depositAmount: number;
+  securityDeposit?: number;
+  damageFee?: number;
+  lateFee?: number;
+  discountType?: 'amount' | 'percentage';
+  discountValue?: number;
+  discountAmount?: number;
   pickupPlanAt?: Date | string;
   returnPlanAt?: Date | string;
   pickedUpAt?: Date | string;
   returnedAt?: Date | string;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  damageFee?: number;
-  bailAmount?: number;
-  material?: string;
-  securityDeposit?: number;
+  rentalDuration?: number;
+  isReadyToDeliver?: boolean;
   collateralType?: string;
   collateralDetails?: string;
   notes?: string;
-  discountType?: 'amount' | 'percentage';
-  discountValue?: number;
-  discountAmount?: number;
-  merchantId: number;   // Integer ID
+  pickupNotes?: string;
+  returnNotes?: string;
+  damageNotes?: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  
+  // Full nested objects
   customer?: CustomerReference;
   outlet: OutletReference;
   orderItems: OrderItemWithProduct[];
   payments: Payment[];
   createdBy?: UserReference;
   merchant: MerchantReference;
+  
+  // Timeline/audit log
+  timeline?: OrderTimelineItem[];
+  
+  // Calculated fields
+  itemCount: number;
+  paymentCount: number;
+  totalPaid: number;
+}
+
+/**
+ * Order timeline item for audit log
+ */
+export interface OrderTimelineItem {
+  id: number;
+  action: string;
+  description: string;
+  oldValues?: any;
+  newValues?: any;
+  createdAt: Date | string;
+  createdBy?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 // ============================================================================
@@ -385,6 +484,7 @@ export type OrderAction = 'create' | 'edit' | 'view' | 'delete' | 'pickup' | 're
 export interface OrderFilters {
   status?: OrderStatus | OrderStatus[];
   orderType?: OrderType;
+  merchantId?: number; // Add merchant filtering support
   outletId?: number;
   customerId?: number;
   productId?: number;
@@ -495,11 +595,12 @@ export interface OrderListData {
  * Used for Orders component with statistics
  */
 export interface OrdersData {
-  orders: OrderSearchResult[];
+  orders: OrderListItem[];
   total: number;
   currentPage: number;
   totalPages: number;
   limit: number;
+  hasMore?: boolean;
   stats?: OrderStats;
 }
 

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { useUserRole } from '@rentalshop/hooks';
+import { ProductAddDialog } from './ProductAddDialog';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 
@@ -32,8 +33,10 @@ export function ProductActions({
   const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null);
 
   const handleAddProduct = () => {
+    console.log('🔵 ProductActions: handleAddProduct called');
     setEditingProduct(null);
     setIsAddDialogOpen(true);
+    console.log('🔵 ProductActions: Dialog state set to true');
   };
 
   const handleEditProduct = (product: ProductWithDetails) => {
@@ -147,6 +150,16 @@ export function ProductActions({
         </CardContent>
       </Card>
 
+      {/* Product Add Dialog */}
+      <ProductAddDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        categories={categories}
+        outlets={outlets}
+        merchantId={String(merchantId)}
+        onProductCreated={onProductCreated}
+        onError={onError}
+      />
 
     </>
   );

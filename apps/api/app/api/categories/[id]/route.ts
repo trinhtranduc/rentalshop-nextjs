@@ -1,4 +1,4 @@
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
@@ -18,7 +18,7 @@ export async function GET(
     const categoryId = parseInt(params.id);
     if (isNaN(categoryId)) {
       return NextResponse.json(
-        { success: false, message: 'Invalid category ID' },
+        ResponseBuilder.error('INVALID_CATEGORY_ID'),
         { status: 400 }
       );
     }
@@ -49,19 +49,17 @@ export async function GET(
         merchantId: userScope.merchantId,
         outletId: userScope.outletId
       });
-      return NextResponse.json({
-        success: false,
-        message: 'Access denied - user not assigned to merchant/outlet'
-      }, { status: 403 });
+      return NextResponse.json(
+        ResponseBuilder.error('NO_DATA_AVAILABLE'),
+        { status: 403 }
+      );
     }
 
-    const category = await db.categories.findFirst({
-      where
-    });
+    const category = await db.categories.findFirst(where);
 
     if (!category) {
       return NextResponse.json(
-        { success: false, message: 'Category not found' },
+        ResponseBuilder.error('CATEGORY_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -77,15 +75,14 @@ export async function GET(
       // DO NOT include category.id (internal CUID)
     };
 
-    return NextResponse.json({
-      success: true,
-      data: transformedCategory
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('CATEGORY_RETRIEVED_SUCCESS', transformedCategory)
+    );
 
     } catch (error) {
       console.error('Error fetching category:', error);
       return NextResponse.json(
-        { success: false, message: 'Failed to fetch category' },
+        ResponseBuilder.error('FETCH_CATEGORIES_FAILED'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -106,7 +103,7 @@ export async function PUT(
     // Check if user can manage categories
     if (!userScope.merchantId) {
       return NextResponse.json(
-        { success: false, message: 'Merchant access required' },
+        ResponseBuilder.error('MERCHANT_ACCESS_REQUIRED'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -114,7 +111,7 @@ export async function PUT(
     const categoryId = parseInt(params.id);
     if (isNaN(categoryId)) {
       return NextResponse.json(
-        { success: false, message: 'Invalid category ID' },
+        ResponseBuilder.error('INVALID_CATEGORY_ID'),
         { status: 400 }
       );
     }
@@ -125,38 +122,42 @@ export async function PUT(
     // Validate required fields
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json(
-        { success: false, message: 'Category name is required' },
+        ResponseBuilder.error('CATEGORY_NAME_REQUIRED'),
         { status: 400 }
       );
     }
 
     // Find category by id and verify ownership
     const existingCategory = await db.categories.findFirst({
-      where: {
-        id: categoryId,
-        merchantId: userScope.merchantId
-      }
+      id: categoryId,
+      merchantId: userScope.merchantId
     });
 
     if (!existingCategory) {
       return NextResponse.json(
-        { success: false, message: 'Category not found' },
+        ResponseBuilder.error('CATEGORY_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
+    // Check if trying to deactivate default category
+    if (isActive === false && existingCategory.isDefault) {
+      return NextResponse.json(
+        ResponseBuilder.error('CANNOT_DELETE_DEFAULT_CATEGORY'),
+        { status: API.STATUS.CONFLICT }
       );
     }
 
     // Check if new name conflicts with existing category (excluding current one)
     const nameConflict = await db.categories.findFirst({
-      where: {
-        name: name.trim(),
-        merchantId: userScope.merchantId,
-        id: { not: categoryId }
-      }
+      name: name.trim(),
+      merchantId: userScope.merchantId,
+      id: { not: categoryId }
     });
 
     if (nameConflict) {
       return NextResponse.json(
-        { success: false, message: 'Category with this name already exists' },
+        ResponseBuilder.error('CATEGORY_NAME_EXISTS'),
         { status: API.STATUS.CONFLICT }
       );
     }
@@ -166,6 +167,12 @@ export async function PUT(
       name: name.trim(),
       isActive: isActive !== undefined ? isActive : existingCategory.isActive
     };
+
+    // Only update isActive if it's not the default category
+    if (existingCategory.isDefault && 'isActive' in updateData) {
+      delete updateData.isActive;
+      console.log('🔍 Removed isActive from update data for default category');
+    }
 
     // Only update description if it has a value
     if (description && description.trim()) {
@@ -185,16 +192,14 @@ export async function PUT(
       // DO NOT include category.id (internal CUID)
     };
 
-    return NextResponse.json({
-      success: true,
-      data: transformedCategory,
-      message: 'Category updated successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('CATEGORY_UPDATED_SUCCESS', transformedCategory)
+    );
 
     } catch (error) {
       console.error('Error updating category:', error);
       return NextResponse.json(
-        { success: false, message: 'Failed to update category' },
+        ResponseBuilder.error('UPDATE_CATEGORY_FAILED'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -215,7 +220,7 @@ export async function DELETE(
     // Check if user can manage categories
     if (!userScope.merchantId) {
       return NextResponse.json(
-        { success: false, message: 'Merchant access required' },
+        ResponseBuilder.error('MERCHANT_ACCESS_REQUIRED'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -223,35 +228,47 @@ export async function DELETE(
     const categoryId = parseInt(params.id);
     if (isNaN(categoryId)) {
       return NextResponse.json(
-        { success: false, message: 'Invalid category ID' },
+        ResponseBuilder.error('INVALID_CATEGORY_ID'),
         { status: 400 }
       );
     }
 
     // Find category by id and verify ownership
     const existingCategory = await db.categories.findFirst({
-      where: {
-        id: categoryId,
-        merchantId: userScope.merchantId
-      }
+      id: categoryId,
+      merchantId: userScope.merchantId
     });
 
     if (!existingCategory) {
       return NextResponse.json(
-        { success: false, message: 'Category not found' },
+        ResponseBuilder.error('CATEGORY_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
+    // Prevent deleting default category
+    if (existingCategory.isDefault) {
+      console.log('❌ Cannot delete default category:', existingCategory.name);
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'CANNOT_DELETE_DEFAULT_CATEGORY',
+          message: 'Cannot delete the default category. This category was created during registration and must remain active.'
+        },
+        { status: 400 }
       );
     }
 
     // Check if category has products (simplified check)
     const productCount = await db.products.getStats({
-      where: { categoryId: categoryId }
+      categoryId: categoryId
     });
     
     if (productCount > 0) {
       return NextResponse.json(
         { 
           success: false, 
+          code: "BUSINESS_RULE_VIOLATION",
           message: `Cannot delete category "${existingCategory.name}" because it has ${productCount} product(s) assigned to it. Please reassign or delete these products first.` 
         },
         { status: API.STATUS.CONFLICT }
@@ -261,15 +278,14 @@ export async function DELETE(
     // Delete category (soft delete)
     await db.categories.delete(categoryId);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Category deleted successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('CATEGORY_DELETED_SUCCESS')
+    );
 
     } catch (error) {
       console.error('Error deleting category:', error);
       return NextResponse.json(
-        { success: false, message: 'Failed to delete category' },
+        ResponseBuilder.error('DELETE_CATEGORY_FAILED'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }

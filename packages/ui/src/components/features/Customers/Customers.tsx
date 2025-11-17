@@ -4,37 +4,43 @@ import React from 'react';
 import { 
   PageWrapper,
   PageContent,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  useToast,
-  CustomerPageHeader,
-  CustomerSearch,
-  CustomerTable,
-  CustomerDetailDialog,
   Pagination,
   EmptyState,
-  StatsOverview,
-  Button
+  Button,
+  Card,
+  CardContent
 } from '@rentalshop/ui';
-import { CustomerForm } from './components/CustomerForm';
+import { CustomerPageHeader, CustomerSearch, CustomerTable } from './components';
 import { 
   User as UserIcon, 
-  UserCheck, 
-  UserX, 
-  Mail,
-  MapPin,
   Download
 } from 'lucide-react';
-import type { Customer, CustomerFilters, CustomerCreateInput, CustomerUpdateInput } from '@rentalshop/types';
-import { useCustomerManagement, type UseCustomerManagementOptions } from '@rentalshop/hooks';
-import { 
-  getCustomerFullName
-} from '@rentalshop/utils';
+import type { Customer, CustomerFilters } from '@rentalshop/types';
+import { useUserRole, useCustomerTranslations } from '@rentalshop/hooks';
+
+// Data interface for customers list
+export interface CustomersData {
+  customers: Customer[];
+  items?: Customer[]; // Alias for compatibility
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+  hasMore: boolean;
+}
 
 export interface CustomersProps {
+  // Data props (required for external data mode - URL state pattern)
+  data?: CustomersData;
+  filters?: CustomerFilters;
+  onFiltersChange?: (filters: CustomerFilters) => void;
+  onSearchChange?: (searchValue: string) => void;
+  onClearFilters?: () => void;
+  onCustomerAction?: (action: string, customerId: number) => void;
+  onPageChange?: (page: number) => void;
+  onSort?: (column: string) => void;
+  
+  // Display props
   title?: string;
   subtitle?: string;
   showExportButton?: boolean;
@@ -42,292 +48,160 @@ export interface CustomersProps {
   addButtonText?: string;
   exportButtonText?: string;
   showStats?: boolean;
-  useSearchCustomers?: boolean;
-  initialLimit?: number;
-  merchantId?: number;
-  outletId?: number;
   currentUser?: any;
   onExport?: () => void;
   className?: string;
 }
 
+/**
+ * ✅ SIMPLIFIED CUSTOMERS COMPONENT (Modern Pattern)
+ * 
+ * - Clean presentation component (like Orders.tsx, Products.tsx)
+ * - No internal state management
+ * - Works with external data (URL state pattern)
+ * - Single responsibility: render customers UI
+ * - ~120 lines (was 333 lines before cleanup)
+ */
 export const Customers: React.FC<CustomersProps> = ({
+  // Data props
+  data,
+  filters = {},
+  onFiltersChange = () => {},
+  onSearchChange = () => {},
+  onClearFilters = () => {},
+  onCustomerAction = () => {},
+  onPageChange = () => {},
+  onSort = () => {},
+  
+  // Display props
   title = "Customer Management",
   subtitle = "Manage customers in the system",
-  showExportButton = true,
-  showAddButton = true,
+  showExportButton = false,
+  showAddButton = false,
   addButtonText = "Add Customer",
   exportButtonText = "Export Customers",
   showStats = false,
-  useSearchCustomers = false,
-  initialLimit = 10,
-  merchantId,
-  outletId,
   currentUser,
   onExport,
   className = ""
 }) => {
-  const { toastSuccess, toastError, toastInfo, removeToast } = useToast();
   
-  // Use the shared customer management hook
-  const customerManagementOptions: UseCustomerManagementOptions = {
-    initialLimit,
-    useSearchCustomers,
-    enableStats: showStats,
-    merchantId,
-    outletId
-  };
+  // User role check for permissions
+  const { canManageUsers } = useUserRole(currentUser);
   
-  const {
-    customers,
-    loading,
-    selectedCustomer,
-    showCustomerDetail,
-    showCreateForm,
-    showEditDialog,
-    pagination,
-    filteredCustomers,
-    filters,
-    stats,
-    handleCustomerRowAction,
-    handleAddCustomer,
-    handleExportCustomers,
-    handleFiltersChange,
-    handleSearchChange,
-    handleClearFilters,
-    handlePageChangeWithFetch,
-    handleCustomerCreated,
-    handleCustomerUpdatedAsync,
-    handleCustomerUpdated,
-    handleCustomerError,
-    setShowCustomerDetail,
-    setShowCreateForm,
-    setShowEditDialog
-  } = useCustomerManagement(customerManagementOptions);
-
-  // Enhanced handlers with toast notifications
-  const handleCustomerCreatedWithToast = async (customerData: CustomerCreateInput | CustomerUpdateInput) => {
-    try {
-      await handleCustomerCreated(customerData as CustomerCreateInput);
-      toastSuccess('Customer Created', 'Customer has been created successfully.');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      toastError('Creation Failed', errorMessage);
-      // Don't re-throw - error already handled
-    }
-  };
-
-  const handleCustomerUpdatedWithToast = async (customerData: CustomerUpdateInput) => {
-    try {
-      await handleCustomerUpdatedAsync(customerData);
-      toastSuccess('Customer Updated', 'Customer information has been updated successfully.');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      toastError('Update Failed', errorMessage);
-      // Don't re-throw - error already handled
-    }
-  };
-
-  const handleEditCustomerSave = async (customerData: CustomerCreateInput | CustomerUpdateInput) => {
-    // For edit mode, we know we should have an id, so cast to CustomerUpdateInput
-    if (!('id' in customerData) || !customerData.id) {
-      throw new Error('Customer ID is required for updates');
-    }
-    await handleCustomerUpdatedWithToast(customerData as CustomerUpdateInput);
-  };
-
-  const handleExportWithToast = () => {
+  // Get translations
+  const t = useCustomerTranslations();
+  
+  // Handler for export button
+  const handleExport = () => {
     if (onExport) {
       onExport();
     } else {
-      handleExportCustomers();
-      toastInfo('Export', 'Export functionality coming soon!');
+      console.log('Export functionality not implemented');
     }
   };
 
-  const handleCustomerUpdatedWithToastCallback = (updatedCustomer: Customer) => {
-    handleCustomerUpdated(updatedCustomer);
-    const fullName = getCustomerFullName(updatedCustomer);
-    toastSuccess('Customer Updated', `Customer "${fullName}" has been updated successfully.`);
+  // Handler for add customer button
+  const handleAddCustomer = () => {
+    console.log('Add customer functionality should be implemented in page');
   };
 
-  const handleCustomerErrorWithToast = (errorMessage: string) => {
-    handleCustomerError(errorMessage);
-    toastError('Error', errorMessage);
-  };
+  // Default empty data
+  const customers = data?.customers || [];
+  const totalCustomers = data?.total || 0;
+  const currentPage = data?.page || 1;
+  const totalPages = data?.totalPages || 1;
+  const limit = data?.limit || 25;
 
-  const handleCustomerDeleteWithToast = async (customerId: number) => {
-    try {
-      // Import the customers API
-      const { customersApi } = await import('@rentalshop/utils');
-      await customersApi.deleteCustomer(customerId);
-      
-      // Refresh the customer list
-      // The hook should handle this automatically, but we can trigger a refresh
-      const fullName = selectedCustomer ? getCustomerFullName(selectedCustomer) : 'Customer';
-      toastSuccess('Customer Deleted', `Customer "${fullName}" has been deleted successfully.`);
-      
-      // Close the detail dialog
-      setShowCustomerDetail(false);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while deleting the customer';
-      toastError('Delete Failed', errorMessage);
-      // Don't re-throw - error already handled
-    }
-  };
-
-  // Loading state
-  if (loading) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <div className="animate-pulse">
-            <div className="h-8 bg-bg-tertiary rounded w-1/4 mb-6"></div>
-            <div className="h-12 bg-bg-tertiary rounded mb-6"></div>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 bg-bg-tertiary rounded"></div>
-              ))}
-            </div>
-          </div>
-        </PageContent>
-      </PageWrapper>
-    );
-  }
+  // Memoize handlers to prevent child re-renders
+  const memoizedOnFiltersChange = React.useCallback(onFiltersChange, [onFiltersChange]);
+  const memoizedOnSearchChange = React.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnClearFilters = React.useCallback(onClearFilters, [onClearFilters]);
+  const memoizedOnCustomerAction = React.useCallback(onCustomerAction, [onCustomerAction]);
+  const memoizedOnPageChange = React.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React.useCallback(onSort, [onSort]);
 
   return (
-    <PageWrapper>
-      <PageContent className={className}>
-        {/* Page Header */}
+    <div className={`flex flex-col h-full ${className}`}>
+      {/* Fixed Header Section */}
+      <div className="flex-shrink-0 space-y-4">
         <CustomerPageHeader
           title={title}
           subtitle={subtitle}
         >
-          {showAddButton && (
-            <Button onClick={handleAddCustomer} className="flex items-center space-x-2">
+          {showAddButton && canManageUsers && (
+            <Button
+              onClick={handleAddCustomer}
+              className="flex items-center space-x-2"
+            >
               <UserIcon className="w-4 h-4" />
               <span>{addButtonText}</span>
             </Button>
           )}
           {showExportButton && (
-            <Button variant="outline" onClick={handleExportWithToast} className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              className="flex items-center space-x-2"
+            >
               <Download className="w-4 h-4" />
               <span>{exportButtonText}</span>
             </Button>
           )}
         </CustomerPageHeader>
 
-        {/* Stats Overview - Only show if enabled */}
-        {showStats && stats && (
-          <StatsOverview
-            stats={[
-              {
-                label: 'Total Customers',
-                value: stats.totalCustomers,
-                icon: UserIcon,
-                color: 'text-blue-600',
-                bgColor: 'bg-blue-100'
-              },
-              {
-                label: 'Active Customers',
-                value: stats.activeCustomers,
-                icon: UserCheck,
-                color: 'text-green-600',
-                bgColor: 'bg-green-100'
-              },
-              {
-                label: 'Inactive Customers',
-                value: stats.inactiveCustomers,
-                icon: UserX,
-                color: 'text-gray-600',
-                bgColor: 'bg-gray-100'
-              },
-              {
-                label: 'With Email',
-                value: stats.customersWithEmail,
-                icon: Mail,
-                color: 'text-purple-600',
-                bgColor: 'bg-purple-100'
-              }
-            ]}
-            className="mb-8"
+        {/* Compact Search - All in one row */}
+        <Card className="shadow-sm border-border">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <CustomerSearch
+                filters={filters}
+                onFiltersChange={memoizedOnFiltersChange}
+                onSearchChange={memoizedOnSearchChange}
+                onClearFilters={memoizedOnClearFilters}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Scrollable Table Section */}
+      <div className="flex-1 min-h-0 mt-4">
+        {customers.length > 0 ? (
+          <CustomerTable
+            customers={customers}
+            onCustomerAction={memoizedOnCustomerAction}
+            sortBy={filters.sortBy || "createdAt"}
+            sortOrder={filters.sortOrder || "desc"}
+            onSort={memoizedOnSort}
+          />
+        ) : (
+          <EmptyState
+            icon={UserIcon}
+            title={t('messages.noCustomers')}
+            description={
+              filters.search || filters.q
+                ? t('messages.tryAdjustingSearch')
+                : t('messages.getStarted')
+            }
           />
         )}
+      </div>
 
-        {/* Search and Filters */}
-        <CustomerSearch
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onSearchChange={handleSearchChange}
-          onClearFilters={handleClearFilters}
-        />
-
-        {/* Customers List */}
-        <CustomerTable
-          customers={filteredCustomers}
-          onCustomerAction={handleCustomerRowAction}
-        />
-
-        {/* Pagination - only show when there are results */}
-        {filteredCustomers.length > 0 && (
+      {/* Fixed Pagination Section - Always at Bottom */}
+      {customers.length > 0 && totalCustomers > limit && (
+        <div className="flex-shrink-0 py-4">
           <Pagination
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            total={pagination.total}
-            limit={pagination.limit}
-            onPageChange={handlePageChangeWithFetch}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            total={totalCustomers}
+            limit={limit}
+            onPageChange={memoizedOnPageChange}
             itemName="customers"
           />
-        )}
-
-      </PageContent>
-      {/* Customer Edit Dialog */}
-      {selectedCustomer && (
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Customer</DialogTitle>
-              <DialogDescription>
-                Update customer information for {selectedCustomer ? getCustomerFullName(selectedCustomer) : 'this customer'}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <CustomerForm
-              mode="edit"
-              customer={selectedCustomer}
-              onSave={handleEditCustomerSave}
-              onCancel={() => setShowEditDialog(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        </div>
       )}
-
-      {/* Customer Detail Dialog (View Only) */}
-      <CustomerDetailDialog
-        open={showCustomerDetail}
-        onOpenChange={setShowCustomerDetail}
-        customer={selectedCustomer}
-        onDelete={handleCustomerDeleteWithToast}
-      />
-
-      {/* Create Customer Dialog */}
-      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Customer</DialogTitle>
-            <DialogDescription>
-              Create a new customer account with contact information and preferences.
-            </DialogDescription>
-          </DialogHeader>
-          <CustomerForm
-            mode="create"
-            onSave={handleCustomerCreatedWithToast as any}
-            onCancel={() => setShowCreateForm(false)}
-            currentUser={currentUser}
-          />
-        </DialogContent>
-      </Dialog>
-    </PageWrapper>
+    </div>
   );
 };
 

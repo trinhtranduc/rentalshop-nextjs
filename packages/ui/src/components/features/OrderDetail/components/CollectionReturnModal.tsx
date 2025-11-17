@@ -63,7 +63,7 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
     if (isCollectionMode) {
       return <Package className="w-5 h-5 text-green-600" />;
     }
-    return <RotateCcw className="w-5 h-5 text-blue-600" />;
+    return <RotateCcw className="w-5 h-5 text-blue-700" />;
   };
 
   const getActionButtonText = () => {
@@ -135,14 +135,14 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
                   {settingsForm.collateralType && 
                    settingsForm.collateralType !== 'Other' && 
                    settingsForm.collateralType.trim() !== '' && (
-                    <span className="ml-2 text-lg font-normal text-blue-600">
+                    <span className="ml-2 text-lg font-normal text-blue-700">
                       + {settingsForm.collateralType}
                     </span>
                   )}
                   {settingsForm.collateralType === 'Other' && 
                    settingsForm.collateralDetails && 
                    settingsForm.collateralDetails.trim() !== '' && (
-                    <span className="ml-2 text-lg font-normal text-blue-600">
+                    <span className="ml-2 text-lg font-normal text-blue-700">
                       + {settingsForm.collateralDetails}
                     </span>
                   )}

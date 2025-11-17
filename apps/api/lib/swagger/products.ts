@@ -1,761 +1,179 @@
-/**
- * Swagger documentation for Product APIs
- */
-import { getApiUrl } from '@rentalshop/utils';
+// Swagger documentation for product availability APIs
 
-export const productSwaggerConfig = {
-  openapi: '3.0.0',
-  info: {
-    title: 'Rental Shop Product API',
-    description: 'Comprehensive API for product management including search, CRUD operations, and specialized endpoints',
-    version: '1.0.0',
-    contact: {
-      name: 'Rental Shop API Support',
-      email: 'support@rentalshop.com'
-    }
-  },
-  servers: [
-    {
-      url: getApiUrl(),
-      description: 'API server'
-    }
-  ],
-  tags: [
-    {
-      name: 'Products',
-      description: 'Product management operations'
-    },
-    {
-      name: 'Product Search',
-      description: 'Product search and filtering operations'
-    },
-    {
-      name: 'Product Barcode',
-      description: 'Barcode-based product operations'
-    }
-  ],
-  paths: {
-    '/api/products': {
-      get: {
-        tags: ['Products'],
-        summary: 'Get products with filtering and pagination',
-        description: 'Retrieve products with various filters including outlet, category, price range, and search terms',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'outletId',
-            in: 'query',
-            description: 'Filter by specific outlet',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'categoryId',
-            in: 'query',
-            description: 'Filter by specific category',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'isActive',
-            in: 'query',
-            description: 'Filter by active status',
-            schema: { type: 'boolean' }
-          },
-          {
-            name: 'search',
-            in: 'query',
-            description: 'Search term for product name',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'minPrice',
-            in: 'query',
-            description: 'Minimum rent price filter',
-            schema: { type: 'number' }
-          },
-          {
-            name: 'maxPrice',
-            in: 'query',
-            description: 'Maximum rent price filter',
-            schema: { type: 'number' }
-          },
-          {
-            name: 'page',
-            in: 'query',
-            description: 'Page number for pagination',
-            schema: { type: 'integer', default: 1 }
-          },
-          {
-            name: 'limit',
-            in: 'query',
-            description: 'Number of items per page',
-            schema: { type: 'integer', default: 20 }
-          },
-          {
-            name: 'sortBy',
-            in: 'query',
-            description: 'Sort field',
-            schema: { 
-              type: 'string', 
-              enum: ['name', 'rentPrice', 'createdAt'],
-              default: 'createdAt'
-            }
-          },
-          {
-            name: 'sortOrder',
-            in: 'query',
-            description: 'Sort order',
-            schema: { 
-              type: 'string', 
-              enum: ['asc', 'desc'],
-              default: 'desc'
-            }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Products retrieved successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: {
-                      type: 'object',
-                      properties: {
-                        products: {
-                          type: 'array',
-                          items: { $ref: '#/components/schemas/Product' }
-                        },
-                        total: { type: 'integer' },
-                        page: { type: 'integer' },
-                        totalPages: { type: 'integer' },
-                        hasMore: { type: 'boolean' }
+export const productAvailabilitySwagger = {
+  '/api/products/availability': {
+    get: {
+      tags: ['Products'],
+      summary: 'Check product availability for a specific date',
+      description: 'Get product availability information including stock, rented quantity, and orders for a specific date',
+      parameters: [
+        {
+          name: 'productId',
+          in: 'query',
+          required: true,
+          schema: { type: 'number' },
+          description: 'Product ID to check availability for'
+        },
+        {
+          name: 'date',
+          in: 'query',
+          required: true,
+          schema: { type: 'string', format: 'date' },
+          description: 'Date to check availability (YYYY-MM-DD format)'
+        },
+        {
+          name: 'outletId',
+          in: 'query',
+          required: false,
+          schema: { type: 'number' },
+          description: 'Outlet ID (required for merchants/admins, optional for outlet users - uses assigned outlet if not provided)'
+        }
+      ],
+      responses: {
+        200: {
+          description: 'Product availability information retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean' },
+                  code: { type: 'string', example: 'PRODUCT_AVAILABILITY_FOUND' },
+                  message: { type: 'string', example: 'Product availability information retrieved successfully' },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      product: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'number', example: 1 },
+                          name: { type: 'string', example: 'Product 2 - Electronics' },
+                          barcode: { type: 'string', example: 'BAR000002' },
+                          outletId: { type: 'number', example: 1 },
+                          outletName: { type: 'string', example: 'Main Branch' }
+                        }
+                      },
+                      date: { type: 'string', example: '2025-01-15' },
+                      summary: {
+                        type: 'object',
+                        properties: {
+                          totalStock: { type: 'number', example: 10 },
+                          totalRented: { type: 'number', example: 3 },
+                          totalReserved: { type: 'number', example: 2 },
+                          totalAvailable: { type: 'number', example: 5 },
+                          isAvailable: { type: 'boolean', example: true }
+                        }
+                      },
+                      orders: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'number', example: 1 },
+                            orderNumber: { type: 'string', example: 'ORD-001-0001' },
+                            orderType: { type: 'string', example: 'RENT' },
+                            status: { type: 'string', example: 'PICKUPED' },
+                            customerName: { type: 'string', example: 'John Smith' },
+                            customerPhone: { type: 'string', example: '+1-555-1000' },
+                            pickupPlanAt: { type: 'string', format: 'date-time' },
+                            returnPlanAt: { type: 'string', format: 'date-time' },
+                            pickedUpAt: { type: 'string', format: 'date-time' },
+                            returnedAt: { type: 'string', format: 'date-time' },
+                            orderItems: {
+                              type: 'array',
+                              items: {
+                                type: 'object',
+                                properties: {
+                                  id: { type: 'number', example: 1 },
+                                  quantity: { type: 'number', example: 2 },
+                                  unitPrice: { type: 'number', example: 50.00 },
+                                  totalPrice: { type: 'number', example: 100.00 },
+                                  product: {
+                                    type: 'object',
+                                    properties: {
+                                      id: { type: 'number', example: 1 },
+                                      name: { type: 'string', example: 'Product 2 - Electronics' },
+                                      barcode: { type: 'string', example: 'BAR000002' }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      meta: {
+                        type: 'object',
+                        properties: {
+                          totalOrders: { type: 'number', example: 5 },
+                          date: { type: 'string', example: '2025-01-15' },
+                          checkedAt: { type: 'string', format: 'date-time' }
+                        }
                       }
                     }
                   }
                 }
               }
-            }
-          },
-          '401': {
-            description: 'Unauthorized - Access token required',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          }
-        }
-      },
-      post: {
-        tags: ['Products'],
-        summary: 'Create a new product',
-        description: 'Create a new product with all required information',
-        security: [{ bearerAuth: [] }],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ProductInput' }
             }
           }
         },
-        responses: {
-          '201': {
-            description: 'Product created successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: { $ref: '#/components/schemas/Product' },
-                    message: { type: 'string' }
-                  }
-                }
-              }
-            }
-          },
-          '400': {
-            description: 'Validation error',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ValidationError' }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/products/search': {
-      get: {
-        tags: ['Product Search'],
-        summary: 'Search products by name or barcode',
-        description: 'Advanced product search with multiple filtering options',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'q',
-            in: 'query',
-            description: 'Search query for product name or barcode',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'outletId',
-            in: 'query',
-            description: 'Filter by specific outlet',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'merchantId',
-            in: 'query',
-            description: 'Filter by specific merchant',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'categoryId',
-            in: 'query',
-            description: 'Filter by specific category',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'isActive',
-            in: 'query',
-            description: 'Filter by active status',
-            schema: { type: 'boolean' }
-          },
-          {
-            name: 'inStock',
-            in: 'query',
-            description: 'Only products with available stock',
-            schema: { type: 'boolean' }
-          },
-          {
-            name: 'limit',
-            in: 'query',
-            description: 'Number of results per page (1-100)',
-            schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
-          },
-          {
-            name: 'offset',
-            in: 'query',
-            description: 'Number of results to skip',
-            schema: { type: 'integer', minimum: 0, default: 0 }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Search results',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: {
-                      type: 'object',
-                      properties: {
-                        products: {
-                          type: 'array',
-                          items: { $ref: '#/components/schemas/ProductSearchResult' }
-                        },
-                        total: { type: 'integer' },
-                        limit: { type: 'integer' },
-                        offset: { type: 'integer' },
-                        hasMore: { type: 'boolean' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid parameters',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/products/barcode/{barcode}': {
-      get: {
-        tags: ['Product Barcode'],
-        summary: 'Find product by barcode',
-        description: 'Search for a product using its exact barcode',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'barcode',
-            in: 'path',
-            required: true,
-            description: 'Product barcode',
-            schema: { type: 'string' }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Product found',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: { $ref: '#/components/schemas/ProductSearchResult' }
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Product not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/products/outlet/{outletId}': {
-      get: {
-        tags: ['Products'],
-        summary: 'Get products by outlet',
-        description: 'Retrieve all products from a specific outlet with optional filters',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'outletId',
-            in: 'path',
-            required: true,
-            description: 'Outlet ID',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'categoryId',
-            in: 'query',
-            description: 'Filter by specific category',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'isActive',
-            in: 'query',
-            description: 'Filter by active status',
-            schema: { type: 'boolean' }
-          },
-          {
-            name: 'inStock',
-            in: 'query',
-            description: 'Only products with available stock',
-            schema: { type: 'boolean' }
-          },
-          {
-            name: 'limit',
-            in: 'query',
-            description: 'Number of results per page (1-100)',
-            schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
-          },
-          {
-            name: 'offset',
-            in: 'query',
-            description: 'Number of results to skip',
-            schema: { type: 'integer', minimum: 0, default: 0 }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Products retrieved successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: {
-                      type: 'object',
-                      properties: {
-                        products: {
-                          type: 'array',
-                          items: { $ref: '#/components/schemas/ProductSearchResult' }
-                        },
-                        total: { type: 'integer' },
-                        limit: { type: 'integer' },
-                        offset: { type: 'integer' },
-                        hasMore: { type: 'boolean' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid parameters',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/products/merchant/{merchantId}': {
-      get: {
-        tags: ['Products'],
-        summary: 'Get products by merchant',
-        description: 'Retrieve all products from a specific merchant with optional filters',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'merchantId',
-            in: 'path',
-            required: true,
-            description: 'Merchant ID',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'categoryId',
-            in: 'query',
-            description: 'Filter by specific category',
-            schema: { type: 'string' }
-          },
-          {
-            name: 'isActive',
-            in: 'query',
-            description: 'Filter by active status',
-            schema: { type: 'boolean' }
-          },
-          {
-            name: 'inStock',
-            in: 'query',
-            description: 'Only products with available stock',
-            schema: { type: 'boolean' }
-          },
-          {
-            name: 'limit',
-            in: 'query',
-            description: 'Number of results per page (1-100)',
-            schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
-          },
-          {
-            name: 'offset',
-            in: 'query',
-            description: 'Number of results to skip',
-            schema: { type: 'integer', minimum: 0, default: 0 }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Products retrieved successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: {
-                      type: 'object',
-                      properties: {
-                        products: {
-                          type: 'array',
-                          items: { $ref: '#/components/schemas/ProductSearchResult' }
-                        },
-                        total: { type: 'integer' },
-                        limit: { type: 'integer' },
-                        offset: { type: 'integer' },
-                        hasMore: { type: 'boolean' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid parameters',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/products/{id}': {
-      get: {
-        tags: ['Products'],
-        summary: 'Get product by ID',
-        description: 'Retrieve a specific product by its ID',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'id',
-            in: 'path',
-            required: true,
-            description: 'Product ID',
-            schema: { type: 'string' }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Product retrieved successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: { $ref: '#/components/schemas/Product' }
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Product not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          }
-        }
-      },
-      put: {
-        tags: ['Products'],
-        summary: 'Update product',
-        description: 'Update an existing product',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'id',
-            in: 'path',
-            required: true,
-            description: 'Product ID',
-            schema: { type: 'string' }
-          }
-        ],
-        requestBody: {
-          required: true,
+        400: {
+          description: 'Bad request - Invalid parameters',
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/ProductUpdateInput' }
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'VALIDATION_ERROR' },
+                  message: { type: 'string', example: 'Invalid parameters' },
+                  error: { type: 'object' }
+                }
+              }
             }
           }
         },
-        responses: {
-          '200': {
-            description: 'Product updated successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: { $ref: '#/components/schemas/Product' },
-                    message: { type: 'string' }
-                  }
+        404: {
+          description: 'Product not found',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'PRODUCT_NOT_FOUND' },
+                  message: { type: 'string', example: 'Product not found' }
                 }
               }
             }
-          },
-          '400': {
-            description: 'Validation error',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ValidationError' }
-              }
-            }
-          },
-          '404': {
-            description: 'Product not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
           }
-        }
-      },
-      delete: {
-        tags: ['Products'],
-        summary: 'Delete product',
-        description: 'Soft delete a product (marks as inactive)',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'id',
-            in: 'path',
-            required: true,
-            description: 'Product ID',
-            schema: { type: 'string' }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Product deleted successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    message: { type: 'string' }
-                  }
+        },
+        401: {
+          description: 'Unauthorized - Invalid or expired token',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'UNAUTHORIZED' },
+                  message: { type: 'string', example: 'Invalid or expired token' }
                 }
               }
             }
-          },
-          '404': {
-            description: 'Product not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
           }
-        }
-      }
-    },
-    '/api/products/{id}/availability': {
-      get: {
-        tags: ['Products'],
-        summary: 'Check product availability',
-        description: 'Check if a product is available for rent',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'id',
-            in: 'path',
-            required: true,
-            description: 'Product ID',
-            schema: { type: 'string' }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Availability status',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    success: { type: 'boolean' },
-                    data: {
-                      type: 'object',
-                      properties: {
-                        available: { type: 'boolean' },
-                        stock: { type: 'integer' },
-                        renting: { type: 'integer' },
-                        availableCount: { type: 'integer' }
-                      }
-                    }
-                  }
+        },
+        403: {
+          description: 'Forbidden - Insufficient permissions',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'FORBIDDEN' },
+                  message: { type: 'string', example: 'Insufficient permissions' }
                 }
-              }
-            }
-          },
-          '404': {
-            description: 'Product not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ErrorResponse' }
               }
             }
           }
@@ -763,154 +181,422 @@ export const productSwaggerConfig = {
       }
     }
   },
-  components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT'
+  '/api/products/{id}/availability': {
+    get: {
+      tags: ['Products'],
+      summary: 'Check product availability with precise time analysis',
+      description: 'Advanced product availability checking with precise time analysis, conflict detection, and timezone support. Ideal for booking systems and detailed scheduling.',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'number' },
+          description: 'Product ID to check availability for'
+        },
+        {
+          name: 'date',
+          in: 'query',
+          required: false,
+          schema: { type: 'string', format: 'date' },
+          description: 'Single date to check availability (YYYY-MM-DD format) - checks entire day'
+        },
+        {
+          name: 'startDate',
+          in: 'query',
+          required: false,
+          schema: { type: 'string', format: 'date-time' },
+          description: 'Start date/time for rental period (ISO datetime format)'
+        },
+        {
+          name: 'endDate',
+          in: 'query',
+          required: false,
+          schema: { type: 'string', format: 'date-time' },
+          description: 'End date/time for rental period (ISO datetime format)'
+        },
+        {
+          name: 'quantity',
+          in: 'query',
+          required: false,
+          schema: { type: 'number', minimum: 1, default: 1 },
+          description: 'Number of items requested (default: 1)'
+        },
+        {
+          name: 'includeTimePrecision',
+          in: 'query',
+          required: false,
+          schema: { type: 'boolean', default: true },
+          description: 'Enable precise hour/minute checking (default: true)'
+        },
+        {
+          name: 'timeZone',
+          in: 'query',
+          required: false,
+          schema: { type: 'string', default: 'UTC' },
+          description: 'Timezone for time calculations (default: UTC)'
+        },
+        {
+          name: 'outletId',
+          in: 'query',
+          required: false,
+          schema: { type: 'number' },
+          description: 'Outlet ID (required for merchants/admins, optional for outlet users - uses assigned outlet if not provided)'
+        }
+      ],
+      responses: {
+        200: {
+          description: 'Product availability information retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean' },
+                  code: { type: 'string', example: 'PRODUCT_AVAILABILITY_FOUND' },
+                  message: { type: 'string', example: 'Product availability information retrieved successfully' },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      product: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'number', example: 1 },
+                          name: { type: 'string', example: 'Product 2 - Electronics' },
+                          barcode: { type: 'string', example: 'BAR000002' },
+                          outletId: { type: 'number', example: 1 },
+                          outletName: { type: 'string', example: 'Main Branch' }
+                        }
+                      },
+                      date: { type: 'string', example: '2025-01-15' },
+                      summary: {
+                        type: 'object',
+                        properties: {
+                          totalStock: { type: 'number', example: 10 },
+                          totalRented: { type: 'number', example: 3 },
+                          totalReserved: { type: 'number', example: 2 },
+                          totalAvailable: { type: 'number', example: 5 },
+                          isAvailable: { type: 'boolean', example: true }
+                        }
+                      },
+                      orders: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'number', example: 1 },
+                            orderNumber: { type: 'string', example: 'ORD-001-0001' },
+                            orderType: { type: 'string', example: 'RENT' },
+                            status: { type: 'string', example: 'PICKUPED' },
+                            customerName: { type: 'string', example: 'John Smith' },
+                            customerPhone: { type: 'string', example: '+1-555-1000' },
+                            pickupPlanAt: { type: 'string', format: 'date-time' },
+                            returnPlanAt: { type: 'string', format: 'date-time' },
+                            pickedUpAt: { type: 'string', format: 'date-time' },
+                            returnedAt: { type: 'string', format: 'date-time' },
+                            orderItems: {
+                              type: 'array',
+                              items: {
+                                type: 'object',
+                                properties: {
+                                  id: { type: 'number', example: 1 },
+                                  quantity: { type: 'number', example: 2 },
+                                  unitPrice: { type: 'number', example: 50.00 },
+                                  totalPrice: { type: 'number', example: 100.00 },
+                                  product: {
+                                    type: 'object',
+                                    properties: {
+                                      id: { type: 'number', example: 1 },
+                                      name: { type: 'string', example: 'Product 2 - Electronics' },
+                                      barcode: { type: 'string', example: 'BAR000002' }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      meta: {
+                        type: 'object',
+                        properties: {
+                          totalOrders: { type: 'number', example: 5 },
+                          date: { type: 'string', example: '2025-01-15' },
+                          checkedAt: { type: 'string', format: 'date-time' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Bad request - Invalid parameters',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'VALIDATION_ERROR' },
+                  message: { type: 'string', example: 'Invalid parameters' },
+                  error: { type: 'object' }
+                }
+              }
+            }
+          }
+        },
+        404: {
+          description: 'Product not found',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'PRODUCT_NOT_FOUND' },
+                  message: { type: 'string', example: 'Product not found' }
+                }
+              }
+            }
+          }
+        },
+        401: {
+          description: 'Unauthorized - Invalid or expired token',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'UNAUTHORIZED' },
+                  message: { type: 'string', example: 'Invalid or expired token' }
+                }
+              }
+            }
+          }
+        },
+        403: {
+          description: 'Forbidden - Insufficient permissions',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'FORBIDDEN' },
+                  message: { type: 'string', example: 'Insufficient permissions' }
+                }
+              }
+            }
+          }
+        }
       }
-    },
-    schemas: {
-      Product: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          name: { type: 'string' },
-          description: { type: 'string', nullable: true },
-          barcode: { type: 'string', nullable: true },
-          stock: { type: 'integer' },
-          renting: { type: 'integer' },
-          available: { type: 'integer' },
-          rentPrice: { type: 'number' },
-          salePrice: { type: 'number', nullable: true },
-          deposit: { type: 'number' },
-          images: { type: 'string' },
-          isActive: { type: 'boolean' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-          outlet: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              name: { type: 'string' },
-              merchant: {
+    }
+  },
+  '/api/products/{id}/availability': {
+    get: {
+      tags: ['Products'],
+      summary: 'Check product availability with precise time analysis',
+      description: 'Advanced product availability checking with precise time analysis, conflict detection, and timezone support. Ideal for booking systems and detailed scheduling.',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'number' },
+          description: 'Product ID to check availability for'
+        },
+        {
+          name: 'startDate',
+          in: 'query',
+          required: true,
+          schema: { type: 'string', format: 'date-time' },
+          description: 'Start date/time for rental period (ISO datetime format)'
+        },
+        {
+          name: 'endDate',
+          in: 'query',
+          required: true,
+          schema: { type: 'string', format: 'date-time' },
+          description: 'End date/time for rental period (ISO datetime format)'
+        },
+        {
+          name: 'quantity',
+          in: 'query',
+          required: false,
+          schema: { type: 'number', minimum: 1, default: 1 },
+          description: 'Number of items requested (default: 1)'
+        },
+        {
+          name: 'includeTimePrecision',
+          in: 'query',
+          required: false,
+          schema: { type: 'boolean', default: true },
+          description: 'Enable precise hour/minute checking (default: true)'
+        },
+        {
+          name: 'timeZone',
+          in: 'query',
+          required: false,
+          schema: { type: 'string', default: 'UTC' },
+          description: 'Timezone for time calculations (default: UTC)'
+        },
+        {
+          name: 'outletId',
+          in: 'query',
+          required: false,
+          schema: { type: 'number' },
+          description: 'Outlet ID (required for merchants/admins, optional for outlet users - uses assigned outlet if not provided)'
+        }
+      ],
+      responses: {
+        200: {
+          description: 'Product availability information retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
                 type: 'object',
                 properties: {
-                  id: { type: 'string' },
-                  companyName: { type: 'string' }
+                  success: { type: 'boolean' },
+                  code: { type: 'string', example: 'AVAILABILITY_CHECKED' },
+                  message: { type: 'string', example: 'Available for rental from 1/15/2025, 9:00:00 AM to 1/15/2025, 5:00:00 PM (8 hours)' },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      productId: { type: 'number', example: 1 },
+                      productName: { type: 'string', example: 'Product 2 - Electronics' },
+                      totalStock: { type: 'number', example: 10 },
+                      totalAvailableStock: { type: 'number', example: 7 },
+                      totalRenting: { type: 'number', example: 3 },
+                      requestedQuantity: { type: 'number', example: 2 },
+                      rentalPeriod: {
+                        type: 'object',
+                        properties: {
+                          startDate: { type: 'string', format: 'date-time' },
+                          endDate: { type: 'string', format: 'date-time' },
+                          startDateLocal: { type: 'string', example: '1/15/2025, 9:00:00 AM' },
+                          endDateLocal: { type: 'string', example: '1/15/2025, 5:00:00 PM' },
+                          durationMs: { type: 'number', example: 28800000 },
+                          durationHours: { type: 'number', example: 8 },
+                          durationDays: { type: 'number', example: 1 },
+                          timeZone: { type: 'string', example: 'UTC' },
+                          includeTimePrecision: { type: 'boolean', example: true }
+                        }
+                      },
+                      isAvailable: { type: 'boolean', example: true },
+                      stockAvailable: { type: 'boolean', example: true },
+                      hasNoConflicts: { type: 'boolean', example: false },
+                      availabilityByOutlet: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            outletId: { type: 'number', example: 1 },
+                            outletName: { type: 'string', example: 'Main Branch' },
+                            stock: { type: 'number', example: 10 },
+                            available: { type: 'number', example: 7 },
+                            renting: { type: 'number', example: 3 },
+                            conflictingQuantity: { type: 'number', example: 2 },
+                            effectivelyAvailable: { type: 'number', example: 5 },
+                            canFulfillRequest: { type: 'boolean', example: true },
+                            conflicts: {
+                              type: 'array',
+                              items: {
+                                type: 'object',
+                                properties: {
+                                  orderNumber: { type: 'string', example: 'ORD-001-0001' },
+                                  customerName: { type: 'string', example: 'John Smith' },
+                                  pickupDate: { type: 'string', format: 'date-time' },
+                                  returnDate: { type: 'string', format: 'date-time' },
+                                  pickupDateLocal: { type: 'string', example: '1/15/2025, 10:00:00 AM' },
+                                  returnDateLocal: { type: 'string', example: '1/15/2025, 4:00:00 PM' },
+                                  quantity: { type: 'number', example: 2 },
+                                  conflictDuration: { type: 'number', example: 21600000 },
+                                  conflictHours: { type: 'number', example: 6 },
+                                  conflictType: { type: 'string', example: 'period_overlap' }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      bestOutlet: {
+                        type: 'object',
+                        properties: {
+                          outletId: { type: 'number', example: 1 },
+                          outletName: { type: 'string', example: 'Main Branch' },
+                          effectivelyAvailable: { type: 'number', example: 5 }
+                        }
+                      },
+                      totalConflictsFound: { type: 'number', example: 1 },
+                      message: { type: 'string', example: 'Available for rental from 1/15/2025, 9:00:00 AM to 1/15/2025, 5:00:00 PM (8 hours)' }
+                    }
+                  }
                 }
               }
             }
-          },
-          category: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              name: { type: 'string' }
-            }
           }
-        }
-      },
-      ProductSearchResult: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          name: { type: 'string' },
-          description: { type: 'string', nullable: true },
-          barcode: { type: 'string', nullable: true },
-          stock: { type: 'integer' },
-          renting: { type: 'integer' },
-          available: { type: 'integer' },
-          rentPrice: { type: 'number' },
-          salePrice: { type: 'number', nullable: true },
-          deposit: { type: 'number' },
-          images: { type: 'string' },
-          isActive: { type: 'boolean' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-          outlet: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              name: { type: 'string' },
-              merchant: {
+        },
+        400: {
+          description: 'Bad request - Invalid parameters',
+          content: {
+            'application/json': {
+              schema: {
                 type: 'object',
                 properties: {
-                  id: { type: 'string' },
-                  companyName: { type: 'string' }
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'VALIDATION_ERROR' },
+                  message: { type: 'string', example: 'Invalid parameters' },
+                  error: { type: 'object' }
                 }
               }
             }
-          },
-          category: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              name: { type: 'string' }
+          }
+        },
+        404: {
+          description: 'Product not found',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'PRODUCT_NOT_FOUND' },
+                  message: { type: 'string', example: 'Product not found' }
+                }
+              }
             }
           }
-        }
-      },
-      ProductInput: {
-        type: 'object',
-        required: ['name', 'stock', 'rentPrice', 'deposit', 'categoryId', 'outletId'],
-        properties: {
-          name: { type: 'string', minLength: 1 },
-          description: { type: 'string' },
-          barcode: { type: 'string' },
-          stock: { type: 'integer', minimum: 0 },
-          rentPrice: { type: 'number', minimum: 0 },
-          salePrice: { type: 'number', minimum: 0 },
-          deposit: { type: 'number', minimum: 0 },
-          categoryId: { type: 'string' },
-          outletId: { type: 'string' },
-          images: {
-            type: 'array',
-            items: { type: 'string' }
+        },
+        401: {
+          description: 'Unauthorized - Invalid or expired token',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'UNAUTHORIZED' },
+                  message: { type: 'string', example: 'Invalid or expired token' }
+                }
+              }
+            }
           }
-        }
-      },
-      ProductUpdateInput: {
-        type: 'object',
-        properties: {
-          name: { type: 'string', minLength: 1 },
-          description: { type: 'string' },
-          barcode: { type: 'string' },
-          stock: { type: 'integer', minimum: 0 },
-          rentPrice: { type: 'number', minimum: 0 },
-          salePrice: { type: 'number', minimum: 0 },
-          deposit: { type: 'number', minimum: 0 },
-          categoryId: { type: 'string' },
-          outletId: { type: 'string' },
-          images: {
-            type: 'array',
-            items: { type: 'string' }
-          },
-          isActive: { type: 'boolean' }
-        }
-      },
-      ErrorResponse: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean', example: false },
-          error: { type: 'string' },
-          message: { type: 'string' },
-          details: { type: 'string' }
-        }
-      },
-      ValidationError: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean', example: false },
-          message: { type: 'string', example: 'Validation failed' },
-          errors: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                field: { type: 'string' },
-                message: { type: 'string' }
+        },
+        403: {
+          description: 'Forbidden - Insufficient permissions',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  code: { type: 'string', example: 'FORBIDDEN' },
+                  message: { type: 'string', example: 'Insufficient permissions' }
+                }
               }
             }
           }
@@ -918,4 +604,6 @@ export const productSwaggerConfig = {
       }
     }
   }
-}; 
+};
+
+export default productAvailabilitySwagger;

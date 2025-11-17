@@ -253,7 +253,7 @@ export const PlanDetailModal: React.FC<PlanDetailModalProps> = ({
           </Button>
           <Button
             onClick={() => handleSubscribe(plan.billingCycle)}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-700 hover:bg-blue-700"
           >
             Subscribe to {plan.name} Plan
           </Button>

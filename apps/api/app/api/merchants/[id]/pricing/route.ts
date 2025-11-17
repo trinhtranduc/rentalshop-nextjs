@@ -1,4 +1,4 @@
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
@@ -27,7 +27,7 @@ export async function GET(
       if (['MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'].includes(user.role) && userScope.merchantId !== merchantId) {
         console.log('❌ Access denied: merchant scope mismatch');
         return NextResponse.json(
-          { success: false, message: 'Access denied' },
+          ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }
         );
       }
@@ -36,7 +36,7 @@ export async function GET(
 
       if (!merchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: 404 }
         );
       }
@@ -75,7 +75,7 @@ export async function GET(
     } catch (error: any) {
       console.error('❌ Error fetching merchant pricing:', error);
       return NextResponse.json(
-        { success: false, message: 'Failed to fetch pricing configuration' },
+        ResponseBuilder.error('FETCH_PRICING_FAILED'),
         { status: 500 }
       );
     }
@@ -98,7 +98,7 @@ export async function PUT(
       // Validate merchant access
       if (user.role === 'MERCHANT' && userScope.merchantId !== merchantId) {
         return NextResponse.json(
-          { success: false, message: 'Access denied' },
+          ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }
         );
       }
@@ -108,7 +108,7 @@ export async function PUT(
       
       if (!businessType || !defaultPricingType || !businessRules || !durationLimits) {
         return NextResponse.json(
-          { success: false, message: 'Missing required fields' },
+          ResponseBuilder.error('MISSING_REQUIRED_FIELD'),
           { status: 400 }
         );
       }
@@ -116,7 +116,7 @@ export async function PUT(
       // Validate business type
       if (!['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL'].includes(businessType)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid business type' },
+          ResponseBuilder.error('INVALID_BUSINESS_TYPE'),
           { status: 400 }
         );
       }
@@ -124,7 +124,7 @@ export async function PUT(
       // Validate pricing type
       if (!['FIXED', 'HOURLY', 'DAILY', 'WEEKLY'].includes(defaultPricingType)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid pricing type' },
+          ResponseBuilder.error('INVALID_PRICING_TYPE'),
           { status: 400 }
         );
       }
@@ -134,7 +134,7 @@ export async function PUT(
 
       if (!existingMerchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: 404 }
         );
       }
@@ -162,6 +162,7 @@ export async function PUT(
 
       return NextResponse.json({
         success: true,
+        code: 'PRICING_CONFIG_UPDATED_SUCCESS',
         message: 'Pricing configuration updated successfully',
         data: {
           merchantId: merchant.id,
@@ -175,7 +176,7 @@ export async function PUT(
     } catch (error: any) {
       console.error('Error updating merchant pricing:', error);
       return NextResponse.json(
-        { success: false, message: 'Failed to update pricing configuration' },
+        ResponseBuilder.error('UPDATE_PRICING_FAILED'),
         { status: 500 }
       );
     }

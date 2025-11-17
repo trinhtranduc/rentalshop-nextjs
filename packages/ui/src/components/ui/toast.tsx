@@ -3,6 +3,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { Button } from './button';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -81,15 +82,17 @@ export const Toast: React.FC<ToastProps> = ({
           )}
         </div>
         
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => {
             setIsVisible(false);
             setTimeout(() => onClose(id), 300);
           }}
-          className="ml-2 flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
+          className="ml-2 flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity h-6 w-6 p-0"
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

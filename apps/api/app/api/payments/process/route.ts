@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
       if (!orderId || !amount || !method) {
         return NextResponse.json(
-          { success: false, message: 'Order ID, amount, and method are required' },
+          ResponseBuilder.error('ORDER_PAYMENT_REQUIRED'),
           { status: 400 }
         );
       }
@@ -25,14 +25,14 @@ export async function POST(request: NextRequest) {
       const order = await db.orders.findById(orderId);
       if (!order) {
         return NextResponse.json(
-          { success: false, message: 'Order not found' },
+          ResponseBuilder.error('ORDER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
 
       // TODO: Implement payment processing functionality
       return NextResponse.json(
-        { success: false, message: 'Payment processing functionality not yet implemented' },
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
         { status: 501 }
       );
 

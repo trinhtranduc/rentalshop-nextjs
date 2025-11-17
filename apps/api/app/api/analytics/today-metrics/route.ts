@@ -65,6 +65,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           availableStock: 0,
           rentingStock: 0
         },
+        code: 'NO_DATA_AVAILABLE',
         message: 'No data available - user not assigned to merchant/outlet'
       });
     }
@@ -91,11 +92,24 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       }
     });
 
+    // Get overdue rentals (status PICKUPED but returnPlanAt < now)
+    const now = new Date();
+    const overdueWhereClause = {
+      ...orderWhereClause,
+      status: 'PICKUPED',
+      returnPlanAt: { lt: now }
+    };
+    const overdueOrders = await db.orders.search({
+      where: overdueWhereClause,
+      limit: 1000
+    });
+
     const metrics = {
       totalOrders,
       activeRentals,
       completedOrders,
       totalRevenue,
+      overdueItems: overdueOrders.total || 0,
       totalStock: stockMetrics._sum?.stock || 0,
       availableStock: stockMetrics._sum?.available || 0,
       rentingStock: stockMetrics._sum?.renting || 0
@@ -104,7 +118,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     return NextResponse.json({
       success: true,
       data: metrics,
-      message: 'Today metrics retrieved successfully'
+      code: 'TODAY_METRICS_SUCCESS',
+        message: 'Today metrics retrieved successfully'
     });
 
   } catch (error) {

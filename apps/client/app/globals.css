@@ -170,14 +170,32 @@ a {
   transform: translateZ(0);
 }
 
-/* Optimized transitions for navigation items */
+/* Optimized transitions for navigation items - SMOOTH INSTANT FEEDBACK */
 .nav-item {
-  transition: color 150ms ease-out, background-color 150ms ease-out, transform 150ms ease-out;
-  will-change: color, background-color, transform;
+  transition: color 80ms ease-out, background-color 80ms ease-out, transform 80ms ease-out, box-shadow 80ms ease-out;
+  will-change: color, background-color, transform, box-shadow;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
-.nav-item:hover {
-  transform: translateY(-1px);
+.nav-item:hover:not(.nav-item-active) {
+  transform: translateY(-0.5px) translateZ(0);
+}
+
+/* Active state for immediate feedback */
+.nav-item-active {
+  transform: translateZ(0);
+  transition: none; /* Disable transition for active state to prevent flicker */
+}
+
+/* Navigation loading state */
+.nav-item-loading {
+  animation: nav-pulse 1s ease-in-out infinite;
+}
+
+@keyframes nav-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* Mobile menu performance optimizations */

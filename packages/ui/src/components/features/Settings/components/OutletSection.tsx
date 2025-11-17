@@ -3,11 +3,13 @@
 import React from 'react';
 import { 
   Card, 
+  CardHeader,
   CardContent,
   Button,
   Input,
   Label
 } from '@rentalshop/ui';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -43,40 +45,38 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
   onCancel,
   onInputChange
 }) => {
+  const t = useSettingsTranslations();
+  
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Outlet Information</h2>
-          <p className="text-gray-600">Manage your outlet details and settings</p>
-        </div>
-        {!isEditing ? (
-          <Button onClick={onEdit}>
-            Edit Outlet Info
-          </Button>
-        ) : (
-          <div className="flex gap-2">
-            <Button onClick={onSave} variant="default" disabled={isUpdating}>
-              {isUpdating ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button onClick={onCancel} variant="outline" disabled={isUpdating}>
-              Cancel
-            </Button>
-          </div>
-        )}
-      </div>
-
       <Card>
-        <CardContent className="p-6">
+        <CardHeader className="flex flex-row items-center justify-between py-4 pb-3">
+          <h3 className="text-base font-semibold text-gray-900">{t('outlet.outletInformation')}</h3>
+          {!isEditing ? (
+            <Button onClick={onEdit} size="sm">
+              {t('outlet.edit')}
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button onClick={onSave} variant="default" size="sm" disabled={isUpdating}>
+                {isUpdating ? t('outlet.saving') : t('outlet.save')}
+              </Button>
+              <Button onClick={onCancel} variant="outline" size="sm" disabled={isUpdating}>
+                {t('outlet.cancel')}
+              </Button>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="p-6 pt-4">
           {!user?.outlet ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">No outlet information available</p>
+              <p className="text-gray-500">{t('outlet.noOutletInfo')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="outletName" className="block text-sm font-medium text-gray-700 mb-2">
-                  Outlet Name
+                  {t('outlet.name')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -85,18 +85,18 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     type="text"
                     value={formData.name}
                     onChange={onInputChange}
-                    placeholder="Enter outlet name"
+                    placeholder={t('outlet.enterOutletName')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.outlet?.name || 'Not provided'}
+                    {user?.outlet?.name || t('outlet.notProvided')}
                   </p>
                 )}
               </div>
 
               <div>
                 <Label htmlFor="outletPhone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Outlet Phone
+                  {t('outlet.phone')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -105,18 +105,18 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     type="tel"
                     value={formData.phone}
                     onChange={onInputChange}
-                    placeholder="Enter outlet phone"
+                    placeholder={t('outlet.enterOutletPhone')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.outlet?.phone || 'Not provided'}
+                    {user?.outlet?.phone || t('outlet.notProvided')}
                   </p>
                 )}
               </div>
 
               <div className="md:col-span-2">
                 <Label htmlFor="outletAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                  Outlet Address
+                  {t('outlet.address')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -125,18 +125,18 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     type="text"
                     value={formData.address}
                     onChange={onInputChange}
-                    placeholder="Enter outlet address"
+                    placeholder={t('outlet.enterOutletAddress')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.outlet?.address || 'Not provided'}
+                    {user?.outlet?.address || t('outlet.notProvided')}
                   </p>
                 )}
               </div>
 
               <div className="md:col-span-2">
                 <Label htmlFor="outletDescription" className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  {t('outlet.description')}
                 </Label>
                 {isEditing ? (
                   <Input
@@ -145,11 +145,11 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                     type="text"
                     value={formData.description}
                     onChange={onInputChange}
-                    placeholder="Enter outlet description"
+                    placeholder={t('outlet.enterDescription')}
                   />
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                    {user?.outlet?.description || 'Not provided'}
+                    {user?.outlet?.description || t('outlet.notProvided')}
                   </p>
                 )}
               </div>

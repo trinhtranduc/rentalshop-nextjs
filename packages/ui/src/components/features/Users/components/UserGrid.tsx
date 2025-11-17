@@ -2,6 +2,7 @@ import React from 'react';
 import { UserCard } from './UserCard';
 import { Card, CardContent } from '@rentalshop/ui';
 import type { User } from '@rentalshop/types';
+import { useUsersTranslations } from '@rentalshop/hooks';
 
 interface UserGridProps {
   users: User[];
@@ -9,15 +10,17 @@ interface UserGridProps {
 }
 
 export function UserGrid({ users, onUserAction }: UserGridProps) {
+  const t = useUsersTranslations();
+  
   if (users.length === 0) {
     return (
       <Card className="shadow-sm border-gray-200 dark:border-gray-700">
         <CardContent className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <div className="text-4xl mb-4">👥</div>
-            <h3 className="text-lg font-medium mb-2">No users found</h3>
+            <h3 className="text-lg font-medium mb-2">{t('messages.noUsers')}</h3>
             <p className="text-sm">
-              Try adjusting your filters or add some users to get started.
+              {t('messages.tryAdjustingSearch')}
             </p>
           </div>
         </CardContent>

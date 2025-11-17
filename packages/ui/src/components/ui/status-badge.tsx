@@ -62,6 +62,15 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   size = 'md',
   className
 }) => {
+  // Handle undefined or null status
+  if (!status) {
+    return (
+      <span className={cn('inline-flex items-center gap-1.5 rounded-full font-medium border px-2 py-1 text-xs bg-gray-100 text-gray-600 border-gray-300', className)}>
+        Unknown
+      </span>
+    );
+  }
+
   // Check if it's a special status first
   const specialConfig = specialStatusConfig[status.toLowerCase() as keyof typeof specialStatusConfig];
   

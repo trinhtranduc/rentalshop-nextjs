@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { clearAuthData } from './common';
 import CONSTANTS from '@rentalshop/constants';
+import type { ApiResponse as ResponseBuilderApiResponse } from '../api/response-builder';
 
 const API = CONSTANTS.API;
 
@@ -74,34 +75,17 @@ export enum ErrorCode {
 }
 
 // ============================================================================
-// ERROR RESPONSE TYPES - Unified Format
+// RE-EXPORT ApiResponse from response-builder (SINGLE SOURCE OF TRUTH)
 // ============================================================================
 
-export interface ApiErrorResponse {
-  success: false;
-  message: string;
-  error: ErrorCode;
-  details?: string;
-  field?: string;
-}
+export type { ApiResponse } from '../api/response-builder';
 
-export interface ApiSuccessResponse<T = any> {
-  success: true;
-  data: T;
-  message?: string;
-}
-
-export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
-
-// ============================================================================
-// TYPE GUARDS - Type-safe response checking
-// ============================================================================
-
-export function isSuccessResponse<T>(response: ApiResponse<T>): response is ApiSuccessResponse<T> {
+// Simplified type guards compatible with ResponseBuilder's ApiResponse
+export function isSuccessResponse<T>(response: ResponseBuilderApiResponse<T>): response is ResponseBuilderApiResponse<T> & { success: true } {
   return response.success === true;
 }
 
-export function isErrorResponse(response: ApiResponse<any>): response is ApiErrorResponse {
+export function isErrorResponse(response: ResponseBuilderApiResponse<any>): response is ResponseBuilderApiResponse<any> & { success: false } {
   return response.success === false;
 }
 
@@ -263,13 +247,12 @@ export class ApiError extends Error {
     this.field = field;
   }
 
-  toResponse(): ApiErrorResponse {
+  toJSON() {
     return {
       success: false,
+      code: this.code,
       message: this.message,
-      error: this.code,
-      details: this.details,
-      field: this.field
+      error: this.details || this.message
     };
   }
 }
@@ -324,31 +307,10 @@ export class PlanLimitError extends ApiError {
 // ERROR RESPONSE BUILDERS - DRY and Consistent
 // ============================================================================
 
-export function createErrorResponse(
-  code: ErrorCode,
-  message?: string,
-  details?: string,
-  field?: string
-): ApiErrorResponse {
-  return {
-    success: false,
-    message: message || ERROR_MESSAGES[code],
-    error: code,
-    details,
-    field
-  };
-}
-
-export function createSuccessResponse<T>(
-  data: T,
-  message?: string
-): ApiSuccessResponse<T> {
-  return {
-    success: true,
-    data,
-    message
-  };
-}
+// createErrorResponse and createSuccessResponse removed
+// Use ResponseBuilder from @rentalshop/utils instead:
+// - ResponseBuilder.error(code, message)
+// - ResponseBuilder.success(code, data)
 
 // ============================================================================
 // DATABASE ERROR HANDLERS - Unified and Comprehensive
@@ -577,7 +539,7 @@ export function handleBusinessError(error: any): ApiError {
 // ============================================================================
 
 export function handleApiError(error: any): {
-  response: ApiErrorResponse;
+  response: ResponseBuilderApiResponse;
   statusCode: number;
 } {
   console.error('🚨 API Error:', error);
@@ -598,17 +560,46 @@ export function handleApiError(error: any): {
     apiError = handleBusinessError(error);
   }
   
-  const response = createErrorResponse(
-    apiError.code,
-    apiError.message,
-    apiError.details,
-    apiError.field
-  );
+  // Convert code to string to match ResponseBuilder.error format
+  const errorCode = String(apiError.code);
+  const errorMessage = typeof apiError.details === 'string' ? apiError.details : apiError.message;
+  
+  // Return response with same format as ResponseBuilder.error
+  const response: ResponseBuilderApiResponse = {
+    success: false,
+    code: errorCode,
+    message: errorMessage,
+    error: errorMessage
+  };
 
   return {
     response,
     statusCode: apiError.statusCode
   };
+}
+
+// ============================================================================
+// ERROR TRANSLATION HELPER
+// ============================================================================
+
+/**
+ * Get translation key for error code
+ * This allows frontend to translate error messages client-side
+ * 
+ * @param errorCode - The error code from API response
+ * @returns Translation key (same as error code for simplicity)
+ */
+export function getErrorTranslationKey(errorCode: string | ErrorCode): string {
+  return errorCode;
+}
+
+/**
+ * Check if error code exists in our error system
+ * @param code - The error code to check
+ * @returns true if error code is valid
+ */
+export function isValidErrorCode(code: string): code is ErrorCode {
+  return Object.values(ErrorCode).includes(code as ErrorCode);
 }
 
 // ============================================================================

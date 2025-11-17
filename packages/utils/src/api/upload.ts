@@ -1,4 +1,5 @@
 import { API } from '@rentalshop/constants';
+import imageCompression from 'browser-image-compression';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -31,10 +32,12 @@ export interface UploadOptions {
   maxFileSize?: number; // in bytes
   allowedTypes?: string[];
   folder?: string;
-  useBase64Fallback?: boolean; // Enable base64 fallback if upload fails
   quality?: number; // Image quality (0-1)
   maxWidth?: number; // Max width for client-side resize
   maxHeight?: number; // Max height for client-side resize
+  enableCompression?: boolean; // Enable client-side compression
+  compressionQuality?: number; // Compression quality (0-1)
+  maxSizeMB?: number; // Max file size after compression
 }
 
 export interface ImageValidationResult {
@@ -138,7 +141,58 @@ export function getImageDimensions(file: File): Promise<ImageDimensions> {
 }
 
 /**
- * Resize image on client-side before upload
+ * Compress image using browser-image-compression library
+ * 
+ * **Why use browser-image-compression:**
+ * - Better compression algorithms
+ * - Auto WebP conversion
+ * - Progress tracking
+ * - More reliable than manual canvas compression
+ * - Handles various image formats
+ */
+export async function compressImage(
+  file: File,
+  options: {
+    maxSizeMB?: number;
+    maxWidthOrHeight?: number;
+    useWebWorker?: boolean;
+    quality?: number;
+    onProgress?: (progress: number) => void;
+  } = {}
+): Promise<File> {
+  const {
+    maxSizeMB = 1, // 1MB max after compression
+    maxWidthOrHeight = 1200, // Max dimension
+    useWebWorker = true, // Use web worker for better performance
+    quality = 0.8, // 80% quality
+    onProgress
+  } = options;
+
+  try {
+    const compressedFile = await imageCompression(file, {
+      maxSizeMB,
+      maxWidthOrHeight,
+      useWebWorker,
+      onProgress: onProgress ? (progress) => onProgress(progress * 100) : undefined,
+      // Auto convert to WebP for better compression
+      fileType: 'image/webp',
+      // Preserve EXIF data
+      preserveExif: false,
+      // Always compress, even if file is small
+      alwaysKeepResolution: false
+    });
+
+    console.log(`Image compressed: ${(file.size / 1024).toFixed(2)}KB → ${(compressedFile.size / 1024).toFixed(2)}KB (${Math.round((1 - compressedFile.size / file.size) * 100)}% reduction)`);
+    
+    return compressedFile;
+  } catch (error) {
+    console.warn('Image compression failed, using original file:', error);
+    return file; // Return original file if compression fails
+  }
+}
+
+/**
+ * Resize image on client-side before upload (legacy method)
  * 
  * **Why client-side resize:**
  * - Reduces upload time and bandwidth
@@ -341,10 +395,12 @@ export async function uploadImage(
     maxFileSize = DEFAULT_MAX_FILE_SIZE,
     allowedTypes = DEFAULT_ALLOWED_TYPES,
     folder = 'rentalshop/products',
-    useBase64Fallback = true,
     quality = 0.85,
     maxWidth,
-    maxHeight
+    maxHeight,
+    enableCompression = true,
+    compressionQuality = 0.8,
+    maxSizeMB = 1
   } = options;
 
   try {
@@ -366,9 +422,51 @@ export async function uploadImage(
       console.warn('Image upload warnings:', validation.warnings);
     }
 
-    // Stage 2: Optional client-side resize
+    // Stage 2: Client-side compression (preferred) or resize
     let fileToUpload = file;
-    if (maxWidth && maxHeight) {
+    
+    if (enableCompression) {
+      try {
+        if (onProgress) {
+          onProgress({ loaded: 10, total: 100, percentage: 10, stage: 'processing' });
+        }
+        
+        console.log(`Compressing image: ${(file.size / 1024).toFixed(2)}KB`);
+        fileToUpload = await compressImage(file, {
+          maxSizeMB,
+          maxWidthOrHeight: maxWidth || 1200,
+          quality: compressionQuality,
+          onProgress: (progress) => {
+            if (onProgress) {
+              onProgress({ 
+                loaded: 10 + (progress * 0.3), // 10-40% for compression
+                total: 100, 
+                percentage: 10 + Math.round(progress * 0.3), 
+                stage: 'processing' 
+              });
+            }
+          }
+        });
+      } catch (compressionError) {
+        console.warn('Image compression failed, trying resize fallback:', compressionError);
+        
+        // Fallback to resize if compression fails
+        if (maxWidth && maxHeight) {
+          try {
+            const dimensions = await getImageDimensions(file);
+            if (dimensions.width > maxWidth || dimensions.height > maxHeight) {
+              console.log(`Resizing image from ${dimensions.width}x${dimensions.height} to fit ${maxWidth}x${maxHeight}`);
+              fileToUpload = await resizeImage(file, maxWidth, maxHeight, quality);
+              console.log(`Image resized. Size reduced from ${(file.size / 1024).toFixed(2)}KB to ${(fileToUpload.size / 1024).toFixed(2)}KB`);
+            }
+          } catch (resizeError) {
+            console.warn('Client-side resize also failed, uploading original:', resizeError);
+            // Continue with original file if both fail
+          }
+        }
+      }
+    } else if (maxWidth && maxHeight) {
+      // Legacy resize method (if compression disabled)
       try {
         const dimensions = await getImageDimensions(file);
         if (dimensions.width > maxWidth || dimensions.height > maxHeight) {
@@ -386,7 +484,6 @@ export async function uploadImage(
     const formData = new FormData();
     formData.append('image', fileToUpload);
     formData.append('folder', folder);
-    formData.append('useBase64', useBase64Fallback.toString());
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
     const uploadUrl = `${apiUrl}/api/upload/image`;
@@ -396,35 +493,11 @@ export async function uploadImage(
     return result;
 
   } catch (error) {
-    console.error('Upload error:', error);
-
-    // Stage 4: Fallback to base64 if enabled
-    if (useBase64Fallback) {
-      try {
-        console.log('Upload failed, attempting base64 fallback...');
-        const base64 = await fileToBase64(file);
-        
-        return {
-          success: true,
-          data: {
-            url: base64,
-            publicId: `base64-${Date.now()}`,
-            width: 0,
-            height: 0,
-            format: file.type.split('/')[1] || 'unknown',
-            size: file.size,
-            uploadMethod: 'base64'
-          },
-          message: 'Image uploaded using base64 fallback'
-        };
-      } catch (base64Error) {
-        console.error('Base64 fallback failed:', base64Error);
-      }
-    }
-
+    console.error('Railway Volume upload failed:', error);
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Upload failed'
+      error: error instanceof Error ? error.message : 'Railway Volume upload failed'
     };
   }
 }
@@ -465,3 +538,5 @@ export function createUploadController() {
     cancel: () => controller.abort()
   };
 }
+
+// All functions are already exported individually above

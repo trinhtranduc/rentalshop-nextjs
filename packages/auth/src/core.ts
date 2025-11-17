@@ -9,6 +9,161 @@ import { verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
 import { PlanLimitError } from '@rentalshop/utils';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
+import { db } from '@rentalshop/database';
+import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
+
+// ============================================================================
+// SUBSCRIPTION STATUS CHECK HELPER
+// ============================================================================
+
+/**
+ * Check if merchant has active subscription
+ * Returns error response if subscription is paused, cancelled, or expired
+ */
+async function checkMerchantSubscriptionStatus(merchantId: number): Promise<{
+  success: boolean;
+  response?: NextResponse;
+}> {
+  try {
+    // Get merchant with subscription info
+    const merchant = await db.merchants.findById(merchantId);
+    
+    if (!merchant) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          { 
+            success: false, 
+            message: 'Merchant not found', 
+            code: 'MERCHANT_NOT_FOUND' 
+          },
+          { status: 404 }
+        )
+      };
+    }
+
+    // Get subscription object
+    const subscription = merchant.subscription;
+    
+    if (!subscription) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          { 
+            success: false, 
+            message: 'No active subscription found. Please subscribe to continue.',
+            code: 'NO_SUBSCRIPTION',
+            details: {
+              merchantId: merchant.id,
+              merchantName: merchant.name
+            }
+          },
+          { status: 403 }
+        )
+      };
+    }
+
+    const subscriptionStatus = subscription.status;
+
+    // Block if subscription is PAUSED
+    if (subscriptionStatus === SUBSCRIPTION_STATUS.PAUSED) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          { 
+            success: false, 
+            message: 'Your subscription is paused. Please contact support to reactivate.',
+            code: 'SUBSCRIPTION_PAUSED',
+            details: {
+              status: subscriptionStatus,
+              merchantId: merchant.id,
+              merchantName: merchant.name
+            }
+          },
+          { status: 403 }
+        )
+      };
+    }
+
+    // Block if subscription is CANCELLED
+    if (subscriptionStatus === SUBSCRIPTION_STATUS.CANCELLED) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          { 
+            success: false, 
+            message: 'Your subscription has been cancelled. Please contact support to reactivate.',
+            code: 'SUBSCRIPTION_CANCELLED',
+            details: {
+              status: subscriptionStatus,
+              merchantId: merchant.id,
+              merchantName: merchant.name,
+              canceledAt: subscription.canceledAt
+            }
+          },
+          { status: 403 }
+        )
+      };
+    }
+
+    // Block if subscription is EXPIRED
+    if (subscriptionStatus === SUBSCRIPTION_STATUS.EXPIRED) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          { 
+            success: false, 
+            message: 'Your subscription has expired. Please renew to continue using the service.',
+            code: 'SUBSCRIPTION_EXPIRED',
+            details: {
+              status: subscriptionStatus,
+              expiredAt: subscription.currentPeriodEnd,
+              merchantId: merchant.id,
+              merchantName: merchant.name
+            }
+          },
+          { status: 403 }
+        )
+      };
+    }
+
+    // Block if subscription is PAST_DUE
+    if (subscriptionStatus === SUBSCRIPTION_STATUS.PAST_DUE) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          { 
+            success: false, 
+            message: 'Your payment is overdue. Please update your payment method to continue.',
+            code: 'SUBSCRIPTION_PAST_DUE',
+            details: {
+              status: subscriptionStatus,
+              merchantId: merchant.id,
+              merchantName: merchant.name
+            }
+          },
+          { status: 403 }
+        )
+      };
+    }
+
+    // Subscription is active or trial - allow access
+    return { success: true };
+  } catch (error) {
+    console.error('Subscription status check error:', error);
+    return {
+      success: false,
+      response: NextResponse.json(
+        { 
+          success: false, 
+          message: 'Failed to verify subscription status',
+          code: 'SUBSCRIPTION_CHECK_FAILED'
+        },
+        { status: 500 }
+      )
+    };
+  }
+}
 
 // ============================================================================
 // CORE TYPES
@@ -139,7 +294,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       return {
         success: false,
         response: NextResponse.json(
-          { success: false, message: 'Access token required' },
+          { success: false, code: 'ACCESS_TOKEN_REQUIRED', message: 'Access token required' },
           { status: 401 }
         )
       };
@@ -169,7 +324,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       return {
         success: false,
         response: NextResponse.json(
-          { success: false, message: 'Invalid token' },
+          { success: false, code: 'INVALID_TOKEN', message: 'Invalid token' },
           { status: 401 }
         )
       };
@@ -179,10 +334,45 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       return {
         success: false,
         response: NextResponse.json(
-          { success: false, message: 'Invalid token' },
+          { success: false, code: 'INVALID_TOKEN', message: 'Invalid token' },
           { status: 401 }
         )
       };
+    }
+
+    // ============================================================================
+    // SESSION VALIDATION (Single Session Enforcement)
+    // ============================================================================
+    // Check if session is still valid (not invalidated by a newer login)
+    if (user.sessionId) {
+      const isSessionValid = await db.sessions.validateSession(user.sessionId);
+      if (!isSessionValid) {
+        return {
+          success: false,
+          response: NextResponse.json(
+            { 
+              success: false, 
+              code: 'SESSION_EXPIRED', 
+              message: 'Your session has expired. Please login again.' 
+            },
+            { status: 401 }
+          )
+        };
+      }
+    }
+
+    // ============================================================================
+    // SUBSCRIPTION STATUS CHECK
+    // ============================================================================
+    // Check if merchant has active subscription (skip for ADMIN users)
+    if (user.role !== 'ADMIN' && user.merchantId) {
+      const subscriptionCheck = await checkMerchantSubscriptionStatus(user.merchantId);
+      if (!subscriptionCheck.success) {
+        return {
+          success: false,
+          response: subscriptionCheck.response!
+        };
+      }
     }
 
     // Transform the JWT payload to match AuthUser interface
@@ -195,8 +385,8 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       name: user.email, // Use email as fallback name
       role: user.role,
       phone: undefined, // Will be populated from database in API routes
-      merchantId: user.merchantId,
-      outletId: user.outletId,
+      merchantId: user.merchantId ?? undefined,
+      outletId: user.outletId ?? undefined,
       merchant: undefined, // Will be populated from database in API routes
       outlet: undefined   // Will be populated from database in API routes
     };
@@ -226,7 +416,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     return {
       success: false,
       response: NextResponse.json(
-        { success: false, message: 'Authentication failed' },
+        { success: false, code: 'AUTHENTICATION_FAILED', message: 'Authentication failed' },
         { status: 401 }
       )
     };

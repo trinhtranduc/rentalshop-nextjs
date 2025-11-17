@@ -91,7 +91,7 @@ export const SimpleList: React.FC<SimpleListProps> = ({
                 )}
                 {item.status && (
                   <span className={`text-xs px-1.5 py-0.5 rounded ${
-                    item.status === 'active' ? 'bg-blue-50 text-blue-600' :
+                    item.status === 'active' ? 'bg-blue-50 text-blue-700' :
                     item.status === 'overdue' ? 'bg-red-50 text-red-600' :
                     'bg-gray-50 text-gray-600'
                   }`}>

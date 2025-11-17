@@ -5,6 +5,7 @@
 // Basic utilities
 export * from './string-utils';
 export * from './function-utils';
+export * from './tenant-key';
 
 // Export common utilities without conflicts
 export { 
@@ -24,11 +25,9 @@ export {
   handleApiResponse
 } from './common';
 
-// Export unified ApiResponse types from errors.ts
+// Export unified ApiResponse type from errors.ts (re-exported from response-builder)
 export type { 
-  ApiResponse, 
-  ApiErrorResponse, 
-  ApiSuccessResponse,
+  ApiResponse,
   ErrorCode
 } from './errors';
 
@@ -49,11 +48,25 @@ export {
   isNetworkError,
   isValidationError,
   type ErrorInfo,
-  type ErrorType
+  type ErrorType,
+  handleApiError,
+  getErrorTranslationKey,
+  isValidErrorCode,
+  ERROR_MESSAGES,
+  ERROR_STATUS_CODES,
+  // Error classes
+  ApiError,
+  ValidationError,
+  DuplicateError,
+  NotFoundError,
+  UnauthorizedError,
+  ForbiddenError,
+  PlanLimitError,
+  // Error handlers
+  handlePrismaError,
+  handleValidationError,
+  handleBusinessError
 } from './errors';
-
-// Unified error handling (consolidated from api-errors.ts)
-export * from './errors';
 
 // Pricing resolver and validation (now consolidated in pricing-calculator.ts)
 export {

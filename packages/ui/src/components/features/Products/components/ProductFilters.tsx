@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { Input } from '@rentalshop/ui';
+import React, { useCallback } from 'react';
+import { Input, Button } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType } from '@rentalshop/types';
-import { useThrottledSearch } from '@rentalshop/hooks';
-import { outletsApi, categoriesApi } from '@rentalshop/utils';
+import { useOutletsData, useCategoriesData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { Search } from 'lucide-react';
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;
@@ -15,193 +15,140 @@ interface ProductFiltersProps {
   onClearFilters?: () => void;
 }
 
-interface Outlet {
-  id: number;
-  name: string;
-}
-
-interface Category {
-  id: number;
-  name: string;
-}
-
+/**
+ * ✅ SIMPLIFIED PRODUCT FILTERS COMPONENT
+ * 
+ * Only 3 essential filters:
+ * 1. Search input
+ * 2. Outlet filter
+ * 3. Category filter
+ * 
+ * Features:
+ * - Uses deduplicated hooks for filter data (no duplicate API calls)
+ * - Clean and minimal UI
+ * - Responsive grid layout
+ */
 export function ProductFilters({ filters, onFiltersChange, onSearchChange, onClearFilters }: ProductFiltersProps) {
-  // State for dynamic filter options
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [loadingOutlets, setLoadingOutlets] = useState(false);
-  const [outletError, setOutletError] = useState<string | null>(null);
+  // Get translations
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
   
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(false);
-  const [categoryError, setCategoryError] = useState<string | null>(null);
+  // ✅ MODERN: Use deduplicated hooks for filter data
+  const { outlets, loading: loadingOutlets } = useOutletsData();
+  const { categories, loading: loadingCategories } = useCategoriesData();
 
-  // Fetch outlets and categories on component mount
-  useEffect(() => {
-    const fetchData = async () => {
-      // Fetch outlets
-      try {
-        setLoadingOutlets(true);
-        setOutletError(null);
-        console.log('🔍 ProductFilters: Fetching outlets...');
-        const result = await outletsApi.getOutlets();
-        console.log('🔍 ProductFilters: Outlets API result:', result);
-        if (result.success && result.data?.outlets) {
-          console.log('🔍 ProductFilters: Setting outlets:', result.data.outlets);
-          setOutlets(result.data.outlets);
-        } else {
-          console.log('🔍 ProductFilters: Failed to load outlets - result:', result);
-          setOutletError('Failed to load outlets');
-          setOutlets([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch outlets:', error);
-        setOutletError('Failed to load outlets');
-        setOutlets([]);
-      } finally {
-        setLoadingOutlets(false);
-      }
+  // Debug logging
+  console.log('🔍 ProductFilters: Categories data:', {
+    categories,
+    isArray: Array.isArray(categories),
+    count: categories?.length || 0,
+    loading: loadingCategories,
+    firstCategory: categories?.[0]?.name || 'none'
+  });
 
-      // Fetch categories
-      try {
-        setLoadingCategories(true);
-        setCategoryError(null);
-        const result = await categoriesApi.getCategories();
-        if (result.success && result.data) {
-          setCategories(result.data);
-        } else {
-          setCategoryError('Failed to load categories');
-          setCategories([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch categories:', error);
-        setCategoryError('Failed to load categories');
-        setCategories([]);
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
+  // ============================================================================
+  // FILTER HANDLERS
+  // ============================================================================
 
-    fetchData();
-  }, []);
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onSearchChange(value);
+  }, [onSearchChange]);
 
-  // Let the parent hook handle throttling
+  const handleOutletChange = useCallback((value: string) => {
+    const outletId = value === 'all' ? undefined : parseInt(value);
+    onFiltersChange({ outletId });
+  }, [onFiltersChange]);
 
-  const handleFilterChange = (key: keyof ProductFiltersType, value: any) => {
-    // For non-search filters, update immediately
-    if (key !== 'search') {
-      onFiltersChange({
-        ...filters,
-        [key]: value
-      });
-    }
-  };
+  const handleCategoryChange = useCallback((value: string) => {
+    const categoryId = value === 'all' ? undefined : parseInt(value);
+    onFiltersChange({ categoryId });
+  }, [onFiltersChange]);
+
+  // Check if any filters are active
+  const hasActiveFilters = !!(filters.search || filters.outletId || filters.categoryId);
+
+  // ============================================================================
+  // RENDER - Compact inline filters (Following Orders pattern)
+  // ============================================================================
 
   return (
-    <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-          Product Filters
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Search and Basic Filters */}
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search field - takes more space */}
-          <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Search Products
-            </label>
-            <Input
-              placeholder="Search by name, barcode..."
-              value={filters.search || ''} // Use the search term from filters
-              onChange={(e) => onSearchChange(e.target.value)} // Use direct handler
-              className="w-full"
+    <>
+      {/* Search Field */}
+      <div className="flex-1 min-w-[280px]">
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder={t('search.placeholder')}
+            value={filters.search || ''}
+            onChange={handleSearchChange}
+            className="pl-9 h-10"
+          />
+          <svg 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
             />
-          </div>
-          
-          {/* Category and Outlet filters - positioned to the right */}
-          <div className="flex flex-col sm:flex-row gap-4 lg:min-w-[400px]">
-            <div className="space-y-2 flex-1">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Category
-              </label>
-              <Select value={filters.categoryId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {loadingCategories ? (
-                    <SelectItem value="loading" disabled>Loading categories...</SelectItem>
-                  ) : categoryError ? (
-                    <SelectItem value="error" disabled className="text-red-500">Error loading categories</SelectItem>
-                  ) : categories.length === 0 ? (
-                    <SelectItem value="none" disabled className="text-gray-500">No categories available</SelectItem>
-                  ) : (
-                    categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id.toString()}>
-                        {category.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              {categoryError && (
-                <p className="text-xs text-red-500 dark:text-red-400">
-                  {categoryError}
-                </p>
-              )}
-              {!loadingCategories && !categoryError && categories.length === 0 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  No categories available for your role
-                </p>
-              )}
-            </div>
-            
-            <div className="space-y-2 flex-1">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Outlet
-              </label>
-              <Select value={filters.outletId?.toString() || 'all'} onValueChange={(value) => handleFilterChange('outletId', value === 'all' ? undefined : parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingOutlets ? "Loading..." : "All Outlets"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Outlets</SelectItem>
-                  {loadingOutlets ? (
-                    <SelectItem value="loading" disabled>Loading outlets...</SelectItem>
-                  ) : outletError ? (
-                    <SelectItem value="error" disabled className="text-red-500">Error loading outlets</SelectItem>
-                  ) : outlets.length === 0 ? (
-                    <SelectItem value="none" disabled className="text-gray-500">No outlets available</SelectItem>
-                  ) : (
-                    outlets.map((outlet) => {
-                      console.log('🔍 ProductFilters: Rendering outlet:', outlet);
-                      return (
-                        <SelectItem key={outlet.id} value={outlet.id.toString()}>
-                          {outlet.name}
-                        </SelectItem>
-                      );
-                    })
-                  )}
-                </SelectContent>
-              </Select>
-              {outletError && (
-                <p className="text-xs text-red-500 dark:text-red-400">
-                  {outletError}
-                </p>
-              )}
-              {!loadingOutlets && !outletError && outlets.length === 0 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  No outlets available for your role
-                </p>
-              )}
-            </div>
-          </div>
+          </svg>
         </div>
+      </div>
 
-        
-      </CardContent>
-    </Card>
+      {/* Outlet Filter */}
+      <Select
+        value={filters.outletId?.toString() || 'all'}
+        onValueChange={handleOutletChange}
+        disabled={loadingOutlets}
+      >
+        <SelectTrigger className="w-[160px] h-10">
+          <SelectValue placeholder={t('filters.outletLabel')} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t('filters.allOutlets')}</SelectItem>
+          {outlets.map((outlet) => (
+            <SelectItem key={outlet.id} value={outlet.id.toString()}>
+              {outlet.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Category Filter */}
+      <Select
+        value={filters.categoryId?.toString() || 'all'}
+        onValueChange={handleCategoryChange}
+        disabled={loadingCategories}
+      >
+        <SelectTrigger className="w-[160px] h-10">
+          <SelectValue placeholder={t('filters.categoryLabel')} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t('filters.allCategories')}</SelectItem>
+          {categories.map((category) => (
+            <SelectItem key={category.id} value={category.id.toString()}>
+              {category.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Clear Filters */}
+      {hasActiveFilters && onClearFilters && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearFilters}
+          className="h-10"
+        >
+          {t('filters.clear')}
+        </Button>
+      )}
+    </>
   );
 }

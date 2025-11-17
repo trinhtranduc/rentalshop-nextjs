@@ -9,6 +9,17 @@ export interface AuthResponse {
   user: User;
 }
 
+// Register response includes additional fields for email verification
+export interface RegisterResponse {
+  user: User;
+  requiresEmailVerification?: boolean;
+  subscription?: {
+    planName: string;
+    trialEnd: Date;
+    daysRemaining: number;
+  };
+}
+
 /**
  * Authentication API client
  */
@@ -32,12 +43,12 @@ export const authApi = {
   /**
    * Register new user
    */
-  async register(userData: RegisterData): Promise<ApiResponse<AuthResponse>> {
+  async register(userData: RegisterData): Promise<ApiResponse<RegisterResponse>> {
     const response = await publicFetch(apiUrls.auth.register, {
       method: 'POST',
       body: JSON.stringify(userData),
     });
-    return await parseApiResponse<AuthResponse>(response);
+    return await parseApiResponse<RegisterResponse>(response);
   },
 
   /**
@@ -97,5 +108,21 @@ export const authApi = {
       body: JSON.stringify({ currentPassword, newPassword }),
     });
     return await parseApiResponse<void>(response);
+  },
+
+  /**
+   * Resend verification email
+   */
+  async resendVerificationEmail(email: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await publicFetch(apiUrls.auth.resendVerification, {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      return await parseApiResponse<{ message: string }>(response);
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      throw error;
+    }
   }
 };

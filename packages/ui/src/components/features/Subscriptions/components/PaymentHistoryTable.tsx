@@ -193,7 +193,7 @@ export function PaymentHistoryTable({
               </table>
             </div>
 
-            {pagination && (
+            {pagination && pagination.total > pagination.limit && (
               <div className="mt-6">
                 <Pagination
                   currentPage={pagination.page}
