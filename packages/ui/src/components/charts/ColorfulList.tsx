@@ -20,9 +20,9 @@ interface ColorfulListProps {
 
 const getColorScheme = (index: number) => {
   const colors = [
-    'from-blue-500 to-blue-600',
+    'from-blue-500 to-blue-700',
     'from-purple-500 to-purple-600', 
-    'from-green-500 to-green-600',
+    'from-blue-600 to-blue-700',
     'from-orange-500 to-orange-600',
     'from-pink-500 to-pink-600',
     'from-indigo-500 to-indigo-600',
@@ -113,7 +113,7 @@ export const ColorfulList: React.FC<ColorfulListProps> = ({
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-lg group-hover:text-blue-600 transition-colors">
+                      <p className="font-bold text-gray-900 text-lg group-hover:text-blue-700 transition-colors">
                         {item.title}
                       </p>
                       {item.subtitle && (

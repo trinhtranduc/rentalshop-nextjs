@@ -8,6 +8,8 @@ export interface PlanLimits {
   products: number;            // Maximum number of products allowed (-1 for unlimited)
   customers: number;           // Maximum number of customers allowed (-1 for unlimited)
   orders: number;              // Maximum number of orders allowed (-1 for unlimited)
+  allowWebAccess?: boolean;    // Whether this plan allows web access (default: true)
+  allowMobileAccess?: boolean; // Whether this plan allows mobile access (default: true)
 }
 
 export interface PlanPricing {
@@ -31,6 +33,7 @@ export interface Plan {
   pricing: {
     monthly: PlanPricing;
     quarterly: PlanPricing;
+    sixMonths: PlanPricing;
     yearly: PlanPricing;
   };
   createdAt: Date;
@@ -73,6 +76,7 @@ export interface PlanUpdateInput {
   pricing?: {
     monthly?: PlanPricing;
     quarterly?: PlanPricing;
+    sixMonths?: PlanPricing;
     yearly?: PlanPricing;
   };
   isActive?: boolean;

@@ -14,6 +14,7 @@ import {
   Calendar,
   DollarSign
 } from 'lucide-react';
+import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -34,19 +35,16 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
   subscriptionLoading,
   currentUserRole
 }) => {
+  const t = useSettingsTranslations();
+  
   if (subscriptionLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Subscription</h2>
-          <p className="text-gray-600">Manage your subscription and billing information</p>
-        </div>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-gray-600">Loading subscription data...</span>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+              <span className="ml-2 text-gray-600">{t('subscription.loading')}</span>
             </div>
           </CardContent>
         </Card>
@@ -57,20 +55,14 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
   if (subscriptionData?.hasSubscription) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Subscription</h2>
-          <p className="text-gray-600">Manage your subscription and billing information</p>
-        </div>
-
-        <div className="space-y-6">
-          {/* Current Plan Card */}
-          <Card>
+        {/* Current Plan Card */}
+        <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <CreditCard className="h-6 w-6 text-blue-600" />
+                  <CreditCard className="h-6 w-6 text-blue-700" />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Current Plan</h3>
+                    <h3 className="text-base font-semibold text-gray-900">{t('subscription.currentPlan')}</h3>
                     <p className="text-sm text-gray-600">{subscriptionData.subscription.plan?.name || 'Professional Plan'}</p>
                   </div>
                 </div>
@@ -78,7 +70,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                   variant={subscriptionData.isExpired ? 'destructive' : 'default'}
                   className={subscriptionData.isExpired ? 'bg-red-100 text-red-800' : subscriptionData.isExpiringSoon ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}
                 >
-                  {subscriptionData.isExpired ? 'Expired' : subscriptionData.isExpiringSoon ? 'Expiring Soon' : 'Active'}
+                  {subscriptionData.isExpired ? t('subscription.expired') : subscriptionData.isExpiringSoon ? t('subscription.expiringSoon') : t('subscription.active')}
                 </Badge>
               </div>
 
@@ -86,9 +78,9 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <DollarSign className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm font-medium text-gray-700">Amount</span>
+                    <span className="text-sm font-medium text-gray-700">{t('subscription.amount')}</span>
                   </div>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-base font-semibold text-gray-900">
                     ${subscriptionData.subscription.amount || '0.00'}
                   </p>
                   <p className="text-xs text-gray-600">
@@ -99,9 +91,9 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <Calendar className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm font-medium text-gray-700">Next Billing</span>
+                    <span className="text-sm font-medium text-gray-700">{t('subscription.nextBilling')}</span>
                   </div>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-base font-semibold text-gray-900">
                     {subscriptionData.subscription.currentPeriodEnd ? 
                       new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString('en-US', { 
                         month: 'short', 
@@ -111,7 +103,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                   </p>
                   {subscriptionData.daysUntilExpiry && (
                     <p className="text-xs text-gray-600">
-                      {subscriptionData.daysUntilExpiry} days remaining
+                      {subscriptionData.daysUntilExpiry} {t('subscription.daysRemaining')}
                     </p>
                   )}
                 </div>
@@ -119,13 +111,13 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <CheckCircle className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm font-medium text-gray-700">Status</span>
+                    <span className="text-sm font-medium text-gray-700">{t('subscription.status')}</span>
                   </div>
-                  <p className="text-lg font-bold text-gray-900 capitalize">
-                    {subscriptionData.subscription.status || 'Active'}
+                  <p className="text-base font-semibold text-gray-900 capitalize">
+                    {subscriptionData.subscription.status || t('subscription.active')}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {subscriptionData.subscription.cancelAtPeriodEnd ? 'Cancels at period end' : 'Auto-renewal enabled'}
+                    {subscriptionData.subscription.cancelAtPeriodEnd ? t('subscription.cancelsAtPeriodEnd') : t('subscription.autoRenewalEnabled')}
                   </p>
                 </div>
               </div>
@@ -135,8 +127,8 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="h-5 w-5 text-yellow-600" />
                     <p className="text-sm text-yellow-800">
-                      Your subscription expires in {subscriptionData.daysUntilExpiry} days. 
-                      Consider renewing to avoid service interruption.
+                      {t('subscription.expiresIn')} {subscriptionData.daysUntilExpiry} {t('subscription.daysRemaining')}. 
+                      {t('subscription.considerRenewing')}
                     </p>
                   </div>
                 </div>
@@ -146,43 +138,37 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-600 text-center">
                   {currentUserRole === 'OUTLET_ADMIN' 
-                    ? 'Contact your merchant administrator to manage subscription settings.'
-                    : 'Subscription management features coming soon.'
+                    ? t('subscription.contactMerchant')
+                    : t('subscription.comingSoon')
                   }
                 </p>
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Subscription</h2>
-        <p className="text-gray-600">Manage your subscription and billing information</p>
-      </div>
-
       <Card>
         <CardContent className="p-6">
           <div className="text-center py-8">
             <CreditCard className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Subscription</h3>
-            <p className="text-gray-600 mb-6">You don't have an active subscription. Choose a plan to get started.</p>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">{t('subscription.noSubscription')}</h3>
+            <p className="text-sm text-gray-600 mb-6">{t('subscription.noSubscriptionDesc')}</p>
             
             {/* Only show action button for ADMIN and MERCHANT roles */}
             {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
               <Button>
-                View Available Plans
+                {t('subscription.viewInvoices')}
               </Button>
             )}
             
             {/* Show read-only message for OUTLET_ADMIN */}
             {currentUserRole === 'OUTLET_ADMIN' && (
               <p className="text-sm text-gray-600">
-                Contact your merchant administrator to set up a subscription.
+                {t('subscription.contactAdmin')}
               </p>
             )}
           </div>

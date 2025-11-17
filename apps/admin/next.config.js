@@ -1,11 +1,17 @@
+// Import next-intl plugin for proper i18n configuration
+const createNextIntlPlugin = require('next-intl/plugin');
+
+// Create the plugin with the path to i18n config
+const withNextIntl = createNextIntlPlugin('./i18n.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // CRITICAL for Railway deployment - reduces bundle size by 90%
   output: 'standalone',
   
-  // CRITICAL for monorepo - enables Next.js to trace workspace dependencies
+  // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
   experimental: {
-    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines'],
   },
   
   transpilePackages: [
@@ -51,6 +57,13 @@ const nextConfig = {
       },
     ];
   },
+  // Ensure proper routing
+  trailingSlash: false,
+  // Disable static optimization for development
+  ...(process.env.NODE_ENV === 'development' && {
+    staticPageGenerationTimeout: 0,
+  }),
 };
 
-module.exports = nextConfig; 
+// Export config wrapped with next-intl plugin
+module.exports = withNextIntl(nextConfig); 

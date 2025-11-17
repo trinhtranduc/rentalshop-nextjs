@@ -307,14 +307,14 @@ export async function searchCustomers(
     where.idType = idType;
   }
 
-  // Search query for name, email, phone, or idNumber
+  // Search query for name, email, phone, or idNumber (case-insensitive)
   if (q && q.trim()) {
-    const searchQuery = q.toLowerCase().trim();
+    const searchQuery = q.trim();
     where.OR = [
-      { firstName: { contains: searchQuery } },
-      { lastName: { contains: searchQuery } },
-      { email: { contains: searchQuery } },
-      { phone: { contains: searchQuery } }
+      { firstName: { contains: searchQuery, mode: 'insensitive' } },
+      { lastName: { contains: searchQuery, mode: 'insensitive' } },
+      { email: { contains: searchQuery, mode: 'insensitive' } },
+      { phone: { contains: searchQuery } } // Phone numbers are usually exact match
     ];
   }
 
@@ -517,7 +517,13 @@ export const simplifiedCustomers = {
    * Search customers with pagination (simplified API)
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { 
+      page = 1, 
+      limit = 20, 
+      sortBy = 'createdAt', 
+      sortOrder = 'desc',
+      ...whereFilters 
+    } = filters;
     const skip = (page - 1) * limit;
 
     // Build where clause
@@ -525,26 +531,41 @@ export const simplifiedCustomers = {
     
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
-    if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+    // Default to active customers only unless explicitly requesting all
+    if (whereFilters.isActive !== undefined) {
+      where.isActive = whereFilters.isActive;
+    } else {
+      where.isActive = true; // Default: only show active customers
+    }
     
-    // Text search across multiple fields
+    // Text search across multiple fields (case-insensitive)
     if (whereFilters.search) {
+      const searchTerm = whereFilters.search.trim();
       where.OR = [
-        { firstName: { contains: whereFilters.search } },
-        { lastName: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } },
-        { phone: { contains: whereFilters.search } }
+        { firstName: { contains: searchTerm, mode: 'insensitive' } },
+        { lastName: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+        { phone: { contains: searchTerm, mode: 'insensitive' } }
       ];
     }
 
-    // Specific field filters
-    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName };
-    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName };
-    if (whereFilters.email) where.email = { contains: whereFilters.email };
-    if (whereFilters.phone) where.phone = { contains: whereFilters.phone };
-    if (whereFilters.city) where.city = { contains: whereFilters.city };
-    if (whereFilters.state) where.state = { contains: whereFilters.state };
-    if (whereFilters.country) where.country = { contains: whereFilters.country };
+    // Specific field filters (case-insensitive)
+    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName, mode: 'insensitive' };
+    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName, mode: 'insensitive' };
+    if (whereFilters.email) where.email = { contains: whereFilters.email, mode: 'insensitive' };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: 'insensitive' };
+    if (whereFilters.city) where.city = { contains: whereFilters.city, mode: 'insensitive' };
+    if (whereFilters.state) where.state = { contains: whereFilters.state, mode: 'insensitive' };
+    if (whereFilters.country) where.country = { contains: whereFilters.country, mode: 'insensitive' };
+
+    // ✅ Build dynamic orderBy clause
+    const orderBy: any = {};
+    if (sortBy === 'firstName' || sortBy === 'lastName' || sortBy === 'email' || sortBy === 'phone') {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      // Default: createdAt
+      orderBy.createdAt = sortOrder;
+    }
 
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
@@ -555,20 +576,68 @@ export const simplifiedCustomers = {
             select: { orders: true }
           }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy, // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.customer.count({ where })
     ]);
 
+    console.log(`📊 db.customers.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, customers=${customers.length}`);
+
     return {
       data: customers,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
+  },
+
+  /**
+   * Delete customer (soft delete) (simplified API)
+   */
+  delete: async (id: number) => {
+    return await prisma.customer.update({
+      where: { id },
+      data: { isActive: false },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true
+      }
+    });
+  },
+
+  /**
+   * Find first customer matching criteria (simplified API)
+   */
+  findFirst: async (whereClause: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
+    return await prisma.customer.findFirst({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true
+      }
+    });
   },
 
   /**

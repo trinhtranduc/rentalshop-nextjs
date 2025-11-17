@@ -25,7 +25,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
             {icon}
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors">
+            <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-700 transition-colors">
               {title}
             </h3>
             <p className="text-gray-600 font-medium">{description}</p>
@@ -48,14 +48,14 @@ export const ColorfulQuickActions: React.FC = () => {
       description: 'Create rental order',
       icon: '📦',
       href: '/orders/new',
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-blue-500 to-blue-700'
     },
     {
       title: 'Return Item',
       description: 'Process returns',
       icon: '🔄',
       href: '/orders/returns',
-      color: 'from-green-500 to-green-600'
+      color: 'from-blue-600 to-blue-700'
     },
     {
       title: 'Add Product',

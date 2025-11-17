@@ -12,7 +12,10 @@ import { Card,
   PaymentHistoryTable,
   ManualRenewalModal,
   UpgradeTrialModal,
+  PageWrapper,
+  Breadcrumb,
   useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { subscriptionsApi, plansApi } from '@rentalshop/utils';
 import { 
   ArrowLeft,
@@ -252,13 +255,24 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
     );
   };
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Subscriptions', href: '/subscriptions' },
+    { label: `#${subscription.id} - ${subscription.merchant?.name || 'Subscription'}`, href: `/subscriptions/${subscriptionId}` },
+    { label: 'Preview' }
+  ];
+
   return (
-    <div className="p-6 space-y-6">
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-6" />
+      
+      <div className="p-6 space-y-6">
       {/* Preview Banner */}
       <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Eye className="w-5 h-5 text-blue-600" />
+            <Eye className="w-5 h-5 text-blue-700" />
             <div>
               <h3 className="font-semibold text-blue-900">🆕 Preview Mode - New Design</h3>
               <p className="text-sm text-blue-700">
@@ -305,7 +319,7 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
           
           {subscription.status === 'trial' && (
             <Button
-              variant="success"
+              variant="default"
               onClick={() => setShowUpgradeModal(true)}
             >
               <TrendingUp className="w-4 h-4 mr-2" />
@@ -395,36 +409,39 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
       <Card>
         <CardHeader>
           <div className="flex gap-4 border-b">
-            <button
-              className={`px-4 py-2 font-medium transition-colors ${
+            <Button
+              variant="ghost"
+              className={`px-4 py-2 font-medium transition-colors rounded-none ${
                 activeTab === 'payments' 
-                  ? 'border-b-2 border-blue-500 text-blue-600' 
+                  ? 'border-b-2 border-blue-500 text-blue-700' 
                   : 'text-gray-600 hover:text-gray-900'
               }`}
               onClick={() => setActiveTab('payments')}
             >
               💳 Payment History
-            </button>
-            <button
-              className={`px-4 py-2 font-medium transition-colors ${
+            </Button>
+            <Button
+              variant="ghost"
+              className={`px-4 py-2 font-medium transition-colors rounded-none ${
                 activeTab === 'activity' 
-                  ? 'border-b-2 border-blue-500 text-blue-600' 
+                  ? 'border-b-2 border-blue-500 text-blue-700' 
                   : 'text-gray-600 hover:text-gray-900'
               }`}
               onClick={() => setActiveTab('activity')}
             >
               📊 Activity Log
-            </button>
-            <button
-              className={`px-4 py-2 font-medium transition-colors ${
+            </Button>
+            <Button
+              variant="ghost"
+              className={`px-4 py-2 font-medium transition-colors rounded-none ${
                 activeTab === 'details' 
-                  ? 'border-b-2 border-blue-500 text-blue-600' 
+                  ? 'border-b-2 border-blue-500 text-blue-700' 
                   : 'text-gray-600 hover:text-gray-900'
               }`}
               onClick={() => setActiveTab('details')}
             >
               📋 Plan Details
-            </button>
+            </Button>
           </div>
         </CardHeader>
 
@@ -528,7 +545,8 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
       )}
 
       {/* Toast Container */}
-    </div>
+      </div>
+    </PageWrapper>
   );
 }
 

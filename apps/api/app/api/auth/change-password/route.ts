@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import bcrypt from 'bcryptjs';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -15,36 +15,32 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
   try {
 
     const body = await request.json();
-    const { currentPassword, newPassword, confirmPassword } = body;
+    const { currentPassword, newPassword } = body;
 
     // Validate input
     if (!currentPassword) {
       return NextResponse.json(
-        { success: false, message: 'Current password is required' },
+        ResponseBuilder.error('CURRENT_PASSWORD_REQUIRED'),
         { status: 400 }
       );
     }
 
     if (!newPassword || newPassword.length < 6) {
       return NextResponse.json(
-        { success: false, message: 'New password must be at least 6 characters' },
+        ResponseBuilder.error('PASSWORD_MIN_LENGTH'),
         { status: 400 }
       );
     }
 
-    if (newPassword !== confirmPassword) {
-      return NextResponse.json(
-        { success: false, message: 'New passwords do not match' },
-        { status: 400 }
-      );
-    }
+    // Note: confirmPassword validation is done on frontend for better UX
+    // No need to validate again on backend
 
     // Get current user from database to verify current password
     const currentUser = await db.users.findById(user.id);
 
     if (!currentUser) {
       return NextResponse.json(
-        { success: false, message: 'User not found' },
+        ResponseBuilder.error('USER_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -53,7 +49,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, currentUser.password);
     if (!isCurrentPasswordValid) {
       return NextResponse.json(
-        { success: false, message: 'Current password is incorrect' },
+        ResponseBuilder.error('CURRENT_PASSWORD_INCORRECT'),
         { status: 400 }
       );
     }
@@ -70,7 +66,8 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
 
     return NextResponse.json({
       success: true,
-      message: 'Password changed successfully'
+      code: 'PASSWORD_CHANGED_SUCCESS',
+        message: 'Password changed successfully'
     });
 
   } catch (error) {

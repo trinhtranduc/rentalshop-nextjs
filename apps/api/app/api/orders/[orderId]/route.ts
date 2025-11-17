@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
@@ -14,7 +14,7 @@ export const GET = async (
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) => {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
+  return withReadOnlyAuth(async (request, { user, userScope }) => {
     try {
       const { orderId } = params;
       console.log('🔍 GET /api/orders/[orderId] - Looking for order with ID:', orderId);
@@ -22,7 +22,7 @@ export const GET = async (
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(orderId)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid order ID format' },
+          ResponseBuilder.error('INVALID_ORDER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -34,13 +34,13 @@ export const GET = async (
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
       
-      // Get order using the simplified database API
-      const order = await db.orders.findById(orderIdNum);
+      // Get order using the optimized database API
+      const order: any = await db.orders.findByIdDetail(orderIdNum);
 
       if (!order) {
         console.log('❌ Order not found in database for orderId:', orderIdNum);
@@ -49,18 +49,48 @@ export const GET = async (
 
       console.log('✅ Order found:', order);
 
+      // Helper function to parse productImages (handle both JSON string and array)
+      const parseProductImages = (images: any): string[] => {
+        if (!images) return [];
+        if (Array.isArray(images)) return images;
+        if (typeof images === 'string') {
+          try {
+            const parsed = JSON.parse(images);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      // Flatten order items with parsed productImages
+      const flattenedOrder = {
+        ...order,
+        orderItems: order.orderItems?.map((item: any) => ({
+          ...item,
+          productImages: parseProductImages(item.productImages || item.product?.images)
+        })) || order.orderItems
+      };
+
       return NextResponse.json({
         success: true,
-        data: order,
+        data: flattenedOrder,
+        code: 'ORDER_RETRIEVED_SUCCESS',
         message: 'Order retrieved successfully'
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error fetching order:', error);
       
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
+      // Use ResponseBuilder for consistent error format
+      const errorCode = error?.code || 'INTERNAL_SERVER_ERROR';
+      const errorMessage = error?.message || 'An error occurred';
+      
+      return NextResponse.json(
+        ResponseBuilder.error(errorCode, errorMessage),
+        { status: 500 }
+      );
     }
   })(request);
 }
@@ -73,14 +103,14 @@ export const PUT = async (
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) => {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withReadOnlyAuth(async (request, { user, userScope }) => {
     try {
       const { orderId } = params;
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(orderId)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid order ID format' },
+          ResponseBuilder.error('INVALID_ORDER_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -92,7 +122,7 @@ export const PUT = async (
       
       if (!userMerchantId) {
         return NextResponse.json(
-          { success: false, message: 'User must be associated with a merchant' },
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
@@ -105,7 +135,7 @@ export const PUT = async (
       const existingOrder = await db.orders.findById(orderIdNum);
       if (!existingOrder) {
         return NextResponse.json(
-          { success: false, message: 'Order not found' },
+          ResponseBuilder.error('ORDER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -119,18 +149,111 @@ export const PUT = async (
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
       console.log('✅ Order updated successfully:', updatedOrder);
 
+      // Get full order details after update (with all relations)
+      const fullOrder: any = await db.orders.findByIdDetail(orderIdNum);
+      
+      if (!fullOrder) {
+        return NextResponse.json(
+          ResponseBuilder.error('ORDER_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+      
+      // Flatten order response (consistent with create order response)
+      const flattenedOrder = {
+        id: fullOrder.id,
+        orderNumber: fullOrder.orderNumber,
+        orderType: fullOrder.orderType,
+        status: fullOrder.status,
+        outletId: fullOrder.outletId,
+        outletName: fullOrder.outlet?.name || null,
+        customerId: fullOrder.customerId,
+        customerName: fullOrder.customer ? `${fullOrder.customer.firstName} ${fullOrder.customer.lastName}`.trim() : null,
+        customerPhone: fullOrder.customer?.phone || null,
+        customerEmail: fullOrder.customer?.email || null,
+        merchantId: null, // Will be populated from outlet if needed
+        merchantName: null, // Will be populated from outlet if needed
+        createdById: fullOrder.createdById,
+        createdByName: fullOrder.createdBy ? `${fullOrder.createdBy.firstName} ${fullOrder.createdBy.lastName}`.trim() : null,
+        totalAmount: fullOrder.totalAmount,
+        depositAmount: fullOrder.depositAmount,
+        securityDeposit: fullOrder.securityDeposit,
+        damageFee: fullOrder.damageFee,
+        lateFee: fullOrder.lateFee,
+        discountType: fullOrder.discountType,
+        discountValue: fullOrder.discountValue,
+        discountAmount: fullOrder.discountAmount,
+        pickupPlanAt: fullOrder.pickupPlanAt,
+        returnPlanAt: fullOrder.returnPlanAt,
+        pickedUpAt: fullOrder.pickedUpAt,
+        returnedAt: fullOrder.returnedAt,
+        rentalDuration: fullOrder.rentalDuration,
+        isReadyToDeliver: fullOrder.isReadyToDeliver,
+        collateralType: fullOrder.collateralType,
+        collateralDetails: fullOrder.collateralDetails,
+        notes: fullOrder.notes,
+        pickupNotes: fullOrder.pickupNotes,
+        returnNotes: fullOrder.returnNotes,
+        damageNotes: fullOrder.damageNotes,
+        createdAt: fullOrder.createdAt,
+        updatedAt: fullOrder.updatedAt,
+        // Flatten order items with product info
+        orderItems: fullOrder.orderItems?.map((item: any) => {
+          // Helper function to parse productImages (handle both JSON string and array)
+          const parseProductImages = (images: any): string[] => {
+            if (!images) return [];
+            if (Array.isArray(images)) return images;
+            if (typeof images === 'string') {
+              try {
+                const parsed = JSON.parse(images);
+                return Array.isArray(parsed) ? parsed : [];
+              } catch {
+                return [];
+              }
+            }
+            return [];
+          };
+
+          const productImages = parseProductImages(item.productImages || item.product?.images);
+
+          return {
+            id: item.id,
+            productId: item.productId,
+            productName: item.product?.name || item.productName || null,
+            productBarcode: item.product?.barcode || item.productBarcode || null,
+            productImages: productImages,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            deposit: item.deposit,
+            notes: item.notes,
+            rentalDays: item.rentalDays
+          };
+        }) || [],
+        // Calculated fields
+        itemCount: fullOrder.orderItems?.length || 0,
+        paymentCount: fullOrder.payments?.length || 0,
+        totalPaid: fullOrder.payments?.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0) || 0
+      };
+
       return NextResponse.json({
         success: true,
-        data: updatedOrder,
+        data: flattenedOrder,
+        code: 'ORDER_UPDATED_SUCCESS',
         message: 'Order updated successfully'
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error updating order:', error);
       
-      // Use unified error handling system
-      const { response, statusCode } = handleApiError(error);
-      return NextResponse.json(response, { status: statusCode });
+      // Use ResponseBuilder for consistent error format
+      const errorCode = error?.code || 'INTERNAL_SERVER_ERROR';
+      const errorMessage = error?.message || 'An error occurred';
+      
+      return NextResponse.json(
+        ResponseBuilder.error(errorCode, errorMessage),
+        { status: 500 }
+      );
     }
   })(request);
 }

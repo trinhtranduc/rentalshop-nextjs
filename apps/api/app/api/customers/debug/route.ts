@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       console.log('Missing required fields:', missingFields);
       return NextResponse.json({
         success: false,
+        code: 'MISSING_REQUIRED_FIELD',
         message: 'Missing required fields',
         missingFields,
         receivedPayload: body
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
       console.log('Validation errors:', parsedBody.error.flatten());
       return NextResponse.json({
         success: false,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
         errors: parsedBody.error.flatten(),
         receivedPayload: body,
@@ -72,7 +74,8 @@ export async function POST(request: NextRequest) {
     console.log('Validation successful');
     return NextResponse.json({
       success: true,
-      message: 'Payload validation successful',
+      code: 'PAYLOAD_VALIDATION_SUCCESS',
+        message: 'Payload validation successful',
       validatedData: parsedBody.data,
       fieldDetails: {
         firstName: { value: parsedBody.data.firstName, type: typeof parsedBody.data.firstName },

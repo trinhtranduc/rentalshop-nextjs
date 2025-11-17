@@ -15,6 +15,7 @@ import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { UserDisplayInfo } from './UserDisplayInfo';
 import { usersApi } from '@rentalshop/utils';
 import type { User } from '@rentalshop/types';
+import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface UserDetailDialogProps {
   open: boolean;
@@ -31,6 +32,8 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
   onUserUpdated,
   onError
 }) => {
+  const t = useUsersTranslations();
+  const tc = useCommonTranslations();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = useState(false);
   const [isActivateConfirmOpen, setIsActivateConfirmOpen] = useState(false);
@@ -123,10 +126,10 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
           <DialogHeader>
             <div>
               <DialogTitle className="text-xl font-semibold">
-                User Details
+                {t('userDetails')}
               </DialogTitle>
               <DialogDescription className="text-sm text-gray-600 mt-1">
-                View user information and details
+                {t('viewUserInfo')}
               </DialogDescription>
             </div>
           </DialogHeader>
@@ -148,7 +151,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Close
+              {tc('buttons.close')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -169,10 +172,10 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         open={isDeactivateConfirmOpen}
         onOpenChange={setIsDeactivateConfirmOpen}
         type="warning"
-        title="Deactivate User Account"
-        description={`Are you sure you want to deactivate ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}? This will prevent them from logging in to the system.`}
-        confirmText="Deactivate Account"
-        cancelText="Cancel"
+        title={t('messages.confirmDeactivateAccount')}
+        description={`${t('messages.confirmDeactivate')} ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}? ${t('messages.confirmDeactivateDetails')}`}
+        confirmText={t('actions.deactivateAccount')}
+        cancelText={tc('buttons.cancel')}
         onConfirm={handleDeactivateUser}
       />
 
@@ -181,10 +184,10 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         open={isActivateConfirmOpen}
         onOpenChange={setIsActivateConfirmOpen}
         type="info"
-        title="Activate User Account"
-        description={`Are you sure you want to activate ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}? This will allow them to log in to the system again.`}
-        confirmText="Activate Account"
-        cancelText="Cancel"
+        title={t('messages.confirmActivateAccount')}
+        description={`${t('messages.confirmActivate')} ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}? ${t('messages.confirmActivateDetails')}`}
+        confirmText={t('actions.activateAccount')}
+        cancelText={tc('buttons.cancel')}
         onConfirm={handleActivateUser}
       />
 
@@ -193,10 +196,10 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         open={isDeleteConfirmOpen}
         onOpenChange={setIsDeleteConfirmOpen}
         type="danger"
-        title="Delete User Account"
-        description={`Are you sure you want to permanently delete ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}? This action cannot be undone and will remove all user data.`}
-        confirmText="Delete Account"
-        cancelText="Cancel"
+        title={t('messages.confirmDeleteAccount')}
+        description={`${t('messages.confirmDelete')} ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}? ${t('messages.confirmDeleteDetails')}`}
+        confirmText={t('actions.deleteAccount')}
+        cancelText={tc('buttons.cancel')}
         onConfirm={handleDeleteUser}
       />
     </>

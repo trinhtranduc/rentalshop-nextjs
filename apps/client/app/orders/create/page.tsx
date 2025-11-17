@@ -2,15 +2,16 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, 
+import { 
+  Card, 
   CardContent, 
   Button,
   PageWrapper,
-  PageHeader,
-  PageTitle,
-  PageContent,
   useToast,
-  FormSkeleton } from '@rentalshop/ui';
+  FormSkeleton,
+  Breadcrumb
+} from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { CreateOrderForm } from '@rentalshop/ui';
 import type { CustomerSearchResult, ProductWithStock, OrderInput } from '@rentalshop/types';
 import { 
@@ -19,11 +20,13 @@ import {
   outletsApi, 
   ordersApi 
 } from '@rentalshop/utils';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 export default function CreateOrderPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const t = useOrderTranslations();
+  const tc = useCommonTranslations();
 
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -68,7 +71,7 @@ export default function CreateOrderPage() {
           console.log('✅ Loaded customers:', customersRes.data?.customers?.length || 0);
         } else {
           console.error('Failed to fetch customers:', customersRes.error);
-          toastError('Load Error', 'Failed to load customers');
+          toastError(tc('labels.error'), tc('messages.errorLoadingData'));
         }
 
         if (productsRes.success) {
@@ -77,7 +80,7 @@ export default function CreateOrderPage() {
           console.log('✅ Loaded products:', productsRes.data?.products?.length || 0);
         } else {
           console.error('Failed to fetch products:', productsRes.error);
-          toastError('Load Error', 'Failed to load products');
+          toastError(tc('labels.error'), tc('messages.errorLoadingData'));
         }
 
         if (outletsRes.success) {
@@ -129,7 +132,7 @@ export default function CreateOrderPage() {
       const result = await ordersApi.createOrder(orderData);
       if (result.success) {
         // Show success message
-        toastSuccess('Order created successfully!');
+        toastSuccess(t('messages.createSuccess'));
         // Navigate back to orders list after successful creation
         router.push('/orders');
       } else {
@@ -137,7 +140,7 @@ export default function CreateOrderPage() {
       }
     } catch (err) {
       console.error('Create order failed:', err);
-      toastError('Create order failed', (err as Error).message || 'Create order failed');
+      toastError(t('messages.createFailed'), (err as Error).message || t('messages.createFailed'));
     } finally{
       setSubmitting(false);
     }
@@ -151,40 +154,53 @@ export default function CreateOrderPage() {
     setResetForm(() => resetFormFn);
   };
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: t('title'), href: '/orders' },
+    { label: t('createOrder') }
+  ];
+
   if (!merchantId) {
     return (
       <PageWrapper>
-        <PageContent>
-          <Card>
-            <CardContent className="p-8 text-center text-gray-600">
-              <div className="mb-4">Merchant ID not found</div>
-              <div className="text-sm text-gray-500">Please log in again to access this page</div>
-            </CardContent>
-          </Card>
-        </PageContent>
+        <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
+        <Card>
+          <CardContent className="p-8 text-center text-gray-600">
+            <div className="mb-4">{tc('labels.error')}</div>
+            <div className="text-sm text-gray-500">{tc('messages.sessionExpired')}</div>
+          </CardContent>
+        </Card>
       </PageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg-primary">
-      {loading ? (
-        <div className="p-6">
-          <FormSkeleton />
-        </div>
-      ) : (
-        <CreateOrderForm
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          customers={customers}
-          products={products}
-          outlets={outlets}
-          loading={submitting}
-          layout="three-column"
-          merchantId={Number(merchantId)}
-          onFormReady={handleFormReady}
-        />
-      )}
+    <div className="min-h-screen bg-bg-secondary">
+      {/* Breadcrumb - At top */}
+      <div className="px-6 py-3">
+        <Breadcrumb items={breadcrumbItems} showHome={false} />
+      </div>
+      
+      {/* Main Content */}
+      <div className="w-full">
+        {loading ? (
+          <div className="p-6">
+            <FormSkeleton />
+          </div>
+        ) : (
+          <CreateOrderForm
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            customers={customers}
+            products={products}
+            outlets={outlets}
+            loading={submitting}
+            layout="three-column"
+            merchantId={Number(merchantId)}
+            onFormReady={handleFormReady}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -1,329 +1,370 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { 
   PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
   Categories,
+  CategoriesLoading,
+  useToast,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  ConfirmationDialog,
+  AddCategoryDialog,
+  CategoryFormContent,
   Button
 } from '@rentalshop/ui';
+import { Plus } from 'lucide-react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useAuth, useCategoriesWithFilters, useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { categoriesApi } from '@rentalshop/utils';
-import { usePagination } from '@rentalshop/hooks';
-import { PAGINATION } from '@rentalshop/constants';
-import type { Category, CategorySearchParams, CategoryData } from '@rentalshop/types';
+import type { CategoryFilters, Category } from '@rentalshop/types';
 
+/**
+ * ✅ MODERN NEXT.JS 13+ CATEGORIES PAGE - URL STATE PATTERN WITH DEBOUNCED SEARCH
+ */
 export default function CategoriesPage() {
-  // State for categories and UI
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<CategorySearchParams>({ search: '' });
-  const [isClient, setIsClient] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const { toastSuccess, toastError } = useToast();
+  const t = useCommonTranslations();
+  const tc = useCategoriesTranslations();
   
-  // Pagination hook
-  const { pagination, handlePageChange: paginationPageChange, updatePaginationFromResponse } = usePagination({
-    initialLimit: PAGINATION.DEFAULT_PAGE_SIZE,
-    initialOffset: 0
-  });
+  // Dialog states
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+
+  // ============================================================================
+  // URL PARAMS - Single Source of Truth
+  // ============================================================================
   
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const hasInitializedRef = useRef(false);
+  const search = searchParams.get('q') || '';
+  const status = searchParams.get('status') || '';
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '25');
+  const sortBy = searchParams.get('sortBy') || 'name';
+  const sortOrder = (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc';
 
-  // Ensure we're on client side
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const merchantId = user?.merchant?.id || user?.merchantId;
+  
+  // ============================================================================
+  // DATA FETCHING - Clean & Simple
+  // ============================================================================
+  
+  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
+  const filters: CategoryFilters = useMemo(() => ({
+    q: search || undefined,
+    merchantId: merchantId ? Number(merchantId) : undefined,
+    isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
+    page,
+    limit,
+    sortBy,
+    sortOrder
+  }), [search, merchantId, status, page, limit, sortBy, sortOrder]);
 
-  // Fetch categories on component mount
-  useEffect(() => {
-    if (!isClient) return; // Don't run on server side
+  const { data, loading, error, refetch } = useCategoriesWithFilters({ filters });
+
+  // ============================================================================
+  // URL UPDATE HELPER
+  // ============================================================================
+  
+  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
     
-    // Add a small delay to ensure skeleton is visible
-    const timer = setTimeout(() => {
-      fetchCategories();
-    }, 100);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== '' && value !== 'all') {
+        params.set(key, value.toString());
+      } else {
+        params.delete(key);
+      }
+    });
     
-    return () => clearTimeout(timer);
-  }, [isClient]); // Only run when isClient becomes true
+    const newURL = `${pathname}?${params.toString()}`;
+    router.push(newURL, { scroll: false });
+  }, [pathname, router, searchParams]);
 
-  // Fetch categories when pagination or search changes
-  useEffect(() => {
-    if (hasInitializedRef.current) {
-      fetchCategories();
-    }
-  }, [pagination.offset, pagination.limit, searchQuery]);
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+  
+  const handleSearchChange = useCallback((searchValue: string) => {
+    updateURL({ q: searchValue, page: 1 });
+  }, [updateURL]);
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      console.log('🔍 fetchCategories called with params:', {
-        search: searchQuery,
-        limit: pagination.limit,
-        offset: pagination.offset,
-        currentPage: pagination.currentPage
-      });
+  const handlePageChange = useCallback((newPage: number) => {
+    updateURL({ page: newPage });
+  }, [updateURL]);
 
-      // Use paginated API if we have search or pagination
-      if (searchQuery || pagination.offset > 0) {
-        const response = await categoriesApi.getCategoriesPaginated(
-          pagination.currentPage,
-          pagination.limit
-        );
+  const handleSort = useCallback((column: string) => {
+    const newSortBy = column;
+    const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
+    updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
+  }, [sortBy, sortOrder, updateURL]);
+
+  const handleCategoryAction = useCallback(async (action: string, categoryId: number) => {
+    const category = data?.categories.find((c: Category) => c.id === categoryId);
+    
+    switch (action) {
+      case 'view':
+        if (category) {
+          setSelectedCategory(category);
+          setShowDetailDialog(true);
+        }
+        break;
         
-        if (response.success && response.data) {
-          const data = response.data;
-          console.log('🔍 Categories API response:', data);
-          
-          setCategories(data.categories || []);
-          
-          // Update pagination from API response
-          updatePaginationFromResponse({
-            total: data.total || 0,
-            limit: pagination.limit,
-            offset: pagination.offset,
-            hasMore: data.total > pagination.offset + pagination.limit
-          });
-        } else {
-          throw new Error(response.message || 'Failed to fetch categories');
+      case 'edit':
+        if (category) {
+          setCategoryToEdit(category);
+          setShowEditDialog(true);
         }
-      } else {
-        // Use regular API for initial load
-        const response = await categoriesApi.getCategories();
-        if (response.success && response.data) {
-          setCategories(response.data);
-          
-          // Update pagination for regular response
-          updatePaginationFromResponse({
-            total: response.data.length,
-            limit: pagination.limit,
-            offset: 0,
-            hasMore: false
-          });
-        } else {
-          throw new Error(response.message || 'Failed to fetch categories');
+        break;
+        
+      case 'delete':
+        if (category) {
+          setCategoryToDelete(category);
+          setShowDeleteConfirm(true);
         }
-      }
-      
-      hasInitializedRef.current = true;
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching categories:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch categories');
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.offset, pagination.limit, pagination.currentPage, searchQuery, updatePaginationFromResponse, isInitialLoad]);
-
-  const handleSearchChange = useCallback((search: string) => {
-    setSearchQuery(search);
-    setFilters(prev => ({ ...prev, search }));
-    // Reset pagination when search changes
-    paginationPageChange(1);
-  }, [paginationPageChange]);
-
-  const handleFiltersChange = useCallback((newFilters: CategorySearchParams) => {
-    setFilters(newFilters);
-    setSearchQuery(newFilters.search || '');
-    // Reset pagination when filters change
-    paginationPageChange(1);
-  }, [paginationPageChange]);
-
-  const handleClearFilters = useCallback(() => {
-    setFilters({ search: '' });
-    setSearchQuery('');
-    // Reset pagination when clearing filters
-    paginationPageChange(1);
-  }, [paginationPageChange]);
-
-  const handleCategoryAction = useCallback((action: string, categoryId: number) => {
-    console.log('Category action:', action, categoryId);
-    // Handle different actions here
-  }, []);
-
-  const handleCategoryCreated = useCallback(async (categoryData: Partial<Category>) => {
-    try {
-      const response = await categoriesApi.createCategory(categoryData);
-      if (response.success && response.data) {
-        const newCategory = response.data;
-        setCategories(prev => [newCategory, ...prev]);
-        // Refresh the list to get updated data
-        fetchCategories();
+        break;
+        
+      case 'activate':
+      case 'deactivate':
+        if (category) {
+          try {
+            const response = await categoriesApi.updateCategory(categoryId, { 
+              isActive: action === 'activate' 
+            });
+            if (response.success) {
+              toastSuccess(
+                tc(`messages.${action === 'activate' ? 'updateSuccess' : 'updateSuccess'}`), 
+                tc(`messages.${action === 'activate' ? 'updateSuccess' : 'updateSuccess'}`)
+              );
+              refetch();
       } else {
-        throw new Error(response.message || 'Failed to create category');
-      }
-    } catch (error) {
-      console.error('Error creating category:', error);
-      throw error;
+              toastError(tc('messages.updateFailed'), response.error || tc('messages.updateFailed'));
+            }
+          } catch (err) {
+            toastError(tc('messages.updateFailed'), tc('messages.updateFailed'));
+          }
+        }
+        break;
+        
+      default:
+        console.log('Unknown action:', action);
     }
-  }, [fetchCategories]);
+  }, [data?.categories, router, toastSuccess, toastError, refetch]);
 
-  const handleCategoryUpdated = useCallback(async (categoryData: Partial<Category>) => {
+  const handleConfirmDelete = useCallback(async () => {
+    if (!categoryToDelete) return;
+    
     try {
-      if (!categoryData.id) { throw new Error('Category ID is required for update'); }
-      const response = await categoriesApi.updateCategory(categoryData.id, categoryData);
-      if (response.success && response.data) {
-        const updatedCategory = response.data;
-        setCategories(prev => {
-          const newCategories: Category[] = prev.map(cat =>
-            cat.id === updatedCategory.id ? updatedCategory : cat
-          );
-          return newCategories;
-        });
-      } else {
-        throw new Error(response.message || 'Failed to update category');
-      }
-    } catch (error) {
-      console.error('Error updating category:', error);
-      throw error;
-    }
-  }, []);
-
-  const handleCategoryDeleted = useCallback(async (categoryId: number) => {
-    try {
-      const response = await categoriesApi.deleteCategory(categoryId);
+      const response = await categoriesApi.deleteCategory(categoryToDelete.id);
       if (response.success) {
-        setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-        // Refresh the list to get updated data
-        fetchCategories();
+        toastSuccess(tc('messages.deleteSuccess'), tc('messages.deleteSuccess'));
+        refetch();
       } else {
-        throw new Error(response.message || 'Failed to delete category');
+        toastError(tc('messages.deleteFailed'), response.error || tc('messages.deleteFailed'));
       }
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      throw error;
+    } catch (err) {
+      toastError(tc('messages.deleteFailed'), tc('messages.deleteFailed'));
+    } finally {
+      setShowDeleteConfirm(false);
+      setCategoryToDelete(null);
     }
-  }, [fetchCategories]);
+  }, [categoryToDelete, router, toastSuccess, toastError, refetch]);
 
-  const handleError = useCallback((error: string) => {
-    setError(error);
-    // Clear error after 5 seconds
-    setTimeout(() => setError(null), 5000);
-  }, []);
+  // ============================================================================
+  // TRANSFORM DATA
+  // ============================================================================
+  
+  const categoryData = useMemo(() => {
+    if (!data) return undefined;
+    
+    return {
+      categories: data.categories || [],
+      total: data.total || 0,
+      currentPage: data.currentPage || page,
+      totalPages: data.totalPages || 1,
+      limit: data.limit || limit,
+      hasMore: data.hasMore || false
+    };
+  }, [data, page, limit]);
 
-  if (loading) {
+  // ============================================================================
+  // RENDER - Show skeleton when loading initial data
+  // ============================================================================
+
+  if (loading && !data) {
     return (
-      <PageWrapper>
-        <PageContent>
-          {/* Main Content with Skeleton Loading */}
-          <div className="container mx-auto px-4 py-6">
-            <Categories
-              categories={[]}
-              loading={true}
-              onCategoryAction={handleCategoryAction}
-              onCategoryCreated={handleCategoryCreated}
-              onCategoryUpdated={handleCategoryUpdated}
-              onCategoryDeleted={handleCategoryDeleted}
-              onError={handleError}
-              filters={{
-                filters: filters,
-                onFiltersChange: handleFiltersChange,
-                onSearchChange: handleSearchChange,
-                onClearFilters: handleClearFilters
-              }}
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              totalCategories={pagination.total}
-              limit={pagination.limit}
-              onPageChange={paginationPageChange}
-            />
-          </div>
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
-  if (error) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="text-red-500 text-6xl mb-4">⚠️</div>
-              <h2 className="text-xl font-semibold mb-2">Error Loading Categories</h2>
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={fetchCategories} variant="outline">
-                Try Again
-              </Button>
-            </div>
-          </div>
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
-  // Don't render Categories component until we're on client side
-  if (!isClient) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <div className="container mx-auto px-4 py-6">
-            <div className="bg-white rounded-lg border p-6">
-              <div className="space-y-4">
-                {/* Table Header Skeleton */}
-                <div className="flex items-center space-x-4">
-                  <div className="h-4 bg-muted rounded w-12"></div>
-                  <div className="h-4 bg-muted rounded flex-1"></div>
-                  <div className="h-4 bg-muted rounded w-32"></div>
-                  <div className="h-4 bg-muted rounded w-24"></div>
-                  <div className="h-4 bg-muted rounded w-24"></div>
-                  <div className="h-4 bg-muted rounded w-24"></div>
-                  <div className="h-4 bg-muted rounded w-24"></div>
-                </div>
-                
-                {/* Table Rows Skeleton */}
-                {[...Array(5)].map((_, index) => (
-                  <div key={index} className="flex items-center space-x-4 py-3">
-                    <div className="h-4 bg-muted rounded w-12"></div>
-                    <div className="h-4 bg-muted rounded flex-1"></div>
-                    <div className="h-4 bg-muted rounded w-32"></div>
-                    <div className="h-4 bg-muted rounded w-20"></div>
-                    <div className="h-4 bg-muted rounded w-24"></div>
-                    <div className="h-4 bg-muted rounded w-24"></div>
-                    <div className="h-4 bg-muted rounded w-24"></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </PageContent>
+      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+        <PageHeader className="flex-shrink-0">
+          <PageTitle>{t('navigation.categories')}</PageTitle>
+          <p className="text-sm text-gray-600">{t('navigation.categories')}</p>
+        </PageHeader>
+        <CategoriesLoading />
       </PageWrapper>
     );
   }
 
   return (
-    <PageWrapper>
-      <PageContent>
-        {/* Main Content */}
-        <div className="container mx-auto px-4 py-6">
-          <Categories
-            categories={categories}
-            loading={loading}
-            onCategoryAction={handleCategoryAction}
-            onCategoryCreated={handleCategoryCreated}
-            onCategoryUpdated={handleCategoryUpdated}
-            onCategoryDeleted={handleCategoryDeleted}
-            onError={handleError}
-            filters={{
-              filters: filters,
-              onFiltersChange: handleFiltersChange,
-              onSearchChange: handleSearchChange,
-              onClearFilters: handleClearFilters
-            }}
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            totalCategories={pagination.total}
-            limit={pagination.limit}
-            onPageChange={paginationPageChange}
-          />
+    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageHeader className="flex-shrink-0">
+        <div className="flex justify-between items-start">
+          <div>
+            <PageTitle subtitle={tc('title')}>
+              {tc('title')}
+            </PageTitle>
+          </div>
+          <Button 
+            onClick={() => setShowAddDialog(true)}
+            variant="default"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {t('buttons.add')} {t('labels.category')}
+          </Button>
         </div>
-      </PageContent>
+      </PageHeader>
+
+      <div className="flex-1 min-h-0 overflow-auto">
+        {error ? (
+          <div className="text-center py-12">
+            <p className="text-red-500">{error.message}</p>
+          </div>
+        ) : (
+          <Categories
+            data={categoryData}
+            filters={filters}
+            onSearchChange={handleSearchChange}
+            onCategoryAction={handleCategoryAction}
+            onPageChange={handlePageChange}
+            onSort={handleSort}
+          />
+        )}
+      </div>
+
+      {/* View Category Dialog */}
+      {selectedCategory && (
+        <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{tc('dialog.viewDetails')}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700">{tc('fields.name')}</p>
+                <p className="mt-1 text-gray-900 font-medium">{selectedCategory.name}</p>
+              </div>
+              {selectedCategory.description && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700">{tc('fields.description')}</p>
+                  <p className="mt-1 text-gray-900 whitespace-pre-wrap">{selectedCategory.description}</p>
+                </div>
+              )}
+              {/* Status field hidden as requested */}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Add Category Dialog */}
+      <AddCategoryDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onCategoryCreated={async (categoryData) => {
+          try {
+            const response = await categoriesApi.createCategory({
+              name: categoryData.name,
+              description: categoryData.description,
+              merchantId: user?.merchant?.id || user?.merchantId || 0
+            });
+            
+            if (response.success) {
+              toastSuccess(tc('messages.createSuccess'), tc('messages.createSuccess'));
+              refetch();
+            } else {
+              throw new Error(response.error || tc('messages.createFailed'));
+            }
+          } catch (error) {
+            console.error('Error creating category:', error);
+            toastError(tc('messages.createFailed'), error instanceof Error ? error.message : tc('messages.createFailed'));
+            throw error; // Re-throw to let dialog handle it
+          }
+        }}
+        onError={(error) => {
+          toastError(tc('messages.createFailed'), error);
+        }}
+      />
+
+      {/* Edit Category Dialog */}
+      {categoryToEdit && (
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>{tc('dialog.edit')}</DialogTitle>
+            </DialogHeader>
+            
+            <div>
+              {/* Use CategoryFormContent */}
+              <CategoryFormContent
+                category={categoryToEdit}
+                mode="edit"
+                onSave={async (categoryData) => {
+                  try {
+                    const response = await categoriesApi.updateCategory(categoryToEdit.id, {
+                      name: categoryData.name,
+                      description: categoryData.description
+                    });
+                    
+                    if (response.success) {
+                      toastSuccess(tc('messages.updateSuccess'), tc('messages.updateSuccess'));
+                      setShowEditDialog(false);
+                      setCategoryToEdit(null);
+                      refetch();
+                    } else {
+                      throw new Error(response.error || tc('messages.updateFailed'));
+                    }
+                  } catch (error) {
+                    console.error('Error updating category:', error);
+                    toastError(tc('messages.updateFailed'), error instanceof Error ? error.message : tc('messages.updateFailed'));
+                    throw error;
+                  }
+                }}
+                onCancel={() => {
+                  setShowEditDialog(false);
+                  setCategoryToEdit(null);
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        type="danger"
+        title={tc('actions.deleteCategory')}
+        description={tc('messages.confirmDelete')}
+        confirmText={tc('actions.deleteCategory')}
+        cancelText={t('buttons.cancel')}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setCategoryToDelete(null);
+        }}
+      />
     </PageWrapper>
   );
 }

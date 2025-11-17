@@ -3,8 +3,6 @@
 import React from 'react';
 import { 
   Card, 
-  CardHeader, 
-  CardTitle, 
   CardContent,
   Badge,
   Button,
@@ -19,6 +17,7 @@ import {
   Plus,
   Eye
 } from 'lucide-react';
+import { useCommonTranslations } from '@rentalshop/hooks';
 
 // Local type definitions
 interface BillingCycle {
@@ -55,6 +54,7 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
   onSort,
   loading = false
 }) => {
+  const t = useCommonTranslations();
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -76,10 +76,7 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Billing Cycles</CardTitle>
-        </CardHeader>
+      <Card className="shadow-sm border-border">
         <CardContent>
           <div className="animate-pulse space-y-4">
             {[...Array(3)].map((_, i) => (
@@ -92,15 +89,13 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Billing Cycles</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
+    <Card className="shadow-sm border-border flex flex-col h-full">
+      <CardContent className="p-0 flex-1 overflow-hidden">
+        {/* Table with scroll - flex layout */}
+        <div className="flex-1 overflow-auto h-full">
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
+            <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
+              <tr>
                 <th 
                   className="text-left py-3 px-4 font-medium text-text-primary cursor-pointer hover:bg-bg-secondary"
                   onClick={() => handleSort('name')}
@@ -233,9 +228,9 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
           {billingCycles.length === 0 && (
             <div className="text-center py-12">
               <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-text-primary mb-2">No billing cycles found</h3>
+              <h3 className="text-lg font-medium text-text-primary mb-2">{t('messages.noBillingCycles')}</h3>
               <p className="text-text-secondary">
-                Get started by creating your first billing cycle
+                {t('messages.getStartedBillingCycle')}
               </p>
             </div>
           )}

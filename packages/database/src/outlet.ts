@@ -19,6 +19,40 @@ import type {
 // ============================================================================
 
 /**
+ * Get default outlet for merchant
+ */
+export async function getDefaultOutlet(merchantId: number): Promise<any> {
+  // First find merchant by public ID to get CUID
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { id: true }
+  });
+  
+  if (!merchant) {
+    throw new Error(`Merchant with id ${merchantId} not found`);
+  }
+
+  const outlet = await prisma.outlet.findFirst({
+    where: {
+      merchantId: merchant.id, // Use CUID
+      isDefault: true,
+      isActive: true
+    },
+    select: {
+      id: true,
+      name: true,
+      merchantId: true
+    }
+  });
+
+  if (!outlet) {
+    throw new Error(`No default outlet found for merchant ${merchantId}`);
+  }
+
+  return outlet;
+}
+
+/**
  * Search outlets - follows dual ID system
  * Input: ids (numbers), Output: ids (numbers)
  */
@@ -490,8 +524,11 @@ export const simplifiedOutlets = {
    * Search outlets with pagination (simplified API)
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc', ...whereFilters } = filters;
     const skip = (page - 1) * limit;
+
+    console.log('🔍 DB outlet.search - Received filters:', filters);
+    console.log('🔍 DB outlet.search - whereFilters:', whereFilters);
 
     // Build where clause
     const where: any = {};
@@ -501,21 +538,34 @@ export const simplifiedOutlets = {
     if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
     if (whereFilters.status) where.status = whereFilters.status;
     
-    // Text search across multiple fields
-    if (whereFilters.search) {
-      where.OR = [
-        { name: { contains: whereFilters.search } },
-        { address: { contains: whereFilters.search } },
-        { phone: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } }
-      ];
+    // Text search across multiple fields - ONLY search by name
+    const searchTerm = whereFilters.search?.trim();
+    console.log('🔍 DB outlet.search - searchTerm:', searchTerm, 'length:', searchTerm?.length);
+    
+    if (searchTerm && searchTerm.length > 0) {
+      where.name = { 
+        contains: searchTerm, 
+        mode: 'insensitive' 
+      };
+      console.log('✅ DB outlet.search - Added name filter:', where.name);
+    } else {
+      console.log('⚠️ DB outlet.search - No search term, will return all outlets for this merchant');
     }
+    
+    console.log('🔍 DB outlet.search - Final where clause:', JSON.stringify(where, null, 2));
 
-    // Specific field filters
-    if (whereFilters.name) where.name = { contains: whereFilters.name };
-    if (whereFilters.address) where.address = { contains: whereFilters.address };
-    if (whereFilters.phone) where.phone = { contains: whereFilters.phone };
-    if (whereFilters.email) where.email = { contains: whereFilters.email };
+    // Specific field filters (not used in current implementation)
+    if (whereFilters.name) where.name = { contains: whereFilters.name, mode: 'insensitive' };
+    if (whereFilters.address) where.address = { contains: whereFilters.address, mode: 'insensitive' };
+    if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: 'insensitive' };
+
+    // Build orderBy based on sortBy and sortOrder
+    const orderBy: any = {};
+    if (sortBy === 'name' || sortBy === 'createdAt' || sortBy === 'updatedAt') {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy.createdAt = 'desc'; // Default
+    }
 
     const [outlets, total] = await Promise.all([
       prisma.outlet.findMany({
@@ -529,19 +579,22 @@ export const simplifiedOutlets = {
             }
           }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit
       }),
       prisma.outlet.count({ where })
     ]);
 
+    console.log(`📊 db.outlets.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, outlets=${outlets.length}`);
+
     return {
       data: outlets,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
 

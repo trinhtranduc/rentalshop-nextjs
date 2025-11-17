@@ -65,7 +65,7 @@ export default function PricingPage() {
         {/* Product Public Check Feature Highlight */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-12">
           <div className="flex items-center mb-4">
-            <LinkIcon className="h-8 w-8 text-blue-600 mr-3" />
+            <LinkIcon className="h-8 w-8 text-blue-700 mr-3" />
             <h2 className="text-2xl font-bold text-blue-900">Product Public Check</h2>
           </div>
           <p className="text-blue-800 mb-4">
@@ -109,7 +109,7 @@ export default function PricingPage() {
               
               <CardHeader className="text-center pb-4">
                 <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg mb-4 ${
-                  plan.id === 'basic' ? 'bg-blue-100 text-blue-600' :
+                  plan.id === 'basic' ? 'bg-blue-100 text-blue-700' :
                   plan.id === 'professional' ? 'bg-purple-100 text-purple-600' :
                   'bg-yellow-100 text-yellow-600'
                 }`}>

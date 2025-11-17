@@ -4,8 +4,8 @@ A comprehensive rental shop management system built with Next.js, featuring a mo
 
 ## 📚 Documentation
 
-- **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)** - 🚀 Deploy to Railway (Production Deployment Guide)
-- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Local development setup
+- **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)** - 🚀 Complete deployment guide for Railway (Recommended)
+- **[.cursorrules](.cursorrules)** - Development rules and best practices including API standardization
 
 ## 🚀 Quick Start
 
@@ -425,7 +425,7 @@ export function AuditLogViewer() {
 - ✅ Built-in PostgreSQL database (no external service needed)
 - ✅ Full backend support (not just serverless)
 - ✅ Persistent storage with volumes
-- ✅ Lower cost: $5-20/month vs $45+/month (Vercel + Supabase)
+- ✅ Lower cost: $5-20/month
 
 **Quick Deploy:**
 ```bash
@@ -443,14 +443,14 @@ railway add postgresql
 git push origin main
 ```
 
-**See [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) for complete guide.**
+**See [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md) for complete deployment guide with PostgreSQL database setup, environment configuration, and troubleshooting.**
 
-## 📚 **Documentation**
+## 📚 **Additional Documentation**
 
-- **Environment Setup**: See `docs/ENVIRONMENT_SETUP.md`
-- **Database Setup**: See `DATABASE_SETUP.md`
-- **API Review**: See `API_REVIEW.md`
-- **Component Library**: See `packages/ui/README.md`
+- **Deployment Guide**: [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md) - Complete Railway deployment instructions
+- **Development Rules**: [.cursorrules](.cursorrules) - Coding standards and API best practices
+- **Component Library**: `packages/ui/README.md` - UI components documentation
+- **Audit Tools**: Run `node scripts/audit-api-standardization.js` to check API compliance
 
 ## 🤝 **Contributing**
 

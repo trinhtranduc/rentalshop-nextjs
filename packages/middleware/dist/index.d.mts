@@ -69,4 +69,4 @@ declare function createAuditHelper(prisma: any): {
   logDelete: (params: any) => Promise<void>;
 };
 
-export { type AuditContext, type AuditMiddlewareConfig, type AuthMiddlewareConfig, type RateLimitConfig, adminAuth, apiRateLimiter, captureAuditContext, clearAuditContext, createAuditHelper, createAuditMiddleware, createAuthMiddleware, createRateLimiter, generateRequestId, getAuditContext, getAuditContextById, getUserFromRequest, logAuditEvent, merchantAuth, optionalAuth, outletAuth, searchRateLimiter, withAuditLogging, withAuth };
+export { AuditContext, AuditMiddlewareConfig, AuthMiddlewareConfig, RateLimitConfig, adminAuth, apiRateLimiter, captureAuditContext, clearAuditContext, createAuditHelper, createAuditMiddleware, createAuthMiddleware, createRateLimiter, generateRequestId, getAuditContext, getAuditContextById, getUserFromRequest, logAuditEvent, merchantAuth, optionalAuth, outletAuth, searchRateLimiter, withAuditLogging, withAuth };

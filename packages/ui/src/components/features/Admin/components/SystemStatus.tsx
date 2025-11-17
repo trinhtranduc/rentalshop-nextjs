@@ -28,7 +28,7 @@ export default function SystemStatus({ statusItems, className = '' }: SystemStat
       case 'error':
         return 'text-red-600';
       default:
-        return 'text-blue-600';
+        return 'text-blue-700';
     }
   };
 

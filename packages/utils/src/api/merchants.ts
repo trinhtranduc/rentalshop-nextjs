@@ -1,26 +1,11 @@
 import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../core';
+import type { Merchant } from '@rentalshop/types';
 
 // ============================================================================
 // TYPES
 // ============================================================================
-
-export interface Merchant {
-  id: number;
-  name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  isActive: boolean;
-  planId?: string;
-  subscriptionStatus?: string;
-  trialEndsAt?: Date | string;
-  totalRevenue?: number;
-  lastActiveAt?: Date | string;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-}
 
 export interface MerchantsResponse {
   merchants: Merchant[];

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { prisma } from '@rentalshop/database';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -13,14 +13,14 @@ export async function GET(request: NextRequest) {
     try {
       // TODO: Implement API keys functionality
       return NextResponse.json(
-        { success: false, message: 'API keys functionality not yet implemented' },
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
         { status: 501 }
       );
 
     } catch (error) {
       console.error('Error fetching API keys:', error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error' },
+        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
     }
@@ -39,14 +39,14 @@ export async function POST(request: NextRequest) {
 
       if (!name) {
         return NextResponse.json(
-          { success: false, message: 'API key name is required' },
+          ResponseBuilder.error('API_KEY_NAME_REQUIRED'),
           { status: 400 }
         );
       }
 
       // TODO: Implement API key creation functionality
       return NextResponse.json(
-        { success: false, message: 'API key creation functionality not yet implemented' },
+        ResponseBuilder.error('FEATURE_NOT_IMPLEMENTED'),
         { status: 501 }
       );
 

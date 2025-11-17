@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -20,7 +20,7 @@ export async function GET(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID format' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -33,7 +33,7 @@ export async function GET(
       if (!merchant) {
         console.log('❌ Merchant not found in database for merchantId:', merchantId);
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -43,6 +43,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: merchant,
+        code: 'MERCHANT_RETRIEVED_SUCCESS',
         message: 'Merchant retrieved successfully'
       });
 
@@ -75,7 +76,7 @@ export async function PUT(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID format' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -90,9 +91,34 @@ export async function PUT(
       const existingMerchant = await db.merchants.findById(merchantId);
       if (!existingMerchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
+      }
+
+      // Check for duplicate phone or email if being updated
+      if (body.phone || body.email) {
+        const emailToCheck = (body.email && body.email !== existingMerchant.email) ? body.email : undefined;
+        const phoneToCheck = (body.phone && body.phone !== existingMerchant.phone) ? body.phone : undefined;
+
+        if (emailToCheck || phoneToCheck) {
+          const duplicateMerchant = await db.merchants.checkDuplicate(emailToCheck, phoneToCheck, merchantId);
+
+          if (duplicateMerchant) {
+            const duplicateField = duplicateMerchant.email === emailToCheck ? 'email' : 'phone number';
+            const duplicateValue = duplicateMerchant.email === emailToCheck ? emailToCheck : phoneToCheck;
+            
+            console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
+            return NextResponse.json(
+              {
+                success: false,
+                code: 'MERCHANT_DUPLICATE',
+                message: `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+              },
+              { status: 409 }
+            );
+          }
+        }
       }
 
       // Update the merchant using the simplified database API
@@ -102,6 +128,7 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         data: updatedMerchant,
+        code: 'MERCHANT_UPDATED_SUCCESS',
         message: 'Merchant updated successfully'
       });
 
@@ -134,7 +161,7 @@ export async function DELETE(
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(
-          { success: false, message: 'Invalid merchant ID format' },
+          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
           { status: 400 }
         );
       }
@@ -145,18 +172,37 @@ export async function DELETE(
       const existingMerchant = await db.merchants.findById(merchantId);
       if (!existingMerchant) {
         return NextResponse.json(
-          { success: false, message: 'Merchant not found' },
+          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
 
+      // Check if merchant has active subscription
+      const activeSubscription = await db.subscriptions.findFirst({
+        merchantId: merchantId,
+        status: { in: ['ACTIVE', 'TRIAL'] }
+      });
+
+      if (activeSubscription) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'MERCHANT_HAS_ACTIVE_SUBSCRIPTION',
+            message: 'Cannot delete merchant with active subscription. Please cancel the subscription first.'
+          },
+          { status: API.STATUS.CONFLICT }
+        );
+      }
+
       // Soft delete by setting isActive to false
+      // Note: This will cascade to outlets, users, products via Prisma schema
       const deletedMerchant = await db.merchants.update(merchantId, { isActive: false });
       console.log('✅ Merchant soft deleted successfully:', deletedMerchant);
 
       return NextResponse.json({
         success: true,
         data: deletedMerchant,
+        code: 'MERCHANT_DELETED_SUCCESS',
         message: 'Merchant deleted successfully'
       });
 

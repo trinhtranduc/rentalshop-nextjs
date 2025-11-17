@@ -2,13 +2,26 @@ import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 
 // Types for calendar API
+export interface CalendarOrderItem {
+  id: number;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  notes?: string;
+  // Flattened product data
+  productId?: number;
+  productName?: string;
+  productBarcode?: string;
+  productImages?: string[] | string | null; // Can be array, JSON string, or null
+  productRentPrice?: number;
+  productDeposit?: number;
+}
+
 export interface CalendarOrderSummary {
   id: number;
   orderNumber: string;
   customerName: string;
   customerPhone?: string;
-  productName: string;
-  productCount?: number;
   totalAmount: number;
   status: string;
   outletName?: string;
@@ -17,6 +30,11 @@ export interface CalendarOrderSummary {
   returnPlanAt?: string;
   isOverdue?: boolean;
   duration?: number;
+  // Product summary for calendar display
+  productName?: string;
+  productCount?: number;
+  // Order items with product details
+  orderItems: CalendarOrderItem[];
 }
 
 export interface DayOrders {
@@ -24,17 +42,37 @@ export interface DayOrders {
   total: number;
 }
 
+export interface CalendarDay {
+  date: string; // YYYY-MM-DD format
+  orders: CalendarOrderSummary[];
+  summary: {
+    totalOrders: number;
+    totalRevenue: number;
+    totalPickups: number;
+    totalReturns: number;
+    averageOrderValue: number;
+  };
+}
+
 export interface CalendarResponse {
-  [dateKey: string]: DayOrders;
+  calendar: CalendarDay[];
+  summary: {
+    totalOrders: number;
+    totalRevenue: number;
+    totalPickups: number;
+    totalReturns: number;
+    averageOrderValue: number;
+  };
 }
 
 export interface CalendarMeta {
-  month: number;
-  year: number;
   totalDays: number;
   stats: {
     totalPickups: number;
     totalOrders: number;
+    totalRevenue: number;
+    totalReturns: number;
+    averageOrderValue: number;
   };
   dateRange: {
     start: string;
@@ -44,15 +82,19 @@ export interface CalendarMeta {
 
 export interface CalendarApiResponse {
   success: boolean;
-  data: CalendarResponse;
-  meta: CalendarMeta;
-  message: string;
+  data?: CalendarResponse;
+  meta?: CalendarMeta;
+  code?: string; // API response code
+  message?: string;
 }
 
 export interface CalendarQuery {
-  month: number;
-  year: number;
+  startDate: string; // ISO date format (YYYY-MM-DD)
+  endDate: string;   // ISO date format (YYYY-MM-DD)
   outletId?: number;
+  merchantId?: number;
+  status?: string;
+  orderType?: string;
   limit?: number;
 }
 
@@ -66,39 +108,54 @@ export interface CalendarQuery {
  */
 export const calendarApi = {
   /**
-   * Get calendar orders for a specific month
+   * Get calendar orders for a specific date range
    * 
    * @param query - Calendar query parameters
    * @returns Promise with calendar data grouped by date
    */
   async getCalendarOrders(query: CalendarQuery): Promise<CalendarApiResponse> {
     const searchParams = new URLSearchParams({
-      month: query.month.toString(),
-      year: query.year.toString(),
+      startDate: query.startDate,
+      endDate: query.endDate,
       ...(query.outletId && { outletId: query.outletId.toString() }),
+      ...(query.merchantId && { merchantId: query.merchantId.toString() }),
+      ...(query.status && { status: query.status }),
+      ...(query.orderType && { orderType: query.orderType }),
       ...(query.limit && { limit: query.limit.toString() })
     });
 
     const response = await authenticatedFetch(`${apiUrls.calendar.orders}?${searchParams}`);
-    const result = await parseApiResponse<CalendarApiResponse>(response);
+    const result = await parseApiResponse<CalendarResponse>(response);
     
-    // Return the calendar response data directly
+    // parseApiResponse unwraps the data, so result.data is CalendarResponse
+    const defaultMeta: CalendarMeta = {
+      totalDays: 0,
+      stats: { 
+        totalPickups: 0, 
+        totalOrders: 0, 
+        totalRevenue: 0, 
+        totalReturns: 0, 
+        averageOrderValue: 0 
+      },
+      dateRange: { start: query.startDate, end: query.endDate }
+    };
+
     if (result.success && result.data) {
-      return result.data;
+      return {
+        success: true,
+        data: result.data,
+        meta: defaultMeta,
+        code: 'CALENDAR_DATA_SUCCESS',
+        message: 'Calendar data loaded'
+      };
     }
     
     // Fallback structure if backend returns different format
     return {
-      success: result.success,
-      data: {} as CalendarResponse,
-      meta: {
-        month: query.month,
-        year: query.year,
-        totalDays: 30,
-        stats: { totalPickups: 0, totalOrders: 0 },
-        dateRange: { start: '', end: '' }
-      },
-      message: result.message || 'Calendar data loaded'
+      success: false,
+      data: { calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } },
+      meta: defaultMeta,
+      message: result.message || 'Failed to load calendar data'
     };
   },
 
@@ -107,9 +164,12 @@ export const calendarApi = {
    */
   async getCurrentMonthOrders(outletId?: number): Promise<CalendarApiResponse> {
     const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
     return this.getCalendarOrders({
-      month: now.getMonth() + 1, // JavaScript months are 0-based
-      year: now.getFullYear(),
+      startDate: startOfMonth.toISOString().split('T')[0],
+      endDate: endOfMonth.toISOString().split('T')[0],
       outletId,
       limit: 4
     });
@@ -121,9 +181,12 @@ export const calendarApi = {
   async getNextMonthOrders(outletId?: number): Promise<CalendarApiResponse> {
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const startOfNextMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
+    const endOfNextMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0);
+    
     return this.getCalendarOrders({
-      month: nextMonth.getMonth() + 1,
-      year: nextMonth.getFullYear(),
+      startDate: startOfNextMonth.toISOString().split('T')[0],
+      endDate: endOfNextMonth.toISOString().split('T')[0],
       outletId,
       limit: 4
     });
@@ -135,11 +198,58 @@ export const calendarApi = {
   async getPreviousMonthOrders(outletId?: number): Promise<CalendarApiResponse> {
     const now = new Date();
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const startOfPrevMonth = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
+    const endOfPrevMonth = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0);
+    
     return this.getCalendarOrders({
-      month: prevMonth.getMonth() + 1,
-      year: prevMonth.getFullYear(),
+      startDate: startOfPrevMonth.toISOString().split('T')[0],
+      endDate: endOfPrevMonth.toISOString().split('T')[0],
       outletId,
       limit: 4
+    });
+  },
+
+  /**
+   * Get calendar orders for a specific month
+   * @param year - Year (e.g., 2025)
+   * @param month - Month (1-12)
+   * @param outletId - Optional outlet filter
+   */
+  async getMonthOrders(year: number, month: number, outletId?: number): Promise<CalendarApiResponse> {
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0);
+    
+    return this.getCalendarOrders({
+      startDate: startOfMonth.toISOString().split('T')[0],
+      endDate: endOfMonth.toISOString().split('T')[0],
+      outletId,
+      limit: 4
+    });
+  },
+
+  /**
+   * Get calendar orders for a custom date range
+   * @param startDate - Start date (YYYY-MM-DD)
+   * @param endDate - End date (YYYY-MM-DD)
+   * @param outletId - Optional outlet filter
+   * @param options - Additional options
+   */
+  async getDateRangeOrders(
+    startDate: string, 
+    endDate: string, 
+    outletId?: number,
+    options?: {
+      merchantId?: number;
+      status?: string;
+      orderType?: string;
+      limit?: number;
+    }
+  ): Promise<CalendarApiResponse> {
+    return this.getCalendarOrders({
+      startDate,
+      endDate,
+      outletId,
+      ...options
     });
   }
 };

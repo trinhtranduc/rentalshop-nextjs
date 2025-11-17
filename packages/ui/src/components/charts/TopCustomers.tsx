@@ -69,7 +69,7 @@ export const TopCustomers: React.FC<TopCustomersProps> = ({ data, loading = fals
           {data.slice(0, 10).map((customer, index) => (
             <div key={customer.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
               {/* Rank */}
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-700 flex items-center justify-center text-white font-bold text-sm">
                 {index + 1}
               </div>
               
@@ -91,7 +91,7 @@ export const TopCustomers: React.FC<TopCustomersProps> = ({ data, loading = fals
                 <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
                   <span className="truncate">{customer.email}</span>
                   <span className="truncate">{customer.phone}</span>
-                  <span className="font-medium text-blue-600">
+                  <span className="font-medium text-blue-700">
                     ${customer.totalSpent.toLocaleString()}
                   </span>
                 </div>

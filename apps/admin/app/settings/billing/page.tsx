@@ -20,30 +20,29 @@ import {
   TableRow
 } from '@rentalshop/ui';
 import { AlertCircle, Edit, Save, Plus, X } from 'lucide-react';
+import { useSettingsTranslations } from '@rentalshop/hooks';
+import type { BillingInterval } from '@rentalshop/utils';
 
-// Simple billing configuration (following Stripe's modern practices)
-interface BillingInterval {
-  id: string;
-  name: string;
-  months: number;
+// Extended billing configuration (following Stripe's modern practices)
+interface ExtendedBillingInterval extends BillingInterval {
   discountPercentage: number;
-  isActive: boolean;
 }
 
-const DEFAULT_BILLING_INTERVALS: BillingInterval[] = [
-  { id: 'month', name: 'Monthly', months: 1, discountPercentage: 0, isActive: true },
-  { id: 'quarter', name: 'Quarterly', months: 3, discountPercentage: 5, isActive: true },
-  { id: '6months', name: '6 Months', months: 6, discountPercentage: 10, isActive: true },
-  { id: 'year', name: 'Yearly', months: 12, discountPercentage: 20, isActive: true }
+const DEFAULT_BILLING_INTERVALS: ExtendedBillingInterval[] = [
+  { id: 'month', name: 'Monthly', duration: 1, unit: 'months', discountPercentage: 0, isActive: true },
+  { id: 'quarter', name: 'Quarterly', duration: 3, unit: 'months', discountPercentage: 5, isActive: true },
+  { id: '6months', name: '6 Months', duration: 6, unit: 'months', discountPercentage: 10, isActive: true },
+  { id: 'year', name: 'Yearly', duration: 12, unit: 'months', discountPercentage: 20, isActive: true }
 ];
 
 export default function BillingSettingsPage() {
-  const [billingIntervals, setBillingIntervals] = useState<BillingInterval[]>(DEFAULT_BILLING_INTERVALS);
-  const [editingInterval, setEditingInterval] = useState<BillingInterval | null>(null);
+  const t = useSettingsTranslations();
+  const [billingIntervals, setBillingIntervals] = useState<ExtendedBillingInterval[]>(DEFAULT_BILLING_INTERVALS);
+  const [editingInterval, setEditingInterval] = useState<ExtendedBillingInterval | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleEditInterval = (interval: BillingInterval) => {
+  const handleEditInterval = (interval: ExtendedBillingInterval) => {
     setEditingInterval({ ...interval });
     setShowEditDialog(true);
   };
@@ -52,7 +51,8 @@ export default function BillingSettingsPage() {
     setEditingInterval({
       id: '',
       name: '',
-      months: 1,
+      duration: 1,
+      unit: 'months',
       discountPercentage: 0,
       isActive: true
     });
@@ -90,16 +90,25 @@ export default function BillingSettingsPage() {
     try {
       const { settingsApi } = await import('@rentalshop/utils');
       
-      const result = await settingsApi.updateBillingIntervals(billingIntervals);
+      // Convert ExtendedBillingInterval to BillingInterval for API
+      const apiIntervals = billingIntervals.map(interval => ({
+        id: interval.id,
+        name: interval.name,
+        duration: interval.duration,
+        unit: interval.unit,
+        isActive: interval.isActive
+      }));
+      
+      const result = await settingsApi.updateBillingIntervals(apiIntervals);
       
       if (result.success) {
-        alert('Billing configuration saved successfully!');
+        alert(t('billing.messages.saveSuccess'));
       } else {
-        alert(`Error: ${result.error || 'Failed to save billing configuration'}`);
+        alert(`${t('billing.messages.saveFailed')}: ${result.error || t('billing.messages.saveFailed')}`);
       }
     } catch (error) {
       console.error('Error saving billing config:', error);
-      alert('Error saving billing configuration. Please try again.');
+      alert(t('billing.messages.saveError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -108,7 +117,7 @@ export default function BillingSettingsPage() {
   return (
     <PageWrapper>
       <PageHeader>
-        <PageTitle>Billing Configuration</PageTitle>
+        <PageTitle>{t('billing.title')}</PageTitle>
       </PageHeader>
       
       <PageContent>
@@ -118,26 +127,25 @@ export default function BillingSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-blue-500" />
-                Modern Subscription Billing
+                {t('billing.modernSubscription')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-600 mb-4">
-                Configure billing intervals and discount percentages following Stripe's modern subscription practices.
-                Longer commitments typically receive higher discounts to encourage customer retention.
+                {t('billing.modernSubscriptionDesc')}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="p-3 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900">Monthly</h4>
-                  <p className="text-blue-700">0% discount - Standard pricing</p>
+                  <h4 className="font-medium text-blue-900">{t('billing.examples.monthly')}</h4>
+                  <p className="text-blue-700">{t('billing.examples.monthlyDesc')}</p>
                 </div>
                 <div className="p-3 bg-green-50 rounded-lg">
-                  <h4 className="font-medium text-green-900">Quarterly</h4>
-                  <p className="text-green-700">5% discount - Good for retention</p>
+                  <h4 className="font-medium text-green-900">{t('billing.examples.quarterly')}</h4>
+                  <p className="text-green-700">{t('billing.examples.quarterlyDesc')}</p>
                 </div>
                 <div className="p-3 bg-purple-50 rounded-lg">
-                  <h4 className="font-medium text-purple-900">Yearly</h4>
-                  <p className="text-purple-700">20% discount - Best value</p>
+                  <h4 className="font-medium text-purple-900">{t('billing.examples.yearly')}</h4>
+                  <p className="text-purple-700">{t('billing.examples.yearlyDesc')}</p>
                 </div>
               </div>
             </CardContent>
@@ -147,10 +155,10 @@ export default function BillingSettingsPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Billing Intervals</CardTitle>
+                <CardTitle>{t('billing.intervals.title')}</CardTitle>
                 <Button onClick={handleAddInterval} size="sm">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Interval
+                  {t('billing.intervals.addInterval')}
                 </Button>
               </div>
             </CardHeader>
@@ -158,18 +166,18 @@ export default function BillingSettingsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Months</TableHead>
-                    <TableHead>Discount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('billing.intervals.name')}</TableHead>
+                    <TableHead>{t('billing.intervals.months')}</TableHead>
+                    <TableHead>{t('billing.intervals.discount')}</TableHead>
+                    <TableHead>{t('billing.intervals.status')}</TableHead>
+                    <TableHead>{t('billing.intervals.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {billingIntervals.map((interval) => (
                     <TableRow key={interval.id}>
                       <TableCell className="font-medium">{interval.name}</TableCell>
-                      <TableCell>{interval.months}</TableCell>
+                      <TableCell>{interval.duration}</TableCell>
                       <TableCell>
                         <Badge variant={interval.discountPercentage > 0 ? 'default' : 'secondary'}>
                           {interval.discountPercentage}%
@@ -212,10 +220,10 @@ export default function BillingSettingsPage() {
             <Button 
               onClick={handleSaveConfig} 
               disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-700 hover:bg-blue-700"
             >
               <Save className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Saving...' : 'Save Configuration'}
+              {isSubmitting ? t('billing.intervals.saving') : t('billing.intervals.saveConfiguration')}
             </Button>
           </div>
 
@@ -224,12 +232,12 @@ export default function BillingSettingsPage() {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <h3 className="text-lg font-medium mb-4">
-                  {editingInterval.id ? 'Edit Billing Interval' : 'Add Billing Interval'}
+                  {editingInterval.id ? t('billing.intervals.editInterval') : t('billing.intervals.addNewInterval')}
                 </h3>
                 
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="intervalName">Name</Label>
+                    <Label htmlFor="intervalName">{t('billing.intervals.name')}</Label>
                     <Input
                       id="intervalName"
                       value={editingInterval.name}
@@ -237,27 +245,27 @@ export default function BillingSettingsPage() {
                         ...editingInterval,
                         name: e.target.value
                       })}
-                      placeholder="e.g., Monthly, Quarterly"
+                      placeholder={t('billing.intervals.namePlaceholder')}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="intervalMonths">Months</Label>
+                    <Label htmlFor="intervalMonths">{t('billing.intervals.months')}</Label>
                     <Input
                       id="intervalMonths"
                       type="number"
                       min="1"
                       max="12"
-                      value={editingInterval.months}
+                      value={editingInterval.duration}
                       onChange={(e) => setEditingInterval({
                         ...editingInterval,
-                        months: parseInt(e.target.value) || 1
+                        duration: parseInt(e.target.value) || 1
                       })}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="intervalDiscount">Discount Percentage</Label>
+                    <Label htmlFor="intervalDiscount">{t('billing.intervals.discount')}</Label>
                     <Input
                       id="intervalDiscount"
                       type="number"
@@ -280,7 +288,7 @@ export default function BillingSettingsPage() {
                         isActive: checked
                       })}
                     />
-                    <Label htmlFor="intervalActive">Active</Label>
+                    <Label htmlFor="intervalActive">{t('billing.intervals.active')}</Label>
                   </div>
                 </div>
 
@@ -289,10 +297,10 @@ export default function BillingSettingsPage() {
                     variant="outline"
                     onClick={() => setShowEditDialog(false)}
                   >
-                    Cancel
+                    {t('billing.intervals.cancel')}
                   </Button>
                   <Button onClick={handleSaveInterval}>
-                    {editingInterval.id ? 'Update' : 'Add'} Interval
+                    {editingInterval.id ? t('billing.intervals.update') : t('billing.intervals.add')} {t('billing.intervals.title')}
                   </Button>
                 </div>
               </div>

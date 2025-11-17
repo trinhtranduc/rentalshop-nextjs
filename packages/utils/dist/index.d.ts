@@ -1,4 +1,6 @@
-import { SubscriptionStatus, BillingInterval as BillingInterval$1, PlanLimits as PlanLimits$1 } from '@rentalshop/constants';
+import { MerchantPricingConfig, SubscriptionStatus, BillingInterval as BillingInterval$1, PricingType, PlanLimits as PlanLimits$1 } from '@rentalshop/constants';
+import { S3Client } from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import React from 'react';
 import { z } from 'zod';
@@ -86,6 +88,15 @@ declare const delay: (ms: number) => Promise<void>;
  * Create a timeout promise that rejects after specified time
  */
 declare const timeout: <T>(promise: Promise<T>, ms: number) => Promise<T>;
+
+/**
+ * Generate a URL-safe tenant key from a merchant / shop name.
+ *
+ * Examples:
+ *  - "Áo dài Phạm 1" -> "aodaipham1"
+ *  - "My Shop!"      -> "myshop"
+ */
+declare function generateTenantKeyFromName(name: string): string;
 
 /**
  * Base entity interface with common fields
@@ -272,27 +283,26 @@ interface RegisterData {
  * Main Merchant interface - consolidated from multiple sources
  * Combines merchants.ts and merchants/merchant.ts definitions
  */
-interface Merchant$1 extends BaseEntity, Address, ContactInfo {
+interface Merchant extends BaseEntity, Address, ContactInfo {
     name: string;
     email: string;
     description?: string;
     businessType?: string;
     pricingType?: string;
     taxId?: string;
+    currency: string;
     isActive: boolean;
     planId?: number;
-    subscriptionStatus: 'active' | 'trial' | 'expired' | 'cancelled';
     totalRevenue: number;
     lastActiveAt?: Date | string;
     pricingConfig?: MerchantPricingConfig | string;
     plan?: PlanDetails;
-    currentSubscription?: CurrentSubscription;
+    subscription?: CurrentSubscription;
     outlets?: OutletReference[];
     users?: UserReference[];
     customers?: CustomerReference[];
     products?: ProductReference[];
     categories?: any[];
-    subscriptions?: any[];
 }
 /**
  * Plan details interface
@@ -320,58 +330,27 @@ interface PlanDetails {
 interface CurrentSubscription {
     id: number;
     status: string;
-    startDate: Date | string;
-    endDate?: Date | string;
-    nextBillingDate?: Date | string;
+    currentPeriodStart: Date | string;
+    currentPeriodEnd: Date | string;
+    trialStart?: Date | string;
+    trialEnd?: Date | string;
     amount: number;
     currency: string;
-    autoRenew: boolean;
+    interval: string;
+    period: number;
+    discount: number;
+    savings: number;
+    cancelAtPeriodEnd: boolean;
+    canceledAt?: Date | string;
+    cancelReason?: string;
     plan?: {
         id: number;
         name: string;
+        description: string;
         basePrice: number;
         currency: string;
+        trialDays: number;
     };
-    planVariant?: {
-        id: number;
-        name: string;
-        duration: number;
-        price: number;
-        discount: number;
-        savings: number;
-    };
-}
-/**
- * Pricing type enumeration
- */
-type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' | 'WEEKLY';
-/**
- * Business type enumeration
- */
-type BusinessType = 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-/**
- * Business rules for pricing
- */
-interface PricingBusinessRules {
-    requireRentalDates: boolean;
-    showPricingOptions: boolean;
-}
-/**
- * Duration limits for time-based pricing
- */
-interface PricingDurationLimits {
-    minDuration: number;
-    maxDuration: number;
-    defaultDuration: number;
-}
-/**
- * Merchant pricing configuration
- */
-interface MerchantPricingConfig {
-    businessType: BusinessType;
-    defaultPricingType: PricingType;
-    businessRules: PricingBusinessRules;
-    durationLimits: PricingDurationLimits;
 }
 
 /**
@@ -416,6 +395,27 @@ interface OutletUpdateInput$1 extends BaseUpdateInput {
     isActive?: boolean;
     isDefault?: boolean;
 }
+/**
+ * Outlet filters interface
+ * Used for filtering outlets in management views
+ */
+interface OutletFilters {
+    q?: string;
+    search?: string;
+    status?: string;
+    merchantId?: number;
+    outletId?: number;
+    city?: string;
+    state?: string;
+    country?: string;
+    isActive?: boolean;
+    isDefault?: boolean;
+    page?: number;
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
 
 /**
  * Main Product interface - consolidated from multiple sources
@@ -433,7 +433,7 @@ interface Product extends BaseEntityWithMerchant {
     renting: number;
     available: number;
     isActive: boolean;
-    images?: string;
+    images?: string[];
     category?: CategoryReference;
     merchant?: MerchantReference;
     outletStock?: OutletStock[];
@@ -472,7 +472,7 @@ interface ProductCreateInput$1 extends BaseFormInput {
     salePrice?: number;
     deposit: number;
     totalStock: number;
-    images?: string;
+    images?: string[];
     outletStock: Array<{
         outletId: number;
         stock: number;
@@ -492,7 +492,7 @@ interface ProductUpdateInput$1 extends BaseUpdateInput {
     stock?: number;
     totalStock?: number;
     salePrice?: number;
-    images?: string;
+    images?: string[];
     isActive?: boolean;
 }
 /**
@@ -593,6 +593,11 @@ interface Order extends BaseEntityWithOutlet {
     orderItems?: OrderItem[];
     payments?: Payment[];
     createdBy?: UserReference;
+    customerName?: string;
+    customerPhone?: string;
+    outletName?: string;
+    merchantName?: string;
+    createdByName?: string;
 }
 /**
  * Order item interface
@@ -724,6 +729,7 @@ type OrderUpdateInput = OrderInput;
 interface OrderFilters {
     status?: OrderStatus | OrderStatus[];
     orderType?: OrderType;
+    merchantId?: number;
     outletId?: number;
     customerId?: number;
     productId?: number;
@@ -838,6 +844,22 @@ interface Category extends BaseEntityWithMerchant {
         name: string;
     };
 }
+/**
+ * Category filters (alias for CategorySearchParams)
+ * Used for consistent API interface with other entities
+ */
+interface CategoryFilters {
+    q?: string;
+    search?: string;
+    merchantId?: number;
+    isActive?: boolean;
+    status?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
 
 interface PlanLimits {
     outlets: number;
@@ -845,6 +867,8 @@ interface PlanLimits {
     products: number;
     customers: number;
     orders: number;
+    allowWebAccess?: boolean;
+    allowMobileAccess?: boolean;
 }
 interface PlanPricing {
     price: number;
@@ -866,6 +890,7 @@ interface Plan {
     pricing: {
         monthly: PlanPricing;
         quarterly: PlanPricing;
+        sixMonths: PlanPricing;
         yearly: PlanPricing;
     };
     createdAt: Date;
@@ -895,6 +920,7 @@ interface PlanUpdateInput$1 {
     pricing?: {
         monthly?: PlanPricing;
         quarterly?: PlanPricing;
+        sixMonths?: PlanPricing;
         yearly?: PlanPricing;
     };
     isActive?: boolean;
@@ -936,7 +962,6 @@ interface Subscription {
         id: number;
         name: string;
         email: string;
-        subscriptionStatus: string;
     };
     plan: Plan;
 }
@@ -971,6 +996,1782 @@ interface SubscriptionsResponse {
         limit: number;
         offset: number;
     };
+}
+
+var required = "This field is required";
+var email = "Please enter a valid email address";
+var phone = "Please enter a valid phone number";
+var min = "Minimum value is {min}";
+var max = "Maximum value is {max}";
+var minLength = "Minimum length is {min} characters";
+var maxLength = "Maximum length is {max} characters";
+var pattern = "Invalid format";
+var url = "Please enter a valid URL";
+var number = "Please enter a valid number";
+var integer = "Please enter a whole number";
+var positive = "Please enter a positive number";
+var negative = "Please enter a negative number";
+var date = "Please enter a valid date";
+var dateRange = "Invalid date range";
+var time$1 = "Please enter a valid time";
+var password = {
+	minLength: "Password must be at least {min} characters",
+	uppercase: "Password must contain at least one uppercase letter",
+	lowercase: "Password must contain at least one lowercase letter",
+	number: "Password must contain at least one number",
+	special: "Password must contain at least one special character",
+	match: "Passwords do not match"
+};
+var file = {
+	size: "File size must be less than {max}",
+	type: "Invalid file type. Allowed types: {types}",
+	required: "Please select a file"
+};
+var unique = "This value already exists";
+var exists = "This value does not exist";
+var custom = {
+	invalidBarcode: "Invalid barcode format",
+	invalidSKU: "Invalid SKU format",
+	stockNotAvailable: "Not enough stock available",
+	invalidDateRange: "End date must be after start date",
+	priceGreaterThanZero: "Price must be greater than zero",
+	quantityGreaterThanZero: "Quantity must be greater than zero"
+};
+var validation$1 = {
+	required: required,
+	email: email,
+	phone: phone,
+	min: min,
+	max: max,
+	minLength: minLength,
+	maxLength: maxLength,
+	pattern: pattern,
+	url: url,
+	number: number,
+	integer: integer,
+	positive: positive,
+	negative: negative,
+	date: date,
+	dateRange: dateRange,
+	time: time$1,
+	password: password,
+	file: file,
+	unique: unique,
+	exists: exists,
+	custom: custom
+};
+
+declare const _________locales_en_validation_json_custom: typeof custom;
+declare const _________locales_en_validation_json_date: typeof date;
+declare const _________locales_en_validation_json_dateRange: typeof dateRange;
+declare const _________locales_en_validation_json_email: typeof email;
+declare const _________locales_en_validation_json_exists: typeof exists;
+declare const _________locales_en_validation_json_file: typeof file;
+declare const _________locales_en_validation_json_integer: typeof integer;
+declare const _________locales_en_validation_json_max: typeof max;
+declare const _________locales_en_validation_json_maxLength: typeof maxLength;
+declare const _________locales_en_validation_json_min: typeof min;
+declare const _________locales_en_validation_json_minLength: typeof minLength;
+declare const _________locales_en_validation_json_negative: typeof negative;
+declare const _________locales_en_validation_json_number: typeof number;
+declare const _________locales_en_validation_json_password: typeof password;
+declare const _________locales_en_validation_json_pattern: typeof pattern;
+declare const _________locales_en_validation_json_phone: typeof phone;
+declare const _________locales_en_validation_json_positive: typeof positive;
+declare const _________locales_en_validation_json_required: typeof required;
+declare const _________locales_en_validation_json_unique: typeof unique;
+declare const _________locales_en_validation_json_url: typeof url;
+declare namespace _________locales_en_validation_json {
+  export {
+    _________locales_en_validation_json_custom as custom,
+    _________locales_en_validation_json_date as date,
+    _________locales_en_validation_json_dateRange as dateRange,
+    validation$1 as default,
+    _________locales_en_validation_json_email as email,
+    _________locales_en_validation_json_exists as exists,
+    _________locales_en_validation_json_file as file,
+    _________locales_en_validation_json_integer as integer,
+    _________locales_en_validation_json_max as max,
+    _________locales_en_validation_json_maxLength as maxLength,
+    _________locales_en_validation_json_min as min,
+    _________locales_en_validation_json_minLength as minLength,
+    _________locales_en_validation_json_negative as negative,
+    _________locales_en_validation_json_number as number,
+    _________locales_en_validation_json_password as password,
+    _________locales_en_validation_json_pattern as pattern,
+    _________locales_en_validation_json_phone as phone,
+    _________locales_en_validation_json_positive as positive,
+    _________locales_en_validation_json_required as required,
+    time$1 as time,
+    _________locales_en_validation_json_unique as unique,
+    _________locales_en_validation_json_url as url,
+  };
+}
+
+var title$4 = "Settings";
+var subtitle$1 = "Manage your account settings and preferences";
+var loading = "Loading settings...";
+var tabs = {
+	profile: "Profile",
+	account: "Account",
+	merchant: "Business",
+	outlet: "Outlet",
+	security: "Security",
+	subscription: "Subscription",
+	currency: "Currency",
+	language: "Language",
+	notifications: "Notifications",
+	preferences: "Preferences"
+};
+var profile$1 = {
+	title: "Profile Settings",
+	subtitle: "Manage your personal information",
+	personalInformation: "Personal Information",
+	firstName: "First Name",
+	lastName: "Last Name",
+	name: "Full Name",
+	email: "Email Address",
+	phone: "Phone Number",
+	role: "Role",
+	avatar: "Profile Picture",
+	updateButton: "Update Profile",
+	uploadAvatar: "Upload Photo",
+	removeAvatar: "Remove Photo",
+	edit: "Edit",
+	save: "Save",
+	cancel: "Cancel",
+	saving: "Saving...",
+	notProvided: "Not provided",
+	enterFirstName: "Enter your first name",
+	enterLastName: "Enter your last name",
+	enterPhone: "Enter your phone number"
+};
+var account = {
+	title: "Account Settings",
+	subtitle: "Manage your account preferences",
+	timezone: "Timezone",
+	dateFormat: "Date Format",
+	timeFormat: "Time Format",
+	numberFormat: "Number Format",
+	changePasswordTitle: "Change Password",
+	changePasswordDesc: "Update your account password",
+	changePasswordButton: "Change Password",
+	sessionTitle: "Session Management",
+	sessionDesc: "Sign out of your current session",
+	signOut: "Sign Out",
+	deleteAccountTitle: "Delete Account",
+	deleteAccountDesc: "Permanently delete your account and all data",
+	deleteAccount: "Delete Account",
+	deleting: "Deleting...",
+	deleteAccountWarning: "This action cannot be undone"
+};
+var merchant = {
+	title: "Business Settings",
+	subtitle: "Manage your business information",
+	businessInformation: "Business Information",
+	name: "Business Name",
+	email: "Business Email",
+	phone: "Business Phone",
+	address: "Business Address",
+	city: "City",
+	state: "State",
+	zipCode: "ZIP Code",
+	country: "Country",
+	taxId: "Tax ID",
+	businessType: "Business Type",
+	pricingType: "Pricing Type",
+	registrationNumber: "Registration Number",
+	logo: "Business Logo",
+	edit: "Edit",
+	save: "Save",
+	cancel: "Cancel",
+	saving: "Saving...",
+	notProvided: "Not provided",
+	enterBusinessName: "Enter business name",
+	enterTaxId: "Enter tax ID",
+	enterPhone: "Enter phone number",
+	enterAddress: "Enter address",
+	enterCity: "Enter city",
+	enterState: "Enter state",
+	enterZipCode: "Enter ZIP code",
+	selectCountry: "Select country",
+	currencySettings: "Currency Settings",
+	currencyDesc: "Select your preferred currency for pricing and transactions",
+	usDollar: "US Dollar",
+	vietnameseDong: "Vietnamese Dong",
+	selected: "Selected",
+	selectCurrency: "Select Currency",
+	savingCurrency: "Updating currency..."
+};
+var outlet = {
+	title: "Outlet Settings",
+	subtitle: "Manage your outlet information",
+	outletInformation: "Outlet Information",
+	name: "Outlet Name",
+	address: "Outlet Address",
+	phone: "Outlet Phone",
+	description: "Description",
+	workingHours: "Working Hours",
+	contactPerson: "Contact Person",
+	edit: "Edit",
+	save: "Save",
+	cancel: "Cancel",
+	saving: "Saving...",
+	notProvided: "Not provided",
+	noOutletInfo: "No outlet information available",
+	enterOutletName: "Enter outlet name",
+	enterOutletPhone: "Enter outlet phone",
+	enterOutletAddress: "Enter outlet address",
+	enterDescription: "Enter outlet description"
+};
+var security = {
+	title: "Security Settings",
+	subtitle: "Manage your password and security preferences",
+	currentPassword: "Current Password",
+	newPassword: "New Password",
+	confirmPassword: "Confirm New Password",
+	changePassword: "Change Password",
+	twoFactorAuth: "Two-Factor Authentication",
+	enableTwoFactor: "Enable 2FA",
+	disableTwoFactor: "Disable 2FA",
+	activeSessions: "Active Sessions",
+	logoutAllDevices: "Logout from all devices"
+};
+var subscription = {
+	title: "Subscription",
+	subtitle: "Manage your subscription plan",
+	currentPlan: "Current Plan",
+	status: "Status",
+	billingCycle: "Billing Cycle",
+	nextBilling: "Next Billing",
+	amount: "Amount",
+	paymentMethod: "Payment Method",
+	upgradePlan: "Upgrade Plan",
+	downgradePlan: "Downgrade Plan",
+	cancelSubscription: "Cancel Subscription",
+	viewInvoices: "View Invoices",
+	planFeatures: "Plan Features",
+	usageStats: "Usage Statistics",
+	loading: "Loading subscription data...",
+	active: "Active",
+	expired: "Expired",
+	expiringSoon: "Expiring Soon",
+	daysRemaining: "days remaining",
+	cancelsAtPeriodEnd: "Cancels at period end",
+	autoRenewalEnabled: "Auto-renewal enabled",
+	expiresIn: "Your subscription expires in",
+	considerRenewing: "Consider renewing to avoid service interruption.",
+	contactMerchant: "Contact your merchant administrator to manage subscription settings.",
+	comingSoon: "Subscription management features coming soon.",
+	noSubscription: "No Active Subscription",
+	noSubscriptionDesc: "You don't have an active subscription plan.",
+	contactAdmin: "Please contact your system administrator to activate a subscription plan."
+};
+var currency = {
+	title: "Currency Settings",
+	subtitle: "Select your preferred currency",
+	selectCurrency: "Select Currency",
+	currentCurrency: "Current Currency",
+	symbol: "Symbol",
+	code: "Code",
+	exchangeRate: "Exchange Rate",
+	updateButton: "Update Currency"
+};
+var language = {
+	title: "Language Settings",
+	subtitle: "Select your preferred language for the interface",
+	selectLanguage: "Select Language",
+	currentLanguage: "Current Language",
+	english: "English",
+	vietnamese: "Tiếng Việt",
+	updateButton: "Update Language",
+	selectALanguage: "Select a language",
+	applyingChanges: "Applying language changes...",
+	languagePreferenceSaved: "Your language preference is saved automatically and will be used across all your sessions."
+};
+var notifications = {
+	title: "Notification Settings",
+	subtitle: "Manage your notification preferences",
+	emailNotifications: "Email Notifications",
+	pushNotifications: "Push Notifications",
+	smsNotifications: "SMS Notifications",
+	orderUpdates: "Order Updates",
+	paymentAlerts: "Payment Alerts",
+	systemAlerts: "System Alerts",
+	marketingEmails: "Marketing Emails"
+};
+var billing = {
+	title: "Billing Configuration",
+	subtitle: "Configure billing intervals and discount percentages",
+	modernSubscription: "Modern Subscription Billing",
+	modernSubscriptionDesc: "Configure billing intervals and discount percentages following Stripe's modern subscription practices. Longer commitments typically receive higher discounts to encourage customer retention.",
+	intervals: {
+		title: "Billing Intervals",
+		addInterval: "Add Interval",
+		editInterval: "Edit Billing Interval",
+		addNewInterval: "Add Billing Interval",
+		name: "Name",
+		months: "Months",
+		discount: "Discount",
+		status: "Status",
+		actions: "Actions",
+		active: "Active",
+		namePlaceholder: "e.g., Monthly, Quarterly",
+		update: "Update",
+		add: "Add",
+		cancel: "Cancel",
+		saveConfiguration: "Save Configuration",
+		saving: "Saving..."
+	},
+	examples: {
+		monthly: "Monthly",
+		quarterly: "Quarterly",
+		yearly: "Yearly",
+		monthlyDesc: "0% discount - Standard pricing",
+		quarterlyDesc: "5% discount - Good for retention",
+		yearlyDesc: "20% discount - Best value"
+	},
+	messages: {
+		saveSuccess: "Billing configuration saved successfully!",
+		saveFailed: "Failed to save billing configuration",
+		saveError: "Error saving billing configuration. Please try again."
+	}
+};
+var menuItems = {
+	profile: {
+		label: "Profile",
+		description: "Manage your personal information"
+	},
+	merchant: {
+		label: "Business",
+		description: "Manage your business information, pricing, and currency"
+	},
+	outlet: {
+		label: "Outlet",
+		description: "Manage your outlet information"
+	},
+	subscription: {
+		label: "Subscription",
+		description: "Manage your subscription and billing"
+	},
+	language: {
+		label: "Language",
+		description: "Select your preferred language"
+	},
+	account: {
+		label: "Account",
+		description: "Account settings, password and preferences"
+	}
+};
+var messages$4 = {
+	updateSuccess: "Settings updated successfully",
+	updateFailed: "Failed to update settings",
+	passwordChanged: "Password changed successfully",
+	passwordChangeFailed: "Failed to change password",
+	confirmDelete: "Are you sure you want to delete your account?",
+	deleteSuccess: "Account deleted successfully",
+	deleteFailed: "Failed to delete account",
+	personalProfileUpdated: "Personal profile updated successfully!",
+	personalProfileUpdateFailed: "Failed to update personal profile",
+	businessInfoUpdated: "Business information updated successfully!",
+	businessInfoUpdateFailed: "Failed to update business information",
+	outletInfoUpdated: "Outlet information updated successfully!",
+	outletInfoUpdateFailed: "Failed to update outlet information",
+	currencyUpdated: "Currency updated successfully!",
+	currencyUpdateFailed: "Failed to update currency",
+	accountDeleted: "Your account has been deleted successfully.",
+	accountDeleteFailed: "Failed to delete account. Please try again.",
+	passwordMismatch: "New passwords do not match",
+	passwordTooShort: "New password must be at least 6 characters"
+};
+var deleteAccountDialog = {
+	title: "Delete Account",
+	description: "Are you sure you want to delete your account? This action cannot be undone and will permanently remove:",
+	profileInfo: "Your profile and personal information",
+	orderHistory: "All your orders and transaction history",
+	productListings: "Your product listings and inventory",
+	savedPreferences: "Any saved preferences and settings",
+	irreversibleWarning: "This action is irreversible.",
+	cancel: "Cancel",
+	deleteAccount: "Delete Account",
+	deleting: "Deleting..."
+};
+var changePassword$1 = {
+	title: "Change Password",
+	currentPassword: "Current Password",
+	newPassword: "New Password",
+	confirmPassword: "Confirm New Password",
+	currentPasswordPlaceholder: "Enter your current password",
+	newPasswordPlaceholder: "Enter your new password",
+	confirmPasswordPlaceholder: "Confirm your new password",
+	cancel: "Cancel",
+	changePassword: "Change Password",
+	changing: "Changing..."
+};
+var settings = {
+	title: title$4,
+	subtitle: subtitle$1,
+	loading: loading,
+	tabs: tabs,
+	profile: profile$1,
+	account: account,
+	merchant: merchant,
+	outlet: outlet,
+	security: security,
+	subscription: subscription,
+	currency: currency,
+	language: language,
+	notifications: notifications,
+	billing: billing,
+	menuItems: menuItems,
+	messages: messages$4,
+	deleteAccountDialog: deleteAccountDialog,
+	changePassword: changePassword$1
+};
+
+declare const _________locales_en_settings_json_account: typeof account;
+declare const _________locales_en_settings_json_billing: typeof billing;
+declare const _________locales_en_settings_json_currency: typeof currency;
+declare const _________locales_en_settings_json_deleteAccountDialog: typeof deleteAccountDialog;
+declare const _________locales_en_settings_json_language: typeof language;
+declare const _________locales_en_settings_json_loading: typeof loading;
+declare const _________locales_en_settings_json_menuItems: typeof menuItems;
+declare const _________locales_en_settings_json_merchant: typeof merchant;
+declare const _________locales_en_settings_json_notifications: typeof notifications;
+declare const _________locales_en_settings_json_outlet: typeof outlet;
+declare const _________locales_en_settings_json_security: typeof security;
+declare const _________locales_en_settings_json_subscription: typeof subscription;
+declare const _________locales_en_settings_json_tabs: typeof tabs;
+declare namespace _________locales_en_settings_json {
+  export {
+    _________locales_en_settings_json_account as account,
+    _________locales_en_settings_json_billing as billing,
+    changePassword$1 as changePassword,
+    _________locales_en_settings_json_currency as currency,
+    settings as default,
+    _________locales_en_settings_json_deleteAccountDialog as deleteAccountDialog,
+    _________locales_en_settings_json_language as language,
+    _________locales_en_settings_json_loading as loading,
+    _________locales_en_settings_json_menuItems as menuItems,
+    _________locales_en_settings_json_merchant as merchant,
+    messages$4 as messages,
+    _________locales_en_settings_json_notifications as notifications,
+    _________locales_en_settings_json_outlet as outlet,
+    profile$1 as profile,
+    _________locales_en_settings_json_security as security,
+    _________locales_en_settings_json_subscription as subscription,
+    subtitle$1 as subtitle,
+    _________locales_en_settings_json_tabs as tabs,
+    title$4 as title,
+  };
+}
+
+var title$3 = "Customers";
+var subtitle = "Manage customers in the system";
+var pageTitle = "Customer Management";
+var createCustomer = "Add Customer";
+var editCustomer = "Edit Customer";
+var viewCustomer = "View Customer";
+var customerDetails = "Customer Details";
+var customerInformation = "Customer Information";
+var noDataAvailable = "No customer data available";
+var viewCustomerInfo = "View customer information and details";
+var customerOverview = "Customer Overview";
+var personalInformation = "Personal Information";
+var addressInformation = "Address Information";
+var updating = "Updating...";
+var updateCustomer = "Update Customer";
+var deleting = "Deleting...";
+var fields$1 = {
+	id: "ID",
+	firstName: "First Name",
+	lastName: "Last Name",
+	fullName: "Full Name",
+	name: "Name",
+	email: "Email",
+	phone: "Phone Number",
+	contact: "Contact",
+	address: "Address",
+	streetAddress: "Street Address",
+	city: "City",
+	state: "State/Province",
+	country: "Country",
+	zipCode: "ZIP/Postal Code",
+	location: "Location",
+	dateOfBirth: "Date of Birth",
+	idNumber: "ID Number",
+	notes: "Notes",
+	tags: "Tags",
+	createdAt: "Created",
+	customerId: "Customer ID",
+	lastUpdated: "Last Updated",
+	merchant: "Merchant",
+	companyName: "Company Name",
+	noAddress: "No address provided",
+	notProvided: "Not provided",
+	notSpecified: "Not specified",
+	notAvailable: "Not available",
+	loading: "Loading..."
+};
+var profile = {
+	title: "Customer Profile",
+	contact: "Contact Information",
+	address: "Address Information",
+	identification: "Identification",
+	preferences: "Preferences",
+	notes: "Internal Notes"
+};
+var orders$1 = {
+	title: "Order History",
+	totalOrders: "Total Orders",
+	activeOrders: "Active Orders",
+	completedOrders: "Completed Orders",
+	totalSpent: "Total Spent",
+	viewOrders: "View All Orders",
+	createOrder: "Create Order for Customer",
+	noOrders: "No orders yet"
+};
+var stats$3 = {
+	title: "Customer Statistics",
+	memberSince: "Member Since",
+	lastOrder: "Last Order",
+	averageOrderValue: "Average Order Value",
+	lifetimeValue: "Lifetime Value",
+	paymentStatus: "Payment Status",
+	currentBalance: "Current Balance"
+};
+var status$2 = {
+	active: "Active",
+	inactive: "Inactive",
+	blocked: "Blocked",
+	vip: "VIP"
+};
+var actions$2 = {
+	title: "Actions",
+	view: "View Details",
+	edit: "Edit",
+	editCustomer: "Edit Customer",
+	viewOrders: "View Orders",
+	orders: "Orders",
+	createOrder: "Create Order",
+	viewHistory: "View History",
+	sendMessage: "Send Message",
+	block: "Block Customer",
+	unblock: "Unblock Customer",
+	"delete": "Delete",
+	deleteCustomer: "Delete Customer",
+	activate: "Activate Customer",
+	deactivate: "Deactivate Customer"
+};
+var messages$3 = {
+	createSuccess: "Customer created successfully",
+	createFailed: "Failed to create customer",
+	updateSuccess: "Customer updated successfully",
+	updateFailed: "Failed to update customer",
+	deleteSuccess: "Customer deleted successfully",
+	deleteFailed: "Failed to delete customer",
+	confirmDelete: "Are you sure you want to delete this customer?",
+	confirmDeleteDetails: "Are you sure you want to delete {name}? This action cannot be undone and will permanently remove all customer data.",
+	noCustomers: "No customers found",
+	noCustomersDescription: "Try adjusting your filters or add some customers to get started.",
+	tryAdjustingSearch: "Try adjusting your search",
+	getStarted: "Get started by adding your first customer",
+	loadingCustomers: "Loading customers...",
+	na: "N/A",
+	noChanges: "No changes detected"
+};
+var filters$2 = {
+	all: "All Customers",
+	active: "Active",
+	inactive: "Inactive",
+	vip: "VIP",
+	hasActiveOrders: "Has Active Orders",
+	hasOverduePayments: "Has Overdue Payments"
+};
+var search$2 = {
+	placeholder: "Search customers by name, email, or phone...",
+	noResults: "No customers found matching your search"
+};
+var validation = {
+	firstNameRequired: "First name is required",
+	firstNameMinLength: "First name must be at least 2 characters",
+	lastNameRequired: "Last name is required",
+	lastNameMinLength: "Last name must be at least 2 characters",
+	emailInvalid: "Email is invalid",
+	phoneRequired: "Phone number is required",
+	phoneInvalid: "Phone number contains invalid characters",
+	phoneMinLength: "Phone number must be at least 8 digits"
+};
+var placeholders = {
+	enterFirstName: "Enter first name",
+	enterLastName: "Enter last name",
+	enterEmail: "Enter email address (optional)",
+	enterPhone: "Enter phone number (optional)",
+	enterCompanyName: "Enter company name (optional)",
+	enterStreetAddress: "Enter street address (optional)",
+	enterCity: "Enter city (optional)",
+	enterState: "Enter state (optional)",
+	enterZipCode: "Enter ZIP code (optional)",
+	enterCountry: "Enter country (optional)"
+};
+var customers = {
+	title: title$3,
+	subtitle: subtitle,
+	pageTitle: pageTitle,
+	createCustomer: createCustomer,
+	editCustomer: editCustomer,
+	viewCustomer: viewCustomer,
+	customerDetails: customerDetails,
+	customerInformation: customerInformation,
+	noDataAvailable: noDataAvailable,
+	viewCustomerInfo: viewCustomerInfo,
+	customerOverview: customerOverview,
+	personalInformation: personalInformation,
+	addressInformation: addressInformation,
+	updating: updating,
+	updateCustomer: updateCustomer,
+	deleting: deleting,
+	fields: fields$1,
+	profile: profile,
+	orders: orders$1,
+	stats: stats$3,
+	status: status$2,
+	actions: actions$2,
+	messages: messages$3,
+	filters: filters$2,
+	search: search$2,
+	validation: validation,
+	placeholders: placeholders
+};
+
+declare const _________locales_en_customers_json_addressInformation: typeof addressInformation;
+declare const _________locales_en_customers_json_createCustomer: typeof createCustomer;
+declare const _________locales_en_customers_json_customerDetails: typeof customerDetails;
+declare const _________locales_en_customers_json_customerInformation: typeof customerInformation;
+declare const _________locales_en_customers_json_customerOverview: typeof customerOverview;
+declare const _________locales_en_customers_json_deleting: typeof deleting;
+declare const _________locales_en_customers_json_editCustomer: typeof editCustomer;
+declare const _________locales_en_customers_json_noDataAvailable: typeof noDataAvailable;
+declare const _________locales_en_customers_json_pageTitle: typeof pageTitle;
+declare const _________locales_en_customers_json_personalInformation: typeof personalInformation;
+declare const _________locales_en_customers_json_placeholders: typeof placeholders;
+declare const _________locales_en_customers_json_profile: typeof profile;
+declare const _________locales_en_customers_json_subtitle: typeof subtitle;
+declare const _________locales_en_customers_json_updateCustomer: typeof updateCustomer;
+declare const _________locales_en_customers_json_updating: typeof updating;
+declare const _________locales_en_customers_json_validation: typeof validation;
+declare const _________locales_en_customers_json_viewCustomer: typeof viewCustomer;
+declare const _________locales_en_customers_json_viewCustomerInfo: typeof viewCustomerInfo;
+declare namespace _________locales_en_customers_json {
+  export {
+    actions$2 as actions,
+    _________locales_en_customers_json_addressInformation as addressInformation,
+    _________locales_en_customers_json_createCustomer as createCustomer,
+    _________locales_en_customers_json_customerDetails as customerDetails,
+    _________locales_en_customers_json_customerInformation as customerInformation,
+    _________locales_en_customers_json_customerOverview as customerOverview,
+    customers as default,
+    _________locales_en_customers_json_deleting as deleting,
+    _________locales_en_customers_json_editCustomer as editCustomer,
+    fields$1 as fields,
+    filters$2 as filters,
+    messages$3 as messages,
+    _________locales_en_customers_json_noDataAvailable as noDataAvailable,
+    orders$1 as orders,
+    _________locales_en_customers_json_pageTitle as pageTitle,
+    _________locales_en_customers_json_personalInformation as personalInformation,
+    _________locales_en_customers_json_placeholders as placeholders,
+    _________locales_en_customers_json_profile as profile,
+    search$2 as search,
+    stats$3 as stats,
+    status$2 as status,
+    _________locales_en_customers_json_subtitle as subtitle,
+    title$3 as title,
+    _________locales_en_customers_json_updateCustomer as updateCustomer,
+    _________locales_en_customers_json_updating as updating,
+    _________locales_en_customers_json_validation as validation,
+    _________locales_en_customers_json_viewCustomer as viewCustomer,
+    _________locales_en_customers_json_viewCustomerInfo as viewCustomerInfo,
+  };
+}
+
+var title$2 = "Products";
+var productName = "Product Name";
+var createProduct = "Add Product";
+var editProduct = "Edit Product";
+var viewProduct = "View Product";
+var productDetails = "Product Details";
+var fields = {
+	name: "Product Name",
+	category: "Category",
+	barcode: "Barcode",
+	sku: "SKU",
+	description: "Description",
+	price: "Price",
+	rentPrice: "Rental Price",
+	salePrice: "Sale Price",
+	deposit: "Deposit",
+	stock: "Stock",
+	available: "Available",
+	renting: "Currently Renting",
+	minRentalPeriod: "Minimum Rental Period",
+	maxRentalPeriod: "Maximum Rental Period",
+	images: "Product Images",
+	specifications: "Specifications",
+	notes: "Notes"
+};
+var stock = {
+	label: "Stock",
+	renting: "Renting"
+};
+var price = {
+	sale: "Sale"
+};
+var status$1 = {
+	active: "Active",
+	inactive: "Inactive",
+	inStock: "In Stock",
+	outOfStock: "Out of Stock",
+	lowStock: "Low Stock"
+};
+var inventory = {
+	title: "Inventory",
+	inStock: "In Stock",
+	outOfStock: "Out of Stock",
+	lowStock: "Low Stock",
+	totalStock: "Total Stock",
+	availableStock: "Available",
+	stockSummary: "Stock Summary",
+	rentedOut: "Rented Out",
+	reserved: "Reserved",
+	updateStock: "Update Stock",
+	stockHistory: "Stock History",
+	outletStockDistribution: "Outlet Stock Distribution",
+	stockAllocation: "Stock allocation across different outlets",
+	noOutletStock: "No outlet stock information available",
+	notAssignedToOutlets: "This product may not be assigned to any outlets yet.",
+	totalOutlets: "Total outlets",
+	stockEntries: "Outlet stock entries",
+	stockRequired: "Stock values are required",
+	noOutletsAvailable: "No Outlets Available",
+	needOutletFirst: "You need to create at least one outlet before you can add products. Please contact your administrator.",
+	needOutletMessage: "You need to create at least one outlet before you can add products. Products must be assigned to specific outlets for inventory management.",
+	contactAdmin: "Please contact your administrator to set up outlets for your merchant.",
+	creating: "Creating..."
+};
+var availability = {
+	title: "Availability",
+	available: "Available",
+	notAvailable: "Not Available",
+	partiallyAvailable: "Partially Available",
+	checkAvailability: "Check Availability",
+	availableFrom: "Available from",
+	availableUntil: "Available until"
+};
+var pricing = {
+	title: "Pricing",
+	hourly: "Hourly Rate",
+	daily: "Daily Rate",
+	weekly: "Weekly Rate",
+	monthly: "Monthly Rate",
+	custom: "Custom Rate",
+	depositRequired: "Deposit Required"
+};
+var actions$1 = {
+	viewDetails: "View Details",
+	edit: "Edit Product",
+	viewOrders: "View Orders",
+	activate: "Activate",
+	deactivate: "Deactivate",
+	"delete": "Delete Product",
+	viewHistory: "View History",
+	duplicate: "Duplicate Product",
+	archive: "Archive Product",
+	restore: "Restore Product"
+};
+var messages$2 = {
+	createSuccess: "Product created successfully",
+	createFailed: "Failed to create product",
+	updateSuccess: "Product updated successfully",
+	updateFailed: "Failed to update product",
+	updateProduct: "Update Product",
+	updating: "Updating...",
+	deleteSuccess: "Product deleted successfully",
+	deleteFailed: "Failed to delete product",
+	confirmDelete: "Are you sure you want to delete this product?",
+	noProducts: "No products found",
+	noProductsDescription: "Try adjusting your filters or add some products to get started.",
+	loadingProducts: "Loading products...",
+	tryAdjustingSearch: "Try adjusting your search or filters",
+	getStarted: "Get started by adding your first product",
+	generateBarcode: "Generate new barcode",
+	maxImagesReached: "Maximum images reached",
+	dragDropImages: "Drag and drop images here",
+	imageFormats: "Supports JPG, PNG, WebP, GIF up to 5MB each (max 3 images, optional)",
+	imagesUploaded: "images uploaded (optional)",
+	clearAllImages: "Clear All Images",
+	uploadFailed: "Upload Failed",
+	preparing: "Preparing...",
+	uploading: "Uploading",
+	processing: "Processing...",
+	complete: "Complete!",
+	removeImage: "Remove image"
+};
+var filters$1 = {
+	all: "All Products",
+	available: "Available",
+	rented: "Currently Rented",
+	outOfStock: "Out of Stock",
+	outletLabel: "Outlet",
+	allOutlets: "All Outlets",
+	categoryLabel: "Category",
+	allCategories: "All Categories",
+	priceRange: "Price Range",
+	clear: "Clear"
+};
+var search$1 = {
+	placeholder: "Search products by name, barcode, or SKU...",
+	noResults: "No products found matching your search"
+};
+var stats$2 = {
+	totalProducts: "Total Products",
+	availableProducts: "Available",
+	rentedProducts: "Rented",
+	totalValue: "Total Inventory Value"
+};
+var selectedProducts = "Selected Products";
+var noProductsSelected = "No Products Selected";
+var productInformationNotAvailable = "Product information not available";
+var productId = "Product ID";
+var products = {
+	title: title$2,
+	productName: productName,
+	createProduct: createProduct,
+	editProduct: editProduct,
+	viewProduct: viewProduct,
+	productDetails: productDetails,
+	fields: fields,
+	stock: stock,
+	price: price,
+	status: status$1,
+	inventory: inventory,
+	availability: availability,
+	pricing: pricing,
+	actions: actions$1,
+	messages: messages$2,
+	filters: filters$1,
+	search: search$1,
+	stats: stats$2,
+	selectedProducts: selectedProducts,
+	noProductsSelected: noProductsSelected,
+	productInformationNotAvailable: productInformationNotAvailable,
+	productId: productId
+};
+
+declare const _________locales_en_products_json_availability: typeof availability;
+declare const _________locales_en_products_json_createProduct: typeof createProduct;
+declare const _________locales_en_products_json_editProduct: typeof editProduct;
+declare const _________locales_en_products_json_fields: typeof fields;
+declare const _________locales_en_products_json_inventory: typeof inventory;
+declare const _________locales_en_products_json_noProductsSelected: typeof noProductsSelected;
+declare const _________locales_en_products_json_price: typeof price;
+declare const _________locales_en_products_json_pricing: typeof pricing;
+declare const _________locales_en_products_json_productDetails: typeof productDetails;
+declare const _________locales_en_products_json_productId: typeof productId;
+declare const _________locales_en_products_json_productInformationNotAvailable: typeof productInformationNotAvailable;
+declare const _________locales_en_products_json_productName: typeof productName;
+declare const _________locales_en_products_json_selectedProducts: typeof selectedProducts;
+declare const _________locales_en_products_json_stock: typeof stock;
+declare const _________locales_en_products_json_viewProduct: typeof viewProduct;
+declare namespace _________locales_en_products_json {
+  export {
+    actions$1 as actions,
+    _________locales_en_products_json_availability as availability,
+    _________locales_en_products_json_createProduct as createProduct,
+    products as default,
+    _________locales_en_products_json_editProduct as editProduct,
+    _________locales_en_products_json_fields as fields,
+    filters$1 as filters,
+    _________locales_en_products_json_inventory as inventory,
+    messages$2 as messages,
+    _________locales_en_products_json_noProductsSelected as noProductsSelected,
+    _________locales_en_products_json_price as price,
+    _________locales_en_products_json_pricing as pricing,
+    _________locales_en_products_json_productDetails as productDetails,
+    _________locales_en_products_json_productId as productId,
+    _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable,
+    _________locales_en_products_json_productName as productName,
+    search$1 as search,
+    _________locales_en_products_json_selectedProducts as selectedProducts,
+    stats$2 as stats,
+    status$1 as status,
+    _________locales_en_products_json_stock as stock,
+    title$2 as title,
+    _________locales_en_products_json_viewProduct as viewProduct,
+  };
+}
+
+var title$1 = "Orders";
+var createOrder = "Create Order";
+var editOrder = "Edit Order";
+var viewOrder = "View Order";
+var orderDetails = "Order Details";
+var orderNumber = "Order Number";
+var orderType = {
+	label: "Order Type",
+	RENT: "RENT",
+	SALE: "SALE"
+};
+var status = {
+	label: "Status",
+	RESERVED: "RESERVED",
+	PICKUPED: "PICKED UP",
+	RETURNED: "RETURNED",
+	COMPLETED: "COMPLETED",
+	CANCELLED: "CANCELLED"
+};
+var customer = {
+	label: "Customer",
+	name: "Customer Name",
+	phone: "Customer Phone",
+	email: "Customer Email",
+	selectCustomer: "Select Customer",
+	createCustomer: "Create New Customer",
+	noCustomer: "Walk-in Customer"
+};
+var dates = {
+	pickupDate: "Pickup Date",
+	returnDate: "Return Date",
+	returnLabel: "Return",
+	createdDate: "Created Date",
+	completedDate: "Completed Date"
+};
+var items = {
+	title: "Order Items",
+	product: "Product",
+	quantity: "Quantity",
+	price: "Price",
+	total: "Total",
+	addItem: "Add Item",
+	removeItem: "Remove Item",
+	noItems: "No items in this order"
+};
+var amount = {
+	total: "Total",
+	deposit: "Deposit",
+	subtotal: "Subtotal",
+	grandTotal: "Grand Total",
+	securityDeposit: "Security Deposit",
+	damageFee: "Damage Fee",
+	collateralType: "Collateral Type",
+	collateralDetails: "Collateral Details"
+};
+var detail = {
+	orderInformation: "Order Information",
+	customerInformation: "Customer Information",
+	products: "Products",
+	orderSummary: "Order Summary",
+	orderSettings: "Order Settings",
+	orderActions: "Order Actions",
+	viewAndManage: "View and manage order information",
+	seller: "Seller",
+	orderDate: "Order Date",
+	editSettings: "Edit Settings",
+	saveChanges: "Save Changes",
+	saving: "Saving...",
+	cancel: "Cancel",
+	notes: "Notes",
+	noNotes: "No notes",
+	noDetails: "No details",
+	collateralOther: "Other",
+	editOrder: "Edit Order",
+	settingsSaved: "Settings Saved",
+	settingsSavedMessage: "Order settings have been updated successfully",
+	saveFailed: "Save Failed",
+	saveFailedMessage: "Failed to save settings. Please try again.",
+	cancelOrderTitle: "Cancel Order",
+	cancelOrderMessage: "Are you sure you want to cancel this order? This action cannot be undone.",
+	keepOrder: "Keep Order",
+	cancelling: "Cancelling...",
+	cancelSuccess: "Cancellation Successful",
+	cancelSuccessMessage: "Order has been cancelled.",
+	cancelFailed: "Cancellation Failed",
+	cancelFailedMessage: "Failed to cancel order. Please try again.",
+	editFailed: "Edit Failed",
+	editFailedMessage: "Failed to enter edit mode. Please try again.",
+	editingRules: "Editing Rules",
+	rentOrderRule: "RENT orders: Can only be edited when status is",
+	saleOrderRule: "SALE orders: Can only be edited when status is",
+	status: "Status",
+	collectionAmount: "Collection Amount",
+	collateral: "Collateral",
+	alreadyCollected: "Already collected",
+	noCollectionNeeded: "No collection needed"
+};
+var payment = {
+	subtotal: "Subtotal",
+	discount: "Discount",
+	deposit: "Deposit",
+	tax: "Tax",
+	total: "Total Amount",
+	amountPaid: "Amount Paid",
+	amountDue: "Amount Due",
+	paymentMethod: "Payment Method",
+	cash: "Cash",
+	card: "Card",
+	transfer: "Transfer",
+	other: "Other"
+};
+var actions = {
+	label: "Actions",
+	view: "View",
+	edit: "Edit",
+	markAsPickedUp: "Mark as Picked Up",
+	pickingUp: "Picking up...",
+	markAsReturned: "Mark as Returned",
+	returning: "Returning...",
+	markAsCompleted: "Mark as Completed",
+	cancelOrder: "Cancel Order",
+	printReceipt: "Print Receipt",
+	sendReceipt: "Send Receipt",
+	viewHistory: "View History",
+	updateOrder: "Update Order",
+	confirmCreate: "Confirm & Create Order",
+	backToEdit: "Back to Edit",
+	orderPreview: "Order Preview",
+	reviewBeforeConfirm: "Review your order details before confirming"
+};
+var messages$1 = {
+	createSuccess: "Order created successfully",
+	createFailed: "Failed to create order",
+	updateSuccess: "Order updated successfully",
+	updateFailed: "Failed to update order",
+	deleteSuccess: "Order deleted successfully",
+	deleteFailed: "Failed to delete order",
+	confirmDelete: "Are you sure you want to delete this order?",
+	confirmCancel: "Are you sure you want to cancel this order?",
+	noOrders: "No orders found",
+	loadingOrders: "Loading orders...",
+	tryAdjustingFilters: "Try adjusting your filters or create some orders to get started.",
+	getStarted: "Get started by creating your first order",
+	noOrdersForProduct: "No Orders Found",
+	noOrdersForProductDescription: "This product hasn't been ordered yet.",
+	noOrdersForCustomer: "No orders found for this customer",
+	viewingAllOrders: "Viewing all",
+	mayBeSlow: "orders may be slow",
+	cannotEditOrder: "Only RESERVED orders can be edited",
+	errorLoadingOrders: "Error Loading Orders",
+	errorLoadingOrder: "Error Loading Order",
+	orderNotFound: "Order Not Found",
+	orderNotFoundMessage: "The order you're looking for could not be found.",
+	goBack: "Go Back",
+	viewAllOrders: "View All Orders",
+	retryLoading: "Retry Loading",
+	failedToUpdateOrder: "Failed to update order",
+	failedToFetchOrder: "Failed to fetch order details",
+	errorFetchingOrder: "An error occurred while fetching order details",
+	orderIdNotFound: "Order id not found",
+	unknownError: "Unknown error",
+	orders: "Orders",
+	edit: "Edit",
+	noBarcode: "No Barcode",
+	noCategory: "No Category",
+	outOfStock: "Out of Stock",
+	lowStock: "Low Stock",
+	inStock: "In Stock",
+	error: "Error",
+	duplicateCustomer: "Duplicate Customer",
+	customerCreated: "Customer Created",
+	customerCreatedMessage: "has been created and selected.",
+	failedToCreateCustomer: "Failed to create customer",
+	processing: "Processing...",
+	updateOrder: "Update Order",
+	preview: "Preview",
+	cancel: "Cancel",
+	resetSelection: "Reset Selection",
+	removeProduct: "Remove product",
+	deposit: "Deposit",
+	product: "Product",
+	unknownProduct: "Unknown Product",
+	clearSelectedCustomer: "Clear selected customer",
+	useAddNewCustomerButton: "Use the \"Add New Customer\" button above to create one",
+	rentalPeriod: "Rental Period",
+	selectRentalPeriod: "Select rental period",
+	editOrder: "Edit Order",
+	createNewOrder: "Create New Order",
+	confirmOrder: "Confirm Order",
+	orderPreview: "Order Preview",
+	reviewOrderDetails: "Review your order details before confirming",
+	customerInformationMissing: "Customer information is missing",
+	noOrderItemsAdded: "No order items added",
+	rentalDatesNotSet: "Rental dates are not set",
+	orderTotalAmountInvalid: "Order total amount is invalid",
+	notSet: "Not set",
+	notSelected: "Not selected",
+	totalPrice: "Total Price",
+	additionalInformation: "Additional Information"
+};
+var productOrders = {
+	title: "Product Orders",
+	description: "View and manage all orders for this product",
+	backToProducts: "Back to Products",
+	totalQuantity: "Total Quantity",
+	totalSales: "Total Sales",
+	reservedOrders: "Reserved Orders",
+	totalStock: "Total Stock",
+	availableInventory: "Available inventory",
+	currentlyRented: "Currently Rented",
+	outOnRental: "Out on rental",
+	availableNow: "Available Now",
+	readyToRent: "Ready to rent",
+	allTimeEarnings: "All time earnings"
+};
+var filters = {
+	all: "All Orders",
+	allStatus: "All Status",
+	allTypes: "All Types",
+	allOutlets: "All Outlets",
+	statusLabel: "Status",
+	typeLabel: "Type",
+	outletLabel: "Outlet",
+	loading: "Loading...",
+	error: "Error",
+	noOutlets: "No outlets",
+	clear: "Clear",
+	active: "Active",
+	completed: "Completed",
+	cancelled: "Cancelled",
+	overdue: "Overdue",
+	today: "Today",
+	thisWeek: "This Week",
+	thisMonth: "This Month",
+	dateRange: "Date Range"
+};
+var search = {
+	placeholder: "Search orders by number, customer name, or phone...",
+	noResults: "No orders found matching your search"
+};
+var stats$1 = {
+	totalOrders: "Total Orders",
+	allTimeOrders: "All time orders",
+	activeRentals: "Active Rentals",
+	currentlyPickuped: "Currently pickuped",
+	totalRevenue: "Total Revenue",
+	lifetimeRevenue: "Lifetime revenue",
+	completedOrders: "Completed Orders",
+	avgOrder: "avg order",
+	totalDeposits: "Total Deposits",
+	averageOrderValue: "Average Order Value",
+	overdueRentals: "Overdue Rentals",
+	revenueMetrics: "Revenue Metrics"
+};
+var orders = {
+	title: title$1,
+	createOrder: createOrder,
+	editOrder: editOrder,
+	viewOrder: viewOrder,
+	orderDetails: orderDetails,
+	orderNumber: orderNumber,
+	orderType: orderType,
+	status: status,
+	customer: customer,
+	dates: dates,
+	items: items,
+	amount: amount,
+	detail: detail,
+	payment: payment,
+	actions: actions,
+	messages: messages$1,
+	productOrders: productOrders,
+	filters: filters,
+	search: search,
+	stats: stats$1
+};
+
+declare const _________locales_en_orders_json_actions: typeof actions;
+declare const _________locales_en_orders_json_amount: typeof amount;
+declare const _________locales_en_orders_json_createOrder: typeof createOrder;
+declare const _________locales_en_orders_json_customer: typeof customer;
+declare const _________locales_en_orders_json_dates: typeof dates;
+declare const _________locales_en_orders_json_detail: typeof detail;
+declare const _________locales_en_orders_json_editOrder: typeof editOrder;
+declare const _________locales_en_orders_json_filters: typeof filters;
+declare const _________locales_en_orders_json_items: typeof items;
+declare const _________locales_en_orders_json_orderDetails: typeof orderDetails;
+declare const _________locales_en_orders_json_orderNumber: typeof orderNumber;
+declare const _________locales_en_orders_json_orderType: typeof orderType;
+declare const _________locales_en_orders_json_payment: typeof payment;
+declare const _________locales_en_orders_json_productOrders: typeof productOrders;
+declare const _________locales_en_orders_json_search: typeof search;
+declare const _________locales_en_orders_json_status: typeof status;
+declare const _________locales_en_orders_json_viewOrder: typeof viewOrder;
+declare namespace _________locales_en_orders_json {
+  export {
+    _________locales_en_orders_json_actions as actions,
+    _________locales_en_orders_json_amount as amount,
+    _________locales_en_orders_json_createOrder as createOrder,
+    _________locales_en_orders_json_customer as customer,
+    _________locales_en_orders_json_dates as dates,
+    orders as default,
+    _________locales_en_orders_json_detail as detail,
+    _________locales_en_orders_json_editOrder as editOrder,
+    _________locales_en_orders_json_filters as filters,
+    _________locales_en_orders_json_items as items,
+    messages$1 as messages,
+    _________locales_en_orders_json_orderDetails as orderDetails,
+    _________locales_en_orders_json_orderNumber as orderNumber,
+    _________locales_en_orders_json_orderType as orderType,
+    _________locales_en_orders_json_payment as payment,
+    _________locales_en_orders_json_productOrders as productOrders,
+    _________locales_en_orders_json_search as search,
+    stats$1 as stats,
+    _________locales_en_orders_json_status as status,
+    title$1 as title,
+    _________locales_en_orders_json_viewOrder as viewOrder,
+  };
+}
+
+var title = "Dashboard";
+var welcome = "Welcome back";
+var overview = "Overview";
+var stats = {
+	totalOrders: "Total Orders",
+	todayRentals: "Today's Rentals",
+	activeRentals: "Active Rentals",
+	totalRevenue: "Total Revenue",
+	totalCustomers: "Total Customers",
+	totalProducts: "Total Products",
+	availableProducts: "Available Products",
+	pendingOrders: "Pending Orders",
+	completedOrders: "Completed Orders",
+	overdueReturns: "Overdue Returns",
+	todayRevenue: "Today's Revenue",
+	thisWeekRevenue: "This Week's Revenue",
+	thisMonthRevenue: "This Month's Revenue",
+	futureRevenue: "Future Revenue",
+	realTimeData: "Real-time data",
+	bookedRevenue: "Booked revenue",
+	expectedRevenue: "Expected revenue from upcoming and ongoing rentals",
+	todayPickups: "Today's Pickups",
+	todayReturns: "Today's Returns",
+	productUtilization: "Product Utilization",
+	revenueGrowth: "Revenue Growth",
+	customerGrowth: "Customer Growth"
+};
+var tooltips = {
+	todayRevenue: "Total actual revenue from orders created today. Includes both rental and sales orders.",
+	todayRentals: "Number of new rental orders created today. Only counts orders with RESERVED, PICKUPED, or RETURNED status.",
+	activeRentals: "Total number of currently active rental orders. Includes all orders with PICKUPED status (currently being rented) and not yet returned.",
+	overdueReturns: "Number of rental orders that are overdue for return. Orders where the planned return date has passed but items haven't been returned yet.",
+	totalRevenue: "Total revenue from all orders in the system. Includes both rental and sales orders from the beginning until now.",
+	totalOrders: "Total number of orders created in the system. Includes all types of orders: rental, sales, and rent-to-own.",
+	totalCustomers: "Total number of customers registered in the system. Includes both individual and business customers.",
+	totalProducts: "Total number of products in inventory. Includes all products that have been added to the system.",
+	availableProducts: "Number of products currently available for rental. Excludes products that are currently being rented or have been sold.",
+	pendingOrders: "Number of orders waiting to be processed. Orders with RESERVED status that haven't been picked up yet.",
+	completedOrders: "Number of completed orders. Rental orders that have been returned or sales orders that have been delivered.",
+	futureRevenue: "Expected revenue from upcoming orders. Includes ongoing rentals and pre-booked orders.",
+	thisWeekRevenue: "Total revenue for this week. Calculated from Monday to Sunday of the current week.",
+	thisMonthRevenue: "Total revenue for this month. Calculated from the 1st to the end of the current month.",
+	thisYearRevenue: "Total revenue for this year. Calculated from January 1st to the present.",
+	customerGrowth: "Growth rate of new customers. Compared to the previous period.",
+	revenueGrowth: "Revenue growth rate. Compared to the previous period to assess business performance.",
+	productUtilization: "Product utilization rate. Percentage of products currently being rented compared to total available products."
+};
+var charts = {
+	revenueOverTime: "Revenue Over Time",
+	ordersByStatus: "Orders by Status",
+	topProducts: "Top Products",
+	customerActivity: "Customer Activity",
+	rentalTrends: "Rental Trends",
+	noData: "No data available for this period",
+	actualRevenue: "Actual Revenue",
+	projectedRevenue: "Projected Revenue",
+	rentalOrders: "Rental Orders",
+	ordersCount: "orders"
+};
+var chartTitles = {
+	dailyRevenue: "Daily Revenue",
+	monthlyRevenue: "Monthly Revenue",
+	yearlyRevenue: "Yearly Revenue",
+	monthlyRentals: "Monthly Rentals",
+	yearlyRentals: "Yearly Rentals"
+};
+var recentActivity = {
+	title: "Recent Activity",
+	newOrder: "New order created",
+	orderPickedUp: "Order picked up",
+	orderReturned: "Order returned",
+	newCustomer: "New customer registered",
+	productAdded: "New product added",
+	viewAll: "View all activities"
+};
+var quickActions = {
+	title: "Quick Actions",
+	createOrder: "Create Order",
+	addProduct: "Add Product",
+	addCustomer: "Add Customer",
+	viewCalendar: "View Calendar",
+	viewReports: "View Reports"
+};
+var upcomingReturns = {
+	title: "Upcoming Returns",
+	dueToday: "Due Today",
+	dueTomorrow: "Due Tomorrow",
+	dueThisWeek: "Due This Week",
+	overdue: "Overdue",
+	noReturns: "No upcoming returns"
+};
+var orderStatuses = {
+	reserved: "Reserved",
+	pickup: "Pickup",
+	"return": "Return",
+	completed: "Completed",
+	cancelled: "Cancelled",
+	ordersCount: "orders"
+};
+var dashboard = {
+	title: title,
+	welcome: welcome,
+	overview: overview,
+	stats: stats,
+	tooltips: tooltips,
+	charts: charts,
+	chartTitles: chartTitles,
+	recentActivity: recentActivity,
+	quickActions: quickActions,
+	upcomingReturns: upcomingReturns,
+	orderStatuses: orderStatuses
+};
+
+declare const _________locales_en_dashboard_json_chartTitles: typeof chartTitles;
+declare const _________locales_en_dashboard_json_charts: typeof charts;
+declare const _________locales_en_dashboard_json_orderStatuses: typeof orderStatuses;
+declare const _________locales_en_dashboard_json_overview: typeof overview;
+declare const _________locales_en_dashboard_json_quickActions: typeof quickActions;
+declare const _________locales_en_dashboard_json_recentActivity: typeof recentActivity;
+declare const _________locales_en_dashboard_json_stats: typeof stats;
+declare const _________locales_en_dashboard_json_title: typeof title;
+declare const _________locales_en_dashboard_json_tooltips: typeof tooltips;
+declare const _________locales_en_dashboard_json_upcomingReturns: typeof upcomingReturns;
+declare const _________locales_en_dashboard_json_welcome: typeof welcome;
+declare namespace _________locales_en_dashboard_json {
+  export {
+    _________locales_en_dashboard_json_chartTitles as chartTitles,
+    _________locales_en_dashboard_json_charts as charts,
+    dashboard as default,
+    _________locales_en_dashboard_json_orderStatuses as orderStatuses,
+    _________locales_en_dashboard_json_overview as overview,
+    _________locales_en_dashboard_json_quickActions as quickActions,
+    _________locales_en_dashboard_json_recentActivity as recentActivity,
+    _________locales_en_dashboard_json_stats as stats,
+    _________locales_en_dashboard_json_title as title,
+    _________locales_en_dashboard_json_tooltips as tooltips,
+    _________locales_en_dashboard_json_upcomingReturns as upcomingReturns,
+    _________locales_en_dashboard_json_welcome as welcome,
+  };
+}
+
+var login = {
+	title: "Login",
+	subtitle: "Sign in to your account",
+	email: "Email Address",
+	password: "Password",
+	rememberMe: "Remember me",
+	forgotPassword: "Forgot password?",
+	loginButton: "Sign In",
+	noAccount: "Don't have an account?",
+	signUp: "Sign up",
+	success: "Logged in successfully",
+	failed: "Login failed. Please check your credentials.",
+	invalidEmail: "Please enter a valid email address",
+	invalidPassword: "Password must be at least 6 characters"
+};
+var register = {
+	title: "Create Account",
+	subtitle: "Register a new account",
+	name: "Full Name",
+	email: "Email Address",
+	phone: "Phone Number",
+	password: "Password",
+	confirmPassword: "Confirm Password",
+	merchantName: "Business Name",
+	registerButton: "Create Account",
+	hasAccount: "Already have an account?",
+	signIn: "Sign in",
+	success: "Account created successfully",
+	failed: "Registration failed. Please try again.",
+	passwordMismatch: "Passwords do not match",
+	emailExists: "Email already exists",
+	termsAndConditions: "I agree to the Terms and Conditions",
+	agreeToTerms: "You must agree to the terms and conditions",
+	createMerchantAccount: "Create Merchant Account",
+	step1: "Step 1: Create your account",
+	step2: "Step 2: Business information",
+	account: "Account",
+	business: "Business",
+	firstName: "First Name",
+	lastName: "Last Name",
+	businessName: "Business Name",
+	businessType: "Business Type",
+	pricingType: "Pricing Type",
+	address: "Business Address",
+	city: "City",
+	state: "State",
+	zipCode: "ZIP Code",
+	country: "Country",
+	enterYourEmail: "Enter your email",
+	createPassword: "Create a password",
+	confirmYourPassword: "Confirm your password",
+	enterFirstName: "Enter your first name",
+	enterLastName: "Enter your last name",
+	enterPhoneNumber: "Enter your phone number",
+	enterBusinessName: "Enter your business name",
+	selectBusinessType: "Select business type",
+	selectPricingType: "Select pricing type",
+	enterBusinessAddress: "Enter your business address",
+	selectCountry: "Select country",
+	validating: "Validating...",
+	continueToBusinessInfo: "Continue to Business Info",
+	back: "Back",
+	creatingAccount: "Creating Account...",
+	importantNotice: "Important Notice",
+	cannotBeChanged: "Business Type and Pricing Type cannot be changed after registration. Please choose carefully as these settings will be locked permanently.",
+	freeTrialIncludes: "Free Trial Includes:",
+	fullAccessToAllFeatures: "Full access to all features",
+	defaultOutlet: "Default outlet",
+	mobileAppAccess: "Mobile app access",
+	noCreditCardRequired: "No credit card required",
+	termsOfService: "Terms of Service",
+	privacyPolicy: "Privacy Policy",
+	iAgreeToThe: "I agree to the",
+	and: "and",
+	registrationComplete: "Registration Complete!",
+	accountCreatedSuccessfully: "Account created successfully.",
+	checkEmailToActivate: "Please check your email to activate your account",
+	registrationFailed: "Registration Failed",
+	somethingWentWrong: "Something went wrong. Please try again.",
+	merchantNameRequired: "Merchant name is required",
+	merchantEmailRequired: "Merchant email is required",
+	userEmailRequired: "User email is required",
+	emailRequired: "Email is required",
+	emailInvalid: "Invalid email format",
+	passwordRequired: "Password is required",
+	passwordMinLength: "Your password must be at least 6 characters",
+	passwordMaxLength: "Your password must be at most 25 characters",
+	confirmPasswordRequired: "Confirm password is required",
+	firstNameRequired: "First name is required",
+	lastNameRequired: "Last name is required",
+	phoneRequired: "Phone number is required",
+	phoneInvalid: "Please enter a valid phone number",
+	phoneNumberInvalid: "Please enter a valid phone number",
+	phoneMinLength: "Phone number must be at least 10 digits",
+	phoneNumberMinLength: "Phone number must be at least 10 digits",
+	businessNameRequired: "Business name is required",
+	businessNameMinLength: "Business name must be at least 2 characters",
+	businessTypeRequired: "Please select your business type",
+	pricingTypeRequired: "Please select your pricing type",
+	addressRequired: "Address is required",
+	addressMinLength: "Address must be at least 5 characters",
+	cityRequired: "City is required",
+	cityMinLength: "City must be at least 2 characters",
+	stateRequired: "State is required",
+	stateMinLength: "State must be at least 2 characters",
+	zipCodeRequired: "ZIP code is required",
+	zipCodeInvalid: "Please enter a valid ZIP code",
+	countryRequired: "Country is required",
+	countryMinLength: "Country must be at least 2 characters",
+	mustAcceptTerms: "You must accept the Terms of Service and Privacy Policy",
+	businessTypes: {
+		general: {
+			label: "General Rental",
+			description: "Mixed rental business with various product types"
+		},
+		clothing: {
+			label: "Clothing & Fashion",
+			description: "Rent or sell clothing, accessories, and fashion items"
+		},
+		vehicle: {
+			label: "Vehicle Rental",
+			description: "Car, motorcycle, bicycle, and vehicle rental services"
+		},
+		equipment: {
+			label: "Equipment Rental",
+			description: "Tools, machinery, and equipment rental services"
+		}
+	},
+	pricingTypes: {
+		fixed: {
+			label: "Fixed Price",
+			description: "Same price regardless of rental duration"
+		},
+		hourly: {
+			label: "Hourly Pricing",
+			description: "Price calculated per hour of rental"
+		},
+		daily: {
+			label: "Daily Pricing",
+			description: "Price calculated per day of rental"
+		}
+	},
+	chooseBusinessType: "Choose the type of business you operate",
+	choosePricingType: "How do you want to price your rentals?",
+	personalInfo: "Personal Information",
+	contactInfo: "Contact Information",
+	accountSecurity: "Account Security",
+	businessInfo: "Business Information",
+	businessAddress: "Business Address"
+};
+var forgotPassword = {
+	title: "Forgot Password",
+	subtitle: "Enter your email to reset your password",
+	email: "Email Address",
+	sendButton: "Send Reset Link",
+	backToLogin: "Back to login",
+	success: "Password reset link sent to your email",
+	failed: "Failed to send reset link",
+	emailNotFound: "Email not found",
+	checkEmail: "Check your email for the reset link"
+};
+var changePassword = {
+	title: "Change Password",
+	currentPassword: "Current Password",
+	newPassword: "New Password",
+	confirmPassword: "Confirm New Password",
+	changeButton: "Change Password",
+	success: "Password changed successfully",
+	failed: "Failed to change password",
+	incorrectPassword: "Current password is incorrect",
+	passwordMismatch: "Passwords do not match"
+};
+var logout = {
+	title: "Logout",
+	message: "Are you sure you want to logout?",
+	confirm: "Yes, Logout",
+	cancel: "Cancel",
+	success: "Logged out successfully"
+};
+var checkEmail = {
+	title: "Please check your email",
+	subtitle: "We have sent an account activation link to your email",
+	emailSentTo: "Email sent to:",
+	nextSteps: "Next steps:",
+	step1: "Check your inbox",
+	step2: "Click the activation link in the email",
+	step3: "Log in after successful activation",
+	spamWarning: "If you don't see the email, please check your spam folder or promotions folder",
+	sending: "Sending...",
+	resendAfter: "Resend after {minutes} minutes",
+	emailResent: "Email has been resent",
+	resendEmail: "Resend activation email",
+	backToLogin: "Back to login",
+	resendSuccess: "Email sent",
+	resendSuccessMessage: "Please check your inbox",
+	rateLimitError: "Too many requests",
+	rateLimitMessage: "Please wait 5 minutes before trying again",
+	sendError: "Email send error",
+	sendErrorMessage: "Unable to send email. Please try again later."
+};
+var auth = {
+	login: login,
+	register: register,
+	forgotPassword: forgotPassword,
+	changePassword: changePassword,
+	logout: logout,
+	checkEmail: checkEmail
+};
+
+declare const _________locales_en_auth_json_changePassword: typeof changePassword;
+declare const _________locales_en_auth_json_checkEmail: typeof checkEmail;
+declare const _________locales_en_auth_json_forgotPassword: typeof forgotPassword;
+declare const _________locales_en_auth_json_login: typeof login;
+declare const _________locales_en_auth_json_logout: typeof logout;
+declare const _________locales_en_auth_json_register: typeof register;
+declare namespace _________locales_en_auth_json {
+  export {
+    _________locales_en_auth_json_changePassword as changePassword,
+    _________locales_en_auth_json_checkEmail as checkEmail,
+    auth as default,
+    _________locales_en_auth_json_forgotPassword as forgotPassword,
+    _________locales_en_auth_json_login as login,
+    _________locales_en_auth_json_logout as logout,
+    _________locales_en_auth_json_register as register,
+  };
+}
+
+var buttons = {
+	save: "Save",
+	cancel: "Cancel",
+	"delete": "Delete",
+	edit: "Edit",
+	add: "Add",
+	search: "Search",
+	filter: "Filter",
+	"export": "Export",
+	"import": "Import",
+	refresh: "Refresh",
+	submit: "Submit",
+	confirm: "Confirm",
+	close: "Close",
+	back: "Back",
+	next: "Next",
+	previous: "Previous",
+	create: "Create",
+	update: "Update",
+	view: "View",
+	download: "Download",
+	upload: "Upload",
+	reset: "Reset",
+	clear: "Clear",
+	apply: "Apply",
+	browse: "Browse Files",
+	saving: "Saving...",
+	tryAgain: "Try Again"
+};
+var labels = {
+	name: "Name",
+	email: "Email",
+	phone: "Phone",
+	address: "Address",
+	addressInformation: "Address Information",
+	city: "City",
+	state: "State",
+	country: "Country",
+	zipCode: "Zip Code",
+	description: "Description",
+	notes: "Notes",
+	status: "Status",
+	type: "Type",
+	category: "Category",
+	merchant: "Merchant",
+	price: "Price",
+	quantity: "Quantity",
+	total: "Total",
+	subtotal: "Subtotal",
+	discount: "Discount",
+	tax: "Tax",
+	date: "Date",
+	time: "Time",
+	createdAt: "Created At",
+	updatedAt: "Updated At",
+	actions: "Actions",
+	search: "Search",
+	noResults: "No results found",
+	noData: "No data",
+	loading: "Loading...",
+	success: "Success",
+	error: "Error",
+	warning: "Warning",
+	info: "Information",
+	pickup: "Pickup",
+	"return": "Return",
+	active: "Active",
+	inactive: "Inactive",
+	"default": "Default",
+	create: "Create",
+	unknown: "Unknown"
+};
+var messages = {
+	noBillingCycles: "No billing cycles found",
+	getStartedBillingCycle: "Get started by creating your first billing cycle",
+	noPlanVariants: "No plan variants found",
+	getStartedPlanVariant: "Get started by creating your first plan variant"
+};
+var navigation = {
+	home: "Home",
+	dashboard: "Dashboard",
+	orders: "Orders",
+	products: "Products",
+	allProducts: "All Products",
+	customers: "Customers",
+	settings: "Settings",
+	logout: "Logout",
+	profile: "Profile",
+	calendar: "Calendar",
+	users: "Users",
+	outlets: "Outlets",
+	categories: "Categories",
+	reports: "Reports",
+	analytics: "Analytics"
+};
+var pagination = {
+	showing: "Showing",
+	to: "to",
+	of: "of",
+	results: "results",
+	page: "Page",
+	rowsPerPage: "Rows per page",
+	first: "First",
+	last: "Last",
+	noData: "No data to display"
+};
+var time = {
+	today: "Today",
+	yesterday: "Yesterday",
+	tomorrow: "Tomorrow",
+	thisWeek: "This Week",
+	thisMonth: "This Month",
+	lastMonth: "Last Month",
+	thisYear: "This Year",
+	lastYear: "Last Year",
+	custom: "Custom",
+	from: "From",
+	to: "To",
+	year: "Year",
+	month: "Month",
+	week: "Week",
+	day: "Day"
+};
+var periods = {
+	daily: "Daily",
+	weekly: "Weekly",
+	monthly: "Monthly",
+	yearly: "Yearly",
+	monthlyAnalytics: "Monthly Analytics",
+	annualStrategy: "Annual Strategy",
+	dailyOperations: "Daily Operations",
+	weeklyReport: "Weekly Report",
+	monthlyReport: "Monthly Report",
+	yearlyReport: "Yearly Report"
+};
+var common = {
+	buttons: buttons,
+	labels: labels,
+	messages: messages,
+	navigation: navigation,
+	pagination: pagination,
+	time: time,
+	periods: periods
+};
+
+declare const _________locales_en_common_json_buttons: typeof buttons;
+declare const _________locales_en_common_json_labels: typeof labels;
+declare const _________locales_en_common_json_messages: typeof messages;
+declare const _________locales_en_common_json_navigation: typeof navigation;
+declare const _________locales_en_common_json_pagination: typeof pagination;
+declare const _________locales_en_common_json_periods: typeof periods;
+declare const _________locales_en_common_json_time: typeof time;
+declare namespace _________locales_en_common_json {
+  export {
+    _________locales_en_common_json_buttons as buttons,
+    common as default,
+    _________locales_en_common_json_labels as labels,
+    _________locales_en_common_json_messages as messages,
+    _________locales_en_common_json_navigation as navigation,
+    _________locales_en_common_json_pagination as pagination,
+    _________locales_en_common_json_periods as periods,
+    _________locales_en_common_json_time as time,
+  };
+}
+
+/**
+ * i18n Type Definitions
+ *
+ * Type-safe translations with autocomplete support
+ */
+type Messages = typeof _________locales_en_common_json & typeof _________locales_en_auth_json & typeof _________locales_en_dashboard_json & typeof _________locales_en_orders_json & typeof _________locales_en_products_json & typeof _________locales_en_customers_json & typeof _________locales_en_settings_json & typeof _________locales_en_validation_json;
+declare global {
+    type IntlMessages = Messages;
 }
 
 /**
@@ -1030,6 +2831,69 @@ interface CurrencyFormatOptions {
 }
 
 /**
+ * API Response Builder
+ * Chuẩn hóa response format với error codes để client có thể translate
+ */
+interface ApiResponse<T = any> {
+    success: boolean;
+    code?: string;
+    message?: string;
+    data?: T;
+    error?: any;
+    meta?: {
+        page?: number;
+        limit?: number;
+        total?: number;
+        hasMore?: boolean;
+    };
+}
+/**
+ * Response Builder Class
+ * Cung cấp các static methods để tạo standardized API responses
+ */
+declare class ResponseBuilder {
+    /**
+     * Build success response
+     * @param code - Success code (e.g., 'USER_CREATED_SUCCESS')
+     * @param data - Response data
+     * @param meta - Optional metadata (pagination, etc.)
+     */
+    static success<T>(code: string, data?: T, meta?: any): ApiResponse<T>;
+    /**
+     * Build error response
+     * @param code - Error code (e.g., 'INVALID_CREDENTIALS')
+     * @param error - Optional error details
+     */
+    static error(code: string, error?: any): ApiResponse;
+    /**
+     * Build paginated success response
+     * @param code - Success code
+     * @param data - Array of items
+     * @param pagination - Pagination info
+     */
+    static paginated<T>(code: string, data: T[], pagination: {
+        page: number;
+        limit: number;
+        total: number;
+    }): ApiResponse<T[]>;
+}
+/**
+ * Helper: Extract error code from error object
+ * Hữu ích khi catch errors và cần extract code
+ */
+declare function getErrorCode(error: any): string;
+/**
+ * Helper: Create error response from caught error
+ * Tự động detect error type và tạo appropriate response
+ */
+declare function createErrorResponse(error: any): ApiResponse;
+/**
+ * Get HTTP status code based on error type/code
+ * Helps determine appropriate status code for error responses
+ */
+declare function getErrorStatusCode(error: any, defaultCode?: number): number;
+
+/**
  * Core Error Codes - Simplified and Unified
  */
 declare enum ErrorCode {
@@ -1080,21 +2944,13 @@ declare enum ErrorCode {
     INVALID_FILE_TYPE = "INVALID_FILE_TYPE",
     UPLOAD_FAILED = "UPLOAD_FAILED"
 }
-interface ApiErrorResponse {
-    success: false;
-    message: string;
-    error: ErrorCode;
-    details?: string;
-    field?: string;
-}
-interface ApiSuccessResponse<T = any> {
+
+declare function isSuccessResponse<T>(response: ApiResponse<T>): response is ApiResponse<T> & {
     success: true;
-    data: T;
-    message?: string;
-}
-type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
-declare function isSuccessResponse<T>(response: ApiResponse<T>): response is ApiSuccessResponse<T>;
-declare function isErrorResponse(response: ApiResponse<any>): response is ApiErrorResponse;
+};
+declare function isErrorResponse(response: ApiResponse<any>): response is ApiResponse<any> & {
+    success: false;
+};
 declare const ERROR_MESSAGES: Record<ErrorCode, string>;
 declare const ERROR_STATUS_CODES: Record<ErrorCode, number>;
 declare class ApiError extends Error {
@@ -1103,7 +2959,12 @@ declare class ApiError extends Error {
     readonly details?: string;
     readonly field?: string;
     constructor(code: ErrorCode, message?: string, details?: string, field?: string);
-    toResponse(): ApiErrorResponse;
+    toJSON(): {
+        success: boolean;
+        code: ErrorCode;
+        message: string;
+        error: string;
+    };
 }
 declare class ValidationError extends ApiError {
     constructor(message: string, details?: string, field?: string);
@@ -1123,15 +2984,27 @@ declare class ForbiddenError extends ApiError {
 declare class PlanLimitError extends ApiError {
     constructor(message?: string, details?: string);
 }
-declare function createErrorResponse(code: ErrorCode, message?: string, details?: string, field?: string): ApiErrorResponse;
-declare function createSuccessResponse<T>(data: T, message?: string): ApiSuccessResponse<T>;
 declare function handlePrismaError(error: any): ApiError;
 declare function handleValidationError(error: any): ApiError;
 declare function handleBusinessError(error: any): ApiError;
 declare function handleApiError(error: any): {
-    response: ApiErrorResponse;
+    response: ApiResponse;
     statusCode: number;
 };
+/**
+ * Get translation key for error code
+ * This allows frontend to translate error messages client-side
+ *
+ * @param errorCode - The error code from API response
+ * @returns Translation key (same as error code for simplicity)
+ */
+declare function getErrorTranslationKey(errorCode: string | ErrorCode): string;
+/**
+ * Check if error code exists in our error system
+ * @param code - The error code to check
+ * @returns true if error code is valid
+ */
+declare function isValidErrorCode(code: string): code is ErrorCode;
 /**
  * Error types for better user experience
  */
@@ -1278,25 +3151,25 @@ interface PricingBreakdown {
 }
 interface PricingConfig {
     discounts: {
-        month: number;
-        quarter: number;
-        semiAnnual: number;
-        year: number;
+        monthly: number;
+        quarterly: number;
+        sixMonths: number;
+        yearly: number;
     };
     intervals: {
-        month: {
+        monthly: {
             interval: BillingInterval$1;
             intervalCount: number;
         };
-        quarter: {
+        quarterly: {
             interval: BillingInterval$1;
             intervalCount: number;
         };
-        semiAnnual: {
+        sixMonths: {
             interval: BillingInterval$1;
             intervalCount: number;
         };
-        year: {
+        yearly: {
             interval: BillingInterval$1;
             intervalCount: number;
         };
@@ -1416,21 +3289,21 @@ declare class PricingResolver {
      * Resolve pricing type cho product dựa trên merchant config
      * Simple: Chỉ dùng pricingType từ merchant (không cần pricingConfig object)
      */
-    static resolvePricingType(product: Product, merchant: Merchant$1): PricingType;
+    static resolvePricingType(product: Product, merchant: Merchant): PricingType;
     /**
      * Get effective pricing config cho product
      */
-    static getEffectivePricingConfig(product: Product, merchant: Merchant$1): PricingInfo;
+    static getEffectivePricingConfig(product: Product, merchant: Merchant): PricingInfo;
     /**
      * Calculate pricing cho product
      */
-    static calculatePricing(product: Product, merchant: Merchant$1, duration?: number, quantity?: number): CalculatedPricing;
+    static calculatePricing(product: Product, merchant: Merchant, duration?: number, quantity?: number): CalculatedPricing;
 }
 declare class PricingValidator {
     /**
      * Validate rental period for a product
      */
-    static validateRentalPeriod(product: Product, merchant: Merchant$1, rentalStartAt: Date, rentalEndAt: Date, quantity?: number): RentalPeriodValidation;
+    static validateRentalPeriod(product: Product, merchant: Merchant, rentalStartAt: Date, rentalEndAt: Date, quantity?: number): RentalPeriodValidation;
     /**
      * Validate pricing configuration
      */
@@ -1895,7 +3768,7 @@ declare const filterProducts: (products: Product[] | ProductWithDetails[], searc
  */
 declare const formatProductPrice: (price: number, currency?: string) => string;
 /**
- * Get product's primary image URL
+ * Get product's primary image URL with better handling for S3 URLs
  * @param product - Product object
  * @returns Primary image URL or placeholder
  */
@@ -2012,8 +3885,9 @@ declare const registerSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     phone: z.ZodOptional<z.ZodString>;
     role: z.ZodOptional<z.ZodEnum<["CLIENT", "SHOP_OWNER", "ADMIN", "MERCHANT", "OUTLET_ADMIN", "OUTLET_STAFF"]>>;
     businessName: z.ZodOptional<z.ZodString>;
+    tenantKey: z.ZodOptional<z.ZodString>;
     businessType: z.ZodOptional<z.ZodEnum<["CLOTHING", "VEHICLE", "EQUIPMENT", "GENERAL"]>>;
-    pricingType: z.ZodOptional<z.ZodEnum<["FIXED", "HOURLY", "DAILY", "WEEKLY"]>>;
+    pricingType: z.ZodOptional<z.ZodEnum<["FIXED", "HOURLY", "DAILY"]>>;
     address: z.ZodOptional<z.ZodString>;
     city: z.ZodOptional<z.ZodString>;
     state: z.ZodOptional<z.ZodString>;
@@ -2030,12 +3904,13 @@ declare const registerSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     role?: "OUTLET_STAFF" | "ADMIN" | "MERCHANT" | "OUTLET_ADMIN" | "CLIENT" | "SHOP_OWNER" | undefined;
     name?: string | undefined;
     businessType?: "CLOTHING" | "VEHICLE" | "EQUIPMENT" | "GENERAL" | undefined;
-    pricingType?: "FIXED" | "HOURLY" | "DAILY" | "WEEKLY" | undefined;
+    pricingType?: "FIXED" | "HOURLY" | "DAILY" | undefined;
     country?: string | undefined;
     address?: string | undefined;
     city?: string | undefined;
     state?: string | undefined;
     zipCode?: string | undefined;
+    tenantKey?: string | undefined;
     businessName?: string | undefined;
     merchantCode?: string | undefined;
     outletCode?: string | undefined;
@@ -2048,12 +3923,13 @@ declare const registerSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     role?: "OUTLET_STAFF" | "ADMIN" | "MERCHANT" | "OUTLET_ADMIN" | "CLIENT" | "SHOP_OWNER" | undefined;
     name?: string | undefined;
     businessType?: "CLOTHING" | "VEHICLE" | "EQUIPMENT" | "GENERAL" | undefined;
-    pricingType?: "FIXED" | "HOURLY" | "DAILY" | "WEEKLY" | undefined;
+    pricingType?: "FIXED" | "HOURLY" | "DAILY" | undefined;
     country?: string | undefined;
     address?: string | undefined;
     city?: string | undefined;
     state?: string | undefined;
     zipCode?: string | undefined;
+    tenantKey?: string | undefined;
     businessName?: string | undefined;
     merchantCode?: string | undefined;
     outletCode?: string | undefined;
@@ -2066,12 +3942,13 @@ declare const registerSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     role?: "OUTLET_STAFF" | "ADMIN" | "MERCHANT" | "OUTLET_ADMIN" | "CLIENT" | "SHOP_OWNER" | undefined;
     name?: string | undefined;
     businessType?: "CLOTHING" | "VEHICLE" | "EQUIPMENT" | "GENERAL" | undefined;
-    pricingType?: "FIXED" | "HOURLY" | "DAILY" | "WEEKLY" | undefined;
+    pricingType?: "FIXED" | "HOURLY" | "DAILY" | undefined;
     country?: string | undefined;
     address?: string | undefined;
     city?: string | undefined;
     state?: string | undefined;
     zipCode?: string | undefined;
+    tenantKey?: string | undefined;
     businessName?: string | undefined;
     merchantCode?: string | undefined;
     outletCode?: string | undefined;
@@ -2084,12 +3961,13 @@ declare const registerSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     role?: "OUTLET_STAFF" | "ADMIN" | "MERCHANT" | "OUTLET_ADMIN" | "CLIENT" | "SHOP_OWNER" | undefined;
     name?: string | undefined;
     businessType?: "CLOTHING" | "VEHICLE" | "EQUIPMENT" | "GENERAL" | undefined;
-    pricingType?: "FIXED" | "HOURLY" | "DAILY" | "WEEKLY" | undefined;
+    pricingType?: "FIXED" | "HOURLY" | "DAILY" | undefined;
     country?: string | undefined;
     address?: string | undefined;
     city?: string | undefined;
     state?: string | undefined;
     zipCode?: string | undefined;
+    tenantKey?: string | undefined;
     businessName?: string | undefined;
     merchantCode?: string | undefined;
     outletCode?: string | undefined;
@@ -2102,12 +3980,13 @@ declare const registerSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     role?: "OUTLET_STAFF" | "ADMIN" | "MERCHANT" | "OUTLET_ADMIN" | "CLIENT" | "SHOP_OWNER" | undefined;
     name?: string | undefined;
     businessType?: "CLOTHING" | "VEHICLE" | "EQUIPMENT" | "GENERAL" | undefined;
-    pricingType?: "FIXED" | "HOURLY" | "DAILY" | "WEEKLY" | undefined;
+    pricingType?: "FIXED" | "HOURLY" | "DAILY" | undefined;
     country?: string | undefined;
     address?: string | undefined;
     city?: string | undefined;
     state?: string | undefined;
     zipCode?: string | undefined;
+    tenantKey?: string | undefined;
     businessName?: string | undefined;
     merchantCode?: string | undefined;
     outletCode?: string | undefined;
@@ -2120,12 +3999,13 @@ declare const registerSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     role?: "OUTLET_STAFF" | "ADMIN" | "MERCHANT" | "OUTLET_ADMIN" | "CLIENT" | "SHOP_OWNER" | undefined;
     name?: string | undefined;
     businessType?: "CLOTHING" | "VEHICLE" | "EQUIPMENT" | "GENERAL" | undefined;
-    pricingType?: "FIXED" | "HOURLY" | "DAILY" | "WEEKLY" | undefined;
+    pricingType?: "FIXED" | "HOURLY" | "DAILY" | undefined;
     country?: string | undefined;
     address?: string | undefined;
     city?: string | undefined;
     state?: string | undefined;
     zipCode?: string | undefined;
+    tenantKey?: string | undefined;
     businessName?: string | undefined;
     merchantCode?: string | undefined;
     outletCode?: string | undefined;
@@ -2141,7 +4021,7 @@ declare const productCreateSchema: z.ZodObject<{
     totalStock: z.ZodNumber;
     images: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
     merchantId: z.ZodOptional<z.ZodNumber>;
-    outletStock: z.ZodArray<z.ZodObject<{
+    outletStock: z.ZodOptional<z.ZodArray<z.ZodObject<{
         outletId: z.ZodNumber;
         stock: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
@@ -2150,37 +4030,37 @@ declare const productCreateSchema: z.ZodObject<{
     }, {
         outletId: number;
         stock: number;
-    }>, "many">;
+    }>, "many">>;
 }, "strip", z.ZodTypeAny, {
     name: string;
     rentPrice: number;
     salePrice: number;
     deposit: number;
     totalStock: number;
-    outletStock: {
-        outletId: number;
-        stock: number;
-    }[];
     merchantId?: number | undefined;
     description?: string | undefined;
     barcode?: string | undefined;
     categoryId?: number | undefined;
     images?: string | string[] | undefined;
+    outletStock?: {
+        outletId: number;
+        stock: number;
+    }[] | undefined;
 }, {
     name: string;
     rentPrice: number;
     salePrice: number;
     totalStock: number;
-    outletStock: {
-        outletId: number;
-        stock: number;
-    }[];
     merchantId?: number | undefined;
     description?: string | undefined;
     barcode?: string | undefined;
     categoryId?: number | undefined;
     deposit?: number | undefined;
     images?: string | string[] | undefined;
+    outletStock?: {
+        outletId: number;
+        stock: number;
+    }[] | undefined;
 }>;
 declare const productUpdateSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
@@ -2188,9 +4068,19 @@ declare const productUpdateSchema: z.ZodObject<{
     rentPrice: z.ZodOptional<z.ZodNumber>;
     salePrice: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     deposit: z.ZodOptional<z.ZodNumber>;
-    images: z.ZodOptional<z.ZodString>;
+    images: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
     categoryId: z.ZodOptional<z.ZodNumber>;
     totalStock: z.ZodOptional<z.ZodNumber>;
+    outletStock: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        outletId: z.ZodNumber;
+        stock: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        outletId: number;
+        stock: number;
+    }, {
+        outletId: number;
+        stock: number;
+    }>, "many">>;
 }, "strip", z.ZodTypeAny, {
     name?: string | undefined;
     description?: string | undefined;
@@ -2199,7 +4089,11 @@ declare const productUpdateSchema: z.ZodObject<{
     salePrice?: number | null | undefined;
     deposit?: number | undefined;
     totalStock?: number | undefined;
-    images?: string | undefined;
+    images?: string | string[] | undefined;
+    outletStock?: {
+        outletId: number;
+        stock: number;
+    }[] | undefined;
 }, {
     name?: string | undefined;
     description?: string | undefined;
@@ -2208,11 +4102,16 @@ declare const productUpdateSchema: z.ZodObject<{
     salePrice?: number | null | undefined;
     deposit?: number | undefined;
     totalStock?: number | undefined;
-    images?: string | undefined;
+    images?: string | string[] | undefined;
+    outletStock?: {
+        outletId: number;
+        stock: number;
+    }[] | undefined;
 }>;
 declare const productsQuerySchema: z.ZodObject<{
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
+    merchantId: z.ZodOptional<z.ZodNumber>;
     categoryId: z.ZodOptional<z.ZodNumber>;
     outletId: z.ZodOptional<z.ZodNumber>;
     available: z.ZodOptional<z.ZodBoolean>;
@@ -2232,6 +4131,7 @@ declare const productsQuerySchema: z.ZodObject<{
     q?: string | undefined;
     sortBy?: string | undefined;
     sortOrder?: "asc" | "desc" | undefined;
+    merchantId?: number | undefined;
     outletId?: number | undefined;
     categoryId?: number | undefined;
     minPrice?: number | undefined;
@@ -2242,6 +4142,7 @@ declare const productsQuerySchema: z.ZodObject<{
     q?: string | undefined;
     sortBy?: string | undefined;
     sortOrder?: "asc" | "desc" | undefined;
+    merchantId?: number | undefined;
     outletId?: number | undefined;
     categoryId?: number | undefined;
     minPrice?: number | undefined;
@@ -2382,6 +4283,7 @@ declare const customersQuerySchema: z.ZodObject<{
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
     merchantId: z.ZodOptional<z.ZodNumber>;
+    outletId: z.ZodOptional<z.ZodNumber>;
     isActive: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodBoolean]>, boolean | undefined, string | boolean>>;
     city: z.ZodOptional<z.ZodString>;
     state: z.ZodOptional<z.ZodString>;
@@ -2401,6 +4303,7 @@ declare const customersQuerySchema: z.ZodObject<{
     sortBy?: string | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     merchantId?: number | undefined;
+    outletId?: number | undefined;
     isActive?: boolean | undefined;
     country?: string | undefined;
     city?: string | undefined;
@@ -2412,6 +4315,7 @@ declare const customersQuerySchema: z.ZodObject<{
     sortBy?: string | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     merchantId?: number | undefined;
+    outletId?: number | undefined;
     isActive?: string | boolean | undefined;
     country?: string | undefined;
     city?: string | undefined;
@@ -2423,6 +4327,7 @@ declare const customersQuerySchema: z.ZodObject<{
 }>;
 declare const ordersQuerySchema: z.ZodObject<{
     q: z.ZodOptional<z.ZodString>;
+    merchantId: z.ZodOptional<z.ZodNumber>;
     outletId: z.ZodOptional<z.ZodNumber>;
     customerId: z.ZodOptional<z.ZodNumber>;
     userId: z.ZodOptional<z.ZodNumber>;
@@ -2435,12 +4340,17 @@ declare const ordersQuerySchema: z.ZodObject<{
     returnDate: z.ZodOptional<z.ZodDate>;
     minAmount: z.ZodOptional<z.ZodNumber>;
     maxAmount: z.ZodOptional<z.ZodNumber>;
+    page: z.ZodDefault<z.ZodNumber>;
     limit: z.ZodDefault<z.ZodNumber>;
-    offset: z.ZodDefault<z.ZodNumber>;
+    sortBy: z.ZodOptional<z.ZodString>;
+    sortOrder: z.ZodOptional<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
+    page: number;
     limit: number;
-    offset: number;
     q?: string | undefined;
+    sortBy?: string | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
+    merchantId?: number | undefined;
     outletId?: number | undefined;
     status?: "CANCELLED" | "RESERVED" | "PICKUPED" | "RETURNED" | "COMPLETED" | undefined;
     startDate?: Date | undefined;
@@ -2455,6 +4365,9 @@ declare const ordersQuerySchema: z.ZodObject<{
     userId?: number | undefined;
 }, {
     q?: string | undefined;
+    sortBy?: string | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
+    merchantId?: number | undefined;
     outletId?: number | undefined;
     status?: "CANCELLED" | "RESERVED" | "PICKUPED" | "RETURNED" | "COMPLETED" | undefined;
     startDate?: Date | undefined;
@@ -2466,8 +4379,8 @@ declare const ordersQuerySchema: z.ZodObject<{
     returnDate?: Date | undefined;
     minAmount?: number | undefined;
     maxAmount?: number | undefined;
+    page?: number | undefined;
     limit?: number | undefined;
-    offset?: number | undefined;
     userId?: number | undefined;
 }>;
 declare const orderCreateSchema: z.ZodObject<{
@@ -2478,8 +4391,7 @@ declare const orderCreateSchema: z.ZodObject<{
     outletId: z.ZodNumber;
     pickupPlanAt: z.ZodOptional<z.ZodDate>;
     returnPlanAt: z.ZodOptional<z.ZodDate>;
-    rentalDuration: z.ZodOptional<z.ZodNumber>;
-    subtotal: z.ZodNumber;
+    subtotal: z.ZodOptional<z.ZodNumber>;
     taxAmount: z.ZodOptional<z.ZodNumber>;
     discountType: z.ZodOptional<z.ZodEnum<["amount", "percentage"]>>;
     discountValue: z.ZodOptional<z.ZodNumber>;
@@ -2495,9 +4407,6 @@ declare const orderCreateSchema: z.ZodObject<{
     pickupNotes: z.ZodOptional<z.ZodString>;
     returnNotes: z.ZodOptional<z.ZodString>;
     damageNotes: z.ZodOptional<z.ZodString>;
-    customerName: z.ZodOptional<z.ZodString>;
-    customerPhone: z.ZodOptional<z.ZodString>;
-    customerEmail: z.ZodOptional<z.ZodString>;
     isReadyToDeliver: z.ZodOptional<z.ZodBoolean>;
     orderItems: z.ZodArray<z.ZodObject<{
         productId: z.ZodNumber;
@@ -2506,29 +4415,20 @@ declare const orderCreateSchema: z.ZodObject<{
         totalPrice: z.ZodOptional<z.ZodNumber>;
         deposit: z.ZodDefault<z.ZodNumber>;
         notes: z.ZodOptional<z.ZodString>;
-        startDate: z.ZodOptional<z.ZodDate>;
-        endDate: z.ZodOptional<z.ZodDate>;
-        daysRented: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         deposit: number;
         productId: number;
         quantity: number;
         unitPrice: number;
-        startDate?: Date | undefined;
-        endDate?: Date | undefined;
         notes?: string | undefined;
         totalPrice?: number | undefined;
-        daysRented?: number | undefined;
     }, {
         productId: number;
         quantity: number;
-        startDate?: Date | undefined;
-        endDate?: Date | undefined;
         deposit?: number | undefined;
         notes?: string | undefined;
         unitPrice?: number | undefined;
         totalPrice?: number | undefined;
-        daysRented?: number | undefined;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     outletId: number;
@@ -2539,37 +4439,30 @@ declare const orderCreateSchema: z.ZodObject<{
         productId: number;
         quantity: number;
         unitPrice: number;
-        startDate?: Date | undefined;
-        endDate?: Date | undefined;
         notes?: string | undefined;
         totalPrice?: number | undefined;
-        daysRented?: number | undefined;
     }[];
-    subtotal: number;
     customerId?: number | undefined;
     depositAmount?: number | undefined;
     pickupPlanAt?: Date | undefined;
     returnPlanAt?: Date | undefined;
     isReadyToDeliver?: boolean | undefined;
     notes?: string | undefined;
+    orderNumber?: string | undefined;
     securityDeposit?: number | undefined;
     damageFee?: number | undefined;
     lateFee?: number | undefined;
     discountType?: "amount" | "percentage" | undefined;
     discountValue?: number | undefined;
     discountAmount?: number | undefined;
-    rentalDuration?: number | undefined;
     collateralType?: string | undefined;
     collateralDetails?: string | undefined;
     pickupNotes?: string | undefined;
     returnNotes?: string | undefined;
     damageNotes?: string | undefined;
-    orderNumber?: string | undefined;
     orderId?: number | undefined;
+    subtotal?: number | undefined;
     taxAmount?: number | undefined;
-    customerName?: string | undefined;
-    customerPhone?: string | undefined;
-    customerEmail?: string | undefined;
 }, {
     outletId: number;
     orderType: "RENT" | "SALE";
@@ -2577,39 +4470,32 @@ declare const orderCreateSchema: z.ZodObject<{
     orderItems: {
         productId: number;
         quantity: number;
-        startDate?: Date | undefined;
-        endDate?: Date | undefined;
         deposit?: number | undefined;
         notes?: string | undefined;
         unitPrice?: number | undefined;
         totalPrice?: number | undefined;
-        daysRented?: number | undefined;
     }[];
-    subtotal: number;
     customerId?: number | undefined;
     depositAmount?: number | undefined;
     pickupPlanAt?: Date | undefined;
     returnPlanAt?: Date | undefined;
     isReadyToDeliver?: boolean | undefined;
     notes?: string | undefined;
+    orderNumber?: string | undefined;
     securityDeposit?: number | undefined;
     damageFee?: number | undefined;
     lateFee?: number | undefined;
     discountType?: "amount" | "percentage" | undefined;
     discountValue?: number | undefined;
     discountAmount?: number | undefined;
-    rentalDuration?: number | undefined;
     collateralType?: string | undefined;
     collateralDetails?: string | undefined;
     pickupNotes?: string | undefined;
     returnNotes?: string | undefined;
     damageNotes?: string | undefined;
-    orderNumber?: string | undefined;
     orderId?: number | undefined;
+    subtotal?: number | undefined;
     taxAmount?: number | undefined;
-    customerName?: string | undefined;
-    customerPhone?: string | undefined;
-    customerEmail?: string | undefined;
 }>;
 declare const orderUpdateSchema: z.ZodObject<{
     orderId: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -2619,8 +4505,7 @@ declare const orderUpdateSchema: z.ZodObject<{
     outletId: z.ZodOptional<z.ZodNumber>;
     pickupPlanAt: z.ZodOptional<z.ZodOptional<z.ZodDate>>;
     returnPlanAt: z.ZodOptional<z.ZodOptional<z.ZodDate>>;
-    rentalDuration: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-    subtotal: z.ZodOptional<z.ZodNumber>;
+    subtotal: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
     taxAmount: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
     discountType: z.ZodOptional<z.ZodOptional<z.ZodEnum<["amount", "percentage"]>>>;
     discountValue: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -2636,9 +4521,6 @@ declare const orderUpdateSchema: z.ZodObject<{
     pickupNotes: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     returnNotes: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     damageNotes: z.ZodOptional<z.ZodOptional<z.ZodString>>;
-    customerName: z.ZodOptional<z.ZodOptional<z.ZodString>>;
-    customerPhone: z.ZodOptional<z.ZodOptional<z.ZodString>>;
-    customerEmail: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     isReadyToDeliver: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
     orderItems: z.ZodOptional<z.ZodArray<z.ZodObject<{
         productId: z.ZodNumber;
@@ -2647,29 +4529,20 @@ declare const orderUpdateSchema: z.ZodObject<{
         totalPrice: z.ZodOptional<z.ZodNumber>;
         deposit: z.ZodDefault<z.ZodNumber>;
         notes: z.ZodOptional<z.ZodString>;
-        startDate: z.ZodOptional<z.ZodDate>;
-        endDate: z.ZodOptional<z.ZodDate>;
-        daysRented: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         deposit: number;
         productId: number;
         quantity: number;
         unitPrice: number;
-        startDate?: Date | undefined;
-        endDate?: Date | undefined;
         notes?: string | undefined;
         totalPrice?: number | undefined;
-        daysRented?: number | undefined;
     }, {
         productId: number;
         quantity: number;
-        startDate?: Date | undefined;
-        endDate?: Date | undefined;
         deposit?: number | undefined;
         notes?: string | undefined;
         unitPrice?: number | undefined;
         totalPrice?: number | undefined;
-        daysRented?: number | undefined;
     }>, "many">>;
 } & {
     status: z.ZodOptional<z.ZodEnum<["RESERVED", "PICKUPED", "RETURNED", "COMPLETED", "CANCELLED"]>>;
@@ -2689,14 +4562,12 @@ declare const orderUpdateSchema: z.ZodObject<{
         productId: number;
         quantity: number;
         unitPrice: number;
-        startDate?: Date | undefined;
-        endDate?: Date | undefined;
         notes?: string | undefined;
         totalPrice?: number | undefined;
-        daysRented?: number | undefined;
     }[] | undefined;
     isReadyToDeliver?: boolean | undefined;
     notes?: string | undefined;
+    orderNumber?: string | undefined;
     securityDeposit?: number | undefined;
     damageFee?: number | undefined;
     lateFee?: number | undefined;
@@ -2705,19 +4576,14 @@ declare const orderUpdateSchema: z.ZodObject<{
     discountAmount?: number | undefined;
     pickedUpAt?: Date | undefined;
     returnedAt?: Date | undefined;
-    rentalDuration?: number | undefined;
     collateralType?: string | undefined;
     collateralDetails?: string | undefined;
     pickupNotes?: string | undefined;
     returnNotes?: string | undefined;
     damageNotes?: string | undefined;
-    orderNumber?: string | undefined;
     orderId?: number | undefined;
     subtotal?: number | undefined;
     taxAmount?: number | undefined;
-    customerName?: string | undefined;
-    customerPhone?: string | undefined;
-    customerEmail?: string | undefined;
 }, {
     outletId?: number | undefined;
     status?: "CANCELLED" | "RESERVED" | "PICKUPED" | "RETURNED" | "COMPLETED" | undefined;
@@ -2730,16 +4596,14 @@ declare const orderUpdateSchema: z.ZodObject<{
     orderItems?: {
         productId: number;
         quantity: number;
-        startDate?: Date | undefined;
-        endDate?: Date | undefined;
         deposit?: number | undefined;
         notes?: string | undefined;
         unitPrice?: number | undefined;
         totalPrice?: number | undefined;
-        daysRented?: number | undefined;
     }[] | undefined;
     isReadyToDeliver?: boolean | undefined;
     notes?: string | undefined;
+    orderNumber?: string | undefined;
     securityDeposit?: number | undefined;
     damageFee?: number | undefined;
     lateFee?: number | undefined;
@@ -2748,24 +4612,21 @@ declare const orderUpdateSchema: z.ZodObject<{
     discountAmount?: number | undefined;
     pickedUpAt?: Date | undefined;
     returnedAt?: Date | undefined;
-    rentalDuration?: number | undefined;
     collateralType?: string | undefined;
     collateralDetails?: string | undefined;
     pickupNotes?: string | undefined;
     returnNotes?: string | undefined;
     damageNotes?: string | undefined;
-    orderNumber?: string | undefined;
     orderId?: number | undefined;
     subtotal?: number | undefined;
     taxAmount?: number | undefined;
-    customerName?: string | undefined;
-    customerPhone?: string | undefined;
-    customerEmail?: string | undefined;
 }>;
 type OrdersQuery = z.infer<typeof ordersQuerySchema>;
 type OrderCreateInput = z.infer<typeof orderCreateSchema>;
 type OrderUpdatePayload = z.infer<typeof orderUpdateSchema>;
 declare const usersQuerySchema: z.ZodObject<{
+    merchantId: z.ZodOptional<z.ZodNumber>;
+    outletId: z.ZodOptional<z.ZodNumber>;
     role: z.ZodOptional<z.ZodEnum<["ADMIN", "MERCHANT", "OUTLET_ADMIN", "OUTLET_STAFF"]>>;
     isActive: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodBoolean]>, boolean | undefined, string | boolean>>;
     search: z.ZodOptional<z.ZodString>;
@@ -2780,12 +4641,16 @@ declare const usersQuerySchema: z.ZodObject<{
     sortBy?: "firstName" | "lastName" | "email" | "createdAt" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     role?: "OUTLET_STAFF" | "ADMIN" | "MERCHANT" | "OUTLET_ADMIN" | undefined;
+    merchantId?: number | undefined;
+    outletId?: number | undefined;
     isActive?: boolean | undefined;
 }, {
     search?: string | undefined;
     sortBy?: "firstName" | "lastName" | "email" | "createdAt" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     role?: "OUTLET_STAFF" | "ADMIN" | "MERCHANT" | "OUTLET_ADMIN" | undefined;
+    merchantId?: number | undefined;
+    outletId?: number | undefined;
     isActive?: string | boolean | undefined;
     page?: number | undefined;
     limit?: number | undefined;
@@ -2852,21 +4717,64 @@ type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 declare const outletsQuerySchema: z.ZodObject<{
     merchantId: z.ZodOptional<z.ZodNumber>;
     isActive: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodBoolean]>, boolean | "all" | undefined, string | boolean>>;
+    q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
+    sortBy: z.ZodOptional<z.ZodString>;
+    sortOrder: z.ZodOptional<z.ZodEnum<["asc", "desc"]>>;
     page: z.ZodDefault<z.ZodNumber>;
     limit: z.ZodDefault<z.ZodNumber>;
+    offset: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     page: number;
     limit: number;
     search?: string | undefined;
+    q?: string | undefined;
+    sortBy?: string | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
     merchantId?: number | undefined;
     isActive?: boolean | "all" | undefined;
+    offset?: number | undefined;
 }, {
     search?: string | undefined;
+    q?: string | undefined;
+    sortBy?: string | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
     merchantId?: number | undefined;
     isActive?: string | boolean | undefined;
     page?: number | undefined;
     limit?: number | undefined;
+    offset?: number | undefined;
+}>;
+declare const categoriesQuerySchema: z.ZodObject<{
+    q: z.ZodOptional<z.ZodString>;
+    search: z.ZodOptional<z.ZodString>;
+    merchantId: z.ZodOptional<z.ZodNumber>;
+    isActive: z.ZodOptional<z.ZodEffects<z.ZodUnion<[z.ZodString, z.ZodBoolean]>, boolean | "all" | undefined, string | boolean>>;
+    sortBy: z.ZodOptional<z.ZodDefault<z.ZodEnum<["name", "createdAt", "updatedAt"]>>>;
+    sortOrder: z.ZodOptional<z.ZodDefault<z.ZodEnum<["asc", "desc"]>>>;
+    page: z.ZodDefault<z.ZodNumber>;
+    limit: z.ZodDefault<z.ZodNumber>;
+    offset: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    page: number;
+    limit: number;
+    search?: string | undefined;
+    q?: string | undefined;
+    sortBy?: "name" | "createdAt" | "updatedAt" | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
+    merchantId?: number | undefined;
+    isActive?: boolean | "all" | undefined;
+    offset?: number | undefined;
+}, {
+    search?: string | undefined;
+    q?: string | undefined;
+    sortBy?: "name" | "createdAt" | "updatedAt" | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
+    merchantId?: number | undefined;
+    isActive?: string | boolean | undefined;
+    page?: number | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
 }>;
 declare const outletCreateSchema: z.ZodObject<{
     name: z.ZodString;
@@ -2967,10 +4875,9 @@ declare const planCreateSchema: z.ZodObject<{
     isActive: boolean;
     name: string;
     description: string;
-    basePrice: number;
     currency: string;
+    basePrice: number;
     trialDays: number;
-    isPopular: boolean;
     limits: {
         outlets: number;
         users: number;
@@ -2978,6 +4885,7 @@ declare const planCreateSchema: z.ZodObject<{
         customers: number;
     };
     features: string[];
+    isPopular: boolean;
 }, {
     name: string;
     description: string;
@@ -2992,8 +4900,8 @@ declare const planCreateSchema: z.ZodObject<{
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
     currency?: string | undefined;
-    isPopular?: boolean | undefined;
     features?: string[] | undefined;
+    isPopular?: boolean | undefined;
 }>;
 declare const planUpdateSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
@@ -3026,10 +4934,9 @@ declare const planUpdateSchema: z.ZodObject<{
     isActive?: boolean | undefined;
     name?: string | undefined;
     description?: string | undefined;
-    basePrice?: number | undefined;
     currency?: string | undefined;
+    basePrice?: number | undefined;
     trialDays?: number | undefined;
-    isPopular?: boolean | undefined;
     limits?: {
         outlets: number;
         users: number;
@@ -3037,15 +4944,15 @@ declare const planUpdateSchema: z.ZodObject<{
         customers: number;
     } | undefined;
     features?: string[] | undefined;
+    isPopular?: boolean | undefined;
 }, {
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
     name?: string | undefined;
     description?: string | undefined;
-    basePrice?: number | undefined;
     currency?: string | undefined;
+    basePrice?: number | undefined;
     trialDays?: number | undefined;
-    isPopular?: boolean | undefined;
     limits?: {
         outlets: number;
         users: number;
@@ -3053,6 +4960,7 @@ declare const planUpdateSchema: z.ZodObject<{
         customers: number;
     } | undefined;
     features?: string[] | undefined;
+    isPopular?: boolean | undefined;
 }>;
 declare const plansQuerySchema: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
@@ -3076,8 +4984,8 @@ declare const plansQuerySchema: z.ZodObject<{
     sortOrder?: "asc" | "desc" | undefined;
     isActive?: boolean | undefined;
     limit?: number | undefined;
-    offset?: number | undefined;
     isPopular?: boolean | undefined;
+    offset?: number | undefined;
 }>;
 type PlanCreateInput = z.infer<typeof planCreateSchema>;
 type PlanUpdateInput = z.infer<typeof planUpdateSchema>;
@@ -3098,8 +5006,8 @@ declare const planVariantCreateSchema: z.ZodObject<{
     name: string;
     planId: string;
     isPopular: boolean;
-    duration: number;
     discount: number;
+    duration: number;
     price?: number | undefined;
     basePrice?: number | undefined;
 }, {
@@ -3132,8 +5040,8 @@ declare const planVariantUpdateSchema: z.ZodObject<{
     price?: number | undefined;
     basePrice?: number | undefined;
     isPopular?: boolean | undefined;
-    duration?: number | undefined;
     discount?: number | undefined;
+    duration?: number | undefined;
 }, {
     sortOrder?: number | undefined;
     isActive?: boolean | undefined;
@@ -3142,8 +5050,8 @@ declare const planVariantUpdateSchema: z.ZodObject<{
     price?: number | undefined;
     basePrice?: number | undefined;
     isPopular?: boolean | undefined;
-    duration?: number | undefined;
     discount?: number | undefined;
+    duration?: number | undefined;
 }>;
 declare const planVariantsQuerySchema: z.ZodObject<{
     planId: z.ZodOptional<z.ZodString>;
@@ -3158,7 +5066,7 @@ declare const planVariantsQuerySchema: z.ZodObject<{
     sortBy: z.ZodDefault<z.ZodEnum<["name", "price", "duration", "discount", "createdAt", "sortOrder"]>>;
     sortOrder: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
-    sortBy: "sortOrder" | "name" | "createdAt" | "price" | "duration" | "discount";
+    sortBy: "sortOrder" | "name" | "createdAt" | "price" | "discount" | "duration";
     sortOrder: "asc" | "desc";
     limit: number;
     offset: number;
@@ -3171,15 +5079,15 @@ declare const planVariantsQuerySchema: z.ZodObject<{
     duration?: number | undefined;
 }, {
     search?: string | undefined;
-    sortBy?: "sortOrder" | "name" | "createdAt" | "price" | "duration" | "discount" | undefined;
+    sortBy?: "sortOrder" | "name" | "createdAt" | "price" | "discount" | "duration" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
     isActive?: boolean | undefined;
     planId?: string | undefined;
     minPrice?: number | undefined;
     maxPrice?: number | undefined;
     limit?: number | undefined;
-    offset?: number | undefined;
     isPopular?: boolean | undefined;
+    offset?: number | undefined;
     duration?: number | undefined;
 }>;
 type PlanVariantCreateInput = z.infer<typeof planVariantCreateSchema>;
@@ -3203,12 +5111,12 @@ declare const subscriptionCreateSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     merchantId: number;
     status: "active" | "trial" | "expired" | "cancelled" | "paused" | "past_due";
+    currency: string;
     planId: string;
     amount: number;
-    currency: string;
-    billingInterval: "month" | "quarter" | "semiAnnual" | "year";
-    planVariantId: string;
     cancelAtPeriodEnd: boolean;
+    billingInterval: "month" | "quarter" | "year" | "semiAnnual";
+    planVariantId: string;
     notes?: string | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
@@ -3221,14 +5129,14 @@ declare const subscriptionCreateSchema: z.ZodObject<{
     amount: number;
     planVariantId: string;
     status?: "active" | "trial" | "expired" | "cancelled" | "paused" | "past_due" | undefined;
-    notes?: string | undefined;
     currency?: string | undefined;
+    notes?: string | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
-    billingInterval?: "month" | "quarter" | "semiAnnual" | "year" | undefined;
+    cancelAtPeriodEnd?: boolean | undefined;
+    billingInterval?: "month" | "quarter" | "year" | "semiAnnual" | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
-    cancelAtPeriodEnd?: boolean | undefined;
     cancelledAt?: Date | undefined;
 }>;
 declare const subscriptionUpdateSchema: z.ZodObject<{
@@ -3251,34 +5159,34 @@ declare const subscriptionUpdateSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     merchantId?: number | undefined;
     status?: "active" | "trial" | "expired" | "cancelled" | "paused" | "past_due" | undefined;
+    currency?: string | undefined;
     planId?: string | undefined;
     id?: number | undefined;
     amount?: number | undefined;
     notes?: string | undefined;
-    currency?: string | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
-    billingInterval?: "month" | "quarter" | "semiAnnual" | "year" | undefined;
+    cancelAtPeriodEnd?: boolean | undefined;
+    billingInterval?: "month" | "quarter" | "year" | "semiAnnual" | undefined;
     planVariantId?: string | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
-    cancelAtPeriodEnd?: boolean | undefined;
     cancelledAt?: Date | undefined;
 }, {
     merchantId?: number | undefined;
     status?: "active" | "trial" | "expired" | "cancelled" | "paused" | "past_due" | undefined;
+    currency?: string | undefined;
     planId?: string | undefined;
     id?: number | undefined;
     amount?: number | undefined;
     notes?: string | undefined;
-    currency?: string | undefined;
     currentPeriodStart?: Date | undefined;
     currentPeriodEnd?: Date | undefined;
-    billingInterval?: "month" | "quarter" | "semiAnnual" | "year" | undefined;
+    cancelAtPeriodEnd?: boolean | undefined;
+    billingInterval?: "month" | "quarter" | "year" | "semiAnnual" | undefined;
     planVariantId?: string | undefined;
     trialStartDate?: Date | undefined;
     trialEndDate?: Date | undefined;
-    cancelAtPeriodEnd?: boolean | undefined;
     cancelledAt?: Date | undefined;
 }>;
 declare const subscriptionsQuerySchema: z.ZodObject<{
@@ -3562,6 +5470,163 @@ declare const formatDateShort: (date: Date | string | null | undefined) => strin
  * Format date and time in short format (e.g., "Jan 15, 2025 3:45 PM")
  */
 declare const formatDateTimeShort: (date: Date | string | null | undefined) => string;
+/**
+ * Format date with locale support
+ * @param date - Date object or date string
+ * @param locale - Locale code ('en' or 'vi')
+ * @param options - Intl.DateTimeFormatOptions
+ * @returns Formatted date string
+ */
+declare const formatDateWithLocale: (date: Date | string | null | undefined, locale?: "en" | "vi", options?: Intl.DateTimeFormatOptions) => string;
+type DateFormatOptions = {
+    month?: 'short' | 'long' | 'numeric';
+    year?: 'numeric' | '2-digit';
+    day?: 'numeric' | '2-digit';
+    weekday?: 'short' | 'long' | 'narrow';
+    hour?: 'numeric' | '2-digit';
+    minute?: 'numeric' | '2-digit';
+    second?: 'numeric' | '2-digit';
+};
+/**
+ * Get the appropriate locale for date formatting based on current language
+ */
+declare function getDateLocale(locale: string): string;
+/**
+ * Format a date string or Date object according to the current locale
+ *
+ * @param date - Date string or Date object to format
+ * @param locale - Current locale ('en' or 'vi')
+ * @param options - Intl.DateTimeFormat options
+ * @returns Formatted date string
+ */
+declare function formatDateByLocale(date: string | Date, locale: string, options?: DateFormatOptions): string;
+/**
+ * Format date for chart periods (month + year)
+ *
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted period string (e.g., "Th12 2024" or "Dec 2024")
+ */
+declare function formatChartPeriod(date: string | Date, locale: string): string;
+/**
+ * Format date for full display (day + month + year)
+ *
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted date string (e.g., "20/01/05" or "Jan 20, 2025")
+ */
+declare function formatFullDateByLocale(date: string | Date, locale: string): string;
+/**
+ * Format date for month only display (month + year)
+ *
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted date string (e.g., "01/05" or "Jan 2025")
+ */
+declare function formatMonthOnlyByLocale(date: string | Date, locale: string): string;
+/**
+ * Format date for daily display (day + month)
+ *
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted date string (e.g., "01/10" or "Oct 1")
+ */
+declare function formatDailyByLocale(date: string | Date, locale: string): string;
+/**
+ * Format date for time display (hour + minute)
+ *
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted time string (e.g., "14:30")
+ */
+declare function formatTimeByLocale(date: string | Date, locale: string): string;
+/**
+ * Format date for datetime display (date + time)
+ *
+ * @param date - Date string or Date object
+ * @param locale - Current locale ('en' or 'vi')
+ * @returns Formatted datetime string (e.g., "10:12 20/01/05" or "10:12 AM Jan 20, 2025")
+ */
+declare function formatDateTimeByLocale(date: string | Date, locale: string): string;
+/**
+ * Hook to get formatted date using current locale
+ *
+ * @param date - Date string or Date object
+ * @param options - Intl.DateTimeFormat options
+ * @returns Formatted date string
+ */
+declare function useFormattedDate(date: string | Date, options?: DateFormatOptions): string;
+/**
+ * Hook to get formatted chart period using current locale
+ *
+ * @param date - Date string or Date object
+ * @returns Formatted period string for charts
+ */
+declare function useFormattedChartPeriod(date: string | Date): string;
+/**
+ * Hook to get formatted full date using current locale
+ *
+ * @param date - Date string or Date object
+ * @returns Formatted date string (dd/mm/yy for Vietnamese, standard for English)
+ */
+declare function useFormattedFullDate(date: string | Date): string;
+/**
+ * Hook to get formatted datetime using current locale
+ *
+ * @param date - Date string or Date object
+ * @returns Formatted datetime string (hh:mm dd/mm/yy for Vietnamese, standard for English)
+ */
+declare function useFormattedDateTime(date: string | Date): string;
+/**
+ * Hook to get formatted month only using current locale
+ *
+ * @param date - Date string or Date object
+ * @returns Formatted month string (mm/yy for Vietnamese, standard for English)
+ */
+declare function useFormattedMonthOnly(date: string | Date): string;
+/**
+ * Hook to get formatted daily using current locale
+ *
+ * @param date - Date string or Date object
+ * @returns Formatted daily string (dd/mm for Vietnamese, standard for English)
+ */
+declare function useFormattedDaily(date: string | Date): string;
+/**
+ * Get local date key from UTC datetime string
+ * Converts UTC database datetime to local date (YYYY-MM-DD)
+ *
+ * @param date - UTC datetime string or Date object from database
+ * @returns Local date in YYYY-MM-DD format
+ *
+ * @example
+ * // Database stores UTC: "2025-10-28T17:00:00Z"
+ * // User in UTC+7 timezone sees it as: "2025-10-29T00:00:00+07:00"
+ * // This function returns: "2025-10-29"
+ * getLocalDateKey("2025-10-28T17:00:00Z") // "2025-10-29"
+ */
+declare function getLocalDateKey(date: Date | string | null | undefined): string;
+/**
+ * Get local date from UTC datetime string
+ * Useful when database stores UTC but UI needs to display in local time
+ *
+ * @param date - UTC datetime string or Date object
+ * @returns Date object in local timezone
+ */
+declare function getLocalDate(date: Date | string | null | undefined): Date | null;
+/**
+ * Get UTC date key from UTC datetime string
+ * Converts UTC datetime to UTC date (YYYY-MM-DD)
+ * This preserves the original UTC date without timezone conversion
+ *
+ * @param date - UTC datetime string or Date object from database
+ * @returns UTC date in YYYY-MM-DD format
+ *
+ * @example
+ * // Database stores UTC: "2025-10-27T17:00:00Z"
+ * // This function returns: "2025-10-27" (no timezone conversion)
+ * getUTCDateKey("2025-10-27T17:00:00Z") // "2025-10-27"
+ */
+declare function getUTCDateKey(date: Date | string | null | undefined): string;
 
 /**
  * Audit Logging Configuration
@@ -3752,6 +5817,15 @@ interface AuthResponse {
     token: string;
     user: User;
 }
+interface RegisterResponse {
+    user: User;
+    requiresEmailVerification?: boolean;
+    subscription?: {
+        planName: string;
+        trialEnd: Date;
+        daysRemaining: number;
+    };
+}
 /**
  * Authentication API client
  */
@@ -3763,7 +5837,7 @@ declare const authApi: {
     /**
      * Register new user
      */
-    register(userData: RegisterData): Promise<ApiResponse<AuthResponse>>;
+    register(userData: RegisterData): Promise<ApiResponse<RegisterResponse>>;
     /**
      * Verify authentication token
      */
@@ -3790,6 +5864,12 @@ declare const authApi: {
      * Change password (authenticated)
      */
     changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse<void>>;
+    /**
+     * Resend verification email
+     */
+    resendVerificationEmail(email: string): Promise<ApiResponse<{
+        message: string;
+    }>>;
 };
 
 interface ProductsResponse {
@@ -3800,6 +5880,64 @@ interface ProductsResponse {
     offset: number;
     hasMore: boolean;
     totalPages: number;
+}
+interface ProductAvailabilityRequest {
+    startDate?: string;
+    endDate?: string;
+    quantity?: number;
+    includeTimePrecision?: boolean;
+    timeZone?: string;
+}
+interface ProductAvailabilityResponse {
+    productId: number;
+    productName: string;
+    totalStock: number;
+    totalAvailableStock: number;
+    totalRenting: number;
+    requestedQuantity: number;
+    rentalPeriod?: {
+        startDate: string;
+        endDate: string;
+        startDateLocal: string;
+        endDateLocal: string;
+        durationMs: number;
+        durationHours: number;
+        durationDays: number;
+        timeZone: string;
+        includeTimePrecision: boolean;
+    };
+    isAvailable: boolean;
+    stockAvailable: boolean;
+    hasNoConflicts: boolean;
+    availabilityByOutlet: Array<{
+        outletId: number;
+        outletName: string;
+        stock: number;
+        available: number;
+        renting: number;
+        conflictingQuantity: number;
+        effectivelyAvailable: number;
+        canFulfillRequest: boolean;
+        conflicts: Array<{
+            orderNumber: string;
+            customerName: string;
+            pickupDate: string;
+            returnDate: string;
+            pickupDateLocal: string;
+            returnDateLocal: string;
+            quantity: number;
+            conflictDuration: number;
+            conflictHours: number;
+            conflictType: 'pickup_overlap' | 'return_overlap' | 'period_overlap' | 'complete_overlap';
+        }>;
+    }>;
+    bestOutlet?: {
+        outletId: number;
+        outletName: string;
+        effectivelyAvailable: number;
+    };
+    totalConflictsFound: number;
+    message: string;
 }
 /**
  * Products API client for product management operations
@@ -3834,6 +5972,10 @@ declare const productsApi: {
      */
     createProduct(productData: ProductCreateInput$1): Promise<ApiResponse<Product>>;
     /**
+     * Create a new product with multipart form data (includes file uploads)
+     */
+    createProductWithFiles(productData: ProductCreateInput$1, files?: File[]): Promise<ApiResponse<Product>>;
+    /**
      * Update an existing product
      */
     updateProduct(productId: number, productData: ProductUpdateInput$1): Promise<ApiResponse<Product>>;
@@ -3860,6 +6002,10 @@ declare const productsApi: {
         id: number;
         data: Partial<ProductUpdateInput$1>;
     }>): Promise<ApiResponse<Product[]>>;
+    /**
+     * Check product availability with rental period and booking conflicts
+     */
+    checkProductAvailability(productId: number, request?: ProductAvailabilityRequest): Promise<ApiResponse<ProductAvailabilityResponse>>;
 };
 
 interface CustomerApiResponse<T = any> {
@@ -4045,6 +6191,10 @@ declare const outletsApi: {
      */
     getOutletsPaginated(page?: number, limit?: number): Promise<ApiResponse<OutletsResponse>>;
     /**
+     * Search outlets by name with filters
+     */
+    searchOutlets(filters: OutletFilters): Promise<ApiResponse<OutletsResponse>>;
+    /**
      * Get outlet by ID
      */
     getOutlet(outletId: number): Promise<ApiResponse<Outlet>>;
@@ -4074,21 +6224,6 @@ declare const outletsApi: {
     getOutletStats(): Promise<ApiResponse<any>>;
 };
 
-interface Merchant {
-    id: number;
-    name: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    isActive: boolean;
-    planId?: string;
-    subscriptionStatus?: string;
-    trialEndsAt?: Date | string;
-    totalRevenue?: number;
-    lastActiveAt?: Date | string;
-    createdAt: Date | string;
-    updatedAt: Date | string;
-}
 interface MerchantsResponse {
     merchants: Merchant[];
     total: number;
@@ -4307,7 +6442,7 @@ declare const analyticsApi: {
     /**
      * Get dashboard summary
      */
-    getDashboardSummary(): Promise<ApiResponse<any>>;
+    getDashboardSummary(period?: "today" | "month" | "year"): Promise<ApiResponse<any>>;
     /**
      * Get system analytics (admin only)
      */
@@ -4399,6 +6534,10 @@ declare const categoriesApi: {
      * Get categories with pagination
      */
     getCategoriesPaginated(page?: number, limit?: number): Promise<ApiResponse<CategoriesResponse>>;
+    /**
+     * Search categories by name with filters
+     */
+    searchCategories(filters: CategoryFilters): Promise<ApiResponse<CategoriesResponse>>;
     /**
      * Create a new category
      */
@@ -4967,6 +7106,9 @@ interface MerchantSettings {
     website?: string;
     description?: string;
 }
+interface MerchantCurrencyUpdate {
+    currency: CurrencyCode;
+}
 interface UserProfile {
     firstName: string;
     lastName: string;
@@ -5031,6 +7173,16 @@ declare const settingsApi: {
      * Update billing intervals
      */
     updateBillingIntervals(intervals: BillingInterval[]): Promise<ApiResponse<BillingInterval[]>>;
+    /**
+     * Update merchant currency
+     */
+    updateMerchantCurrency(data: MerchantCurrencyUpdate): Promise<ApiResponse<any>>;
+    /**
+     * Get merchant currency
+     */
+    getMerchantCurrency(): Promise<ApiResponse<{
+        currency: string;
+    }>>;
 };
 
 /**
@@ -5284,13 +7436,24 @@ declare const systemApi: {
     }>>;
 };
 
+interface CalendarOrderItem {
+    id: number;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+    notes?: string;
+    productId?: number;
+    productName?: string;
+    productBarcode?: string;
+    productImages?: string[] | string | null;
+    productRentPrice?: number;
+    productDeposit?: number;
+}
 interface CalendarOrderSummary {
     id: number;
     orderNumber: string;
     customerName: string;
     customerPhone?: string;
-    productName: string;
-    productCount?: number;
     totalAmount: number;
     status: string;
     outletName?: string;
@@ -5299,21 +7462,43 @@ interface CalendarOrderSummary {
     returnPlanAt?: string;
     isOverdue?: boolean;
     duration?: number;
+    productName?: string;
+    productCount?: number;
+    orderItems: CalendarOrderItem[];
 }
 interface DayOrders {
     pickups: CalendarOrderSummary[];
     total: number;
 }
+interface CalendarDay {
+    date: string;
+    orders: CalendarOrderSummary[];
+    summary: {
+        totalOrders: number;
+        totalRevenue: number;
+        totalPickups: number;
+        totalReturns: number;
+        averageOrderValue: number;
+    };
+}
 interface CalendarResponse {
-    [dateKey: string]: DayOrders;
+    calendar: CalendarDay[];
+    summary: {
+        totalOrders: number;
+        totalRevenue: number;
+        totalPickups: number;
+        totalReturns: number;
+        averageOrderValue: number;
+    };
 }
 interface CalendarMeta {
-    month: number;
-    year: number;
     totalDays: number;
     stats: {
         totalPickups: number;
         totalOrders: number;
+        totalRevenue: number;
+        totalReturns: number;
+        averageOrderValue: number;
     };
     dateRange: {
         start: string;
@@ -5322,14 +7507,18 @@ interface CalendarMeta {
 }
 interface CalendarApiResponse {
     success: boolean;
-    data: CalendarResponse;
-    meta: CalendarMeta;
-    message: string;
+    data?: CalendarResponse;
+    meta?: CalendarMeta;
+    code?: string;
+    message?: string;
 }
 interface CalendarQuery {
-    month: number;
-    year: number;
+    startDate: string;
+    endDate: string;
     outletId?: number;
+    merchantId?: number;
+    status?: string;
+    orderType?: string;
     limit?: number;
 }
 /**
@@ -5342,7 +7531,7 @@ interface CalendarQuery {
  */
 declare const calendarApi: {
     /**
-     * Get calendar orders for a specific month
+     * Get calendar orders for a specific date range
      *
      * @param query - Calendar query parameters
      * @returns Promise with calendar data grouped by date
@@ -5360,6 +7549,26 @@ declare const calendarApi: {
      * Get calendar orders for previous month
      */
     getPreviousMonthOrders(outletId?: number): Promise<CalendarApiResponse>;
+    /**
+     * Get calendar orders for a specific month
+     * @param year - Year (e.g., 2025)
+     * @param month - Month (1-12)
+     * @param outletId - Optional outlet filter
+     */
+    getMonthOrders(year: number, month: number, outletId?: number): Promise<CalendarApiResponse>;
+    /**
+     * Get calendar orders for a custom date range
+     * @param startDate - Start date (YYYY-MM-DD)
+     * @param endDate - End date (YYYY-MM-DD)
+     * @param outletId - Optional outlet filter
+     * @param options - Additional options
+     */
+    getDateRangeOrders(startDate: string, endDate: string, outletId?: number, options?: {
+        merchantId?: number;
+        status?: string;
+        orderType?: string;
+        limit?: number;
+    }): Promise<CalendarApiResponse>;
 };
 
 interface UploadResponse {
@@ -5387,10 +7596,12 @@ interface UploadOptions {
     maxFileSize?: number;
     allowedTypes?: string[];
     folder?: string;
-    useBase64Fallback?: boolean;
     quality?: number;
     maxWidth?: number;
     maxHeight?: number;
+    enableCompression?: boolean;
+    compressionQuality?: number;
+    maxSizeMB?: number;
 }
 interface ImageValidationResult {
     isValid: boolean;
@@ -5416,7 +7627,24 @@ declare function validateImage(file: File, options?: UploadOptions): ImageValida
  */
 declare function getImageDimensions(file: File): Promise<ImageDimensions>;
 /**
- * Resize image on client-side before upload
+ * Compress image using browser-image-compression library
+ *
+ * **Why use browser-image-compression:**
+ * - Better compression algorithms
+ * - Auto WebP conversion
+ * - Progress tracking
+ * - More reliable than manual canvas compression
+ * - Handles various image formats
+ */
+declare function compressImage(file: File, options?: {
+    maxSizeMB?: number;
+    maxWidthOrHeight?: number;
+    useWebWorker?: boolean;
+    quality?: number;
+    onProgress?: (progress: number) => void;
+}): Promise<File>;
+/**
+ * Resize image on client-side before upload (legacy method)
  *
  * **Why client-side resize:**
  * - Reduces upload time and bandwidth
@@ -5459,6 +7687,92 @@ declare function createUploadController(): {
     signal: AbortSignal;
     cancel: () => void;
 };
+
+declare function createS3Client(): S3Client;
+declare let s3Client: S3Client;
+declare const BUCKET_NAME: string | undefined;
+declare const CLOUDFRONT_DOMAIN: string;
+interface S3UploadOptions {
+    folder?: string;
+    fileName?: string;
+    contentType?: string;
+    expiresIn?: number;
+    preserveOriginalName?: boolean;
+}
+interface S3StreamUploadOptions extends S3UploadOptions {
+    stream?: Readable;
+}
+interface S3UploadResponse {
+    success: boolean;
+    data?: {
+        url: string;
+        key: string;
+        bucket: string;
+        region: string;
+        cdnUrl?: string;
+        s3Url?: string;
+    };
+    error?: string;
+}
+/**
+ * Upload file to AWS S3
+ */
+declare function uploadToS3(file: Buffer | Uint8Array, options?: S3UploadOptions): Promise<S3UploadResponse>;
+/**
+ * Upload stream to AWS S3 (Based on Stack Overflow example)
+ * This is useful for handling large files or streams directly from multipart form data
+ */
+declare function uploadStreamToS3(stream: Readable, options?: S3StreamUploadOptions): Promise<S3UploadResponse>;
+/**
+ * Delete file from AWS S3
+ */
+declare function deleteFromS3(key: string): Promise<boolean>;
+/**
+ * Clean up orphaned staging files
+ * Used when user uploads images but doesn't create product
+ */
+declare function cleanupStagingFiles(stagingKeys: string[]): Promise<{
+    success: boolean;
+    deletedCount: number;
+    errors: string[];
+}>;
+/**
+ * Move file from staging to production folder in S3
+ * This implements the Two-Phase Upload Pattern
+ */
+declare function commitStagingFiles(stagingKeys: string[], targetFolder?: string): Promise<{
+    success: boolean;
+    committedKeys: string[];
+    errors: string[];
+}>;
+/**
+ * Generate presigned URL for direct upload
+ */
+declare function generatePresignedUrl(key: string, contentType: string, expiresIn?: number): Promise<string | null>;
+/**
+ * Generate clean S3 URL for file access (direct or CDN)
+ */
+declare function generateAccessUrl(key: string, expiresIn?: number): Promise<string | null>;
+/**
+ * Process product images - return CloudFront URLs as-is
+ */
+declare function processProductImages(images: string | string[] | null | undefined, expiresIn?: number): Promise<string[]>;
+/**
+ * Normalize image key/path to JPG extension
+ */
+declare function normalizeImageKeyToJpg(key: string): string;
+/**
+ * Normalize image URL to JPG extension for consistent display
+ */
+declare function normalizeImageUrlToJpg(url: string): string;
+/**
+ * Extract S3 key from URL
+ */
+declare function extractS3KeyFromUrl(url: string): string | null;
+/**
+ * Check if URL is from our S3 bucket
+ */
+declare function isS3Url(url: string): boolean;
 
 type Environment = 'development' | 'production' | 'test' | 'local';
 /**
@@ -5545,6 +7859,7 @@ interface ApiUrls {
         forgotPassword: string;
         resetPassword: string;
         changePassword: string;
+        resendVerification: string;
     };
     categories: {
         list: string;
@@ -5559,6 +7874,7 @@ interface ApiUrls {
         delete: (id: number) => string;
         updateStock: (id: number) => string;
         bulkUpdate: string;
+        availability: (id: number) => string;
     };
     orders: {
         list: string;
@@ -5714,6 +8030,7 @@ interface ApiUrls {
         user: string;
         outlet: string;
         billing: string;
+        currency: string;
         changePassword: string;
         uploadPicture: string;
         deletePicture: string;
@@ -5881,4 +8198,4 @@ declare class APIMonitor {
     static measureEndpoint<T>(method: string, path: string, handler: () => Promise<T>): Promise<T>;
 }
 
-export { APIMonitor, API_BASE_URL, type AnalyticsFilters, type ApiConfig, ApiError, type ApiErrorResponse, type ApiResponse, type ApiSuccessResponse, type ApiUrls, type AuditConfig, type AuditEntityConfig, AuditHelper, type AuditHelperContext, type AuditLog, type AuditLogFilter, type AuditLogResponse, type AuditLogStats, type AuditLogStatsResponse, AuditPerformanceMonitor, type AuthResponse, type AvailabilityBadgeProps, type BackupInfo, type BackupSchedule, type BackupVerification, type BadgeConfig, type BillingCycle, type BillingCycleCreateInput, type BillingCycleFilters, type BillingCycleUpdateInput, type BillingCyclesResponse, type BillingInterval, type BillingSettings, type CalculatedPricing, type CalendarApiResponse, type CalendarMeta, type CalendarOrderSummary, type CalendarQuery, type CalendarResponse, type CategoriesResponse, type CustomerAnalytics, type CustomerApiResponse, type CustomerListResponse, type CustomerSearchResponse, DEFAULT_CURRENCIES, DEFAULT_CURRENCY_SETTINGS, type DatabaseConfig, DatabaseMonitor, type DayOrders, DuplicateError, ERROR_MESSAGES, ERROR_STATUS_CODES, type Environment, ErrorCode, type ErrorInfo, type ErrorType, ForbiddenError, type ImageDimensions, type ImageValidationResult, type LocationBadgeProps, type LoginInput, type ManualPayment, type ManualPaymentCreateInput, MemoryMonitor, type Merchant, type MerchantSearchFilters, type MerchantSettings, type MerchantsResponse, NotFoundError, type Notification, type NotificationFilters, type NotificationsResponse, type OrderCreateInput, type OrderUpdatePayload, type OrdersQuery, type OrdersResponse, type OutletCreateInput, type OutletSettings, type OutletUpdateInput, type OutletsQuery, type OutletsResponse, type PaymentFilters, type PaymentGatewayConfig, type PaymentGatewayManager, type PaymentsResponse, type PerformanceMetrics, PerformanceMonitor, type PlanCreateInput, PlanLimitError, type PlanLimitsInfo, type PlanLimitsValidationResult, type PlanStats, type PlanUpdateInput, type PlanVariantCreateInput, type PlanVariantUpdateInput, type PlanVariantsQuery, type PlansQuery, type PlansResponse, type PricingBreakdown, type PricingConfig, type PricingInfo, PricingResolver, PricingValidator, type ProductAnalytics, type ProductCreateInput, type ProductUpdateInput, type ProductsQuery, type ProductsResponse, type ProrationCalculation, type RegisterInput, type RenewalConfig, type RenewalResult, type RenewalStats, type RentalInput, type RentalPeriodValidation, type RevenueData, type RoleBadgeProps, type StatusBadgeProps, type StoredUser, type SubscriptionCreateInput, SubscriptionManager, type SubscriptionPeriod, type SubscriptionRenewalConfig, type SubscriptionRenewalResult, type SubscriptionUpdateInput, type SubscriptionValidationOptions, type SubscriptionValidationResult, type SubscriptionsQuery, type SystemStats, UnauthorizedError, type UploadOptions, type UploadProgress, type UploadResponse, type UserApiResponse, type UserCreateInput, type UserProfile, type UserUpdateInput, type UsersQuery, ValidationError, type ValidationResult, addDaysToDate, analyticsApi, analyzeError, apiConfig, apiEnvironment, apiUrls, assertPlanLimit, auditPerformanceMonitor, authApi, authenticatedFetch, billingCyclesApi, buildApiUrl, calculateCustomerStats, calculateDiscountedPrice, calculateNewBillingDate, calculateProductStats, calculateProratedAmount, calculateProration, calculateRenewalPrice, calculateSavings, calculateStockPercentage, calculateSubscriptionPeriod, calculateSubscriptionPrice, calculateUserStats, calendarApi, canCreateUsers, canPerformOperation, canRentProduct, canSellProduct, capitalizeWords, categoriesApi, checkSubscriptionStatus, clearAuthData, compareOrderNumberFormats, convertCurrency, createApiUrl, createAuditHelper, createErrorResponse, createPaymentGatewayManager, createSuccessResponse, createUploadController, customerCreateSchema, customerUpdateSchema, customersApi, customersQuerySchema, databaseConfig, debounce, defaultAuditConfig, delay, exportAuditLogs, fileToBase64, filterCustomers, filterProducts, filterUsers, formatBillingCycle, formatCurrency, formatCurrencyAdvanced, formatCustomerForDisplay, formatDate, formatDateLong, formatDateShort, formatDateTime, formatDateTimeLong, formatDateTimeShort, formatPhoneNumber, formatProductPrice, formatProration, formatSubscriptionPeriod, generateRandomString, generateSlug, getAdminUrl, getAllPricingOptions, getAllowedOperations, getApiBaseUrl, getApiCorsOrigins, getApiDatabaseUrl, getApiJwtSecret, getApiUrl, getAuditConfig, getAuditEntityConfig, getAuditLogStats, getAuditLogs, getAuthToken, getAvailabilityBadge, getAvailabilityBadgeConfig, getBillingCycleDiscount, getClientUrl, getCurrency, getCurrencyDisplay, getCurrentCurrency, getCurrentDate, getCurrentEntityCounts, getCurrentEnvironment, getCurrentUser, getCustomerAddress, getCustomerAge, getCustomerContactInfo, getCustomerFullName, getCustomerIdTypeBadge, getCustomerLocationBadge, getCustomerStatusBadge, getDatabaseConfig, getDaysDifference, getDiscountPercentage, getEnvironmentUrls, getExchangeRate, getFormatRecommendations, getImageDimensions, getInitials, getLocationBadge, getLocationBadgeConfig, getMobileUrl, getOutletStats, getPlanLimitError, getPlanLimitErrorMessage, getPlanLimitsInfo, getPriceTrendBadge, getPriceTrendBadgeConfig, getPricingBreakdown, getPricingComparison, getProductAvailabilityBadge, getProductCategoryName, getProductDisplayName, getProductImageUrl, getProductOutletName, getProductStatusBadge, getProductStockStatus, getProductTypeBadge, getRoleBadge, getRoleBadgeConfig, getStatusBadge, getStatusBadgeConfig, getStoredUser, getSubscriptionError, getSubscriptionStatusBadge, getSubscriptionStatusPriority, getToastType, getTomorrow, getUserFullName, getUserRoleBadge, getUserStatusBadge, handleApiError, handleApiErrorForUI, handleApiResponse, handleBusinessError, handlePrismaError, handleValidationError, isAuthError, isAuthenticated, isBrowser, isDateAfter, isDateBefore, isDev, isDevelopment, isDevelopmentEnvironment, isEmpty, isErrorResponse, isGracePeriodExceeded, isLocal, isLocalEnvironment, isNetworkError, isPermissionError, isProd, isProduction, isProductionEnvironment, isServer, isSubscriptionExpired, isSuccessResponse, isTest, isValidCurrencyCode, isValidEmail, isValidPhone, isValidationError, loginSchema, memoize, merchantsApi, migrateOrderNumbers, normalizeWhitespace, notificationsApi, once, orderCreateSchema, orderUpdateSchema, ordersApi, ordersQuerySchema, outletCreateSchema, outletUpdateSchema, outletsApi, outletsQuerySchema, parseApiResponse, parseCurrency, paymentsApi, planCreateSchema, planUpdateSchema, planVariantCreateSchema, planVariantUpdateSchema, planVariantsQuerySchema, plansApi, plansQuerySchema, pricingCalculator, productCreateSchema, productUpdateSchema, productsApi, productsQuerySchema, profileApi, publicFetch, publicPlansApi, quickAuditLog, registerSchema, rentalSchema, resizeImage, retry, sanitizeFieldValue, settingsApi, shouldApplyProration, shouldLogEntity, shouldLogField, shouldSample, shouldThrowPlanLimitError, sortProducts, sortSubscriptionsByStatus, storeAuthData, subscriptionCreateSchema, subscriptionNeedsAttention, subscriptionUpdateSchema, subscriptionsApi, subscriptionsQuerySchema, systemApi, throttle, timeout, truncateText, uploadImage, uploadImages, userCreateSchema, userUpdateSchema, usersApi, usersQuerySchema, validateCustomer, validateForRenewal, validateImage, validateOrderNumberFormat, validatePlanLimits, validatePlatformAccess, validateProductPublicCheckAccess, validateSubscriptionAccess, withErrorHandlingForUI };
+export { APIMonitor, API_BASE_URL, AnalyticsFilters, ApiConfig, ApiError, ApiResponse, ApiUrls, AuditConfig, AuditEntityConfig, AuditHelper, AuditHelperContext, AuditLog, AuditLogFilter, AuditLogResponse, AuditLogStats, AuditLogStatsResponse, AuditPerformanceMonitor, AuthResponse, AvailabilityBadgeProps, BUCKET_NAME, BackupInfo, BackupSchedule, BackupVerification, BadgeConfig, BillingCycle, BillingCycleCreateInput, BillingCycleFilters, BillingCycleUpdateInput, BillingCyclesResponse, BillingInterval, BillingSettings, CLOUDFRONT_DOMAIN, CalculatedPricing, CalendarApiResponse, CalendarDay, CalendarMeta, CalendarOrderItem, CalendarOrderSummary, CalendarQuery, CalendarResponse, CategoriesResponse, CustomerAnalytics, CustomerApiResponse, CustomerListResponse, CustomerSearchResponse, DEFAULT_CURRENCIES, DEFAULT_CURRENCY_SETTINGS, DatabaseConfig, DatabaseMonitor, DateFormatOptions, DayOrders, DuplicateError, ERROR_MESSAGES, ERROR_STATUS_CODES, Environment, ErrorCode, ErrorInfo, ErrorType, ForbiddenError, ImageDimensions, ImageValidationResult, LocationBadgeProps, LoginInput, ManualPayment, ManualPaymentCreateInput, MemoryMonitor, MerchantCurrencyUpdate, MerchantSearchFilters, MerchantSettings, MerchantsResponse, NotFoundError, Notification, NotificationFilters, NotificationsResponse, OrderCreateInput, OrderUpdatePayload, OrdersQuery, OrdersResponse, OutletCreateInput, OutletSettings, OutletUpdateInput, OutletsQuery, OutletsResponse, PaymentFilters, PaymentGatewayConfig, PaymentGatewayManager, PaymentsResponse, PerformanceMetrics, PerformanceMonitor, PlanCreateInput, PlanLimitError, PlanLimitsInfo, PlanLimitsValidationResult, PlanStats, PlanUpdateInput, PlanVariantCreateInput, PlanVariantUpdateInput, PlanVariantsQuery, PlansQuery, PlansResponse, PricingBreakdown, PricingConfig, PricingInfo, PricingResolver, PricingValidator, ProductAnalytics, ProductAvailabilityRequest, ProductAvailabilityResponse, ProductCreateInput, ProductUpdateInput, ProductsQuery, ProductsResponse, ProrationCalculation, RegisterInput, RegisterResponse, RenewalConfig, RenewalResult, RenewalStats, RentalInput, RentalPeriodValidation, ResponseBuilder, RevenueData, RoleBadgeProps, S3StreamUploadOptions, S3UploadOptions, S3UploadResponse, StatusBadgeProps, StoredUser, SubscriptionCreateInput, SubscriptionManager, SubscriptionPeriod, SubscriptionRenewalConfig, SubscriptionRenewalResult, SubscriptionUpdateInput, SubscriptionValidationOptions, SubscriptionValidationResult, SubscriptionsQuery, SystemStats, UnauthorizedError, UploadOptions, UploadProgress, UploadResponse, UserApiResponse, UserCreateInput, UserProfile, UserUpdateInput, UsersQuery, ValidationError, ValidationResult, addDaysToDate, analyticsApi, analyzeError, apiConfig, apiEnvironment, apiUrls, assertPlanLimit, auditPerformanceMonitor, authApi, authenticatedFetch, billingCyclesApi, buildApiUrl, calculateCustomerStats, calculateDiscountedPrice, calculateNewBillingDate, calculateProductStats, calculateProratedAmount, calculateProration, calculateRenewalPrice, calculateSavings, calculateStockPercentage, calculateSubscriptionPeriod, calculateSubscriptionPrice, calculateUserStats, calendarApi, canCreateUsers, canPerformOperation, canRentProduct, canSellProduct, capitalizeWords, categoriesApi, categoriesQuerySchema, checkSubscriptionStatus, cleanupStagingFiles, clearAuthData, commitStagingFiles, compareOrderNumberFormats, compressImage, convertCurrency, createApiUrl, createAuditHelper, createErrorResponse, createPaymentGatewayManager, createS3Client, createUploadController, customerCreateSchema, customerUpdateSchema, customersApi, customersQuerySchema, databaseConfig, debounce, defaultAuditConfig, delay, deleteFromS3, exportAuditLogs, extractS3KeyFromUrl, fileToBase64, filterCustomers, filterProducts, filterUsers, formatBillingCycle, formatChartPeriod, formatCurrency, formatCurrencyAdvanced, formatCustomerForDisplay, formatDailyByLocale, formatDate, formatDateByLocale, formatDateLong, formatDateShort, formatDateTime, formatDateTimeByLocale, formatDateTimeLong, formatDateTimeShort, formatDateWithLocale, formatFullDateByLocale, formatMonthOnlyByLocale, formatPhoneNumber, formatProductPrice, formatProration, formatSubscriptionPeriod, formatTimeByLocale, generateAccessUrl, generatePresignedUrl, generateRandomString, generateSlug, generateTenantKeyFromName, getAdminUrl, getAllPricingOptions, getAllowedOperations, getApiBaseUrl, getApiCorsOrigins, getApiDatabaseUrl, getApiJwtSecret, getApiUrl, getAuditConfig, getAuditEntityConfig, getAuditLogStats, getAuditLogs, getAuthToken, getAvailabilityBadge, getAvailabilityBadgeConfig, getBillingCycleDiscount, getClientUrl, getCurrency, getCurrencyDisplay, getCurrentCurrency, getCurrentDate, getCurrentEntityCounts, getCurrentEnvironment, getCurrentUser, getCustomerAddress, getCustomerAge, getCustomerContactInfo, getCustomerFullName, getCustomerIdTypeBadge, getCustomerLocationBadge, getCustomerStatusBadge, getDatabaseConfig, getDateLocale, getDaysDifference, getDiscountPercentage, getEnvironmentUrls, getErrorCode, getErrorStatusCode, getErrorTranslationKey, getExchangeRate, getFormatRecommendations, getImageDimensions, getInitials, getLocalDate, getLocalDateKey, getLocationBadge, getLocationBadgeConfig, getMobileUrl, getOutletStats, getPlanLimitError, getPlanLimitErrorMessage, getPlanLimitsInfo, getPriceTrendBadge, getPriceTrendBadgeConfig, getPricingBreakdown, getPricingComparison, getProductAvailabilityBadge, getProductCategoryName, getProductDisplayName, getProductImageUrl, getProductOutletName, getProductStatusBadge, getProductStockStatus, getProductTypeBadge, getRoleBadge, getRoleBadgeConfig, getStatusBadge, getStatusBadgeConfig, getStoredUser, getSubscriptionError, getSubscriptionStatusBadge, getSubscriptionStatusPriority, getToastType, getTomorrow, getUTCDateKey, getUserFullName, getUserRoleBadge, getUserStatusBadge, handleApiError, handleApiErrorForUI, handleApiResponse, handleBusinessError, handlePrismaError, handleValidationError, isAuthError, isAuthenticated, isBrowser, isDateAfter, isDateBefore, isDev, isDevelopment, isDevelopmentEnvironment, isEmpty, isErrorResponse, isGracePeriodExceeded, isLocal, isLocalEnvironment, isNetworkError, isPermissionError, isProd, isProduction, isProductionEnvironment, isS3Url, isServer, isSubscriptionExpired, isSuccessResponse, isTest, isValidCurrencyCode, isValidEmail, isValidErrorCode, isValidPhone, isValidationError, loginSchema, memoize, merchantsApi, migrateOrderNumbers, normalizeImageKeyToJpg, normalizeImageUrlToJpg, normalizeWhitespace, notificationsApi, once, orderCreateSchema, orderUpdateSchema, ordersApi, ordersQuerySchema, outletCreateSchema, outletUpdateSchema, outletsApi, outletsQuerySchema, parseApiResponse, parseCurrency, paymentsApi, planCreateSchema, planUpdateSchema, planVariantCreateSchema, planVariantUpdateSchema, planVariantsQuerySchema, plansApi, plansQuerySchema, pricingCalculator, processProductImages, productCreateSchema, productUpdateSchema, productsApi, productsQuerySchema, profileApi, publicFetch, publicPlansApi, quickAuditLog, registerSchema, rentalSchema, resizeImage, retry, s3Client, sanitizeFieldValue, settingsApi, shouldApplyProration, shouldLogEntity, shouldLogField, shouldSample, shouldThrowPlanLimitError, sortProducts, sortSubscriptionsByStatus, storeAuthData, subscriptionCreateSchema, subscriptionNeedsAttention, subscriptionUpdateSchema, subscriptionsApi, subscriptionsQuerySchema, systemApi, throttle, timeout, truncateText, uploadImage, uploadImages, uploadStreamToS3, uploadToS3, useFormattedChartPeriod, useFormattedDaily, useFormattedDate, useFormattedDateTime, useFormattedFullDate, useFormattedMonthOnly, userCreateSchema, userUpdateSchema, usersApi, usersQuerySchema, validateCustomer, validateForRenewal, validateImage, validateOrderNumberFormat, validatePlanLimits, validatePlatformAccess, validateProductPublicCheckAccess, validateSubscriptionAccess, withErrorHandlingForUI };

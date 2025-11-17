@@ -6,6 +6,7 @@ export { UserCard } from './UserCard';
 export { UsersLoading } from './UsersLoading';
 export { UserActions } from './UserActions';
 export { UserDetailDialog } from './UserDetailDialog';
+export { AddUserDialog } from './AddUserDialog';
 export { ChangePasswordDialog } from './ChangePasswordDialog';
 export { UserForm } from './UserForm';
 export { UserRow } from './UserRow';

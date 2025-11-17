@@ -1,6 +1,6 @@
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAnyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import {API} from '@rentalshop/constants';
 
@@ -8,7 +8,7 @@ import {API} from '@rentalshop/constants';
  * GET /api/users/profile
  * Get current user's profile
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAnyAuth(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 Profile API called');
     
@@ -22,7 +22,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     if (!userProfile) {
       console.log('❌ User not found with id:', user.id);
       return NextResponse.json(
-        { success: false, message: 'User not found' },
+        ResponseBuilder.error('USER_NOT_FOUND'),
         { status: API.STATUS.NOT_FOUND }
       );
     }
@@ -70,7 +70,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         description: userProfile.merchant.description,
         isActive: userProfile.merchant.isActive,
         planId: userProfile.merchant.planId,
-        subscriptionStatus: userProfile.merchant.subscriptionStatus,
+        subscriptionStatus: userProfile.merchant.subscription?.status,
         totalRevenue: userProfile.merchant.totalRevenue,
         createdAt: userProfile.merchant.createdAt,
         lastActiveAt: userProfile.merchant.lastActiveAt,
@@ -123,7 +123,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   } catch (error) {
     console.error('❌ Error fetching user profile:', error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
@@ -133,7 +133,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
  * PUT /api/users/profile
  * Update current user's profile
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, context: any) => {
+export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
   const { user, userScope } = context;
   try {
 
@@ -154,10 +154,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'No valid fields to update' 
-        },
+        ResponseBuilder.error('NO_VALID_FIELDS', 'No valid fields to update'),
         { status: 400 }
       );
     }
@@ -185,19 +182,14 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         whereClause.merchantId = null;
       }
 
-      const existingUserWithPhone = await db.users.findFirst({
-        where: whereClause,
-      });
+      const existingUserWithPhone = await db.users.findFirst(whereClause);
 
       if (existingUserWithPhone) {
         const scopeMessage = currentUser?.role === 'ADMIN' 
           ? 'globally' 
           : 'in your organization';
         return NextResponse.json(
-          { 
-            success: false, 
-            error: `Phone number already exists ${scopeMessage}` 
-          },
+          ResponseBuilder.error('PHONE_ALREADY_EXISTS', `Phone number already exists ${scopeMessage}`),
           { status: 400 }
         );
       }
@@ -239,24 +231,19 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       } : undefined,
     };
 
-    return NextResponse.json({
-      success: true,
-      data: transformedUser,
-      message: 'Profile updated successfully',
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('PROFILE_UPDATED_SUCCESS', transformedUser)
+    );
   } catch (error) {
     console.error('❌ Error updating user profile:', error);
     console.error('Error details:', {
+      code: 'INTERNAL_SERVER_ERROR',
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });
     
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to update user profile',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      ResponseBuilder.error('UPDATE_PROFILE_FAILED', error instanceof Error ? error.message : 'Failed to update user profile'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }

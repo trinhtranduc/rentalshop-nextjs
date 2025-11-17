@@ -40,23 +40,6 @@ export const ProductPageHeader: React.FC<ProductPageHeaderProps> = ({
           ←{backText}
         </Button>
       )}
-      
-      {/* Title and Subtitle */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-          {subtitle && (
-            <p className="text-gray-600 mt-1">{subtitle}</p>
-          )}
-        </div>
-        
-        {/* Action Buttons */}
-        {children && (
-          <div className="flex gap-2">
-            {children}
-          </div>
-        )}
-      </div>
     </div>
   );
 };

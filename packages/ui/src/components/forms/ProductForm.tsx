@@ -25,6 +25,7 @@ import {
 } from '../ui';
 import { formatCurrency } from '../../lib';
 import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
+import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { 
   Package, 
   DollarSign, 
@@ -74,7 +75,7 @@ interface ProductFormProps {
   initialData?: Partial<ProductFormData>;
   categories: Category[];
   outlets: Array<{ id: number; name: string; address?: string }>;
-  onSubmit: (data: ProductInput) => void;
+  onSubmit: (data: ProductInput, files?: File[]) => void; // Updated to support files
   onCancel?: () => void;
   loading?: boolean;
   title?: string;
@@ -84,6 +85,7 @@ interface ProductFormProps {
   hideHeader?: boolean; // Hide header when used in dialog
   hideSubmitButton?: boolean; // Hide submit button when using external action buttons
   formId?: string; // Form ID for external submit buttons
+  useMultipartUpload?: boolean; // New prop to enable multipart form data upload
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -99,8 +101,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   merchantId = '',
   hideHeader = false,
   hideSubmitButton = false,
-  formId
+  formId,
+  useMultipartUpload = false
 }) => {
+  const t = useProductTranslations();
+  const tc = useCommonTranslations();
+  
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
@@ -124,6 +130,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [uploadProgress, setUploadProgress] = useState<Record<string, UploadProgress>>({});
   const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // New state for files when using multipart upload
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Debug: Log initial data changes
@@ -201,6 +208,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       setFormData(updatedFormData);
     }
   }, [outlets, categories, formData.outletStock.length, formData.categoryId, formData.barcode, mode]);
+
+  // Auto-sync outlet stock with totalStock if only 1 outlet (default outlet)
+  useEffect(() => {
+    if (outlets.length === 1 && formData.outletStock.length === 1) {
+      const currentOutletStock = formData.outletStock[0].stock;
+      
+      // If totalStock changes and differs from outlet stock, sync it
+      if (formData.totalStock !== currentOutletStock) {
+        setFormData(prev => ({
+          ...prev,
+          outletStock: [{
+            outletId: outlets[0].id,
+            stock: formData.totalStock
+          }]
+        }));
+      }
+    }
+  }, [formData.totalStock, outlets.length]);
 
   // Generate unique barcode
   const generateBarcode = (): string => {
@@ -358,11 +383,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       rentPrice: formData.rentPrice,
       salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
       deposit: formData.deposit,
-      images: formData.images, // Keep as array for ProductInput
+      images: useMultipartUpload ? [] : formData.images, // Empty array for multipart, existing images for immediate upload
       outletStock: formData.outletStock,
     };
 
-    onSubmit(productData);
+    // Pass files when using multipart upload
+    if (useMultipartUpload) {
+      onSubmit(productData, selectedFiles);
+    } else {
+      onSubmit(productData);
+    }
   };
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
@@ -407,20 +437,31 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
 
 
-  // Image handling with enhanced Cloudinary upload and progress tracking
+  // Image handling - supports both immediate upload and multipart form data
   const handleImageUpload = async (files: FileList | null) => {
     if (!files) return;
     
     // Check if adding more files would exceed the 3 image limit
-    if (formData.images.length >= 3) {
+    const currentImageCount = useMultipartUpload ? selectedFiles.length : formData.images.length;
+    if (currentImageCount >= 3) {
       console.warn('Maximum 3 images allowed');
       return;
     }
     
     const filesArray = Array.from(files);
-    const filesToUpload = filesArray.slice(0, 3 - formData.images.length);
+    const filesToUpload = filesArray.slice(0, 3 - currentImageCount);
     
-    // Get auth token
+    if (useMultipartUpload) {
+      // For multipart upload, just store files and show preview
+      console.log('🔍 Using multipart upload mode - storing files locally');
+      setSelectedFiles(prev => [...prev, ...filesToUpload]);
+      
+      // Clear any upload errors
+      setUploadErrors({});
+      return;
+    }
+    
+    // Get auth token for immediate upload
     const token = getAuthToken();
     if (!token) {
       console.error('No authentication token found');
@@ -448,15 +489,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       }));
       
       try {
-        // Upload with progress tracking and automatic optimization
+        // Upload with progress tracking, compression, and optimization
         const uploadResult = await uploadImage(file, token, {
-          folder: 'rentalshop/products',
+          folder: 'staging',
           maxFileSize: 5 * 1024 * 1024, // 5MB
           allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
-          useBase64Fallback: true, // Enable fallback for development
           maxWidth: 1200, // Client-side resize before upload
           maxHeight: 900,
           quality: 0.85,
+          // Enable advanced compression
+          enableCompression: true,
+          compressionQuality: 0.8, // 80% quality
+          maxSizeMB: 1, // Max 1MB after compression
           onProgress: (progress: UploadProgress) => {
             setUploadProgress(prev => ({
               ...prev,
@@ -520,10 +564,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   };
 
   const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+    if (useMultipartUpload) {
+      // Remove from selectedFiles
+      setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    } else {
+      // Remove from formData.images (existing behavior)
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    }
   };
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -541,10 +591,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     e.stopPropagation();
     setDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0] && formData.images.length < 3) {
+    const currentImageCount = useMultipartUpload ? selectedFiles.length : formData.images.length;
+    if (e.dataTransfer.files && e.dataTransfer.files[0] && currentImageCount < 3) {
       handleImageUpload(e.dataTransfer.files);
     }
-  }, [formData.images.length]);
+  }, [formData.images.length, selectedFiles.length, useMultipartUpload]);
 
   const getProductStatus = () => {
     if (formData.totalStock === 0) return { status: 'Out of Stock', variant: 'destructive' as const };
@@ -553,7 +604,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const { status, variant } = getProductStatus();
 
+  // Helper variables for image handling
+  const currentImages = useMultipartUpload ? selectedFiles : formData.images;
+  const currentImageCount = currentImages.length;
+  const isMaxImagesReached = currentImageCount >= 3;
 
+  // Helper function to create image preview URL for files
+  const createFilePreviewUrl = (file: File): string => {
+    return URL.createObjectURL(file);
+  };
 
   return (
     <div className="space-y-6">
@@ -600,40 +659,40 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="w-5 h-5" />
-              Product Information
+              {t('productDetails')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Product Name *</label>
+                <label className="text-sm font-medium text-text-primary">{t('fields.name')} *</label>
                 <Input
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter product name"
+                  placeholder={t('fields.name')}
                   className={errors.name ? 'border-red-500' : ''}
                 />
                 {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">SKU</label>
+                <label className="text-sm font-medium text-text-primary">{t('fields.sku')}</label>
                 <Input
                   value={formData.sku}
                   onChange={(e) => handleInputChange('sku', e.target.value)}
-                  placeholder="Enter SKU (optional)"
+                  placeholder={t('fields.sku')}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Barcode</label>
+                <label className="text-sm font-medium text-text-primary">{t('fields.barcode')}</label>
                 <div className="flex gap-2">
                   <Input
                     value={formData.barcode}
                     onChange={(e) => handleInputChange('barcode', e.target.value)}
-                    placeholder="Enter barcode (optional)"
+                    placeholder={t('fields.barcode')}
                     className="flex-1"
                   />
                   <Button
@@ -641,7 +700,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => handleInputChange('barcode', generateBarcode())}
-                    title="Generate new barcode"
+                    title={t('messages.generateBarcode')}
                   >
                     <RefreshCw className="w-4 h-4" />
                   </Button>
@@ -649,7 +708,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Category *</label>
+                <label className="text-sm font-medium text-text-primary">{t('fields.category')} *</label>
                 <Select
                   value={formData.categoryId.toString()}
                   onValueChange={(value) => {
@@ -657,7 +716,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   }}
                 >
                   <SelectTrigger className={errors.categoryId ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder={t('fields.category')} />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
@@ -672,30 +731,25 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Description</label>
+              <label className="text-sm font-medium text-text-primary">{t('fields.description')}</label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Enter product description (optional)"
+                placeholder={t('fields.description')}
                 rows={3}
               />
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Pricing & Stock */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Pricing & Stock
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Pricing Section - Merged into Product Details */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                {t('pricing.title')}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <NumericInput
-                  label="Rent Price"
+                  label={t('fields.rentPrice')}
                   value={formData.rentPrice}
                   onChange={(value) => handleInputChange('rentPrice', value)}
                   placeholder="0.00"
@@ -709,7 +763,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
               <div className="space-y-2">
                 <NumericInput
-                  label="Sale Price"
+                  label={t('fields.salePrice')}
                   value={formData.salePrice}
                   onChange={(value) => handleInputChange('salePrice', value)}
                   placeholder="0.00"
@@ -723,7 +777,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
               <div className="space-y-2">
                 <NumericInput
-                  label="Deposit"
+                  label={t('fields.deposit')}
                   value={formData.deposit}
                   onChange={(value) => handleInputChange('deposit', value)}
                   placeholder="0.00"
@@ -739,7 +793,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <NumericInput
-                  label="Total Stock"
+                  label={t('fields.stock')}
                   value={formData.totalStock}
                   onChange={(value) => handleInputChange('totalStock', value)}
                   placeholder="0"
@@ -751,35 +805,35 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
               </div>
             </div>
+            </div>
           </CardContent>
         </Card>
 
-
-
-        {/* Outlet Stock Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Warehouse className="w-5 h-5" />
-              Outlet Stock Distribution *
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Outlet Stock Management - Only show if merchant has multiple outlets */}
+        {outlets.length > 1 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Warehouse className="w-5 h-5" />
+                {t('inventory.outletStockDistribution')} *
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
             <div className="mb-4">
               <p className="text-sm text-muted-foreground">
-                Total outlets: {outlets.length} | Outlet stock entries: {formData.outletStock.length} | <span className="text-red-500">*</span> Stock values are required
+                {t('inventory.totalOutlets')}: {outlets.length} | {t('inventory.stockEntries')}: {formData.outletStock.length} | <span className="text-red-500">*</span> {t('inventory.stockRequired')}
               </p>
             </div>
             
             {outlets.length === 0 ? (
               <div className="text-center py-8">
                 <Warehouse className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Outlets Available</h3>
+                <h3 className="text-lg font-semibold mb-2">{t('inventory.noOutletsAvailable')}</h3>
                 <p className="text-muted-foreground mb-4">
-                  You need to create at least one outlet before you can add products. Products must be assigned to specific outlets for inventory management.
+                  {t('inventory.needOutletMessage')}
                 </p>
                 <p className="text-sm text-red-500">
-                  Please contact your administrator to set up outlets for your merchant.
+                  {t('inventory.contactAdmin')}
                 </p>
               </div>
             ) : (
@@ -787,8 +841,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Outlet</TableHead>
-                      <TableHead>Stock</TableHead>
+                      <TableHead>{t('filters.outletLabel')}</TableHead>
+                      <TableHead>{t('stock.label')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -833,36 +887,40 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             )}
           </CardContent>
         </Card>
+        ) : null}
 
         {/* Enhanced Image Management */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ImageIcon className="w-5 h-5" />
-              Product Images
+              {t('fields.images')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Drag & Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive && formData.images.length < 3
+                dragActive && !isMaxImagesReached
                   ? 'border-action-primary bg-action-primary/10' 
-                  : formData.images.length >= 3
+                  : isMaxImagesReached
                   ? 'border-gray-300 bg-gray-50'
                   : 'border-border hover:border-action-primary/50'
               }`}
-              onDragEnter={formData.images.length < 3 ? handleDrag : undefined}
-              onDragLeave={formData.images.length < 3 ? handleDrag : undefined}
-              onDragOver={formData.images.length < 3 ? handleDrag : undefined}
-              onDrop={formData.images.length < 3 ? handleDrop : undefined}
+              onDragEnter={!isMaxImagesReached ? handleDrag : undefined}
+              onDragLeave={!isMaxImagesReached ? handleDrag : undefined}
+              onDragOver={!isMaxImagesReached ? handleDrag : undefined}
+              onDrop={!isMaxImagesReached ? handleDrop : undefined}
             >
-              <Upload className={`w-8 h-8 mx-auto mb-2 ${formData.images.length >= 3 ? 'text-gray-400' : 'text-text-secondary'}`} />
+              <Upload className={`w-8 h-8 mx-auto mb-2 ${isMaxImagesReached ? 'text-gray-400' : 'text-text-secondary'}`} />
               <p className="text-text-primary font-medium mb-1">
-                {formData.images.length >= 3 ? 'Maximum images reached' : 'Drag and drop images here'}
+                {isMaxImagesReached ? t('messages.maxImagesReached') : t('messages.dragDropImages')}
               </p>
               <p className="text-text-secondary text-sm mb-3">
-                Supports JPG, PNG, WebP, GIF up to 5MB each (max 3 images, optional)
+                {useMultipartUpload 
+                  ? `${t('messages.imageFormats')} (will be uploaded with form data)`
+                  : t('messages.imageFormats')
+                }
               </p>
               
               {/* File Input */}
@@ -874,7 +932,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 onChange={(e) => handleImageUpload(e.target.files)}
                 className="hidden"
                 id="image-upload"
-                disabled={formData.images.length >= 3}
+                disabled={isMaxImagesReached}
               />
               
               {/* Browse Button */}
@@ -883,25 +941,31 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 variant="outline" 
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={formData.images.length >= 3}
+                disabled={isMaxImagesReached}
               >
-                {formData.images.length >= 3 ? 'Max Images Reached' : 'Browse Files'}
+                {isMaxImagesReached ? t('messages.maxImagesReached') : tc('buttons.browse')}
               </Button>
             </div>
 
             {/* Image Counter and Preview Grid */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-text-secondary">
-                {formData.images.length}/3 images uploaded (optional)
+                {currentImageCount}/3 {useMultipartUpload ? t('messages.imagesSelected') : t('messages.imagesUploaded')}
               </p>
-              {formData.images.length > 0 && (
+              {currentImageCount > 0 && (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setFormData(prev => ({ ...prev, images: [] }))}
+                  onClick={() => {
+                    if (useMultipartUpload) {
+                      setSelectedFiles([]);
+                    } else {
+                      setFormData(prev => ({ ...prev, images: [] }));
+                    }
+                  }}
                 >
-                  Clear All Images
+                  {t('messages.clearAllImages')}
                 </Button>
               )}
             </div>
@@ -913,79 +977,116 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   <div key={fileId} className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                     <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="text-sm text-red-700 font-medium">Upload Failed</p>
+                      <p className="text-sm text-red-700 font-medium">{t('messages.uploadFailed')}</p>
                       <p className="text-xs text-red-600 mt-1">{error}</p>
                     </div>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       type="button"
                       onClick={() => setUploadErrors(prev => {
                         const newErrors = { ...prev };
                         delete newErrors[fileId];
                         return newErrors;
                       })}
-                      className="text-red-400 hover:text-red-600"
+                      className="text-red-400 hover:text-red-600 h-6 w-6 p-0"
                     >
                       <XCircle className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
             )}
             
-            {formData.images.length > 0 && (
+            {currentImageCount > 0 && (
               <div className="grid grid-cols-3 gap-3">
-                {formData.images.map((image, index) => {
-                  // Check if this is an uploading placeholder
-                  const isUploading = image.startsWith('uploading-');
-                  const fileId = isUploading ? image.replace('uploading-', '') : '';
-                  const progress = isUploading ? uploadProgress[fileId] : null;
-                  
-                  return (
-                    <div key={index} className="relative group">
-                      {isUploading ? (
-                        // Upload Progress Card
-                        <div className="w-full h-24 rounded-lg border border-action-primary bg-action-primary/5 flex flex-col items-center justify-center gap-2">
-                          <Loader2 className="w-6 h-6 animate-spin text-action-primary" />
-                          {progress && (
-                            <>
-                              <div className="w-full px-4">
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                  <div 
-                                    className="bg-action-primary h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${progress.percentage}%` }}
-                                  />
-                                </div>
-                              </div>
-                              <p className="text-xs text-text-secondary">
-                                {progress.stage === 'preparing' && 'Preparing...'}
-                                {progress.stage === 'uploading' && `Uploading ${progress.percentage}%`}
-                                {progress.stage === 'processing' && 'Processing...'}
-                                {progress.stage === 'complete' && 'Complete!'}
-                              </p>
-                            </>
-                          )}
+                {useMultipartUpload ? (
+                  // Render selected files for multipart upload
+                  selectedFiles.map((file, index) => {
+                    const previewUrl = createFilePreviewUrl(file);
+                    return (
+                      <div key={index} className="relative group">
+                        <img
+                          src={previewUrl}
+                          alt={`${file.name}`}
+                          className="w-full h-24 object-cover rounded-lg border"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 rounded-b-lg truncate">
+                          {file.name}
                         </div>
-                      ) : (
-                        // Image Preview
-                        <>
-                          <img
-                            src={image}
-                            alt={`Product ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg border"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                            title="Remove image"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          type="button"
+                          onClick={() => {
+                            removeImage(index);
+                            URL.revokeObjectURL(previewUrl); // Clean up object URL
+                          }}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 h-6 w-6"
+                          title={t('messages.removeImage')}
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  // Render uploaded images (existing behavior)
+                  formData.images.map((image, index) => {
+                    // Check if this is an uploading placeholder
+                    const isUploading = image.startsWith('uploading-');
+                    const fileId = isUploading ? image.replace('uploading-', '') : '';
+                    const progress = isUploading ? uploadProgress[fileId] : null;
+                    
+                    return (
+                      <div key={index} className="relative group">
+                        {isUploading ? (
+                          // Upload Progress Card
+                          <div className="w-full h-24 rounded-lg border border-action-primary bg-action-primary/5 flex flex-col items-center justify-center gap-2">
+                            <Loader2 className="w-6 h-6 animate-spin text-action-primary" />
+                            {progress && (
+                              <>
+                                <div className="w-full px-4">
+                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div 
+                                      className="bg-action-primary h-2 rounded-full transition-all duration-300"
+                                      style={{ width: `${progress.percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                <p className="text-xs text-text-secondary">
+                                  {progress.stage === 'preparing' && t('messages.preparing')}
+                                  {progress.stage === 'uploading' && `${t('messages.uploading')} ${progress.percentage}%`}
+                                  {progress.stage === 'processing' && t('messages.processing')}
+                                  {progress.stage === 'complete' && t('messages.complete')}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          // Image Preview
+                          <>
+                            <img
+                              src={image}
+                              alt={`${t('fields.name')} ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg border"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 h-6 w-6"
+                              title={t('messages.removeImage')}
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
           </CardContent>

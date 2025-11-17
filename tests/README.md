@@ -7,6 +7,7 @@ This directory contains essential tests for the Rental Shop Next.js application,
 ```
 tests/
 ├── README.md                           # This file
+├── MANUAL_TESTING_CHECKLIST.md         # Manual testing checklist
 ├── subscription-validation.test.js     # Core subscription validation tests
 ├── admin-extension.test.js             # Admin extension functionality tests
 ├── product-availability-actual.test.js # Product availability with actual functions
@@ -54,6 +55,15 @@ tests/
 - **Plan Changes**: Test subscription plan upgrades and downgrades
 - **Access Validation**: Test subscription-based access control
 - **Workflow Integration**: Test complete admin workflows and bulk operations
+
+### 6. Manual Testing Checklist (`MANUAL_TESTING_CHECKLIST.md`)
+- **Comprehensive Manual Testing**: Complete checklist for manual testing of all core features
+- **Registration & Login**: Test account creation with default outlet and category
+- **Dashboard**: Test today, monthly, and yearly reports with data validation
+- **Orders**: Test create, update, status changes, search, and filter
+- **Products**: Test create, update, search, and filter functionality
+- **Customers**: Test customer management and history tracking
+- **UI/UX**: Test responsive design, loading states, and performance
 
 ## Running Tests
 
@@ -114,6 +124,19 @@ These tests focus on **documenting requirements** and **validating business logi
 - Status updates from expired/cancelled to active
 - Access restoration after extension
 - Activity logging for audit trails
+
+## Manual Testing
+
+For comprehensive manual testing of all features before deployment, use the **Manual Testing Checklist**:
+- 📋 [MANUAL_TESTING_CHECKLIST.md](./MANUAL_TESTING_CHECKLIST.md)
+
+This checklist covers:
+- ✅ Registration & login with default outlet and category
+- ✅ Dashboard analytics (today, month, year)
+- ✅ Order management (create, update, status changes, search, filter)
+- ✅ Product management (create, update, search, filter)
+- ✅ Customer management
+- ✅ UI/UX and performance testing
 
 ## Implementation Notes
 

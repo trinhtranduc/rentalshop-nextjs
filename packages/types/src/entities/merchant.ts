@@ -31,13 +31,13 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   email: string;
   description?: string;
   businessType?: string;
-  pricingType?: string; // FIXED, HOURLY, DAILY, WEEKLY
+  pricingType?: string; // FIXED, HOURLY, DAILY
   taxId?: string;
+  currency: string; // Currency code (USD, VND)
   isActive: boolean;
   
   // Subscription and plan information
   planId?: number;
-  subscriptionStatus: 'active' | 'trial' | 'expired' | 'cancelled';
   
   // Business metrics
   totalRevenue: number;
@@ -48,13 +48,12 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   
   // Related entities (populated when needed)
   plan?: PlanDetails;
-  currentSubscription?: CurrentSubscription;
+  subscription?: CurrentSubscription; // ✅ Always exists (default trial)
   outlets?: OutletReference[];
   users?: UserReference[];
   customers?: CustomerReference[];
   products?: ProductReference[];
   categories?: any[];
-  subscriptions?: any[];
 }
 
 // ============================================================================
@@ -88,25 +87,26 @@ export interface PlanDetails {
 export interface CurrentSubscription {
   id: number;
   status: string;
-  startDate: Date | string;
-  endDate?: Date | string;
-  nextBillingDate?: Date | string;
+  currentPeriodStart: Date | string;
+  currentPeriodEnd: Date | string;
+  trialStart?: Date | string;
+  trialEnd?: Date | string;
   amount: number;
   currency: string;
-  autoRenew: boolean;
+  interval: string; // 'month', 'quarter', 'year'
+  period: number; // 1, 3, 6, 12 months
+  discount: number;
+  savings: number;
+  cancelAtPeriodEnd: boolean;
+  canceledAt?: Date | string;
+  cancelReason?: string;
   plan?: {
     id: number;
     name: string;
+    description: string;
     basePrice: number;
     currency: string;
-  };
-  planVariant?: {
-    id: number;
-    name: string;
-    duration: number;
-    price: number;
-    discount: number;
-    savings: number;
+    trialDays: number;
   };
 }
 
@@ -123,6 +123,9 @@ export interface MerchantCreateInput extends BaseFormInput {
   email: string;
   phone?: string;
   description?: string;
+  currency?: string; // Currency code (USD, VND), defaults to USD
+  businessType?: string; // Business type (CLOTHING, VEHICLE, EQUIPMENT, GENERAL)
+  pricingType?: string; // Pricing type (FIXED, HOURLY, DAILY)
   planId?: number;
   isActive?: boolean;
 }
@@ -140,8 +143,10 @@ export interface MerchantUpdateInput extends BaseUpdateInput {
   state?: string;
   zipCode?: string;
   country?: string;
-  businessType?: string;
+  businessType?: string; // Business type (CLOTHING, VEHICLE, EQUIPMENT, GENERAL)
+  pricingType?: string; // Pricing type (FIXED, HOURLY, DAILY)
   taxId?: number;
+  currency?: string; // Currency code (USD, VND)
   isActive?: boolean;
 }
 
@@ -183,7 +188,6 @@ export interface MerchantStats {
   name: string;
   email: string;
   isActive: boolean;
-  subscriptionStatus: string;
   planName?: string;
   subscriptionEndDate?: Date | string;
   totalRevenue: number;
@@ -259,40 +263,8 @@ export interface MerchantFilters {
 // ============================================================================
 // PRICING CONFIGURATION TYPES
 // ============================================================================
+// Import types from constants package to avoid duplication
+import type { BusinessType, PricingType, PricingBusinessRules, PricingDurationLimits, MerchantPricingConfig } from '@rentalshop/constants';
 
-/**
- * Pricing type enumeration
- */
-export type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' | 'WEEKLY';
-
-/**
- * Business type enumeration
- */
-export type BusinessType = 'CLOTHING'| 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-
-/**
- * Business rules for pricing
- */
-export interface PricingBusinessRules {
-  requireRentalDates: boolean;      // Bắt buộc chọn dates cho time-based pricing
-  showPricingOptions: boolean;      // Hiển thị pricing options cho customer
-}
-
-/**
- * Duration limits for time-based pricing
- */
-export interface PricingDurationLimits {
-  minDuration: number;              // Thời gian thuê tối thiểu
-  maxDuration: number;              // Thời gian thuê tối đa
-  defaultDuration: number;          // Thời gian mặc định
-}
-
-/**
- * Merchant pricing configuration
- */
-export interface MerchantPricingConfig {
-  businessType: BusinessType;       // Loại hình kinh doanh
-  defaultPricingType: PricingType;  // Pricing type mặc định
-  businessRules: PricingBusinessRules;
-  durationLimits: PricingDurationLimits;
-}
+// Re-export for backward compatibility
+export type { BusinessType, PricingType, PricingBusinessRules, PricingDurationLimits, MerchantPricingConfig };

@@ -22,6 +22,11 @@ export * from './subscription';
 export * from './settings';
 
 // ============================================================================
+// INTERNATIONALIZATION (i18n)
+// ============================================================================
+export * from './i18n';
+
+// ============================================================================
 // DASHBOARD & ANALYTICS
 // ============================================================================
 export * from './dashboard';
@@ -34,6 +39,11 @@ export * from './calendar';
 // These exports are maintained for backward compatibility
 export * from './common/currency';
 export * from './common/search';
+
+// ============================================================================
+// PLATFORM DETECTION
+// ============================================================================
+export * from './platform';
 
 // ============================================================================
 // LEGACY SUPPORT - DEPRECATED

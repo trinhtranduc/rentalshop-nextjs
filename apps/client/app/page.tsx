@@ -1,7 +1,12 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { useTranslations } from 'next-intl'
+import { Button, Logo, LanguageSwitcher } from '@rentalshop/ui'
+import { publicPlansApi } from '@rentalshop/utils'
+import type { Plan } from '@rentalshop/types'
 import { 
   Check, 
   ChevronDown, 
@@ -21,10 +26,16 @@ import {
   ExternalLink,
   BarChart,
   AlertTriangle,
-  X
+  X,
+  Store,
+  Sparkles,
+  ShoppingBag,
+  Zap,
+  Loader2
 } from 'lucide-react'
 
 const LandingPage = () => {
+  const t = useTranslations('landing')
   return (
     <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-bg-card to-bg-tertiary">
       
@@ -32,21 +43,31 @@ const LandingPage = () => {
         <header className="bg-bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
-                  <svg className="w-5 h-5 text-text-inverted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <span className="text-xl font-bold text-text-primary">RentalShop</span>
+              <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+                <Logo 
+                  size="md" 
+                  variant="custom" 
+                  src="/anyrent-logo-light.svg"
+                  showLabel={true}
+                  labelText="AnyRent"
+                  showBackground={false}
+                />
+              </Link>
+              <div className="hidden md:flex items-center space-x-6">
+                <a href="#features" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.features')}</a>
+                <a href="#pricing" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.pricing')}</a>
+                <a href="#faq" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.faq')}</a>
+                <a href="#contact" className="text-text-secondary hover:text-action-primary transition-colors">{t('navigation.contact')}</a>
+                <LanguageSwitcher variant="compact" />
+                <Link href="/login" className="bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted px-4 py-2 rounded-lg hover:from-brand-secondary hover:to-action-primary transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
+                  {t('navigation.login')}
+                </Link>
               </div>
-              <div className="hidden md:flex items-center space-x-8">
-                <a href="#features" className="text-text-secondary hover:text-action-primary transition-colors">Features</a>
-                <a href="#pricing" className="text-text-secondary hover:text-action-primary transition-colors">Pricing</a>
-                <a href="#faq" className="text-text-secondary hover:text-action-primary transition-colors">FAQ</a>
-                <a href="#contact" className="text-text-secondary hover:text-action-primary transition-colors">Contact</a>
-                <Link href="/login" className="bg-brand-primary text-text-inverted px-4 py-2 rounded-lg hover:bg-brand-secondary transition-colors">
-                  Login
+              {/* Mobile menu - simplified */}
+              <div className="md:hidden flex items-center space-x-3">
+                <LanguageSwitcher variant="compact" />
+                <Link href="/login" className="bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted px-3 py-1.5 rounded-lg text-sm">
+                  {t('navigation.login')}
                 </Link>
               </div>
             </div>
@@ -58,30 +79,30 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div className="text-center">
               <h1 className="text-5xl md:text-6xl font-bold text-text-primary mb-6">
-                Modern Rental Shop
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-action-primary">
-                  {" "}Management System
+                {t('hero.title')}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-action-primary to-brand-secondary">
+                  {" "}{t('hero.subtitle')}
                 </span>
               </h1>
               <p className="text-xl text-text-secondary mb-8 max-w-3xl mx-auto">
-                Professional rental shop management solution. Manage products, customers, and orders efficiently with our modern, easy-to-use platform.
+                {t('hero.description')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a 
                   href="https://apps.apple.com/vn/app/rentalshop/id1500115668" 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-brand-primary text-text-inverted rounded-xl hover:bg-brand-secondary transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted rounded-xl hover:from-brand-secondary hover:to-action-primary transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   <Download className="w-5 h-5 mr-2" />
-                  Download App
+                  {t('hero.downloadApp')}
                 </a>
                 <Link 
                   href="/login" 
-                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-brand-primary text-brand-primary rounded-xl hover:bg-brand-primary hover:text-text-inverted transition-all duration-200"
+                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-brand-primary text-brand-primary rounded-xl hover:bg-gradient-to-r hover:from-brand-primary hover:to-action-primary hover:text-text-inverted transition-all duration-200 transform hover:scale-105"
                 >
                   <Globe className="w-5 h-5 mr-2" />
-                  Try Web Portal
+                  {t('hero.tryWebPortal')}
                 </Link>
               </div>
             </div>
@@ -89,9 +110,9 @@ const LandingPage = () => {
           
           {/* Background decoration */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-            <div className="absolute top-20 left-10 w-72 h-72 bg-brand-primary/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-            <div className="absolute top-40 right-10 w-72 h-72 bg-action-primary/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-action-warning/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+            <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-brand-primary/30 to-action-primary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+            <div className="absolute top-40 right-10 w-72 h-72 bg-gradient-to-r from-action-primary/30 to-brand-secondary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-gradient-to-r from-action-warning/30 to-action-success/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
           </div>
         </section>
 
@@ -100,10 +121,10 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-text-primary mb-4">
-              Available on All Platforms
+              {t('download.title')}
             </h2>
             <p className="text-xl text-text-secondary">
-              Access your rental shop management from anywhere, anytime
+              {t('download.description')}
             </p>
           </div>
           
@@ -114,8 +135,8 @@ const LandingPage = () => {
                   <Smartphone className="w-6 h-6 text-brand-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">Mobile App</h3>
-                  <p className="text-text-secondary">Manage your rental shop on the go with our iOS and Android apps</p>
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('download.mobileApp')}</h3>
+                  <p className="text-text-secondary">{t('download.mobileAppDesc')}</p>
                 </div>
               </div>
               
@@ -124,8 +145,8 @@ const LandingPage = () => {
                   <Globe className="w-6 h-6 text-action-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">Web Portal</h3>
-                  <p className="text-text-secondary">Access full features through any web browser with responsive design</p>
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('download.webPortal')}</h3>
+                  <p className="text-text-secondary">{t('download.webPortalDesc')}</p>
                 </div>
               </div>
               
@@ -134,24 +155,23 @@ const LandingPage = () => {
                   <BarChart className="w-6 h-6 text-action-success" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">Analytics Dashboard</h3>
-                  <p className="text-text-secondary">Get insights into your business performance with detailed reports</p>
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('download.analytics')}</h3>
+                  <p className="text-text-secondary">{t('download.analyticsDesc')}</p>
                 </div>
               </div>
             </div>
             
             <div className="text-center">
               <div className="bg-gradient-to-br from-bg-secondary to-bg-tertiary rounded-3xl p-8 shadow-xl">
-                <div className="w-64 h-96 bg-gradient-to-b from-brand-primary to-action-primary rounded-3xl mx-auto shadow-2xl flex items-center justify-center">
-                  <div className="text-center text-text-inverted">
-                    <Smartphone className="w-16 h-16 mx-auto mb-4" />
-                    <div className="w-8 h-8 bg-bg-card rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <svg className="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </div>
-                    <p className="text-sm opacity-90">Mobile App</p>
-                  </div>
+                <div className="w-full flex items-center justify-center">
+                  <Image 
+                    src="/anyrent-iphone-splashscreen.jpg"
+                    alt="AnyRent iPhone Splashscreen"
+                    width={288}
+                    height={576}
+                    className="rounded-3xl shadow-2xl border border-border"
+                    priority
+                  />
                 </div>
                 <div className="mt-8">
                   <a 
@@ -161,7 +181,7 @@ const LandingPage = () => {
                     className="w-full bg-text-primary text-text-inverted py-3 px-6 rounded-xl hover:bg-text-secondary transition-colors flex items-center justify-center"
                   >
                     <span className="mr-2">📱</span>
-                    Download on App Store
+                    {t('download.downloadOnAppStore')}
                   </a>
                 </div>
               </div>
@@ -175,60 +195,60 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-text-primary mb-4">
-                Powerful Features
+                {t('features.title')}
               </h2>
               <p className="text-xl text-text-secondary">
-                Everything you need to manage your rental business efficiently
+                {t('features.description')}
               </p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <div className="w-12 h-12 bg-brand-primary/10 rounded-xl flex items-center justify-center mb-6">
+              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-brand-primary/30">
+                <div className="w-12 h-12 bg-gradient-to-br from-brand-primary/20 to-action-primary/20 rounded-xl flex items-center justify-center mb-6">
                   <BarChart3 className="w-6 h-6 text-brand-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">Order Management</h3>
-                <p className="text-text-secondary">Create, track, and manage rental orders with ease. Monitor order status and history.</p>
+                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.orderManagement')}</h3>
+                <p className="text-text-secondary">{t('features.orderManagementDesc')}</p>
               </div>
               
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <div className="w-12 h-12 bg-action-success/10 rounded-xl flex items-center justify-center mb-6">
+              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-action-success/30">
+                <div className="w-12 h-12 bg-gradient-to-br from-action-success/20 to-emerald-400/20 rounded-xl flex items-center justify-center mb-6">
                   <Users className="w-6 h-6 text-action-success" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">Customer Management</h3>
-                <p className="text-text-secondary">Store customer information, track rental history, and manage customer relationships.</p>
+                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.customerManagement')}</h3>
+                <p className="text-text-secondary">{t('features.customerManagementDesc')}</p>
               </div>
               
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <div className="w-12 h-12 bg-action-warning/10 rounded-xl flex items-center justify-center mb-6">
+              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-action-warning/30">
+                <div className="w-12 h-12 bg-gradient-to-br from-action-warning/20 to-amber-400/20 rounded-xl flex items-center justify-center mb-6">
                   <Clock className="w-6 h-6 text-action-warning" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">Calendar & Scheduling</h3>
-                <p className="text-text-secondary">Visual calendar to track rentals, returns, and availability of products.</p>
+                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.calendarScheduling')}</h3>
+                <p className="text-text-secondary">{t('features.calendarSchedulingDesc')}</p>
               </div>
             
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <div className="w-12 h-12 bg-action-primary/10 rounded-xl flex items-center justify-center mb-6">
+              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-action-primary/30">
+                <div className="w-12 h-12 bg-gradient-to-br from-action-primary/20 to-blue-500/20 rounded-xl flex items-center justify-center mb-6">
                   <DollarSign className="w-6 h-6 text-action-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">Financial Reports</h3>
-                <p className="text-text-secondary">Generate detailed financial reports, track revenue, and analyze business performance.</p>
+                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.financialReports')}</h3>
+                <p className="text-text-secondary">{t('features.financialReportsDesc')}</p>
               </div>
             
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <div className="w-12 h-12 bg-action-danger/10 rounded-xl flex items-center justify-center mb-6">
+              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-action-danger/30">
+                <div className="w-12 h-12 bg-gradient-to-br from-action-danger/20 to-red-500/20 rounded-xl flex items-center justify-center mb-6">
                   <AlertTriangle className="w-6 h-6 text-action-danger" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">Duplicate Order Prevention</h3>
-                <p className="text-text-secondary">Smart system prevents duplicate orders and ensures accurate inventory management.</p>
+                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.duplicatePrevention')}</h3>
+                <p className="text-text-secondary">{t('features.duplicatePreventionDesc')}</p>
               </div>
             
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <div className="w-12 h-12 bg-brand-secondary/10 rounded-xl flex items-center justify-center mb-6">
-                  <Globe className="w-6 h-6 text-brand-secondary" />
+              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-brand-secondary/30">
+                <div className="w-12 h-12 bg-gradient-to-br from-brand-secondary/20 to-blue-400/20 rounded-xl flex items-center justify-center mb-6">
+                  <Sparkles className="w-6 h-6 text-brand-secondary" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">Multi-Platform Support</h3>
-                <p className="text-text-secondary">Access your data from iOS, Android, and web platforms seamlessly.</p>
+                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.multiPlatform')}</h3>
+                <p className="text-text-secondary">{t('features.multiPlatformDesc')}</p>
               </div>
             </div>
           </div>
@@ -239,10 +259,10 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-text-primary mb-4">
-              Why Choose RentalShop?
+              {t('whyChoose.title')}
             </h2>
             <p className="text-xl text-text-secondary">
-              Join hundreds of rental businesses that trust our platform
+              {t('whyChoose.description')}
             </p>
           </div>
           
@@ -253,8 +273,8 @@ const LandingPage = () => {
                   <Star className="w-6 h-6 text-brand-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">Easy to Use</h3>
-                  <p className="text-text-secondary">Intuitive interface designed for rental business owners, no technical skills required.</p>
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('whyChoose.easyToUse')}</h3>
+                  <p className="text-text-secondary">{t('whyChoose.easyToUseDesc')}</p>
                 </div>
               </div>
               
@@ -263,8 +283,8 @@ const LandingPage = () => {
                   <Clock className="w-6 h-6 text-action-success" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">Time Saving</h3>
-                  <p className="text-text-secondary">Automate routine tasks and focus on growing your business instead of paperwork.</p>
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('whyChoose.timeSaving')}</h3>
+                  <p className="text-text-secondary">{t('whyChoose.timeSavingDesc')}</p>
                 </div>
               </div>
               
@@ -273,8 +293,8 @@ const LandingPage = () => {
                   <DollarSign className="w-6 h-6 text-action-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">Increase Revenue</h3>
-                  <p className="text-text-secondary">Better inventory management and customer tracking lead to increased sales.</p>
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('whyChoose.increaseRevenue')}</h3>
+                  <p className="text-text-secondary">{t('whyChoose.increaseRevenueDesc')}</p>
                 </div>
               </div>
               
@@ -283,23 +303,27 @@ const LandingPage = () => {
                   <Shield className="w-6 h-6 text-action-warning" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">24/7 Support</h3>
-                  <p className="text-text-secondary">Get help whenever you need it with our dedicated customer support team.</p>
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">{t('whyChoose.support')}</h3>
+                  <p className="text-text-secondary">{t('whyChoose.supportDesc')}</p>
                 </div>
               </div>
             </div>
             
             <div className="relative">
-              <div className="bg-gradient-to-br from-brand-primary to-action-primary rounded-3xl p-8 text-text-inverted">
-                <div className="text-center">
-                  <div className="text-6xl font-bold mb-4">500+</div>
-                  <div className="text-xl mb-8">Active Stores</div>
-                  <div className="flex justify-center space-x-2">
+              <div className="bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary rounded-3xl p-8 text-text-inverted shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                <div className="text-center relative z-10">
+                  <div className="flex items-center justify-center mb-2">
+                    <Zap className="w-8 h-8 mr-2 text-yellow-300" />
+                    <div className="text-6xl font-bold">500+</div>
+                  </div>
+                  <div className="text-xl mb-8 font-semibold">{t('whyChoose.activeStores')}</div>
+                  <div className="flex justify-center space-x-2 mb-4">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-6 h-6 fill-current" />
+                      <Star key={star} className="w-6 h-6 fill-yellow-300 text-yellow-300" />
                     ))}
                   </div>
-                  <div className="text-sm mt-2">4.9/5 Rating</div>
+                  <div className="text-sm font-semibold">{t('whyChoose.rating')}</div>
                 </div>
               </div>
             </div>
@@ -332,8 +356,9 @@ const LandingPage = () => {
 // Simple component implementations for the landing page
 const Stats = () => {
   return (
-    <section className="py-20 bg-brand-secondary text-text-inverted">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary text-text-inverted relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid md:grid-cols-4 gap-8 text-center">
           <div>
             <div className="text-4xl font-bold mb-2">500+</div>
@@ -358,15 +383,16 @@ const Stats = () => {
 };
 
 const Testimonials = () => {
+  const t = useTranslations('landing.testimonials')
   return (
     <section className="py-20 bg-bg-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-text-primary mb-4">
-            What Our Customers Say
+            {t('title')}
           </h2>
           <p className="text-xl text-text-secondary">
-            Join hundreds of satisfied rental business owners
+            {t('description')}
           </p>
         </div>
         
@@ -378,7 +404,7 @@ const Testimonials = () => {
               ))}
             </div>
             <p className="text-text-secondary mb-4">
-              "RentalShop has helped me manage my rental business efficiently. The interface is easy to use and features are comprehensive."
+              "AnyRent has helped me manage my rental business efficiently. The interface is easy to use and features are comprehensive."
             </p>
             <div className="flex items-center">
               <div className="w-10 h-10 bg-brand-primary rounded-full flex items-center justify-center text-text-inverted font-bold">
@@ -437,15 +463,18 @@ const Testimonials = () => {
 };
 
 const CTA = () => {
+  const t = useTranslations('landing.cta')
+  const tHero = useTranslations('landing.hero')
   return (
-    <section className="py-20 bg-brand-primary">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-4xl font-bold text-text-inverted mb-4">
-          Ready to Get Started?
-        </h2>
-        <p className="text-xl text-brand-primary/80 mb-8">
-          Join thousands of rental businesses that trust our platform
-        </p>
+      <section className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 className="text-4xl font-bold text-text-inverted mb-4">
+            {t('title')}
+          </h2>
+          <p className="text-xl text-white/90 mb-8">
+            {t('description')}
+          </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a 
             href="https://apps.apple.com/vn/app/rentalshop/id1500115668" 
@@ -454,14 +483,14 @@ const CTA = () => {
             className="inline-flex items-center justify-center px-8 py-4 bg-bg-card text-brand-primary rounded-xl hover:bg-bg-secondary transition-all duration-200 font-semibold"
           >
             <Download className="w-5 h-5 mr-2" />
-            Download App
+            {tHero('downloadApp')}
           </a>
           <Link 
             href="/login" 
             className="inline-flex items-center justify-center px-8 py-4 border-2 border-bg-card text-bg-card rounded-xl hover:bg-bg-card hover:text-brand-primary transition-all duration-200"
           >
             <Globe className="w-5 h-5 mr-2" />
-            Try Web Portal
+            {tHero('tryWebPortal')}
           </Link>
         </div>
       </div>
@@ -470,6 +499,7 @@ const CTA = () => {
 };
 
 const FAQ = () => {
+  const t = useTranslations('landing.faq')
   const [openItems, setOpenItems] = React.useState(new Set());
   
   const toggleItem = (index: number) => {
@@ -482,22 +512,23 @@ const FAQ = () => {
     setOpenItems(newOpenItems);
   };
   
+  const tFaq = useTranslations('landing.faq.items')
   const faqItems = [
     {
-      question: "Is RentalShop free to use?",
-      answer: "RentalShop offers a free trial version. You can sign up and use basic features without any cost."
+      question: tFaq('freeUse.question'),
+      answer: tFaq('freeUse.answer')
     },
     {
-      question: "Can I use it on multiple devices?",
-      answer: "Yes, RentalShop supports multiple platforms. You can use it on iOS, Android, and web browsers."
+      question: tFaq('multipleDevices.question'),
+      answer: tFaq('multipleDevices.answer')
     },
     {
-      question: "Is my data secure?",
-      answer: "We are committed to protecting your data. All information is encrypted and stored securely in the cloud."
+      question: tFaq('dataSecure.question'),
+      answer: tFaq('dataSecure.answer')
     },
     {
-      question: "Do you provide customer support?",
-      answer: "Yes, we provide 24/7 customer support through chat, email, and phone."
+      question: tFaq('support.question'),
+      answer: tFaq('support.answer')
     }
   ];
   
@@ -506,19 +537,20 @@ const FAQ = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-text-primary mb-4">
-            Frequently Asked Questions
+            {t('title')}
           </h2>
           <p className="text-xl text-text-secondary">
-            Everything you need to know about RentalShop
+            {t('description')}
           </p>
         </div>
         
         <div className="space-y-4">
           {faqItems.map((item, index) => (
             <div key={index} className="bg-bg-card rounded-lg shadow-sm">
-              <button
+              <Button
                 onClick={() => toggleItem(index)}
-                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-bg-secondary transition-colors"
+                variant="ghost"
+                className="w-full px-6 py-4 h-auto text-left flex items-center justify-between hover:bg-bg-secondary rounded-lg"
               >
                 <span className="font-semibold text-text-primary">{item.question}</span>
                 {openItems.has(index) ? (
@@ -526,7 +558,7 @@ const FAQ = () => {
                 ) : (
                   <ChevronDown className="w-5 h-5 text-text-tertiary" />
                 )}
-              </button>
+              </Button>
               {openItems.has(index) && (
                 <div className="px-6 pb-4">
                   <p className="text-text-secondary">{item.answer}</p>
@@ -541,87 +573,125 @@ const FAQ = () => {
 };
 
 const Pricing = () => {
-  const [selectedDuration, setSelectedDuration] = React.useState('3'); // '3', '6', '12'
+  const tPricing = useTranslations('landing.pricing')
+  const [selectedDuration, setSelectedDuration] = useState<'3' | '6' | '12'>('3'); // '3', '6', '12'
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const formatCurrency = (amount: number) => {
+  // Fetch plans from public API
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('🔄 Fetching plans from /api/plans/public');
+        const response = await publicPlansApi.getPublicPlansWithVariants();
+        
+        if (response.success && response.data) {
+          console.log('✅ Plans loaded successfully:', response.data);
+          // Sort plans by sortOrder and filter active ones
+          const activePlans = response.data
+            .filter(plan => plan.isActive)
+            // Hide trial plans: remove plans named like Trial or with 0 price and trialDays > 0
+            .filter(plan => {
+              const name = (plan.name || '').toLowerCase();
+              const isTrialName = name.includes('trial');
+              const isFreeTrial = (plan.trialDays && plan.trialDays > 0) && (plan.basePrice === 0);
+              return !isTrialName && !isFreeTrial;
+            })
+            .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+          setPlans(activePlans);
+        } else {
+          console.error('❌ Failed to load plans:', response.error);
+          setError(response.error || 'Failed to load plans');
+        }
+      } catch (err) {
+        console.error('❌ Error fetching plans:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load plans');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, []);
+
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
-  // Data for vertical cards with duration toggle
+  // Transform plans to display format
   const getPricingData = () => {
-    const durationIndex = selectedDuration === '3' ? 0 : selectedDuration === '6' ? 1 : 2;
-    
-    return [
-      {
-        name: "Free Trial",
-        subtitle: "Perfect for getting started",
-        price: "$0",
-        period: "7 days",
-        description: "Try all features for free",
-        features: [
-          { text: "Order Management", included: true },
-          { text: "Product Management", included: true },
-          { text: "Customer Management", included: true },
-          { text: "Revenue Reports", included: true },
-          { text: "Single Account", included: true },
-          { text: "Web Portal", included: true },
-          { text: "Additional Accounts", included: false },
-          { text: "Free Updates", included: true },
-          { text: "Mobile App", included: true }
-        ],
-        popular: false,
-        buttonText: "Start Free Trial",
-        buttonClass: "bg-text-secondary hover:bg-text-primary"
-      },
-      {
-        name: "Basic Plan",
-        subtitle: "For small rental businesses",
-        // Updated pricing: 3 months no discount, 6 months 5% discount, 12 months 15% discount
-        price: selectedDuration === '3' ? "$5" : selectedDuration === '6' ? "$4.75" : "$4.25",
-        period: "per month",
-        description: "Perfect for small rental shops",
-        features: [
-          { text: "Order Management", included: true },
-          { text: "Product Management", included: true },
-          { text: "Customer Management", included: true },
-          { text: "Revenue Reports", included: true },
-          { text: "Two Accounts", included: true },
-          { text: "Web Portal", included: false },
-          { text: "Additional Accounts", included: true },
-          { text: "Free Updates", included: true },
-          { text: "Mobile App", included: true }
-        ],
-        popular: true,
-        buttonText: "Get Started",
-        buttonClass: "bg-gradient-to-r from-brand-primary to-brand-secondary hover:from-brand-secondary hover:to-brand-primary"
-      },
-      {
-        name: "Premium Plan",
-        subtitle: "For growing businesses",
-        // Updated pricing: 3 months no discount, 6 months 5% discount, 12 months 15% discount
-        price: selectedDuration === '3' ? "$10" : selectedDuration === '6' ? "$9.50" : "$8.50",
-        period: "per month",
-        description: "Advanced features for larger operations",
-        features: [
-          { text: "Order Management", included: true },
-          { text: "Product Management", included: true },
-          { text: "Customer Management", included: true },
-          { text: "Revenue Reports", included: true },
-          { text: "Five Accounts", included: true },
-          { text: "Web Portal", included: true },
-          { text: "Additional Accounts", included: true },
-          { text: "Free Updates", included: true },
-          { text: "Mobile App", included: true }
-        ],
-        popular: false,
-        buttonText: "Get Started",
-        buttonClass: "bg-gradient-to-r from-action-success to-action-primary hover:from-action-primary hover:to-action-success"
+    if (!plans || plans.length === 0) {
+      return [];
+    }
+
+    return plans.map((plan) => {
+      // Compute monthly price based on selected duration
+      // Discounts: 3m=0%, 6m=5%, 12m=15% (applied to monthly price)
+      let monthlyPrice = 0;
+      const periodLabel = tPricing('plans.basic.period');
+      let savings = 0;
+
+      const base = plan.basePrice || 0;
+      if (selectedDuration === '3') {
+        monthlyPrice = base; // no discount
+        savings = 0;
+      } else if (selectedDuration === '6') {
+        monthlyPrice = base * 0.95; // 5% discount per month
+        savings = base * 0.05 * 6; // total savings for context if needed
+      } else if (selectedDuration === '12') {
+        monthlyPrice = base * 0.85; // 15% discount per month
+        savings = base * 0.15 * 12;
+      } else {
+        // Monthly (fallback)
+        monthlyPrice = base;
+        savings = 0;
       }
-    ];
+
+      // Parse features - handle both JSON string and array
+      let featuresArray: string[] = [];
+      if (Array.isArray(plan.features)) {
+        featuresArray = plan.features;
+      } else if (typeof plan.features === 'string') {
+        try {
+          featuresArray = JSON.parse(plan.features);
+        } catch (e) {
+          console.warn('Failed to parse features JSON:', e);
+          featuresArray = [];
+        }
+      }
+
+      // Transform features array to display format
+      const features = featuresArray.map((feature) => ({
+        text: feature,
+        included: true
+      }));
+
+      return {
+        id: plan.id,
+        name: plan.name,
+        subtitle: plan.description || '',
+        price: formatCurrency(monthlyPrice, plan.currency),
+        period: periodLabel,
+        description: plan.description || '',
+        features: features,
+        popular: plan.isPopular || false,
+        buttonText: "Get Started",
+        buttonClass: plan.isPopular
+          ? "bg-gradient-to-r from-brand-primary to-brand-secondary hover:from-brand-secondary hover:to-brand-primary"
+          : "bg-gradient-to-r from-action-success to-action-primary hover:from-action-primary hover:to-action-success",
+        savings: savings > 0 ? savings : undefined,
+        currency: plan.currency
+      };
+    });
   };
 
   const pricingData = getPricingData();
@@ -631,59 +701,75 @@ const Pricing = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-text-primary mb-4">
-            Simple Pricing
+            {tPricing('title')}
           </h2>
           <p className="text-xl text-text-secondary">
-            Choose the plan that fits your business needs
+            {tPricing('description')}
           </p>
         </div>
         
         {/* Duration Toggle */}
         <div className="flex justify-center mb-12">
           <div className="flex items-center bg-bg-secondary rounded-lg p-1">
-            <button
+            <Button
               onClick={() => setSelectedDuration('3')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedDuration === '3'
-                  ? 'bg-bg-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
+              variant={selectedDuration === '3' ? 'secondary' : 'ghost'}
+              size="sm"
+              className={selectedDuration === '3' ? 'bg-bg-card shadow-sm' : ''}
             >
               <div className="text-center">
-                <div>3 months</div>
+                <div>{tPricing('months.three')}</div>
                 <div className="text-lg text-text-secondary font-bold">0%</div>
               </div>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setSelectedDuration('6')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedDuration === '6'
-                  ? 'bg-bg-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
+              variant={selectedDuration === '6' ? 'secondary' : 'ghost'}
+              size="sm"
+              className={selectedDuration === '6' ? 'bg-bg-card shadow-sm' : ''}
             >
               <div className="text-center">
-                <div>6 months</div>
+                <div>{tPricing('months.six')}</div>
                 <div className="text-lg text-action-success font-bold">-5%</div>
               </div>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setSelectedDuration('12')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedDuration === '12'
-                  ? 'bg-bg-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
+              variant={selectedDuration === '12' ? 'secondary' : 'ghost'}
+              size="sm"
+              className={selectedDuration === '12' ? 'bg-bg-card shadow-sm' : ''}
             >
               <div className="text-center">
-                <div>12 months</div>
+                <div>{tPricing('months.twelve')}</div>
                 <div className="text-lg text-action-danger font-bold">-15%</div>
               </div>
-            </button>
+            </Button>
           </div>
         </div>
         
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+            <span className="ml-3 text-text-secondary">Loading plans...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="text-center py-20">
+            <p className="text-action-danger mb-4">{error}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+        
         {/* Pricing Cards */}
+        {!loading && !error && pricingData.length > 0 && (
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {pricingData.map((plan, index) => (
             <div key={index} className={`relative bg-bg-card rounded-2xl shadow-lg border-2 transition-all duration-300 hover:shadow-xl ${
@@ -691,8 +777,8 @@ const Pricing = () => {
             }`}>
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-brand-primary text-text-inverted px-4 py-1 rounded-full text-sm font-semibold">
-                    Most Popular
+                  <span className="bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                    {tPricing('plans.basic.mostPopular')}
                   </span>
                 </div>
               )}
@@ -704,7 +790,7 @@ const Pricing = () => {
                   <p className="text-text-secondary mb-4">{plan.subtitle}</p>
                   <div className="mb-4">
                     <span className="text-4xl font-bold text-text-primary">{plan.price}</span>
-                    <span className="text-text-secondary">/{plan.period}</span>
+                    <span className="text-text-secondary">/{tPricing('plans.basic.period')}</span>
                   </div>
                   <p className="text-sm text-text-secondary">{plan.description}</p>
                 </div>
@@ -730,39 +816,47 @@ const Pricing = () => {
                   href="/login" 
                   className={`w-full py-4 px-6 rounded-xl font-semibold text-text-inverted transition-all duration-200 ${plan.buttonClass} inline-block text-center`}
                 >
-                  {plan.buttonText}
+                  {tPricing('plans.basic.buttonText')}
                 </Link>
               </div>
             </div>
           ))}
         </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && pricingData.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-text-secondary">No plans available at the moment.</p>
+          </div>
+        )}
         
         {/* Additional information */}
         <div className="mt-16 text-center">
           <div className="bg-bg-secondary rounded-2xl p-8 max-w-4xl mx-auto">
             <h3 className="text-2xl font-bold text-text-primary mb-4">
-              All Plans Include
+              {tPricing('allPlansInclude')}
             </h3>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="flex items-center space-x-3">
                 <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">24/7 Support</span>
+                <span className="text-text-primary">{tPricing('support24')}</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">Data Backup</span>
+                <span className="text-text-primary">{tPricing('dataBackup')}</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">Free Updates</span>
+                <span className="text-text-primary">{tPricing('freeUpdates')}</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">Mobile App</span>
+                <span className="text-text-primary">{tPricing('features.mobileApp')}</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Check className="w-5 h-5 text-action-success" />
-                <span className="text-text-primary">Training</span>
+                <span className="text-text-primary">{tPricing('training')}</span>
               </div>
             </div>
           </div>
@@ -773,21 +867,20 @@ const Pricing = () => {
 };
 
 const Footer = () => {
+  const tf = useTranslations('landing.footer')
   return (
     <footer id="contact" className="bg-gray-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
+              <div className="w-10 h-10 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <Store className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold">RentalShop</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">AnyRent</span>
             </div>
             <p className="text-gray-400 mb-4">
-              Leading rental management software in Vietnam
+              {tf('description')}
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -800,36 +893,36 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Product</h3>
+            <h3 className="text-lg font-semibold mb-4">{tf('product.title')}</h3>
             <ul className="space-y-2">
-              <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
-              <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
-              <li><a href="#download" className="text-gray-400 hover:text-white transition-colors">Download App</a></li>
+              <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">{tf('product.features')}</a></li>
+              <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors">{tf('product.pricing')}</a></li>
+              <li><a href="#download" className="text-gray-400 hover:text-white transition-colors">{tf('product.downloadApp')}</a></li>
             </ul>
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Support</h3>
+            <h3 className="text-lg font-semibold mb-4">{tf('support.title')}</h3>
             <ul className="space-y-2">
-              <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+              <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors">{tf('support.faq')}</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">{tf('support.documentation')}</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">{tf('support.contact')}</a></li>
             </ul>
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Company</h3>
+            <h3 className="text-lg font-semibold mb-4">{tf('company.title')}</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Terms</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Privacy</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">{tf('company.aboutUs')}</a></li>
+              <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">{tf('company.terms')}</Link></li>
+              <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">{tf('company.privacy')}</Link></li>
             </ul>
           </div>
         </div>
         
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400">
-            © 2024 RentalShop. All rights reserved.
+            {tf('copyright')}
           </p>
         </div>
       </div>
@@ -852,7 +945,7 @@ const FloatingButtons = () => {
         </a>
         <Link 
           href="/login" 
-          className="bg-brand-primary text-text-inverted p-3 rounded-full shadow-lg hover:bg-brand-secondary transition-colors"
+          className="bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted p-3 rounded-full shadow-lg hover:from-brand-secondary hover:to-action-primary transition-all duration-200 transform hover:scale-110"
           title="Login"
         >
           <Globe className="w-6 h-6" />

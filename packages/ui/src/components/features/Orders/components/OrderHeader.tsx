@@ -1,13 +1,17 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
 import { OrderStats } from '@rentalshop/types';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface OrderHeaderProps {
   totalOrders: number;
   stats?: OrderStats;
+  showStats?: boolean;
 }
 
-export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
+export const OrderHeader = React.memo(function OrderHeader({ totalOrders, stats, showStats = true }: OrderHeaderProps) {
+  const t = useOrderTranslations();
+  
   console.log('OrderHeader received stats:', stats);
   console.log('OrderHeader received totalOrders:', totalOrders);
   
@@ -32,6 +36,11 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
     averageOrderValue: stats?.averageOrderValue ?? 0
   };
 
+  // Don't render anything if showStats is false
+  if (!showStats) {
+    return null;
+  }
+
   return (
     <div className="space-y-6">
       
@@ -39,7 +48,7 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Total Orders
+              {t('stats.totalOrders')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -47,7 +56,7 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
               {(safeStats.totalOrders || 0).toLocaleString()}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              All time orders
+              {t('stats.allTimeOrders')}
             </p>
           </CardContent>
         </Card>
@@ -55,15 +64,15 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Active Rentals
+              {t('stats.activeRentals')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
               {(safeStats.activeRentals || 0).toLocaleString()}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Currently pickuped
+              {t('stats.currentlyPickuped')}
             </p>
           </CardContent>
         </Card>
@@ -71,7 +80,7 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Total Revenue
+              {t('stats.totalRevenue')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -79,7 +88,7 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
               {formatCurrency(safeStats.totalRevenue || 0)}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Lifetime revenue
+              {t('stats.lifetimeRevenue')}
             </p>
           </CardContent>
         </Card>
@@ -87,7 +96,7 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Completed Orders
+              {t('stats.completedOrders')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -95,11 +104,11 @@ export function OrderHeader({ totalOrders, stats }: OrderHeaderProps) {
               {(safeStats.completedOrders || 0).toLocaleString()}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {formatCurrency(safeStats.averageOrderValue || 0)} avg order
+              {formatCurrency(safeStats.averageOrderValue || 0)} {t('stats.avgOrder')}
             </p>
           </CardContent>
         </Card>
       </div>
     </div>
   );
-}
+});

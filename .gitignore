@@ -8,7 +8,7 @@ lerna-debug.log*
 
 # Package manager files
 package-lock.json
-yarn.lock
+# yarn.lock          ← MUST COMMIT for Railway deployment!
 pnpm-lock.yaml
 
 # Yarn v2
@@ -75,8 +75,10 @@ next-env.d.ts
 .yarn-integrity
 
 # Environment variables
-# Strategy: Commit .env (dev defaults), .env.production (template), env.example
-# Ignore all others for security and personalization
+# Strategy: NEVER commit .env or .env.production (contains sensitive credentials)
+# ONLY commit env.example with placeholder values
+.env
+.env.production
 .env.local
 .env.development.local
 .env.test.local
@@ -101,7 +103,8 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public - Commented out to allow committing apps/*/public folders for Docker
+# Docker needs public folders for Next.js apps
 
 # Vuepress build output
 .vuepress/dist
@@ -239,7 +242,7 @@ jspm_packages/
 .vscode-test
 
 # Prisma
-prisma/migrations/
+# prisma/migrations/  ← REMOVED: We need to track migrations!
 prisma/dev.db
 prisma/dev.db-journal
 

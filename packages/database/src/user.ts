@@ -182,7 +182,7 @@ export async function updateUser(
           description: true,
           isActive: true,
           planId: true,
-          subscriptionStatus: true,
+          // subscriptionStatus removed - use subscription.status
           totalRevenue: true,
           createdAt: true,
           lastActiveAt: true,
@@ -408,7 +408,7 @@ export const simplifiedUsers = {
             description: true,
             isActive: true,
             planId: true,
-            subscriptionStatus: true,
+            // subscriptionStatus removed - use subscription.status
             totalRevenue: true,
             createdAt: true,
             lastActiveAt: true
@@ -442,7 +442,22 @@ export const simplifiedUsers = {
   findByEmail: async (email: string) => {
     return await prisma.user.findUnique({
       where: { email },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        emailVerified: true,
+        emailVerifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        merchantId: true,
+        outletId: true,
+        deletedAt: true,
         merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }
       }
@@ -562,7 +577,7 @@ export const simplifiedUsers = {
               description: true,
               isActive: true,
               planId: true,
-              subscriptionStatus: true,
+              // subscriptionStatus removed - use subscription.status
               totalRevenue: true,
               createdAt: true,
               lastActiveAt: true
@@ -628,7 +643,13 @@ export const simplifiedUsers = {
    * Search users with simple filters (simplified API)
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { 
+      page = 1, 
+      limit = 20, 
+      sortBy = 'createdAt', 
+      sortOrder = 'desc',
+      ...whereFilters 
+    } = filters;
     const skip = (page - 1) * limit;
 
     // Build where clause
@@ -637,15 +658,30 @@ export const simplifiedUsers = {
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
     if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
-    if (whereFilters.role) where.role = whereFilters.role;
     
-    // Text search
+    // Handle role filtering - roles array has priority over single role
+    if (whereFilters.roles && Array.isArray(whereFilters.roles)) {
+      where.role = { in: whereFilters.roles };
+    } else if (whereFilters.role) {
+      where.role = whereFilters.role;
+    }
+    
+    // Text search (case-insensitive)
     if (whereFilters.search) {
       where.OR = [
-        { firstName: { contains: whereFilters.search } },
-        { lastName: { contains: whereFilters.search } },
-        { email: { contains: whereFilters.search } }
+        { firstName: { contains: whereFilters.search, mode: 'insensitive' } },
+        { lastName: { contains: whereFilters.search, mode: 'insensitive' } },
+        { email: { contains: whereFilters.search, mode: 'insensitive' } }
       ];
+    }
+
+    // ✅ Build dynamic orderBy clause
+    const orderBy: any = {};
+    if (sortBy === 'firstName' || sortBy === 'lastName' || sortBy === 'email') {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      // Default: createdAt
+      orderBy.createdAt = sortOrder;
     }
 
     const [users, total] = await Promise.all([
@@ -655,24 +691,36 @@ export const simplifiedUsers = {
           merchant: { select: { id: true, name: true } },
           outlet: { select: { id: true, name: true } }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy, // ✅ Dynamic sorting
         skip,
         take: limit
       }),
       prisma.user.count({ where })
     ]);
 
+    console.log(`📊 db.users.search: page=${page}, skip=${skip}, limit=${limit}, total=${total}, users=${users.length}`);
+
     return {
       data: users,
       total,
       page,
       limit,
-      hasMore: skip + limit < total
+      hasMore: skip + limit < total,
+      totalPages: Math.ceil(total / limit)
     };
   },
 
   count: async (options?: { where?: any }) => {
     const where = options?.where || {};
+    return await prisma.user.count({ where });
+  },
+
+  /**
+   * Get user statistics (simplified API)
+   */
+  getStats: async (whereClause?: any) => {
+    // Handle both direct where clause and object with where property
+    const where = whereClause?.where || whereClause || {};
     return await prisma.user.count({ where });
   }
 };

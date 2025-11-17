@@ -312,9 +312,10 @@ export default function PlanVariantsPage() {
         <div className="mb-6">
           <div className="border-b border-border">
             <nav className="-mb-px flex space-x-8">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setActiveTab('active')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm rounded-none ${
                   activeTab === 'active'
                     ? 'border-action-primary text-action-primary'
                     : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'
@@ -322,10 +323,11 @@ export default function PlanVariantsPage() {
               >
                 <Package className="w-4 h-4 mr-2 inline" />
                 Active Variants ({variants.length})
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() => setActiveTab('recycle')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm rounded-none ${
                   activeTab === 'recycle'
                     ? 'border-action-primary text-action-primary'
                     : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'
@@ -333,7 +335,7 @@ export default function PlanVariantsPage() {
               >
                 <RotateCcw className="w-4 h-4 mr-2 inline" />
                 Recycle Bin ({deletedVariants.length})
-              </button>
+              </Button>
             </nav>
           </div>
         </div>
@@ -419,7 +421,7 @@ export default function PlanVariantsPage() {
                   <p className="text-text-secondary mb-4">
                     {searchTerm || planFilter !== 'all' || statusFilter !== 'all' 
                       ? 'Try adjusting your filters to see more results.'
-                      : 'Get started by creating your first plan variant.'
+                      : 'Get started by creating your first plan variant'
                     }
                   </p>
                   {!searchTerm && planFilter === 'all' && statusFilter === 'all' && (

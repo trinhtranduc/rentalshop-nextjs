@@ -1,17 +1,14 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-  Button,
-  Input,
-  Textarea,
-  Label
+  DialogTitle
 } from '../../../ui';
-import { Save, Loader2 } from 'lucide-react';
+import { useCategoriesTranslations } from '@rentalshop/hooks';
+import { CategoryFormContent } from './CategoryFormContent';
 import type { Category } from '@rentalshop/types';
 
 interface CategoryFormProps {
@@ -21,161 +18,34 @@ interface CategoryFormProps {
   mode: 'create' | 'edit';
 }
 
+/**
+ * CategoryForm - Wrapper component that includes Dialog
+ * This is kept for backward compatibility
+ * For new code, use CategoryFormContent with your own Dialog wrapper
+ */
 export const CategoryForm: React.FC<CategoryFormProps> = ({
   category,
   onSave,
   onCancel,
   mode
 }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: ''
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Initialize form data when editing
-  useEffect(() => {
-    if (category && mode === 'edit') {
-      setFormData({
-        name: category.name || '',
-        description: category.description || ''
-      });
-    }
-  }, [category, mode]);
-
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear field-specific error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Category name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Category name must be at least 2 characters';
-    } else if (formData.name.trim().length > 50) {
-      newErrors.name = 'Category name must be less than 50 characters';
-    }
-
-    if (formData.description && formData.description.trim().length > 200) {
-      newErrors.description = 'Description must be less than 200 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Prepare category data
-      const categoryData: Partial<Category> = {
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined
-      };
-
-      // Call the onSave callback
-      await onSave(categoryData as Category);
-      
-    } catch (error) {
-      console.error('Error saving category:', error);
-      // Error handling is done by the parent component
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleCancel = () => {
-    if (isSubmitting) return; // Prevent cancellation while submitting
-    onCancel();
-  };
-
+  const t = useCategoriesTranslations();
+  
   return (
     <Dialog open={true} onOpenChange={onCancel}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'create' ? 'Add New Category' : 'Edit Category'}
+            {mode === 'create' ? t('dialog.addNew') : t('dialog.edit')}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Category Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="Enter category name"
-              className={errors.name ? 'border-red-500' : ''}
-              disabled={isSubmitting}
-              required
-            />
-            {errors.name && (
-              <p className="text-sm text-red-500 mt-1">{errors.name}</p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Enter category description (optional)"
-              rows={3}
-              className={errors.description ? 'border-red-500' : ''}
-              disabled={isSubmitting}
-            />
-            {errors.description && (
-              <p className="text-sm text-red-500 mt-1">{errors.description}</p>
-            )}
-            <p className="text-xs text-gray-500 mt-1">
-              {formData.description.length}/200 characters
-            </p>
-          </div>
-
-
-          <div className="flex items-center justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  {mode === 'create' ? 'Create Category' : 'Update Category'}
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+        
+        <CategoryFormContent
+          category={category}
+          onSave={onSave}
+          onCancel={onCancel}
+          mode={mode}
+        />
       </DialogContent>
     </Dialog>
   );

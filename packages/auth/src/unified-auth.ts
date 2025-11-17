@@ -283,7 +283,9 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
             console.log(`❌ Insufficient permissions: ${user.role} not in [${allowedRoles.join(', ')}]`);
             return NextResponse.json(
               { 
-                error: 'Insufficient permissions',
+                success: false,
+                code: 'INSUFFICIENT_PERMISSIONS',
+                message: 'Insufficient permissions',
                 required: allowedRoles,
                 current: user.role
               }, 
@@ -327,24 +329,39 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
 // ============================================================================
 
 /**
- * Admin-only routes  
+ * Admin-only routes (System-wide access)
  */
 export const withAdminAuth = withAuthRoles(['ADMIN']);
 
 /**
- * Admin and Merchant routes
+ * Admin and Merchant routes (Organization-level access)
  */
 export const withMerchantAuth = withAuthRoles(['ADMIN', 'MERCHANT']);
 
 /**
- * All management roles (excluding OUTLET_STAFF)
+ * All management roles (Admin, Merchant, Outlet Admin - excluding Outlet Staff)
  */
 export const withManagementAuth = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
 
 /**
- * Any authenticated user
+ * Outlet-level access (Outlet Admin + Outlet Staff)
+ */
+export const withOutletAuth = withAuthRoles(['OUTLET_ADMIN', 'OUTLET_STAFF']);
+
+/**
+ * Any authenticated user (No role restrictions)
  */
 export const withAnyAuth = withAuthRoles();
+
+/**
+ * Read-only access (No subscription required)
+ */
+export const withReadOnlyAuth = withAuthRoles(undefined, { requireActiveSubscription: false });
+
+/**
+ * Admin + Read-only for non-admin users
+ */
+export const withAdminOrReadOnlyAuth = withAuthRoles(['ADMIN'], { requireActiveSubscription: false });
 
 // ============================================================================
 // MAIN EXPORT - Use this in API routes

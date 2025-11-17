@@ -16,10 +16,17 @@ export function useNavigation() {
     }
   }, [router, prefetchedRoutes])
 
-  // Navigate to a route instantly (non-blocking)
+  // Navigate to a route instantly (non-blocking) with optimized performance
   const navigateTo = useCallback((href: string) => {
-    // Instant navigation without any delays
-    router.push(href)
+    // Use startTransition for better performance and React 18 optimizations
+    if (typeof window !== 'undefined' && 'startTransition' in window) {
+      (window as any).startTransition(() => {
+        router.push(href)
+      })
+    } else {
+      // Fallback for older React versions
+      router.push(href)
+    }
   }, [router])
 
   // Prefetch all main routes on mount

@@ -7,7 +7,7 @@ import type { SubscriptionStatus, BillingInterval } from '@rentalshop/constants'
 
 // Re-export types from centralized constants (Single Source of Truth)
 export type { SubscriptionStatus, BillingInterval };
-export type BillingPeriod = 1 | 3 | 6 | 12; // months
+export type BillingPeriod = 1 | 3 | 6 | 12; // months (1=monthly, 3=quarterly, 6=sixMonths, 12=yearly)
 
 export interface SubscriptionPeriod {
   startDate: Date;
@@ -24,7 +24,7 @@ export interface Subscription {
   merchantId: number;
   planId: number;
   status: SubscriptionStatus;
-  billingInterval: BillingInterval; // month, quarter, semiAnnual, year
+  billingInterval: BillingInterval; // monthly, quarterly, sixMonths, yearly
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
   amount: number; // Calculated price based on plan and interval
@@ -39,7 +39,6 @@ export interface Subscription {
     id: number;
     name: string;
     email: string;
-    subscriptionStatus: string;
   };
   plan: Plan;
 }
@@ -106,12 +105,14 @@ export const PRICING_CONFIG = {
   DISCOUNTS: {
     monthly: 0,      // 0% discount
     quarterly: 10,   // 10% discount
+    sixMonths: 15,   // 15% discount
     yearly: 20,      // 20% discount
   },
   INTERVALS: {
-    monthly: { interval: 'month' as const, intervalCount: 1 },
-    quarterly: { interval: 'month' as const, intervalCount: 3 },
-    yearly: { interval: 'year' as const, intervalCount: 1 },
+    monthly: { interval: 'monthly' as const, intervalCount: 1 },
+    quarterly: { interval: 'quarterly' as const, intervalCount: 3 },
+    sixMonths: { interval: 'sixMonths' as const, intervalCount: 6 },
+    yearly: { interval: 'yearly' as const, intervalCount: 1 },
   }
 } as const;
 
@@ -120,8 +121,21 @@ export function calculatePricing(
   basePrice: number, 
   period: BillingPeriod
 ): PricingCalculation {
-  const config = PRICING_CONFIG.INTERVALS[period === 1 ? 'monthly' : period === 3 ? 'quarterly' : 'yearly'];
-  const discount = PRICING_CONFIG.DISCOUNTS[period === 1 ? 'monthly' : period === 3 ? 'quarterly' : 'yearly'];
+  let config, discount;
+  
+  if (period === 1) {
+    config = PRICING_CONFIG.INTERVALS.monthly;
+    discount = PRICING_CONFIG.DISCOUNTS.monthly;
+  } else if (period === 3) {
+    config = PRICING_CONFIG.INTERVALS.quarterly;
+    discount = PRICING_CONFIG.DISCOUNTS.quarterly;
+  } else if (period === 6) {
+    config = PRICING_CONFIG.INTERVALS.sixMonths;
+    discount = PRICING_CONFIG.DISCOUNTS.sixMonths;
+  } else {
+    config = PRICING_CONFIG.INTERVALS.yearly;
+    discount = PRICING_CONFIG.DISCOUNTS.yearly;
+  }
   
   const totalMonths = period;
   const totalBasePrice = basePrice * totalMonths;

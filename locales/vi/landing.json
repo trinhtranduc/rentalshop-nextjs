@@ -1,0 +1,167 @@
+{
+  "navigation": {
+    "features": "Tính năng",
+    "pricing": "Bảng giá",
+    "faq": "Câu hỏi thường gặp",
+    "contact": "Liên hệ",
+    "login": "Đăng nhập"
+  },
+  "hero": {
+    "title": "Hệ thống Quản lý",
+    "subtitle": "Cửa hàng cho thuê Hiện đại",
+    "description": "Giải pháp quản lý cửa hàng cho thuê chuyên nghiệp. Quản lý sản phẩm, khách hàng và đơn hàng hiệu quả với nền tảng hiện đại, dễ sử dụng của chúng tôi.",
+    "downloadApp": "Tải ứng dụng",
+    "tryWebPortal": "Dùng thử Web Portal"
+  },
+  "download": {
+    "title": "Có sẵn trên mọi nền tảng",
+    "description": "Truy cập quản lý cửa hàng cho thuê của bạn từ mọi nơi, mọi lúc",
+    "mobileApp": "Ứng dụng di động",
+    "mobileAppDesc": "Quản lý cửa hàng cho thuê của bạn trên đường với ứng dụng iOS và Android của chúng tôi",
+    "webPortal": "Web Portal",
+    "webPortalDesc": "Truy cập đầy đủ tính năng qua bất kỳ trình duyệt web nào với thiết kế responsive",
+    "analytics": "Bảng phân tích",
+    "analyticsDesc": "Nhận thông tin chi tiết về hiệu suất kinh doanh của bạn với các báo cáo chi tiết",
+    "downloadOnAppStore": "Tải xuống trên App Store"
+  },
+  "features": {
+    "title": "Tính năng mạnh mẽ",
+    "description": "Mọi thứ bạn cần để quản lý hiệu quả doanh nghiệp cho thuê của mình",
+    "orderManagement": "Quản lý đơn hàng",
+    "orderManagementDesc": "Tạo, theo dõi và quản lý đơn hàng cho thuê một cách dễ dàng. Theo dõi trạng thái và lịch sử đơn hàng.",
+    "customerManagement": "Quản lý khách hàng",
+    "customerManagementDesc": "Lưu trữ thông tin khách hàng, theo dõi lịch sử cho thuê và quản lý quan hệ khách hàng.",
+    "calendarScheduling": "Lịch & Lên lịch",
+    "calendarSchedulingDesc": "Lịch trực quan để theo dõi các khoản cho thuê, trả lại và tình trạng sẵn có của sản phẩm.",
+    "financialReports": "Báo cáo tài chính",
+    "financialReportsDesc": "Tạo báo cáo tài chính chi tiết, theo dõi doanh thu và phân tích hiệu suất kinh doanh.",
+    "duplicatePrevention": "Ngăn chặn đơn hàng trùng lặp",
+    "duplicatePreventionDesc": "Hệ thống thông minh ngăn chặn đơn hàng trùng lặp và đảm bảo quản lý hàng tồn kho chính xác.",
+    "multiPlatform": "Hỗ trợ đa nền tảng",
+    "multiPlatformDesc": "Truy cập dữ liệu của bạn từ iOS, Android và các nền tảng web một cách liền mạch."
+  },
+  "whyChoose": {
+    "title": "Tại sao chọn AnyRent?",
+    "description": "Tham gia cùng hàng trăm doanh nghiệp cho thuê tin tưởng nền tảng của chúng tôi",
+    "easyToUse": "Dễ sử dụng",
+    "easyToUseDesc": "Giao diện trực quan được thiết kế cho chủ cửa hàng cho thuê, không cần kỹ năng kỹ thuật.",
+    "timeSaving": "Tiết kiệm thời gian",
+    "timeSavingDesc": "Tự động hóa các nhiệm vụ thường xuyên và tập trung vào việc phát triển kinh doanh thay vì giấy tờ.",
+    "increaseRevenue": "Tăng doanh thu",
+    "increaseRevenueDesc": "Quản lý hàng tồn kho và theo dõi khách hàng tốt hơn dẫn đến tăng doanh số.",
+    "support": "Hỗ trợ 24/7",
+    "supportDesc": "Nhận trợ giúp bất cứ khi nào bạn cần với đội ngũ hỗ trợ khách hàng chuyên dụng của chúng tôi.",
+    "activeStores": "Cửa hàng hoạt động",
+    "rating": "Đánh giá 4.9/5"
+  },
+  "stats": {
+    "activeStores": "Cửa hàng hoạt động",
+    "ordersProcessed": "Đơn hàng đã xử lý",
+    "customerRating": "Đánh giá khách hàng",
+    "supportAvailable": "Hỗ trợ sẵn có"
+  },
+  "testimonials": {
+    "title": "Khách hàng nói gì về chúng tôi",
+    "description": "Tham gia cùng hàng trăm chủ cửa hàng cho thuê hài lòng"
+  },
+  "cta": {
+    "title": "Sẵn sàng bắt đầu?",
+    "description": "Tham gia cùng hàng nghìn doanh nghiệp cho thuê tin tưởng nền tảng của chúng tôi"
+  },
+  "faq": {
+    "title": "Câu hỏi thường gặp",
+    "description": "Mọi thứ bạn cần biết về AnyRent",
+    "items": {
+      "freeUse": {
+        "question": "AnyRent có miễn phí không?",
+        "answer": "AnyRent cung cấp phiên bản dùng thử miễn phí. Bạn có thể đăng ký và sử dụng các tính năng cơ bản mà không mất phí."
+      },
+      "multipleDevices": {
+        "question": "Tôi có thể sử dụng trên nhiều thiết bị không?",
+        "answer": "Có, AnyRent hỗ trợ nhiều nền tảng. Bạn có thể sử dụng trên iOS, Android và trình duyệt web."
+      },
+      "dataSecure": {
+        "question": "Dữ liệu của tôi có an toàn không?",
+        "answer": "Chúng tôi cam kết bảo vệ dữ liệu của bạn. Tất cả thông tin được mã hóa và lưu trữ an toàn trên đám mây."
+      },
+      "support": {
+        "question": "Bạn có cung cấp hỗ trợ khách hàng không?",
+        "answer": "Có, chúng tôi cung cấp hỗ trợ khách hàng 24/7 qua chat, email và điện thoại."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Bảng giá đơn giản",
+    "description": "Chọn gói phù hợp với nhu cầu kinh doanh của bạn",
+    "months": {
+      "three": "3 tháng",
+      "six": "6 tháng",
+      "twelve": "12 tháng"
+    },
+    "plans": {
+      "freeTrial": {
+        "name": "Dùng thử miễn phí",
+        "subtitle": "Hoàn hảo để bắt đầu",
+        "period": "7 ngày",
+        "description": "Dùng thử tất cả tính năng miễn phí",
+        "buttonText": "Bắt đầu dùng thử"
+      },
+      "basic": {
+        "name": "Gói Cơ bản",
+        "subtitle": "Dành cho doanh nghiệp cho thuê nhỏ",
+        "period": "mỗi tháng",
+        "description": "Hoàn hảo cho cửa hàng cho thuê nhỏ",
+        "buttonText": "Bắt đầu",
+        "mostPopular": "Phổ biến nhất"
+      },
+      "premium": {
+        "name": "Gói Cao cấp",
+        "subtitle": "Dành cho doanh nghiệp đang phát triển",
+        "period": "mỗi tháng",
+        "description": "Tính năng nâng cao cho hoạt động quy mô lớn hơn",
+        "buttonText": "Bắt đầu"
+      }
+    },
+    "features": {
+      "orderManagement": "Quản lý đơn hàng",
+      "productManagement": "Quản lý sản phẩm",
+      "customerManagement": "Quản lý khách hàng",
+      "revenueReports": "Báo cáo doanh thu",
+      "singleAccount": "Một tài khoản",
+      "twoAccounts": "Hai tài khoản",
+      "fiveAccounts": "Năm tài khoản",
+      "webPortal": "Web Portal",
+      "additionalAccounts": "Tài khoản bổ sung",
+      "freeUpdates": "Cập nhật miễn phí",
+      "mobileApp": "Ứng dụng di động"
+    },
+    "allPlansInclude": "Tất cả gói bao gồm",
+    "support24": "Hỗ trợ 24/7",
+    "dataBackup": "Sao lưu dữ liệu",
+    "freeUpdates": "Cập nhật miễn phí",
+    "training": "Đào tạo"
+  },
+  "footer": {
+    "description": "Phần mềm quản lý cho thuê hàng đầu tại Việt Nam",
+    "product": {
+      "title": "Sản phẩm",
+      "features": "Tính năng",
+      "pricing": "Bảng giá",
+      "downloadApp": "Tải ứng dụng"
+    },
+    "support": {
+      "title": "Hỗ trợ",
+      "faq": "Câu hỏi thường gặp",
+      "documentation": "Tài liệu",
+      "contact": "Liên hệ"
+    },
+    "company": {
+      "title": "Công ty",
+      "aboutUs": "Về chúng tôi",
+      "terms": "Điều khoản",
+      "privacy": "Quyền riêng tư"
+    },
+    "copyright": "© 2024 AnyRent. Bảo lưu mọi quyền."
+  }
+}
+

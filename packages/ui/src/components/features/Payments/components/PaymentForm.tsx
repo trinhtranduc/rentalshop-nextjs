@@ -432,7 +432,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             <div className="p-4 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Total Amount:</span>
-                <span className="text-xl font-bold text-blue-600">
+                <span className="text-xl font-bold text-blue-700">
                   ${formData.amount} {formData.currency}
                 </span>
               </div>

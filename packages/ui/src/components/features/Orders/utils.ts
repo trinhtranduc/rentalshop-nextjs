@@ -33,7 +33,36 @@ export const filterOrders = (orders: OrderData[], filters: OrderFilters): OrderD
   });
 };
 
+/**
+ * @deprecated DO NOT USE - Client-side sorting is dangerous with large datasets!
+ * 
+ * ⚠️ WARNING: Sorting 1M+ records in browser will:
+ * - Freeze UI for 10-30 seconds
+ * - Potentially crash browser (out of memory)
+ * - Terrible user experience
+ * 
+ * ✅ INSTEAD: Use server-side sorting via API:
+ * - ordersApi.search({ sortBy: 'orderNumber', sortOrder: 'desc' })
+ * - Database handles sorting efficiently with indexes
+ * - Only transfers paginated results (20-50 records)
+ * 
+ * This function is kept ONLY for backward compatibility with small datasets (< 100 records).
+ * Use at your own risk!
+ */
 export const sortOrders = (orders: Order[], sortBy: string, sortOrder: 'asc' | 'desc'): Order[] => {
+  // Safety check - prevent sorting large datasets
+  if (orders.length > 1000) {
+    console.error('❌ CRITICAL: Attempting to client-side sort', orders.length, 'orders!');
+    console.error('❌ This will freeze the UI and may crash the browser!');
+    console.error('✅ Use server-side sorting instead: ordersApi.search({ sortBy, sortOrder })');
+    throw new Error(`Client-side sorting not supported for ${orders.length} records. Use server-side sorting.`);
+  }
+  
+  if (orders.length > 100) {
+    console.warn('⚠️ WARNING: Client-side sorting', orders.length, 'records may slow down UI');
+    console.warn('✅ Consider using server-side sorting for better performance');
+  }
+  
   return [...orders].sort((a, b) => {
     let aValue: any;
     let bValue: any;

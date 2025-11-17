@@ -81,10 +81,10 @@ export function SubscriptionChangePlanDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ArrowRight className="h-5 w-5 text-blue-600" />
+            <ArrowRight className="h-5 w-5 text-blue-700" />
             Change Subscription Plan
           </DialogTitle>
           <DialogDescription>
@@ -93,28 +93,7 @@ export function SubscriptionChangePlanDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Current Plan */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Plan</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">{currentPlan?.name || 'Unknown Plan'}</h3>
-                  <p className="text-sm text-gray-600">{currentPlan?.description || 'No description'}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold">
-                    {currentPlan ? formatCurrency(currentPlan.basePrice, currentPlan.currency) : 'Unknown'}
-                  </p>
-                  <p className="text-sm text-gray-600">per month</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
+        <div className="flex-1 overflow-y-auto space-y-6 pr-1">
           {/* Billing Period Selection */}
           <div className="space-y-4">
             <Label className="text-lg font-semibold">Billing Period</Label>
@@ -125,6 +104,7 @@ export function SubscriptionChangePlanDialog({
               <SelectContent>
                 <SelectItem value="1">Monthly (0% discount)</SelectItem>
                 <SelectItem value="3">Quarterly (10% discount)</SelectItem>
+                <SelectItem value="6">6 Months (15% discount)</SelectItem>
                 <SelectItem value="12">Yearly (20% discount)</SelectItem>
               </SelectContent>
             </Select>
@@ -135,8 +115,14 @@ export function SubscriptionChangePlanDialog({
             <Label className="text-lg font-semibold">Select New Plan</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {plans.map((plan) => {
-                const pricing = plan.pricing || {};
-                const periodKey = selectedPeriod === 1 ? 'monthly' : selectedPeriod === 3 ? 'quarterly' : 'yearly';
+                // Type the pricing to ensure sixMonths is available
+                const pricing: { monthly?: any; quarterly?: any; sixMonths?: any; yearly?: any } = plan.pricing || {};
+                let periodKey: 'monthly' | 'quarterly' | 'sixMonths' | 'yearly';
+                if (selectedPeriod === 1) periodKey = 'monthly';
+                else if (selectedPeriod === 3) periodKey = 'quarterly';
+                else if (selectedPeriod === 6) periodKey = 'sixMonths';
+                else periodKey = 'yearly';
+                
                 const periodPricing = pricing[periodKey] || { price: plan.basePrice, discount: 0, discountedPrice: plan.basePrice, savings: 0 };
                 
                 return (
@@ -153,7 +139,7 @@ export function SubscriptionChangePlanDialog({
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">{plan.name}</CardTitle>
                         {selectedPlanId === plan.id && (
-                          <Check className="h-5 w-5 text-blue-600" />
+                          <Check className="h-5 w-5 text-blue-700" />
                         )}
                       </div>
                       <p className="text-sm text-gray-600">{plan.description}</p>
@@ -162,11 +148,12 @@ export function SubscriptionChangePlanDialog({
                       <div className="space-y-3">
                         <div className="text-center">
                           <div className="text-2xl font-bold">
-                            {formatCurrency(periodPricing.price, plan.currency)}
+                            {formatCurrency(periodPricing.price, plan.currency as any)}
                           </div>
                           <div className="text-sm text-gray-600">
                             {selectedPeriod === 1 ? 'per month' : 
-                             selectedPeriod === 3 ? 'per quarter' : 'per year'}
+                             selectedPeriod === 3 ? 'per quarter' : 
+                             selectedPeriod === 6 ? 'every 6 months' : 'per year'}
                           </div>
                           {periodPricing.discount > 0 && (
                             <div className="flex items-center justify-center gap-2 mt-1">
@@ -174,7 +161,7 @@ export function SubscriptionChangePlanDialog({
                                 {periodPricing.discount}% off
                               </Badge>
                               <span className="text-xs text-green-600">
-                                Save {formatCurrency(periodPricing.savings, plan.currency)}
+                                Save {formatCurrency(periodPricing.savings, plan.currency as any)}
                               </span>
                             </div>
                           )}
@@ -193,42 +180,7 @@ export function SubscriptionChangePlanDialog({
             </div>
           </div>
 
-          {/* Plan Comparison */}
-          {selectedPlan && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Plan Comparison</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div className="font-medium">Feature</div>
-                    <div className="font-medium text-center">Current</div>
-                    <div className="font-medium text-center">New Plan</div>
-                  </div>
-                  {features.map((feature) => (
-                    <div key={feature.key} className="grid grid-cols-3 gap-4 text-sm">
-                      <div>{feature.label}</div>
-                      <div className="text-center">
-                        {feature.current === -1 ? 'Unlimited' : feature.current}
-                      </div>
-                      <div className="text-center flex items-center justify-center gap-1">
-                        {feature.selected === -1 ? 'Unlimited' : feature.selected}
-                        {feature.change === 'upgrade' && (
-                          <ArrowRight className="h-4 w-4 text-green-600" />
-                        )}
-                        {feature.change === 'downgrade' && (
-                          <X className="h-4 w-4 text-red-600" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Pricing Change Alert */}
+          {/* Pricing Summary */}
           {selectedPlan && currentPlan && (
             <Alert>
               <AlertDescription>
@@ -236,11 +188,11 @@ export function SubscriptionChangePlanDialog({
                   <p className="font-medium">Pricing Change:</p>
                   <div className="flex items-center gap-4">
                     <span className="text-sm">
-                      From: {formatCurrency(currentPlan.basePrice, currentPlan.currency)}/month
+                      From: {formatCurrency(currentPlan.basePrice, currentPlan.currency as any)}/month
                     </span>
                     <ArrowRight className="h-4 w-4" />
                     <span className="text-sm font-medium">
-                      To: {formatCurrency(selectedPlan.basePrice, selectedPlan.currency)}/month
+                      To: {formatCurrency(selectedPlan.basePrice, selectedPlan.currency as any)}/month
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">
@@ -252,7 +204,7 @@ export function SubscriptionChangePlanDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 mt-4 border-t pt-4">
           <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>

@@ -9,8 +9,10 @@ import { Button,
   UserDisplayInfo, 
   AccountManagementCard,
   ConfirmationDialog,
-  
+  PageWrapper,
+  Breadcrumb,
   ChangePasswordDialog, useToast } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
   ArrowLeft,
   Edit, 
@@ -20,7 +22,7 @@ import {
   Key
 } from 'lucide-react';
 import { usersApi } from "@rentalshop/utils";
-import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
+import { useAuth, useSimpleErrorHandler, useCommonTranslations, useUsersTranslations } from '@rentalshop/hooks';
 import type { User, UserUpdateInput } from '@rentalshop/ui';
 
 export default function UserPage() {
@@ -29,6 +31,8 @@ export default function UserPage() {
   const { user } = useAuth();
   const { handleError } = useSimpleErrorHandler();
   const { toastSuccess, toastError, removeToast } = useToast();
+  const t = useCommonTranslations();
+  const tu = useUsersTranslations();
   const userId = params.id as string;
   
   console.log('🔍 UserPage: Component rendered with params:', params);
@@ -113,11 +117,11 @@ export default function UserPage() {
   };
 
   const handlePasswordChangeSuccess = () => {
-    toastSuccess('Password Changed', 'User password has been changed successfully!');
+    toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
   };
 
   const handlePasswordChangeError = (errorMessage: string) => {
-    toastError('Password Change Failed', errorMessage);
+    toastError(t('messages.updateFailed'), errorMessage);
   };
 
   const handleEdit = () => {
@@ -155,10 +159,10 @@ export default function UserPage() {
         setShowEditSection(false);
         
         // Show success message
-        toastSuccess('User Updated', 'User information has been updated successfully!');
+        toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         console.error('❌ UserPage: API error:', response.error);
-        toastError('Update Failed', response.error || 'Failed to update user');
+        toastError(t('messages.updateFailed'), response.error || t('messages.updateFailed'));
         throw new Error(response.error || 'Failed to update user');
       }
       
@@ -182,7 +186,7 @@ export default function UserPage() {
       if (response.success) {
         // Refresh user data
         await refreshUserData();
-        toastSuccess('User Activated', 'User account has been activated successfully!');
+        toastSuccess(tu('messages.activateSuccess'), tu('messages.activateSuccess'));
       } else {
         toastError('Activation Failed', response.error || 'Failed to activate user');
       }
@@ -211,7 +215,7 @@ export default function UserPage() {
       if (response.success) {
         // Refresh user data
         await refreshUserData();
-        toastSuccess('User Deactivated', 'User account has been deactivated successfully!');
+        toastSuccess(tu('messages.deactivateSuccess'), tu('messages.deactivateSuccess'));
         setShowDeactivateConfirm(false);
       } else {
         toastError('Deactivation Failed', response.error || 'Failed to deactivate user');
@@ -272,7 +276,7 @@ export default function UserPage() {
               <p className="text-gray-600 mb-6">The user you're looking for doesn't exist or has been removed.</p>
               <Button onClick={() => router.push('/users')} variant="outline">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Users
+                {tu('actions.backToUsers')}
               </Button>
             </div>
           </div>
@@ -281,10 +285,18 @@ export default function UserPage() {
     );
   }
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Users', href: '/users' },
+    { label: userData.name }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <PageWrapper>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-6" />
+      
+      {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{userData.name}</h1>
@@ -296,15 +308,15 @@ export default function UserPage() {
               variant="outline"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Users
+              {tu('actions.backToUsers')}
             </Button>
             <Button 
               onClick={handleEdit} 
               variant={showEditSection ? "outline" : "default"}
-              className={showEditSection ? "" : "bg-blue-600 hover:bg-blue-700 text-white"}
+              className={showEditSection ? "" : "bg-blue-700 hover:bg-blue-700 text-white"}
             >
               <Edit className="w-4 h-4 mr-2" />
-              {showEditSection ? 'Cancel Edit' : 'Edit User'}
+              {showEditSection ? t('buttons.cancel') : tu('editUser')}
             </Button>
             
             <Button 
@@ -313,7 +325,7 @@ export default function UserPage() {
               className="border-green-200 text-green-700 hover:bg-green-50"
             >
               <Key className="w-4 h-4 mr-2" />
-              Change Password
+              {tu('actions.changePassword')}
             </Button>
           </div>
         </div>
@@ -329,7 +341,6 @@ export default function UserPage() {
               onSave={handleSave}
               onCancel={() => setShowEditSection(false)}
               isSubmitting={isUpdating}
-              mode="edit"
             />
           </div>
         )}
@@ -346,15 +357,14 @@ export default function UserPage() {
             onDelete={() => setShowDeleteConfirm(true)}
           />
         )}
-      </div>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         type="danger"
-        title="Delete User Account"
-        description={`Are you sure you want to delete "${userData.name}"? This action cannot be undone and will permanently remove all user data.`}
+        title={tu('actions.delete')}
+        description={tu('messages.confirmDelete')}
         confirmText={isUpdating ? 'Deleting...' : 'Delete Account'}
         onConfirm={handleDelete}
       />
@@ -364,9 +374,9 @@ export default function UserPage() {
         open={showDeactivateConfirm}
         onOpenChange={setShowDeactivateConfirm}
         type="warning"
-        title="Deactivate User Account"
+        title={tu('actions.deactivate')}
         description={`Are you sure you want to deactivate "${userData.name}"? This will prevent the user from logging in and accessing the system. This action can be reversed by an administrator.`}
-        confirmText={isUpdating ? 'Deactivating...' : 'Deactivate Account'}
+        confirmText={isUpdating ? t('labels.loading') : tu('actions.deactivate')}
         onConfirm={confirmDeactivate}
       />
 
@@ -380,6 +390,6 @@ export default function UserPage() {
         onSuccess={handlePasswordChangeSuccess}
         onError={handlePasswordChangeError}
       />
-    </div>
+    </PageWrapper>
   );
 }

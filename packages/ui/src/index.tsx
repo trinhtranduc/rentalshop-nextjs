@@ -11,6 +11,7 @@ export * from './components/forms';
 // ============================================================================
 // FEATURE COMPONENTS (Complete Business Features)
 // ============================================================================
+export * from './components/features/Auth';
 export * from './components/features/Dashboard';
 export * from './components/features/Products';
 export * from './components/features/Customers';
@@ -55,6 +56,8 @@ export * from './components/charts';
 // CONTEXTS & HOOKS
 // ============================================================================
 // Note: Business logic hooks are imported directly from @rentalshop/hooks where needed
+export * from './contexts/CurrencyContext';
+export * from './hooks';
 
 // ============================================================================
 // UTILITIES

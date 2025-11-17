@@ -2,98 +2,124 @@
 
 import React from 'react';
 import { 
-  OutletHeader, 
-  OutletFilters, 
-  OutletGrid, 
-  OutletTable, 
-  OutletPagination,
-} from './components';
-import { 
-  OutletData, 
-  OutletFilters as OutletFiltersType,
-  Outlet
-} from '@rentalshop/types';
+  Pagination,
+  EmptyState,
+  Card,
+  CardContent
+} from '@rentalshop/ui';
+import { OutletTable, OutletSearch } from './components';
+import { Building2 } from 'lucide-react';
+import type { Outlet, OutletFilters } from '@rentalshop/types';
+import { useOutletsTranslations } from '@rentalshop/hooks';
 
-interface OutletsProps {
-  data: OutletData;
-  filters: OutletFiltersType;
-  viewMode: 'grid' | 'table';
-  onFiltersChange: (filters: OutletFiltersType) => void;
-  onSearchChange: (searchValue: string) => void;
-  onClearFilters?: () => void;
-  onViewModeChange: (mode: 'grid' | 'table') => void;
-  onOutletAction: (action: string, outletId: number) => void;
-  onPageChange: (page: number) => void;
-  onSort?: (column: string) => void;
-  // Enhanced props for outlet management
-  merchantId?: number;
-  onOutletCreated?: (outlet: Outlet) => void;
-  onOutletUpdated?: (outlet: Outlet) => void;
-  onError?: (error: string) => void;
+// Data interface for outlets list
+export interface OutletsData {
+  outlets: Outlet[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+  hasMore: boolean;
 }
 
-// Export the main Outlets component
-export function Outlets({ 
-  data, 
-  filters, 
-  viewMode, 
-  onFiltersChange, 
-  onSearchChange,
-  onClearFilters,
-  onViewModeChange, 
-  onOutletAction, 
-  onPageChange,
-  onSort,
-  // Enhanced props
-  merchantId,
-  onOutletCreated,
-  onOutletUpdated,
-  onError
-}: OutletsProps) {
+export interface OutletsProps {
+  // Data props
+  data?: OutletsData;
+  filters?: OutletFilters;
+  onSearchChange?: (searchValue: string) => void;
+  onOutletAction?: (action: string, outletId: number) => void;
+  onPageChange?: (page: number) => void;
+  onSort?: (column: string) => void;
   
+  // Display props
+  currentUser?: any;
+  className?: string;
+}
+
+/**
+ * ✅ SIMPLIFIED OUTLETS COMPONENT (Modern Pattern)
+ */
+export const Outlets: React.FC<OutletsProps> = ({
+  data,
+  filters = {},
+  onSearchChange = () => {},
+  onOutletAction = () => {},
+  onPageChange = () => {},
+  onSort = () => {},
+  currentUser,
+  className = ""
+}) => {
+  
+  // Get translations
+  const t = useOutletsTranslations();
+  
+  const outlets = data?.outlets || [];
+  const totalOutlets = data?.total || 0;
+  const currentPage = data?.page || 1;
+  const totalPages = data?.totalPages || 1;
+  const limit = data?.limit || 25;
+
+  // Memoize handlers
+  const memoizedOnSearchChange = React.useCallback(onSearchChange, [onSearchChange]);
+  const memoizedOnOutletAction = React.useCallback(onOutletAction, [onOutletAction]);
+  const memoizedOnPageChange = React.useCallback(onPageChange, [onPageChange]);
+  const memoizedOnSort = React.useCallback(onSort, [onSort]);
+
   return (
-    <div className="space-y-6">
-      {/* Header with view mode toggle and actions */}
-      <OutletHeader
-        viewMode={viewMode}
-        onViewModeChange={onViewModeChange}
-        onAddOutlet={() => onOutletAction('add', 0)}
-        totalOutlets={data.outlets.length}
-        merchantId={merchantId}
-      />
+    <div className={`flex flex-col h-full ${className}`}>
+      {/* Fixed Search Section */}
+      <div className="flex-shrink-0 mb-4">
+        <Card className="shadow-sm border-border">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <OutletSearch
+                value={filters.q || ''}
+                onChange={memoizedOnSearchChange}
+                onClear={() => memoizedOnSearchChange('')}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Filters */}
-      <OutletFilters
-        filters={filters}
-        onFiltersChange={onFiltersChange}
-        onSearchChange={onSearchChange}
-        onClearFilters={onClearFilters}
-      />
+      {/* Scrollable Table Section */}
+      <div className="flex-1 min-h-0">
+        {outlets.length > 0 ? (
+          <OutletTable
+            outlets={outlets}
+            onOutletAction={memoizedOnOutletAction}
+            sortBy={filters.sortBy || "createdAt"}
+            sortOrder={filters.sortOrder || "desc"}
+            onSort={memoizedOnSort}
+          />
+        ) : (
+          <EmptyState
+            icon={Building2}
+            title={t('messages.noOutlets')}
+            description={
+              filters.q
+                ? t('messages.tryAdjustingSearch')
+                : t('messages.getStarted')
+            }
+          />
+        )}
+      </div>
 
-      {/* Content */}
-      {viewMode === 'grid' ? (
-        <OutletGrid
-          outlets={data.outlets}
-          onOutletAction={onOutletAction}
-        />
-      ) : (
-        <OutletTable
-          outlets={data.outlets}
-          onOutletAction={onOutletAction}
-          onSort={onSort}
-        />
-      )}
-
-      {/* Pagination */}
-      {data.total > 0 && (
-        <OutletPagination
-          currentPage={data.currentPage}
-          totalPages={data.totalPages}
-          total={data.total}
-          limit={filters.limit || 20}
-          onPageChange={onPageChange}
-        />
+      {/* Fixed Pagination Section */}
+      {outlets.length > 0 && totalOutlets > limit && (
+        <div className="flex-shrink-0 py-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            total={totalOutlets}
+            limit={limit}
+            onPageChange={memoizedOnPageChange}
+            itemName="outlets"
+          />
+        </div>
       )}
     </div>
   );
-}
+};
+
+export default Outlets;

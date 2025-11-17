@@ -1,3 +1,4 @@
+
 // ============================================================================
 // SIMPLIFIED MERCHANT OPERATIONS
 // ============================================================================
@@ -10,9 +11,12 @@ import type { SimpleFilters, SimpleResponse } from './index';
 // TYPES
 // ============================================================================
 
+type BusinessTypeEnum = 'GENERAL' | 'VEHICLE' | 'CLOTHING' | 'EQUIPMENT';
+type PricingTypeEnum = 'FIXED' | 'HOURLY' | 'DAILY';
+
 export interface MerchantFilters extends SimpleFilters {
-  businessType?: string;
-  subscriptionStatus?: string;
+  businessType?: BusinessTypeEnum;
+  // subscriptionStatus removed - use subscription.status instead
   planId?: number;
   isActive?: boolean;
 }
@@ -21,19 +25,21 @@ export interface MerchantCreateData {
   name: string;
   email: string;
   phone?: string;
+  tenantKey?: string;
   address?: string;
   city?: string;
   state?: string;
   zipCode?: string;
   country?: string;
-  businessType?: string;
-  pricingType?: string;
+  businessType?: BusinessTypeEnum;
+  pricingType?: PricingTypeEnum;
   taxId?: string;
   website?: string;
   description?: string;
+  currency?: string; // Currency code (USD, VND), defaults to USD
   pricingConfig?: string;
   planId?: number;
-  subscriptionStatus?: string;
+  // subscriptionStatus removed - use subscription.status instead
 }
 
 export interface MerchantUpdateData extends Partial<MerchantCreateData> {
@@ -53,7 +59,7 @@ export async function findById(id: number) {
   return await prisma.merchant.findUnique({
     where: { id },
     include: {
-      Plan: true,
+      // Plan removed - use subscription.plan instead (single source of truth)
       subscription: {
         include: {
           plan: true
@@ -100,7 +106,6 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
     limit = 20,
     search,
     businessType,
-    subscriptionStatus,
     planId,
     isActive
   } = filters;
@@ -113,8 +118,7 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } },
-      { businessType: { contains: search, mode: 'insensitive' } }
+      { email: { contains: search, mode: 'insensitive' } }
     ];
   }
 
@@ -122,9 +126,12 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
     where.businessType = businessType;
   }
 
-  if (subscriptionStatus) {
-    where.subscriptionStatus = subscriptionStatus;
-  }
+  // subscriptionStatus filter removed - use subscription.status instead
+  // if (subscriptionStatus) {
+  //   where.subscription = {
+  //     status: subscriptionStatus
+  //   };
+  // }
 
   if (planId !== undefined) {
     where.planId = planId;
@@ -139,22 +146,33 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
     prisma.merchant.findMany({
       where,
       include: {
-        Plan: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            basePrice: true,
-            currency: true
-          }
-        },
         subscription: {
           select: {
             id: true,
             status: true,
             currentPeriodStart: true,
             currentPeriodEnd: true,
-            amount: true
+            trialStart: true,
+            trialEnd: true,
+            amount: true,
+            currency: true,
+            interval: true,
+            period: true,
+            discount: true,
+            savings: true,
+            cancelAtPeriodEnd: true,
+            canceledAt: true,
+            cancelReason: true,
+            plan: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                basePrice: true,
+                currency: true,
+                trialDays: true
+              }
+            }
           }
         },
         _count: {
@@ -186,9 +204,11 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
  * Create new merchant
  */
 export async function create(data: MerchantCreateData) {
+  const { planId, ...rest } = data;
   return await prisma.merchant.create({
     data: {
-      ...data,
+      ...rest,
+      ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
       createdAt: new Date(),
       updatedAt: new Date()
     },
@@ -203,10 +223,12 @@ export async function create(data: MerchantCreateData) {
  * Update merchant
  */
 export async function update(id: number, data: MerchantUpdateData) {
+  const { planId, ...rest } = data;
   return await prisma.merchant.update({
     where: { id },
     data: {
-      ...data,
+      ...rest,
+      ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
       updatedAt: new Date()
     },
     include: {
@@ -282,17 +304,75 @@ export async function count(options?: { where?: any }) {
   return await prisma.merchant.count({ where });
 }
 
+/**
+ * Check for duplicate merchant by email or phone
+ */
+export async function checkDuplicate(email?: string, phone?: string, excludeId?: number) {
+  if (!email && !phone) {
+    return null;
+  }
+
+  const conditions = [];
+  
+  if (email) {
+    conditions.push({ email });
+  }
+  
+  if (phone) {
+    conditions.push({ phone });
+  }
+
+  const where: any = {
+    OR: conditions
+  };
+
+  // Exclude specific merchant ID (for update operations)
+  if (excludeId) {
+    where.id = { not: excludeId };
+  }
+
+  return await prisma.merchant.findFirst({ where });
+}
+
 // ============================================================================
 // EXPORT SIMPLIFIED INTERFACE
 // ============================================================================
 
+/**
+ * Find first merchant matching criteria (simplified API)
+ */
+export const findFirst = async (whereClause: any) => {
+  // Handle both direct where clause and object with where property
+  const where = whereClause?.where || whereClause || {};
+  return await prisma.merchant.findFirst({
+    where,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      address: true,
+      businessType: true,
+      pricingType: true,
+      pricingConfig: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+};
+
 export const simplifiedMerchants = {
   findById,
   findByEmail,
+  findFirst,
   search,
   create,
   update,
   remove,
   getStats,
-  count
+  count,
+  checkDuplicate
 };
+
+

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { PageWrapper,
   PageHeader,
@@ -74,36 +73,32 @@ export default function EditMerchantPage() {
       // Use centralized API client
       const result = await merchantsApi.getMerchantDetail(parseInt(merchantId));
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setMerchant(data.data.merchant);
-          setEditData({
-            name: data.data.merchant.name,
-            email: data.data.merchant.email,
-            phone: data.data.merchant.phone || '',
-            address: data.data.merchant.address || '',
-            city: data.data.merchant.city || '',
-            state: data.data.merchant.state || '',
-            zipCode: data.data.merchant.zipCode || '',
-            country: data.data.merchant.country || '',
-            businessType: data.data.merchant.businessType || '',
-            taxId: data.data.merchant.taxId || '',
-            website: data.data.merchant.website || '',
-            description: data.data.merchant.description || '',
-            isActive: data.data.merchant.isActive
-          });
-        } else {
-          setError(data.message || 'Failed to fetch merchant details');
-        }
+      if (result.success && result.data) {
+        // API returns merchant data directly
+        const merchantData = result.data;
+        
+        setMerchant(merchantData);
+        setEditData({
+          name: merchantData.name || '',
+          email: merchantData.email || '',
+          phone: merchantData.phone || '',
+          address: merchantData.address || '',
+          city: merchantData.city || '',
+          state: merchantData.state || '',
+          zipCode: merchantData.zipCode || '',
+          country: merchantData.country || '',
+          businessType: merchantData.businessType || '',
+          taxId: merchantData.taxId || '',
+          website: merchantData.website || '',
+          description: merchantData.description || '',
+          isActive: merchantData.isActive ?? true
+        });
       } else {
-        console.error('Failed to fetch merchant details');
-        // Fallback to mock data for now
+        setError(result.message || 'Failed to fetch merchant details');
       }
     } catch (error) {
       console.error('Error fetching merchant details:', error);
       setError('Failed to fetch merchant details');
-      // Fallback to mock data for now
     } finally {
       setLoading(false);
     }
@@ -112,39 +107,18 @@ export default function EditMerchantPage() {
     try {
       setSaving(true);
       
-      // Get auth token from localStorage
-      const token = getAuthToken();
-      if (!token) {
-        console.error('No auth token found');
-        setError('Authentication required');
-        return;
-      }
+      // Use centralized API client
+      const result = await merchantsApi.updateMerchant(parseInt(merchantId), editData);
 
-      const response = await fetch(`http://localhost:3002/api/merchants/${merchantId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(editData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Show success toast
-          toastSuccess('Merchant updated', 'Changes saved successfully.');
-          // Navigate back to merchant detail page
-          router.push(`/merchants/${merchantId}`);
-        } else {
-          const msg = data.message || 'Failed to update merchant';
-          setError(msg);
-          toastError('Update failed', msg);
-        }
+      if (result.success) {
+        // Show success toast
+        toastSuccess('Merchant updated', 'Changes saved successfully.');
+        // Navigate back to merchant detail page
+        router.push(`/merchants/${merchantId}`);
       } else {
-        console.error('Failed to update merchant');
-        setError('Failed to update merchant');
-        toastError('Update failed', 'Server returned an error.');
+        const msg = result.message || 'Failed to update merchant';
+        setError(msg);
+        toastError('Update failed', msg);
       }
     } catch (err) {
       console.error('Error updating merchant:', err);
