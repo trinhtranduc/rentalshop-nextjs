@@ -50,6 +50,7 @@ export interface UsersProps {
   showStats?: boolean;
   currentUser?: any;
   onExport?: () => void;
+  onAdd?: () => void;
   className?: string;
 }
 
@@ -82,6 +83,7 @@ export const Users: React.FC<UsersProps> = ({
   showStats = false,
   currentUser,
   onExport,
+  onAdd,
   className = ""
 }) => {
   
@@ -111,7 +113,11 @@ export const Users: React.FC<UsersProps> = ({
 
   // Handler for add user button
   const handleAddUser = () => {
-    console.log('Add user functionality should be implemented in page');
+    if (onAdd) {
+      onAdd();
+    } else {
+      console.log('Add user functionality should be implemented in page');
+    }
   };
 
   // Default empty data

@@ -516,7 +516,7 @@ function createApiUrls(): ApiUrls {
       create: `${base}/api/orders`,
       update: (id: number) => `${base}/api/orders/${id}`,
       delete: (id: number) => `${base}/api/orders/${id}`,
-      getByNumber: (orderNumber: string) => `${base}/api/orders/by-number/${orderNumber}`,
+      getByNumber: (orderNumber: string) => `${base}/api/orders/by-number/${encodeURIComponent(orderNumber)}`,
       updateStatus: (id: number) => `${base}/api/orders/${id}/status`,
       stats: `${base}/api/orders/stats`,
     },

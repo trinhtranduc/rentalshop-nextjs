@@ -1,11 +1,23 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
-import { Users, PageWrapper } from '@rentalshop/ui';
+import React, { useCallback, useMemo, useState } from 'react';
+import { 
+  Users, 
+  PageWrapper,
+  UserDetailDialog,
+  AddUserDialog,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  UserForm,
+  useToast
+} from '@rentalshop/ui';
 import { useAuth, useUsersData } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
-import type { UserFilters } from '@rentalshop/types';
+import type { UserFilters, User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { usersApi } from '@rentalshop/utils';
 
 /**
  * ✅ MODERN USERS PAGE (URL State Pattern)
@@ -23,6 +35,13 @@ export default function UsersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user: currentUser } = useAuth();
+  const { toastSuccess, toastError } = useToast();
+  
+  // Dialog states
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -44,7 +63,7 @@ export default function UsersPage() {
   const filters: UserFilters = useMemo(() => ({
     search: search || undefined,
     q: search || undefined,
-    role,
+    role: role as any,
     status,
     page,
     limit,
@@ -52,7 +71,7 @@ export default function UsersPage() {
     sortOrder
   }), [search, role, status, page, limit, sortBy, sortOrder]);
 
-  const { data, loading, error } = useUsersData({ filters });
+  const { data, loading, error, refetch } = useUsersData({ filters });
   
   console.log('📊 Users Page - Data state:', {
     hasData: !!data,
@@ -125,13 +144,25 @@ export default function UsersPage() {
   const handleUserAction = useCallback(async (action: string, userId: number) => {
     console.log('🎬 User action:', action, userId);
     
+    const userItem = data?.users.find(u => u.id === userId);
+    
     switch (action) {
       case 'view':
-        router.push(`/users/${userId}`);
+        // Show detail dialog
+        if (userItem) {
+          setSelectedUser(userItem);
+          setShowDetailDialog(true);
+        }
         break;
+        
       case 'edit':
-        router.push(`/users/${userId}/edit`);
+        // Show edit dialog
+        if (userItem) {
+          setSelectedUser(userItem);
+          setShowEditDialog(true);
+        }
         break;
+        
       case 'delete':
         // Show delete confirmation
         console.log('Delete user:', userId);
@@ -140,7 +171,27 @@ export default function UsersPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [router]);
+  }, [data?.users]);
+  
+  // Handle user update from edit dialog
+  const handleUserUpdate = useCallback(async (userData: UserCreateInput | UserUpdateInput) => {
+    if (!selectedUser) return;
+    
+    try {
+      const response = await usersApi.updateUser(selectedUser.id, userData as UserUpdateInput);
+      if (response.success) {
+        toastSuccess('User updated successfully');
+        setShowEditDialog(false);
+        setSelectedUser(null);
+        refetch();
+      } else {
+        throw new Error(response.error || 'Failed to update user');
+      }
+    } catch (error) {
+      toastError('Failed to update user', (error as Error).message);
+      throw error;
+    }
+  }, [selectedUser, toastSuccess, toastError, refetch]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -184,6 +235,7 @@ export default function UsersPage() {
           onPageChange={handlePageChange}
           onSort={handleSort}
           onUserAction={handleUserAction}
+          onAdd={() => setShowAddDialog(true)}
           title="User Management"
           subtitle="Manage all users across the platform"
           showExportButton={false} // Export feature - temporarily hidden, will be enabled in the future
@@ -194,6 +246,64 @@ export default function UsersPage() {
           currentUser={currentUser}
         />
       </div>
+
+      {/* User Detail Dialog */}
+      {selectedUser && (
+        <UserDetailDialog
+          user={selectedUser}
+          open={showDetailDialog}
+          onOpenChange={setShowDetailDialog}
+        />
+      )}
+
+      {/* Add User Dialog */}
+      <AddUserDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        currentUser={currentUser}
+        onUserCreated={async (userData) => {
+          try {
+            const response = await usersApi.createUser(userData);
+            
+            if (response.success) {
+              toastSuccess('User created successfully');
+              setShowAddDialog(false);
+              refetch();
+            } else {
+              throw new Error(response.error || 'Failed to create user');
+            }
+          } catch (error) {
+            console.error('Error creating user:', error);
+            toastError('Failed to create user', error instanceof Error ? error.message : 'Unknown error');
+            throw error; // Re-throw to let dialog handle it
+          }
+        }}
+        onError={(error) => {
+          toastError('Error', error);
+        }}
+      />
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Edit User: {selectedUser?.firstName} {selectedUser?.lastName}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <UserForm
+              mode="edit"
+              user={selectedUser}
+              onSave={handleUserUpdate}
+              onCancel={() => {
+                setShowEditDialog(false);
+                setSelectedUser(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </PageWrapper>
   );
 }

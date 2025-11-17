@@ -8,14 +8,17 @@ import { PageWrapper,
   PageTitle,
   PageContent,
   Button,
-  UserPageHeader,
-  UserDisplayInfo,
+  UserCard,
   AccountManagementCard,
   ConfirmationDialog,
+  ChangePasswordDialog,
+  Breadcrumb,
   useToast,
   UserForm } from '@rentalshop/ui';
+import type { BreadcrumbItem } from '@rentalshop/ui';
 import { Edit, ArrowLeft, UserCheck, UserX, Trash2, Key } from 'lucide-react';
-import type { User, UserUpdateInput } from '@rentalshop/types';
+import { useAuth } from '@rentalshop/hooks';
+import type { User, UserUpdateInput, UserCreateInput } from '@rentalshop/types';
 
 interface UserDetailData {
   user: User;
@@ -27,6 +30,7 @@ export default function UserDetailPage() {
   const router = useRouter();
   const merchantId = params.id as string;
   const userId = params.userId as string;
+  const { user: currentUser } = useAuth();
   
   const { toastSuccess, toastError, removeToast } = useToast();
   
@@ -69,7 +73,7 @@ export default function UserDetailPage() {
     setShowEditSection(!showEditSection);
   };
 
-  const handleSave = async (userData: UserUpdateInput) => {
+  const handleSave = async (userData: UserUpdateInput | UserCreateInput) => {
     try {
       setIsUpdating(true);
       
@@ -191,6 +195,14 @@ export default function UserDetailPage() {
     toastError('Password Change Failed', errorMessage);
   };
 
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Merchants', href: '/merchants' },
+    { label: `Merchant ${merchantId}`, href: `/merchants/${merchantId}` },
+    { label: 'Users', href: `/merchants/${merchantId}/users` },
+    { label: userDetails ? userDetails.user.name : 'User Details' }
+  ];
+
   if (loading) {
     return (
       <PageWrapper>
@@ -234,23 +246,16 @@ export default function UserDetailPage() {
     <PageWrapper>
       <PageHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/merchants/${merchantId}/users`)}
-            >
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => router.push(`/merchants/${merchantId}/users`)}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Users
+              Back
             </Button>
-            <PageTitle>{userDetails.user.name}</PageTitle>
+            <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           </div>
-          <div className="flex space-x-2">
+          <div className="flex items-center gap-2">
             {!showEditSection && (
-              <Button
-                variant="outline"
-                onClick={handleEdit}
-              >
+              <Button variant="outline" onClick={handleEdit}>
                 <Edit className="w-4 h-4 mr-2" />
                 Edit User
               </Button>
@@ -260,10 +265,39 @@ export default function UserDetailPage() {
       </PageHeader>
 
       <PageContent>
-        
+        {/* Header */}
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{userDetails.user.name}</h1>
+            <p className="text-gray-600">{userDetails.user.email}</p>
+          </div>
+          <div className="flex gap-2">
+            {!showEditSection && (
+              <>
+                <Button 
+                  onClick={handleEdit} 
+                  variant="default"
+                  className="bg-blue-700 hover:bg-blue-700 text-white"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit User
+                </Button>
+                <Button 
+                  onClick={() => setShowChangePassword(true)}
+                  variant="outline"
+                  className="border-green-200 text-green-700 hover:bg-green-50"
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  Change Password
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* User Information - Read Only OR Edit Form */}
         {!showEditSection ? (
-          <UserDisplayInfo user={userDetails.user} />
+          <UserCard user={userDetails.user} onUserAction={() => {}} />
         ) : (
           <div className="mt-8">
             <UserForm
@@ -308,6 +342,16 @@ export default function UserDetailPage() {
         description={`Are you sure you want to deactivate "${userDetails.user.name}"? This will prevent the user from logging in and accessing the system. This action can be reversed by an administrator.`}
         confirmText={isUpdating ? 'Deactivating...' : 'Deactivate Account'}
         onConfirm={handleDeactivate}
+      />
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog
+        open={showChangePassword}
+        onOpenChange={setShowChangePassword}
+        userId={userDetails.user.id ? parseInt(userDetails.user.id.toString()) : 0}
+        userName={userDetails.user.name || ''}
+        onSuccess={handlePasswordChangeSuccess}
+        onError={handlePasswordChangeError}
       />
     </PageWrapper>
   );
