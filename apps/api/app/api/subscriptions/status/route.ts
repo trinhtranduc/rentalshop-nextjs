@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
+import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
       // For MERCHANT, OUTLET_ADMIN, OUTLET_STAFF: get their merchant's subscription
       // For ADMIN role, they can specify merchantId in query params
       const { searchParams } = new URL(request.url);
-      const merchantId = user.role === 'ADMIN' 
+      const merchantId = user.role === USER_ROLE.ADMIN 
         ? (searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : userScope.merchantId)
         : userScope.merchantId; // All outlet users have merchantId in scope
 
@@ -66,8 +67,8 @@ export async function GET(request: NextRequest) {
       
       // Calculate expiration states
       const isPeriodExpired = periodEnd && periodEnd < now;
-      const isTrialExpired = dbStatus === 'trial' && trialEnd && trialEnd <= now;
-      const isTrialActive = dbStatus === 'trial' && trialEnd && trialEnd > now;
+      const isTrialExpired = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && trialEnd && trialEnd <= now;
+      const isTrialActive = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && trialEnd && trialEnd > now;
       
       // ============================================================================
       // SIMPLE STATUS: CHỈ 1 STATUS DUY NHẤT

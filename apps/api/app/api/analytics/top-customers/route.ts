@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
@@ -35,7 +36,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         gte: dateStart,
         lte: dateEnd
       },
-      status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED', 'PICKUPED', 'RETURNED'] }
+      status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any, ORDER_STATUS.COMPLETED as any, ORDER_STATUS.RETURNED as any] }
     };
 
     // Apply role-based filtering
@@ -94,7 +95,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       where: {
         ...orderWhereClause,
         customerId: item.customerId!,
-        orderType: 'RENT'
+        orderType: ORDER_TYPE.RENT as any
       }
     });
 
@@ -103,7 +104,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       where: {
         ...orderWhereClause,
         customerId: item.customerId!,
-        orderType: 'SALE'
+        orderType: ORDER_TYPE.SALE as any
       }
     });
 

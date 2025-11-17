@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
+import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
 import { handleApiError, getUTCDateKey } from '@rentalshop/utils';
 
@@ -64,7 +65,7 @@ export const GET = withReadOnlyAuth(async (
       where.orderType = orderType;
     } else {
       // Default to RENT orders if no orderType specified
-      where.orderType = 'RENT';
+      where.orderType = ORDER_TYPE.RENT as any;
     }
     
     if (status) {
@@ -72,12 +73,12 @@ export const GET = withReadOnlyAuth(async (
     } else {
       // Default to only active pickup orders (not returned)
       where.status = {
-        in: ['RESERVED', 'PICKUPED']
+        in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
       };
     }
 
     // Role-based filtering
-    if (user.role === 'ADMIN') {
+    if (user.role === USER_ROLE.ADMIN) {
       // ADMIN: Can see all orders, optionally filter by outletId
       if (outletId) {
         where.outletId = outletId;

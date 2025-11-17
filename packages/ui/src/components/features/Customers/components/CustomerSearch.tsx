@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useCallback } from 'react';
 import { Input, Button } from '@rentalshop/ui';
 import { CustomerFilters } from '@rentalshop/types';

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -22,6 +24,7 @@ import {
 } from '../../../ui';
 import { Calendar, CreditCard, Users, Package, Building2 } from 'lucide-react';
 import type { Plan } from '@rentalshop/types';
+import type { SubscriptionStatus } from '@rentalshop/constants';
 
 interface MerchantPlanDialogProps {
   isOpen: boolean;
@@ -38,7 +41,7 @@ interface MerchantPlanDialogProps {
     name: string;
     email: string;
     subscription?: {
-      status: string;
+      status: SubscriptionStatus; // ✅ Type safe with enum
       plan?: {
         id: number;
         name: string;
@@ -46,7 +49,7 @@ interface MerchantPlanDialogProps {
         currency: string;
       };
     } | null;
-    subscriptionStatus: string;
+    subscriptionStatus: SubscriptionStatus; // ✅ Type safe with enum
   };
   plans: Plan[];
   loading?: boolean;

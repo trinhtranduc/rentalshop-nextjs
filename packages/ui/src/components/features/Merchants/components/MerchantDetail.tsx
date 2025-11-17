@@ -8,6 +8,8 @@ import { MerchantSubscriptionSection } from './MerchantSubscriptionSection';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '../../../ui';
 import { Building2, Users, Package, ShoppingCart } from 'lucide-react';
 import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
+import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
+import type { SubscriptionStatus } from '@rentalshop/constants';
 
 interface MerchantDetailProps {
   data: MerchantDetailData;
@@ -124,7 +126,8 @@ export function MerchantDetail({
               price: data.merchant.plan.basePrice,
               currency: data.merchant.plan.currency
             } : null,
-            subscriptionStatus: data.merchant.subscription?.status || 'unknown'
+            subscriptionStatus: normalizeSubscriptionStatus(data.merchant.subscription?.status) || SUBSCRIPTION_STATUS.TRIAL,
+            subscription: data.merchant.subscription || null
           }}
           subscriptions={data.merchant.subscription ? [data.merchant.subscription] : []}
           plans={plans}

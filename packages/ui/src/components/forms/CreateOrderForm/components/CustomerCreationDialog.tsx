@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * CustomerCreationDialog - Dialog component for creating new customers
  */

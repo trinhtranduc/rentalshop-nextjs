@@ -21,12 +21,12 @@
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit"
   },
+  "dependencies": {
+    "@rentalshop/constants": "file:../constants"
+  },
   "devDependencies": {
     "tsup": "^7.3.0",
     "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "@rentalshop/constants": "*"
   },
   "peerDependencies": {
     "zod": "^3.22.0"

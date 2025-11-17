@@ -326,8 +326,10 @@ export async function sendVerificationEmail(
   // Lazy load env to avoid initialization issues in browser
   const { env } = await import('@rentalshop/env');
   
-  const clientUrl = env.CLIENT_URL;
-  const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
+  // Use API_URL so the link goes to backend first, which verifies token
+  // and then redirects back to CLIENT_URL with success/error.
+  const apiUrl = env.API_URL || env.CLIENT_URL;
+  const verificationUrl = `${apiUrl}/api/auth/verify-email?token=${verificationToken}`;
 
   const html = generateVerificationEmail({
     name,

@@ -1,5 +1,6 @@
 import { prisma } from './client';
 import type { Prisma } from '@prisma/client';
+import { ORDER_TYPE, ORDER_STATUS, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   OrderSearchFilter,
   OrderSearchResult,
@@ -112,7 +113,7 @@ const orderSelect = {
   outletId: true,
   customerId: true,
   createdById: true,
-} satisfies Prisma.OrderSelect
+} as const
 
 const orderInclude = {
   customer: {
@@ -171,7 +172,7 @@ const orderInclude = {
       processedAt: true,
     }
   }
-} satisfies Prisma.OrderInclude
+} as const
 
 function transformOrder(order: any): OrderWithRelations {
   return {
@@ -285,8 +286,8 @@ export async function createOrder(data: {
   const order = await prisma.order.create({
     data: {
       orderNumber: data.orderNumber,
-      orderType: data.orderType,
-      status: data.status ?? 'RESERVED',
+      orderType: data.orderType as any, // ✅ Type safe with Prisma enum
+      status: (data.status ?? ORDER_STATUS.RESERVED) as any, // ✅ Type safe with Prisma enum
       totalAmount: data.totalAmount,
       depositAmount: data.depositAmount ?? 0,
       securityDeposit: data.securityDeposit ?? 0,
@@ -445,7 +446,7 @@ export async function deleteOrder(id: number): Promise<boolean> {
 }
 
 export async function getOrderCount(outletId?: number, status?: string): Promise<number> {
-  const where: Prisma.OrderWhereInput = {}
+  const where: any = {}
   if (outletId) where.outletId = outletId
   if (status) where.status = status
 
@@ -619,7 +620,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
   const totalPages = Math.ceil(total / limit);
   const page = Math.floor(offset / limit) + 1;
 
-  const transformedOrders: OrderSearchResult[] = orders.map(order => ({
+  const transformedOrders: OrderSearchResult[] = orders.map((order: any) => ({
     id: order.id,
     orderNumber: order.orderNumber,
     orderType: order.orderType as any,
@@ -1764,7 +1765,7 @@ export const simplifiedOrders = {
     const itemCount = (order as any).orderItems?.length || 0;
     const paymentCount = (order as any).payments?.length || 0;
     const totalPaid = (order as any).payments
-      ?.filter((p: any) => p.status === 'COMPLETED')
+      ?.filter((p: any) => p.status === PAYMENT_STATUS.COMPLETED)
       .reduce((sum: number, p: any) => sum + p.amount, 0) || 0;
 
     return {

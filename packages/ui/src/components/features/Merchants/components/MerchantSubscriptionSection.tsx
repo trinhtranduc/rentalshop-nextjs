@@ -30,22 +30,7 @@ import {
   Clock,
   History
 } from 'lucide-react';
-
-interface Subscription {
-  id: number;
-  planId: number;
-  status: string;
-  amount: number;
-  currency: string;
-  interval: string;
-  currentPeriodStart: Date;
-  currentPeriodEnd: Date;
-  plan?: {
-    id: number;
-    name: string;
-    description: string;
-  };
-}
+import type { Subscription } from '@rentalshop/types';
 
 interface MerchantSubscriptionSectionProps {
   merchantId: number;

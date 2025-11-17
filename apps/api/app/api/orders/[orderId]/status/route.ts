@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_STATUS } from '@rentalshop/constants';
 import { z } from 'zod';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
@@ -82,11 +83,11 @@ export async function PATCH(
     };
 
     // Automatically set timestamps based on status
-    if (status === 'PICKUPED' && !pickedUpAt) {
+    if (status === ORDER_STATUS.PICKUPED && !pickedUpAt) {
       updateInput.pickedUpAt = new Date().toISOString();
     }
     
-    if (status === 'RETURNED' && !returnedAt) {
+    if (status === ORDER_STATUS.RETURNED && !returnedAt) {
       updateInput.returnedAt = new Date().toISOString();
       
       // Enhanced return handling with collateral management
@@ -136,7 +137,7 @@ export async function PATCH(
     // Enhanced response for returns
     let responseMessage = `Order status updated to ${status} successfully`;
     
-    if (status === 'RETURNED') {
+    if (status === ORDER_STATUS.RETURNED) {
       const returnInfo = [];
       
       // Calculate return amount (deposit + security deposit)

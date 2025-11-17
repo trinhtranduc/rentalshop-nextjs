@@ -46,7 +46,7 @@ export type AuthWrapper = (handler: AuthenticatedHandler) => (request: NextReque
  */
 async function checkSubscriptionStatus(user: any): Promise<{ success: boolean; response?: NextResponse }> {
   // ADMIN users bypass subscription checks
-  if (user.role === 'ADMIN') {
+  if (user.role === USER_ROLE.ADMIN) {
     return { success: true };
   }
 

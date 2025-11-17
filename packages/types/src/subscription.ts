@@ -3,9 +3,9 @@
 // ============================================================================
 
 import { Plan } from './plans';
-import { SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
+import type { SubscriptionStatus, BillingInterval } from '@rentalshop/constants';
 
-// Re-export types from centralized constants
+// Re-export types from centralized constants (Single Source of Truth)
 export type { SubscriptionStatus, BillingInterval };
 export type BillingPeriod = 1 | 3 | 6 | 12; // months (1=monthly, 3=quarterly, 6=sixMonths, 12=yearly)
 
@@ -19,28 +19,54 @@ export interface SubscriptionPeriod {
   isTrial?: boolean;
 }
 
+/**
+ * Complete Subscription interface matching Prisma model
+ * This is the single source of truth for subscription data
+ */
 export interface Subscription {
+  // Core identifiers
   id: number;
   merchantId: number;
   planId: number;
-  status: SubscriptionStatus;
-  billingInterval: BillingInterval; // monthly, quarterly, sixMonths, yearly
-  currentPeriodStart: Date;
-  currentPeriodEnd: Date;
-  amount: number; // Calculated price based on plan and interval
-  createdAt: Date;
-  updatedAt: Date;
   
-  // Enhanced subscription period information
+  // Status and billing
+  status: SubscriptionStatus; // ✅ Type safe with enum
+  billingInterval: BillingInterval; // monthly, quarterly, sixMonths, yearly
+  
+  // Period information
+  currentPeriodStart: Date | string;
+  currentPeriodEnd: Date | string;
+  trialStart?: Date | string;
+  trialEnd?: Date | string;
+  
+  // Pricing information
+  amount: number; // Calculated price based on plan and interval
+  currency: string; // Currency code (USD, VND)
+  interval: string; // 'month', 'quarter', 'year' (legacy field, use billingInterval)
+  intervalCount: number; // Number of intervals (1, 3, 6, 12)
+  period: number; // 1, 3, 6, 12 months (legacy field, use intervalCount)
+  discount: number; // Discount percentage
+  savings: number; // Calculated savings amount
+  
+  // Cancellation information
+  cancelAtPeriodEnd: boolean;
+  canceledAt?: Date | string;
+  cancelReason?: string;
+  
+  // Timestamps
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  
+  // Enhanced subscription period information (computed)
   subscriptionPeriod?: SubscriptionPeriod;
   
-  // Relations
-  merchant: {
+  // Relations (populated when needed)
+  merchant?: {
     id: number;
     name: string;
     email: string;
   };
-  plan: Plan;
+  plan?: Plan;
 }
 
 export interface SubscriptionCreateInput {
@@ -62,7 +88,7 @@ export interface SubscriptionUpdateInput {
 export interface SubscriptionFilters {
   merchantId?: number;
   planId?: number;
-  status?: string;
+  status?: SubscriptionStatus; // ✅ Type safe with enum
   startDate?: Date | string;
   endDate?: Date | string;
   limit?: number;

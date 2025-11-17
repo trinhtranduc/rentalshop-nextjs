@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Button, Input, Label, Textarea } from '@rentalshop/ui';
 import { Save, X, Edit } from 'lucide-react';

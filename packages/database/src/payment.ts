@@ -4,7 +4,7 @@ import type { Prisma } from '@prisma/client';
 /**
  * Create payment
  */
-export async function createPayment(data: Prisma.PaymentCreateInput) {
+export async function createPayment(data: any) {
   return await prisma.payment.create({
     data,
     include: {

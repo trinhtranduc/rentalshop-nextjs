@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -180,7 +181,7 @@ export async function DELETE(
       // Check if merchant has active subscription
       const activeSubscription = await db.subscriptions.findFirst({
         merchantId: merchantId,
-        status: { in: ['ACTIVE', 'TRIAL'] }
+        status: { in: [SUBSCRIPTION_STATUS.ACTIVE as any, SUBSCRIPTION_STATUS.TRIAL as any] }
       });
 
       if (activeSubscription) {

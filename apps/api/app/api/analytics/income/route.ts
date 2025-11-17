@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -124,15 +125,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
         // Calculate revenue using the same formula as dashboard
         const calculateOrderRevenue = (order: any) => {
-          if (order.orderType === 'SALE') {
+          if (order.orderType === ORDER_TYPE.SALE) {
             return order.totalAmount;
           } else {
             // RENT order
-            if (order.status === 'RESERVED') {
+            if (order.status === ORDER_STATUS.RESERVED) {
               return order.depositAmount;
-            } else if (order.status === 'PICKUPED') {
+            } else if (order.status === ORDER_STATUS.PICKUPED) {
               return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
-            } else if (order.status === 'RETURNED') {
+            } else if (order.status === ORDER_STATUS.RETURNED) {
               // Check if order was picked up and returned on the same day
               const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
               const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
@@ -159,7 +160,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         // Get future income (pending orders with future return dates)
         const futureIncome = await db.orders.aggregate({
           where: {
-            status: { in: ['RESERVED', 'ACTIVE'] },
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] },
             returnPlanAt: {
               gte: startOfMonth,
               lte: endOfMonth
@@ -178,7 +179,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
               gte: startOfMonth,
               lte: endOfMonth
             },
-            status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED'] },
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any, ORDER_STATUS.COMPLETED as any] },
             ...orderWhereClause
           }
         });
@@ -287,15 +288,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
         // Calculate revenue using the same formula as dashboard
         const calculateOrderRevenue = (order: any) => {
-          if (order.orderType === 'SALE') {
+          if (order.orderType === ORDER_TYPE.SALE) {
             return order.totalAmount;
           } else {
             // RENT order
-            if (order.status === 'RESERVED') {
+            if (order.status === ORDER_STATUS.RESERVED) {
               return order.depositAmount;
-            } else if (order.status === 'PICKUPED') {
+            } else if (order.status === ORDER_STATUS.PICKUPED) {
               return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
-            } else if (order.status === 'RETURNED') {
+            } else if (order.status === ORDER_STATUS.RETURNED) {
               // Check if order was picked up and returned on the same day
               const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
               const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
@@ -322,7 +323,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         // Get future income (pending orders with future return dates)
         const futureIncome = await db.orders.aggregate({
           where: {
-            status: { in: ['RESERVED', 'ACTIVE'] },
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] },
             returnPlanAt: {
               gte: startOfDay,
               lte: endOfDay
@@ -341,7 +342,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
               gte: startOfDay,
               lte: endOfDay
             },
-            status: { in: ['RESERVED', 'ACTIVE', 'COMPLETED'] },
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any, ORDER_STATUS.COMPLETED as any] },
             ...orderWhereClause
           }
         });
