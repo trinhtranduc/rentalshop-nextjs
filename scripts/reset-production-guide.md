@@ -23,10 +23,16 @@
 ### Bước 3: Cấu hình Deploy Command
 1. Scroll xuống phần **Deploy**
 2. Tìm **Deploy Command** hoặc **Start Command**
-3. Thêm command:
+3. **Option A - Reset và Start Server (Recommended):**
+   ```bash
+   chmod +x scripts/reset-and-start.sh && scripts/reset-and-start.sh
+   ```
+   
+   **Option B - Chỉ Reset (sau đó phải đổi lại start command):**
    ```bash
    yarn db:reset-railway
    ```
+   ⚠️ **Lưu ý:** Với Option B, sau khi reset xong phải đổi lại start command về `yarn start` hoặc `cd apps/api && yarn start`
 4. Click **Save**
 
 ### Bước 4: Trigger Deploy
@@ -40,11 +46,17 @@
 3. Xem **Logs** để theo dõi quá trình reset
 4. Đợi đến khi thấy: `🎉 Railway database reset completed successfully!`
 
-### Bước 6: Xóa Deploy Command (Sau khi reset xong)
+### Bước 6: Xóa/Đổi Deploy Command (Sau khi reset xong)
 1. Vào lại **Settings** → **Deploy**
-2. Xóa command `yarn db:reset-railway`
-3. Để lại command mặc định (thường là `yarn start` hoặc `npm start`)
-4. Click **Save**
+2. **Nếu dùng Option A:** Xóa command reset, để lại:
+   ```bash
+   cd apps/api && yarn start
+   ```
+   **Nếu dùng Option B:** Đổi command từ `yarn db:reset-railway` về:
+   ```bash
+   cd apps/api && yarn start
+   ```
+3. Click **Save**
 
 ### Bước 7: Verify
 1. Test API endpoints
