@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_STATUS } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -78,8 +79,8 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     // Calculate metrics
     const totalOrders = todayOrders.total || 0;
-    const activeRentals = todayOrders.data?.filter(order => order.status === 'PICKUPED').length || 0;
-    const completedOrders = todayOrders.data?.filter(order => order.status === 'COMPLETED').length || 0;
+    const activeRentals = todayOrders.data?.filter(order => order.status === ORDER_STATUS.PICKUPED).length || 0;
+    const completedOrders = todayOrders.data?.filter(order => order.status === ORDER_STATUS.COMPLETED).length || 0;
     const totalRevenue = todayOrders.data?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
 
     // Get stock metrics

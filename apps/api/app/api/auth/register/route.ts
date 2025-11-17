@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, createEmailVerification } from '@rentalshop/database';
 import { registerSchema, sendVerificationEmail, generateTenantKeyFromName } from '@rentalshop/utils';
 import { generateToken, hashPassword } from '@rentalshop/auth';
-import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, getDefaultPricingConfig, type BusinessType, type PricingType } from '@rentalshop/constants';
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine registration type
-    const isMerchantRegistration = validatedData.role === 'MERCHANT' || !!validatedData.businessName;
+    const isMerchantRegistration = validatedData.role === USER_ROLE.MERCHANT || !!validatedData.businessName;
 
     if (isMerchantRegistration) {
       // ============================================================================

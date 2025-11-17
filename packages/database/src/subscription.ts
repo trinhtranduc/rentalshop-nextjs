@@ -885,12 +885,12 @@ export async function renewSubscription(
         amount: subscription.amount,
         currency: subscription.currency,
         method: paymentData.method,
-        type: 'SUBSCRIPTION',
-        status: paymentData.method === 'STRIPE' ? 'COMPLETED' : 'PENDING',
+        type: PAYMENT_TYPE.SUBSCRIPTION_PAYMENT as any,
+        status: paymentData.method === PAYMENT_METHOD.STRIPE ? PAYMENT_STATUS.COMPLETED as any : PAYMENT_STATUS.PENDING as any,
         transactionId: paymentData.transactionId,
         reference: paymentData.reference,
         description: paymentData.description || `Monthly subscription renewal - ${new Date().toLocaleDateString()}`,
-        processedAt: paymentData.method === 'STRIPE' ? new Date() : null
+        processedAt: paymentData.method === PAYMENT_METHOD.STRIPE ? new Date() : null
       }
     });
 
