@@ -150,10 +150,11 @@ Sau khi reset, sử dụng:
 
 ## 📊 Production Database Info
 
-- **Host:** `metro.proxy.rlwy.net`
-- **Port:** `39416`
+- **Host:** `maglev.proxy.rlwy.net`
+- **Port:** `46280`
 - **Database:** `railway`
-- **Access:** Railway network only
+- **Access:** Railway network only (public URL available for local testing)
+- **Public URL:** `postgresql://postgres:rcoiKvDAztXzqINtiUYlxZaPDpqrtRLg@maglev.proxy.rlwy.net:46280/railway`
 
 ---
 
