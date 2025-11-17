@@ -62,6 +62,15 @@ DATABASE_URL='postgresql://postgres:rcoiKvDAztXzqINtiUYlxZaPDpqrtRLg@maglev.prox
 ./scripts/test-prod-db.sh
 ```
 
+**Export DATABASE_URL (for current shell session):**
+```bash
+# Quick export script
+source scripts/export-prod-db-url.sh
+
+# Or manual export
+export DATABASE_URL='postgresql://postgres:rcoiKvDAztXzqINtiUYlxZaPDpqrtRLg@maglev.proxy.rlwy.net:46280/railway'
+```
+
 ---
 
 ## ⚠️ Important Notes
