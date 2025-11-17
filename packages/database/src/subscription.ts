@@ -4,6 +4,7 @@
 
 import { prisma } from './client';
 import { calculateSubscriptionPrice, getPricingBreakdown } from '@rentalshop/utils';
+import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   Subscription, 
   Plan, 
@@ -125,6 +126,38 @@ function transformPlanFromDb(plan: any): Plan {
   };
 }
 
+/**
+ * Helper function to transform Prisma subscription to Subscription type
+ * Ensures all required fields are included
+ */
+function transformSubscriptionFromDb(sub: any): Subscription {
+  return {
+    id: sub.id,
+    merchantId: sub.merchantId,
+    planId: sub.planId,
+    status: sub.status as SubscriptionStatus, // ✅ Type safe with Prisma enum
+    billingInterval: sub.interval as BillingInterval,
+    currentPeriodStart: sub.currentPeriodStart,
+    currentPeriodEnd: sub.currentPeriodEnd,
+    trialStart: sub.trialStart,
+    trialEnd: sub.trialEnd,
+    amount: sub.amount,
+    currency: sub.currency || 'USD',
+    interval: sub.interval,
+    intervalCount: sub.intervalCount || 1,
+    period: sub.period || 1,
+    discount: sub.discount || 0,
+    savings: sub.savings || 0,
+    cancelAtPeriodEnd: sub.cancelAtPeriodEnd || false,
+    canceledAt: sub.canceledAt,
+    cancelReason: sub.cancelReason,
+    createdAt: sub.createdAt,
+    updatedAt: sub.updatedAt,
+    ...(sub.merchant && { merchant: sub.merchant }),
+    ...(sub.plan && { plan: convertPrismaPlanToPlan(sub.plan) })
+  };
+}
+
 export function calculatePlanPricing(plan: Plan): Record<BillingInterval, number> {
   const pricing: Record<BillingInterval, number> = {} as any;
   
@@ -191,20 +224,7 @@ export async function getSubscriptionByMerchantId(merchantId: number): Promise<S
 
   if (!subscription) return null;
 
-  return {
-    id: subscription.id,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status as SubscriptionStatus,
-    billingInterval: subscription.interval as BillingInterval,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    amount: subscription.amount,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: convertPrismaPlanToPlan(subscription.plan)
-  };
+  return transformSubscriptionFromDb(subscription);
 }
 
 export async function getAllSubscriptions(): Promise<Subscription[]> {
@@ -222,20 +242,7 @@ export async function getAllSubscriptions(): Promise<Subscription[]> {
     orderBy: { createdAt: 'desc' }
   });
 
-  return subscriptions.map((sub: any) => ({
-    id: sub.id,
-    merchantId: sub.merchantId,
-    planId: sub.planId,
-    status: sub.status as SubscriptionStatus,
-    billingInterval: sub.interval as BillingInterval,
-    currentPeriodStart: sub.currentPeriodStart,
-    currentPeriodEnd: sub.currentPeriodEnd,
-    amount: sub.amount,
-    createdAt: sub.createdAt,
-    updatedAt: sub.updatedAt,
-    merchant: sub.merchant,
-    plan: convertPrismaPlanToPlan(sub.plan)
-  }));
+  return subscriptions.map((sub: any) => transformSubscriptionFromDb(sub));
 }
 
 // ============================================================================
@@ -307,35 +314,7 @@ export async function searchSubscriptions(filters: {
   const hasMore = (filters.offset || 0) + (filters.limit || 20) < total;
 
   return {
-    subscriptions: subscriptions.map((sub: any) => ({
-      id: sub.id,
-      merchantId: sub.merchantId,
-      planId: sub.planId,
-      status: sub.status as SubscriptionStatus,
-      billingInterval: sub.interval as BillingInterval,
-      currentPeriodStart: sub.currentPeriodStart,
-      currentPeriodEnd: sub.currentPeriodEnd,
-      amount: sub.amount,
-      createdAt: sub.createdAt,
-      updatedAt: sub.updatedAt,
-      merchant: sub.merchant,
-      plan: {
-        id: sub.plan.id,
-        name: sub.plan.name,
-        description: sub.plan.description,
-        basePrice: sub.plan.basePrice,
-        currency: sub.plan.currency,
-        trialDays: sub.plan.trialDays,
-        limits: JSON.parse(sub.plan.limits as string) as PlanLimits,
-        features: JSON.parse(sub.plan.features as string) as string[],
-        isActive: sub.plan.isActive,
-        isPopular: sub.plan.isPopular,
-        sortOrder: sub.plan.sortOrder,
-        pricing: generatePricingFromBasePrice(sub.plan.basePrice),
-        createdAt: sub.plan.createdAt,
-        updatedAt: sub.plan.updatedAt
-      }
-    })),
+    subscriptions: subscriptions.map((sub: any) => transformSubscriptionFromDb(sub)),
     total,
     hasMore
   };
@@ -386,7 +365,7 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
     data: {
       merchantId: merchant.id,
       planId: plan.id,
-      status: data.status || 'trial',
+      status: (data.status || SUBSCRIPTION_STATUS.TRIAL) as SubscriptionStatus, // ✅ Type safe with enum constant
       interval: billingInterval,
       currentPeriodStart: startDate,
       currentPeriodEnd: currentPeriodEnd,
@@ -412,20 +391,7 @@ export async function createSubscription(data: SubscriptionCreateInput): Promise
     }
   });
 
-  return {
-    id: subscription.id,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status as SubscriptionStatus,
-    billingInterval: subscription.interval as BillingInterval,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    amount: subscription.amount,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: convertPrismaPlanToPlan(subscription.plan)
-  };
+  return transformSubscriptionFromDb(subscription);
 }
 
 // ============================================================================
@@ -537,28 +503,19 @@ export async function changePlan(
 
   // No need to update merchant - subscription.status is the single source of truth
 
+  const result = transformSubscriptionFromDb(updatedSubscription);
+  
+  // Add enhanced subscription period information
   return {
-    id: updatedSubscription.id,
-    merchantId: updatedSubscription.merchantId,
-    planId: updatedSubscription.planId,
-    status: updatedSubscription.status as SubscriptionStatus,
-    billingInterval: updatedSubscription.interval as BillingInterval,
-    currentPeriodStart: updatedSubscription.currentPeriodStart,
-    currentPeriodEnd: updatedSubscription.currentPeriodEnd,
-    amount: updatedSubscription.amount,
-    createdAt: updatedSubscription.createdAt,
-    updatedAt: updatedSubscription.updatedAt,
-    // Enhanced subscription period information
+    ...result,
     subscriptionPeriod: {
       startDate: updatedSubscription.currentPeriodStart,
       endDate: updatedSubscription.currentPeriodEnd,
       duration: updatedSubscription.interval,
-      isActive: updatedSubscription.status === 'active',
+      isActive: updatedSubscription.status === SUBSCRIPTION_STATUS.ACTIVE, // ✅ Use enum constant
       daysRemaining: Math.ceil((updatedSubscription.currentPeriodEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
       nextBillingDate: updatedSubscription.currentPeriodEnd
-    },
-    merchant: updatedSubscription.merchant,
-    plan: convertPrismaPlanToPlan(updatedSubscription.plan)
+    }
   };
 }
 
@@ -566,7 +523,7 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
   const subscription = await prisma.subscription.update({
     where: { id: subscriptionId },
     data: {
-      status: 'paused',
+      status: SUBSCRIPTION_STATUS.PAUSED, // ✅ Use enum constant
       updatedAt: new Date()
     },
     include: {
@@ -581,27 +538,14 @@ export async function pauseSubscription(subscriptionId: number): Promise<Subscri
     }
   });
 
-  return {
-    id: subscription.id,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status as SubscriptionStatus,
-    billingInterval: subscription.interval as BillingInterval,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    amount: subscription.amount,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: convertPrismaPlanToPlan(subscription.plan)
-  };
+  return transformSubscriptionFromDb(subscription);
 }
 
 export async function resumeSubscription(subscriptionId: number): Promise<Subscription> {
   const subscription = await prisma.subscription.update({
     where: { id: subscriptionId },
     data: {
-      status: 'active',
+      status: SUBSCRIPTION_STATUS.ACTIVE, // ✅ Use enum constant
       updatedAt: new Date()
     },
     include: {
@@ -616,20 +560,7 @@ export async function resumeSubscription(subscriptionId: number): Promise<Subscr
     }
   });
 
-  return {
-    id: subscription.id,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status as SubscriptionStatus,
-    billingInterval: subscription.interval as BillingInterval,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    amount: subscription.amount,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: convertPrismaPlanToPlan(subscription.plan)
-  };
+  return transformSubscriptionFromDb(subscription);
 }
 
 export async function cancelSubscription(subscriptionId: number): Promise<{ success: boolean; message: string; data?: Subscription; statusCode?: number }> {
@@ -637,7 +568,7 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
     const subscription = await prisma.subscription.update({
       where: { id: subscriptionId },
       data: {
-        status: 'cancelled',
+        status: SUBSCRIPTION_STATUS.CANCELLED, // ✅ Use enum constant
         updatedAt: new Date()
       },
       include: {
@@ -652,35 +583,7 @@ export async function cancelSubscription(subscriptionId: number): Promise<{ succ
       }
     });
 
-    const result: Subscription = {
-      id: subscription.id,
-      merchantId: subscriptionId,
-      planId: subscription.planId,
-      status: subscription.status as SubscriptionStatus,
-      billingInterval: subscription.interval as BillingInterval,
-      currentPeriodStart: subscription.currentPeriodStart,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-      amount: subscription.amount,
-      createdAt: subscription.createdAt,
-      updatedAt: subscription.updatedAt,
-      merchant: subscription.merchant,
-      plan: {
-        id: subscription.plan.id,
-        name: subscription.plan.name,
-        description: subscription.plan.description,
-        basePrice: subscription.plan.basePrice,
-        currency: subscription.plan.currency,
-        trialDays: subscription.plan.trialDays,
-        limits: JSON.parse(subscription.plan.limits as string) as PlanLimits,
-        features: JSON.parse(subscription.plan.features as string) as string[],
-        isActive: subscription.plan.isActive,
-        isPopular: subscription.plan.isPopular,
-        sortOrder: subscription.plan.sortOrder,
-        pricing: generatePricingFromBasePrice(subscription.plan.basePrice),
-        createdAt: subscription.plan.createdAt,
-        updatedAt: subscription.plan.updatedAt
-      }
-    };
+    const result = transformSubscriptionFromDb(subscription);
 
     return {
       success: true,
@@ -710,7 +613,7 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
         lt: now
       },
       status: {
-        in: ['active', 'trial']
+        in: [SUBSCRIPTION_STATUS.ACTIVE, SUBSCRIPTION_STATUS.TRIAL] // ✅ Use enum constants
       }
     },
     include: {
@@ -726,20 +629,7 @@ export async function getExpiredSubscriptions(): Promise<Subscription[]> {
     orderBy: { currentPeriodEnd: 'asc' }
   });
 
-  return subscriptions.map((sub: any) => ({
-    id: sub.id,
-    merchantId: sub.merchantId,
-    planId: sub.planId,
-    status: sub.status as SubscriptionStatus,
-    billingInterval: sub.interval as BillingInterval,
-    currentPeriodStart: sub.currentPeriodStart,
-    currentPeriodEnd: sub.currentPeriodEnd,
-    amount: sub.amount,
-    createdAt: sub.createdAt,
-    updatedAt: sub.updatedAt,
-    merchant: sub.merchant,
-    plan: convertPrismaPlanToPlan(sub.plan)
-  }));
+  return subscriptions.map((sub: any) => transformSubscriptionFromDb(sub));
 }
 
 export async function getSubscriptionById(id: number): Promise<Subscription | null> {
@@ -759,20 +649,7 @@ export async function getSubscriptionById(id: number): Promise<Subscription | nu
 
   if (!subscription) return null;
 
-  return {
-    id: subscription.id,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status as SubscriptionStatus,
-    billingInterval: subscription.interval as BillingInterval,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    amount: subscription.amount,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: convertPrismaPlanToPlan(subscription.plan)
-  };
+  return transformSubscriptionFromDb(subscription);
 }
 
 export async function updateSubscription(
@@ -802,20 +679,7 @@ export async function updateSubscription(
     }
   });
 
-  return {
-    id: subscription.id,
-    merchantId: subscription.merchantId,
-    planId: subscription.planId,
-    status: subscription.status as SubscriptionStatus,
-    billingInterval: subscription.interval as BillingInterval,
-    currentPeriodStart: subscription.currentPeriodStart,
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    amount: subscription.amount,
-    createdAt: subscription.createdAt,
-    updatedAt: subscription.updatedAt,
-    merchant: subscription.merchant,
-    plan: convertPrismaPlanToPlan(subscription.plan)
-  };
+  return transformSubscriptionFromDb(subscription);
 }
 
 // ============================================================================
@@ -863,9 +727,9 @@ export async function createSubscriptionPayment(data: SubscriptionPaymentCreateI
       subscriptionId: subscription.id,
       amount: data.amount,
       currency: data.currency,
-      method: data.method,
-      type: 'SUBSCRIPTION',
-      status: data.status,
+      method: (data.method || PAYMENT_METHOD.STRIPE) as any, // ✅ Prisma sẽ convert string -> enum automatically
+      type: PAYMENT_TYPE.SUBSCRIPTION_PAYMENT as any, // ✅ Prisma sẽ convert string -> enum automatically
+      status: (data.status || PAYMENT_STATUS.PENDING) as any, // ✅ Prisma sẽ convert string -> enum automatically
       transactionId: data.transactionId,
       description: data.description,
       failureReason: data.failureReason
@@ -1003,7 +867,7 @@ export async function renewSubscription(
   }
 
   // 2. Validate subscription can be renewed
-  if (subscription.status === 'cancelled') {
+  if (subscription.status === SUBSCRIPTION_STATUS.CANCELLED) { // ✅ Use enum constant
     throw new Error('Cannot renew cancelled subscription');
   }
 
@@ -1036,7 +900,7 @@ export async function renewSubscription(
       data: {
         currentPeriodStart: newPeriodStart,
         currentPeriodEnd: newPeriodEnd,
-        status: 'active',
+        status: SUBSCRIPTION_STATUS.ACTIVE, // ✅ Use enum constant
         updatedAt: new Date()
       },
       include: {
@@ -1065,20 +929,7 @@ export async function renewSubscription(
 
   // 5. Return formatted response
   return {
-    subscription: {
-      id: result.updatedSubscription.id,
-      merchantId: result.updatedSubscription.merchantId,
-      planId: result.updatedSubscription.planId,
-      status: result.updatedSubscription.status as SubscriptionStatus,
-      billingInterval: result.updatedSubscription.interval as BillingInterval,
-      currentPeriodStart: result.updatedSubscription.currentPeriodStart,
-      currentPeriodEnd: result.updatedSubscription.currentPeriodEnd,
-      amount: result.updatedSubscription.amount,
-      createdAt: result.updatedSubscription.createdAt,
-      updatedAt: result.updatedSubscription.updatedAt,
-      merchant: result.updatedSubscription.merchant,
-      plan: convertPrismaPlanToPlan(result.updatedSubscription.plan)
-    },
+    subscription: transformSubscriptionFromDb(result.updatedSubscription),
     payment: {
       id: result.payment.id,
       subscriptionId: subscriptionId,

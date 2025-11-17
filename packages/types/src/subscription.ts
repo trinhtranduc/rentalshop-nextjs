@@ -19,28 +19,54 @@ export interface SubscriptionPeriod {
   isTrial?: boolean;
 }
 
+/**
+ * Complete Subscription interface matching Prisma model
+ * This is the single source of truth for subscription data
+ */
 export interface Subscription {
+  // Core identifiers
   id: number;
   merchantId: number;
   planId: number;
-  status: SubscriptionStatus;
-  billingInterval: BillingInterval; // monthly, quarterly, sixMonths, yearly
-  currentPeriodStart: Date;
-  currentPeriodEnd: Date;
-  amount: number; // Calculated price based on plan and interval
-  createdAt: Date;
-  updatedAt: Date;
   
-  // Enhanced subscription period information
+  // Status and billing
+  status: SubscriptionStatus; // ✅ Type safe with enum
+  billingInterval: BillingInterval; // monthly, quarterly, sixMonths, yearly
+  
+  // Period information
+  currentPeriodStart: Date | string;
+  currentPeriodEnd: Date | string;
+  trialStart?: Date | string;
+  trialEnd?: Date | string;
+  
+  // Pricing information
+  amount: number; // Calculated price based on plan and interval
+  currency: string; // Currency code (USD, VND)
+  interval: string; // 'month', 'quarter', 'year' (legacy field, use billingInterval)
+  intervalCount: number; // Number of intervals (1, 3, 6, 12)
+  period: number; // 1, 3, 6, 12 months (legacy field, use intervalCount)
+  discount: number; // Discount percentage
+  savings: number; // Calculated savings amount
+  
+  // Cancellation information
+  cancelAtPeriodEnd: boolean;
+  canceledAt?: Date | string;
+  cancelReason?: string;
+  
+  // Timestamps
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  
+  // Enhanced subscription period information (computed)
   subscriptionPeriod?: SubscriptionPeriod;
   
-  // Relations
-  merchant: {
+  // Relations (populated when needed)
+  merchant?: {
     id: number;
     name: string;
     email: string;
   };
-  plan: Plan;
+  plan?: Plan;
 }
 
 export interface SubscriptionCreateInput {
@@ -62,7 +88,7 @@ export interface SubscriptionUpdateInput {
 export interface SubscriptionFilters {
   merchantId?: number;
   planId?: number;
-  status?: string;
+  status?: SubscriptionStatus; // ✅ Type safe with enum
   startDate?: Date | string;
   endDate?: Date | string;
   limit?: number;

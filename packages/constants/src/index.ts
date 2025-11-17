@@ -125,7 +125,9 @@ export {
   isPaymentSuccessful,
   isPaymentPending,
   isPaymentFailed,
-  isEntityActive
+  isEntityActive,
+  isValidSubscriptionStatus,
+  normalizeSubscriptionStatus
 } from './status';
 
 // ============================================================================

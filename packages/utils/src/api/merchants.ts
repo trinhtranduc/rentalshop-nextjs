@@ -2,6 +2,7 @@ import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../core';
 import type { Merchant } from '@rentalshop/types';
+import type { SubscriptionStatus } from '@rentalshop/constants';
 
 // ============================================================================
 // TYPES
@@ -20,7 +21,7 @@ export interface MerchantSearchFilters {
   status?: string;
   plan?: string;
   isActive?: boolean;
-  subscriptionStatus?: string;
+  subscriptionStatus?: SubscriptionStatus; // ✅ Type safe with enum
   minRevenue?: number;
   maxRevenue?: number;
   startDate?: string;

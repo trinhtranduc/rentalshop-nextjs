@@ -10,7 +10,7 @@ export interface RegisterData {
   firstName?: string;
   lastName?: string;
   phone?: string;
-  role?: 'CLIENT' | 'SHOP_OWNER' | 'ADMIN';
+  role?: import('@rentalshop/constants').UserRole; // ✅ Type safe with enum
 }
 
 export interface AuthUser {

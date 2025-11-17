@@ -16,6 +16,8 @@ import {
   ProductReference,
   CustomerReference
 } from '../common/base';
+import type { SubscriptionStatus } from '@rentalshop/constants';
+import type { Subscription } from '../subscription';
 
 // ============================================================================
 // CORE MERCHANT INTERFACES
@@ -48,7 +50,7 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   
   // Related entities (populated when needed)
   plan?: PlanDetails;
-  subscription?: CurrentSubscription; // ✅ Always exists (default trial)
+  subscription?: Subscription; // ✅ Always exists (default trial) - uses unified Subscription type
   outlets?: OutletReference[];
   users?: UserReference[];
   customers?: CustomerReference[];
@@ -81,33 +83,14 @@ export interface PlanDetails {
 }
 
 /**
- * Current subscription interface
- * Used for active subscription information
+ * @deprecated Use Subscription from @rentalshop/types instead
+ * This type is kept for backward compatibility but will be removed
+ * 
+ * CurrentSubscription is now merged into Subscription interface
+ * which matches the Prisma model exactly.
  */
-export interface CurrentSubscription {
-  id: number;
-  status: string;
-  currentPeriodStart: Date | string;
-  currentPeriodEnd: Date | string;
-  trialStart?: Date | string;
-  trialEnd?: Date | string;
-  amount: number;
-  currency: string;
-  interval: string; // 'month', 'quarter', 'year'
-  period: number; // 1, 3, 6, 12 months
-  discount: number;
-  savings: number;
-  cancelAtPeriodEnd: boolean;
-  canceledAt?: Date | string;
-  cancelReason?: string;
-  plan?: {
-    id: number;
-    name: string;
-    description: string;
-    basePrice: number;
-    currency: string;
-    trialDays: number;
-  };
+export interface CurrentSubscription extends Omit<Subscription, 'merchantId' | 'planId' | 'billingInterval' | 'createdAt' | 'updatedAt' | 'merchant'> {
+  // This interface is deprecated - use Subscription instead
 }
 
 // ============================================================================
@@ -160,6 +143,7 @@ export interface MerchantUpdateInput extends BaseUpdateInput {
  */
 export interface MerchantSearchParams extends BaseSearchParams {
   status?: 'ACTIVE' | 'INACTIVE' | 'TRIAL' | 'EXPIRED';
+  subscriptionStatus?: SubscriptionStatus; // ✅ Type safe with enum
   plan?: string;
   businessType?: string;
   country?: string;
@@ -251,6 +235,7 @@ export type MerchantAction = 'create' | 'edit' | 'view' | 'delete' | 'activate' 
 export interface MerchantFilters {
   search?: string;
   status?: string;
+  subscriptionStatus?: SubscriptionStatus; // ✅ Type safe with enum
   planId?: number;
   businessType?: string;
   country?: string;

@@ -88,7 +88,7 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
       firstName: data.firstName || data.name?.split(' ')[0] || '',
       lastName: data.lastName || data.name?.split(' ').slice(1).join(' ') || '',
       phone: data.phone,
-      role: data.role || 'OUTLET_STAFF',
+      role: (data.role || 'OUTLET_STAFF') as any, // ✅ Type safe with Prisma enum
     },
   });
 
