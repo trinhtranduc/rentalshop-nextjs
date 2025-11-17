@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { z } from 'zod';
 
@@ -118,7 +119,7 @@ export const GET = withReadOnlyAuth(
         where: {
           outletId: finalOutletId,
           orderType: {
-            in: ['RENT', 'SALE'] // Include both RENT and SALE orders
+            in: [ORDER_TYPE.RENT as any, ORDER_TYPE.SALE as any] // Include both RENT and SALE orders
           },
           orderItems: {
             some: {
@@ -194,7 +195,7 @@ export const GET = withReadOnlyAuth(
         // 1. Pickup date is on or before the check date
         // 2. Return date is on or after the check date (or no return date for PICKUPED orders)
         const isPickupOnOrBefore = orderPickup <= endOfDay;
-        const isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : (order.status === 'PICKUPED');
+        const isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : (order.status === ORDER_STATUS.PICKUPED);
         
         return isPickupOnOrBefore && isReturnOnOrAfter;
       });
@@ -232,18 +233,18 @@ export const GET = withReadOnlyAuth(
 
         order.orderItems.forEach((item: any) => {
           if (item.productId === productId) {
-            if (order.orderType === 'RENT') {
+            if (order.orderType === ORDER_TYPE.RENT) {
               // RENT orders: only PICKUPED counts as "rented"
-              if (order.status === 'PICKUPED') {
+              if (order.status === ORDER_STATUS.PICKUPED) {
                 totalRented += item.quantity;
-              } else if (order.status === 'RESERVED') {
+              } else if (order.status === ORDER_STATUS.RESERVED) {
                 totalReserved += item.quantity;
               }
-            } else if (order.orderType === 'SALE') {
+            } else if (order.orderType === ORDER_TYPE.SALE) {
               // SALE orders: only PICKUPED counts as "rented" (removes from inventory)
-              if (order.status === 'PICKUPED') {
+              if (order.status === ORDER_STATUS.PICKUPED) {
                 totalRented += item.quantity;
-              } else if (order.status === 'RESERVED') {
+              } else if (order.status === ORDER_STATUS.RESERVED) {
                 totalReserved += item.quantity;
               }
               // COMPLETED SALE orders don't count for availability (already sold)

@@ -449,7 +449,7 @@ export function getUserScope(user: AuthUser): UserScope {
   return {
     merchantId,
     outletId,
-    canAccessSystem: user.role === 'ADMIN'
+    canAccessSystem: user.role === USER_ROLE.ADMIN
   };
 }
 

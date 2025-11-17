@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
@@ -209,7 +210,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     // Determine initial status based on order type
     // SALE orders start as COMPLETED (immediate purchase)
     // RENT orders start as RESERVED (scheduled rental)
-    const initialStatus = parsed.data.orderType === 'SALE' ? 'COMPLETED' : 'RESERVED';
+    const initialStatus = parsed.data.orderType === ORDER_TYPE.SALE ? ORDER_STATUS.COMPLETED : ORDER_STATUS.RESERVED;
 
     // Calculate rentalDuration from pickup and return dates
     let rentalDuration: number | null = null;

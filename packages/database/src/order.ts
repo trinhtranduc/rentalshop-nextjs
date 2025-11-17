@@ -1,6 +1,6 @@
 import { prisma } from './client';
 import type { Prisma } from '@prisma/client';
-import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
+import { ORDER_TYPE, ORDER_STATUS, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   OrderSearchFilter,
   OrderSearchResult,
@@ -1765,7 +1765,7 @@ export const simplifiedOrders = {
     const itemCount = (order as any).orderItems?.length || 0;
     const paymentCount = (order as any).payments?.length || 0;
     const totalPaid = (order as any).payments
-      ?.filter((p: any) => p.status === 'COMPLETED')
+      ?.filter((p: any) => p.status === PAYMENT_STATUS.COMPLETED)
       .reduce((sum: number, p: any) => sum + p.amount, 0) || 0;
 
     return {
