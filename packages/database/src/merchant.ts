@@ -5,6 +5,7 @@
 // Consistent with other simplified database operations
 
 import { prisma } from './client';
+import { ORDER_STATUS } from '@rentalshop/constants';
 import type { SimpleFilters, SimpleResponse } from './index';
 
 // ============================================================================
@@ -279,7 +280,7 @@ export async function getStats(id: number) {
       outlet: {
         merchantId: id
       },
-      status: { in: ['COMPLETED', 'RETURNED'] }
+      status: { in: [ORDER_STATUS.COMPLETED as any, ORDER_STATUS.RETURNED as any] }
     },
     _sum: {
       totalAmount: true
