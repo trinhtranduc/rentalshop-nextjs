@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, createEmailVerification } from '@rentalshop/database';
 import { registerSchema, sendVerificationEmail, generateTenantKeyFromName } from '@rentalshop/utils';
 import { generateToken, hashPassword } from '@rentalshop/auth';
+import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, getDefaultPricingConfig, type BusinessType, type PricingType } from '@rentalshop/constants';
 
@@ -247,7 +248,7 @@ export async function POST(request: NextRequest) {
       await db.subscriptions.create({
         merchantId: merchant.id,
         planId: trialPlan.id,
-        status: 'trial',
+        status: SUBSCRIPTION_STATUS.TRIAL as any,
         amount: 0,
         currency: 'USD',
         currentPeriodStart: subscriptionStartDate,

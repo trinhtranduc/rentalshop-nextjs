@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
+import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -66,8 +67,8 @@ export async function GET(request: NextRequest) {
       
       // Calculate expiration states
       const isPeriodExpired = periodEnd && periodEnd < now;
-      const isTrialExpired = dbStatus === 'trial' && trialEnd && trialEnd <= now;
-      const isTrialActive = dbStatus === 'trial' && trialEnd && trialEnd > now;
+      const isTrialExpired = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && trialEnd && trialEnd <= now;
+      const isTrialActive = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && trialEnd && trialEnd > now;
       
       // ============================================================================
       // SIMPLE STATUS: CHỈ 1 STATUS DUY NHẤT
