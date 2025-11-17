@@ -34,7 +34,35 @@ async function resetDatabase() {
   console.log('🔄 Starting Railway database reset...\n');
   
   // Check DATABASE_URL
-  const dbUrl = process.env.DATABASE_URL;
+  let dbUrl = process.env.DATABASE_URL;
+  
+  // If using internal Railway URL and it's not accessible, try to use public URL
+  if (dbUrl && dbUrl.includes('railway.internal')) {
+    console.warn('⚠️  Detected internal Railway URL (railway.internal)');
+    console.warn('   Internal URLs only work within Railway network.');
+    console.warn('   If running from local machine, use PUBLIC DATABASE_URL instead.\n');
+    
+    // Check if RAILWAY_PUBLIC_DATABASE_URL is set (for local runs)
+    if (process.env.RAILWAY_PUBLIC_DATABASE_URL) {
+      dbUrl = process.env.RAILWAY_PUBLIC_DATABASE_URL;
+      console.log('✅ Using RAILWAY_PUBLIC_DATABASE_URL for local connection\n');
+    } else {
+      console.error('❌ Internal URL detected but RAILWAY_PUBLIC_DATABASE_URL not set!');
+      console.error('');
+      console.error('💡 Solutions:');
+      console.error('   1. Set RAILWAY_PUBLIC_DATABASE_URL environment variable:');
+      console.error('      export RAILWAY_PUBLIC_DATABASE_URL="postgresql://postgres:password@host:port/database"');
+      console.error('');
+      console.error('   2. Or run script directly on Railway service:');
+      console.error('      - Via Railway Dashboard: Add command in Deploy settings');
+      console.error('      - Via Railway CLI: railway run --service <service-name> yarn db:reset-railway');
+      console.error('');
+      console.error('   3. Or temporarily override DATABASE_URL:');
+      console.error('      DATABASE_URL="public-url" railway run yarn db:reset-railway');
+      process.exit(1);
+    }
+  }
+  
   if (!dbUrl) {
     console.error('❌ DATABASE_URL environment variable is not set!');
     process.exit(1);
@@ -114,19 +142,22 @@ async function resetDatabase() {
     // Step 4: Reset sequences
     console.log('🔄 Step 4: Resetting sequences...');
     try {
-      await prisma.$executeRawUnsafe(`
-        DO $$ 
-        DECLARE
-          r RECORD;
-        BEGIN
-          FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') 
-          LOOP
-            EXECUTE 'SELECT setval(pg_get_serial_sequence(''' || r.tablename || ''', ''id''), 1, false)';
-          EXCEPTION WHEN OTHERS THEN
-            -- Ignore tables without id sequence
-          END LOOP;
-        END $$;
-      `);
+      // Reset sequences for all tables with id column
+      const tablesWithSequences = [
+        'User', 'Merchant', 'Outlet', 'Category', 'Product', 'OutletStock',
+        'Customer', 'Order', 'OrderItem', 'Payment', 'Plan', 'Subscription',
+        'SubscriptionActivity', 'AuditLog', 'EmailVerification', 'UserSession'
+      ];
+      
+      for (const table of tablesWithSequences) {
+        try {
+          await prisma.$executeRawUnsafe(`
+            SELECT setval(pg_get_serial_sequence('${table}', 'id'), 1, false);
+          `);
+        } catch (error) {
+          // Ignore if sequence doesn't exist
+        }
+      }
       console.log('✅ Sequences reset successfully\n');
     } catch (error) {
       console.warn('⚠️  Could not reset sequences:', error.message);
