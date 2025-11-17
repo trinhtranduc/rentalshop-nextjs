@@ -15,6 +15,10 @@ postgresql://postgres:kWGqYPjEgJLKSmDroFFSsnVjKsUFcnmv@shuttle.proxy.rlwy.net:25
 
 **Reset Command:**
 ```bash
+# Quick reset script
+./scripts/reset-dev-db.sh
+
+# Or manual
 DATABASE_URL='postgresql://postgres:kWGqYPjEgJLKSmDroFFSsnVjKsUFcnmv@shuttle.proxy.rlwy.net:25662/railway' node scripts/reset-railway-database.js
 ```
 
@@ -33,13 +37,29 @@ postgresql://postgres:rcoiKvDAztXzqINtiUYlxZaPDpqrtRLg@maglev.proxy.rlwy.net:462
 - Database: `railway`
 - Access: Railway network only (not accessible from local)
 
-**Reset Command (on Railway):**
+**Reset Command:**
+
+**Option 1: On Railway (Recommended)**
 ```bash
 # Via Railway Dashboard:
 # Settings → Deploy → Add command: yarn db:reset-railway
 
 # Via Railway CLI:
 railway run --service <production-service-name> yarn db:reset-railway
+```
+
+**Option 2: Local with Public URL (⚠️ Use with caution)**
+```bash
+# Quick reset script (requires confirmation)
+./scripts/reset-prod-db.sh
+
+# Or manual
+DATABASE_URL='postgresql://postgres:rcoiKvDAztXzqINtiUYlxZaPDpqrtRLg@maglev.proxy.rlwy.net:46280/railway' node scripts/reset-railway-database.js
+```
+
+**Test Connection:**
+```bash
+./scripts/test-prod-db.sh
 ```
 
 ---
