@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
+import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -147,7 +148,7 @@ export async function DELETE(
       // Check if plan has active subscriptions
       const activeSubscriptions = await db.subscriptions.getStats({
         planId: planId,
-        status: { in: ['ACTIVE', 'TRIAL'] }
+        status: { in: [SUBSCRIPTION_STATUS.ACTIVE as any, SUBSCRIPTION_STATUS.TRIAL as any] }
       });
 
       if (activeSubscriptions > 0) {

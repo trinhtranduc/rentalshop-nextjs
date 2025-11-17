@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { z } from 'zod';
+import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, getDefaultPricingConfig, BusinessType } from '@rentalshop/constants';
 
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
     const subscription = await db.subscriptions.create({
       merchantId: merchant.id,
       planId: trialPlan?.id || 1,
-      status: 'TRIAL',
+      status: SUBSCRIPTION_STATUS.TRIAL as any,
       amount: 0,
       currency: validatedData.currency, // Use merchant's currency
       currentPeriodStart: new Date(),
