@@ -1,14 +1,22 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { ProductCard } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { ProductCard, SearchableSelect, Pagination, Input, Button } from '@rentalshop/ui';
 import { cn } from '@rentalshop/ui';
+import { Search, X } from 'lucide-react';
 import type { Product, Category } from '@rentalshop/types';
+import { useTranslations } from 'next-intl';
 
 interface PublicProductGridProps {
   products: Product[];
   categories: Category[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  };
   onProductClick?: (productId: number) => void;
   className?: string;
 }
@@ -16,27 +24,61 @@ interface PublicProductGridProps {
 export function PublicProductGrid({ 
   products, 
   categories, 
+  pagination,
   onProductClick,
   className 
 }: PublicProductGridProps) {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const t = useTranslations('products');
 
-  // Filter products by selected category
-  const filteredProducts = useMemo(() => {
-    if (!selectedCategoryId) {
-      return products;
+  // Get current filters from URL
+  const currentCategoryId = searchParams.get('categoryId') 
+    ? parseInt(searchParams.get('categoryId')!, 10) 
+    : null;
+  const currentSearch = searchParams.get('search') || '';
+  const currentPage = parseInt(searchParams.get('page') || '1', 10);
+
+  // Update URL with new filters
+  const updateFilters = useCallback((updates: { categoryId?: number | null; search?: string; page?: number }) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (updates.categoryId === null || updates.categoryId === undefined) {
+      params.delete('categoryId');
+    } else if (updates.categoryId) {
+      params.set('categoryId', updates.categoryId.toString());
     }
-    return products.filter(product => {
-      // Handle both categoryId directly or from category object
-      const productCategoryId = product.categoryId || product.category?.id;
-      return productCategoryId === selectedCategoryId;
-    });
-  }, [products, selectedCategoryId]);
+    
+    if (updates.search === undefined) {
+      // Don't change search
+    } else if (updates.search === '') {
+      params.delete('search');
+    } else {
+      params.set('search', updates.search);
+    }
+    
+    if (updates.page === undefined) {
+      // Don't change page
+    } else if (updates.page === 1) {
+      params.delete('page');
+    } else {
+      params.set('page', updates.page.toString());
+    }
+    
+    router.push(`${pathname}?${params.toString()}`);
+  }, [router, pathname, searchParams]);
+
+  // Category options for SearchableSelect
+  const categoryOptions = useMemo(() => {
+    return categories.map(cat => ({
+      value: cat.id.toString(),
+      label: cat.name || 'Uncategorized'
+    }));
+  }, [categories]);
 
   // Calculate product stats for display
   const getProductStats = (product: any) => {
-    // Calculate total stock, renting, available from outletStock if available
-    // Product can have stock (from Product type) or totalStock (from API response)
     let totalStock = (product as any).totalStock || product.stock || 0;
     let totalRenting = product.renting || 0;
     let totalAvailable = product.available || totalStock;
@@ -50,51 +92,88 @@ export function PublicProductGrid({
     return { totalStock, totalRenting, totalAvailable };
   };
 
+  const handleCategoryChange = (categoryId: number | undefined) => {
+    updateFilters({ categoryId: categoryId || null, page: 1 });
+  };
+
+  const handleSearchChange = (search: string) => {
+    updateFilters({ search, page: 1 });
+  };
+
+  const handleClearSearch = () => {
+    updateFilters({ search: '' });
+  };
+
+  const handlePageChange = (page: number) => {
+    updateFilters({ page });
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const totalPages = pagination ? Math.ceil(pagination.total / pagination.limit) : 1;
+
   return (
     <div className={cn('container mx-auto px-4 py-8', className)}>
-      {/* Category Filter */}
-      {categories.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Categories</h2>
-          <div className="flex flex-wrap gap-2">
+      {/* Filters Section */}
+      <div className="mb-6 space-y-4">
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            type="text"
+            placeholder={t('search.placeholder')}
+            value={currentSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-10 pr-10 h-12"
+          />
+          {currentSearch && (
             <Button
-              variant={selectedCategoryId === null ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedCategoryId(null)}
-              className={cn(
-                selectedCategoryId === null && 'bg-blue-600 text-white hover:bg-blue-700'
-              )}
+              variant="ghost"
+              size="icon"
+              onClick={handleClearSearch}
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
             >
-              All Products
+              <X className="w-4 h-4" />
             </Button>
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategoryId === category.id ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedCategoryId(category.id)}
-                className={cn(
-                  selectedCategoryId === category.id && 'bg-blue-600 text-white hover:bg-blue-700'
-                )}
-              >
-                {category.name}
-              </Button>
-            ))}
+          )}
+        </div>
+
+        {/* Category Filter */}
+        {categories.length > 0 && (
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              {t('fields.category')}:
+            </label>
+            <div className="flex-1 max-w-xs">
+              <SearchableSelect
+                value={currentCategoryId || undefined}
+                onChange={handleCategoryChange}
+                options={categoryOptions}
+                placeholder={t('allCategories')}
+                emptyText={t('noCategories')}
+                className="w-full"
+              />
+            </div>
           </div>
+        )}
+      </div>
+
+      {/* Products Count */}
+      {pagination && pagination.total > 0 && (
+        <div className="mb-4 text-sm text-gray-600">
+          {t('showingProducts', { 
+            count: products.length, 
+            total: pagination.total 
+          })}
         </div>
       )}
 
       {/* Products Grid */}
-      {filteredProducts.length > 0 ? (
+      {products.length > 0 ? (
         <>
-          <div className="mb-4 text-sm text-gray-600">
-            Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
-            {selectedCategoryId && ` in ${categories.find(c => c.id === selectedCategoryId)?.name}`}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+            {products.map((product) => {
               const stats = getProductStats(product);
-              // Get categoryId from product (could be direct or from category object)
               const productCategoryId = product.categoryId || product.category?.id;
               const category = categories.find(c => c.id === productCategoryId);
               
@@ -115,7 +194,7 @@ export function PublicProductGrid({
                     name: category?.name || product.category?.name || 'Uncategorized'
                   }}
                   outlet={{
-                    name: 'Store' // Default outlet name for public view
+                    name: 'Store'
                   }}
                   onView={onProductClick}
                   variant="client"
@@ -124,6 +203,20 @@ export function PublicProductGrid({
               );
             })}
           </div>
+
+          {/* Pagination */}
+          {pagination && totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                total={pagination.total}
+                limit={pagination.limit}
+                onPageChange={handlePageChange}
+                itemName={t('products') || 'products'}
+              />
+            </div>
+          )}
         </>
       ) : (
         <div className="text-center py-12">
@@ -134,19 +227,29 @@ export function PublicProductGrid({
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {selectedCategoryId 
-                ? 'No products in this category'
-                : 'No products available'}
+              {currentSearch || currentCategoryId
+                ? t('noProductsFound')
+                : t('noProducts')}
             </h3>
             <p className="text-gray-500">
-              {selectedCategoryId 
-                ? `There are no products in "${categories.find(c => c.id === selectedCategoryId)?.name}" category at the moment.`
-                : 'This store does not have any products available for viewing at the moment. Please check back later.'}
+              {currentSearch || currentCategoryId
+                ? t('tryDifferentSearch')
+                : t('checkBackLater')}
             </p>
+            {(currentSearch || currentCategoryId) && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  updateFilters({ categoryId: null, search: '', page: 1 });
+                }}
+                className="mt-4"
+              >
+                {t('clearFilters')}
+              </Button>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
-
