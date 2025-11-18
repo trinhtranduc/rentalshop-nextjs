@@ -491,7 +491,7 @@ function createApiUrls(): ApiUrls {
       verify: `${base}/api/auth/verify`,
       refresh: `${base}/api/auth/refresh`,
       logout: `${base}/api/auth/logout`,
-      forgotPassword: `${base}/api/auth/forget-password`,
+      forgotPassword: `${base}/api/auth/forgot-password`,
       resetPassword: `${base}/api/auth/reset-password`,
       changePassword: `${base}/api/auth/change-password`,
       resendVerification: `${base}/api/auth/resend-verification`,

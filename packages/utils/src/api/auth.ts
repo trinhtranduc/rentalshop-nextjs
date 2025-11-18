@@ -81,7 +81,7 @@ export const authApi = {
    * Request password reset
    */
   async requestPasswordReset(email: string): Promise<ApiResponse<void>> {
-    const response = await fetch(apiUrls.auth.forgotPassword, {
+    const response = await publicFetch(apiUrls.auth.forgotPassword, {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -92,7 +92,7 @@ export const authApi = {
    * Reset password with token
    */
   async resetPassword(token: string, password: string, confirmPassword: string): Promise<ApiResponse<void>> {
-    const response = await fetch(apiUrls.auth.resetPassword, {
+    const response = await publicFetch(apiUrls.auth.resetPassword, {
       method: 'POST',
       body: JSON.stringify({ token, password, confirmPassword }),
     });
