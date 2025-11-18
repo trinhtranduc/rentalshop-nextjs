@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff } from "lucide-react";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input } from "@rentalshop/ui";
+import { Button, Card, CardContent, Input, Logo, LanguageSwitcher } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
 
 // Types for the reset password form
@@ -75,26 +75,91 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
   if (passwordReset || success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            25% { transform: translateY(-20px) translateX(10px); }
+            50% { transform: translateY(-10px) translateX(-10px); }
+            75% { transform: translateY(-15px) translateX(5px); }
+          }
+          
+          @keyframes float-slow {
+            0%, 100% { transform: translateY(0px) translateX(0px) scale(1); }
+            50% { transform: translateY(-30px) translateX(-20px) scale(1.1); }
+          }
+          
+          @keyframes rotate-move {
+            0% { transform: rotate(0deg) translate(-50%, -50%); }
+            25% { transform: rotate(90deg) translate(-30%, -70%); }
+            50% { transform: rotate(180deg) translate(-50%, -50%); }
+            75% { transform: rotate(270deg) translate(-70%, -30%); }
+            100% { transform: rotate(360deg) translate(-50%, -50%); }
+          }
+          
+          @keyframes pulse-glow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.5; }
+          }
+          
+          .float-1 { animation: float 8s ease-in-out infinite; }
+          .float-2 { animation: float 10s ease-in-out infinite 1s; }
+          .float-3 { animation: float 12s ease-in-out infinite 2s; }
+          .float-4 { animation: float-slow 15s ease-in-out infinite 0.5s; }
+          .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        `}</style>
+        
+        {/* Background Pattern - Grid */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `radial-gradient(circle, #c7d2fe 1.5px, transparent 1.5px)`,
+          backgroundSize: '50px 50px',
+          opacity: 0.4
+        }}></div>
+        
+        {/* Floating Elements */}
+        <div className="absolute top-20 left-10 w-32 h-32 bg-blue-400 rounded-full opacity-30 blur-2xl pointer-events-none float-1 pulse-glow"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-indigo-400 rounded-full opacity-40 blur-2xl pointer-events-none float-2 pulse-glow"></div>
+        <div className="absolute bottom-32 left-20 w-20 h-20 bg-purple-400 rounded-full opacity-35 blur-2xl pointer-events-none float-3 pulse-glow"></div>
+        <div className="absolute bottom-20 right-32 w-36 h-36 bg-blue-500 rounded-full opacity-30 blur-2xl pointer-events-none float-4 pulse-glow"></div>
+        
+        {/* Decorative Shapes */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-blue-200 to-transparent rounded-full opacity-40 blur-3xl pointer-events-none" style={{
+          animation: 'rotate-move 30s ease-in-out infinite',
+          transformOrigin: 'center'
+        }}></div>
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-indigo-200 to-transparent rounded-full opacity-35 blur-3xl pointer-events-none" style={{
+          animation: 'rotate-move 25s ease-in-out infinite reverse',
+          transformOrigin: 'center'
+        }}></div>
+        
+        {/* Language Switcher - Top Right */}
+        <div className="absolute top-4 right-4 z-10">
+          <LanguageSwitcher variant="compact" />
+        </div>
+
+        <div className="w-full max-w-lg relative z-10">
           {/* Logo */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-8">
             <div className="inline-block">
-              <div className="h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">R</span>
-              </div>
+              <Logo 
+                size="2xl" 
+                variant="custom" 
+                src="/anyrent-logo-light.svg" 
+                showBackground={false}
+                blueStroke={true}
+              />
             </div>
-            <h1 className="mt-4 text-2xl font-bold text-gray-800">
+            <h1 className="mt-6 text-3xl font-bold text-gray-900">
               {t('resetPassword.success')}
             </h1>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-3 text-base text-gray-600 max-w-sm mx-auto">
               {t('resetPassword.success')}
             </p>
           </div>
 
           {/* Success Card */}
-          <Card className="shadow-lg">
-            <CardContent className="p-6 text-center">
+          <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm relative z-10">
+            <CardContent className="p-8 text-center">
               <div className="mx-auto w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
@@ -129,54 +194,111 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) translateX(0px); }
+          25% { transform: translateY(-20px) translateX(10px); }
+          50% { transform: translateY(-10px) translateX(-10px); }
+          75% { transform: translateY(-15px) translateX(5px); }
+        }
+        
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0px) translateX(0px) scale(1); }
+          50% { transform: translateY(-30px) translateX(-20px) scale(1.1); }
+        }
+        
+        @keyframes rotate-move {
+          0% { transform: rotate(0deg) translate(-50%, -50%); }
+          25% { transform: rotate(90deg) translate(-30%, -70%); }
+          50% { transform: rotate(180deg) translate(-50%, -50%); }
+          75% { transform: rotate(270deg) translate(-70%, -30%); }
+          100% { transform: rotate(360deg) translate(-50%, -50%); }
+        }
+        
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.5; }
+        }
+        
+        .float-1 { animation: float 8s ease-in-out infinite; }
+        .float-2 { animation: float 10s ease-in-out infinite 1s; }
+        .float-3 { animation: float 12s ease-in-out infinite 2s; }
+        .float-4 { animation: float-slow 15s ease-in-out infinite 0.5s; }
+        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+      `}</style>
+      
+      {/* Background Pattern - Grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: `radial-gradient(circle, #c7d2fe 1.5px, transparent 1.5px)`,
+        backgroundSize: '50px 50px',
+        opacity: 0.4
+      }}></div>
+      
+      {/* Floating Elements */}
+      <div className="absolute top-20 left-10 w-32 h-32 bg-blue-400 rounded-full opacity-30 blur-2xl pointer-events-none float-1 pulse-glow"></div>
+      <div className="absolute top-40 right-20 w-24 h-24 bg-indigo-400 rounded-full opacity-40 blur-2xl pointer-events-none float-2 pulse-glow"></div>
+      <div className="absolute bottom-32 left-20 w-20 h-20 bg-purple-400 rounded-full opacity-35 blur-2xl pointer-events-none float-3 pulse-glow"></div>
+      <div className="absolute bottom-20 right-32 w-36 h-36 bg-blue-500 rounded-full opacity-30 blur-2xl pointer-events-none float-4 pulse-glow"></div>
+      
+      {/* Decorative Shapes */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-blue-200 to-transparent rounded-full opacity-40 blur-3xl pointer-events-none" style={{
+        animation: 'rotate-move 30s ease-in-out infinite',
+        transformOrigin: 'center'
+      }}></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-indigo-200 to-transparent rounded-full opacity-35 blur-3xl pointer-events-none" style={{
+        animation: 'rotate-move 25s ease-in-out infinite reverse',
+        transformOrigin: 'center'
+      }}></div>
+      
+      {/* Language Switcher - Top Right */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher variant="compact" />
+      </div>
+
+      <div className="w-full max-w-lg relative z-10">
+        {/* Logo & Welcome */}
+        <div className="text-center mb-8">
           <div className="inline-block">
-            <div className="h-12 w-12 mx-auto bg-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">R</span>
-            </div>
+            <Logo 
+              size="2xl" 
+              variant="custom" 
+              src="/anyrent-logo-light.svg" 
+              showBackground={false}
+              blueStroke={true}
+            />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-gray-800">
+          <h1 className="mt-6 text-3xl font-bold text-gray-900">
             {t('resetPassword.title')}
           </h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-3 text-base text-gray-600 max-w-sm mx-auto">
             {t('resetPassword.subtitle')}
           </p>
         </div>
 
         {/* Reset Password Card */}
-        <Card className="shadow-lg">
-          <CardHeader className="text-center border-b border-gray-200 bg-gray-50 rounded-t-lg">
-            <CardTitle className="text-xl font-semibold text-gray-800">
-              {t('resetPassword.title')}
-            </CardTitle>
-            <CardDescription className="text-sm text-gray-600 mt-1">
-              {t('resetPassword.subtitle')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <form onSubmit={handleSubmit}>
+        <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm relative z-10">
+          <CardContent className="p-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg flex items-center">
+                <div className="mb-4 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center">
                   <div className="w-4 h-4 mr-2">⚠️</div>
                   {error}
                 </div>
               )}
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Password Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('resetPassword.password')}
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <div className="relative w-full">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <Input
                       type={viewPassword ? "text" : "password"}
                       placeholder={t('resetPassword.password')}
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 w-full"
                       onChange={validation.handleChange}
                       onBlur={validation.handleBlur}
                       value={validation.values.password || ""}
@@ -185,17 +307,17 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
                     <button
                       type="button"
                       onClick={() => setViewPassword(!viewPassword)}
-                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       {viewPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-5 w-5" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-5 w-5" />
                       )}
                     </button>
                   </div>
                   {validation.touched.password && validation.errors.password && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-2 text-sm text-red-600">
                       {validation.errors.password}
                     </p>
                   )}
@@ -206,12 +328,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('resetPassword.confirmPassword')}
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <div className="relative w-full">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <Input
                       type={viewConfirmPassword ? "text" : "password"}
                       placeholder={t('resetPassword.confirmPassword')}
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 w-full"
                       onChange={validation.handleChange}
                       onBlur={validation.handleBlur}
                       value={validation.values.confirmPassword || ""}
@@ -220,17 +342,17 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
                     <button
                       type="button"
                       onClick={() => setViewConfirmPassword(!viewConfirmPassword)}
-                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       {viewConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-5 w-5" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-5 w-5" />
                       )}
                     </button>
                   </div>
                   {validation.touched.confirmPassword && validation.errors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-2 text-sm text-red-600">
                       {validation.errors.confirmPassword}
                     </p>
                   )}
