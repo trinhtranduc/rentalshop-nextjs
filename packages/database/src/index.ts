@@ -235,6 +235,9 @@ export type { RegistrationInput, RegistrationResult } from './registration';
 // Email verification functions
 export * from './email-verification';
 
+// Password reset functions
+export * from './password-reset';
+
 // ============================================================================
 // MIGRATION GUIDE
 // ============================================================================

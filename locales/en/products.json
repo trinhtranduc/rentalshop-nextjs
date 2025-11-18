@@ -83,6 +83,7 @@
   },
   "actions": {
     "viewDetails": "View Details",
+    "view": "View",
     "edit": "Edit Product",
     "viewOrders": "View Orders",
     "activate": "Activate",
@@ -93,6 +94,9 @@
     "archive": "Archive Product",
     "restore": "Restore Product"
   },
+  "rentNow": "Rent Now",
+  "details": "Details",
+  "rent": "Rent",
   "messages": {
     "createSuccess": "Product created successfully",
     "createFailed": "Failed to create product",
@@ -153,6 +157,12 @@
   "checkBackLater": "This store does not have any products available at the moment. Please check back later.",
   "clearFilters": "Clear Filters",
   "allCategories": "All Categories",
-  "noCategories": "No categories"
+  "noCategories": "No categories",
+  "uncategorized": "Uncategorized",
+  "store": "Store",
+  "productsPlural": "products",
+  "storeNotFound": "Store Not Found",
+  "storeNotFoundMessage": "The store you're looking for could not be found. Please check the URL or contact the store owner.",
+  "goToHomepage": "Go to Homepage"
 }
 

@@ -92,7 +92,13 @@
     "vietnameseDong": "Đồng Việt Nam",
     "selected": "Đã chọn",
     "selectCurrency": "Chọn tiền tệ",
-    "savingCurrency": "Đang cập nhật tiền tệ..."
+    "savingCurrency": "Đang cập nhật tiền tệ...",
+    "publicProductLink": "Link Sản Phẩm Công Khai",
+    "publicProductLinkDesc": "Chia sẻ link này với khách hàng để họ có thể xem sản phẩm của bạn. Link này là công khai và không cần đăng nhập.",
+    "copy": "Sao chép Link",
+    "copied": "Đã sao chép!",
+    "share": "Chia sẻ",
+    "viewPublicPage": "Xem Trang Công Khai"
   },
   "outlet": {
     "title": "Cài đặt cửa hàng",

@@ -82,6 +82,7 @@
   },
   "actions": {
     "viewDetails": "Xem chi tiết",
+    "view": "Xem",
     "edit": "Sửa sản phẩm",
     "viewOrders": "Xem đơn hàng",
     "activate": "Kích hoạt",
@@ -92,6 +93,9 @@
     "archive": "Lưu trữ sản phẩm",
     "restore": "Khôi phục sản phẩm"
   },
+  "rentNow": "Thuê ngay",
+  "details": "Chi tiết",
+  "rent": "Thuê",
   "messages": {
     "createSuccess": "Tạo sản phẩm thành công",
     "createFailed": "Tạo sản phẩm thất bại",
@@ -152,6 +156,12 @@
   "checkBackLater": "Cửa hàng này hiện không có sản phẩm nào. Vui lòng quay lại sau.",
   "clearFilters": "Xóa bộ lọc",
   "allCategories": "Tất cả danh mục",
-  "noCategories": "Không có danh mục"
+  "noCategories": "Không có danh mục",
+  "uncategorized": "Chưa phân loại",
+  "store": "Cửa hàng",
+  "productsPlural": "sản phẩm",
+  "storeNotFound": "Không tìm thấy cửa hàng",
+  "storeNotFoundMessage": "Cửa hàng bạn đang tìm kiếm không tồn tại. Vui lòng kiểm tra lại URL hoặc liên hệ chủ cửa hàng.",
+  "goToHomepage": "Về trang chủ"
 }
 
