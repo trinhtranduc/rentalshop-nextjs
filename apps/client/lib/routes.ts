@@ -51,6 +51,13 @@ export function isPublicRoute(pathname: string): boolean {
     return true;
   }
   
+  // Check public product pages (e.g., /tenant-key/products)
+  // Pattern: /[tenantKey]/products
+  const publicProductPagePattern = /^\/[a-z0-9\-]+\/products$/i;
+  if (publicProductPagePattern.test(pathname)) {
+    return true;
+  }
+  
   return false;
 }
 

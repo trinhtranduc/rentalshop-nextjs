@@ -31,15 +31,21 @@ export const createApiUrl = (endpoint: string): string => {
   
   // For relative endpoints, construct full URL
   if (cleanEndpoint.startsWith('api/')) {
-    // Use centralized API URL configuration
-    try {
-      const { apiUrls } = require('../config/api');
-      return `${apiUrls.base}/${cleanEndpoint}`;
-    } catch {
-      // Fallback to environment variable if centralized config not available
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
-      return `${baseUrl}/${cleanEndpoint}`;
+    // Always use environment variable for server-side rendering compatibility
+    // In server components, require() may fail, so we use env var directly
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    
+    // Debug logging to track URL construction
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+      console.log('🔍 createApiUrl debug:', {
+        endpoint: cleanEndpoint,
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+        baseUrl,
+        finalUrl: `${baseUrl}/${cleanEndpoint}`
+      });
     }
+    
+    return `${baseUrl}/${cleanEndpoint}`;
   }
   
   // Default to relative API path
