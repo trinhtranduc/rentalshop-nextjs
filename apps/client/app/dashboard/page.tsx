@@ -18,7 +18,8 @@ import {
   useToast,
   Button,
   AddCustomerDialog,
-  ProductAddDialog } from '@rentalshop/ui';
+  ProductAddDialog,
+  useFormatCurrency } from '@rentalshop/ui';
 import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
@@ -98,6 +99,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
   setActiveTooltip: (title: string | null) => void;
   position?: 'left' | 'center' | 'right';
 }) => {
+  const formatMoney = useFormatCurrency();
   const shouldShowDollar = title.toLowerCase().includes('revenue') || title.toLowerCase().includes('income');
   const isTooltipActive = activeTooltip === title;
   
@@ -153,7 +155,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
         <p className={`text-3xl font-bold ${color} mb-2`}>
           {typeof value === 'number' 
             ? shouldShowDollar 
-              ? `$${value.toLocaleString()}`
+              ? formatMoney(value)
               : value.toLocaleString()
             : value}
         </p>
@@ -184,6 +186,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toastError, toastSuccess } = useToast();
+  const formatMoney = useFormatCurrency();
   const t = useDashboardTranslations();
   const tc = useCommonTranslations();
   const router = useRouter();
@@ -868,7 +871,7 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold text-sm text-blue-700">${(order.totalAmount || 0).toLocaleString()}</div>
+                            <div className="font-bold text-sm text-blue-700">{formatMoney(order.totalAmount || 0)}</div>
                             <div className="text-xs text-gray-500 font-normal mt-0.5">{order.status}</div>
                           </div>
                         </div>
@@ -1054,7 +1057,7 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-600">{product.category}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-green-600 text-lg">${(product.totalRevenue || 0).toLocaleString()}</p>
+                            <p className="font-semibold text-green-600 text-lg">{formatMoney(product.totalRevenue || 0)}</p>
                             <p className="text-sm text-gray-500">{product.rentalCount || 0} total orders</p>
                           </div>
                         </div>
@@ -1100,7 +1103,7 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-600">{customer.location}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-green-600 text-lg">${(customer.totalSpent || 0).toLocaleString()}</p>
+                            <p className="font-semibold text-green-600 text-lg">{formatMoney(customer.totalSpent || 0)}</p>
                             <p className="text-sm text-gray-500">{customer.orderCount || 0} total orders</p>
                             <p className="text-xs text-gray-400">
                               {customer.rentalCount || 0} rentals • {customer.saleCount || 0} sales
