@@ -2,6 +2,8 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { useCommonTranslations } from '@rentalshop/hooks';
 import { useFormattedDaily, useFormattedMonthOnly } from '@rentalshop/utils';
+import { useFormatCurrency } from '../../hooks/useFormatCurrency';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { 
   BarChart, 
   Bar, 
@@ -39,6 +41,8 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   timePeriod = 'month'
 }) => {
   const tc = useCommonTranslations();
+  const formatMoney = useFormatCurrency();
+  const { symbol, currency } = useCurrency();
   if (loading) {
     return (
       <div className="h-64 flex items-center justify-center">
@@ -69,9 +73,9 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     };
   });
 
-  // Custom tooltip formatter
+  // Custom tooltip formatter with currency
   const formatTooltip = (value: number, name: string) => [
-    `$${value.toLocaleString()}`,
+    formatMoney(value),
     name
   ];
 
@@ -87,7 +91,19 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           height={80}
         />
         <YAxis 
-          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          tickFormatter={(value) => {
+            // For large numbers, show abbreviated format
+            if (value >= 1000) {
+              const kValue = (value / 1000).toFixed(0);
+              // Format based on currency: USD has symbol before, VND has symbol after
+              if (currency === 'VND') {
+                return `${kValue}k${symbol}`;
+              } else {
+                return `${symbol}${kValue}k`;
+              }
+            }
+            return formatMoney(value);
+          }}
           tick={{ fontSize: 12 }}
         />
         <Tooltip 
