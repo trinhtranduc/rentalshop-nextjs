@@ -33,7 +33,7 @@ export const createApiUrl = (endpoint: string): string => {
   if (cleanEndpoint.startsWith('api/')) {
     // Always use environment variable for server-side rendering compatibility
     // In server components, require() may fail, so we use env var directly
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
     
     // Debug logging to track URL construction
     if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
@@ -45,7 +45,7 @@ export const createApiUrl = (endpoint: string): string => {
       });
     }
     
-    return `${baseUrl}/${cleanEndpoint}`;
+      return `${baseUrl}/${cleanEndpoint}`;
   }
   
   // Default to relative API path

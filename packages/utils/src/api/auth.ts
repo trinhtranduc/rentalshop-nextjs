@@ -91,10 +91,10 @@ export const authApi = {
   /**
    * Reset password with token
    */
-  async resetPassword(token: string, newPassword: string): Promise<ApiResponse<void>> {
+  async resetPassword(token: string, password: string, confirmPassword: string): Promise<ApiResponse<void>> {
     const response = await fetch(apiUrls.auth.resetPassword, {
       method: 'POST',
-      body: JSON.stringify({ token, newPassword }),
+      body: JSON.stringify({ token, password, confirmPassword }),
     });
     return await parseApiResponse<void>(response);
   },

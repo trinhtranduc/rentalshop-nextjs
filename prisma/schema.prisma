@@ -95,6 +95,7 @@ model User {
   createdOrders          Order[]
   subscriptionActivities SubscriptionActivity[]
   emailVerifications     EmailVerification[]
+  passwordResets         PasswordReset[]
   merchant               Merchant?              @relation(fields: [merchantId], references: [id])
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
   sessions               UserSession[]
@@ -487,4 +488,22 @@ model EmailVerification {
   @@index([email])
   @@index([expiresAt])
   @@index([verified])
+}
+
+model PasswordReset {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique
+  email     String
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([email])
+  @@index([expiresAt])
+  @@index([used])
 }

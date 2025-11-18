@@ -2,9 +2,8 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { ProductCard, SearchableSelect, Pagination, Input, Button } from '@rentalshop/ui';
+import { ProductCard, SearchableSelect, Pagination, Input, Button, Card, CardContent } from '@rentalshop/ui';
 import { cn } from '@rentalshop/ui';
-import { Search, X } from 'lucide-react';
 import type { Product, Category } from '@rentalshop/types';
 import { useTranslations } from 'next-intl';
 
@@ -73,9 +72,9 @@ export function PublicProductGrid({
   const categoryOptions = useMemo(() => {
     return categories.map(cat => ({
       value: cat.id.toString(),
-      label: cat.name || 'Uncategorized'
+      label: cat.name || t('uncategorized')
     }));
-  }, [categories]);
+  }, [categories, t]);
 
   // Calculate product stats for display
   const getProductStats = (product: any) => {
@@ -114,49 +113,64 @@ export function PublicProductGrid({
 
   return (
     <div className={cn('container mx-auto px-4 py-8', className)}>
-      {/* Filters Section */}
-      <div className="mb-6 space-y-4">
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <Input
-            type="text"
-            placeholder={t('search.placeholder')}
-            value={currentSearch}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10 pr-10 h-12"
-          />
-          {currentSearch && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClearSearch}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
+      {/* Filters Section - Same style as Order page */}
+      <Card className="shadow-sm border-border mb-6">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search Field - Larger width */}
+            <div className="flex-1 min-w-[280px]">
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder={t('search.placeholder')}
+                  value={currentSearch}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-9 h-10"
+                />
+                <svg 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                  />
+                </svg>
+              </div>
+            </div>
 
-        {/* Category Filter */}
-        {categories.length > 0 && (
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-              {t('fields.category')}:
-            </label>
-            <div className="flex-1 max-w-xs">
+            {/* Category Filter */}
+            {categories.length > 0 && (
               <SearchableSelect
                 value={currentCategoryId || undefined}
                 onChange={handleCategoryChange}
                 options={categoryOptions}
                 placeholder={t('allCategories')}
                 emptyText={t('noCategories')}
-                className="w-full"
+                className="w-[200px]"
               />
-            </div>
+            )}
+
+            {/* Clear Filters Button */}
+            {(currentSearch || currentCategoryId) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  updateFilters({ categoryId: null, search: '', page: 1 });
+                }}
+                className="h-10"
+              >
+                {t('clearFilters')}
+              </Button>
+            )}
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Products Count */}
       {pagination && pagination.total > 0 && (
@@ -191,10 +205,10 @@ export function PublicProductGrid({
                   deposit={product.deposit || 0}
                   images={product.images || []}
                   category={{
-                    name: category?.name || product.category?.name || 'Uncategorized'
+                    name: category?.name || product.category?.name || t('uncategorized')
                   }}
                   outlet={{
-                    name: 'Store'
+                    name: t('store')
                   }}
                   onView={onProductClick}
                   variant="client"
@@ -213,7 +227,7 @@ export function PublicProductGrid({
                 total={pagination.total}
                 limit={pagination.limit}
                 onPageChange={handlePageChange}
-                itemName={t('products') || 'products'}
+                itemName={t('productsPlural')}
               />
             </div>
           )}
