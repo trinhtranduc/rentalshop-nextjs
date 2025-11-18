@@ -25,6 +25,7 @@ const publicRoutes = [
   '/api/system/integrity',
   '/api/docs',
   '/api/plans/public',
+  '/api/public', // Public product pages for merchants to share with customers
   '/api/test',
   '/api/debug', // Debug endpoints for troubleshooting
 ];

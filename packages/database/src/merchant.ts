@@ -99,6 +99,31 @@ export async function findByEmail(email: string) {
 }
 
 /**
+ * Find merchant by tenantKey
+ * Used for public product pages where merchant shares link with customers
+ */
+export async function findByTenantKey(tenantKey: string) {
+  return await prisma.merchant.findUnique({
+    where: { tenantKey },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      address: true,
+      phone: true,
+      email: true,
+      website: true,
+      city: true,
+      country: true,
+      currency: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+}
+
+/**
  * Search merchants with filtering and pagination
  */
 export async function search(filters: MerchantFilters): Promise<SimpleResponse<any>> {
@@ -366,6 +391,7 @@ export const findFirst = async (whereClause: any) => {
 export const simplifiedMerchants = {
   findById,
   findByEmail,
+  findByTenantKey,
   findFirst,
   search,
   create,
