@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     // Mark token as used
     console.log('✅ [Reset Password] Marking token as used...');
     await markTokenAsUsed(validatedData.token);
-
+    
     console.log('✅ [Reset Password] Password reset successful for user:', user.id);
     
     return NextResponse.json(
