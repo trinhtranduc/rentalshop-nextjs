@@ -31,7 +31,9 @@ async function fetchPublicProducts(tenantKey: string, searchParams: any) {
 
     const url = `api/public/${tenantKey}/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     console.log('🌐 Fetching URL:', url);
+    console.log('🔍 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
     const response = await publicFetch(url);
+    console.log('🔍 Actual API URL called:', response.url || 'N/A');
     
     console.log('📡 Response status:', response.status, response.statusText);
     
@@ -88,7 +90,7 @@ export default async function PublicProductsPage({
   
   console.log('✅ Found merchant:', data.merchant.name, 'with', data.products?.length || 0, 'products');
 
-  const { merchant, products = [], categories = [] } = data;
+  const { merchant, products = [], categories = [], pagination } = data;
 
   // Show merchant info even if no products (for better UX)
   return (
@@ -100,6 +102,7 @@ export default async function PublicProductsPage({
       <PublicProductGrid 
         products={products as Product[]}
         categories={categories as Category[]}
+        pagination={pagination}
       />
     </div>
   );

@@ -145,6 +145,13 @@
   "selectedProducts": "Sản phẩm đã chọn",
   "noProductsSelected": "Chưa chọn sản phẩm nào",
   "productInformationNotAvailable": "Thông tin sản phẩm không có sẵn",
-  "productId": "ID sản phẩm"
+  "productId": "ID sản phẩm",
+  "showingProducts": "Hiển thị {count} trong tổng số {total} sản phẩm",
+  "noProductsFound": "Không tìm thấy sản phẩm",
+  "tryDifferentSearch": "Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn",
+  "checkBackLater": "Cửa hàng này hiện không có sản phẩm nào. Vui lòng quay lại sau.",
+  "clearFilters": "Xóa bộ lọc",
+  "allCategories": "Tất cả danh mục",
+  "noCategories": "Không có danh mục"
 }
 

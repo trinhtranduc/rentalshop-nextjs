@@ -146,6 +146,13 @@
   "selectedProducts": "Selected Products",
   "noProductsSelected": "No Products Selected",
   "productInformationNotAvailable": "Product information not available",
-  "productId": "Product ID"
+  "productId": "Product ID",
+  "showingProducts": "Showing {count} of {total} products",
+  "noProductsFound": "No products found",
+  "tryDifferentSearch": "Try adjusting your search or filters",
+  "checkBackLater": "This store does not have any products available at the moment. Please check back later.",
+  "clearFilters": "Clear Filters",
+  "allCategories": "All Categories",
+  "noCategories": "No categories"
 }
 

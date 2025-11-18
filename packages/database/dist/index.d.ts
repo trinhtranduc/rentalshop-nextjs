@@ -301,6 +301,25 @@ declare function findByEmail(email: string): Promise<({
     currency: string;
 }) | null>;
 /**
+ * Find merchant by tenantKey
+ * Used for public product pages where merchant shares link with customers
+ */
+declare function findByTenantKey(tenantKey: string): Promise<{
+    id: number;
+    name: string;
+    address: string | null;
+    description: string | null;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    phone: string | null;
+    city: string | null;
+    country: string | null;
+    email: string;
+    website: string | null;
+    currency: string;
+} | null>;
+/**
  * Search merchants with filtering and pagination
  */
 declare function search$3(filters: MerchantFilters): Promise<SimpleResponse<any>>;
@@ -1826,6 +1845,13 @@ var selectedProducts = "Selected Products";
 var noProductsSelected = "No Products Selected";
 var productInformationNotAvailable = "Product information not available";
 var productId = "Product ID";
+var showingProducts = "Showing {count} of {total} products";
+var noProductsFound = "No products found";
+var tryDifferentSearch = "Try adjusting your search or filters";
+var checkBackLater = "This store does not have any products available at the moment. Please check back later.";
+var clearFilters = "Clear Filters";
+var allCategories = "All Categories";
+var noCategories = "No categories";
 var products = {
 	title: title$2,
 	productName: productName,
@@ -1848,14 +1874,26 @@ var products = {
 	selectedProducts: selectedProducts,
 	noProductsSelected: noProductsSelected,
 	productInformationNotAvailable: productInformationNotAvailable,
-	productId: productId
+	productId: productId,
+	showingProducts: showingProducts,
+	noProductsFound: noProductsFound,
+	tryDifferentSearch: tryDifferentSearch,
+	checkBackLater: checkBackLater,
+	clearFilters: clearFilters,
+	allCategories: allCategories,
+	noCategories: noCategories
 };
 
+declare const _________locales_en_products_json_allCategories: typeof allCategories;
 declare const _________locales_en_products_json_availability: typeof availability;
+declare const _________locales_en_products_json_checkBackLater: typeof checkBackLater;
+declare const _________locales_en_products_json_clearFilters: typeof clearFilters;
 declare const _________locales_en_products_json_createProduct: typeof createProduct;
 declare const _________locales_en_products_json_editProduct: typeof editProduct;
 declare const _________locales_en_products_json_fields: typeof fields;
 declare const _________locales_en_products_json_inventory: typeof inventory;
+declare const _________locales_en_products_json_noCategories: typeof noCategories;
+declare const _________locales_en_products_json_noProductsFound: typeof noProductsFound;
 declare const _________locales_en_products_json_noProductsSelected: typeof noProductsSelected;
 declare const _________locales_en_products_json_price: typeof price;
 declare const _________locales_en_products_json_pricing: typeof pricing;
@@ -1864,10 +1902,12 @@ declare const _________locales_en_products_json_productId: typeof productId;
 declare const _________locales_en_products_json_productInformationNotAvailable: typeof productInformationNotAvailable;
 declare const _________locales_en_products_json_productName: typeof productName;
 declare const _________locales_en_products_json_selectedProducts: typeof selectedProducts;
+declare const _________locales_en_products_json_showingProducts: typeof showingProducts;
 declare const _________locales_en_products_json_stock: typeof stock;
+declare const _________locales_en_products_json_tryDifferentSearch: typeof tryDifferentSearch;
 declare const _________locales_en_products_json_viewProduct: typeof viewProduct;
 declare namespace _________locales_en_products_json {
-  export { actions$1 as actions, _________locales_en_products_json_availability as availability, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_noProductsSelected as noProductsSelected, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productId as productId, _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable, _________locales_en_products_json_productName as productName, search$1 as search, _________locales_en_products_json_selectedProducts as selectedProducts, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, title$2 as title, _________locales_en_products_json_viewProduct as viewProduct };
+  export { actions$1 as actions, _________locales_en_products_json_allCategories as allCategories, _________locales_en_products_json_availability as availability, _________locales_en_products_json_checkBackLater as checkBackLater, _________locales_en_products_json_clearFilters as clearFilters, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_noCategories as noCategories, _________locales_en_products_json_noProductsFound as noProductsFound, _________locales_en_products_json_noProductsSelected as noProductsSelected, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productId as productId, _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable, _________locales_en_products_json_productName as productName, search$1 as search, _________locales_en_products_json_selectedProducts as selectedProducts, _________locales_en_products_json_showingProducts as showingProducts, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, title$2 as title, _________locales_en_products_json_tryDifferentSearch as tryDifferentSearch, _________locales_en_products_json_viewProduct as viewProduct };
 }
 
 var title$1 = "Orders";
@@ -5019,6 +5059,7 @@ declare const db: {
     merchants: {
         findById: typeof findById$1;
         findByEmail: typeof findByEmail;
+        findByTenantKey: typeof findByTenantKey;
         findFirst: (whereClause: any) => Promise<{
             id: number;
             name: string;
