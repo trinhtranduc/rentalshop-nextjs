@@ -11,7 +11,7 @@ import {
   Badge,
   SearchableCountrySelect
 } from '@rentalshop/ui';
-import { CheckCircle2, Copy, Share2, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Copy, ExternalLink } from 'lucide-react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useLocale } from 'next-intl';
 import { 
@@ -106,6 +106,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
             // Handle nested structure: result.data.merchant or direct result.data
             const merchantInfo = (result.data as any).merchant || result.data;
             console.log('✅ Merchant data extracted:', merchantInfo);
+            console.log('🔍 Merchant tenantKey:', merchantInfo?.tenantKey);
             setMerchantData(merchantInfo);
           } else {
             console.error('❌ Failed to fetch merchant data:', result);
@@ -129,6 +130,15 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   
   // Use merchant data from user object or fetched data
   const merchant = user?.merchant || merchantData;
+  
+  // Debug merchant data for Public Product Link
+  console.log('🔍 MerchantSection - Merchant data for Public Product Link:', {
+    merchant,
+    'merchant?.tenantKey': merchant?.tenantKey,
+    'user?.merchant': user?.merchant,
+    merchantData,
+    'user?.merchantId': user?.merchantId
+  });
   
   // Auto-update currency when locale changes
   useEffect(() => {
@@ -180,26 +190,6 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy link:', error);
-    }
-  };
-  
-  // Share link
-  const handleShareLink = async () => {
-    if (!publicProductLink) return;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${merchant?.name || 'Store'} - Products`,
-          text: `Check out products from ${merchant?.name || 'our store'}`,
-          url: publicProductLink
-        });
-      } catch (error) {
-        // User cancelled or error occurred
-        console.log('Share cancelled or failed:', error);
-      }
-    } else {
-      // Fallback to copy
-      handleCopyLink();
     }
   };
   
@@ -492,7 +482,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
       </Card>
 
       {/* Public Product Link Card */}
-      {merchant?.tenantKey && (
+      {merchant?.tenantKey ? (
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -504,12 +494,14 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
           </p>
 
             <div className="space-y-4">
-              {/* Link Display */}
+              {/* Link Display - Clickable */}
               <div className="flex items-center gap-2">
                 <Input
                   value={publicProductLink || ''}
                   readOnly
-                  className="flex-1 bg-gray-50 text-gray-900 font-mono text-sm"
+                  onClick={handleCopyLink}
+                  className="flex-1 bg-gray-50 text-gray-900 font-mono text-sm cursor-pointer hover:bg-gray-100 transition-colors"
+                  title="Click to copy link"
                 />
                 <Button
                   variant="outline"
@@ -529,35 +521,26 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                     </>
                   )}
                 </Button>
-                {typeof navigator !== 'undefined' && 'share' in navigator && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleShareLink}
-                    className="h-10"
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    {t('merchant.share')}
-                  </Button>
-                    )}
                   </div>
 
-              {/* Preview Link */}
-              <div className="pt-4 border-t border-gray-200">
-                <a
-                  href={publicProductLink || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  {t('merchant.viewPublicPage')}
-                </a>
+              {/* Clickable Link */}
+              {publicProductLink && (
+                <div className="pt-4 border-t border-gray-200">
+                  <a
+                    href={publicProductLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    {t('merchant.viewPublicPage')}
+                  </a>
                     </div>
-                  </div>
+              )}
+          </div>
         </CardContent>
       </Card>
-      )}
+      ) : null}
     </div>
   );
 };
