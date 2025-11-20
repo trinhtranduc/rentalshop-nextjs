@@ -4,7 +4,27 @@ A comprehensive rental shop management system built with Next.js, featuring a mo
 
 ## 📚 Documentation
 
-- **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)** - 🚀 Complete deployment guide for Railway (Recommended)
+All detailed documentation is available in the [`docs/`](docs/) folder:
+
+### Core Guides
+- **[Rental Duration System Guide](docs/RENTAL_DURATION_SYSTEM_GUIDE.md)** - Product-based pricing system with HOURLY/DAILY/FIXED pricing types
+- **[API Endpoints Documentation](docs/API_ENDPOINTS_DOCUMENTATION.md)** - Complete API reference
+- **[Database Migration Guide](docs/DATABASE_MIGRATION_GUIDE.md)** - Database migration procedures
+
+### Deployment & Infrastructure
+- **[Railway Deployment](docs/RAILWAY_DEPLOY.md)** - 🚀 Complete deployment guide for Railway (Recommended)
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - General deployment instructions
+- **[Railway CLI Steps](docs/RAILWAY_CLI_STEPS.md)** - Railway CLI usage
+- **[Railway Database URL Guide](docs/RAILWAY_DATABASE_URL_GUIDE.md)** - Database URL configuration
+
+### Email Configuration
+- **[Email Setup Guide](docs/EMAIL_SETUP_GUIDE.md)** - Email service configuration
+- **[Email Configuration Checklist](docs/EMAIL_CONFIGURATION_CHECKLIST.md)** - Email setup checklist
+- **[Email Verification Setup](docs/EMAIL_VERIFICATION_SETUP.md)** - Email verification flow
+- **[AWS SES Setup](docs/AWS_SES_SETUP.md)** - AWS SES configuration
+
+### Development
+- **[Git Workflow Guide](docs/GIT_WORKFLOW_GUIDE.md)** - Git workflow and best practices
 - **[.cursorrules](.cursorrules)** - Development rules and best practices including API standardization
 
 ## 🚀 Quick Start

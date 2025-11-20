@@ -54,6 +54,8 @@ export interface Order extends BaseEntityWithOutlet {
   returnPlanAt?: Date | string;
   pickedUpAt?: Date | string;
   returnedAt?: Date | string;
+  rentalDuration?: number; // Duration value (hours, days, or 1 for rental)
+  rentalDurationUnit?: 'hour' | 'day' | 'rental'; // Unit for rentalDuration
   
   // Additional order details
   damageFee?: number;

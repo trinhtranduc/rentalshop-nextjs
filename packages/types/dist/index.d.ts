@@ -1,4 +1,4 @@
-import { SubscriptionStatus, BillingInterval, MerchantPricingConfig } from '@rentalshop/constants';
+import { SubscriptionStatus, BillingInterval, MerchantPricingConfig, PricingType } from '@rentalshop/constants';
 export { BillingInterval, BusinessType, MerchantPricingConfig, PricingBusinessRules, PricingDurationLimits, PricingType, SubscriptionStatus } from '@rentalshop/constants';
 
 /**
@@ -1079,6 +1079,12 @@ interface Product extends BaseEntityWithMerchant {
     available: number;
     isActive: boolean;
     images?: string[];
+    pricingType?: PricingType | null;
+    durationConfig?: string | {
+        minDuration?: number;
+        maxDuration?: number;
+        defaultDuration?: number;
+    } | null;
     category?: CategoryReference;
     merchant?: MerchantReference;
     outletStock?: OutletStock[];
@@ -1337,6 +1343,8 @@ interface Order extends BaseEntityWithOutlet {
     returnPlanAt?: Date | string;
     pickedUpAt?: Date | string;
     returnedAt?: Date | string;
+    rentalDuration?: number;
+    rentalDurationUnit?: 'hour' | 'day' | 'rental';
     damageFee?: number;
     bailAmount?: number;
     material?: string;
@@ -2540,7 +2548,13 @@ var merchant = {
 	vietnameseDong: "Vietnamese Dong",
 	selected: "Selected",
 	selectCurrency: "Select Currency",
-	savingCurrency: "Updating currency..."
+	savingCurrency: "Updating currency...",
+	publicProductLink: "Public Product Link",
+	publicProductLinkDesc: "Share this link with your customers so they can browse your products. This link is public and doesn't require login.",
+	copy: "Copy Link",
+	copied: "Copied!",
+	share: "Share",
+	viewPublicPage: "View Public Page"
 };
 var outlet = {
 	title: "Outlet Settings",
@@ -3069,6 +3083,7 @@ var pricing = {
 };
 var actions$1 = {
 	viewDetails: "View Details",
+	view: "View",
 	edit: "Edit Product",
 	viewOrders: "View Orders",
 	activate: "Activate",
@@ -3079,6 +3094,9 @@ var actions$1 = {
 	archive: "Archive Product",
 	restore: "Restore Product"
 };
+var rentNow = "Rent Now";
+var details = "Details";
+var rent = "Rent";
 var messages$2 = {
 	createSuccess: "Product created successfully",
 	createFailed: "Failed to create product",
@@ -3140,6 +3158,12 @@ var checkBackLater = "This store does not have any products available at the mom
 var clearFilters = "Clear Filters";
 var allCategories = "All Categories";
 var noCategories = "No categories";
+var uncategorized = "Uncategorized";
+var store = "Store";
+var productsPlural = "products";
+var storeNotFound = "Store Not Found";
+var storeNotFoundMessage = "The store you're looking for could not be found. Please check the URL or contact the store owner.";
+var goToHomepage = "Go to Homepage";
 var products = {
 	title: title$2,
 	productName: productName,
@@ -3155,6 +3179,9 @@ var products = {
 	availability: availability,
 	pricing: pricing,
 	actions: actions$1,
+	rentNow: rentNow,
+	details: details,
+	rent: rent,
 	messages: messages$2,
 	filters: filters$1,
 	search: search$1,
@@ -3169,7 +3196,13 @@ var products = {
 	checkBackLater: checkBackLater,
 	clearFilters: clearFilters,
 	allCategories: allCategories,
-	noCategories: noCategories
+	noCategories: noCategories,
+	uncategorized: uncategorized,
+	store: store,
+	productsPlural: productsPlural,
+	storeNotFound: storeNotFound,
+	storeNotFoundMessage: storeNotFoundMessage,
+	goToHomepage: goToHomepage
 };
 
 declare const _________locales_en_products_json_allCategories: typeof allCategories;
@@ -3177,8 +3210,10 @@ declare const _________locales_en_products_json_availability: typeof availabilit
 declare const _________locales_en_products_json_checkBackLater: typeof checkBackLater;
 declare const _________locales_en_products_json_clearFilters: typeof clearFilters;
 declare const _________locales_en_products_json_createProduct: typeof createProduct;
+declare const _________locales_en_products_json_details: typeof details;
 declare const _________locales_en_products_json_editProduct: typeof editProduct;
 declare const _________locales_en_products_json_fields: typeof fields;
+declare const _________locales_en_products_json_goToHomepage: typeof goToHomepage;
 declare const _________locales_en_products_json_inventory: typeof inventory;
 declare const _________locales_en_products_json_noCategories: typeof noCategories;
 declare const _________locales_en_products_json_noProductsFound: typeof noProductsFound;
@@ -3189,13 +3224,20 @@ declare const _________locales_en_products_json_productDetails: typeof productDe
 declare const _________locales_en_products_json_productId: typeof productId;
 declare const _________locales_en_products_json_productInformationNotAvailable: typeof productInformationNotAvailable;
 declare const _________locales_en_products_json_productName: typeof productName;
+declare const _________locales_en_products_json_productsPlural: typeof productsPlural;
+declare const _________locales_en_products_json_rent: typeof rent;
+declare const _________locales_en_products_json_rentNow: typeof rentNow;
 declare const _________locales_en_products_json_selectedProducts: typeof selectedProducts;
 declare const _________locales_en_products_json_showingProducts: typeof showingProducts;
 declare const _________locales_en_products_json_stock: typeof stock;
+declare const _________locales_en_products_json_store: typeof store;
+declare const _________locales_en_products_json_storeNotFound: typeof storeNotFound;
+declare const _________locales_en_products_json_storeNotFoundMessage: typeof storeNotFoundMessage;
 declare const _________locales_en_products_json_tryDifferentSearch: typeof tryDifferentSearch;
+declare const _________locales_en_products_json_uncategorized: typeof uncategorized;
 declare const _________locales_en_products_json_viewProduct: typeof viewProduct;
 declare namespace _________locales_en_products_json {
-  export { actions$1 as actions, _________locales_en_products_json_allCategories as allCategories, _________locales_en_products_json_availability as availability, _________locales_en_products_json_checkBackLater as checkBackLater, _________locales_en_products_json_clearFilters as clearFilters, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_noCategories as noCategories, _________locales_en_products_json_noProductsFound as noProductsFound, _________locales_en_products_json_noProductsSelected as noProductsSelected, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productId as productId, _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable, _________locales_en_products_json_productName as productName, search$1 as search, _________locales_en_products_json_selectedProducts as selectedProducts, _________locales_en_products_json_showingProducts as showingProducts, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, title$2 as title, _________locales_en_products_json_tryDifferentSearch as tryDifferentSearch, _________locales_en_products_json_viewProduct as viewProduct };
+  export { actions$1 as actions, _________locales_en_products_json_allCategories as allCategories, _________locales_en_products_json_availability as availability, _________locales_en_products_json_checkBackLater as checkBackLater, _________locales_en_products_json_clearFilters as clearFilters, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_details as details, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_goToHomepage as goToHomepage, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_noCategories as noCategories, _________locales_en_products_json_noProductsFound as noProductsFound, _________locales_en_products_json_noProductsSelected as noProductsSelected, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productId as productId, _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable, _________locales_en_products_json_productName as productName, _________locales_en_products_json_productsPlural as productsPlural, _________locales_en_products_json_rent as rent, _________locales_en_products_json_rentNow as rentNow, search$1 as search, _________locales_en_products_json_selectedProducts as selectedProducts, _________locales_en_products_json_showingProducts as showingProducts, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, _________locales_en_products_json_store as store, _________locales_en_products_json_storeNotFound as storeNotFound, _________locales_en_products_json_storeNotFoundMessage as storeNotFoundMessage, title$2 as title, _________locales_en_products_json_tryDifferentSearch as tryDifferentSearch, _________locales_en_products_json_uncategorized as uncategorized, _________locales_en_products_json_viewProduct as viewProduct };
 }
 
 var title$1 = "Orders";
@@ -3785,6 +3827,22 @@ var forgotPassword = {
 	emailNotFound: "Email not found",
 	checkEmail: "Check your email for the reset link"
 };
+var resetPassword = {
+	title: "Reset Password",
+	subtitle: "Enter your new password",
+	password: "New Password",
+	confirmPassword: "Confirm New Password",
+	resetButton: "Reset Password",
+	success: "Password reset successfully",
+	failed: "Failed to reset password",
+	passwordMismatch: "Passwords do not match",
+	tokenInvalid: "Reset link is invalid or expired",
+	tokenExpired: "Reset link has expired. Please request a new one",
+	tokenUsed: "This reset link has already been used",
+	passwordMinLength: "Password must be at least 6 characters",
+	passwordRequired: "Password is required",
+	confirmPasswordRequired: "Please confirm your password"
+};
 var changePassword = {
 	title: "Change Password",
 	currentPassword: "Current Password",
@@ -3828,6 +3886,7 @@ var auth = {
 	login: login,
 	register: register,
 	forgotPassword: forgotPassword,
+	resetPassword: resetPassword,
 	changePassword: changePassword,
 	logout: logout,
 	checkEmail: checkEmail
@@ -3839,8 +3898,9 @@ declare const _________locales_en_auth_json_forgotPassword: typeof forgotPasswor
 declare const _________locales_en_auth_json_login: typeof login;
 declare const _________locales_en_auth_json_logout: typeof logout;
 declare const _________locales_en_auth_json_register: typeof register;
+declare const _________locales_en_auth_json_resetPassword: typeof resetPassword;
 declare namespace _________locales_en_auth_json {
-  export { _________locales_en_auth_json_changePassword as changePassword, _________locales_en_auth_json_checkEmail as checkEmail, auth as default, _________locales_en_auth_json_forgotPassword as forgotPassword, _________locales_en_auth_json_login as login, _________locales_en_auth_json_logout as logout, _________locales_en_auth_json_register as register };
+  export { _________locales_en_auth_json_changePassword as changePassword, _________locales_en_auth_json_checkEmail as checkEmail, auth as default, _________locales_en_auth_json_forgotPassword as forgotPassword, _________locales_en_auth_json_login as login, _________locales_en_auth_json_logout as logout, _________locales_en_auth_json_register as register, _________locales_en_auth_json_resetPassword as resetPassword };
 }
 
 var buttons = {

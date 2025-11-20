@@ -20,6 +20,7 @@ import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
 import { simplifiedOrderItems } from './order-items';
 import { sessions } from './sessions';
+import { simplifiedSync } from './sync';
 
 // Optimized order functions (temporarily disabled due to type issues)
 // export { 
@@ -152,7 +153,12 @@ const db = {
   // ============================================================================
   // SESSION OPERATIONS (Single Session Enforcement)
   // ============================================================================
-  sessions
+  sessions,
+
+  // ============================================================================
+  // SYNC OPERATIONS (Temporary - for sync-standalone endpoint)
+  // ============================================================================
+  sync: simplifiedSync
 };
 
 // ============================================================================

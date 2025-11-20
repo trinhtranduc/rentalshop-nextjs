@@ -72,6 +72,10 @@ export {
 export {
   PricingResolver,
   PricingValidator,
+  parseProductDurationLimits,
+  getEffectiveDurationLimits,
+  calculateDurationInUnit,
+  getDurationUnitLabel,
   type PricingInfo,
   type CalculatedPricing,
   type ValidationResult,
