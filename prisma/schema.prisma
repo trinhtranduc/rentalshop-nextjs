@@ -127,45 +127,45 @@ model UserSession {
 }
 
 model Merchant {
-  id                 Int           @id @default(autoincrement())
-  name               String
-  email              String        @unique
-  phone              String?
+  id            Int           @id @default(autoincrement())
+  name          String
+  email         String        @unique
+  phone         String?
   /// Human friendly tenant key (used for subdomain like aodaipham1.anyrent.shop)
   /// Optional now to avoid breaking existing data, but should be filled for new merchants.
-  tenantKey          String?       @unique
-  address            String?
-  city               String?
-  state              String?
-  zipCode            String?
-  country            String?
-  businessType       BusinessType  @default(GENERAL)
-  taxId              String?
-  website            String?
-  description        String?
-  planId             Int?
+  tenantKey     String?       @unique
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  country       String?
+  businessType  BusinessType  @default(GENERAL)
+  taxId         String?
+  website       String?
+  description   String?
+  planId        Int?
   // subscriptionStatus removed - use subscription.status instead (single source of truth)
-  totalRevenue       Float         @default(0)
-  lastActiveAt       DateTime?
-  isActive           Boolean       @default(true)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  pricingConfig      String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
-  pricingType        PricingType   @default(FIXED)
-  currency           String        @default("USD")
-  categories         Category[]
-  customers          Customer[]
-  Plan               Plan?         @relation(fields: [planId], references: [id])
-  outlets            Outlet[]
-  payments           Payment[]
-  products           Product[]
-  subscription       Subscription?
-  users              User[]
+  totalRevenue  Float         @default(0)
+  lastActiveAt  DateTime?
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  pricingConfig String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
+  pricingType   PricingType   @default(FIXED)
+  currency      String        @default("USD")
+  categories    Category[]
+  customers     Customer[]
+  Plan          Plan?         @relation(fields: [planId], references: [id])
+  outlets       Outlet[]
+  payments      Payment[]
+  products      Product[]
+  subscription  Subscription?
+  users         User[]
+  // Index removed - subscriptionStatus field removed
 
   @@index([name])
   @@index([email])
   @@index([planId])
-  // Index removed - subscriptionStatus field removed
 }
 
 model Outlet {
@@ -210,27 +210,29 @@ model Category {
 }
 
 model Product {
-  id          Int           @id @default(autoincrement())
-  name        String
-  description String?
-  barcode     String?       @unique
-  totalStock  Int           @default(0)
-  rentPrice   Float
-  salePrice   Float?
-  deposit     Float         @default(0)
-  images      Json?
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  merchantId  Int
-  categoryId  Int
+  id             Int           @id @default(autoincrement())
+  name           String
+  description    String?
+  barcode        String?       @unique
+  totalStock     Int           @default(0)
+  rentPrice      Float
+  salePrice      Float?
+  costPrice      Float? // Giá vốn (purchase cost) - Optional for profit calculation
+  deposit        Float         @default(0)
+  images         Json?
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  merchantId     Int
+  categoryId     Int
   // Optional product-level pricing configuration (default: FIXED if null)
-  pricingType PricingType?  // NULL = FIXED (default), HOURLY/DAILY require durationConfig
-  durationConfig String?    // JSON: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
-  orderItems  OrderItem[]
-  outletStock OutletStock[]
-  category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  pricingType    PricingType? // NULL = FIXED (default), HOURLY/DAILY require durationConfig
+  durationConfig String? // JSON: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
+  // Future: pricingTiers String? // JSON: [{ minDuration, maxDuration, price, description? }] - Optional pricing tiers for HOURLY/DAILY
+  orderItems     OrderItem[]
+  outletStock    OutletStock[]
+  category       Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  merchant       Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
   @@index([merchantId])
   @@index([categoryId])
@@ -285,7 +287,7 @@ model Customer {
 model Order {
   id                Int         @id @default(autoincrement())
   orderNumber       String      @unique
-  orderType         OrderType   // ✅ Type safe with enum
+  orderType         OrderType // ✅ Type safe with enum
   status            OrderStatus @default(RESERVED) // ✅ Type safe with enum
   totalAmount       Float
   depositAmount     Float       @default(0)
@@ -357,7 +359,7 @@ model Payment {
   amount         Float
   currency       String        @default("USD")
   method         PaymentMethod // ✅ Type safe with enum
-  type           PaymentType   // ✅ Type safe with enum
+  type           PaymentType // ✅ Type safe with enum
   status         PaymentStatus @default(PENDING) // ✅ Type safe with enum
   reference      String?
   transactionId  String?

@@ -416,10 +416,14 @@ export async function createProduct(input: any): Promise<any> {
     totalStock: input.totalStock || 0,
     rentPrice: input.rentPrice,
     salePrice: input.salePrice,
+    costPrice: input.costPrice,
     deposit: input.deposit || 0,
     images: input.images,
     isActive: input.isActive ?? true,
     merchantId: merchant.id, // Use CUID
+    // Optional pricing configuration (default FIXED if null)
+    pricingType: input.pricingType || null,
+    durationConfig: input.durationConfig || null,
   };
 
   // Only add categoryId if category is provided
@@ -497,8 +501,12 @@ export async function updateProduct(
   if (input.description !== undefined) updateData.description = input.description;
   if (input.barcode !== undefined) updateData.barcode = input.barcode;
   if (input.totalStock !== undefined) updateData.totalStock = input.totalStock;
+  // Optional pricing configuration
+  if (input.pricingType !== undefined) updateData.pricingType = input.pricingType;
+  if (input.durationConfig !== undefined) updateData.durationConfig = input.durationConfig;
   if (input.rentPrice !== undefined) updateData.rentPrice = input.rentPrice;
   if (input.salePrice !== undefined) updateData.salePrice = input.salePrice;
+  if (input.costPrice !== undefined) updateData.costPrice = input.costPrice;
   if (input.deposit !== undefined) updateData.deposit = input.deposit;
   if (input.images !== undefined) updateData.images = input.images;
   if (input.isActive !== undefined) updateData.isActive = input.isActive;

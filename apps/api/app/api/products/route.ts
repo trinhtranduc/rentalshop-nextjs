@@ -3,7 +3,7 @@ import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 
 /**
@@ -58,7 +58,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     // - MERCHANT role: Can only see products from their own merchant
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their merchant
     let filterMerchantId = userScope.merchantId;
-    if (user.role === 'ADMIN') {
+    if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all merchants unless specifically filtering by merchant
       filterMerchantId = queryMerchantId || userScope.merchantId;
     }
@@ -67,10 +67,10 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     // - MERCHANT role: Can see products from all outlets of their merchant (unless queryOutletId is specified)
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their assigned outlet
     let filterOutletId = userScope.outletId;
-    if (user.role === 'MERCHANT') {
+    if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       filterOutletId = queryOutletId || userScope.outletId;
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all products (no outlet filtering unless specified)
       filterOutletId = queryOutletId;
     }
@@ -349,11 +349,11 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     
     // For ADMIN users, they need to specify merchantId in the request
     // For other roles, use their assigned merchantId
-    if (user.role === 'ADMIN' && parsed.data.merchantId) {
+    if (user.role === USER_ROLE.ADMIN && parsed.data.merchantId) {
       merchantId = parsed.data.merchantId;
     } else if (!merchantId) {
       return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_ID_REQUIRED', user.role === 'ADMIN' 
+        ResponseBuilder.error('MERCHANT_ID_REQUIRED', user.role === USER_ROLE.ADMIN 
           ? 'MerchantId is required for ADMIN users when creating products' 
           : 'User is not associated with any merchant'),
         { status: 400 }
@@ -527,6 +527,9 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       salePrice: parsed.data.salePrice ?? undefined,
       deposit: parsed.data.deposit ?? 0,
       images: imagesValue,
+      // Optional pricing configuration (default FIXED if null)
+      pricingType: parsed.data.pricingType || null,
+      durationConfig: parsed.data.durationConfig || null,
       outletStock: {
         create: outletStock.map(os => ({
           outlet: { connect: { id: os.outletId } },

@@ -16,7 +16,7 @@ import {
   ProductReference,
   CustomerReference
 } from '../common/base';
-import type { SubscriptionStatus } from '@rentalshop/constants';
+import type { SubscriptionStatus, MerchantStatus } from '@rentalshop/constants';
 import type { Subscription } from '../subscription';
 
 // ============================================================================
@@ -142,7 +142,7 @@ export interface MerchantUpdateInput extends BaseUpdateInput {
  * Extends base search with merchant-specific filters
  */
 export interface MerchantSearchParams extends BaseSearchParams {
-  status?: 'ACTIVE' | 'INACTIVE' | 'TRIAL' | 'EXPIRED';
+  status?: MerchantStatus; // ✅ Type safe with enum from @rentalshop/constants
   subscriptionStatus?: SubscriptionStatus; // ✅ Type safe with enum
   plan?: string;
   businessType?: string;

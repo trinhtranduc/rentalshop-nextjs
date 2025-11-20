@@ -108,6 +108,18 @@ export const ENTITY_STATUS = {
 export type EntityStatus = typeof ENTITY_STATUS[keyof typeof ENTITY_STATUS];
 
 // ============================================================================
+// MERCHANT STATUSES
+// ============================================================================
+export const MERCHANT_STATUS = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  TRIAL: 'TRIAL',
+  EXPIRED: 'EXPIRED'
+} as const;
+
+export type MerchantStatus = typeof MERCHANT_STATUS[keyof typeof MERCHANT_STATUS];
+
+// ============================================================================
 // PRODUCT AVAILABILITY STATUSES
 // ============================================================================
 export const PRODUCT_AVAILABILITY_STATUS = {

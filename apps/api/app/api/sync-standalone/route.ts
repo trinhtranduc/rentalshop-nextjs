@@ -638,7 +638,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
                       data: {
                         orderNumber,
                         orderType: orderData.orderType,
-                        status: orderData.status || 'RESERVED',
+                        status: orderData.status || ORDER_STATUS.RESERVED,
                         totalAmount: orderData.totalAmount,
                         depositAmount: orderData.depositAmount || 0,
                         pickupPlanAt: orderData.pickupPlanAt,
@@ -715,7 +715,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
 
         // Update session status to COMPLETED
         await db.sync.updateStatus(syncSession.id, {
-          status: 'COMPLETED',
+          status: ORDER_STATUS.COMPLETED,
           stats,
           errorLog: errorLog.length > 0 ? errorLog : undefined
         });

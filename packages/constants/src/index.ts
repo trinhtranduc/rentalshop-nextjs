@@ -41,6 +41,7 @@ export {
   ORDER_TYPE,
   USER_ROLE,
   ENTITY_STATUS,
+  MERCHANT_STATUS,
   PRODUCT_AVAILABILITY_STATUS,
   BILLING_INTERVAL,
   AUDIT_ACTION,
@@ -57,6 +58,7 @@ export type {
   OrderType,
   UserRole,
   EntityStatus,
+  MerchantStatus,
   ProductAvailabilityStatus,
   BillingInterval,
   AuditAction,
@@ -135,6 +137,7 @@ export {
 // ============================================================================
 export {
   BUSINESS_TYPE_DEFAULTS,
+  PRICING_TYPE,
   PRICING_TYPE_LABELS,
   BUSINESS_TYPE_LABELS,
   PRICING_TYPE_DESCRIPTIONS,

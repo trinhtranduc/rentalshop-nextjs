@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder } from '@rentalshop/utils';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
@@ -18,7 +18,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/orders - UserScope:`, userScope);
   
   // Validate that non-admin users have merchant association
-  if (user.role !== 'ADMIN' && !userScope.merchantId) {
+  if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
     console.log('❌ Non-admin user without merchant association:', {
       role: user.role,
       merchantId: userScope.merchantId,
@@ -95,13 +95,13 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     // Role-based outlet filtering:
     // - MERCHANT role: Can see orders from all outlets of their merchant (unless queryOutletId is specified)
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
-    if (user.role === 'MERCHANT') {
+    if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       searchFilters.outletId = queryOutletId;
-    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
       // Outlet users can only see orders from their assigned outlet
       searchFilters.outletId = userScope.outletId;
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all orders (no outlet filtering unless specified)
       searchFilters.outletId = queryOutletId;
     }
