@@ -9,11 +9,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { OldServerSyncService } from '@rentalshop/utils/src/sync/oldServerSync';
 import { db } from '@rentalshop/database';
-import { processProductImages, imagesToBase64 } from '@rentalshop/utils/src/sync/imageSync';
+import { downloadProductImagesForSync, imagesToBase64 } from '@rentalshop/utils/src/sync/imageSync';
 import { transformCustomer, transformProduct, transformOrder } from '@rentalshop/utils/src/sync/transformers';
 import { generateOrderNumber } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
  * GET /api/sync-standalone
@@ -98,7 +98,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user,
         for (const product of products) {
           const productId = product.product_id || product.id || `unknown-${Date.now()}`;
           try {
-            const imageResult = await processProductImages(product);
+            const imageResult = await downloadProductImagesForSync(product);
             
             // Convert buffers to base64 for JSON serialization
             const imageData = imagesToBase64(imageResult.downloadedImages);
@@ -532,7 +532,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
             for (const oldProduct of oldProducts) {
               try {
                 // Process images - get original URLs for now (POST handler will upload later)
-                const imageResult = await processProductImages(oldProduct);
+                const imageResult = await downloadProductImagesForSync(oldProduct);
                 const imageUrls = imageResult.originalUrls; // Extract URLs for transformProduct
                 
                 const productData = transformProduct(oldProduct, merchantId, categoryId, imageUrls);

@@ -19,13 +19,13 @@ export interface ImageDownloadResult {
 }
 
 /**
- * Process product images from old server
+ * Download product images from old server for sync
  * Downloads images from URLs and stores in buffers for later upload
  * 
  * @param oldProduct - Product object from old server
  * @returns Image download result with buffers ready for upload
  */
-export async function processProductImages(
+export async function downloadProductImagesForSync(
   oldProduct: any
 ): Promise<ImageDownloadResult> {
   const result: ImageDownloadResult = {
