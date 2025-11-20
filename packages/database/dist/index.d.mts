@@ -1765,6 +1765,7 @@ var fields = {
 	price: "Price",
 	rentPrice: "Rental Price",
 	salePrice: "Sale Price",
+	costPrice: "Cost Price",
 	deposit: "Deposit",
 	stock: "Stock",
 	available: "Available",
