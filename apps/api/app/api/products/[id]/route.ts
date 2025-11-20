@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withManagementAuth } from '@rentalshop/auth';
 import { productUpdateSchema, handleApiError, ResponseBuilder, uploadToS3, generateAccessUrl, commitStagingFiles } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * Helper function to validate image file
@@ -173,7 +173,9 @@ export async function PUT(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // ADMIN users can update products without merchantId (they have system-wide access)
+      // Non-admin users need merchantId
+      if (user.role !== USER_ROLE.ADMIN && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
@@ -519,7 +521,9 @@ export async function DELETE(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // ADMIN users can delete products without merchantId (they have system-wide access)
+      // Non-admin users need merchantId
+      if (user.role !== USER_ROLE.ADMIN && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
