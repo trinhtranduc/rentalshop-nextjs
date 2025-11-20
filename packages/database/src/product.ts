@@ -735,7 +735,7 @@ export const simplifiedProducts = {
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
-            outlet: { select: { id: true, name: true } }
+            outlet: { select: { id: true, name: true, address: true } }
           }
         }
       }
