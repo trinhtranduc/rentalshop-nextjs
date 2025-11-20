@@ -464,7 +464,7 @@ Product {
       price: 40000,
       description?: "Long term rental"
     }
-  ]
+]
 }
 
 // Pricing calculation logic sẽ tự động chọn tier phù hợp

@@ -135,11 +135,17 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     });
 
   } catch (error) {
-    console.error('Error in GET /api/products:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('FETCH_PRODUCTS_FAILED'),
-      { status: 500 }
-    );
+    console.error('❌ Error in GET /api/products:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userScope,
+      userRole: user.role
+    });
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
@@ -302,7 +308,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
           productDataFromRequest.images = productDataFromRequest.images
             .split(',')
             .filter(Boolean)
-            .map(url => url.trim());
+            .map((url: string) => url.trim());
         }
         
         if (productDataFromRequest.images.length === 0) {
@@ -560,7 +566,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
         imageUrls = product.images.split(',').filter(Boolean);
       }
     } else if (Array.isArray(product.images)) {
-      imageUrls = product.images;
+      imageUrls = product.images.map(String).filter(Boolean);
     }
 
     // Return product with parsed images

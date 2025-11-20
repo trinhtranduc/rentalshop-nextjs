@@ -3820,6 +3820,7 @@ declare const db: {
                     outlet: {
                         id: number;
                         name: string;
+                        address: string | null;
                     };
                 } & {
                     id: number;
