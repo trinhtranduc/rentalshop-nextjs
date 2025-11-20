@@ -13,6 +13,7 @@ import {
   MerchantReference,
   OutletReference
 } from '../common/base';
+import type { PricingType } from '@rentalshop/constants';
 
 // ============================================================================
 // CORE PRODUCT INTERFACES
@@ -36,6 +37,14 @@ export interface Product extends BaseEntityWithMerchant {
   available: number; // Computed field: stock - renting
   isActive: boolean;
   images?: string[];
+  
+  // Optional product-level pricing configuration (default: FIXED if null)
+  pricingType?: PricingType | null; // NULL = FIXED (default), uses enum from @rentalshop/constants
+  durationConfig?: string | { // JSON: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
+    minDuration?: number;
+    maxDuration?: number;
+    defaultDuration?: number;
+  } | null;
   
   // Related entities (populated when needed)
   category?: CategoryReference;

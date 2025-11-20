@@ -25,3 +25,8 @@ export * from './performance';
 // Email service
 export * from './services/email';
 
+// Sync utilities
+export * from './sync/imageSync';
+export * from './sync/oldServerSync';
+export * from './sync/transformers';
+

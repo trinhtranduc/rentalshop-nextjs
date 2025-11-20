@@ -1,0 +1,56 @@
+api get customer:
+
+postman request 'https://crm.rentalshop.org/rental/get_customers' \
+  --header 'TOKEN: e9897a1f623884872aa82ba67c24a5f3d7c57132cfb541df59116420c6d1eceb7b7b3c79073bcd979012871d49d4f654098e72f5f709f6978f5c71f9c5d05a03' \
+  --header 'lat: 15.985848' \
+  --header 'long: 108.2644128' \
+  --header 'device: Iphone 6s' \
+  --header 'version: 234' \
+  --header 'Content-Type: application/json' \
+  --header 'Cookie: session_id=f1eaf95ea3b07063ba92140a5a5e89bae40d6c1d' \
+  --body '{
+  "params": {
+    "keyword_search":""
+  }
+}'
+
+response:
+
+{
+    "jsonrpc": "2.0",
+    "id": null,
+    "result": {
+        "meta": {
+            "status": true,
+            "message": ""
+        },
+        "data": {
+            "customers": [
+                {
+                    "full_name": "An",
+                    "email": "",
+                    "phone": "0972407435",
+                    "customer_level": "normal",
+                    "royal_rental_point": 45,
+                    "royal_sale_point": 45,
+                    "avatar": "",
+                    "customer_id": 28197
+                },
+                {
+                    "full_name": "Ánh",
+                    "email": "",
+                    "phone": "9999999999",
+                    "customer_level": "normal",
+                    "royal_rental_point": 45,
+                    "royal_sale_point": 45,
+                    "avatar": "",
+                    "customer_id": 10984
+                }
+            ],
+            "total_of_page": 14,
+            "page_size": 20,
+            "current_page": 1,
+            "count": 270
+        }
+    }
+}

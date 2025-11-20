@@ -224,6 +224,9 @@ model Product {
   updatedAt   DateTime      @updatedAt
   merchantId  Int
   categoryId  Int
+  // Optional product-level pricing configuration (default: FIXED if null)
+  pricingType PricingType?  // NULL = FIXED (default), HOURLY/DAILY require durationConfig
+  durationConfig String?    // JSON: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
   orderItems  OrderItem[]
   outletStock OutletStock[]
   category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -233,6 +236,7 @@ model Product {
   @@index([categoryId])
   @@index([barcode])
   @@index([name])
+  @@index([pricingType])
 }
 
 model OutletStock {
