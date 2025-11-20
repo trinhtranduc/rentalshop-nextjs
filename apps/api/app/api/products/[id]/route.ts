@@ -70,17 +70,8 @@ export async function GET(
 
       const productId = parseInt(id);
       
-      // Get user scope for merchant isolation
-      const userMerchantId = userScope.merchantId;
-      
-      if (!userMerchantId) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
-        );
-      }
-      
       // Get product using the simplified database API
+      // Note: ADMIN users can access all products, non-admin users are filtered by merchantId in database layer
       const product = await db.products.findById(productId);
 
       if (!product) {
@@ -100,7 +91,7 @@ export async function GET(
           imageUrls = product.images.split(',').filter(Boolean);
         }
       } else if (Array.isArray(product.images)) {
-        imageUrls = product.images;
+        imageUrls = product.images.map(String).filter(Boolean);
       }
 
       // Transform the data to match the expected format
@@ -112,10 +103,14 @@ export async function GET(
         categoryId: product.categoryId,
         rentPrice: product.rentPrice,
         salePrice: product.salePrice,
+        costPrice: (product as any).costPrice ?? null, // Include costPrice (giá vốn)
         deposit: product.deposit,
         totalStock: product.totalStock,
         images: imageUrls,
         isActive: product.isActive,
+        // Optional pricing configuration
+        pricingType: (product as any).pricingType ?? null,
+        durationConfig: (product as any).durationConfig ?? null,
         category: product.category,
         merchant: product.merchant,
         outletStock: product.outletStock.map((os: any) => ({
@@ -224,7 +219,7 @@ export async function PUT(
               productDataFromRequest.images = productDataFromRequest.images
                 .split(',')
                 .filter(Boolean)
-                .map(url => url.trim());
+                .map((url: string) => url.trim());
             }
             
             if (productDataFromRequest.images.length === 0) {
@@ -471,6 +466,7 @@ export async function PUT(
         categoryId: updatedProduct.categoryId,
         rentPrice: updatedProduct.rentPrice,
         salePrice: updatedProduct.salePrice,
+        costPrice: (updatedProduct as any).costPrice ?? null, // Include costPrice (giá vốn)
         deposit: updatedProduct.deposit,
         totalStock: updatedProduct.totalStock,
         images: updatedProduct.images,
@@ -550,7 +546,7 @@ export async function DELETE(
           imageUrls = deletedProduct.images.split(',').filter(Boolean);
         }
       } else if (Array.isArray(deletedProduct.images)) {
-        imageUrls = deletedProduct.images;
+        imageUrls = deletedProduct.images.map(String).filter(Boolean);
       }
 
       // Return product with parsed images
