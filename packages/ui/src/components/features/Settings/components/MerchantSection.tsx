@@ -319,7 +319,9 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 )}
               </div>
 
-              <div className="md:col-span-2">
+              {/* Business Type and Pricing Type - HIDDEN */}
+              {/* Removed: Business Type and Pricing Type fields as per user request */}
+              {/* <div className="md:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-2">
@@ -361,7 +363,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 </p>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               <div className="md:col-span-2">
                 <Label htmlFor="merchantAddress" className="block text-sm font-medium text-gray-700 mb-2">
