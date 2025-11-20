@@ -908,7 +908,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
               <div className="space-y-2">
                 <NumericInput
-                  label={t('fields.costPrice') || 'Giá vốn'}
+                  label={t('fields.costPrice')}
                   value={formData.costPrice}
                   onChange={(value) => handleInputChange('costPrice', value)}
                   placeholder="0.00"
