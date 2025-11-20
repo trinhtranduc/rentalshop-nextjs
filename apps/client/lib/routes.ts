@@ -13,6 +13,7 @@ export const PUBLIC_ROUTES = [
   '/login',
   '/register',
   '/forget-password',
+  '/reset-password',
   '/email-verification',
   '/terms',
   '/privacy',
