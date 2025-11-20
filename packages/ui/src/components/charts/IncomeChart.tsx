@@ -19,6 +19,13 @@ interface RevenueData {
   period: string;
   actual: number;
   projected: number;
+  [key: string]: any; // Allow dynamic outlet keys like "Outlet1_actual", "Outlet2_projected"
+}
+
+interface OutletInfo {
+  id: number;
+  name: string;
+  color?: string;
 }
 
 interface IncomeChartProps {
@@ -29,6 +36,7 @@ interface IncomeChartProps {
   noDataText?: string;
   loadingText?: string;
   timePeriod?: 'month' | 'year';
+  outlets?: OutletInfo[]; // Optional outlet info for comparison mode
 }
 
 export const IncomeChart: React.FC<IncomeChartProps> = ({ 
@@ -38,11 +46,19 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   projectedLabel = "Projected Revenue",
   noDataText = "No data available",
   loadingText = "Loading chart data...",
-  timePeriod = 'month'
+  timePeriod = 'month',
+  outlets = []
 }) => {
   const tc = useCommonTranslations();
   const formatMoney = useFormatCurrency();
   const { symbol, currency } = useCurrency();
+  
+  // Color palette for multiple outlets
+  const outletColors = [
+    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899',
+    '#06B6D4', '#84CC16', '#F97316', '#6366F1'
+  ];
+  
   if (loading) {
     return (
       <div className="h-64 flex items-center justify-center">
@@ -59,6 +75,17 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     );
   }
 
+  // Check if data has outlet comparison (dynamic keys with outlet names)
+  const firstItem = data[0] || {};
+  const hasOutletComparison = outlets && outlets.length > 0;
+  const outletKeys = hasOutletComparison 
+    ? outlets.map(outlet => ({
+        actual: `${outlet.name}_actual`,
+        projected: `${outlet.name}_projected`,
+        outletName: outlet.name
+      }))
+    : [];
+
   // Transform data for Recharts with localized formatting based on time period
   const chartData = data.map(item => {
     // Use different formatting based on time period
@@ -66,11 +93,21 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       ? useFormattedMonthOnly(item.period)  // For yearly: 01/25, 02/25, etc.
       : useFormattedDaily(item.period);     // For monthly: 01/10, 02/10, etc.
     
-    return {
-      period: formattedPeriod,
-      [actualLabel]: item.actual,
-      [projectedLabel]: item.projected,
-    };
+    const result: any = { period: formattedPeriod };
+    
+    if (hasOutletComparison && outletKeys.length > 0) {
+      // Outlet comparison mode: use outlet-specific keys
+      outletKeys.forEach((outletKey) => {
+        result[`${outletKey.outletName} (Actual)`] = item[outletKey.actual] || 0;
+        result[`${outletKey.outletName} (Projected)`] = item[outletKey.projected] || 0;
+      });
+    } else {
+      // Default mode: use standard labels
+      result[actualLabel] = item.actual || 0;
+      result[projectedLabel] = item.projected || 0;
+    }
+    
+    return result;
   });
 
   // Custom tooltip formatter with currency
@@ -111,18 +148,47 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           labelStyle={{ color: '#374151' }}
         />
         <Legend />
-        <Bar 
-          dataKey={actualLabel} 
-          fill="#3B82F6" 
-          radius={[4, 4, 0, 0]}
-          name={actualLabel}
-        />
-        <Bar 
-          dataKey={projectedLabel} 
-          fill="#10B981" 
-          radius={[4, 4, 0, 0]}
-          name={projectedLabel}
-        />
+        {hasOutletComparison && outletKeys.length > 0 ? (
+          // Render bars for each outlet (both actual and projected)
+          <>
+            {outletKeys.map((outletKey, index) => {
+              const actualColor = outletColors[index % outletColors.length];
+              const projectedColor = outletColors[(index + outletKeys.length) % outletColors.length];
+              return (
+                <React.Fragment key={outletKey.outletName}>
+                  <Bar 
+                    dataKey={`${outletKey.outletName} (Actual)`}
+                    fill={actualColor}
+                    radius={[4, 4, 0, 0]}
+                    name={`${outletKey.outletName} (Actual)`}
+                  />
+                  <Bar 
+                    dataKey={`${outletKey.outletName} (Projected)`}
+                    fill={`${actualColor}80`}
+                    radius={[4, 4, 0, 0]}
+                    name={`${outletKey.outletName} (Projected)`}
+                  />
+                </React.Fragment>
+              );
+            })}
+          </>
+        ) : (
+          // Default: single aggregated series
+          <>
+            <Bar 
+              dataKey={actualLabel} 
+              fill="#3B82F6" 
+              radius={[4, 4, 0, 0]}
+              name={actualLabel}
+            />
+            <Bar 
+              dataKey={projectedLabel} 
+              fill="#10B981" 
+              radius={[4, 4, 0, 0]}
+              name={projectedLabel}
+            />
+          </>
+        )}
       </BarChart>
     </ResponsiveContainer>
   );

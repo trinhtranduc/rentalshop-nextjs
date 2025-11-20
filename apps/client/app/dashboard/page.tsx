@@ -32,7 +32,7 @@ import {
   Minus
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi, useFormattedFullDate, useFormattedMonthOnly } from '@rentalshop/utils';
+import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi, useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils';
 import { useLocale as useNextIntlLocale } from 'next-intl';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
 
@@ -233,6 +233,9 @@ export default function DashboardPage() {
   // Data for product dialog
   const [categories, setCategories] = useState<any[]>([]);
   const [outlets, setOutlets] = useState<any[]>([]);
+  
+  // Outlet comparison state (MERCHANT only)
+  const [selectedOutlets, setSelectedOutlets] = useState<number[]>([]); // Empty = all outlets
 
   // Fetch categories and outlets for product dialog
   useEffect(() => {
@@ -290,7 +293,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [timePeriod]); // Fetch when time period changes
+  }, [timePeriod, selectedOutlets]); // Fetch when time period or selected outlets change
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -362,8 +365,8 @@ export default function DashboardPage() {
       console.log('  📊 Enhanced Dashboard:', `/api/analytics/enhanced-dashboard?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
       console.log('  📈 Today Metrics:', '/api/analytics/today-metrics');
       console.log('  📉 Growth Metrics:', `/api/analytics/growth-metrics?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
-      console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
-      console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
+      console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${selectedOutlets.length > 0 ? `&outletIds=${selectedOutlets.join(',')}` : ''}`);
+      console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${selectedOutlets.length > 0 ? `&outletIds=${selectedOutlets.join(',')}` : ''}`);
       console.log('  🏆 Top Products:', `/api/analytics/top-products?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
       console.log('  👥 Top Customers:', `/api/analytics/top-customers?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
       console.log('  📋 Dashboard Summary:', '/api/analytics/dashboard');
@@ -390,11 +393,17 @@ export default function DashboardPage() {
           console.log('📉 Growth Metrics API:', response);
           return response;
         }),
-        analyticsApi.getIncomeAnalytics(defaultFilters).then(response => {
+        analyticsApi.getIncomeAnalytics({
+          ...defaultFilters,
+          outletIds: selectedOutlets.length > 0 ? selectedOutlets : undefined
+        }).then(response => {
           console.log('💰 Income Analytics API:', response);
           return response;
         }),
-        analyticsApi.getOrderAnalytics(defaultFilters).then(response => {
+        analyticsApi.getOrderAnalytics({
+          ...defaultFilters,
+          outletIds: selectedOutlets.length > 0 ? selectedOutlets : undefined
+        }).then(response => {
           console.log('📦 Order Analytics API:', response);
           return response;
         }),
@@ -577,7 +586,55 @@ export default function DashboardPage() {
   };
 
   const getRevenueData = () => {
-    // Transform income data to match chart component expectations
+    // Check if data has outlet information (outlet comparison mode)
+    const hasOutletData = incomeData.length > 0 && incomeData.some((item: any) => item.outletId !== undefined);
+    
+    if (hasOutletData && selectedOutlets.length > 0) {
+      // Group by period and outlet for comparison mode
+      const groupedByPeriod: { [key: string]: any } = {};
+      const outletMap = new Map<number, string>();
+      
+      // Build outlet map from data
+      incomeData.forEach((item: any) => {
+        if (item.outletId && item.outletName) {
+          outletMap.set(item.outletId, item.outletName);
+        }
+      });
+      
+      incomeData.forEach((item: any) => {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthIndex = monthNames.indexOf(item.month);
+        const date = new Date(item.year, monthIndex, 1);
+        const periodKey = date.toISOString();
+        
+        if (!groupedByPeriod[periodKey]) {
+          groupedByPeriod[periodKey] = {
+            period: periodKey,
+            outlets: {} as { [outletId: string]: { actual: number; projected: number; outletName: string } }
+          };
+        }
+        
+        const outletKey = item.outletId || 'all';
+        const outletName = item.outletName || outletMap.get(item.outletId) || 'All Outlets';
+        groupedByPeriod[periodKey].outlets[outletKey] = {
+          actual: item.realIncome || 0,
+          projected: item.futureIncome || 0,
+          outletName: outletName
+        };
+      });
+      
+      // Convert to array format for chart
+      return Object.values(groupedByPeriod).map((group: any) => {
+        const result: any = { period: group.period };
+        Object.entries(group.outlets).forEach(([outletId, outletData]: [string, any]) => {
+          result[`${outletData.outletName}_actual`] = outletData.actual;
+          result[`${outletData.outletName}_projected`] = outletData.projected;
+        });
+        return result;
+      });
+    }
+    
+    // Default behavior: aggregate data (no outlet comparison)
     return incomeData.map((item: any) => {
       // Create a proper date object from month name and year
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -593,7 +650,82 @@ export default function DashboardPage() {
   };
 
   const getOrderData = () => {
-    // Transform order data to match chart component expectations
+    // Check if data has outlet information (outlet comparison mode)
+    const hasOutletData = orderData.length > 0 && orderData.some((item: any) => item.outletId !== undefined);
+    
+    if (hasOutletData && selectedOutlets.length > 0 && outlets.length > 1) {
+      // Group by period and outlet for comparison mode
+      const groupedByPeriod: { [key: string]: any } = {};
+      const outletMap = new Map<number, string>();
+      
+      // Build outlet map from data
+      orderData.forEach((item: any) => {
+        if (item.outletId && item.outletName) {
+          outletMap.set(item.outletId, item.outletName);
+        }
+      });
+      
+      orderData.forEach((item: any) => {
+        // Handle different date formats from API
+        let periodKey: string;
+        
+        if (item.period) {
+          // Try to parse as date, otherwise use as-is
+          try {
+            const date = new Date(item.period);
+            periodKey = date.toISOString();
+          } catch {
+            periodKey = item.period;
+          }
+        } else if (item.month && item.year) {
+          // Convert month/year to period key
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const monthIndex = monthNames.indexOf(item.month);
+          const date = new Date(item.year, monthIndex, 1);
+          periodKey = date.toISOString();
+        } else {
+          periodKey = 'unknown';
+        }
+        
+        if (!groupedByPeriod[periodKey]) {
+          groupedByPeriod[periodKey] = {
+            period: periodKey,
+            outlets: {} as { [outletId: string]: { actual: number; outletName: string } }
+          };
+        }
+        
+        const outletKey = item.outletId || 'all';
+        const outletName = item.outletName || outletMap.get(item.outletId) || 'All Outlets';
+        groupedByPeriod[periodKey].outlets[outletKey] = {
+          actual: item.count || item.orderCount || 0,
+          outletName: outletName
+        };
+      });
+      
+      // Convert to array format for chart
+      return Object.values(groupedByPeriod).map((group: any) => {
+        // Format period label for display
+        let periodLabel: string;
+        try {
+          const date = new Date(group.period);
+          if (timePeriod === 'year') {
+            periodLabel = useFormattedMonthOnly(date.toISOString());
+          } else {
+            periodLabel = useFormattedDaily(date.toISOString());
+          }
+        } catch {
+          periodLabel = group.period;
+        }
+        
+        const result: any = { period: periodLabel };
+        Object.entries(group.outlets).forEach(([outletId, outletData]: [string, any]) => {
+          result[outletData.outletName] = outletData.actual;
+        });
+        return result;
+      });
+    }
+    
+    // Default behavior: aggregate data (no outlet comparison)
     return orderData.map((item: any) => {
       // Handle different date formats from API
       let periodLabel: string;
@@ -977,6 +1109,74 @@ export default function DashboardPage() {
               )}
             </div>
 
+            {/* Outlet Selector - Only for MERCHANT role in month/year views */}
+            {user?.role === 'MERCHANT' && outlets.length > 1 && (timePeriod === 'month' || timePeriod === 'year') && (
+              <CardClean size="md" className="mb-6">
+                <CardHeaderClean>
+                  <CardTitleClean size="sm">{t('charts.compareOutlets')}</CardTitleClean>
+                </CardHeaderClean>
+                <CardContentClean>
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600">{t('charts.selectOutletsToCompare')}</p>
+                    <div className="flex flex-wrap gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedOutlets.length === 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedOutlets([]); // All outlets
+                            } else {
+                              // If unchecking "All", select first outlet
+                              if (outlets.length > 0) {
+                                setSelectedOutlets([outlets[0].id]);
+                              }
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">{t('charts.allOutlets')}</span>
+                      </label>
+                      {outlets.map((outlet) => {
+                        const isChecked = selectedOutlets.length === 0 ? true : selectedOutlets.includes(outlet.id);
+                        return (
+                          <label key={outlet.id} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  // Add outlet to selection
+                                  if (selectedOutlets.length === 0) {
+                                    // If "all" was selected, replace with this outlet
+                                    setSelectedOutlets([outlet.id]);
+                                  } else if (!selectedOutlets.includes(outlet.id)) {
+                                    setSelectedOutlets([...selectedOutlets, outlet.id]);
+                                  }
+                                } else {
+                                  // Remove outlet from selection
+                                  if (selectedOutlets.length === 0) {
+                                    // If "all" was checked, select all except this one
+                                    setSelectedOutlets(outlets.filter(o => o.id !== outlet.id).map(o => o.id));
+                                  } else {
+                                    const newSelection = selectedOutlets.filter(id => id !== outlet.id);
+                                    // If no outlets selected, default to all (empty array)
+                                    setSelectedOutlets(newSelection.length > 0 ? newSelection : []);
+                                  }
+                                }
+                              }}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">{outlet.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </CardContentClean>
+              </CardClean>
+            )}
+
             {/* Revenue Charts - Hidden for OUTLET_STAFF */}
             {user?.role !== 'OUTLET_STAFF' && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -998,6 +1198,11 @@ export default function DashboardPage() {
                       noDataText={t('charts.noData')}
                       loadingText={tc('labels.loading')}
                       timePeriod={timePeriod}
+                      outlets={
+                        selectedOutlets.length > 0 && selectedOutlets.length < outlets.length
+                          ? outlets.filter(o => selectedOutlets.includes(o.id)).map(o => ({ id: o.id, name: o.name }))
+                          : outlets.map(o => ({ id: o.id, name: o.name }))
+                      }
                     />
                   </CardContentClean>
                 </CardClean>
@@ -1018,6 +1223,10 @@ export default function DashboardPage() {
                     legendLabel={t('charts.rentalOrders')}
                     tooltipLabel={t('charts.ordersCount')}
                     timePeriod={timePeriod}
+                    outlets={selectedOutlets.length > 0 
+                      ? outlets.filter(o => selectedOutlets.includes(o.id)).map(o => ({ id: o.id, name: o.name }))
+                      : []
+                    }
                   />
                 </CardContentClean>
               </CardClean>
