@@ -7,8 +7,11 @@ import { cn } from '../../../../lib/cn';
 import { Eye, Edit, Package } from 'lucide-react';
 import { getProductImageUrl } from '@rentalshop/utils';
 import { useTranslations } from 'next-intl';
+import { getRentalPriceLabel, formatRentalPrice } from '../utils';
+import { formatCurrency } from '../../../../lib';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
+import type { PricingType } from '@rentalshop/constants';
 
 export interface ProductCardProps {
   id: number;
@@ -27,6 +30,7 @@ export interface ProductCardProps {
   outlet: {
     name: string;
   };
+  pricingType?: PricingType | null;
   onRent?: (productId: number) => void;
   onView?: (productId: number) => void;
   onEdit?: (productId: number) => void;
@@ -54,6 +58,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   images,
   category,
   outlet,
+  pricingType,
   onRent,
   onView,
   onEdit,
@@ -240,9 +245,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Pricing */}
           <div className="mb-4 space-y-1">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">{t('fields.rentPrice')}:</span>
+              <span className="text-sm text-gray-600">{getRentalPriceLabel(pricingType, t)}:</span>
               <span className="font-semibold text-lg text-blue-700">
-                ${rentPrice.toFixed(2)}/{t('pricing.daily').toLowerCase()}
+                {formatRentalPrice(rentPrice, pricingType, t, formatCurrency)}
               </span>
             </div>
             {salePrice && (

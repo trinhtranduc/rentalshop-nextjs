@@ -64,6 +64,9 @@
   "PASSWORD_CHANGED_SUCCESS": "Đổi mật khẩu thành công",
   "PASSWORD_RESET_SUCCESS": "Đặt lại mật khẩu thành công",
   "PASSWORD_RESET_LINK_SENT": "Nếu tài khoản tồn tại, liên kết đặt lại mật khẩu đã được gửi",
+  "PASSWORD_RESET_TOKEN_INVALID": "Token đặt lại mật khẩu không hợp lệ",
+  "PASSWORD_RESET_TOKEN_EXPIRED": "Token đặt lại mật khẩu đã hết hạn",
+  "PASSWORD_RESET_TOKEN_USED": "Token đặt lại mật khẩu đã được sử dụng",
   "TOKEN_VALID": "Token hợp lệ",
   "EMAIL_NOT_VERIFIED": "Email chưa được xác thực. Vui lòng kiểm tra email và xác thực tài khoản của bạn trước khi đăng nhập.",
   "LOGIN_SUCCESS": "Đăng nhập thành công",
@@ -132,6 +135,11 @@
   "MISSING_STAGING_KEYS": "Thiếu staging keys",
   "NO_VALID_FIELDS": "Không có trường hợp lệ để cập nhật",
   "OUTLET_REQUIRED": "ID cửa hàng là bắt buộc",
+  "INVALID_ACTION": "Hành động không hợp lệ",
+  "INVALID_REQUEST": "Định dạng yêu cầu không hợp lệ",
+  "INVALID_TENANT_KEY": "Tenant key không hợp lệ",
+  "MISSING_ENDPOINT_OR_TOKEN": "Thiếu endpoint hoặc token trong yêu cầu",
+  "PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED": "Phương thức thanh toán và mã giao dịch là bắt buộc",
   
   "_comment_resources": "Lỗi tài nguyên",
   "NO_OUTLETS_FOUND": "Không tìm thấy cửa hàng nào cho doanh nghiệp",
@@ -139,8 +147,10 @@
   "FEATURE_NOT_IMPLEMENTED": "Tính năng này chưa được triển khai",
   "NO_DATA_AVAILABLE": "Không có dữ liệu - người dùng chưa được gán cho doanh nghiệp/cửa hàng",
   "DEFAULT_OUTLET_NOT_FOUND": "Không tìm thấy cửa hàng mặc định",
+  "NO_DEFAULT_OUTLET": "Không tìm thấy cửa hàng mặc định cho doanh nghiệp",
   "PRODUCT_OUTLET_NOT_FOUND": "Không tìm thấy sản phẩm trong cửa hàng được chỉ định",
   "PRODUCT_ACCESS_DENIED": "Truy cập bị từ chối đối với sản phẩm này",
+  "MERCHANT_INACTIVE": "Tài khoản doanh nghiệp không hoạt động",
   
   "_comment_conflicts": "Lỗi xung đột",
   "CUSTOMER_DUPLICATE": "Khách hàng với email hoặc số điện thoại này đã tồn tại",
@@ -220,6 +230,9 @@
   "PRODUCT_AVAILABILITY_FOUND": "Lấy thông tin tình trạng sản phẩm thành công",
   "AVAILABILITY_CHECKED": "Kiểm tra tình trạng thành công",
   "SUBSCRIPTION_STATUS_RETRIEVED": "Lấy trạng thái đăng ký thành công",
+  "CATEGORIES_FETCHED": "Lấy danh sách danh mục thành công",
+  "PRODUCTS_FETCHED": "Lấy danh sách sản phẩm thành công",
+  "SYNC_DATA_FETCHED": "Lấy dữ liệu đồng bộ thành công",
   
   "_comment_success_special": "Thông báo thành công - Đặc biệt",
   "DASHBOARD_DATA_SUCCESS": "Lấy dữ liệu bảng điều khiển nâng cao thành công",
@@ -230,6 +243,9 @@
   "SUBSCRIPTION_PAUSED_SUCCESS": "Tạm dừng đăng ký thành công",
   "DEVICE_REGISTERED_SUCCESS": "Đăng ký thiết bị thành công",
   "SYNC_CHECK_SUCCESS": "Kiểm tra đồng bộ hoàn tất",
+  "SYNC_COMPLETED": "Thao tác đồng bộ hoàn tất thành công",
+  "PREVIEW_SUCCESS": "Thao tác xem trước hoàn tất thành công",
+  "SUBSCRIPTION_RENEWED_SUCCESS": "Gia hạn đăng ký thành công",
   "PAYLOAD_VALIDATION_SUCCESS": "Xác thực dữ liệu thành công",
   
   "_comment_success_registration": "Thông báo thành công - Đăng ký",
@@ -267,6 +283,7 @@
   "UPDATE_PLAN_FAILED": "Không thể cập nhật gói",
   "UPDATE_PROFILE_FAILED": "Không thể cập nhật hồ sơ người dùng",
   "CLEANUP_FAILED": "Thao tác dọn dẹp thất bại",
+  "SYNC_FAILED": "Thao tác đồng bộ thất bại",
   
   "_comment_data_integrity": "Kiểm tra tính toàn vẹn dữ liệu (Nội bộ)",
   "DATA_INTEGRITY_CHECK_PASSED": "Tất cả kiểm tra tính toàn vẹn dữ liệu đã vượt qua",
@@ -298,5 +315,6 @@
   "_comment_test": "Thông báo kiểm thử",
   "TEST_API_WORKING": "API kiểm thử đang hoạt động",
   "TEST_POST_WORKING": "POST kiểm thử đang hoạt động",
-  "API_KEYS_WORKING": "Endpoint API Keys đang hoạt động!"
+  "API_KEYS_WORKING": "Endpoint API Keys đang hoạt động!",
+  "AWS_S3_TEST_FAILED": "Kiểm thử AWS S3 thất bại"
 }

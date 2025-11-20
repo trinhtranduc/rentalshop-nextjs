@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import type { ProductWithStock } from '@rentalshop/types';
 import { formatCurrency, formatDate } from '../../../../lib';
+import { getRentalPriceLabel, formatRentalPrice } from '../utils';
 
 interface ProductDetailListProps {
   product: ProductWithStock;
@@ -159,9 +160,9 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
           {/* Pricing */}
           <div className="ml-8 text-right">
             <div className="text-3xl font-bold text-gray-900 mb-2">
-              {formatCurrency(product.rentPrice)}
+              {formatRentalPrice(product.rentPrice, product.pricingType, t, formatCurrency)}
             </div>
-            <div className="text-sm text-gray-600 mb-1">{t('fields.rentPrice')}</div>
+            <div className="text-sm text-gray-600 mb-1">{getRentalPriceLabel(product.pricingType, t)}</div>
             
             {product.salePrice && product.salePrice > 0 && (
               <div className="mt-3">

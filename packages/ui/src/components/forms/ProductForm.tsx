@@ -141,7 +141,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     images: [],
     outletStock: [],
     sku: '',
-    pricingType: null, // Default FIXED (null = FIXED)
+    pricingType: null, // Always FIXED (null = FIXED) - Pricing type selection disabled for now
     durationConfig: null,
     ...initialData
   });
@@ -871,16 +871,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               />
             </div>
 
-            {/* Pricing Section - Merged into Product Details */}
+            {/* Pricing Type Configuration - REMOVED: Will be supported in the future */}
+            {/* TODO: Re-add pricing type selection when ready to support HOURLY/DAILY pricing */}
+            {/* Code has been removed to prevent any pricing type selection UI from appearing */}
+
+            {/* Rental Price - Always Fixed Price (FIXED pricing type) */}
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                {t('pricing.title')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <NumericInput
-                  label={t('fields.rentPrice')}
+                  label={t('pricing.pricePerRental')}
                   value={formData.rentPrice}
                   onChange={(value) => handleInputChange('rentPrice', value)}
                   placeholder="0.00"
@@ -890,167 +889,81 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   maxDecimalPlaces={2}
                 />
                 {errors.rentPrice && <p className="text-sm text-red-500">{errors.rentPrice}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <NumericInput
-                  label={t('fields.salePrice')}
-                  value={formData.salePrice}
-                  onChange={(value) => handleInputChange('salePrice', value)}
-                  placeholder="0.00"
-                  error={!!errors.salePrice}
-                  required
-                  allowDecimals={true}
-                  maxDecimalPlaces={2}
-                />
-                {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <NumericInput
-                  label={t('fields.costPrice')}
-                  value={formData.costPrice}
-                  onChange={(value) => handleInputChange('costPrice', value)}
-                  placeholder="0.00"
-                  error={!!errors.costPrice}
-                  allowDecimals={true}
-                  maxDecimalPlaces={2}
-                />
-                {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <NumericInput
-                  label={t('fields.deposit')}
-                  value={formData.deposit}
-                  onChange={(value) => handleInputChange('deposit', value)}
-                  placeholder="0.00"
-                  error={!!errors.deposit}
-                  required
-                  allowDecimals={true}
-                  maxDecimalPlaces={2}
-                />
-                {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
+                <p className="text-xs text-gray-500">
+                  {t('pricing.fixedDescription')}
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <NumericInput
-                  label={t('fields.stock')}
-                  value={formData.totalStock}
-                  onChange={(value) => handleInputChange('totalStock', value)}
-                  placeholder="0"
-                  error={!!errors.totalStock}
-                  required
-                  allowDecimals={false}
-                  min={0}
-                />
-                {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
-              </div>
-            </div>
-
-            {/* Pricing Type Configuration */}
+            {/* Other Pricing & Inventory Section */}
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                Pricing Type (Optional - Default: Fixed Price)
+                <DollarSign className="w-4 h-4" />
+                {t('pricing.title')}
               </h3>
+              
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Pricing Type
-                  </label>
-                  <Select
-                    value={formData.pricingType || PRICING_TYPE.FIXED}
-                    onValueChange={(value) => handleInputChange('pricingType', value === PRICING_TYPE.FIXED ? null : value as PricingType)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select pricing type (default: Fixed)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRICING_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{option.label}</span>
-                            <span className="text-xs text-gray-500">{option.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500">
-                    {formData.pricingType 
-                      ? getPricingTypeDescription(formData.pricingType)
-                      : 'Fixed price per rental (default). Duration configuration not required.'}
-                  </p>
+                {/* Deposit, Sale Price, and Cost Price */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <NumericInput
+                      label={t('fields.deposit')}
+                      value={formData.deposit}
+                      onChange={(value) => handleInputChange('deposit', value)}
+                      placeholder="0.00"
+                      error={!!errors.deposit}
+                      required
+                      allowDecimals={true}
+                      maxDecimalPlaces={2}
+                    />
+                    {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <NumericInput
+                      label={t('fields.salePrice')}
+                      value={formData.salePrice}
+                      onChange={(value) => handleInputChange('salePrice', value)}
+                      placeholder="0.00"
+                      error={!!errors.salePrice}
+                      required
+                      allowDecimals={true}
+                      maxDecimalPlaces={2}
+                    />
+                    {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <NumericInput
+                      label={t('fields.costPrice')}
+                      value={formData.costPrice}
+                      onChange={(value) => handleInputChange('costPrice', value)}
+                      placeholder="0.00"
+                      error={!!errors.costPrice}
+                      allowDecimals={true}
+                      maxDecimalPlaces={2}
+                    />
+                    {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
+                  </div>
                 </div>
 
-                {/* Duration Configuration - Only show for HOURLY/DAILY */}
-                {(formData.pricingType === PRICING_TYPE.HOURLY || formData.pricingType === PRICING_TYPE.DAILY) && (
-                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Duration Configuration (Required for {formData.pricingType === PRICING_TYPE.HOURLY ? 'Hourly' : 'Daily'} Pricing)
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <NumericInput
-                          label={`Minimum Duration (${formData.pricingType === PRICING_TYPE.HOURLY ? 'hours' : 'days'})`}
-                          value={formData.durationConfig?.minDuration || 1}
-                          onChange={(value) => handleInputChange('durationConfig', { 
-                            ...formData.durationConfig, 
-                            minDuration: parseInt(String(value)) || 1 
-                          })}
-                          placeholder="1"
-                          error={!!errors.durationConfig}
-                          required
-                          allowDecimals={false}
-                          min={1}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <NumericInput
-                          label={`Maximum Duration (${formData.pricingType === PRICING_TYPE.HOURLY ? 'hours' : 'days'})`}
-                          value={formData.durationConfig?.maxDuration || (formData.pricingType === PRICING_TYPE.HOURLY ? 168 : 30)}
-                          onChange={(value) => handleInputChange('durationConfig', { 
-                            ...formData.durationConfig, 
-                            maxDuration: parseInt(String(value)) || (formData.pricingType === PRICING_TYPE.HOURLY ? 168 : 30)
-                          })}
-                          placeholder={formData.pricingType === PRICING_TYPE.HOURLY ? '168' : '30'}
-                          error={!!errors.durationConfig}
-                          required
-                          allowDecimals={false}
-                          min={1}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <NumericInput
-                          label={`Default Duration (${formData.pricingType === PRICING_TYPE.HOURLY ? 'hours' : 'days'})`}
-                          value={formData.durationConfig?.defaultDuration || (formData.pricingType === PRICING_TYPE.HOURLY ? 4 : 3)}
-                          onChange={(value) => handleInputChange('durationConfig', { 
-                            ...formData.durationConfig, 
-                            defaultDuration: parseInt(String(value)) || (formData.pricingType === PRICING_TYPE.HOURLY ? 4 : 3)
-                          })}
-                          placeholder={formData.pricingType === PRICING_TYPE.HOURLY ? '4' : '3'}
-                          error={!!errors.durationConfig}
-                          required
-                          allowDecimals={false}
-                          min={1}
-                        />
-                      </div>
-                    </div>
-                    {errors.durationConfig && (
-                      <p className="text-sm text-red-500">{errors.durationConfig}</p>
-                    )}
-                    <p className="text-xs text-gray-500">
-                      {formData.pricingType === PRICING_TYPE.HOURLY 
-                        ? 'Example: Min 1 hour, Max 168 hours (1 week), Default 4 hours'
-                        : 'Example: Min 1 day, Max 30 days, Default 3 days'}
-                    </p>
+                {/* Stock */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <NumericInput
+                      label={t('fields.stock')}
+                      value={formData.totalStock}
+                      onChange={(value) => handleInputChange('totalStock', value)}
+                      placeholder="0"
+                      error={!!errors.totalStock}
+                      required
+                      allowDecimals={false}
+                      min={0}
+                    />
+                    {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
             </div>
           </CardContent>
         </Card>
