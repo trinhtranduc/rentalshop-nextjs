@@ -858,21 +858,99 @@ export const simplifiedProducts = {
 
   /**
    * Search products with simple filters (simplified API)
+   * Handles conversion of public IDs (numbers) to CUIDs for database queries
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { page = 1, limit = 20, sortBy, sortOrder, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
 
     // Build where clause
-    const where: any = {};
+    const where: any = {
+      isActive: whereFilters.isActive !== undefined ? whereFilters.isActive : true
+    };
     
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
-    if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
-    // Default to active products only unless explicitly requesting all
-    if (whereFilters.isActive !== undefined) {
-      where.isActive = whereFilters.isActive;
-    } else {
-      where.isActive = true; // Default: only show active products
+    // Convert merchantId (public ID) to CUID
+    if (whereFilters.merchantId) {
+      const merchant = await prisma.merchant.findUnique({
+        where: { id: whereFilters.merchantId },
+        select: { id: true }
+      });
+      if (merchant) {
+        where.merchantId = merchant.id; // Use CUID
+      } else {
+        // Merchant not found, return empty result
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          hasMore: false
+        };
+      }
+    }
+    
+    // Convert categoryId (public ID) to CUID
+    if (whereFilters.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: whereFilters.categoryId },
+        select: { id: true }
+      });
+      if (category) {
+        where.categoryId = category.id; // Use CUID
+      } else {
+        // Category not found, return empty result
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          hasMore: false
+        };
+      }
+    }
+    
+    // Convert outletId (public ID) to CUID and filter by outlet stock
+    if (whereFilters.outletId) {
+      const outlet = await prisma.outlet.findUnique({
+        where: { id: whereFilters.outletId },
+        select: { id: true }
+      });
+      if (outlet) {
+        where.outletStock = {
+          some: {
+            outletId: outlet.id, // Use CUID
+            stock: { gt: 0 }
+          }
+        };
+      } else {
+        // Outlet not found, return empty result
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          hasMore: false
+        };
+      }
+    }
+    
+    // Availability filter
+    if (whereFilters.available !== undefined) {
+      if (whereFilters.available) {
+        where.outletStock = {
+          ...(where.outletStock || {}),
+          some: {
+            available: { gt: 0 }
+          }
+        };
+      } else {
+        where.outletStock = {
+          ...(where.outletStock || {}),
+          none: {
+            available: { gt: 0 }
+          }
+        };
+      }
     }
     
     // Text search (case-insensitive)
@@ -892,6 +970,9 @@ export const simplifiedProducts = {
       if (whereFilters.maxPrice !== undefined) where.rentPrice.lte = whereFilters.maxPrice;
     }
 
+    // Build orderBy clause
+    const orderBy = buildProductOrderByClause(sortBy, sortOrder);
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
@@ -900,11 +981,11 @@ export const simplifiedProducts = {
           category: { select: { id: true, name: true } },
           outletStock: {
             include: {
-              outlet: { select: { id: true, name: true } }
+              outlet: { select: { id: true, name: true, address: true } }
             }
           }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit
       }),

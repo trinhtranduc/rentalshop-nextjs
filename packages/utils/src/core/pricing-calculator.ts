@@ -835,7 +835,7 @@ export class PricingValidator {
           `You will be charged for the minimum duration of ${minDuration} ${unitLabelPlural}.`
         );
         suggestions.push(`Consider selecting at least ${minDuration} ${unitLabelPlural} to get full value`);
-      }
+    }
 
       if (duration > maxDuration) {
         const unitLabel = unit === 'hour' ? 'hour' : unit === 'day' ? 'day' : 'rental';
