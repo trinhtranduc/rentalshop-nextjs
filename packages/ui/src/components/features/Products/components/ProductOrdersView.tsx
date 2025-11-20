@@ -152,13 +152,35 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
       orderNumber: order.orderNumber,
       orderType: order.orderType,
       status: order.status,
+      customerId: order.customerId,
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
       customerPhone: order.customer?.phone || 'No phone',
-      outletName: order.outlet.name,
-      merchantName: order.outlet.merchant?.name || 'N/A',
+      outletId: order.outletId || (order.outlet?.id ? (typeof order.outlet.id === 'string' ? parseInt(order.outlet.id) : order.outlet.id) : 0),
+      outletName: order.outlet?.name || 'N/A',
+      merchantName: order.outlet?.merchant?.name || 'N/A',
+      createdById: order.createdById || 0,
+      createdByName: order.createdBy?.name || (order as any).createdByName || 'N/A',
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
+      notes: order.notes,
       createdAt: new Date(order.createdAt),
+      updatedAt: new Date(order.updatedAt || order.createdAt),
+      orderItems: order.orderItems?.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        notes: item.notes,
+        productId: item.productId,
+        productName: (item as any).productName || item.product?.name || 'Unknown Product',
+        productBarcode: (item as any).productBarcode || (item.product as any)?.barcode,
+        productImages: (item as any).productImages || (item.product as any)?.images || [],
+        productRentPrice: item.product?.rentPrice,
+        productDeposit: item.deposit
+      })) || [],
+      itemCount: order.orderItems?.length || 0,
+      paymentCount: order.payments?.length || 0,
+      totalPaid: order.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0,
       pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt) : undefined,
       returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt) : undefined,
       pickedUpAt: order.pickedUpAt ? new Date(order.pickedUpAt) : undefined,
@@ -238,7 +260,11 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
         const response = await ordersApi.getOrdersByProduct(parseInt(productId));
         
         if (response.success && response.data) {
-          setOrders(response.data as OrderWithDetails[]);
+          // Handle both array and paginated response structures
+          const ordersData = Array.isArray(response.data) 
+            ? response.data 
+            : (response.data as any).orders || [];
+          setOrders(ordersData as unknown as OrderWithDetails[]);
           setTotalPages(1);
         } else {
           setOrders([]);

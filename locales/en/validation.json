@@ -37,6 +37,112 @@
     "invalidDateRange": "End date must be after start date",
     "priceGreaterThanZero": "Price must be greater than zero",
     "quantityGreaterThanZero": "Quantity must be greater than zero"
+  },
+  "fields": {
+    "firstName": {
+      "required": "First name is required"
+    },
+    "lastName": {
+      "required": "Last name is required"
+    },
+    "name": {
+      "required": "Name is required",
+      "minLength": "Name must be at least {min} characters"
+    },
+    "productName": {
+      "required": "Product name is required"
+    },
+    "outletName": {
+      "required": "Outlet name is required"
+    },
+    "planName": {
+      "required": "Plan name is required"
+    },
+    "planDescription": {
+      "required": "Plan description is required"
+    },
+    "variantName": {
+      "required": "Variant name is required"
+    },
+    "phone": {
+      "required": "Phone number is required"
+    },
+    "email": {
+      "invalid": "Invalid email address",
+      "invalidFormat": "Invalid email format"
+    },
+    "password": {
+      "minLength6": "Password must be at least 6 characters"
+    },
+    "country": {
+      "invalid": "Please select a valid country"
+    },
+    "tenantKey": {
+      "invalid": "Tenant key must be alphanumeric"
+    },
+    "product": {
+      "required": "Product is required"
+    },
+    "outlet": {
+      "required": "Outlet is required"
+    },
+    "merchantId": {
+      "required": "Merchant ID is required"
+    },
+    "planId": {
+      "required": "Plan ID is required"
+    },
+    "planVariantId": {
+      "required": "Plan variant ID is required"
+    },
+    "rentPrice": {
+      "nonNegative": "Rent price must be non-negative"
+    },
+    "salePrice": {
+      "nonNegative": "Sale price must be non-negative"
+    },
+    "costPrice": {
+      "nonNegative": "Cost price must be non-negative"
+    },
+    "deposit": {
+      "nonNegative": "Deposit must be non-negative"
+    },
+    "stock": {
+      "nonNegative": "Stock must be non-negative"
+    },
+    "totalStock": {
+      "nonNegative": "Total stock must be non-negative"
+    },
+    "basePrice": {
+      "nonNegative": "Base price must be non-negative"
+    },
+    "price": {
+      "nonNegative": "Price must be non-negative"
+    },
+    "amount": {
+      "nonNegative": "Amount must be non-negative"
+    },
+    "duration": {
+      "positive": "Duration must be positive"
+    },
+    "trialDays": {
+      "nonNegative": "Trial days must be non-negative"
+    },
+    "discount": {
+      "range": "Discount must be between 0 and 100"
+    },
+    "durationConfig": {
+      "required": "Duration configuration is required and must be valid JSON for HOURLY and DAILY pricing types"
+    },
+    "endDate": {
+      "afterStart": "End date must be after start date"
+    },
+    "nameOrFullName": {
+      "required": "Either 'name' or both 'firstName' and 'lastName' must be provided"
+    },
+    "businessTypePricingType": {
+      "required": "Business type and pricing type are required for merchant registration"
+    }
   }
 }
 

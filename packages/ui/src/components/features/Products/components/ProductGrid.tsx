@@ -93,6 +93,7 @@ export function ProductGrid({
             images={product.images || []}
             category={{ name: product.category }}
             outlet={{ name: product.outletName }}
+            pricingType={(product as any).pricingType}
             onView={(productId) => onProductAction('view', productId)}
             onEdit={(productId) => onProductAction('edit', productId)}
             onDelete={(productId) => onProductAction('delete', productId)}
