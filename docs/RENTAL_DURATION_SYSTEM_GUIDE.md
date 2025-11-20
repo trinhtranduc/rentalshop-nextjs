@@ -369,9 +369,17 @@ Ví dụ sử dụng:
 - Không care thời gian, chỉ tính theo lần thuê
 ```
 
-## 4. Extension Points (Mở rộng tương lai)
+## 4. Current Implementation & Future Extensions
 
-### Current: Product-level Configuration (Đã implement)
+### Current: Single Pricing Type per Product (Đã implement - Phase 1)
+
+**Design Decision:** Mỗi sản phẩm chỉ có **1 pricing type** và **1 giá** (rentPrice)
+
+**Lý do:**
+- ✅ Đơn giản, dễ hiểu và maintain
+- ✅ Phù hợp với Odoo/Rentman/Booqable (họ cũng dùng 1 pricing type per product)
+- ✅ Đáp ứng 95% use cases thực tế
+- ✅ Dễ mở rộng trong tương lai
 
 **Use Case:** Mỗi sản phẩm có config riêng
 
@@ -379,48 +387,107 @@ Ví dụ sử dụng:
 ```
 Product "Xe máy Honda Wave": 
   - Pricing Type: HOURLY
+  - Price: 50,000 VND/hour
   - Min: 2h, Max: 48h, Default: 4h
 
 Product "Máy khoan Bosch": 
   - Pricing Type: DAILY
+  - Price: 200,000 VND/day
   - Min: 1d, Max: 7d, Default: 3d
 
 Product "Áo dài": 
   - Pricing Type: FIXED (Per Rental/Per Time)
+  - Price: 500,000 VND/rental
   - Không cần duration limits (không tính theo thời gian)
-  - Giá cố định: 500,000 VND/lần, dù thuê 1 ngày hay 3 ngày
 ```
+
+**Current Limitation:**
+- ❌ Không thể có nhiều pricing types cùng lúc (ví dụ: vừa HOURLY vừa DAILY)
+- ❌ Không thể có pricing tiers (giá khác nhau cho các khoảng thời gian)
+- ✅ **Workaround:** Nếu cần nhiều pricing types, tạo nhiều products riêng biệt
 
 **Implementation:**
 ```typescript
 // Product là source of truth duy nhất, không có fallback
-const pricingType = product.pricingType; // REQUIRED - phải có
+const pricingType = product.pricingType || 'FIXED'; // Default FIXED nếu null
+const rentPrice = product.rentPrice; // Single price for the pricing type
 const durationLimits = product.durationConfig; // REQUIRED cho HOURLY/DAILY
 
 // Không dùng merchant config trong logic
 // Merchant config chỉ để suggest khi tạo product mới (UI convenience)
 ```
 
-### Future: Pricing Tiers
+### Future Extension: Pricing Tiers (Phase 2 - Planned)
 
-**Use Case:** Giá khác nhau cho các khoảng thời gian
+**Use Case:** Giá khác nhau cho các khoảng thời gian trong cùng 1 pricing type
 
-**Ví dụ:**
+**Ví dụ thực tế:**
 ```
-1-3 hours: 50,000 VND/hour
-4-8 hours: 45,000 VND/hour
-9+ hours: 40,000 VND/hour
+Product "Xe máy Honda Wave" (HOURLY):
+  - 1-3 hours: 50,000 VND/hour
+  - 4-8 hours: 45,000 VND/hour (giảm giá cho thuê dài hạn)
+  - 9+ hours: 40,000 VND/hour (giảm giá nhiều hơn)
+
+Product "Máy khoan Bosch" (DAILY):
+  - 1-2 days: 200,000 VND/day
+  - 3-5 days: 180,000 VND/day
+  - 6+ days: 150,000 VND/day
 ```
 
-**Implementation:**
+**Benefits:**
+- ✅ Khuyến khích khách thuê dài hạn với giá tốt hơn
+- ✅ Tối ưu hóa doanh thu và inventory turnover
+- ✅ Linh hoạt hơn trong pricing strategy
+
+**Planned Implementation:**
 ```typescript
-// Thêm pricingTiers vào Product
-pricingTiers: [
-  { minDuration: 1, maxDuration: 3, price: 50000 },
-  { minDuration: 4, maxDuration: 8, price: 45000 },
-  { minDuration: 9, maxDuration: 999, price: 40000 }
-]
+// Thêm pricingTiers vào Product schema
+Product {
+  pricingType: 'HOURLY' | 'DAILY' | 'FIXED',
+  rentPrice: number, // Base price (backward compatible - fallback nếu không có tiers)
+  pricingTiers?: [  // Optional: Nếu có tiers thì dùng tiers, không thì dùng rentPrice
+    { 
+      minDuration: 1, 
+      maxDuration: 3, 
+      price: 50000,
+      description?: "Short term rental"
+    },
+    { 
+      minDuration: 4, 
+      maxDuration: 8, 
+      price: 45000,
+      description?: "Medium term rental"
+    },
+    { 
+      minDuration: 9, 
+      maxDuration: 999, 
+      price: 40000,
+      description?: "Long term rental"
+    }
+  ]
+}
+
+// Pricing calculation logic sẽ tự động chọn tier phù hợp
+function calculatePrice(product: Product, duration: number): number {
+  if (product.pricingTiers && product.pricingTiers.length > 0) {
+    // Tìm tier phù hợp với duration
+    const tier = product.pricingTiers.find(
+      t => duration >= t.minDuration && duration <= t.maxDuration
+    );
+    if (tier) {
+      return tier.price * duration;
+    }
+  }
+  // Fallback về rentPrice nếu không có tiers hoặc không tìm thấy tier
+  return product.rentPrice * duration;
+}
 ```
+
+**Migration Path:**
+- Existing products với `rentPrice` sẽ tiếp tục hoạt động bình thường
+- Khi merchant muốn dùng pricing tiers, họ có thể thêm `pricingTiers` vào product
+- Nếu có `pricingTiers`, hệ thống sẽ ưu tiên dùng tiers thay vì `rentPrice`
+- Backward compatible: Products không có tiers vẫn dùng `rentPrice` như cũ
 
 ### Future: Weekly/Monthly Pricing
 
@@ -440,12 +507,43 @@ if (pricingType === 'WEEKLY') {
 
 ## 5. Implementation Plan
 
-### Phase 1: Product-level Configuration (Current - Primary)
-- **Product là source of truth** - mỗi product có pricing type và duration limits riêng
-- Merchant chỉ là default khi tạo product mới
-- HOURLY, DAILY, FIXED pricing types
-- Duration calculation và validation dựa trên product config
-- UI để cấu hình pricing type và duration limits cho từng product
+### Phase 1: Single Pricing Type per Product (✅ COMPLETED - Current)
+
+**Status:** ✅ Đã implement và đang sử dụng
+
+**Features:**
+- ✅ **Product là source of truth** - mỗi product có pricing type và duration limits riêng
+- ✅ Merchant chỉ là default khi tạo product mới (UI convenience)
+- ✅ HOURLY, DAILY, FIXED pricing types
+- ✅ Duration calculation và validation dựa trên product config
+- ✅ UI để cấu hình pricing type và duration limits cho từng product
+- ✅ Minimum charge logic (nếu duration < minDuration, charge cho minDuration)
+- ✅ Type-safe enums và constants
+
+**Current Limitation:**
+- ❌ Mỗi product chỉ có 1 pricing type (HOURLY, DAILY, hoặc FIXED)
+- ❌ Mỗi product chỉ có 1 giá (rentPrice)
+- ❌ Không có pricing tiers (giá khác nhau cho các khoảng thời gian)
+
+**Workaround:**
+- Nếu cần nhiều pricing types, tạo nhiều products riêng biệt
+- Ví dụ: "Xe máy - Thuê theo giờ" và "Xe máy - Thuê theo ngày"
+
+### Phase 2: Pricing Tiers (📋 PLANNED - Future Extension)
+
+**Status:** 📋 Planned for future implementation
+
+**Features (Planned):**
+- 📋 Pricing tiers cho HOURLY và DAILY pricing types
+- 📋 Giá khác nhau cho các khoảng thời gian
+- 📋 Backward compatible với Phase 1 (products không có tiers vẫn hoạt động)
+- 📋 UI để cấu hình pricing tiers cho từng product
+- 📋 Auto-calculation logic để chọn tier phù hợp với duration
+
+**Migration Strategy:**
+- Existing products với `rentPrice` sẽ tiếp tục hoạt động
+- Optional field `pricingTiers` - nếu có thì dùng, không có thì dùng `rentPrice`
+- No breaking changes - 100% backward compatible
 
 ### Phase 2: Advanced Features (Future)
 - Pricing tiers (giá khác nhau cho các khoảng thời gian)

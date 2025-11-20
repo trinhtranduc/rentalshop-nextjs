@@ -8,7 +8,13 @@ import {API} from '@rentalshop/constants';
 
 // Schema for status update
 const statusUpdateSchema = z.object({
-  status: z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']),
+  status: z.enum([
+    ORDER_STATUS.RESERVED,
+    ORDER_STATUS.PICKUPED,
+    ORDER_STATUS.RETURNED,
+    ORDER_STATUS.COMPLETED,
+    ORDER_STATUS.CANCELLED
+  ] as [string, ...string[]]),
   notes: z.string().optional(),
   pickupNotes: z.string().optional(),
   returnNotes: z.string().optional(),

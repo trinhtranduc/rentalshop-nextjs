@@ -930,6 +930,19 @@ declare const SUBSCRIPTION_STATUS: {
     readonly EXPIRED: "EXPIRED";
 };
 type SubscriptionStatus = typeof SUBSCRIPTION_STATUS[keyof typeof SUBSCRIPTION_STATUS];
+declare const ORDER_STATUS: {
+    readonly RESERVED: "RESERVED";
+    readonly PICKUPED: "PICKUPED";
+    readonly RETURNED: "RETURNED";
+    readonly COMPLETED: "COMPLETED";
+    readonly CANCELLED: "CANCELLED";
+};
+type OrderStatus = typeof ORDER_STATUS[keyof typeof ORDER_STATUS];
+declare const ORDER_TYPE: {
+    readonly RENT: "RENT";
+    readonly SALE: "SALE";
+};
+type OrderType = typeof ORDER_TYPE[keyof typeof ORDER_TYPE];
 declare const BILLING_INTERVAL: {
     readonly MONTHLY: "monthly";
     readonly QUARTERLY: "quarterly";
@@ -1019,14 +1032,6 @@ interface Subscription {
     plan?: Plan;
 }
 
-/**
- * Order types - simplified to RENT and SALE only
- */
-type OrderType = 'RENT' | 'SALE';
-/**
- * Order statuses - simplified status flow
- */
-type OrderStatus = 'RESERVED' | 'PICKUPED' | 'RETURNED' | 'COMPLETED' | 'CANCELLED';
 /**
  * Order item with product details
  * Used for order item displays

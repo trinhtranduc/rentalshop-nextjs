@@ -1,7 +1,21 @@
 import { z } from 'zod';
 import { prisma } from '@rentalshop/database';
 import { ApiError, ErrorCode } from './errors';
-import { API, PlanLimits, getPlan, hasWebAccess, hasMobileAccess, getPlanPlatform, hasProductPublicCheck } from '@rentalshop/constants';
+import { 
+  API, 
+  PlanLimits, 
+  getPlan, 
+  hasWebAccess, 
+  hasMobileAccess, 
+  getPlanPlatform, 
+  hasProductPublicCheck,
+  ORDER_STATUS,
+  ORDER_TYPE,
+  USER_ROLE,
+  PAYMENT_STATUS,
+  PAYMENT_METHOD,
+  SUBSCRIPTION_STATUS
+} from '@rentalshop/constants';
 import { AuthUser } from '@rentalshop/types';
 
 // Auth validation schemas
@@ -18,7 +32,15 @@ export const registerSchema = z.object({
   firstName: z.string().min(1, 'First name is required').optional(),
   lastName: z.string().min(1, 'Last name is required').optional(),
   phone: z.string().optional(),
-  role: z.enum(['CLIENT', 'SHOP_OWNER', 'ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']).optional(),
+  role: z.enum([
+    USER_ROLE.ADMIN,
+    USER_ROLE.MERCHANT,
+    USER_ROLE.OUTLET_ADMIN,
+    USER_ROLE.OUTLET_STAFF,
+    // Legacy roles for backward compatibility
+    'CLIENT',
+    'SHOP_OWNER'
+  ] as [string, ...string[]]).optional(),
   // For merchant registration
   businessName: z.string().optional(),
   // Optional tenant key (domain-like identifier) for future multi-tenant routing
@@ -61,13 +83,43 @@ export const productCreateSchema = z.object({
   description: z.string().optional(),
   barcode: z.string().optional(),
   rentPrice: z.number().nonnegative('Rent price must be non-negative'),
-  salePrice: z.number().nonnegative('Sale price must be non-negative'),
+  salePrice: z.number().nonnegative('Sale price must be non-negative').optional(),
+  costPrice: z.number().nonnegative('Cost price must be non-negative').optional(),
   deposit: z.number().nonnegative('Deposit must be non-negative').default(0),
   categoryId: z.coerce.number().int().positive().optional(), // Optional - will use default category if not provided
   totalStock: z.number().int().min(0, 'Total stock must be non-negative'),
   images: z.union([z.string(), z.array(z.string())]).optional(), // Allow both string and array for testing
   merchantId: z.coerce.number().int().positive().optional(), // Optional - required for ADMIN users, auto-assigned for others
   outletStock: z.array(outletStockItemSchema).optional(), // Optional - will use default outlet if not provided
+  // Optional pricing configuration (default FIXED if null)
+  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).nullable().optional(), // NULL = FIXED (default)
+  durationConfig: z.string().nullable().optional(), // JSON string: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
+}).refine((data) => {
+  // If pricingType is HOURLY or DAILY, durationConfig is required
+  if (data.pricingType === 'HOURLY' || data.pricingType === 'DAILY') {
+    if (!data.durationConfig) {
+      return false;
+    }
+    // Validate durationConfig JSON structure
+    try {
+      const config = JSON.parse(data.durationConfig);
+      if (!config.minDuration || !config.maxDuration || !config.defaultDuration) {
+        return false;
+      }
+      if (config.minDuration > config.maxDuration) {
+        return false;
+      }
+      if (config.defaultDuration < config.minDuration || config.defaultDuration > config.maxDuration) {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'Duration configuration is required and must be valid JSON for HOURLY and DAILY pricing types',
+  path: ['durationConfig']
 });
 
 export const productUpdateSchema = z.object({
@@ -75,11 +127,41 @@ export const productUpdateSchema = z.object({
   description: z.string().optional(),
   rentPrice: z.number().nonnegative().optional(),
   salePrice: z.number().nonnegative().nullable().optional(),
+  costPrice: z.number().nonnegative().optional(),
   deposit: z.number().nonnegative().optional(),
   images: z.union([z.string(), z.array(z.string())]).optional(), // Support both string and array
   categoryId: z.coerce.number().int().positive().optional(), // Changed from string to number
   totalStock: z.number().int().min(0).optional(),
   outletStock: z.array(outletStockItemSchema).optional(), // Add outletStock field
+  // Optional pricing configuration (default FIXED if null)
+  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).nullable().optional(), // NULL = FIXED (default)
+  durationConfig: z.string().nullable().optional(), // JSON string: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
+}).refine((data) => {
+  // If pricingType is HOURLY or DAILY, durationConfig is required
+  if (data.pricingType === 'HOURLY' || data.pricingType === 'DAILY') {
+    if (!data.durationConfig) {
+      return false;
+    }
+    // Validate durationConfig JSON structure
+    try {
+      const config = JSON.parse(data.durationConfig);
+      if (!config.minDuration || !config.maxDuration || !config.defaultDuration) {
+        return false;
+      }
+      if (config.minDuration > config.maxDuration) {
+        return false;
+      }
+      if (config.defaultDuration < config.minDuration || config.defaultDuration > config.maxDuration) {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'Duration configuration is required and must be valid JSON for HOURLY and DAILY pricing types',
+  path: ['durationConfig']
 });
 
 export const productsQuerySchema = z.object({
@@ -164,13 +246,28 @@ export const customersQuerySchema = z.object({
 // Orders validation schemas
 // ============================================================================
 
-// Simplified order types: only RENT and SALE
-const orderTypeEnum = z.enum(['RENT', 'SALE']);
+// ============================================================================
+// ZOD ENUM HELPERS - Type-safe enums from constants
+// ============================================================================
 
-// Order statuses based on order type:
-// RENT: RESERVED (mới cục), PICKUPED (đang thuê), RETURNED (đã trả), CANCELLED (hủy)
-// SALE: COMPLETED và CANCELLED
-const orderStatusEnum = z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']);
+/**
+ * Generate Zod enum for OrderStatus from ORDER_STATUS constants
+ */
+const orderStatusEnum = z.enum([
+  ORDER_STATUS.RESERVED,
+  ORDER_STATUS.PICKUPED,
+  ORDER_STATUS.RETURNED,
+  ORDER_STATUS.COMPLETED,
+  ORDER_STATUS.CANCELLED
+] as [string, ...string[]]);
+
+/**
+ * Generate Zod enum for OrderType from ORDER_TYPE constants
+ */
+const orderTypeEnum = z.enum([
+  ORDER_TYPE.RENT,
+  ORDER_TYPE.SALE
+] as [string, ...string[]]);
 
 export const ordersQuerySchema = z.object({
   q: z.string().optional(),
@@ -258,7 +355,15 @@ export type OrderUpdatePayload = z.infer<typeof orderUpdateSchema>;
 // Users validation schemas
 // ============================================================================
 
-const userRoleEnum = z.enum(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+/**
+ * Generate Zod enum for UserRole from USER_ROLE constants
+ */
+const userRoleEnum = z.enum([
+  USER_ROLE.ADMIN,
+  USER_ROLE.MERCHANT,
+  USER_ROLE.OUTLET_ADMIN,
+  USER_ROLE.OUTLET_STAFF
+] as [string, ...string[]]);
 
 export const usersQuerySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(), // Add merchant filtering support

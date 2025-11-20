@@ -12,8 +12,17 @@ const calendarOrdersQuerySchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
   outletId: z.coerce.number().int().positive().optional(),
   merchantId: z.coerce.number().int().positive().optional(),
-  status: z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']).optional(),
-  orderType: z.enum(['RENT', 'SALE']).optional(),
+  status: z.enum([
+    ORDER_STATUS.RESERVED,
+    ORDER_STATUS.PICKUPED,
+    ORDER_STATUS.RETURNED,
+    ORDER_STATUS.COMPLETED,
+    ORDER_STATUS.CANCELLED
+  ] as [string, ...string[]]).optional(),
+  orderType: z.enum([
+    ORDER_TYPE.RENT,
+    ORDER_TYPE.SALE
+  ] as [string, ...string[]]).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(10), // Max 50 orders per day
 });
 
@@ -84,7 +93,7 @@ export const GET = withReadOnlyAuth(async (
         where.outletId = outletId;
       }
       // No restrictions for ADMIN - they can see all merchants and outlets
-    } else if (user.role === 'MERCHANT') {
+    } else if (user.role === USER_ROLE.MERCHANT) {
       // MERCHANT: Can see orders from all their outlets
       // Filter by outlet.merchantId through relation
       where.outlet = {
@@ -95,7 +104,7 @@ export const GET = withReadOnlyAuth(async (
         // Remove outlet filter if outletId is specified
         delete where.outlet;
       }
-    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
       // OUTLET users: Can only see orders from their assigned outlet
       where.outletId = userScope.outletId;
     }
