@@ -425,9 +425,9 @@ export async function sendPasswordResetEmail(
   // Lazy load env to avoid initialization issues in browser
   const { env } = await import('@rentalshop/env');
   
-  // Use ADMIN_URL for password reset link (merchants use admin app)
-  const adminUrl = env.ADMIN_URL || env.CLIENT_URL || 'http://localhost:3001';
-  const resetUrl = `${adminUrl}/reset-password?token=${resetToken}`;
+  // Use CLIENT_URL for password reset link (users reset password via client app)
+  const clientUrl = env.CLIENT_URL || env.ADMIN_URL || 'http://localhost:3000';
+  const resetUrl = `${clientUrl}/reset-password?token=${resetToken}`;
 
   const html = generatePasswordResetEmail({
     name,

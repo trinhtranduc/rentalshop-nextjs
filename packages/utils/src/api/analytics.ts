@@ -6,6 +6,7 @@ export interface AnalyticsFilters {
   startDate?: string;
   endDate?: string;
   outletId?: number;
+  outletIds?: number[]; // Array of outlet IDs for comparison (comma-separated in query string)
   merchantId?: number;
   groupBy?: 'day' | 'week' | 'month' | 'year';
 }
@@ -64,6 +65,7 @@ export const analyticsApi = {
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.outletIds && filters.outletIds.length > 0) params.append('outletIds', filters.outletIds.join(','));
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.groupBy) params.append('groupBy', filters.groupBy);
     
@@ -162,6 +164,7 @@ export const analyticsApi = {
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.outletIds && filters.outletIds.length > 0) params.append('outletIds', filters.outletIds.join(','));
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.groupBy) params.append('groupBy', filters.groupBy);
     

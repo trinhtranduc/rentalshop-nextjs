@@ -1158,6 +1158,112 @@ var custom = {
 	priceGreaterThanZero: "Price must be greater than zero",
 	quantityGreaterThanZero: "Quantity must be greater than zero"
 };
+var fields$2 = {
+	firstName: {
+		required: "First name is required"
+	},
+	lastName: {
+		required: "Last name is required"
+	},
+	name: {
+		required: "Name is required",
+		minLength: "Name must be at least {min} characters"
+	},
+	productName: {
+		required: "Product name is required"
+	},
+	outletName: {
+		required: "Outlet name is required"
+	},
+	planName: {
+		required: "Plan name is required"
+	},
+	planDescription: {
+		required: "Plan description is required"
+	},
+	variantName: {
+		required: "Variant name is required"
+	},
+	phone: {
+		required: "Phone number is required"
+	},
+	email: {
+		invalid: "Invalid email address",
+		invalidFormat: "Invalid email format"
+	},
+	password: {
+		minLength6: "Password must be at least 6 characters"
+	},
+	country: {
+		invalid: "Please select a valid country"
+	},
+	tenantKey: {
+		invalid: "Tenant key must be alphanumeric"
+	},
+	product: {
+		required: "Product is required"
+	},
+	outlet: {
+		required: "Outlet is required"
+	},
+	merchantId: {
+		required: "Merchant ID is required"
+	},
+	planId: {
+		required: "Plan ID is required"
+	},
+	planVariantId: {
+		required: "Plan variant ID is required"
+	},
+	rentPrice: {
+		nonNegative: "Rent price must be non-negative"
+	},
+	salePrice: {
+		nonNegative: "Sale price must be non-negative"
+	},
+	costPrice: {
+		nonNegative: "Cost price must be non-negative"
+	},
+	deposit: {
+		nonNegative: "Deposit must be non-negative"
+	},
+	stock: {
+		nonNegative: "Stock must be non-negative"
+	},
+	totalStock: {
+		nonNegative: "Total stock must be non-negative"
+	},
+	basePrice: {
+		nonNegative: "Base price must be non-negative"
+	},
+	price: {
+		nonNegative: "Price must be non-negative"
+	},
+	amount: {
+		nonNegative: "Amount must be non-negative"
+	},
+	duration: {
+		positive: "Duration must be positive"
+	},
+	trialDays: {
+		nonNegative: "Trial days must be non-negative"
+	},
+	discount: {
+		range: "Discount must be between 0 and 100"
+	},
+	durationConfig: {
+		required: "Duration configuration is required and must be valid JSON for HOURLY and DAILY pricing types"
+	},
+	endDate: {
+		afterStart: "End date must be after start date"
+	},
+	nameOrFullName: {
+		required: "Either 'name' or both 'firstName' and 'lastName' must be provided"
+	},
+	businessTypePricingType: {
+		required: "Business type and pricing type are required for merchant registration"
+	}
+};
 var validation$1 = {
 	required: required,
 	email: email,
@@ -1179,7 +1285,8 @@ var validation$1 = {
 	file: file,
 	unique: unique,
 	exists: exists,
-	custom: custom
+	custom: custom,
+	fields: fields$2
 };
 
 declare const _________locales_en_validation_json_custom: typeof custom;
@@ -1203,7 +1310,7 @@ declare const _________locales_en_validation_json_required: typeof required;
 declare const _________locales_en_validation_json_unique: typeof unique;
 declare const _________locales_en_validation_json_url: typeof url;
 declare namespace _________locales_en_validation_json {
-  export { _________locales_en_validation_json_custom as custom, _________locales_en_validation_json_date as date, _________locales_en_validation_json_dateRange as dateRange, validation$1 as default, _________locales_en_validation_json_email as email, _________locales_en_validation_json_exists as exists, _________locales_en_validation_json_file as file, _________locales_en_validation_json_integer as integer, _________locales_en_validation_json_max as max, _________locales_en_validation_json_maxLength as maxLength, _________locales_en_validation_json_min as min, _________locales_en_validation_json_minLength as minLength, _________locales_en_validation_json_negative as negative, _________locales_en_validation_json_number as number, _________locales_en_validation_json_password as password, _________locales_en_validation_json_pattern as pattern, _________locales_en_validation_json_phone as phone, _________locales_en_validation_json_positive as positive, _________locales_en_validation_json_required as required, time$1 as time, _________locales_en_validation_json_unique as unique, _________locales_en_validation_json_url as url };
+  export { _________locales_en_validation_json_custom as custom, _________locales_en_validation_json_date as date, _________locales_en_validation_json_dateRange as dateRange, validation$1 as default, _________locales_en_validation_json_email as email, _________locales_en_validation_json_exists as exists, fields$2 as fields, _________locales_en_validation_json_file as file, _________locales_en_validation_json_integer as integer, _________locales_en_validation_json_max as max, _________locales_en_validation_json_maxLength as maxLength, _________locales_en_validation_json_min as min, _________locales_en_validation_json_minLength as minLength, _________locales_en_validation_json_negative as negative, _________locales_en_validation_json_number as number, _________locales_en_validation_json_password as password, _________locales_en_validation_json_pattern as pattern, _________locales_en_validation_json_phone as phone, _________locales_en_validation_json_positive as positive, _________locales_en_validation_json_required as required, time$1 as time, _________locales_en_validation_json_unique as unique, _________locales_en_validation_json_url as url };
 }
 
 var title$4 = "Settings";
@@ -1826,12 +1933,36 @@ var availability = {
 };
 var pricing = {
 	title: "Pricing",
+	pricingType: "Pricing Type",
+	pricingTypeOptional: "Pricing Type (Optional - Default: Fixed Price)",
+	selectPricingType: "Select pricing type (default: Fixed)",
+	fixed: "Fixed Price",
+	fixedDescription: "Same price regardless of rental duration",
+	fixedDescriptionDefault: "Fixed price per rental (default). Duration configuration not required.",
+	pricePerRental: "Price per rental",
+	pricePerHour: "Price per hour",
+	pricePerDay: "Price per day",
 	hourly: "Hourly Rate",
+	hourlyLabel: "Hourly",
+	hourlyDescription: "Price per hour (e.g., vehicles, tools)",
 	daily: "Daily Rate",
+	dailyLabel: "Daily",
+	dailyDescription: "Price per day (e.g., construction equipment)",
 	weekly: "Weekly Rate",
 	monthly: "Monthly Rate",
 	custom: "Custom Rate",
-	depositRequired: "Deposit Required"
+	depositRequired: "Deposit Required",
+	durationConfiguration: "Duration Configuration",
+	durationConfigurationRequired: "Duration Configuration (Required for {type} Pricing)",
+	durationConfigurationRequiredHourly: "Duration Configuration (Required for Hourly Pricing)",
+	durationConfigurationRequiredDaily: "Duration Configuration (Required for Daily Pricing)",
+	minimumDuration: "Minimum Duration",
+	maximumDuration: "Maximum Duration",
+	defaultDuration: "Default Duration",
+	durationUnitHours: "hours",
+	durationUnitDays: "days",
+	exampleHourly: "Example: Min 1 hour, Max 168 hours (1 week), Default 4 hours",
+	exampleDaily: "Example: Min 1 day, Max 30 days, Default 3 days"
 };
 var actions$1 = {
 	viewDetails: "View Details",
@@ -2344,6 +2475,11 @@ var charts = {
 	customerActivity: "Customer Activity",
 	rentalTrends: "Rental Trends",
 	noData: "No data available for this period",
+	compareOutlets: "Compare Outlets",
+	selectOutletsToCompare: "Select outlets to compare",
+	allOutlets: "All Outlets",
+	compareRevenue: "Compare Monthly Revenue by Outlet",
+	compareOrders: "Compare Monthly Orders by Outlet",
 	actualRevenue: "Actual Revenue",
 	projectedRevenue: "Projected Revenue",
 	rentalOrders: "Rental Orders",
@@ -3622,13 +3758,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }) | null>;
         findByBarcode: (barcode: string) => Promise<({
             merchant: {
@@ -3662,13 +3801,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }) | null>;
         create: (data: any) => Promise<{
             merchant: {
@@ -3702,13 +3844,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }>;
         update: (id: number, data: any) => Promise<{
             merchant: {
@@ -3742,13 +3887,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }>;
         delete: (id: number) => Promise<{
             id: number;
@@ -3758,13 +3906,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }>;
         findFirst: (whereClause: any) => Promise<({
             merchant: {
@@ -3798,13 +3949,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }) | null>;
         getStats: (whereClause?: any) => Promise<number>;
         search: (filters: any) => Promise<{
@@ -3841,13 +3995,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             })[];
             total: number;
             page: any;
@@ -5399,13 +5556,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             } | {
                 id: number;
                 name: string;
@@ -5414,13 +5574,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             })[] | {
                 id: number;
                 name: string;
@@ -5429,13 +5592,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             }[];
             [x: number]: never;
             [x: symbol]: never;
@@ -5602,13 +5768,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             };
         } & {
             id: number;
@@ -5664,13 +5833,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             };
         } & {
             id: number;
@@ -5726,13 +5898,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             };
         } & {
             id: number;
