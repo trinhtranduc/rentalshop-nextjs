@@ -206,6 +206,7 @@
     "useAddNewCustomerButton": "Sử dụng nút \"Thêm khách hàng mới\" ở trên để tạo",
     "rentalPeriod": "Thời gian thuê",
     "selectRentalPeriod": "Chọn thời gian thuê",
+    "selectOutlet": "Chọn cửa hàng",
     "orders": "Đơn hàng",
     "createNewOrder": "Tạo đơn hàng mới",
     "confirmOrder": "Xác nhận đơn hàng",

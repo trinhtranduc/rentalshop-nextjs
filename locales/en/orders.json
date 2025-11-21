@@ -186,6 +186,7 @@
     "useAddNewCustomerButton": "Use the \"Add New Customer\" button above to create one",
     "rentalPeriod": "Rental Period",
     "selectRentalPeriod": "Select rental period",
+    "selectOutlet": "Select outlet",
     "orders": "Orders",
     "editOrder": "Edit Order",
     "createNewOrder": "Create New Order",

@@ -292,7 +292,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             }}
           >
             <SelectTrigger variant="filled" className="w-full">
-              <SelectValue placeholder="Select outlet..." />
+              <SelectValue placeholder={t('messages.selectOutlet')} />
             </SelectTrigger>
             <SelectContent>
               {outlets.map(outlet => (
