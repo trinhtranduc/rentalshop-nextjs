@@ -124,6 +124,21 @@ export const customersApi = {
   },
 
   /**
+   * Get customer by phone number
+   * Used for duplicate checking before creating new customer
+   */
+  async getCustomerByPhone(phone: string): Promise<CustomerApiResponse> {
+    const params = new URLSearchParams({
+      q: phone,
+      limit: '10',
+      _t: Date.now().toString() // Cache-busting parameter
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.customers.list}?${params.toString()}`);
+    return await parseApiResponse<CustomerApiResponse>(response);
+  },
+
+  /**
    * Create new customer
    */
   async createCustomer(customerData: CustomerInput): Promise<CustomerApiResponse> {
