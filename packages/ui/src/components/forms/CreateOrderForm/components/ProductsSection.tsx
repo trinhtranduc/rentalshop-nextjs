@@ -295,7 +295,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Quantity
+              {t('messages.quantity')}
             </label>
             <input
               type="number"
@@ -307,7 +307,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Unit Price
+              {t('messages.unitPrice')}
             </label>
             <input
               type="number"
@@ -323,14 +323,14 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         {/* Notes */}
         <div className="mb-3">
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Notes
+            {t('messages.orderNotes')}
           </label>
           <textarea
             value={item.notes || ''}
             onChange={(e) => onUpdate(item.productId, 'notes', e.target.value)}
             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             rows={2}
-            placeholder="Add notes about this product..."
+            placeholder={t('messages.addNotesAboutProduct')}
           />
         </div>
         
@@ -429,7 +429,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         {/* Quantity */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Quantity
+            {t('messages.quantity')}
           </label>
           <NumberInput
             value={item.quantity}
@@ -443,7 +443,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         {/* Unit Price */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Unit Price
+            {t('messages.unitPrice')}
           </label>
           <NumberInput
             value={item.unitPrice}
@@ -458,7 +458,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         {/* Deposit */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Deposit
+            {t('messages.deposit')}
           </label>
           <NumberInput
             value={item.deposit || 0}
@@ -474,12 +474,12 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
       {/* Notes */}
       <div className="mt-3">
         <label className="block text-xs font-medium text-gray-700 mb-1">
-          Notes
+          {t('messages.orderNotes')}
         </label>
         <Input
           value={item.notes}
           onChange={(e) => onUpdate(item.productId, 'notes', e.target.value)}
-          placeholder="Add notes for this item..."
+          placeholder={t('messages.addNotesForItem')}
           className="h-8 text-sm"
         />
       </div>
