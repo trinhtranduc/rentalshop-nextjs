@@ -950,7 +950,7 @@ export default function DashboardPage() {
                   change=""
                   description=""
                   tooltip={t('tooltips.todayRevenue')}
-                  color="text-green-600"
+                  color="text-blue-700"
                   trend="neutral"
                   activeTooltip={activeTooltip}
                   setActiveTooltip={setActiveTooltip}
@@ -963,7 +963,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.todayRentals')}
-                color="text-green-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -975,7 +975,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.activeRentals')}
-                color="text-green-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -987,7 +987,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.overdueReturns')}
-                color="text-green-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -1118,7 +1118,7 @@ export default function DashboardPage() {
                   change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}%` : ''}
                   description=""
                   tooltip={t('tooltips.totalRevenue')}
-                  color="text-green-600"
+                  color="text-blue-700"
                   trend={currentStats.revenueGrowth > 0 ? "up" : "neutral"}
                   activeTooltip={activeTooltip}
                   setActiveTooltip={setActiveTooltip}
@@ -1130,7 +1130,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.totalOrders')}
-                color="text-green-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -1141,7 +1141,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.completedOrders')}
-                color="text-green-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -1154,7 +1154,7 @@ export default function DashboardPage() {
                   change=""
                   description=""
                   tooltip={t('tooltips.futureRevenue')}
-                  color="text-green-600"
+                  color="text-blue-700"
                   trend="neutral"
                   activeTooltip={activeTooltip}
                   setActiveTooltip={setActiveTooltip}
