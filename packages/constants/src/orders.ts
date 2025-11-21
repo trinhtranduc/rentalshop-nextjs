@@ -20,11 +20,15 @@ export const ORDER_TYPES = {
 export type OrderType = typeof ORDER_TYPES[keyof typeof ORDER_TYPES];
 
 // ============================================================================
-// ORDER STATUS COLORS - Ocean Blue Theme (Badge/Display)
+// ORDER STATUS COLORS - Simplified System Theme
 // ============================================================================
+// Using only 3 colors from system theme for simplicity:
+// - Blue (info): RESERVED (pending/awaiting)
+// - Green (success): PICKUPED, RETURNED, COMPLETED (active/positive)
+// - Red (danger): CANCELLED (negative)
 export const ORDER_STATUS_COLORS = {
   RESERVED: 'bg-blue-50 text-blue-700 border border-blue-200',
-  PICKUPED: 'bg-orange-50 text-orange-700 border border-orange-200',
+  PICKUPED: 'bg-green-50 text-green-700 border border-green-200',
   RETURNED: 'bg-green-50 text-green-700 border border-green-200',
   COMPLETED: 'bg-green-50 text-green-700 border border-green-200',
   CANCELLED: 'bg-red-50 text-red-700 border border-red-200'
