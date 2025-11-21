@@ -95,6 +95,19 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     
     const result: any = { period: formattedPeriod };
     
+    // Debug: check which branch we're taking
+    if (item.actual > 0 || item.projected > 0) {
+      console.log(`🔍 Transform branch check item ${index}:`, {
+        hasOutletComparison,
+        outletKeysLength: outletKeys.length,
+        willUseOutletComparison: hasOutletComparison && outletKeys.length > 0,
+        actualLabel,
+        projectedLabel,
+        itemActual: item.actual,
+        itemProjected: item.projected
+      });
+    }
+    
     if (hasOutletComparison && outletKeys.length > 0) {
       // Outlet comparison mode: use outlet-specific keys
       outletKeys.forEach((outletKey) => {
@@ -127,7 +140,9 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
           resultProjectedLabel: result[projectedLabel],
           resultKeys: Object.keys(result),
           hasActualLabel: actualLabel in result,
-          hasProjectedLabel: projectedLabel in result
+          hasProjectedLabel: projectedLabel in result,
+          directAccess: result['Doanh thu thực tế'],
+          directAccessProjected: result['Doanh thu dự kiến']
         });
       }
     }
