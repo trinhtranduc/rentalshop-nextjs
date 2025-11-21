@@ -740,12 +740,13 @@ export default function DashboardPage() {
         projected: item.futureIncome || 0
       };
       
-      // Debug: log first few items to verify parsing
-      if (incomeData.indexOf(item) < 3) {
+      // Debug: log first few items and items with data to verify parsing
+      if (incomeData.indexOf(item) < 3 || item.realIncome > 0) {
         console.log('🔍 Revenue data item:', {
           original: { month: item.month, year: item.year, realIncome: item.realIncome },
           parsed: { period: result.period, actual: result.actual, projected: result.projected },
-          date: formatDateAsYYYYMMDD(date)
+          date: formatDateAsYYYYMMDD(date),
+          parsedDate: date.toString()
         });
       }
       
@@ -889,11 +890,14 @@ export default function DashboardPage() {
   // Debug: log revenue data for chart
   useEffect(() => {
     if (currentRevenueData.length > 0) {
+      const itemsWithData = currentRevenueData.filter(item => item.actual > 0 || item.projected > 0);
       console.log('📊 Revenue data for chart:', {
         totalItems: currentRevenueData.length,
         first3: currentRevenueData.slice(0, 3),
         last3: currentRevenueData.slice(-3),
-        hasData: currentRevenueData.some(item => item.actual > 0 || item.projected > 0)
+        hasData: currentRevenueData.some(item => item.actual > 0 || item.projected > 0),
+        itemsWithData: itemsWithData,
+        allPeriods: currentRevenueData.map(item => ({ period: item.period, actual: item.actual, projected: item.projected }))
       });
     }
   }, [currentRevenueData]);
