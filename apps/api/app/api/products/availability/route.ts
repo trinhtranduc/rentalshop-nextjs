@@ -234,25 +234,34 @@ export const GET = withReadOnlyAuth(
         order.orderItems.forEach((item: any) => {
           if (item.productId === productId) {
             if (order.orderType === ORDER_TYPE.RENT) {
-              // RENT orders: only PICKUPED counts as "rented"
+              // RENT orders: Use renting logic (temporary)
+              // PICKUPED: items are rented (count as rented)
+              // RESERVED: items are reserved (count as reserved)
               if (order.status === ORDER_STATUS.PICKUPED) {
                 totalRented += item.quantity;
               } else if (order.status === ORDER_STATUS.RESERVED) {
                 totalReserved += item.quantity;
               }
             } else if (order.orderType === ORDER_TYPE.SALE) {
-              // SALE orders: only PICKUPED counts as "rented" (removes from inventory)
-              if (order.status === ORDER_STATUS.PICKUPED) {
-                totalRented += item.quantity;
-              } else if (order.status === ORDER_STATUS.RESERVED) {
+              // SALE orders: Permanently reduce stock (not renting)
+              // COMPLETED/PICKUPED: items are sold (already reflected in stock reduction)
+              // RESERVED: items are reserved (count as reserved, but stock not reduced yet)
+              // Note: SALE orders that are COMPLETED/PICKUPED have already reduced stock,
+              // so we don't need to count them again here. The stock field already reflects this.
+              if (order.status === ORDER_STATUS.RESERVED) {
                 totalReserved += item.quantity;
               }
-              // COMPLETED SALE orders don't count for availability (already sold)
+              // COMPLETED/PICKUPED SALE orders don't need to be counted here
+              // because they've already permanently reduced the stock field
             }
           }
         });
       });
 
+      // Calculate available: stock - renting - reserved
+      // For RENT: available = stock - renting (temporary)
+      // For SALE: available = stock (already reduced for completed sales)
+      // Reserved items (both RENT and SALE) reduce available temporarily
       const totalAvailable = totalStock - totalRented - totalReserved;
 
       // Enhanced logging for final calculation

@@ -111,7 +111,10 @@
     "getStarted": "Get started by adding your first customer",
     "loadingCustomers": "Loading customers...",
     "na": "N/A",
-    "noChanges": "No changes detected"
+    "noChanges": "No changes detected",
+    "unexpectedError": "An unexpected error occurred",
+    "duplicatePhone": "A customer with this phone number already exists",
+    "duplicateEmail": "A customer with this email address already exists"
   },
   "filters": {
     "all": "All Customers",

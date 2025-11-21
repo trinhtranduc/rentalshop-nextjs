@@ -8,6 +8,7 @@
 
 import { prisma } from './client';
 import type { ProductSearchFilter } from '@rentalshop/types';
+import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 
 // ============================================================================
 // PRODUCT LOOKUP FUNCTIONS (BY PUBLIC ID)
@@ -645,6 +646,233 @@ export async function updateProductStock(
   });
 
   return outletStock;
+}
+
+/**
+ * Sync OutletStock.available field to ensure it equals stock - renting
+ * This ensures data consistency after any stock or renting updates
+ */
+export async function syncOutletStockAvailable(
+  productId: number,
+  outletId: number
+): Promise<void> {
+  // Find product and outlet by id
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true }
+  });
+  
+  if (!product) {
+    throw new Error(`Product with id ${productId} not found`);
+  }
+
+  const outlet = await prisma.outlet.findUnique({
+    where: { id: outletId },
+    select: { id: true }
+  });
+  
+  if (!outlet) {
+    throw new Error(`Outlet with id ${outletId} not found`);
+  }
+
+  // Get current outlet stock
+  const outletStock = await prisma.outletStock.findUnique({
+    where: {
+      productId_outletId: {
+        productId: product.id,
+        outletId: outlet.id,
+      },
+    },
+  });
+
+  if (!outletStock) {
+    console.warn(`OutletStock not found for product ${productId} and outlet ${outletId}`);
+    return;
+  }
+
+  // Recalculate available = stock - renting
+  const calculatedAvailable = Math.max(0, outletStock.stock - outletStock.renting);
+
+  // Update if different
+  if (outletStock.available !== calculatedAvailable) {
+    await prisma.outletStock.update({
+      where: { id: outletStock.id },
+      data: { available: calculatedAvailable },
+    });
+    console.log(`✅ Synced OutletStock.available: ${outletStock.available} → ${calculatedAvailable} (product ${productId}, outlet ${outletId})`);
+  }
+}
+
+/**
+ * Update OutletStock when order status changes
+ * Handles both RENT and SALE orders according to Odoo best practices:
+ * - RENT: Uses renting field (temporary), stock doesn't change
+ * - SALE: Decreases stock permanently (sold, not returned)
+ */
+export async function updateOutletStockForOrder(
+  orderId: number,
+  oldStatus: string | null,
+  newStatus: string,
+  orderType: 'RENT' | 'SALE',
+  outletId: number,
+  orderItems: Array<{ productId: number; quantity: number }>
+): Promise<void> {
+  console.log(`🔄 Updating outlet stock for order ${orderId}: ${oldStatus} → ${newStatus} (${orderType})`);
+
+  // Find outlet by id
+  const outlet = await prisma.outlet.findUnique({
+    where: { id: outletId },
+    select: { id: true }
+  });
+  
+  if (!outlet) {
+    throw new Error(`Outlet with id ${outletId} not found`);
+  }
+
+  // Process each order item
+  for (const item of orderItems) {
+    if (!item.productId || !item.quantity || item.quantity <= 0) {
+      console.warn(`⚠️ Skipping invalid order item:`, item);
+      continue;
+    }
+
+    // Find product by id
+    const product = await prisma.product.findUnique({
+      where: { id: item.productId },
+      select: { id: true }
+    });
+
+    if (!product) {
+      console.warn(`⚠️ Product ${item.productId} not found, skipping stock update`);
+      continue;
+    }
+
+    // Get or create outlet stock
+    let outletStock = await prisma.outletStock.findUnique({
+      where: {
+        productId_outletId: {
+          productId: product.id,
+          outletId: outlet.id,
+        },
+      },
+    });
+
+    if (!outletStock) {
+      console.warn(`⚠️ OutletStock not found for product ${item.productId} and outlet ${outletId}, creating...`);
+      outletStock = await prisma.outletStock.create({
+        data: {
+          productId: product.id,
+          outletId: outlet.id,
+          stock: 0,
+          available: 0,
+          renting: 0,
+        },
+      });
+    }
+
+    // Determine stock changes based on order type and status transition
+    let stockChange = 0;
+    let rentingChange = 0;
+    let availableChange = 0;
+
+    if (orderType === ORDER_TYPE.SALE) {
+      // SALE orders: Permanently decrease stock when COMPLETED/PICKUPED
+      if (newStatus === ORDER_STATUS.COMPLETED || newStatus === ORDER_STATUS.PICKUPED) {
+        // Only decrease if wasn't already completed/pickuped
+        if (oldStatus !== ORDER_STATUS.COMPLETED && oldStatus !== ORDER_STATUS.PICKUPED) {
+          stockChange = -item.quantity;
+          availableChange = -item.quantity;
+          console.log(`📉 SALE order ${orderId}: Decreasing stock by ${item.quantity} for product ${item.productId}`);
+        }
+      } else if (newStatus === ORDER_STATUS.CANCELLED) {
+        // Rollback stock if was previously completed/pickuped
+        if (oldStatus === ORDER_STATUS.COMPLETED || oldStatus === ORDER_STATUS.PICKUPED) {
+          stockChange = item.quantity;
+          availableChange = item.quantity;
+          console.log(`📈 SALE order ${orderId}: Rolling back stock by ${item.quantity} for product ${item.productId}`);
+        }
+      }
+      // RESERVED status doesn't change stock (just reserved, not sold yet)
+    } else if (orderType === ORDER_TYPE.RENT) {
+      // RENT orders: Use renting field (temporary), stock doesn't change
+      if (newStatus === ORDER_STATUS.RESERVED) {
+        // Reserve: Decrease available (temporary reservation)
+        // Only if not already reserved
+        if (oldStatus !== ORDER_STATUS.RESERVED && oldStatus !== ORDER_STATUS.PICKUPED) {
+          availableChange = -item.quantity;
+          console.log(`🔒 RENT order ${orderId}: Reserving ${item.quantity} for product ${item.productId}`);
+        }
+      } else if (newStatus === ORDER_STATUS.PICKUPED) {
+        // Pickup: Increase renting, decrease available (if not already picked up)
+        if (oldStatus !== ORDER_STATUS.PICKUPED) {
+          if (oldStatus === ORDER_STATUS.RESERVED) {
+            // From RESERVED: renting increases, available already decreased in RESERVED
+            rentingChange = item.quantity;
+            // availableChange = 0 (already decreased in RESERVED)
+          } else {
+            // From other status (e.g., directly to PICKUPED): both renting and available change
+            rentingChange = item.quantity;
+            availableChange = -item.quantity;
+          }
+          console.log(`📤 RENT order ${orderId}: Picking up ${item.quantity} for product ${item.productId}`);
+        }
+      } else if (newStatus === ORDER_STATUS.RETURNED) {
+        // Return: Decrease renting, increase available
+        if (oldStatus === ORDER_STATUS.PICKUPED) {
+          rentingChange = -item.quantity;
+          availableChange = item.quantity;
+          console.log(`📥 RENT order ${orderId}: Returning ${item.quantity} for product ${item.productId}`);
+        }
+      } else if (newStatus === ORDER_STATUS.CANCELLED) {
+        // Cancel: Rollback based on previous status
+        if (oldStatus === ORDER_STATUS.PICKUPED) {
+          // Was picked up: rollback renting and available
+          rentingChange = -item.quantity;
+          availableChange = item.quantity;
+          console.log(`↩️ RENT order ${orderId}: Cancelling pickup, rolling back ${item.quantity} for product ${item.productId}`);
+        } else if (oldStatus === ORDER_STATUS.RESERVED) {
+          // Was only reserved: rollback available
+          availableChange = item.quantity;
+          console.log(`↩️ RENT order ${orderId}: Cancelling reservation, rolling back ${item.quantity} for product ${item.productId}`);
+        }
+      }
+    }
+
+    // Apply changes if any
+    if (stockChange !== 0 || rentingChange !== 0 || availableChange !== 0) {
+      const updateData: any = {};
+      
+      // Use increment for stock and renting
+      if (stockChange !== 0) {
+        updateData.stock = { increment: stockChange };
+      }
+      
+      if (rentingChange !== 0) {
+        updateData.renting = { increment: rentingChange };
+      }
+
+      // Calculate final available value to ensure consistency: available = stock - renting
+      // This is more reliable than using increment, as it ensures the formula is always correct
+      const newStock = outletStock.stock + stockChange;
+      const newRenting = outletStock.renting + rentingChange;
+      const finalAvailable = Math.max(0, newStock - newRenting);
+      updateData.available = finalAvailable;
+
+      await prisma.outletStock.update({
+        where: { id: outletStock.id },
+        data: updateData,
+      });
+
+      console.log(`✅ Updated OutletStock for product ${item.productId}, outlet ${outletId}:`, {
+        stockChange,
+        rentingChange,
+        availableChange,
+        newStock,
+        newRenting,
+        newAvailable: finalAvailable,
+      });
+    }
+  }
 }
 
 /**
