@@ -1137,7 +1137,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.totalOrders')}
-                color="text-blue-700"
+                color="text-green-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -1148,7 +1148,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.completedOrders')}
-                color="text-purple-600"
+                color="text-green-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -1161,7 +1161,7 @@ export default function DashboardPage() {
                   change=""
                   description=""
                   tooltip={t('tooltips.futureRevenue')}
-                  color="text-orange-600"
+                  color="text-green-600"
                   trend="neutral"
                   activeTooltip={activeTooltip}
                   setActiveTooltip={setActiveTooltip}
