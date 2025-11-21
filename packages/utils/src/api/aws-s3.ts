@@ -148,6 +148,22 @@ export async function uploadToS3(
     if (!BUCKET_NAME) {
       throw new Error('AWS_S3_BUCKET_NAME environment variable is not set');
     }
+    
+    // Validate AWS credentials
+    const cleanAccessKey = (AWS_ACCESS_KEY_ID || '').trim();
+    const cleanSecretKey = (AWS_SECRET_ACCESS_KEY || '').trim();
+    
+    if (!cleanAccessKey || !cleanSecretKey) {
+      throw new Error('AWS credentials not configured. Please check AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.');
+    }
+    
+    // Log bucket and region info for debugging
+    const region = AWS_REGION || process.env.AWS_REGION || 'us-east-1';
+    console.log('📤 S3 Upload Info:', {
+      bucketName: BUCKET_NAME,
+      region: region,
+      hasCredentials: !!(cleanAccessKey && cleanSecretKey)
+    });
 
     const {
       folder: optionsFolder = 'uploads',
@@ -234,9 +250,37 @@ export async function uploadToS3(
     };
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Enhanced error logging for bucket issues
+    if (errorMessage.includes('bucket') || errorMessage.includes('Bucket')) {
+      console.error('❌ S3 Bucket Error:', {
+        error: errorMessage,
+        bucketName: BUCKET_NAME || 'NOT SET',
+        region: AWS_REGION || process.env.AWS_REGION || 'us-east-1',
+        hasCredentials: !!(AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY),
+        key: key || 'unknown'
+      });
+      
+      // Provide more helpful error message
+      if (errorMessage.includes('does not exist')) {
+        return {
+          success: false,
+          error: `S3 bucket "${BUCKET_NAME || 'NOT CONFIGURED'}" does not exist in region "${AWS_REGION || process.env.AWS_REGION || 'us-east-1'}". Please check AWS_S3_BUCKET_NAME environment variable and ensure the bucket exists in your AWS account.`
+        };
+      }
+    }
+    
+    console.error('❌ S3 Upload Error:', {
+      error: errorMessage,
+      bucketName: BUCKET_NAME || 'NOT SET',
+      region: AWS_REGION || process.env.AWS_REGION || 'us-east-1',
+      key: key || 'unknown'
+    });
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage
     };
   }
 }
@@ -317,22 +361,43 @@ export async function uploadStreamToS3(
     };
 
   } catch (error) {
-    console.error('AWS S3 stream upload error:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      region: AWS_REGION,
-      bucket: BUCKET_NAME,
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Enhanced error logging for bucket issues
+    if (errorMessage.includes('bucket') || errorMessage.includes('Bucket')) {
+      console.error('❌ S3 Bucket Error (Stream Upload):', {
+        error: errorMessage,
+        bucketName: BUCKET_NAME || 'NOT SET',
+        region: AWS_REGION || process.env.AWS_REGION || 'us-east-1',
+        hasCredentials: !!(AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY),
+        key: key || 'unknown'
+      });
+      
+      // Provide more helpful error message
+      if (errorMessage.includes('does not exist')) {
+        return {
+          success: false,
+          error: `S3 bucket "${BUCKET_NAME || 'NOT CONFIGURED'}" does not exist in region "${AWS_REGION || process.env.AWS_REGION || 'us-east-1'}". Please check AWS_S3_BUCKET_NAME environment variable and ensure the bucket exists in your AWS account.`
+        };
+      }
+    }
+    
+    console.error('❌ AWS S3 stream upload error:', {
+      error: errorMessage,
+      region: AWS_REGION || process.env.AWS_REGION || 'us-east-1',
+      bucket: BUCKET_NAME || 'NOT SET',
       key: key || 'unknown'
     });
     
-    let errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    let finalErrorMessage = errorMessage;
     
     if (errorMessage.includes('signature')) {
-      errorMessage = `AWS Signature Mismatch - Stream upload failed. Check credentials and region: ${AWS_REGION}`;
+      finalErrorMessage = `AWS Signature Mismatch - Stream upload failed. Check credentials and region: ${AWS_REGION || process.env.AWS_REGION || 'us-east-1'}`;
     }
     
     return {
       success: false,
-      error: errorMessage
+      error: finalErrorMessage
     };
   }
 }
