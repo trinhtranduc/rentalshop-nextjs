@@ -325,15 +325,19 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     }
 
     // Check for duplicate phone or email if being updated
-    if (parsed.data.phone || parsed.data.email) {
+    // Only check if phone/email are provided, not empty, and different from existing
+    const hasPhone = parsed.data.phone && parsed.data.phone.trim();
+    const hasEmail = parsed.data.email && parsed.data.email.trim();
+    
+    if (hasPhone || hasEmail) {
       const duplicateConditions = [];
       
-      if (parsed.data.phone && parsed.data.phone !== existingCustomer.phone) {
-        duplicateConditions.push({ phone: parsed.data.phone });
+      if (hasPhone && parsed.data.phone.trim() !== existingCustomer.phone) {
+        duplicateConditions.push({ phone: parsed.data.phone.trim() });
       }
       
-      if (parsed.data.email && parsed.data.email !== existingCustomer.email) {
-        duplicateConditions.push({ email: parsed.data.email });
+      if (hasEmail && parsed.data.email.trim() !== existingCustomer.email) {
+        duplicateConditions.push({ email: parsed.data.email.trim() });
       }
 
       if (duplicateConditions.length > 0) {
@@ -344,8 +348,8 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         });
 
         if (duplicateCustomer) {
-          const duplicateField = duplicateCustomer.phone === parsed.data.phone ? 'phone number' : 'email';
-          const duplicateValue = duplicateCustomer.phone === parsed.data.phone ? parsed.data.phone : parsed.data.email;
+          const duplicateField = duplicateCustomer.phone === parsed.data.phone?.trim() ? 'phone number' : 'email';
+          const duplicateValue = duplicateCustomer.phone === parsed.data.phone?.trim() ? parsed.data.phone.trim() : parsed.data.email.trim();
           
           console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
