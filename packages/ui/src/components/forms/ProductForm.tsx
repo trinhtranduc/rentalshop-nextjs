@@ -904,66 +904,66 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               
               <div className="space-y-4">
                 {/* Deposit, Sale Price, and Cost Price */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <NumericInput
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <NumericInput
                       label={t('fields.deposit')}
                       value={formData.deposit}
                       onChange={(value) => handleInputChange('deposit', value)}
-                      placeholder="0.00"
+                  placeholder="0.00"
                       error={!!errors.deposit}
-                      required
-                      allowDecimals={true}
-                      maxDecimalPlaces={2}
-                    />
+                  required
+                  allowDecimals={true}
+                  maxDecimalPlaces={2}
+                />
                     {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
-                  </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <NumericInput
-                      label={t('fields.salePrice')}
-                      value={formData.salePrice}
-                      onChange={(value) => handleInputChange('salePrice', value)}
-                      placeholder="0.00"
-                      error={!!errors.salePrice}
-                      required
-                      allowDecimals={true}
-                      maxDecimalPlaces={2}
-                    />
-                    {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
-                  </div>
+              <div className="space-y-2">
+                <NumericInput
+                  label={t('fields.salePrice')}
+                  value={formData.salePrice}
+                  onChange={(value) => handleInputChange('salePrice', value)}
+                  placeholder="0.00"
+                  error={!!errors.salePrice}
+                  required
+                  allowDecimals={true}
+                  maxDecimalPlaces={2}
+                />
+                {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
+              </div>
 
-                  <div className="space-y-2">
-                    <NumericInput
-                      label={t('fields.costPrice')}
-                      value={formData.costPrice}
-                      onChange={(value) => handleInputChange('costPrice', value)}
-                      placeholder="0.00"
-                      error={!!errors.costPrice}
-                      allowDecimals={true}
-                      maxDecimalPlaces={2}
-                    />
-                    {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <NumericInput
+                  label={t('fields.costPrice')}
+                  value={formData.costPrice}
+                  onChange={(value) => handleInputChange('costPrice', value)}
+                  placeholder="0.00"
+                  error={!!errors.costPrice}
+                  allowDecimals={true}
+                  maxDecimalPlaces={2}
+                />
+                {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
+              </div>
+            </div>
 
                 {/* Stock */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <NumericInput
-                      label={t('fields.stock')}
-                      value={formData.totalStock}
-                      onChange={(value) => handleInputChange('totalStock', value)}
-                      placeholder="0"
-                      error={!!errors.totalStock}
-                      required
-                      allowDecimals={false}
-                      min={0}
-                    />
-                    {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <NumericInput
+                  label={t('fields.stock')}
+                  value={formData.totalStock}
+                  onChange={(value) => handleInputChange('totalStock', value)}
+                  placeholder="0"
+                  error={!!errors.totalStock}
+                  required
+                  allowDecimals={false}
+                  min={0}
+                />
+                {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
               </div>
+            </div>
+            </div>
             </div>
           </CardContent>
         </Card>

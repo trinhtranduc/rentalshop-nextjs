@@ -52,14 +52,14 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       
       // Default behavior: get all merchant outlets or single outlet
       if (userScope.merchantId) {
-        const merchant = await db.merchants.findById(userScope.merchantId);
-        if (merchant && merchant.outlets) {
+      const merchant = await db.merchants.findById(userScope.merchantId);
+      if (merchant && merchant.outlets) {
           return merchant.outlets.map((outlet: any) => ({
             id: outlet.id,
             publicId: outlet.publicId || outlet.id,
             name: outlet.name
           }));
-        }
+      }
       } else if (userScope.outletId) {
         const outlet = await db.outlets.findById(userScope.outletId);
         if (outlet) {
@@ -93,50 +93,50 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         const outletObj = await db.outlets.findById(userScope.outletId);
         if (outletObj) {
           orderWhereClause.outletId = outletObj.id;
-        }
-      } else if (user.role === 'ADMIN') {
-        // ADMIN users see all data (system-wide access)
-        // No additional filtering needed for ADMIN role
-      } else {
-        // All other users without merchant/outlet assignment should see no data
+      }
+    } else if (user.role === 'ADMIN') {
+      // ADMIN users see all data (system-wide access)
+      // No additional filtering needed for ADMIN role
+    } else {
+      // All other users without merchant/outlet assignment should see no data
         return { period: '', count: 0, outletId: undefined, outletName: undefined };
-      }
+    }
 
-      // Add date filtering if provided
-      if (startDate || endDate) {
-        orderWhereClause.createdAt = {};
-        if (startDate) orderWhereClause.createdAt.gte = new Date(startDate);
-        if (endDate) orderWhereClause.createdAt.lte = new Date(endDate);
-      }
+    // Add date filtering if provided
+    if (startDate || endDate) {
+      orderWhereClause.createdAt = {};
+      if (startDate) orderWhereClause.createdAt.gte = new Date(startDate);
+      if (endDate) orderWhereClause.createdAt.lte = new Date(endDate);
+    }
 
       // Get orders based on outlet scope
-      const orders = await db.orders.search({
-        where: orderWhereClause,
-        limit: 1000 // Get enough orders to analyze
-      });
+    const orders = await db.orders.search({
+      where: orderWhereClause,
+      limit: 1000 // Get enough orders to analyze
+    });
 
-      // Group orders by time period
-      const groupedOrders: { [key: string]: number } = {};
+    // Group orders by time period
+    const groupedOrders: { [key: string]: number } = {};
+    
+    orders.data?.forEach(order => {
+      const date = new Date(order.createdAt);
+      let key: string;
       
-      orders.data?.forEach(order => {
-        const date = new Date(order.createdAt);
-        let key: string;
-        
-        if (groupBy === 'day') {
-          key = date.toISOString().split('T')[0]; // YYYY-MM-DD
-        } else {
-          key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
-        }
-        
-        groupedOrders[key] = (groupedOrders[key] || 0) + 1;
-      });
+      if (groupBy === 'day') {
+        key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      } else {
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+      }
+      
+      groupedOrders[key] = (groupedOrders[key] || 0) + 1;
+    });
 
       // Convert to array format with outlet info
       return Object.entries(groupedOrders).map(([period, count]) => ({
-        period,
+      period,
         count,
         ...(outlet ? { outletId: outlet.publicId, outletName: outlet.name } : {})
-      })).sort((a, b) => a.period.localeCompare(b.period));
+    })).sort((a, b) => a.period.localeCompare(b.period));
     };
 
     // Process orders for each outlet separately if outletIds provided, otherwise process aggregated

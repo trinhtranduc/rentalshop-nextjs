@@ -142,14 +142,14 @@ export const OrderChart: React.FC<OrderChartProps> = ({
           })
         ) : (
           // Default: single aggregated series
-          <Line 
-            type="monotone" 
-            dataKey={legendLabel} 
-            stroke="#3B82F6" 
-            strokeWidth={2}
-            dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6 }}
-          />
+        <Line 
+          type="monotone" 
+          dataKey={legendLabel} 
+          stroke="#3B82F6" 
+          strokeWidth={2}
+          dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+          activeDot={{ r: 6 }}
+        />
         )}
       </LineChart>
     </ResponsiveContainer>

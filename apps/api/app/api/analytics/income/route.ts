@@ -48,7 +48,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     // Generate data based on groupBy parameter
     const incomeData = [];
-
+    
     // Helper function to get outlet IDs based on selected outlets or user scope
     const getOutletsToProcess = async () => {
       if (selectedOutletIds && user.role === 'MERCHANT' && userScope.merchantId) {
@@ -65,62 +65,62 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           })
         );
         return outlets.filter((o): o is { id: string; publicId: number; name: string } => o !== null);
-      }
-      
+        }
+
       // Default behavior: get all merchant outlets or single outlet
-      if (userScope.merchantId) {
-        const merchant = await db.merchants.findById(userScope.merchantId);
-        if (merchant && merchant.outlets) {
+        if (userScope.merchantId) {
+          const merchant = await db.merchants.findById(userScope.merchantId);
+          if (merchant && merchant.outlets) {
           return merchant.outlets.map((outlet: any) => ({
             id: outlet.id,
             publicId: outlet.publicId || outlet.id,
             name: outlet.name
           }));
-        }
-      } else if (userScope.outletId) {
+          }
+        } else if (userScope.outletId) {
         const outlet = await db.outlets.findById(userScope.outletId);
-        if (outlet) {
+          if (outlet) {
           return [{
             id: outlet.id,
             publicId: userScope.outletId,
             name: outlet.name
           }];
+          }
         }
-      }
       return [];
     };
 
     const outletsToProcess = await getOutletsToProcess();
 
     // Helper function to calculate revenue for an order
-    const calculateOrderRevenue = (order: any) => {
-      if (order.orderType === ORDER_TYPE.SALE) {
-        return order.totalAmount;
-      } else {
-        // RENT order
-        if (order.status === ORDER_STATUS.RESERVED) {
-          return order.depositAmount;
-        } else if (order.status === ORDER_STATUS.PICKUPED) {
-          return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
-        } else if (order.status === ORDER_STATUS.RETURNED) {
-          // Check if order was picked up and returned on the same day
-          const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
-          const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
-          
-          if (pickupDate && returnDate) {
-            const sameDay = pickupDate.toDateString() === returnDate.toDateString();
-            if (sameDay) {
-              // Same day rental: total - security deposit + damage fee
-              return order.totalAmount - (order.securityDeposit || 0) + (order.damageFee || 0);
+        const calculateOrderRevenue = (order: any) => {
+          if (order.orderType === ORDER_TYPE.SALE) {
+            return order.totalAmount;
+          } else {
+            // RENT order
+            if (order.status === ORDER_STATUS.RESERVED) {
+              return order.depositAmount;
+            } else if (order.status === ORDER_STATUS.PICKUPED) {
+              return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
+            } else if (order.status === ORDER_STATUS.RETURNED) {
+              // Check if order was picked up and returned on the same day
+              const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+              const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
+              
+              if (pickupDate && returnDate) {
+                const sameDay = pickupDate.toDateString() === returnDate.toDateString();
+                if (sameDay) {
+                  // Same day rental: total - security deposit + damage fee
+                  return order.totalAmount - (order.securityDeposit || 0) + (order.damageFee || 0);
+                }
+              }
+              
+              // Different days or no pickup/return dates: security deposit - damage fee
+              return (order.securityDeposit || 0) - (order.damageFee || 0);
             }
           }
-          
-          // Different days or no pickup/return dates: security deposit - damage fee
-          return (order.securityDeposit || 0) - (order.damageFee || 0);
-        }
-      }
-      return 0;
-    };
+          return 0;
+        };
 
     // Helper function to process income data for a specific outlet
     const processOutletIncome = async (outlet: { id: string; publicId: number; name: string } | null, startOfPeriod: Date, endOfPeriod: Date, periodLabel: string, year: number, groupByType: 'month' | 'day') => {
@@ -165,44 +165,44 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       });
 
       // Calculate real income
-      const realIncome = ordersForRevenueResult.data.reduce((sum: number, order: any) => {
-        return sum + calculateOrderRevenue(order);
-      }, 0);
+        const realIncome = ordersForRevenueResult.data.reduce((sum: number, order: any) => {
+          return sum + calculateOrderRevenue(order);
+        }, 0);
 
-      // Get future income (pending orders with future return dates)
-      const futureIncome = await db.orders.aggregate({
-        where: {
-          status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] },
-          returnPlanAt: {
+        // Get future income (pending orders with future return dates)
+        const futureIncome = await db.orders.aggregate({
+          where: {
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] },
+            returnPlanAt: {
             gte: startOfPeriod,
             lte: endOfPeriod
+            },
+            ...orderWhereClause
           },
-          ...orderWhereClause
-        },
-        _sum: {
-          totalAmount: true
-        }
-      });
+          _sum: {
+            totalAmount: true
+          }
+        });
 
       // Get order count for the period
-      const orderCount = await db.orders.getStats({
-        where: {
-          createdAt: {
+        const orderCount = await db.orders.getStats({
+          where: {
+            createdAt: {
             gte: startOfPeriod,
             lte: endOfPeriod
-          },
-          status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any, ORDER_STATUS.COMPLETED as any] },
-          ...orderWhereClause
-        }
-      });
+            },
+            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any, ORDER_STATUS.COMPLETED as any] },
+            ...orderWhereClause
+          }
+        });
 
       // Push data with outlet info if outlet comparison is enabled
       const dataPoint: any = {
         month: groupByType === 'month' ? periodLabel : `${periodLabel}`,
-        year: year,
-        realIncome: realIncome,
-        futureIncome: futureIncome._sum?.totalAmount || 0,
-        orderCount: orderCount
+          year: year,
+          realIncome: realIncome,
+          futureIncome: futureIncome._sum?.totalAmount || 0,
+          orderCount: orderCount
       };
 
       // Add outlet info when outletIds parameter is provided
