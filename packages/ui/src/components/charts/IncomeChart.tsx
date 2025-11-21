@@ -77,14 +77,46 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
 
   // Check if data has outlet comparison (dynamic keys with outlet names)
   const firstItem = data[0] || {};
-  const hasOutletComparison = outlets && outlets.length > 0;
-  const outletKeys = hasOutletComparison 
+  const firstItemKeys = Object.keys(firstItem);
+  
+  // Check if outlets prop is provided and create outlet keys
+  const outletKeys = outlets && outlets.length > 0
     ? outlets.map(outlet => ({
         actual: `${outlet.name}_actual`,
         projected: `${outlet.name}_projected`,
         outletName: outlet.name
       }))
     : [];
+  
+  // Only use outlet comparison if:
+  // 1. Outlets are provided
+  // 2. Data actually has outlet-specific keys (not just 'actual' and 'projected')
+  const hasOutletSpecificKeys = outletKeys.length > 0 && 
+    outletKeys.some(outletKey => 
+      firstItem.hasOwnProperty(outletKey.actual) || 
+      firstItem.hasOwnProperty(outletKey.projected)
+    );
+  
+  // Check if data has standard keys (total mode)
+  const hasStandardKeys = firstItem.hasOwnProperty('actual') || firstItem.hasOwnProperty('projected');
+  
+  // Determine mode: outlet comparison only if outlet-specific keys exist
+  // If data has outlet-specific keys, use outlet comparison mode
+  // Otherwise, fallback to default mode (total with actual/projected)
+  const hasOutletComparison = hasOutletSpecificKeys;
+  
+  // Debug: log detection logic
+  console.log('🔍 Outlet Comparison Detection:', {
+    outletsProvided: outlets && outlets.length > 0,
+    outletsCount: outlets?.length || 0,
+    outletKeysCount: outletKeys.length,
+    firstItemKeys: firstItemKeys,
+    hasOutletSpecificKeys,
+    hasStandardKeys,
+    hasOutletComparison,
+    willUseOutletComparison: hasOutletComparison && outletKeys.length > 0,
+    sampleOutletKeys: outletKeys.slice(0, 2).map(k => ({ actual: k.actual, projected: k.projected }))
+  });
 
   // Transform data for Recharts with localized formatting based on time period
   const chartData = data.map((item, index) => {
@@ -95,16 +127,19 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     
     const result: any = { period: formattedPeriod };
     
-    // Debug: check which branch we're taking
-    if (item.actual > 0 || item.projected > 0) {
+    // Debug: check which branch we're taking (only for items with data)
+    if (item.actual > 0 || item.projected > 0 || (hasOutletComparison && outletKeys.some(k => (item[k.actual] || 0) > 0 || (item[k.projected] || 0) > 0))) {
       console.log(`🔍 Transform branch check item ${index}:`, {
         hasOutletComparison,
         outletKeysLength: outletKeys.length,
         willUseOutletComparison: hasOutletComparison && outletKeys.length > 0,
         actualLabel,
         projectedLabel,
+        itemKeys: Object.keys(item),
         itemActual: item.actual,
-        itemProjected: item.projected
+        itemProjected: item.projected,
+        hasItemActual: 'actual' in item,
+        hasItemProjected: 'projected' in item
       });
     }
     
