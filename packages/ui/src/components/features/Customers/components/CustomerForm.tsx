@@ -83,13 +83,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       newErrors.firstName = 'First name is required';
     }
 
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    }
+    // lastName is optional - no validation needed
+    // phone is optional - no validation needed
 
     if (formData.email && formData.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -171,7 +166,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
             {/* Last Name */}
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name *</Label>
+              <Label htmlFor="lastName">Last Name</Label>
               <Input
                 id="lastName"
                 value={formData.lastName}
@@ -204,7 +199,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
             {/* Phone */}
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone *</Label>
+              <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
                 value={formData.phone}
