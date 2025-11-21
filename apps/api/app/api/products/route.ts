@@ -539,7 +539,9 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       outletStock: {
         create: outletStock.map(os => ({
           outlet: { connect: { id: os.outletId } },
-          stock: os.stock
+          stock: os.stock,
+          available: os.stock, // available = stock when creating new product (no items rented yet)
+          renting: 0 // No items rented when creating product
         }))
       }
     };

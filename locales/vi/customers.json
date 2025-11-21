@@ -111,7 +111,10 @@
     "getStarted": "Bắt đầu bằng cách thêm khách hàng đầu tiên",
     "loadingCustomers": "Đang tải khách hàng...",
     "na": "Không có",
-    "noChanges": "Không có thay đổi"
+    "noChanges": "Không có thay đổi",
+    "unexpectedError": "Đã xảy ra lỗi không mong muốn",
+    "duplicatePhone": "Đã tồn tại khách hàng với số điện thoại này",
+    "duplicateEmail": "Đã tồn tại khách hàng với địa chỉ email này"
   },
   "filters": {
     "all": "Tất cả khách hàng",
