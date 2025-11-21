@@ -1025,7 +1025,6 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       {(todayOrders || []).slice(0, 6).map(order => {
                         const statusColor = getStatusBadgeColor(order.status);
-                        // Option 5: No background, just border and text
                         // Extract text color for icon and amount
                         const textColor = statusColor.includes('blue-700') ? 'text-blue-700' :
                                          statusColor.includes('green-700') ? 'text-green-700' :
@@ -1035,7 +1034,7 @@ export default function DashboardPage() {
                                          'text-gray-700';
                         
                         return (
-                          <div key={order.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 transition-colors hover:shadow-sm hover:border-gray-300">
+                          <div key={order.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 transition-colors hover:border-gray-300">
                             <div className="flex items-center space-x-3 flex-1 min-w-0">
                               <Package className={`w-4 h-4 ${textColor} shrink-0`} />
                               <div className="flex-1 min-w-0">
@@ -1083,15 +1082,9 @@ export default function DashboardPage() {
                       { statusKey: 'cancelled', count: orderStatusCounts.cancelled || 0 }
                     ].map((item, index) => {
                       const dotColor = getStatusDotColor(item.statusKey);
-                      const statusColor = getStatusBadgeColor(
-                        item.statusKey === 'pickup' ? 'PICKUPED' :
-                        item.statusKey === 'return' ? 'RETURNED' :
-                        item.statusKey.toUpperCase()
-                      );
-                      // Option 5: No background, clean white card with border
                       
                       return (
-                        <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-sm hover:border-gray-300 transition-all">
+                        <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-all">
                           <div className="flex items-center gap-3">
                             <div className={`w-3 h-3 rounded-full ${dotColor} shrink-0`}></div>
                             <span className="text-sm font-semibold text-gray-900 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
