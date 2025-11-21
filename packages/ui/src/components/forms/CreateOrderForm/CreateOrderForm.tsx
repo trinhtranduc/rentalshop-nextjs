@@ -233,7 +233,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       const requestParams: ProductAvailabilityRequest = {
         quantity: requestedQuantity,
         includeTimePrecision: true,
-        timeZone: 'UTC'
+        timeZone: 'UTC',
+        outletId: formData.outletId // Required for MERCHANT and ADMIN roles
       };
 
       // Add rental dates if provided (for RENT mode)
