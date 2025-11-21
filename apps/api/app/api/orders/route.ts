@@ -217,7 +217,6 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     // Calculate rentalDuration from pickup and return dates
     // Duration calculation depends on product pricing type
     let rentalDuration: number | null = null;
-    let rentalDurationUnit: string | null = null;
     
     if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
       const pickup = new Date(parsed.data.pickupPlanAt);
@@ -238,17 +237,14 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       if (pricingType === 'HOURLY') {
         const diffTime = returnDate.getTime() - pickup.getTime();
         rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60)); // Convert to hours
-        rentalDurationUnit = 'hour';
         console.log('🔍 Calculated rental duration:', rentalDuration, 'hours');
       } else if (pricingType === 'DAILY') {
-      const diffTime = returnDate.getTime() - pickup.getTime();
-      rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
-        rentalDurationUnit = 'day';
-      console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
+        const diffTime = returnDate.getTime() - pickup.getTime();
+        rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
+        console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
       } else {
         // FIXED pricing: duration is 1 (per rental)
         rentalDuration = 1;
-        rentalDurationUnit = 'rental';
         console.log('🔍 FIXED pricing: rental duration = 1 rental');
       }
     }
@@ -272,7 +268,6 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
       returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
       rentalDuration: rentalDuration,
-      rentalDurationUnit: rentalDurationUnit,
       isReadyToDeliver: parsed.data.isReadyToDeliver || false,
       collateralType: parsed.data.collateralType,
       collateralDetails: parsed.data.collateralDetails,
@@ -390,7 +385,6 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       pickedUpAt: order.pickedUpAt,
       returnedAt: order.returnedAt,
       rentalDuration: order.rentalDuration,
-      rentalDurationUnit: order.rentalDurationUnit,
       isReadyToDeliver: order.isReadyToDeliver,
       collateralType: order.collateralType,
       collateralDetails: order.collateralDetails,
