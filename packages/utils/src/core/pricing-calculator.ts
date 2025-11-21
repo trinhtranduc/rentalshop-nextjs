@@ -2,7 +2,7 @@
 // REFACTORED PRICING CALCULATOR SYSTEM
 // ============================================================================
 
-import { Plan, Product, Merchant, PricingType, BusinessType, PricingDurationLimits, PricingBusinessRules } from '@rentalshop/types';
+import { Plan, Product, Merchant, PricingType, PricingDurationLimits } from '@rentalshop/types';
 import { BillingInterval, BUSINESS_TYPE_DEFAULTS } from '@rentalshop/constants';
 
 // ============================================================================
