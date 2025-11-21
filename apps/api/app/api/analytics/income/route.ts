@@ -220,9 +220,13 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
       
       while (current <= endMonth) {
-        const monthName = current.toLocaleString('default', { month: 'short' });
         const year = current.getFullYear();
         const month = current.getMonth();
+        
+        // Format as mm/yy (e.g., "11/25")
+        const monthStr = String(month + 1).padStart(2, '0');
+        const yearStr = String(year).slice(-2); // Last 2 digits of year
+        const periodLabel = `${monthStr}/${yearStr}`;
         
         // Calculate start and end of month
         const startOfMonth = new Date(year, month, 1);
@@ -232,11 +236,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         if (selectedOutletIds && outletsToProcess.length > 0) {
           // Process each outlet separately for comparison
           for (const outlet of outletsToProcess) {
-            await processOutletIncome(outlet, startOfMonth, endOfMonth, monthName, year, 'month');
+            await processOutletIncome(outlet, startOfMonth, endOfMonth, periodLabel, year, 'month');
           }
         } else {
           // Default behavior: aggregate all outlets (or single outlet for outlet users)
-          await processOutletIncome(null, startOfMonth, endOfMonth, monthName, year, 'month');
+          await processOutletIncome(null, startOfMonth, endOfMonth, periodLabel, year, 'month');
         }
 
         // Move to next month
@@ -248,11 +252,15 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       const endDay = new Date(end);
       
       while (current <= endDay) {
-        const dayName = current.toLocaleDateString('en-US', { weekday: 'short' });
-        const monthName = current.toLocaleString('default', { month: 'short' });
         const year = current.getFullYear();
         const month = current.getMonth();
         const day = current.getDate();
+        
+        // Format as dd/mm/yy (e.g., "21/11/25")
+        const dayStr = String(day).padStart(2, '0');
+        const monthStr = String(month + 1).padStart(2, '0');
+        const yearStr = String(year).slice(-2); // Last 2 digits of year
+        const periodLabel = `${dayStr}/${monthStr}/${yearStr}`;
         
         // Calculate start and end of day
         const startOfDay = new Date(year, month, day, 0, 0, 0);
@@ -262,11 +270,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         if (selectedOutletIds && outletsToProcess.length > 0) {
           // Process each outlet separately for comparison
           for (const outlet of outletsToProcess) {
-            await processOutletIncome(outlet, startOfDay, endOfDay, `${monthName} ${day}`, year, 'day');
+            await processOutletIncome(outlet, startOfDay, endOfDay, periodLabel, year, 'day');
           }
         } else {
           // Default behavior: aggregate all outlets (or single outlet for outlet users)
-          await processOutletIncome(null, startOfDay, endOfDay, `${monthName} ${day}`, year, 'day');
+          await processOutletIncome(null, startOfDay, endOfDay, periodLabel, year, 'day');
         }
 
         // Move to next day

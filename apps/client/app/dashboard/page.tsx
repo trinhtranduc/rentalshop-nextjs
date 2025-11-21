@@ -118,6 +118,49 @@ const getStatusBadgeColor = (status: string): string => {
   return ORDER_STATUS_COLORS[normalizedStatus as keyof typeof ORDER_STATUS_COLORS] || ORDER_STATUS_COLORS.RESERVED;
 };
 
+// Format date as YYYY-MM-DD using local date components (avoids timezone conversion issues)
+const formatDateAsYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Parse date from API format: "dd/mm/yy" (daily) or "mm/yy" (monthly)
+const parseDateFromAPIFormat = (monthStr: string, year: number): Date => {
+  // Check if format is "dd/mm/yy" (daily) or "mm/yy" (monthly)
+  const parts = monthStr.split('/');
+  
+  if (parts.length === 3) {
+    // Daily format: "dd/mm/yy" (e.g., "21/11/25")
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+    // Handle 2-digit year: assume 20xx for years < 50, 19xx for years >= 50
+    const fullYear = parseInt(parts[2], 10) < 50 ? 2000 + parseInt(parts[2], 10) : 1900 + parseInt(parts[2], 10);
+    return new Date(fullYear, month, day);
+  } else if (parts.length === 2) {
+    // Monthly format: "mm/yy" (e.g., "11/25")
+    const month = parseInt(parts[0], 10) - 1; // Month is 0-indexed
+    // Handle 2-digit year: assume 20xx for years < 50, 19xx for years >= 50
+    const fullYear = parseInt(parts[1], 10) < 50 ? 2000 + parseInt(parts[1], 10) : 1900 + parseInt(parts[1], 10);
+    return new Date(fullYear, month, 1); // First day of month
+  }
+  
+  // Fallback: try to parse as old format "Nov 21" or "Nov"
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthParts = monthStr.trim().split(' ');
+  const monthName = monthParts[0];
+  const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1;
+  
+  const monthIndex = monthNames.indexOf(monthName);
+  if (monthIndex >= 0) {
+    return new Date(year, monthIndex, day);
+  }
+  
+  // Last fallback: use provided year and current date
+  return new Date(year, 0, 1);
+};
+
 // ============================================================================
 // COMPONENTS
 // ============================================================================
@@ -637,26 +680,16 @@ export default function DashboardPage() {
       
       incomeData.forEach((item: any) => {
         // Parse period from API response
-        // API returns: month: "Nov 25" (for daily) or "Nov" (for monthly), year: 2025
+        // API returns: month: "21/11/25" (for daily) or "11/25" (for monthly), year: 2025
         let date: Date;
         
         if (item.month && item.year) {
-          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const monthParts = item.month.trim().split(' ');
-          const monthName = monthParts[0]; // Extract "Nov" from "Nov 25"
-          const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1; // Extract day if present, default to 1
-          
-          const monthIndex = monthNames.indexOf(monthName);
-          if (monthIndex >= 0) {
-            date = new Date(item.year, monthIndex, day);
-          } else {
-            date = new Date(item.month + ' ' + item.year);
-          }
+          date = parseDateFromAPIFormat(item.month, item.year);
         } else {
           date = new Date();
         }
         
-        const periodKey = date.toISOString();
+        const periodKey = formatDateAsYYYYMMDD(date);
         
         if (!groupedByPeriod[periodKey]) {
           groupedByPeriod[periodKey] = {
@@ -688,23 +721,11 @@ export default function DashboardPage() {
     // Default behavior: aggregate data (no outlet comparison)
     return incomeData.map((item: any) => {
       // Parse period from API response
-      // API returns: month: "Nov 25" (for daily) or "Nov" (for monthly), year: 2025
+      // API returns: month: "21/11/25" (for daily) or "11/25" (for monthly), year: 2025
       let date: Date;
       
       if (item.month && item.year) {
-        // Handle "Nov 25" format (daily) or "Nov" format (monthly)
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const monthParts = item.month.trim().split(' ');
-        const monthName = monthParts[0]; // Extract "Nov" from "Nov 25"
-        const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1; // Extract day if present, default to 1
-        
-        const monthIndex = monthNames.indexOf(monthName);
-        if (monthIndex >= 0) {
-          date = new Date(item.year, monthIndex, day);
-        } else {
-          // Fallback: try to parse as date string
-          date = new Date(item.month + ' ' + item.year);
-        }
+        date = parseDateFromAPIFormat(item.month, item.year);
       } else if (item.period) {
         // If period is already a date string
         date = new Date(item.period);
@@ -713,11 +734,22 @@ export default function DashboardPage() {
         date = new Date();
       }
       
-      return {
-        period: date.toISOString(),  // Return ISO string for consistent date formatting
+      const result = {
+        period: formatDateAsYYYYMMDD(date),  // Return YYYY-MM-DD format to avoid timezone conversion issues
         actual: item.realIncome || 0,
         projected: item.futureIncome || 0
       };
+      
+      // Debug: log first few items to verify parsing
+      if (incomeData.indexOf(item) < 3) {
+        console.log('🔍 Revenue data item:', {
+          original: { month: item.month, year: item.year, realIncome: item.realIncome },
+          parsed: { period: result.period, actual: result.actual, projected: result.projected },
+          date: formatDateAsYYYYMMDD(date)
+        });
+      }
+      
+      return result;
     });
   };
 
@@ -745,7 +777,7 @@ export default function DashboardPage() {
           // Try to parse as date, otherwise use as-is
           try {
             const date = new Date(item.period);
-            periodKey = date.toISOString();
+            periodKey = formatDateAsYYYYMMDD(date);
           } catch {
             periodKey = item.period;
           }
@@ -759,7 +791,7 @@ export default function DashboardPage() {
           const monthIndex = monthNames.indexOf(monthName);
           if (monthIndex >= 0) {
             const date = new Date(item.year, monthIndex, day);
-            periodKey = date.toISOString();
+          periodKey = formatDateAsYYYYMMDD(date);
           } else {
             periodKey = 'unknown';
           }
@@ -789,9 +821,9 @@ export default function DashboardPage() {
         try {
           const date = new Date(group.period);
           if (timePeriod === 'year') {
-            periodLabel = useFormattedMonthOnly(date.toISOString());
+            periodLabel = useFormattedMonthOnly(date);
           } else {
-            periodLabel = useFormattedDaily(date.toISOString());
+            periodLabel = useFormattedDaily(date);
           }
         } catch {
           periodLabel = group.period;
@@ -831,7 +863,7 @@ export default function DashboardPage() {
       }
       
       return {
-        period: date.toISOString(),  // Return ISO string for consistent date formatting
+        period: formatDateAsYYYYMMDD(date),  // Return YYYY-MM-DD format to avoid timezone conversion issues
         actual: item.count || item.orderCount || 0,
         projected: item.count || item.orderCount || 0
       };
@@ -853,6 +885,18 @@ export default function DashboardPage() {
   const currentOrderData = getOrderData();
   const currentTopProducts = getTopProducts();
   const currentTopCustomers = getTopCustomers();
+  
+  // Debug: log revenue data for chart
+  useEffect(() => {
+    if (currentRevenueData.length > 0) {
+      console.log('📊 Revenue data for chart:', {
+        totalItems: currentRevenueData.length,
+        first3: currentRevenueData.slice(0, 3),
+        last3: currentRevenueData.slice(-3),
+        hasData: currentRevenueData.some(item => item.actual > 0 || item.projected > 0)
+      });
+    }
+  }, [currentRevenueData]);
   
   // Debug popular data
   console.log('🔍 Current Top Products:', currentTopProducts);
@@ -1087,21 +1131,21 @@ export default function DashboardPage() {
                               <Package className={`w-4 h-4 ${textColor} shrink-0`} />
                               <div className="flex-1 min-w-0">
                                 <div className="font-semibold text-sm text-gray-900 truncate">{order.orderNumber}</div>
-                                <div className="text-xs text-gray-600 font-normal mt-0.5">
-                                  {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'} • 
-                                  {order.returnPlanAt ? useFormattedFullDate(order.returnPlanAt) : 'N/A'}
-                                </div>
+                              <div className="text-xs text-gray-600 font-normal mt-0.5">
+                                {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'} • 
+                                {order.returnPlanAt ? useFormattedFullDate(order.returnPlanAt) : 'N/A'}
+                              </div>
                                 <div className="text-xs text-gray-500 font-normal truncate">{order.productNames || 'N/A'}</div>
                                 <div className="mt-1.5">
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
                                     {order.status}
                                   </span>
-                                </div>
-                              </div>
                             </div>
+                          </div>
+                          </div>
                             <div className="text-right ml-3 shrink-0">
                               <div className={`font-bold text-sm ${textColor}`}>{formatMoney(order.totalAmount || 0)}</div>
-                            </div>
+                        </div>
                           </div>
                         );
                       })}
@@ -1133,15 +1177,15 @@ export default function DashboardPage() {
                       
                       return (
                         <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-all">
-                          <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                             <div className={`w-3 h-3 rounded-full ${dotColor} shrink-0`}></div>
-                            <span className="text-sm font-semibold text-gray-900 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-base font-bold text-gray-900">{item.count}</span>
-                            <span className="text-xs text-gray-400 font-normal">{t('orderStatuses.ordersCount')}</span>
-                          </div>
+                          <span className="text-sm font-semibold text-gray-900 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-bold text-gray-900">{item.count}</span>
+                          <span className="text-xs text-gray-400 font-normal">{t('orderStatuses.ordersCount')}</span>
+                        </div>
+                      </div>
                       );
                     })}
                   </div>
