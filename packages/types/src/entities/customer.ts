@@ -51,9 +51,9 @@ export interface Customer extends BaseEntityWithMerchant, Address, ContactInfo {
  */
 export interface CustomerCreateInput extends BaseFormInput {
   firstName: string;
-  lastName: string;
+  lastName?: string; // Optional - only firstName is required
   email?: string;
-  phone: string;
+  phone?: string; // Optional - no constraint required
   address?: string;
   city?: string;
   state?: string;

@@ -201,9 +201,9 @@ export type RentalInput = z.infer<typeof rentalSchema>;
 // Customer validation schemas
 export const customerCreateSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  lastName: z.string().optional(), // Optional - only firstName is required
   email: z.string().email('Invalid email format').optional().or(z.literal('')),
-  phone: z.string().min(1, 'Phone number is required'),
+  phone: z.string().optional(), // Optional - no constraint required
   merchantId: z.coerce.number().int().positive().optional(), // Optional - only required for ADMIN users, auto-assigned for MERCHANT/OUTLET from JWT
   address: z.string().optional(),
   city: z.string().optional(),

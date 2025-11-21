@@ -261,9 +261,9 @@ model OutletStock {
 model Customer {
   id          Int       @id @default(autoincrement())
   firstName   String
-  lastName    String
+  lastName    String? // Optional - only firstName is required
   email       String?
-  phone       String
+  phone       String? // Optional - no constraint required
   address     String?
   city        String?
   state       String?
@@ -280,7 +280,8 @@ model Customer {
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   orders      Order[]
 
-  @@unique([merchantId, phone])
+  // Remove unique constraint on phone since it's optional
+  // @@unique([merchantId, phone]) - Removed: phone is optional
   @@index([merchantId, firstName, lastName])
 }
 
