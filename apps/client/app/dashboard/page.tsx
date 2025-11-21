@@ -963,7 +963,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.todayRentals')}
-                color="text-blue-700"
+                color="text-green-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -975,7 +975,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.activeRentals')}
-                color="text-purple-600"
+                color="text-green-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -987,7 +987,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.overdueReturns')}
-                color="text-red-600"
+                color="text-green-600"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
