@@ -188,7 +188,6 @@ export const PUT = async (
         pickedUpAt: fullOrder.pickedUpAt,
         returnedAt: fullOrder.returnedAt,
         rentalDuration: fullOrder.rentalDuration,
-        rentalDurationUnit: fullOrder.rentalDurationUnit,
         isReadyToDeliver: fullOrder.isReadyToDeliver,
         collateralType: fullOrder.collateralType,
         collateralDetails: fullOrder.collateralDetails,
