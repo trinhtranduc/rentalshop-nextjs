@@ -103,13 +103,38 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       });
     } else {
       // Default mode: use standard labels
+      // Debug before setting
+      if (item.actual > 0 || item.projected > 0) {
+        console.log(`🔧 Before transform item ${index}:`, {
+          actualLabel: actualLabel,
+          projectedLabel: projectedLabel,
+          actualLabelType: typeof actualLabel,
+          projectedLabelType: typeof projectedLabel,
+          itemActual: item.actual,
+          itemProjected: item.projected,
+          resultBefore: { ...result }
+        });
+      }
+      
       result[actualLabel] = item.actual || 0;
       result[projectedLabel] = item.projected || 0;
+      
+      // Debug after setting
+      if (item.actual > 0 || item.projected > 0) {
+        console.log(`✅ After transform item ${index}:`, {
+          resultAfter: { ...result },
+          resultActualLabel: result[actualLabel],
+          resultProjectedLabel: result[projectedLabel],
+          resultKeys: Object.keys(result),
+          hasActualLabel: actualLabel in result,
+          hasProjectedLabel: projectedLabel in result
+        });
+      }
     }
     
     // Debug: log transform for items with data
     if (item.actual > 0 || item.projected > 0) {
-      console.log(`🔄 Transform item ${index}:`, {
+      console.log(`🔄 Transform item ${index} FINAL:`, {
         input: { period: item.period, actual: item.actual, projected: item.projected },
         output: result,
         outputActualLabel: result[actualLabel],
