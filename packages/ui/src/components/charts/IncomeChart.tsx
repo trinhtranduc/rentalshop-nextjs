@@ -113,6 +113,11 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   // Debug: log chart data
   if (chartData.length > 0) {
     const itemsWithData = chartData.filter(item => (item[actualLabel] || 0) > 0 || (item[projectedLabel] || 0) > 0);
+    
+    // Find item with data to debug
+    const itemWithData = chartData.find(item => (item[actualLabel] || 0) > 0 || (item[projectedLabel] || 0) > 0);
+    const rawItemWithData = data.find(d => d.actual > 0 || d.projected > 0);
+    
     console.log('📈 IncomeChart data:', {
       totalItems: chartData.length,
       itemsWithData: itemsWithData.length,
@@ -122,16 +127,17 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       firstItem: chartData[0],
       firstItemActual: chartData[0]?.[actualLabel],
       firstItemProjected: chartData[0]?.[projectedLabel],
-      first3: chartData.slice(0, 3),
-      last3: chartData.slice(-3),
-      itemsWithDataDetails: itemsWithData.map(item => ({
-        period: item.period,
-        actual: item[actualLabel],
-        projected: item[projectedLabel],
-        allKeys: Object.keys(item)
-      })),
+      itemWithData: itemWithData,
+      itemWithDataActual: itemWithData?.[actualLabel],
+      itemWithDataProjected: itemWithData?.[projectedLabel],
       rawDataFirst: data[0],
-      rawDataWithActual: data.find(d => d.actual > 0 || d.projected > 0)
+      rawDataWithActual: rawItemWithData,
+      allItemsSample: chartData.slice(0, 5).map(item => ({
+        period: item.period,
+        actualValue: item[actualLabel],
+        projectedValue: item[projectedLabel],
+        allKeys: Object.keys(item)
+      }))
     });
   }
 
