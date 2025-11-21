@@ -1769,7 +1769,10 @@ var messages$3 = {
 	getStarted: "Get started by adding your first customer",
 	loadingCustomers: "Loading customers...",
 	na: "N/A",
-	noChanges: "No changes detected"
+	noChanges: "No changes detected",
+	unexpectedError: "An unexpected error occurred",
+	duplicatePhone: "A customer with this phone number already exists",
+	duplicateEmail: "A customer with this email address already exists"
 };
 var filters$2 = {
 	all: "All Customers",
@@ -2309,7 +2312,7 @@ var messages$1 = {
 	useAddNewCustomerButton: "Use the \"Add New Customer\" button above to create one",
 	rentalPeriod: "Rental Period",
 	selectRentalPeriod: "Select rental period",
-	editOrder: "Edit Order",
+	selectOutlet: "Select outlet",
 	createNewOrder: "Create New Order",
 	confirmOrder: "Confirm Order",
 	orderPreview: "Order Preview",
@@ -2321,7 +2324,12 @@ var messages$1 = {
 	notSet: "Not set",
 	notSelected: "Not selected",
 	totalPrice: "Total Price",
-	additionalInformation: "Additional Information"
+	additionalInformation: "Additional Information",
+	enterDepositAmount: "Enter deposit amount...",
+	quantity: "Quantity",
+	unitPrice: "Unit Price",
+	addNotesForItem: "Add notes for this item...",
+	addNotesAboutProduct: "Add notes about this product..."
 };
 var productOrders = {
 	title: "Product Orders",
@@ -2505,6 +2513,7 @@ var quickActions = {
 	title: "Quick Actions",
 	createOrder: "Create Order",
 	addProduct: "Add Product",
+	addCategory: "Add Category",
 	addCustomer: "Add Customer",
 	viewCalendar: "View Calendar",
 	viewReports: "View Reports"
@@ -2862,9 +2871,33 @@ var labels = {
 	inactive: "Inactive",
 	"default": "Default",
 	create: "Create",
-	unknown: "Unknown"
+	unknown: "Unknown",
+	addProduct: "Add Product",
+	addCategory: "Add Category",
+	addCustomer: "Add Customer"
 };
 var messages = {
+	saveSuccess: "Saved successfully",
+	saveFailed: "Failed to save",
+	deleteSuccess: "Deleted successfully",
+	deleteFailed: "Failed to delete",
+	updateSuccess: "Updated successfully",
+	updateFailed: "Failed to update",
+	createSuccess: "Created successfully",
+	createFailed: "Failed to create",
+	confirmDelete: "Are you sure you want to delete this item?",
+	confirmAction: "Are you sure you want to proceed?",
+	noData: "No data available",
+	loadingData: "Loading data...",
+	errorLoadingData: "Error loading data",
+	invalidInput: "Invalid input",
+	requiredField: "This field is required",
+	sessionExpired: "Your session has expired. Please login again.",
+	unauthorized: "You are not authorized to perform this action",
+	serverError: "Server error. Please try again later.",
+	networkError: "Network error. Please check your connection.",
+	comingSoon: "Feature coming soon!",
+	notFound: "The item you're looking for doesn't exist or has been removed.",
 	noBillingCycles: "No billing cycles found",
 	getStartedBillingCycle: "Get started by creating your first billing cycle",
 	noPlanVariants: "No plan variants found",

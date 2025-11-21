@@ -1,20 +1,20 @@
 # Translation Audit Report
 
-Generated: 2025-11-21T06:54:27.906Z
+Generated: 2025-11-21T08:18:56.759Z
 
 ## Summary
 
-- **Total Issues Found**: 1319
+- **Total Issues Found**: 1321
 - **Critical** (Missing Translation Keys): 0
-- **High** (Hardcoded UI Strings): 837
+- **High** (Hardcoded UI Strings): 835
 - **Medium** (Hardcoded API Messages): 91
-- **Low** (Console/Alert Messages): 391
+- **Low** (Console/Alert Messages): 395
 
 ## 1. Translation Files Comparison
 
 **Total Files**: 16
-**Total Keys (EN)**: 2076
-**Total Keys (VI)**: 2106
+**Total Keys (EN)**: 2105
+**Total Keys (VI)**: 2135
 
 ✅ All translation files are complete!
 
@@ -55,7 +55,7 @@ Generated: 2025-11-21T06:54:27.906Z
 
 ## 2. Hardcoded Strings in Components
 
-**Total Found**: 837
+**Total Found**: 835
 
 ### packages/ui/src/components/ui/product-availability-badge.tsx
 
@@ -515,16 +515,6 @@ Generated: 2025-11-21T06:54:27.906Z
   ```
 
 ### packages/ui/src/components/forms/CreateOrderForm/components/OrderInfoSection.tsx
-
-- **Line 295** (placeholder): `"Select outlet..."`
-  ```
-  <SelectValue placeholder="Select outlet..." />
-  ```
-
-- **Line 295** (placeholder): `"Select outlet..."`
-  ```
-  <SelectValue placeholder="Select outlet..." />
-  ```
 
 - **Line 373** (ui): `"absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"`
   ```
@@ -5195,7 +5185,7 @@ Generated: 2025-11-21T06:54:27.906Z
 
 ## 4. Hardcoded Validation Messages
 
-**Total Found**: 709
+**Total Found**: 719
 
 ### packages/ui/src/components/ui/product-availability-async-display.tsx
 
@@ -8914,34 +8904,84 @@ Generated: 2025-11-21T06:54:27.906Z
 
 ### apps/client/app/orders/create/page.tsx
 
-- **Line 73**: `"Failed to fetch customers:"`
+- **Line 86**: `"Failed to fetch customers:"`
   ```
   console.error('Failed to fetch customers:', customersRes.error);
   ```
 
-- **Line 82**: `"Failed to fetch products:"`
+- **Line 96**: `"Failed to fetch products:"`
   ```
   console.error('Failed to fetch products:', productsRes.error);
   ```
 
-- **Line 117**: `"Failed to fetch outlets:"`
+- **Line 131**: `"Failed to fetch outlets:"`
   ```
   console.error('Failed to fetch outlets:', outletsRes.error);
   ```
 
-- **Line 120**: `"Error loading data for order creation:"`
+- **Line 140**: `"Failed to fetch categories:"`
+  ```
+  console.error('Failed to fetch categories:', categoriesRes.error);
+  ```
+
+- **Line 143**: `"Error loading data for order creation:"`
   ```
   console.error('Error loading data for order creation:', error);
   ```
 
-- **Line 139**: `"Failed to create order"`
+- **Line 162**: `"Failed to create order"`
   ```
   throw new Error(result.error || 'Failed to create order');
   ```
 
-- **Line 142**: `"Create order failed:"`
+- **Line 165**: `"Create order failed:"`
   ```
   console.error('Create order failed:', err);
+  ```
+
+- **Line 196**: `"Failed to create product"`
+  ```
+  throw new Error(result.error || 'Failed to create product');
+  ```
+
+- **Line 199**: `"Error creating product:"`
+  ```
+  console.error('Error creating product:', error);
+  ```
+
+- **Line 200**: `"Failed to create product"`
+  ```
+  toastError(tc('labels.error'), (error as Error).message || 'Failed to create product');
+  ```
+
+- **Line 217**: `"Failed to create category"`
+  ```
+  throw new Error(result.error || 'Failed to create category');
+  ```
+
+- **Line 220**: `"Error creating category:"`
+  ```
+  console.error('Error creating category:', error);
+  ```
+
+- **Line 221**: `"Failed to create category"`
+  ```
+  toastError(tc('labels.error'), (error as Error).message || 'Failed to create category');
+  ```
+
+- **Line 258**: `"Failed to create customer"`
+  ```
+  throw new Error(result.error || 'Failed to create customer');
+  ```
+
+- **Line 261**: `"Error creating customer:"`
+  ```
+  console.error('Error creating customer:', error);
+  ```
+
+- **Line 262**: `"Failed to create customer"`
+  ```
+  toastError(tc('labels.error'), (error as Error).message || 'Failed to create customer');
   ```
 
 ### apps/client/app/forget-password/page.tsx
@@ -9006,7 +9046,7 @@ Generated: 2025-11-21T06:54:27.906Z
 
 ## 5. Console/Alert Messages
 
-**Total Found**: 391
+**Total Found**: 395
 
 ### packages/ui/src/components/ui/product-availability-async-display.tsx
 
@@ -10467,7 +10507,7 @@ Generated: 2025-11-21T06:54:27.906Z
 
 ### apps/api/app/api/products/availability/route.ts
 
-- **Line 377** (console.error): `"Error checking product availability:"`
+- **Line 386** (console.error): `"Error checking product availability:"`
   ```
   console.error('Error checking product availability:', error);
   ```
@@ -11286,29 +11326,49 @@ Generated: 2025-11-21T06:54:27.906Z
 
 ### apps/client/app/orders/create/page.tsx
 
-- **Line 73** (console.error): `"Failed to fetch customers:"`
+- **Line 86** (console.error): `"Failed to fetch customers:"`
   ```
   console.error('Failed to fetch customers:', customersRes.error);
   ```
 
-- **Line 82** (console.error): `"Failed to fetch products:"`
+- **Line 96** (console.error): `"Failed to fetch products:"`
   ```
   console.error('Failed to fetch products:', productsRes.error);
   ```
 
-- **Line 117** (console.error): `"Failed to fetch outlets:"`
+- **Line 131** (console.error): `"Failed to fetch outlets:"`
   ```
   console.error('Failed to fetch outlets:', outletsRes.error);
   ```
 
-- **Line 120** (console.error): `"Error loading data for order creation:"`
+- **Line 140** (console.error): `"Failed to fetch categories:"`
+  ```
+  console.error('Failed to fetch categories:', categoriesRes.error);
+  ```
+
+- **Line 143** (console.error): `"Error loading data for order creation:"`
   ```
   console.error('Error loading data for order creation:', error);
   ```
 
-- **Line 142** (console.error): `"Create order failed:"`
+- **Line 165** (console.error): `"Create order failed:"`
   ```
   console.error('Create order failed:', err);
+  ```
+
+- **Line 199** (console.error): `"Error creating product:"`
+  ```
+  console.error('Error creating product:', error);
+  ```
+
+- **Line 220** (console.error): `"Error creating category:"`
+  ```
+  console.error('Error creating category:', error);
+  ```
+
+- **Line 261** (console.error): `"Error creating customer:"`
+  ```
+  console.error('Error creating customer:', error);
   ```
 
 ### apps/client/app/forget-password/page.tsx
