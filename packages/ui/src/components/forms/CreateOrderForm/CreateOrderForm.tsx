@@ -340,40 +340,42 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       console.log('🔍 handleAddNewCustomer: Merchant ID found:', currentMerchantId);
       
-      // Check for duplicate phone number before creating
-      const normalizedPhone = customerData.phone.replace(/[\s\-\(\)\+]/g, '');
-      
-      // First, check in the already loaded search results for immediate feedback
-      const localDuplicate = customerSearchResults.find(customer => {
-        if (customer.phone) {
-          const existingNormalizedPhone = customer.phone.replace(/[\s\-\(\)\+]/g, '');
-          return normalizedPhone === existingNormalizedPhone;
-        }
-        return false;
-      });
-      
-      if (localDuplicate) {
-        const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName}). Please use a different phone number or search for the existing customer.`;
-        toastError(t('messages.duplicateCustomer'), errorMsg);
-        throw new Error(errorMsg);
-      }
-      
-      console.log('🔍 handleAddNewCustomer: No local duplicates found, checking API...');
-      
-      // Then check with the API for a more comprehensive check
-      const duplicateCheck = await customersApi.getCustomerByPhone(customerData.phone);
-      
-      if (duplicateCheck.success && duplicateCheck.data) {
-        const existingCustomers = duplicateCheck.data.customers || duplicateCheck.data.customer || [];
-        const customersArray = Array.isArray(existingCustomers) ? existingCustomers : [existingCustomers];
+      // Check for duplicate phone number before creating (only if phone is provided)
+      if (customerData.phone && customerData.phone.trim()) {
+        const normalizedPhone = customerData.phone.replace(/[\s\-\(\)\+]/g, '');
         
-        for (const existingCustomer of customersArray) {
-          if (existingCustomer.phone) {
-            const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
-            if (normalizedPhone === existingNormalizedPhone) {
-              const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName}). Please use a different phone number or search for the existing customer.`;
-              toastError(t('messages.duplicateCustomer'), errorMsg);
-              throw new Error(errorMsg);
+        // First, check in the already loaded search results for immediate feedback
+        const localDuplicate = customerSearchResults.find(customer => {
+          if (customer.phone) {
+            const existingNormalizedPhone = customer.phone.replace(/[\s\-\(\)\+]/g, '');
+            return normalizedPhone === existingNormalizedPhone;
+          }
+          return false;
+        });
+        
+        if (localDuplicate) {
+          const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName || ''}). Please use a different phone number or search for the existing customer.`;
+          toastError(t('messages.duplicateCustomer'), errorMsg);
+          throw new Error(errorMsg);
+        }
+        
+        console.log('🔍 handleAddNewCustomer: No local duplicates found, checking API...');
+        
+        // Then check with the API for a more comprehensive check
+        const duplicateCheck = await customersApi.getCustomerByPhone(customerData.phone);
+        
+        if (duplicateCheck.success && duplicateCheck.data) {
+          const existingCustomers = duplicateCheck.data.customers || duplicateCheck.data.customer || [];
+          const customersArray = Array.isArray(existingCustomers) ? existingCustomers : [existingCustomers];
+          
+          for (const existingCustomer of customersArray) {
+            if (existingCustomer.phone) {
+              const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
+              if (normalizedPhone === existingNormalizedPhone) {
+                const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName || ''}). Please use a different phone number or search for the existing customer.`;
+                toastError(t('messages.duplicateCustomer'), errorMsg);
+                throw new Error(errorMsg);
+              }
             }
           }
         }
