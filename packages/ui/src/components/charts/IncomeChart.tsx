@@ -105,18 +105,18 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
   // Otherwise, fallback to default mode (total with actual/projected)
   const hasOutletComparison = hasOutletSpecificKeys;
   
-  // Debug: log detection logic
-  console.log('🔍 Outlet Comparison Detection:', {
-    outletsProvided: outlets && outlets.length > 0,
-    outletsCount: outlets?.length || 0,
-    outletKeysCount: outletKeys.length,
-    firstItemKeys: firstItemKeys,
-    hasOutletSpecificKeys,
-    hasStandardKeys,
-    hasOutletComparison,
-    willUseOutletComparison: hasOutletComparison && outletKeys.length > 0,
-    sampleOutletKeys: outletKeys.slice(0, 2).map(k => ({ actual: k.actual, projected: k.projected }))
-  });
+  // Debug: log detection logic (simplified)
+  if (hasOutletComparison) {
+    console.log('📊 IncomeChart: Using outlet comparison mode', {
+      outlets: outletKeys.length,
+      mode: 'outlet-comparison'
+    });
+  } else {
+    console.log('📊 IncomeChart: Using total mode', {
+      mode: 'total',
+      hasStandardKeys
+    });
+  }
 
   // Transform data for Recharts with localized formatting based on time period
   const chartData = data.map((item, index) => {
@@ -127,21 +127,6 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     
     const result: any = { period: formattedPeriod };
     
-    // Debug: check which branch we're taking (only for items with data)
-    if (item.actual > 0 || item.projected > 0 || (hasOutletComparison && outletKeys.some(k => (item[k.actual] || 0) > 0 || (item[k.projected] || 0) > 0))) {
-      console.log(`🔍 Transform branch check item ${index}:`, {
-        hasOutletComparison,
-        outletKeysLength: outletKeys.length,
-        willUseOutletComparison: hasOutletComparison && outletKeys.length > 0,
-        actualLabel,
-        projectedLabel,
-        itemKeys: Object.keys(item),
-        itemActual: item.actual,
-        itemProjected: item.projected,
-        hasItemActual: 'actual' in item,
-        hasItemProjected: 'projected' in item
-      });
-    }
     
     if (hasOutletComparison && outletKeys.length > 0) {
       // Outlet comparison mode: use outlet-specific keys
@@ -151,108 +136,20 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       });
     } else {
       // Default mode: use standard labels
-      // Debug before setting
-      if (item.actual > 0 || item.projected > 0) {
-        console.log(`🔧 Before transform item ${index}:`, {
-          actualLabel: actualLabel,
-          projectedLabel: projectedLabel,
-          actualLabelType: typeof actualLabel,
-          projectedLabelType: typeof projectedLabel,
-          itemActual: item.actual,
-          itemProjected: item.projected,
-          resultBefore: { ...result }
-        });
-      }
-      
       result[actualLabel] = item.actual || 0;
       result[projectedLabel] = item.projected || 0;
-      
-      // Debug after setting
-      if (item.actual > 0 || item.projected > 0) {
-        console.log(`✅ After transform item ${index}:`, {
-          resultAfter: { ...result },
-          resultActualLabel: result[actualLabel],
-          resultProjectedLabel: result[projectedLabel],
-          resultKeys: Object.keys(result),
-          hasActualLabel: actualLabel in result,
-          hasProjectedLabel: projectedLabel in result,
-          directAccess: result['Doanh thu thực tế'],
-          directAccessProjected: result['Doanh thu dự kiến']
-        });
-      }
-    }
-    
-    // Debug: log transform for items with data
-    if (item.actual > 0 || item.projected > 0) {
-      console.log(`🔄 Transform item ${index} FINAL:`, {
-        input: { period: item.period, actual: item.actual, projected: item.projected },
-        output: result,
-        outputActualLabel: result[actualLabel],
-        outputProjectedLabel: result[projectedLabel],
-        actualLabel: actualLabel,
-        projectedLabel: projectedLabel,
-        resultKeys: Object.keys(result),
-        resultValues: Object.entries(result).map(([key, value]) => ({ key, value, type: typeof value }))
-      });
     }
     
     return result;
   });
 
-  // Debug: log chart data with detailed inspection
+  // Debug: log chart data summary (simplified)
   if (chartData.length > 0) {
-    // Find raw data item with actual data
-    const rawItemWithData = data.find(d => d.actual > 0 || d.projected > 0);
-    
-    // Find corresponding chartData item (by period)
-    const chartItemWithData = rawItemWithData 
-      ? chartData.find(item => {
-          // Match by period - need to check both original period and formatted period
-          const rawPeriod = rawItemWithData.period;
-          const formattedRawPeriod = timePeriod === 'year' 
-            ? useFormattedMonthOnly(rawPeriod)
-            : useFormattedDaily(rawPeriod);
-          return item.period === formattedRawPeriod || item.period === rawPeriod;
-        })
-      : null;
-    
-    // Filter items with data using actualLabel and projectedLabel
     const itemsWithData = chartData.filter(item => (item[actualLabel] || 0) > 0 || (item[projectedLabel] || 0) > 0);
-    
-    // Also check if any item has the raw 'actual' or 'projected' keys (in case transform failed)
-    const itemsWithRawKeys = chartData.filter(item => (item.actual || 0) > 0 || (item.projected || 0) > 0);
-    
-    console.log('📈 IncomeChart data - DETAILED DEBUG:', {
+    console.log('📈 IncomeChart:', {
       totalItems: chartData.length,
       itemsWithData: itemsWithData.length,
-      itemsWithRawKeys: itemsWithRawKeys.length,
-      actualLabel: actualLabel,
-      projectedLabel: projectedLabel,
-      firstItemKeys: Object.keys(chartData[0] || {}),
-      firstItem: chartData[0],
-      firstItemActual: chartData[0]?.[actualLabel],
-      firstItemProjected: chartData[0]?.[projectedLabel],
-      rawDataFirst: data[0],
-      rawDataWithActual: rawItemWithData,
-      chartItemWithData: chartItemWithData,
-      chartItemWithDataKeys: chartItemWithData ? Object.keys(chartItemWithData) : null,
-      chartItemWithDataActual: chartItemWithData?.[actualLabel],
-      chartItemWithDataProjected: chartItemWithData?.[projectedLabel],
-      chartItemWithDataRawActual: chartItemWithData?.actual,
-      chartItemWithDataRawProjected: chartItemWithData?.projected,
-      allItemsSample: chartData.slice(0, 5).map(item => ({
-        period: item.period,
-        actualValue: item[actualLabel],
-        projectedValue: item[projectedLabel],
-        rawActual: item.actual,
-        rawProjected: item.projected,
-        allKeys: Object.keys(item),
-        allValues: Object.entries(item).reduce((acc, [key, value]) => {
-          acc[key] = value;
-          return acc;
-        }, {} as any)
-      })),
-      itemWithData2025_11_21: chartData.find(item => item.period?.includes('21') || item.period === '2025-11-21')
+      mode: hasOutletComparison ? 'outlet-comparison' : 'total'
     });
   }
 
