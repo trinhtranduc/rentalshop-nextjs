@@ -89,6 +89,7 @@ interface RecentOrder {
 // HELPER FUNCTIONS
 // ============================================================================
 // Map status key to ORDER_STATUS constant and get color
+// Simplified: Only 3 colors - Blue (reserved), Green (active/positive), Red (cancelled)
 const getStatusDotColor = (statusKey: string): string => {
   const statusMap: Record<string, string> = {
     'reserved': 'RESERVED',
@@ -102,12 +103,10 @@ const getStatusDotColor = (statusKey: string): string => {
   const status = statusMap[statusKey.toLowerCase()] || 'RESERVED';
   const colorClass = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || ORDER_STATUS_COLORS.RESERVED;
   
-  // Extract background color from class (e.g., "bg-blue-50" -> "bg-blue-700" for dot)
+  // Simplified color extraction - only 3 colors
   if (colorClass.includes('blue')) return 'bg-blue-700';
-  if (colorClass.includes('orange')) return 'bg-orange-700';
   if (colorClass.includes('green')) return 'bg-green-700';
   if (colorClass.includes('red')) return 'bg-red-700';
-  if (colorClass.includes('gray')) return 'bg-gray-700';
   return 'bg-gray-700';
 };
 
@@ -1026,9 +1025,8 @@ export default function DashboardPage() {
                         const statusColor = getStatusBadgeColor(order.status);
                         // Extract background color for card (e.g., "bg-blue-50" from "bg-blue-50 text-blue-700")
                         const cardBgColor = statusColor.split(' ')[0] || 'bg-gray-50';
-                        // Extract text color for icon and amount
+                        // Extract text color for icon and amount - simplified to 3 colors
                         const textColor = statusColor.includes('blue') ? 'text-blue-700' :
-                                         statusColor.includes('orange') ? 'text-orange-700' :
                                          statusColor.includes('green') ? 'text-green-700' :
                                          statusColor.includes('red') ? 'text-red-700' :
                                          'text-gray-700';

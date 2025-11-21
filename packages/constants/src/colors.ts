@@ -86,12 +86,12 @@ export const ORDER_STATUS_COLORS = {
     buttonText: '#FFFFFF',  // White - button text
   },
   PICKUPED: {
-    bg: '#FFF7ED',          // Orange 50 - badge background (lighter, softer)
-    text: '#C2410C',        // Orange 700 - badge text (better contrast)
-    border: '#FED7AA',      // Orange 200 - border
-    hex: '#F97316',         // Orange 500 - primary color
-    buttonBg: '#F97316',    // Orange 500 - button background
-    buttonHover: '#EA580C', // Orange 600 - button hover
+    bg: '#F0FDF4',          // Green 50 - badge background (simplified to match system green)
+    text: '#15803D',        // Green 700 - badge text (consistent with other green statuses)
+    border: '#BBF7D0',      // Green 200 - border
+    hex: '#22C55E',         // Green 500 - primary color (system brand color)
+    buttonBg: '#22C55E',    // Green 500 - button background
+    buttonHover: '#16A34A', // Green 600 - button hover
     buttonText: '#FFFFFF',  // White - button text
   },
   RETURNED: {

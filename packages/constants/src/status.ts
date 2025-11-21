@@ -299,7 +299,7 @@ export function getStatusColor(status: string, type: 'subscription' | 'order' | 
         case ORDER_STATUS.RESERVED:
           return 'text-blue-700 bg-blue-50 border-blue-200';
         case ORDER_STATUS.PICKUPED:
-          return 'text-orange-700 bg-orange-50 border-orange-200';
+          return 'text-green-700 bg-green-50 border-green-200';
         case ORDER_STATUS.RETURNED:
           return 'text-green-700 bg-green-50 border-green-200';
         case ORDER_STATUS.COMPLETED:
