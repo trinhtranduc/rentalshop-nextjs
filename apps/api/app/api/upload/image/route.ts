@@ -156,9 +156,15 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
     console.log('📊 Upload result:', JSON.stringify(result, null, 2));
 
     if (result.success && result.data) {
-      // Generate presigned URL for immediate access
-      const presignedUrl = await generateAccessUrl(result.data.key, 86400); // 24 hours
-      const accessUrl = presignedUrl || result.data.cdnUrl || result.data.url;
+      // For staging files, always use presigned URL for immediate access
+      // CloudFront may not be properly configured yet, so presigned URL is more reliable
+      const isStaging = result.data.key.startsWith('staging/');
+      let accessUrl: string;
+      
+      // Always use presigned URL for staging files to ensure immediate access
+      // CloudFront may not have access configured for staging folder
+      const presignedUrl = await generateAccessUrl(result.data.key, 86400, isStaging); // 24 hours, force presigned for staging
+      accessUrl = presignedUrl || result.data.s3Url || result.data.url;
       
       // Extract filename from key for better tracking
       const keyParts = result.data.key.split('/');
@@ -173,7 +179,7 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
           url: accessUrl,
           publicId: result.data.key,
           stagingKey: result.data.key, // Original staging key for cleanup if needed
-          isStaging: result.data.key.startsWith('staging/'),
+          isStaging: isStaging,
           originalFileName: effectiveFileName || file.name,
           finalFileName: finalFileName,
           width: 0,
