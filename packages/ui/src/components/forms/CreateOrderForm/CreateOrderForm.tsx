@@ -179,25 +179,39 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     try {
       const searchResults = await searchProducts(query);
       setSearchedProducts(searchResults);
-      return searchResults.map(product => ({
-        value: String(product.id),
-        label: product.name,
-        image: product.images?.[0],
-        subtitle: product.barcode ? `Barcode: ${product.barcode}` : t('messages.noBarcode'),
-        details: [
-          formatCurrency(product.rentPrice || 0, currency as any),
-          `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
-          `Available: ${product.outletStock?.[0]?.available || 0}`,
-          `Total Stock: ${product.outletStock?.[0]?.stock || 0}`,
-          product.category?.name || t('messages.noCategory')
-        ].filter(Boolean),
-        type: 'product' as const
-      }));
+      
+      // Get the selected outlet ID from form data
+      const selectedOutletId = formData.outletId;
+      
+      return searchResults.map(product => {
+        // Find outlet stock for the selected outlet, or use first one if no outlet selected
+        const outletStock = selectedOutletId
+          ? product.outletStock?.find((os: any) => os.outletId === selectedOutletId)
+          : product.outletStock?.[0];
+        
+        const available = outletStock?.available ?? 0;
+        const stock = outletStock?.stock ?? 0;
+        
+        return {
+          value: String(product.id),
+          label: product.name,
+          image: product.images?.[0],
+          subtitle: product.barcode ? `Barcode: ${product.barcode}` : t('messages.noBarcode'),
+          details: [
+            formatCurrency(product.rentPrice || 0, currency as any),
+            `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
+            `Available: ${available}`,
+            `Total Stock: ${stock}`,
+            product.category?.name || t('messages.noCategory')
+          ].filter(Boolean),
+          type: 'product' as const
+        };
+      });
     } catch (error) {
       console.error('Error searching products:', error);
       return [];
     }
-  }, [searchProducts, currency]);
+  }, [searchProducts, currency, formData.outletId, t]);
 
   // Create a custom getProductAvailabilityStatus function using new API
   const getProductAvailabilityStatus = useCallback(async (
