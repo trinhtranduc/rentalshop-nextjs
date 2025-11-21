@@ -111,10 +111,13 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     if (item.actual > 0 || item.projected > 0) {
       console.log(`🔄 Transform item ${index}:`, {
         input: { period: item.period, actual: item.actual, projected: item.projected },
-        output: { period: result.period, [actualLabel]: result[actualLabel], [projectedLabel]: result[projectedLabel] },
+        output: result,
+        outputActualLabel: result[actualLabel],
+        outputProjectedLabel: result[projectedLabel],
         actualLabel: actualLabel,
         projectedLabel: projectedLabel,
-        resultKeys: Object.keys(result)
+        resultKeys: Object.keys(result),
+        resultValues: Object.entries(result).map(([key, value]) => ({ key, value, type: typeof value }))
       });
     }
     
