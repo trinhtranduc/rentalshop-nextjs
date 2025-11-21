@@ -636,9 +636,26 @@ export default function DashboardPage() {
       });
       
       incomeData.forEach((item: any) => {
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const monthIndex = monthNames.indexOf(item.month);
-        const date = new Date(item.year, monthIndex, 1);
+        // Parse period from API response
+        // API returns: month: "Nov 25" (for daily) or "Nov" (for monthly), year: 2025
+        let date: Date;
+        
+        if (item.month && item.year) {
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const monthParts = item.month.trim().split(' ');
+          const monthName = monthParts[0]; // Extract "Nov" from "Nov 25"
+          const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1; // Extract day if present, default to 1
+          
+          const monthIndex = monthNames.indexOf(monthName);
+          if (monthIndex >= 0) {
+            date = new Date(item.year, monthIndex, day);
+          } else {
+            date = new Date(item.month + ' ' + item.year);
+          }
+        } else {
+          date = new Date();
+        }
+        
         const periodKey = date.toISOString();
         
         if (!groupedByPeriod[periodKey]) {
@@ -670,10 +687,31 @@ export default function DashboardPage() {
     
     // Default behavior: aggregate data (no outlet comparison)
     return incomeData.map((item: any) => {
-      // Create a proper date object from month name and year
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthIndex = monthNames.indexOf(item.month);
-      const date = new Date(item.year, monthIndex, 1);
+      // Parse period from API response
+      // API returns: month: "Nov 25" (for daily) or "Nov" (for monthly), year: 2025
+      let date: Date;
+      
+      if (item.month && item.year) {
+        // Handle "Nov 25" format (daily) or "Nov" format (monthly)
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthParts = item.month.trim().split(' ');
+        const monthName = monthParts[0]; // Extract "Nov" from "Nov 25"
+        const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1; // Extract day if present, default to 1
+        
+        const monthIndex = monthNames.indexOf(monthName);
+        if (monthIndex >= 0) {
+          date = new Date(item.year, monthIndex, day);
+        } else {
+          // Fallback: try to parse as date string
+          date = new Date(item.month + ' ' + item.year);
+        }
+      } else if (item.period) {
+        // If period is already a date string
+        date = new Date(item.period);
+      } else {
+        // Fallback to current date
+        date = new Date();
+      }
       
       return {
         period: date.toISOString(),  // Return ISO string for consistent date formatting
@@ -712,11 +750,19 @@ export default function DashboardPage() {
             periodKey = item.period;
           }
         } else if (item.month && item.year) {
-          // Convert month/year to period key
+          // Parse month/year - handle "Nov 25" format (daily) or "Nov" format (monthly)
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const monthIndex = monthNames.indexOf(item.month);
-          const date = new Date(item.year, monthIndex, 1);
-          periodKey = date.toISOString();
+          const monthParts = item.month.trim().split(' ');
+          const monthName = monthParts[0]; // Extract "Nov" from "Nov 25"
+          const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1; // Extract day if present, default to 1
+          
+          const monthIndex = monthNames.indexOf(monthName);
+          if (monthIndex >= 0) {
+            const date = new Date(item.year, monthIndex, day);
+            periodKey = date.toISOString();
+          } else {
+            periodKey = 'unknown';
+          }
         } else {
           periodKey = 'unknown';
         }
@@ -761,29 +807,31 @@ export default function DashboardPage() {
     
     // Default behavior: aggregate data (no outlet comparison)
     return orderData.map((item: any) => {
-      // Handle different date formats from API
-      let periodLabel: string;
+      // Parse period from API response
+      let date: Date;
       
       if (item.period) {
         // Order Analytics API returns format like "2025-10-02" or "2025-10"
-        const date = new Date(item.period);
-        // Determine if it's day or month format based on string length
-        if (item.period.includes('-') && item.period.split('-').length === 3) {
-          // Day format: "2025-10-02"
-          periodLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        } else {
-          // Month format: "2025-10"
-          periodLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        }
+        date = new Date(item.period);
       } else if (item.month && item.year) {
-        // Income Analytics API returns format like "Oct 2025"
-        periodLabel = `${item.month} ${item.year}`;
+        // Parse month/year - handle "Nov 25" format (daily) or "Nov" format (monthly)
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthParts = item.month.trim().split(' ');
+        const monthName = monthParts[0]; // Extract "Nov" from "Nov 25"
+        const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1; // Extract day if present, default to 1
+        
+        const monthIndex = monthNames.indexOf(monthName);
+        if (monthIndex >= 0) {
+          date = new Date(item.year, monthIndex, day);
+        } else {
+          date = new Date(item.month + ' ' + item.year);
+        }
       } else {
-        periodLabel = 'Unknown';
+        date = new Date();
       }
       
       return {
-        period: periodLabel,
+        period: date.toISOString(),  // Return ISO string for consistent date formatting
         actual: item.count || item.orderCount || 0,
         projected: item.count || item.orderCount || 0
       };
