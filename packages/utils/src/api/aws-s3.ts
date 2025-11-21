@@ -499,13 +499,31 @@ export async function generatePresignedUrl(
 
 /**
  * Generate clean S3 URL for file access (direct or CDN)
+ * For staging files, always uses presigned URL for immediate access
+ * For production files, prefers CloudFront if configured, otherwise presigned URL
  */
 export async function generateAccessUrl(
   key: string,
-  expiresIn: number = 3600
+  expiresIn: number = 3600,
+  forcePresigned: boolean = false
 ): Promise<string | null> {
   try {
-    // Prefer CloudFront URL if available (much cleaner and no access issues)
+    const isStaging = key.startsWith('staging/');
+    
+    // For staging files, always use presigned URL for immediate reliable access
+    // CloudFront may not be configured or may not have access to staging folder yet
+    if (isStaging || forcePresigned) {
+      const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+      });
+
+      const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+      return presignedUrl;
+    }
+    
+    // For production files, prefer CloudFront URL if available (much cleaner and no access issues)
+    // Only if CloudFront is properly configured and has access to S3 bucket
     if (CLOUDFRONT_DOMAIN) {
       return `https://${CLOUDFRONT_DOMAIN}/${key}`;
     }

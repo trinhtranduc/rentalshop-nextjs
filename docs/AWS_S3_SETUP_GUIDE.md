@@ -23,7 +23,7 @@ RentalShop sử dụng **AWS S3** làm phương thức upload chính với **Rai
 1. Vào **S3** service
 2. Click **"Create bucket"**
 3. Cấu hình:
-   - **Bucket name**: `rentalshop-images` (hoặc tên khác)
+   - **Bucket name**: `anyrent-images` (hoặc tên khác)
    - **Region**: `US East (N. Virginia)` (rẻ nhất)
    - **Public access**: **Block all public access** (uncheck)
    - **Versioning**: Disabled
@@ -39,7 +39,7 @@ RentalShop sử dụng **AWS S3** làm phương thức upload chính với **Rai
             "Effect": "Allow",
             "Principal": "*",
             "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::rentalshop-images/*"
+            "Resource": "arn:aws:s3:::anyrent-images/*"
         }
     ]
 }
@@ -55,7 +55,7 @@ RentalShop sử dụng **AWS S3** làm phương thức upload chính với **Rai
 ### **Bước 5: Setup CloudFront (Optional)**
 1. Vào **CloudFront** service
 2. Click **"Create distribution"**
-3. Origin domain: `rentalshop-images.s3.amazonaws.com`
+3. Origin domain: `anyrent-images.s3.amazonaws.com`
 4. Default root object: `index.html`
 5. Caching: **CachingOptimized**
 6. Price class: **Use only US, Canada and Europe**
@@ -68,7 +68,7 @@ RentalShop sử dụng **AWS S3** làm phương thức upload chính với **Rai
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=...
-AWS_S3_BUCKET_NAME=rentalshop-images
+AWS_S3_BUCKET_NAME=anyrent-images
 AWS_CLOUDFRONT_DOMAIN=d1234567890.cloudfront.net
 ```
 
@@ -78,7 +78,7 @@ AWS_CLOUDFRONT_DOMAIN=d1234567890.cloudfront.net
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_S3_BUCKET_NAME=rentalshop-images
+AWS_S3_BUCKET_NAME=anyrent-images
 AWS_CLOUDFRONT_DOMAIN=your-cloudfront-domain.cloudfront.net
 ```
 
@@ -128,7 +128,7 @@ railway logs --service dev-apis
                 "s3:GetObject",
                 "s3:DeleteObject"
             ],
-            "Resource": "arn:aws:s3:::rentalshop-images/*"
+            "Resource": "arn:aws:s3:::anyrent-images/*"
         }
     ]
 }
@@ -158,7 +158,7 @@ railway logs --service dev-apis
 #### **1. Access Denied:**
 ```bash
 # Kiểm tra IAM permissions
-aws s3 ls s3://rentalshop-images
+aws s3 ls s3://anyrent-images
 ```
 
 #### **2. Bucket not found:**
@@ -170,19 +170,74 @@ aws s3 ls --region us-east-1
 #### **3. CORS errors:**
 ```bash
 # Kiểm tra CORS configuration
-aws s3api get-bucket-cors --bucket rentalshop-images
+aws s3api get-bucket-cors --bucket anyrent-images
+```
+
+#### **4. CloudFront URL không xem được ảnh:**
+**Vấn đề:** Upload thành công nhưng không xem được ảnh qua CloudFront URL.
+
+**Nguyên nhân:**
+- CloudFront chưa được cấu hình **Origin Access Control (OAC)** hoặc **Origin Access Identity (OAI)**
+- S3 bucket policy chưa cho phép CloudFront access
+- CloudFront distribution chưa có đúng origin path
+
+**Giải pháp tạm thời:**
+- Staging files sẽ tự động dùng **presigned URL** thay vì CloudFront URL để đảm bảo access được ngay
+- Presigned URL có thời hạn 24 giờ, đủ để preview và commit file
+
+**Giải pháp vĩnh viễn - Setup CloudFront đúng cách:**
+1. **Tạo Origin Access Control (OAC)** trong CloudFront:
+   - Vào CloudFront → Settings → Create OAC
+   - Signing behavior: `Sign requests (recommended)`
+   - Origin type: `S3`
+
+2. **Cập nhật S3 Bucket Policy** để cho phép CloudFront:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowCloudFrontServicePrincipal",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "cloudfront.amazonaws.com"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::anyrent-images/*",
+            "Condition": {
+                "StringEquals": {
+                    "AWS:SourceArn": "arn:aws:cloudfront::YOUR_ACCOUNT_ID:distribution/YOUR_DISTRIBUTION_ID"
+                }
+            }
+        }
+    ]
+}
+```
+
+3. **Cập nhật CloudFront Distribution**:
+   - Origin domain: `anyrent-images.s3.us-east-1.amazonaws.com`
+   - Origin access: Select OAC created above
+   - Default root object: (leave empty)
+   - Caching: Optimized
+
+4. **Test sau khi setup:**
+```bash
+# Test CloudFront URL
+curl -I https://d1234567890.cloudfront.net/staging/test.jpg
+
+# Should return 200 OK, not 403 Forbidden
 ```
 
 ### **Debug commands:**
 ```bash
 # Test S3 connection
-aws s3 ls s3://rentalshop-images
+aws s3 ls s3://anyrent-images
 
 # Test upload
-aws s3 cp test.jpg s3://rentalshop-images/test.jpg
+aws s3 cp test.jpg s3://anyrent-images/test.jpg
 
 # Test download
-aws s3 cp s3://rentalshop-images/test.jpg ./downloaded.jpg
+aws s3 cp s3://anyrent-images/test.jpg ./downloaded.jpg
 ```
 
 ## 📈 **Performance Optimization**
