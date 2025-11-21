@@ -476,8 +476,9 @@ export async function GET(
         conflicts: outletConflicts.conflicts,
       };
 
-      // Overall availability
-      const overallAvailable = canFulfillRequest;
+      // Overall availability - canFulfillRequest is the authoritative source
+      // It already accounts for stock, conflicts, and requested quantity
+      const isAvailable = canFulfillRequest;
 
       return NextResponse.json(
         ResponseBuilder.success('AVAILABILITY_CHECKED', {
@@ -502,7 +503,9 @@ export async function GET(
             timeZone,
             includeTimePrecision,
           },
-          isAvailable: overallAvailable && stockAvailable,
+          // Simplified: isAvailable = canFulfillRequest (already accounts for stock and conflicts)
+          isAvailable,
+          // Keep stockAvailable for backward compatibility and informational purposes
           stockAvailable,
           hasNoConflicts: conflictingOrders.length === 0,
           availabilityByOutlet: [availabilityResult],
@@ -513,7 +516,7 @@ export async function GET(
           },
           totalConflictsFound: outletConflicts.conflicts.length,
           // Enhanced message with time precision
-          message: overallAvailable && stockAvailable
+          message: isAvailable
             ? includeTimePrecision
               ? `Available for rental from ${rentalStart.toLocaleString('en-US', { timeZone, hour12: false })} to ${rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })} (${Math.round(durationHours * 100) / 100} hours)`
               : `Available for rental from ${rentalStart.toLocaleDateString()} to ${rentalEnd.toLocaleDateString()} (${durationDays} days)`
