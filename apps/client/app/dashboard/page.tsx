@@ -89,7 +89,7 @@ interface RecentOrder {
 // HELPER FUNCTIONS
 // ============================================================================
 // Map status key to ORDER_STATUS constant and get color
-// Simplified: Only 3 colors - Blue (reserved), Green (active/positive), Red (cancelled)
+// Option 5: Minimal text-only design - extract dot color from text color
 const getStatusDotColor = (statusKey: string): string => {
   const statusMap: Record<string, string> = {
     'reserved': 'RESERVED',
@@ -103,11 +103,13 @@ const getStatusDotColor = (statusKey: string): string => {
   const status = statusMap[statusKey.toLowerCase()] || 'RESERVED';
   const colorClass = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || ORDER_STATUS_COLORS.RESERVED;
   
-  // Simplified color extraction - only 3 colors
-  if (colorClass.includes('blue')) return 'bg-blue-700';
-  if (colorClass.includes('green')) return 'bg-green-700';
-  if (colorClass.includes('red')) return 'bg-red-700';
-  return 'bg-gray-700';
+  // Extract dot color from text color (minimal design)
+  if (colorClass.includes('blue-700')) return 'bg-blue-700';
+  if (colorClass.includes('green-700')) return 'bg-green-700';
+  if (colorClass.includes('green-600')) return 'bg-green-600';
+  if (colorClass.includes('gray-700')) return 'bg-gray-700';
+  if (colorClass.includes('gray-500')) return 'bg-gray-500';
+  return 'bg-gray-600';
 };
 
 // Get status badge color class
@@ -1023,16 +1025,17 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       {(todayOrders || []).slice(0, 6).map(order => {
                         const statusColor = getStatusBadgeColor(order.status);
-                        // Extract background color for card (e.g., "bg-blue-50" from "bg-blue-50 text-blue-700")
-                        const cardBgColor = statusColor.split(' ')[0] || 'bg-gray-50';
-                        // Extract text color for icon and amount - simplified to 3 colors
-                        const textColor = statusColor.includes('blue') ? 'text-blue-700' :
-                                         statusColor.includes('green') ? 'text-green-700' :
-                                         statusColor.includes('red') ? 'text-red-700' :
+                        // Option 5: No background, just border and text
+                        // Extract text color for icon and amount
+                        const textColor = statusColor.includes('blue-700') ? 'text-blue-700' :
+                                         statusColor.includes('green-700') ? 'text-green-700' :
+                                         statusColor.includes('green-600') ? 'text-green-600' :
+                                         statusColor.includes('gray-700') ? 'text-gray-700' :
+                                         statusColor.includes('gray-500') ? 'text-gray-500' :
                                          'text-gray-700';
                         
                         return (
-                          <div key={order.id} className={`flex items-center justify-between p-3 ${cardBgColor} rounded-lg border transition-colors hover:shadow-sm`}>
+                          <div key={order.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 transition-colors hover:shadow-sm hover:border-gray-300">
                             <div className="flex items-center space-x-3 flex-1 min-w-0">
                               <Package className={`w-4 h-4 ${textColor} shrink-0`} />
                               <div className="flex-1 min-w-0">
@@ -1043,7 +1046,7 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="text-xs text-gray-500 font-normal truncate">{order.productNames || 'N/A'}</div>
                                 <div className="mt-1.5">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusColor}`}>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
                                     {order.status}
                                   </span>
                                 </div>
@@ -1085,10 +1088,10 @@ export default function DashboardPage() {
                         item.statusKey === 'return' ? 'RETURNED' :
                         item.statusKey.toUpperCase()
                       );
-                      const cardBgColor = statusColor.split(' ')[0] || 'bg-gray-50';
+                      // Option 5: No background, clean white card with border
                       
                       return (
-                        <div key={index} className={`flex items-center justify-between p-3 ${cardBgColor} rounded-lg border hover:shadow-sm transition-all`}>
+                        <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-sm hover:border-gray-300 transition-all">
                           <div className="flex items-center gap-3">
                             <div className={`w-3 h-3 rounded-full ${dotColor} shrink-0`}></div>
                             <span className="text-sm font-semibold text-gray-900 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>

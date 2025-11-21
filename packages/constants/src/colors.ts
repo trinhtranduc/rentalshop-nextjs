@@ -77,8 +77,8 @@ export const BORDER_COLORS = {
 // ============================================================================
 export const ORDER_STATUS_COLORS = {
   RESERVED: {
-    bg: '#EFF6FF',          // Blue 50 - badge background (lighter, softer)
-    text: '#1D4ED8',        // Blue 700 - badge text (better contrast)
+    bg: 'transparent',      // No background - minimal design
+    text: '#1D4ED8',        // Blue 700 - text color
     border: '#BFDBFE',      // Blue 200 - border
     hex: '#3B82F6',         // Blue 500 - primary color
     buttonBg: '#3B82F6',    // Blue 500 - button background
@@ -86,8 +86,8 @@ export const ORDER_STATUS_COLORS = {
     buttonText: '#FFFFFF',  // White - button text
   },
   PICKUPED: {
-    bg: '#F0FDF4',          // Green 50 - badge background (simplified to match system green)
-    text: '#15803D',        // Green 700 - badge text (consistent with other green statuses)
+    bg: 'transparent',      // No background - minimal design
+    text: '#15803D',        // Green 700 - text color
     border: '#BBF7D0',      // Green 200 - border
     hex: '#22C55E',         // Green 500 - primary color (system brand color)
     buttonBg: '#22C55E',    // Green 500 - button background
@@ -95,8 +95,8 @@ export const ORDER_STATUS_COLORS = {
     buttonText: '#FFFFFF',  // White - button text
   },
   RETURNED: {
-    bg: '#F0FDF4',          // Green 50 - badge background (lighter, softer)
-    text: '#15803D',        // Green 700 - badge text (better contrast)
+    bg: 'transparent',      // No background - minimal design
+    text: '#16A34A',        // Green 600 - lighter green text
     border: '#BBF7D0',      // Green 200 - border
     hex: '#22C55E',         // Green 500 - primary color
     buttonBg: '#22C55E',    // Green 500 - button background
@@ -104,21 +104,21 @@ export const ORDER_STATUS_COLORS = {
     buttonText: '#FFFFFF',  // White - button text
   },
   COMPLETED: {
-    bg: '#F0FDF4',          // Green 50 - badge background (same as RETURNED - success)
-    text: '#15803D',        // Green 700 - badge text (better contrast)
-    border: '#BBF7D0',      // Green 200 - border
-    hex: '#22C55E',         // Green 500 - primary color
-    buttonBg: '#22C55E',    // Green 500 - button background
-    buttonHover: '#16A34A', // Green 600 - button hover
+    bg: 'transparent',      // No background - minimal design
+    text: '#475569',        // Gray 600 - neutral gray text
+    border: '#E2E8F0',      // Gray 200 - border
+    hex: '#64748B',         // Gray 500 - primary color
+    buttonBg: '#64748B',    // Gray 500 - button background
+    buttonHover: '#475569', // Gray 600 - button hover
     buttonText: '#FFFFFF',  // White - button text
   },
   CANCELLED: {
-    bg: '#FEF2F2',          // Red 50 - badge background (lighter, softer)
-    text: '#B91C1C',        // Red 700 - badge text (better contrast)
-    border: '#FECACA',      // Red 200 - border
-    hex: '#EF4444',         // Red 500 - primary color
-    buttonBg: '#EF4444',    // Red 500 - button background
-    buttonHover: '#DC2626', // Red 600 - button hover
+    bg: 'transparent',      // No background - minimal design
+    text: '#94A3B8',        // Gray 400 - muted gray text
+    border: '#E2E8F0',      // Gray 200 - border
+    hex: '#94A3B8',         // Gray 400 - primary color
+    buttonBg: '#94A3B8',    // Gray 400 - button background
+    buttonHover: '#64748B', // Gray 500 - button hover
     buttonText: '#FFFFFF',  // White - button text
   },
 } as const;
