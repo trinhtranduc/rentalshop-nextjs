@@ -193,18 +193,18 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         const stock = outletStock?.stock ?? 0;
         
         return {
-          value: String(product.id),
-          label: product.name,
-          image: product.images?.[0],
-          subtitle: product.barcode ? `Barcode: ${product.barcode}` : t('messages.noBarcode'),
-          details: [
-            formatCurrency(product.rentPrice || 0, currency as any),
-            `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
+        value: String(product.id),
+        label: product.name,
+        image: product.images?.[0],
+        subtitle: product.barcode ? `Barcode: ${product.barcode}` : t('messages.noBarcode'),
+        details: [
+          formatCurrency(product.rentPrice || 0, currency as any),
+          `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
             `Available: ${available}`,
             `Total Stock: ${stock}`,
-            product.category?.name || t('messages.noCategory')
-          ].filter(Boolean),
-          type: 'product' as const
+          product.category?.name || t('messages.noCategory')
+        ].filter(Boolean),
+        type: 'product' as const
         };
       });
     } catch (error) {
@@ -261,12 +261,14 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           };
         }
 
-        // Check if any outlet can fulfill the request
+        // Simplified: Use canFulfillRequest as the single source of truth
+        // It already accounts for stock, conflicts, and requested quantity
         const canFulfill = availabilityData.availabilityByOutlet?.some((outlet: any) => outlet.canFulfillRequest);
         const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
           sum + outlet.effectivelyAvailable, 0) || availabilityData.totalAvailableStock;
 
-        // Primary check: isAvailable from API (this is the authoritative source)
+        // Use isAvailable from API (which is now = canFulfillRequest)
+        // This is the authoritative source that accounts for everything
         if (!availabilityData.isAvailable) {
           const conflictCount = availabilityData.totalConflictsFound || 0;
           return {
@@ -278,17 +280,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           };
         }
 
-        // Secondary check: canFulfillRequest (even if isAvailable is true, check if outlets can fulfill)
-        if (!canFulfill) {
-          return {
-            status: 'low-stock',
-            text: `Low Stock (${effectivelyAvailable}/${requestedQuantity})`,
-            color: 'bg-orange-100 text-orange-600'
-          };
-        }
-
-        // Available: isAvailable is true AND canFulfillRequest is true
-        // Note: hasNoConflicts can be false but still available if there's enough stock
+        // Available: isAvailable is true (which means canFulfillRequest is also true)
         const conflictCount = availabilityData.totalConflictsFound || 0;
         return {
           status: 'available',
