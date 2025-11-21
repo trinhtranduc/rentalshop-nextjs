@@ -156,15 +156,30 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
     console.log('📊 Upload result:', JSON.stringify(result, null, 2));
 
     if (result.success && result.data) {
-      // For staging files, always use presigned URL for immediate access
-      // CloudFront may not be properly configured yet, so presigned URL is more reliable
+      // Prefer CloudFront URL if configured (faster, cleaner, CDN caching)
+      // result.data.url already contains CloudFront URL if CLOUDFRONT_DOMAIN is set
       const isStaging = result.data.key.startsWith('staging/');
       let accessUrl: string;
       
-      // Always use presigned URL for staging files to ensure immediate access
-      // CloudFront may not have access configured for staging folder
-      const presignedUrl = await generateAccessUrl(result.data.key, 86400, isStaging); // 24 hours, force presigned for staging
-      accessUrl = presignedUrl || result.data.s3Url || result.data.url;
+      // Check if CloudFront is configured via environment variable
+      const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
+      
+      // Use CloudFront URL if configured (check both result.data.cdnUrl and result.data.url)
+      // CloudFront provides better performance, CDN caching, and cleaner URLs
+      if (cloudfrontDomain && (result.data.cdnUrl || (result.data.url && !result.data.url.includes('amazonaws.com')))) {
+        // CloudFront URL is available - use it directly
+        accessUrl = result.data.cdnUrl || result.data.url;
+        console.log('✅ Using CloudFront URL:', accessUrl);
+      } else if (cloudfrontDomain) {
+        // CloudFront is configured but URL not in result - generate it
+        accessUrl = `https://${cloudfrontDomain}/${result.data.key}`;
+        console.log('✅ Generated CloudFront URL:', accessUrl);
+      } else {
+        // CloudFront not configured - generate presigned URL as fallback
+        const presignedUrl = await generateAccessUrl(result.data.key, 86400, false); // 24 hours
+        accessUrl = presignedUrl || result.data.s3Url || result.data.url;
+        console.log('⚠️ CloudFront not configured, using presigned URL');
+      }
       
       // Extract filename from key for better tracking
       const keyParts = result.data.key.split('/');

@@ -175,18 +175,18 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
         ) : (
           // Default: single aggregated series
           <>
-            <Bar 
-              dataKey={actualLabel} 
-              fill="#3B82F6" 
-              radius={[4, 4, 0, 0]}
-              name={actualLabel}
-            />
-            <Bar 
-              dataKey={projectedLabel} 
-              fill="#10B981" 
-              radius={[4, 4, 0, 0]}
-              name={projectedLabel}
-            />
+        <Bar 
+          dataKey={actualLabel} 
+          fill="#3B82F6" 
+          radius={[4, 4, 0, 0]}
+          name={actualLabel}
+        />
+        <Bar 
+          dataKey={projectedLabel} 
+          fill="#10B981" 
+          radius={[4, 4, 0, 0]}
+          name={projectedLabel}
+        />
           </>
         )}
       </BarChart>

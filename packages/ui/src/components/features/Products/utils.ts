@@ -23,7 +23,7 @@ export function getRentalPriceLabel(
     return t('pricing.pricePerRental');
   }
 }
-
+    
 /**
  * Get rental price unit suffix for display
  * @param pricingType - The pricing type (FIXED, HOURLY, DAILY, or null)
@@ -38,7 +38,7 @@ export function getRentalPriceUnit(
     return `/${t('pricing.durationUnitHours')}`;
   } else if (pricingType === 'DAILY') {
     return `/${t('pricing.durationUnitDays')}`;
-  } else {
+    } else {
     // FIXED or null (default to FIXED) - use "lần" for Vietnamese, "rental" for English
     const label = t('pricing.pricePerRental');
     // Extract unit from translation - simple approach
