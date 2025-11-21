@@ -110,6 +110,18 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     return result;
   });
 
+  // Debug: log chart data
+  if (chartData.length > 0) {
+    const itemsWithData = chartData.filter(item => (item[actualLabel] || 0) > 0 || (item[projectedLabel] || 0) > 0);
+    console.log('📈 IncomeChart data:', {
+      totalItems: chartData.length,
+      itemsWithData: itemsWithData.length,
+      first3: chartData.slice(0, 3),
+      last3: chartData.slice(-3),
+      itemsWithDataDetails: itemsWithData
+    });
+  }
+
   // Custom tooltip formatter with currency
   const formatTooltip = (value: number, name: string) => [
     formatMoney(value),
