@@ -116,9 +116,14 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     console.log('📈 IncomeChart data:', {
       totalItems: chartData.length,
       itemsWithData: itemsWithData.length,
+      actualLabel: actualLabel,
+      projectedLabel: projectedLabel,
+      firstItemKeys: Object.keys(chartData[0] || {}),
+      firstItem: chartData[0],
       first3: chartData.slice(0, 3),
       last3: chartData.slice(-3),
-      itemsWithDataDetails: itemsWithData
+      itemsWithDataDetails: itemsWithData,
+      rawDataFirst: data[0]
     });
   }
 
