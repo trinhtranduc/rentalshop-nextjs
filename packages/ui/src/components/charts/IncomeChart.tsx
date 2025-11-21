@@ -87,7 +87,7 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
     : [];
 
   // Transform data for Recharts with localized formatting based on time period
-  const chartData = data.map(item => {
+  const chartData = data.map((item, index) => {
     // Use different formatting based on time period
     const formattedPeriod = timePeriod === 'year' 
       ? useFormattedMonthOnly(item.period)  // For yearly: 01/25, 02/25, etc.
@@ -107,37 +107,74 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       result[projectedLabel] = item.projected || 0;
     }
     
+    // Debug: log transform for items with data
+    if (item.actual > 0 || item.projected > 0) {
+      console.log(`🔄 Transform item ${index}:`, {
+        input: { period: item.period, actual: item.actual, projected: item.projected },
+        output: { period: result.period, [actualLabel]: result[actualLabel], [projectedLabel]: result[projectedLabel] },
+        actualLabel: actualLabel,
+        projectedLabel: projectedLabel,
+        resultKeys: Object.keys(result)
+      });
+    }
+    
     return result;
   });
 
-  // Debug: log chart data
+  // Debug: log chart data with detailed inspection
   if (chartData.length > 0) {
-    const itemsWithData = chartData.filter(item => (item[actualLabel] || 0) > 0 || (item[projectedLabel] || 0) > 0);
-    
-    // Find item with data to debug
-    const itemWithData = chartData.find(item => (item[actualLabel] || 0) > 0 || (item[projectedLabel] || 0) > 0);
+    // Find raw data item with actual data
     const rawItemWithData = data.find(d => d.actual > 0 || d.projected > 0);
     
-    console.log('📈 IncomeChart data:', {
+    // Find corresponding chartData item (by period)
+    const chartItemWithData = rawItemWithData 
+      ? chartData.find(item => {
+          // Match by period - need to check both original period and formatted period
+          const rawPeriod = rawItemWithData.period;
+          const formattedRawPeriod = timePeriod === 'year' 
+            ? useFormattedMonthOnly(rawPeriod)
+            : useFormattedDaily(rawPeriod);
+          return item.period === formattedRawPeriod || item.period === rawPeriod;
+        })
+      : null;
+    
+    // Filter items with data using actualLabel and projectedLabel
+    const itemsWithData = chartData.filter(item => (item[actualLabel] || 0) > 0 || (item[projectedLabel] || 0) > 0);
+    
+    // Also check if any item has the raw 'actual' or 'projected' keys (in case transform failed)
+    const itemsWithRawKeys = chartData.filter(item => (item.actual || 0) > 0 || (item.projected || 0) > 0);
+    
+    console.log('📈 IncomeChart data - DETAILED DEBUG:', {
       totalItems: chartData.length,
       itemsWithData: itemsWithData.length,
+      itemsWithRawKeys: itemsWithRawKeys.length,
       actualLabel: actualLabel,
       projectedLabel: projectedLabel,
       firstItemKeys: Object.keys(chartData[0] || {}),
       firstItem: chartData[0],
       firstItemActual: chartData[0]?.[actualLabel],
       firstItemProjected: chartData[0]?.[projectedLabel],
-      itemWithData: itemWithData,
-      itemWithDataActual: itemWithData?.[actualLabel],
-      itemWithDataProjected: itemWithData?.[projectedLabel],
       rawDataFirst: data[0],
       rawDataWithActual: rawItemWithData,
+      chartItemWithData: chartItemWithData,
+      chartItemWithDataKeys: chartItemWithData ? Object.keys(chartItemWithData) : null,
+      chartItemWithDataActual: chartItemWithData?.[actualLabel],
+      chartItemWithDataProjected: chartItemWithData?.[projectedLabel],
+      chartItemWithDataRawActual: chartItemWithData?.actual,
+      chartItemWithDataRawProjected: chartItemWithData?.projected,
       allItemsSample: chartData.slice(0, 5).map(item => ({
         period: item.period,
         actualValue: item[actualLabel],
         projectedValue: item[projectedLabel],
-        allKeys: Object.keys(item)
-      }))
+        rawActual: item.actual,
+        rawProjected: item.projected,
+        allKeys: Object.keys(item),
+        allValues: Object.entries(item).reduce((acc, [key, value]) => {
+          acc[key] = value;
+          return acc;
+        }, {} as any)
+      })),
+      itemWithData2025_11_21: chartData.find(item => item.period?.includes('21') || item.period === '2025-11-21')
     });
   }
 
