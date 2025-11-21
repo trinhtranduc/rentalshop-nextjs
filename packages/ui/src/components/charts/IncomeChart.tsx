@@ -120,10 +120,18 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
       projectedLabel: projectedLabel,
       firstItemKeys: Object.keys(chartData[0] || {}),
       firstItem: chartData[0],
+      firstItemActual: chartData[0]?.[actualLabel],
+      firstItemProjected: chartData[0]?.[projectedLabel],
       first3: chartData.slice(0, 3),
       last3: chartData.slice(-3),
-      itemsWithDataDetails: itemsWithData,
-      rawDataFirst: data[0]
+      itemsWithDataDetails: itemsWithData.map(item => ({
+        period: item.period,
+        actual: item[actualLabel],
+        projected: item[projectedLabel],
+        allKeys: Object.keys(item)
+      })),
+      rawDataFirst: data[0],
+      rawDataWithActual: data.find(d => d.actual > 0 || d.projected > 0)
     });
   }
 
