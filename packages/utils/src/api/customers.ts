@@ -207,23 +207,19 @@ export const customersApi = {
     const errors: string[] = [];
 
     if (!data.firstName?.trim()) errors.push('First name is required');
-    if (!data.lastName?.trim()) errors.push('Last name is required');
-    if (!data.email?.trim()) errors.push('Email is required');
-    if (!data.phone?.trim()) errors.push('Phone is required');
+    // lastName is optional - only firstName is required
+    // email is optional
+    // phone is optional - no constraint required
     if (!data.merchantId) errors.push('Merchant ID is required');
 
-    // Email validation
-    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    // Email validation (only if provided)
+    if (data.email && data.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       errors.push('Invalid email format');
     }
 
-    // Phone validation
-    if (data.phone && !/^[0-9+\-\s()]+$/.test(data.phone)) {
+    // Phone validation (only if provided)
+    if (data.phone && data.phone.trim() && !/^[0-9+\-\s()]+$/.test(data.phone)) {
       errors.push('Phone number contains invalid characters');
-    }
-
-    if (data.phone && data.phone.length < 8) {
-      errors.push('Phone number must be at least 8 characters');
     }
 
     // ID Type validation

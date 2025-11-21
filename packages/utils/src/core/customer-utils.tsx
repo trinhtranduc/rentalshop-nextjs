@@ -196,13 +196,8 @@ export const validateCustomer = (customer: Partial<Customer>) => {
     errors.push('First name is required');
   }
   
-  if (!customer.lastName || customer.lastName.trim() === '') {
-    errors.push('Last name is required');
-  }
-  
-  if (!customer.phone || customer.phone.trim() === '') {
-    errors.push('Phone number is required');
-  }
+  // lastName is optional - only firstName is required
+  // phone is optional - no constraint required
   
   if (customer.email && customer.email.trim() !== '') {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
