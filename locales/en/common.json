@@ -70,7 +70,10 @@
     "inactive": "Inactive",
     "default": "Default",
     "create": "Create",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "addProduct": "Add Product",
+    "addCategory": "Add Category",
+    "addCustomer": "Add Customer"
   },
   "messages": {
     "saveSuccess": "Saved successfully",
@@ -93,7 +96,11 @@
     "serverError": "Server error. Please try again later.",
     "networkError": "Network error. Please check your connection.",
     "comingSoon": "Feature coming soon!",
-    "notFound": "The item you're looking for doesn't exist or has been removed."
+    "notFound": "The item you're looking for doesn't exist or has been removed.",
+    "noBillingCycles": "No billing cycles found",
+    "getStartedBillingCycle": "Get started by creating your first billing cycle",
+    "noPlanVariants": "No plan variants found",
+    "getStartedPlanVariant": "Get started by creating your first plan variant"
   },
   "navigation": {
     "home": "Home",
@@ -151,12 +158,6 @@
     "weeklyReport": "Weekly Report",
     "monthlyReport": "Monthly Report",
     "yearlyReport": "Yearly Report"
-  },
-  "messages": {
-    "noBillingCycles": "No billing cycles found",
-    "getStartedBillingCycle": "Get started by creating your first billing cycle",
-    "noPlanVariants": "No plan variants found",
-    "getStartedPlanVariant": "Get started by creating your first plan variant"
   }
 }
 

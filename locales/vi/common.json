@@ -70,7 +70,10 @@
     "inactive": "Không hoạt động",
     "default": "Mặc định",
     "create": "Tạo",
-    "unknown": "Không xác định"
+    "unknown": "Không xác định",
+    "addProduct": "Thêm sản phẩm",
+    "addCategory": "Thêm danh mục",
+    "addCustomer": "Thêm khách hàng"
   },
   "messages": {
     "saveSuccess": "Lưu thành công",
@@ -93,7 +96,11 @@
     "serverError": "Lỗi máy chủ. Vui lòng thử lại sau.",
     "networkError": "Lỗi kết nối. Vui lòng kiểm tra kết nối mạng.",
     "comingSoon": "Tính năng sắp ra mắt!",
-    "notFound": "Mục bạn tìm kiếm không tồn tại hoặc đã bị xóa."
+    "notFound": "Mục bạn tìm kiếm không tồn tại hoặc đã bị xóa.",
+    "noBillingCycles": "Không tìm thấy chu kỳ thanh toán nào",
+    "getStartedBillingCycle": "Bắt đầu bằng cách tạo chu kỳ thanh toán đầu tiên của bạn",
+    "noPlanVariants": "Không tìm thấy biến thể gói nào",
+    "getStartedPlanVariant": "Bắt đầu bằng cách tạo biến thể gói đầu tiên của bạn"
   },
   "navigation": {
     "home": "Trang chủ",
@@ -151,12 +158,6 @@
     "weeklyReport": "Báo cáo hàng tuần",
     "monthlyReport": "Báo cáo hàng tháng",
     "yearlyReport": "Báo cáo hàng năm"
-  },
-  "messages": {
-    "noBillingCycles": "Không tìm thấy chu kỳ thanh toán nào",
-    "getStartedBillingCycle": "Bắt đầu bằng cách tạo chu kỳ thanh toán đầu tiên của bạn",
-    "noPlanVariants": "Không tìm thấy biến thể gói nào",
-    "getStartedPlanVariant": "Bắt đầu bằng cách tạo biến thể gói đầu tiên của bạn"
   }
 }
 

@@ -78,6 +78,7 @@
     "title": "Quick Actions",
     "createOrder": "Create Order",
     "addProduct": "Add Product",
+    "addCategory": "Add Category",
     "addCustomer": "Add Customer",
     "viewCalendar": "View Calendar",
     "viewReports": "View Reports"
