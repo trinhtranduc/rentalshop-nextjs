@@ -2818,6 +2818,7 @@ var buttons = {
 	apply: "Apply",
 	browse: "Browse Files",
 	saving: "Saving...",
+	creating: "Creating...",
 	tryAgain: "Try Again"
 };
 var labels = {
