@@ -178,35 +178,41 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
 
     // Check for duplicate phone or email within the same merchant
-    if (parsed.data.phone || parsed.data.email) {
+    // Only check if phone/email are provided and not empty
+    const hasPhone = parsed.data.phone && parsed.data.phone.trim();
+    const hasEmail = parsed.data.email && parsed.data.email.trim();
+    
+    if (hasPhone || hasEmail) {
       const duplicateConditions = [];
       
-      if (parsed.data.phone) {
-        duplicateConditions.push({ phone: parsed.data.phone });
+      if (hasPhone) {
+        duplicateConditions.push({ phone: parsed.data.phone.trim() });
       }
       
-      if (parsed.data.email) {
-        duplicateConditions.push({ email: parsed.data.email });
+      if (hasEmail) {
+        duplicateConditions.push({ email: parsed.data.email.trim() });
       }
 
-      const duplicateCustomer = await db.customers.findFirst({
-        merchantId: merchantId,
-        OR: duplicateConditions
-      });
+      if (duplicateConditions.length > 0) {
+        const duplicateCustomer = await db.customers.findFirst({
+          merchantId: merchantId,
+          OR: duplicateConditions
+        });
 
-      if (duplicateCustomer) {
-        const duplicateField = duplicateCustomer.phone === parsed.data.phone ? 'phone number' : 'email';
-        const duplicateValue = duplicateCustomer.phone === parsed.data.phone ? parsed.data.phone : parsed.data.email;
-        
-        console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
-        return NextResponse.json(
-          {
-            success: false,
-            code: 'CUSTOMER_DUPLICATE',
-            message: `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
-          },
-          { status: 409 }
-        );
+        if (duplicateCustomer) {
+          const duplicateField = duplicateCustomer.phone === parsed.data.phone?.trim() ? 'phone number' : 'email';
+          const duplicateValue = duplicateCustomer.phone === parsed.data.phone?.trim() ? parsed.data.phone.trim() : parsed.data.email.trim();
+          
+          console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'CUSTOMER_DUPLICATE',
+              message: `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
+            },
+            { status: 409 }
+          );
+        }
       }
     }
 
