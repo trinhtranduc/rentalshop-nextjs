@@ -261,38 +261,42 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           };
         }
 
-        if (startDate && endDate && formData.orderType === 'RENT') {
-          // For rental orders with dates, check if available considering conflicts
-          if (!availabilityData.isAvailable || !availabilityData.hasNoConflicts) {
-            const conflictCount = availabilityData.totalConflictsFound;
-            return {
-              status: 'unavailable',
-              text: conflictCount > 0 
-                ? `Conflicts detected (${conflictCount} orders)`
-                : 'Unavailable for selected dates',
-              color: 'bg-orange-100 text-orange-600'
-            };
-          }
-        }
-
         // Check if any outlet can fulfill the request
         const canFulfill = availabilityData.availabilityByOutlet?.some((outlet: any) => outlet.canFulfillRequest);
         const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
           sum + outlet.effectivelyAvailable, 0) || availabilityData.totalAvailableStock;
 
-        if (canFulfill) {
+        // Primary check: isAvailable from API (this is the authoritative source)
+        if (!availabilityData.isAvailable) {
+          const conflictCount = availabilityData.totalConflictsFound || 0;
           return {
-            status: 'available',
-            text: `Available (${effectivelyAvailable} units)`,
-            color: 'bg-green-100 text-green-600'
+            status: 'unavailable',
+            text: conflictCount > 0 
+              ? `Conflicts detected (${conflictCount} orders)`
+              : 'Unavailable for selected dates',
+            color: 'bg-orange-100 text-orange-600'
           };
-        } else {
+        }
+
+        // Secondary check: canFulfillRequest (even if isAvailable is true, check if outlets can fulfill)
+        if (!canFulfill) {
           return {
             status: 'low-stock',
             text: `Low Stock (${effectivelyAvailable}/${requestedQuantity})`,
             color: 'bg-orange-100 text-orange-600'
           };
         }
+
+        // Available: isAvailable is true AND canFulfillRequest is true
+        // Note: hasNoConflicts can be false but still available if there's enough stock
+        const conflictCount = availabilityData.totalConflictsFound || 0;
+        return {
+          status: 'available',
+          text: conflictCount > 0 
+            ? `Available (${effectivelyAvailable} units) - ${conflictCount} conflict(s) but sufficient stock`
+            : `Available (${effectivelyAvailable} units)`,
+          color: 'bg-green-100 text-green-600'
+        };
       } else {
         // API call failed, fallback to basic stock check
         console.warn('Availability API failed, falling back to basic stock check');
