@@ -303,7 +303,7 @@ export function getStatusColor(status: string, type: 'subscription' | 'order' | 
         case ORDER_STATUS.RETURNED:
           return 'bg-green-50 text-green-700 border border-green-200';
         case ORDER_STATUS.COMPLETED:
-          return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+          return 'bg-green-50 text-green-700 border border-green-200';
         case ORDER_STATUS.CANCELLED:
           return 'bg-red-50 text-red-700 border border-red-200';
         default:

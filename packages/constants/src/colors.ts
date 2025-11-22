@@ -73,10 +73,11 @@ export const BORDER_COLORS = {
 } as const;
 
 // ============================================================================
-// ORDER STATUS COLORS - Colorful Theme (Option A: 5-Color)
+// ORDER STATUS COLORS - Colorful Theme (4-Color)
 // ============================================================================
 // Each status has its own distinct color for better visual distinction
-// Blue (RESERVED), Orange (PICKUPED), Green (RETURNED), Emerald (COMPLETED), Red (CANCELLED)
+// Blue (RESERVED), Orange (PICKUPED), Green (RETURNED/COMPLETED), Red (CANCELLED)
+// RETURNED and COMPLETED both use Green as they are both "completed states"
 export const ORDER_STATUS_COLORS = {
   RESERVED: {
     bg: 'bg-blue-50',         // Blue 50 - light blue background
@@ -109,14 +110,14 @@ export const ORDER_STATUS_COLORS = {
     className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
   },
   COMPLETED: {
-    bg: 'bg-emerald-50',       // Emerald 50 - light emerald background
-    text: 'text-emerald-700',  // Emerald 700 - text color
-    border: 'border-emerald-200', // Emerald 200 - border
-    hex: '#10B981',          // Emerald 500 - primary color
-    buttonBg: '#10B981',     // Emerald 500 - button background
-    buttonHover: '#059669',  // Emerald 600 - button hover
+    bg: 'bg-green-50',       // Green 50 - light green background (same as RETURNED for consistency)
+    text: 'text-green-700',  // Green 700 - text color
+    border: 'border-green-200', // Green 200 - border
+    hex: '#22C55E',          // Green 500 - primary color
+    buttonBg: '#22C55E',     // Green 500 - button background
+    buttonHover: '#16A34A',  // Green 600 - button hover
     buttonText: '#FFFFFF',   // White - button text
-    className: 'bg-emerald-50 text-emerald-700 border-emerald-200', // Full className for badges
+    className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
   },
   CANCELLED: {
     bg: 'bg-red-50',         // Red 50 - light red background
