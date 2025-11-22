@@ -58,12 +58,17 @@ export function CalendarGrid({
         let displayDate: Date | null = null;
         
         if (order.status === 'RESERVED') {
-          displayDate = (order as any).pickupPlanAt ? new Date((order as any).pickupPlanAt) : null;
+          // RESERVED: ưu tiên pickupPlanAt, nếu không có thì dùng pickupDate (từ transform)
+          displayDate = (order as any).pickupPlanAt 
+            ? new Date((order as any).pickupPlanAt)
+            : (order.pickupDate ? new Date(order.pickupDate) : null);
         } else if (order.status === 'PICKUPED') {
-          // PICKUPED: ưu tiên pickedUpAt, nếu không có thì dùng pickupPlanAt
+          // PICKUPED: ưu tiên pickedUpAt, nếu không có thì dùng pickupPlanAt, cuối cùng là pickupDate
           displayDate = (order as any).pickedUpAt 
             ? new Date((order as any).pickedUpAt)
-            : ((order as any).pickupPlanAt ? new Date((order as any).pickupPlanAt) : null);
+            : ((order as any).pickupPlanAt 
+              ? new Date((order as any).pickupPlanAt)
+              : (order.pickupDate ? new Date(order.pickupDate) : null));
         }
         
         if (!displayDate) return false;
@@ -74,16 +79,17 @@ export function CalendarGrid({
         
         const matches = displayDateKey === currentDateKey;
         
-        // Debug logging for first week only
-        if (tempDate.getDate() <= 7) {
-          console.log('📅 CalendarGrid date matching:', {
-            currentDateKey,
-            displayDateKey,
-            matches,
-            orderNumber: order.orderNumber,
-            status: order.status
-          });
-        }
+        // Debug logging for all dates to troubleshoot
+        console.log('📅 CalendarGrid date matching:', {
+          currentDateKey,
+          displayDateKey,
+          matches,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          pickupPlanAt: (order as any).pickupPlanAt,
+          pickupDate: order.pickupDate,
+          pickedUpAt: (order as any).pickedUpAt
+        });
         
         return matches;
       });
