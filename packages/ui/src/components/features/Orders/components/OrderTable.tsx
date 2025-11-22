@@ -59,7 +59,7 @@ export const OrderTable = React.memo(function OrderTable({
 
   const getStatusBadge = (status: string) => {
     return (
-      <Badge variant="outline" className={ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS]}>
+      <Badge variant="outline" className={getOrderStatusClassName(status)}>
         {t(`status.${status}`)}
       </Badge>
     );
