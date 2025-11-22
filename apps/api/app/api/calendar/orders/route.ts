@@ -12,10 +12,13 @@ const calendarOrdersQuerySchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
   outletId: z.coerce.number().int().positive().optional(),
   merchantId: z.coerce.number().int().positive().optional(),
-  // Calendar chỉ hiển thị đơn đã cọc (RESERVED) - đơn dự kiến lấy
-  // KHÔNG hiển thị: PICKUPED, RETURNED, COMPLETED, CANCELLED
+  // Calendar chỉ hiển thị đơn RESERVED (đã cọc) và PICKUPED (đã lấy hàng)
+  // RESERVED: hiển thị theo pickupPlanAt (ngày dự kiến lấy)
+  // PICKUPED: hiển thị theo pickedUpAt (ngày thực tế lấy) hoặc pickupPlanAt
+  // KHÔNG hiển thị: RETURNED, COMPLETED, CANCELLED
   status: z.enum([
-    ORDER_STATUS.RESERVED
+    ORDER_STATUS.RESERVED,
+    ORDER_STATUS.PICKUPED
   ] as [string, ...string[]]).optional(),
   orderType: z.enum([
     ORDER_TYPE.RENT,
@@ -59,12 +62,24 @@ export const GET = withReadOnlyAuth(async (
     console.log('📅 Date range:', { startDate, endDate });
 
     // Build where clause with role-based filtering
-    // Calendar should show orders by pickup date, not return date
+    // Calendar shows orders by:
+    // - RESERVED: pickupPlanAt (ngày dự kiến lấy)
+    // - PICKUPED: pickedUpAt (ngày thực tế lấy) hoặc pickupPlanAt
     const where: any = {
-      pickupPlanAt: {
-        gte: startDate,
-        lte: endDate
-      }
+      OR: [
+        {
+          pickupPlanAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        },
+        {
+          pickedUpAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      ]
     };
 
     // Add optional filters
@@ -75,15 +90,19 @@ export const GET = withReadOnlyAuth(async (
       where.orderType = ORDER_TYPE.RENT as any;
     }
     
-    // Calendar chỉ hiển thị đơn đã cọc (RESERVED) - đơn dự kiến lấy
-    // KHÔNG hiển thị: PICKUPED, RETURNED, COMPLETED, CANCELLED
-    // Luôn filter chỉ RESERVED, bất kể user có truyền status hay không
+    // Calendar chỉ hiển thị đơn RESERVED (đã cọc) và PICKUPED (đã lấy hàng)
+    // RESERVED: hiển thị theo pickupPlanAt (ngày dự kiến lấy)
+    // PICKUPED: hiển thị theo pickedUpAt (ngày thực tế lấy) hoặc pickupPlanAt
+    // KHÔNG hiển thị: RETURNED, COMPLETED, CANCELLED
+    // Luôn filter chỉ RESERVED và PICKUPED, bất kể user có truyền status hay không
     if (status) {
-      // Nếu user truyền status, chỉ cho phép RESERVED
-      where.status = status; // Schema đã validate chỉ cho phép RESERVED
+      // Nếu user truyền status, chỉ cho phép RESERVED hoặc PICKUPED
+      where.status = status; // Schema đã validate chỉ cho phép RESERVED hoặc PICKUPED
     } else {
-      // Default: luôn chỉ lấy RESERVED (đơn đã cọc)
-      where.status = ORDER_STATUS.RESERVED as any;
+      // Default: luôn chỉ lấy RESERVED và PICKUPED
+      where.status = {
+        in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
+      };
     }
 
     // Role-based filtering
@@ -183,20 +202,37 @@ export const GET = withReadOnlyAuth(async (
           })
         };
 
-        // Add order only to pickup date (RESERVED orders only - đơn đã cọc)
-        if (order.pickupPlanAt) {
-          const pickupDate = new Date(order.pickupPlanAt);
+        // Add order to calendar based on status:
+        // - RESERVED: hiển thị theo pickupPlanAt (ngày dự kiến lấy)
+        // - PICKUPED: hiển thị theo pickedUpAt (ngày thực tế lấy) hoặc pickupPlanAt
+        let displayDate: Date | null = null;
+        
+        if (order.status === ORDER_STATUS.RESERVED) {
+          // RESERVED: hiển thị theo pickupPlanAt
+          if (order.pickupPlanAt) {
+            displayDate = new Date(order.pickupPlanAt);
+          }
+        } else if (order.status === ORDER_STATUS.PICKUPED) {
+          // PICKUPED: ưu tiên pickedUpAt, nếu không có thì dùng pickupPlanAt
+          if (order.pickedUpAt) {
+            displayDate = new Date(order.pickedUpAt);
+          } else if (order.pickupPlanAt) {
+            displayDate = new Date(order.pickupPlanAt);
+          }
+        }
+        
+        if (displayDate) {
           // Use local date key to match frontend calendar display (user's local timezone)
-          const pickupDateKey = getLocalDateKey(pickupDate);
+          const dateKey = getLocalDateKey(displayDate);
           
-          if (!calendarMap[pickupDateKey]) {
-            calendarMap[pickupDateKey] = [];
+          if (!calendarMap[dateKey]) {
+            calendarMap[dateKey] = [];
           }
           
           // Check if already added to avoid duplicates
-          const alreadyInMap = calendarMap[pickupDateKey].some(o => o.id === order.id);
-          if (!alreadyInMap && calendarMap[pickupDateKey].length < limit) {
-            calendarMap[pickupDateKey].push(orderSummary);
+          const alreadyInMap = calendarMap[dateKey].some(o => o.id === order.id);
+          if (!alreadyInMap && calendarMap[dateKey].length < limit) {
+            calendarMap[dateKey].push(orderSummary);
           }
         }
       }
@@ -209,8 +245,9 @@ export const GET = withReadOnlyAuth(async (
       for (const [dateKey, dayOrders] of Object.entries(calendarMap)) {
         const dayRevenue = dayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
         
-        // All orders in calendarMap are RESERVED orders only (đơn đã cọc)
-        // Orders are only added to their pickup date
+        // All orders in calendarMap are RESERVED or PICKUPED orders
+        // RESERVED: hiển thị theo pickupPlanAt
+        // PICKUPED: hiển thị theo pickedUpAt hoặc pickupPlanAt
         const dayPickups = dayOrders.length;
         const dayReturns = 0; // No return orders displayed
         
