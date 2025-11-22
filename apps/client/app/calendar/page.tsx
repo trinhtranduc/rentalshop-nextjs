@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Calendars, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate, getUTCDateKey, getLocalDateKey } from '@rentalshop/utils';
+import { useFormattedFullDate, getUTCDateKey, getLocalDateKey, formatCurrency } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 
@@ -345,7 +345,7 @@ export default function CalendarPage() {
                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                {(order.totalAmount && order.totalAmount > 0) && (
                                  <span className="font-semibold">
-                                   ${order.totalAmount.toFixed(2)}
+                                   {formatCurrency(order.totalAmount, 'VND')}
                                  </span>
                                )}
                              </td>
