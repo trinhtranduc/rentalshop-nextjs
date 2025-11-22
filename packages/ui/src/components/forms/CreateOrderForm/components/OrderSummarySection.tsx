@@ -80,14 +80,14 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
           {/* Subtotal */}
           <div className="flex justify-between text-sm">
             <span className="text-text-secondary">{t('summary.subtotal')}:</span>
-            <span className="font-mono font-medium">{formatMoney(formData.subtotal)}</span>
+            <span className="font-medium">{formatMoney(formData.subtotal)}</span>
           </div>
 
           {/* Discount */}
           {formData.discountAmount > 0 && (
             <div className="flex justify-between text-sm text-action-success">
               <span>{t('summary.discount')}:</span>
-              <span className="font-mono font-medium">-{formatMoney(formData.discountAmount)}</span>
+              <span className="font-medium">-{formatMoney(formData.discountAmount)}</span>
             </div>
           )}
 
@@ -95,14 +95,14 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
           {formData.orderType === 'RENT' && formData.depositAmount > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-text-secondary">{t('summary.deposit')}:</span>
-              <span className="font-mono font-medium">{formatMoney(formData.depositAmount)}</span>
+              <span className="font-medium">{formatMoney(formData.depositAmount)}</span>
             </div>
           )}
 
           {/* Grand Total */}
           <div className="flex justify-between text-base font-bold text-action-primary pt-2 border-t border-border">
             <span>{t('summary.grandTotal')}:</span>
-            <span className="font-mono">{formatMoney(formData.totalAmount)}</span>
+            <span>{formatMoney(formData.totalAmount)}</span>
           </div>
         </div>
 

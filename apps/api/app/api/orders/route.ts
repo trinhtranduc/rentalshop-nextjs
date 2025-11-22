@@ -239,9 +239,9 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
         rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60)); // Convert to hours
         console.log('🔍 Calculated rental duration:', rentalDuration, 'hours');
       } else if (pricingType === 'DAILY') {
-        const diffTime = returnDate.getTime() - pickup.getTime();
-        rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
-        console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
+      const diffTime = returnDate.getTime() - pickup.getTime();
+      rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
+      console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
       } else {
         // FIXED pricing: duration is 1 (per rental)
         rentalDuration = 1;

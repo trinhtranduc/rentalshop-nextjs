@@ -271,24 +271,24 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         // This is the authoritative source that accounts for everything
         if (!availabilityData.isAvailable) {
           const conflictCount = availabilityData.totalConflictsFound || 0;
-          return {
-            status: 'unavailable',
-            text: conflictCount > 0 
-              ? `Conflicts detected (${conflictCount} orders)`
-              : 'Unavailable for selected dates',
-            color: 'bg-orange-100 text-orange-600'
-          };
-        }
+            return {
+              status: 'unavailable',
+              text: conflictCount > 0 
+                ? `Conflicts detected (${conflictCount} orders)`
+                : 'Unavailable for selected dates',
+              color: 'bg-orange-100 text-orange-600'
+            };
+          }
 
         // Available: isAvailable is true (which means canFulfillRequest is also true)
         const conflictCount = availabilityData.totalConflictsFound || 0;
-        return {
-          status: 'available',
+          return {
+            status: 'available',
           text: conflictCount > 0 
             ? `Available (${effectivelyAvailable} units) - ${conflictCount} conflict(s) but sufficient stock`
             : `Available (${effectivelyAvailable} units)`,
-          color: 'bg-green-100 text-green-600'
-        };
+            color: 'bg-green-100 text-green-600'
+          };
       } else {
         // API call failed, fallback to basic stock check
         console.warn('Availability API failed, falling back to basic stock check');

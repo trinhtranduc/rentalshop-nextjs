@@ -84,7 +84,9 @@ export {
   PRODUCT_AVAILABILITY_COLORS,
   BUTTON_COLORS,
   getOrderStatusClass,
-  getOrderTypeClass
+  getOrderTypeClass,
+  getOrderStatusClassName,
+  getOrderStatusColors
 } from './colors';
 
 // Explicit exports for critical constants

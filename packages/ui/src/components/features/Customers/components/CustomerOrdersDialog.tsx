@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
 import { Badge } from '@rentalshop/ui';
 import type { CustomerWithMerchant } from '@rentalshop/types';
 import { Package, Calendar, DollarSign, User, MapPin, Clock } from 'lucide-react';
-import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
+import { getOrderStatusClassName } from '@rentalshop/constants';
 import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface CustomerOrdersDialogProps {
@@ -107,7 +107,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
   };
 
   const getStatusBadge = (status: string) => {
-    const colors = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
+    const colors = getOrderStatusClassName(status);
     return (
       <Badge variant="outline" className={colors}>
         {status}

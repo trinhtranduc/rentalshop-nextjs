@@ -7,14 +7,14 @@ import {
   Package, 
   XCircle 
 } from 'lucide-react';
-import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
+import { getOrderStatusClassName } from '@rentalshop/constants';
 
 interface StatusBadgesProps {
   order: OrderDetailData;
 }
 
 const getStatusColor = (status: string) => {
-  return ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
+  return getOrderStatusClassName(status);
 };
 
 const getStatusIcon = (status: string) => {
@@ -35,10 +35,11 @@ const getStatusIcon = (status: string) => {
 };
 
 export const StatusBadges: React.FC<StatusBadgesProps> = ({ order }) => {
+  const orderData = order.order;
   // Calculate overdue status from order dates
-  const isOverdue = order.status === 'PICKUPED' && order.returnPlanAt && new Date() > new Date(order.returnPlanAt);
-  const daysOverdue = isOverdue && order.returnPlanAt 
-    ? Math.ceil((new Date().getTime() - new Date(order.returnPlanAt).getTime()) / (1000 * 60 * 60 * 24))
+  const isOverdue = orderData.status === 'PICKUPED' && orderData.returnPlanAt && new Date() > new Date(orderData.returnPlanAt);
+  const daysOverdue = isOverdue && orderData.returnPlanAt 
+    ? Math.ceil((new Date().getTime() - new Date(orderData.returnPlanAt).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
   return (
@@ -46,11 +47,11 @@ export const StatusBadges: React.FC<StatusBadgesProps> = ({ order }) => {
       <div className="flex items-center space-x-2">
         <span className="text-sm font-medium text-gray-700">Status:</span>
         <Badge 
-          className={`px-3 py-1.5 text-sm font-medium border ${getStatusColor(order.status)}`}
+          className={`px-3 py-1.5 text-sm font-medium border ${getStatusColor(orderData.status)}`}
         >
           <div className="flex items-center space-x-2">
-            {getStatusIcon(order.status)}
-            <span>{order.status.replace('_', ' ')}</span>
+            {getStatusIcon(orderData.status)}
+            <span>{orderData.status.replace('_', ' ')}</span>
           </div>
         </Badge>
       </div>
@@ -58,7 +59,7 @@ export const StatusBadges: React.FC<StatusBadgesProps> = ({ order }) => {
       <div className="flex items-center space-x-2">
         <span className="text-sm font-medium text-gray-700">Type:</span>
         <Badge className="px-3 py-1.5 text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
-          {order.orderType.replace('_', ' ')}
+          {orderData.orderType.replace('_', ' ')}
         </Badge>
       </div>
       

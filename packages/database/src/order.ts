@@ -423,7 +423,7 @@ export async function updateOrder(
     hasCustomer: !!updateData.customer,
     hasOutlet: !!updateData.outlet
   });
-
+  
   // Get old order status before update (for stock/renting updates)
   const oldOrder = await prisma.order.findUnique({
     where: { id },

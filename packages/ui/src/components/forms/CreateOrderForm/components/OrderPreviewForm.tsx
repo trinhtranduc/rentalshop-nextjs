@@ -341,14 +341,14 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
                           <TableCell>
                             <Badge variant="outline">{item.quantity}</Badge>
                           </TableCell>
-                          <TableCell className="font-mono">
+                          <TableCell>
                             {formatCurrency(item.unitPrice)}
                           </TableCell>
-                          <TableCell className="font-mono font-medium">
+                          <TableCell className="font-medium">
                             {formatCurrency(item.totalPrice)}
                           </TableCell>
                           {orderData.orderType === 'RENT' && (
-                            <TableCell className="font-mono">
+                            <TableCell>
                               {formatCurrency(item.deposit || 0)}
                             </TableCell>
                           )}
@@ -375,20 +375,20 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="font-mono">{formatCurrency(orderData.subtotal)}</span>
+              <span>{formatCurrency(orderData.subtotal)}</span>
             </div>
             
             {orderData.taxAmount && orderData.taxAmount > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Tax:</span>
-                <span className="font-mono">{formatCurrency(orderData.taxAmount)}</span>
+                <span>{formatCurrency(orderData.taxAmount)}</span>
               </div>
             )}
             
             {orderData.discountAmount && orderData.discountAmount > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Discount:</span>
-                <span className="font-mono text-green-600">-{formatCurrency(orderData.discountAmount)}</span>
+                <span className="text-green-600">-{formatCurrency(orderData.discountAmount)}</span>
               </div>
             )}
             
@@ -396,19 +396,19 @@ export const OrderPreviewForm: React.FC<OrderPreviewFormProps> = ({
             
             <div className="flex justify-between items-center text-lg font-bold">
               <span>Total Amount:</span>
-              <span className="font-mono text-blue-700">{formatCurrency(orderData.totalAmount)}</span>
+              <span className="text-blue-700">{formatCurrency(orderData.totalAmount)}</span>
             </div>
             
             {orderData.depositAmount && orderData.depositAmount > 0 && (
               <>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Deposit Required:</span>
-                  <span className="font-mono text-orange-600">{formatCurrency(orderData.depositAmount)}</span>
+                  <span className="text-orange-600">{formatCurrency(orderData.depositAmount)}</span>
                 </div>
                 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Remaining Balance:</span>
-                  <span className="font-mono font-medium">
+                  <span className="font-medium">
                     {formatCurrency(orderData.totalAmount - orderData.depositAmount)}
                   </span>
                 </div>

@@ -300,17 +300,17 @@ export default function CreateOrderPage() {
         ) : (
           <>
             <div className="space-y-6 px-6">
-              <CreateOrderForm
-                onSubmit={handleSubmit}
-                onCancel={handleCancel}
-                customers={customers}
-                products={products}
-                outlets={outlets}
-                loading={submitting}
+          <CreateOrderForm
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            customers={customers}
+            products={products}
+            outlets={outlets}
+            loading={submitting}
                 layout="split"
-                merchantId={Number(merchantId)}
-                onFormReady={handleFormReady}
-              />
+            merchantId={Number(merchantId)}
+            onFormReady={handleFormReady}
+          />
               
               {/* Quick Actions - Similar to Dashboard */}
               <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">

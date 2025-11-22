@@ -35,7 +35,7 @@ export const calculateCollectionTotal = (order: OrderWithDetails, settingsForm: 
 };
 
 export const getStatusColor = (status: string): string => {
-  return CONSTANTS.ORDER_STATUS_COLORS[status as keyof typeof CONSTANTS.ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
+  return CONSTANTS.getOrderStatusClassName(status);
 };
 
 export const getOrderTypeColor = (type: string): string => {
