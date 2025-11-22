@@ -92,36 +92,6 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     const outletsToProcess = await getOutletsToProcess();
 
-    // Helper function to calculate revenue for an order
-        const calculateOrderRevenue = (order: any) => {
-          if (order.orderType === ORDER_TYPE.SALE) {
-            return order.totalAmount;
-          } else {
-            // RENT order
-            if (order.status === ORDER_STATUS.RESERVED) {
-              return order.depositAmount;
-            } else if (order.status === ORDER_STATUS.PICKUPED) {
-              return order.totalAmount - order.depositAmount + (order.securityDeposit || 0);
-            } else if (order.status === ORDER_STATUS.RETURNED) {
-              // Check if order was picked up and returned on the same day
-              const pickupDate = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
-              const returnDate = order.returnedAt ? new Date(order.returnedAt) : null;
-              
-              if (pickupDate && returnDate) {
-                const sameDay = pickupDate.toDateString() === returnDate.toDateString();
-                if (sameDay) {
-                  // Same day rental: total - security deposit + damage fee
-                  return order.totalAmount - (order.securityDeposit || 0) + (order.damageFee || 0);
-                }
-              }
-              
-              // Different days or no pickup/return dates: security deposit - damage fee
-              return (order.securityDeposit || 0) - (order.damageFee || 0);
-            }
-          }
-          return 0;
-        };
-
     // Helper function to process income data for a specific outlet
     const processOutletIncome = async (outlet: { id: string; publicId: number; name: string } | null, startOfPeriod: Date, endOfPeriod: Date, periodLabel: string, year: number, groupByType: 'month' | 'day') => {
       // Build where clause for orders
@@ -148,38 +118,141 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         }
       }
 
-      // Get orders for revenue calculation
-      const ordersForRevenueResult = await db.orders.search({
-        where: orderWhereClause,
+      // Build outlet filter for all queries
+      const outletFilter: any = {};
+      if (outlet) {
+        outletFilter.outletId = outlet.id;
+      } else if (userScope.merchantId && !selectedOutletIds) {
+        const merchant = await db.merchants.findById(userScope.merchantId);
+        if (merchant && merchant.outlets) {
+          outletFilter.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+        }
+      } else if (userScope.outletId) {
+        const outletObj = await db.outlets.findById(userScope.outletId);
+        if (outletObj) {
+          outletFilter.outletId = outletObj.id;
+        }
+      }
+
+      // Calculate real income based on actual transaction dates
+      // SALE: Count totalAmount on createdAt date (sale is completed immediately)
+      // RESERVED: Count depositAmount on createdAt date
+      // PICKUPED: Count (totalAmount - depositAmount + securityDeposit) on pickedUpAt date
+      // RETURNED: Count -(securityDeposit - damageFee) on returnedAt date (negative because we return money to customer)
+      
+      let realIncome = 0;
+
+      // 0. SALE orders: Count totalAmount on createdAt date
+      const saleOrders = await db.orders.search({
+        where: {
+          ...outletFilter,
+          orderType: ORDER_TYPE.SALE as any,
+          createdAt: {
+            gte: startOfPeriod,
+            lte: endOfPeriod
+          }
+        },
         select: {
-          id: true,
-          orderType: true,
-          status: true,
-          totalAmount: true,
-          depositAmount: true,
-          securityDeposit: true,
-          damageFee: true,
-          pickedUpAt: true,
-          returnedAt: true
+          totalAmount: true
         }
       });
+      realIncome += saleOrders.data.reduce((sum: number, order: any) => {
+        return sum + (order.totalAmount || 0);
+      }, 0);
 
-      // Calculate real income
-        const realIncome = ordersForRevenueResult.data.reduce((sum: number, order: any) => {
-          return sum + calculateOrderRevenue(order);
-        }, 0);
+      // 1. RESERVED orders (RENT only): Count depositAmount on createdAt date
+      const reservedOrders = await db.orders.search({
+        where: {
+          ...outletFilter,
+          orderType: ORDER_TYPE.RENT as any,
+          status: ORDER_STATUS.RESERVED as any,
+          createdAt: {
+            gte: startOfPeriod,
+            lte: endOfPeriod
+          }
+        },
+        select: {
+          depositAmount: true
+        }
+      });
+      realIncome += reservedOrders.data.reduce((sum: number, order: any) => {
+        return sum + (order.depositAmount || 0);
+      }, 0);
 
-        // Get future income (orders with pickup date in this period)
+      // 2. PICKUPED orders (RENT only): Count (totalAmount - depositAmount + securityDeposit) on pickedUpAt date
+      const pickedUpOrders = await db.orders.search({
+        where: {
+          ...outletFilter,
+          orderType: ORDER_TYPE.RENT as any,
+          status: ORDER_STATUS.PICKUPED as any,
+          pickedUpAt: {
+            gte: startOfPeriod,
+            lte: endOfPeriod
+          }
+        },
+        select: {
+          totalAmount: true,
+          depositAmount: true,
+          securityDeposit: true
+        }
+      });
+      realIncome += pickedUpOrders.data.reduce((sum: number, order: any) => {
+        // Revenue when picking up: (total - deposit already paid) + security deposit
+        return sum + (order.totalAmount - (order.depositAmount || 0) + (order.securityDeposit || 0));
+      }, 0);
+
+      // 3. RETURNED orders (RENT only): Count -(securityDeposit - damageFee) on returnedAt date (negative = money returned to customer)
+      const returnedOrders = await db.orders.search({
+        where: {
+          ...outletFilter,
+          orderType: ORDER_TYPE.RENT as any,
+          status: ORDER_STATUS.RETURNED as any,
+          returnedAt: {
+            gte: startOfPeriod,
+            lte: endOfPeriod
+          }
+        },
+        select: {
+          securityDeposit: true,
+          damageFee: true
+        }
+      });
+      realIncome += returnedOrders.data.reduce((sum: number, order: any) => {
+        // Revenue when returning: -(securityDeposit - damageFee) = money returned to customer (negative)
+        const refund = (order.securityDeposit || 0) - (order.damageFee || 0);
+        return sum - refund; // Negative because we return money
+      }, 0);
+
+        // Get future income (RENT orders with pickup date in this period)
         // Future income = totalAmount - depositAmount (amount expected to receive on pickup day)
+        // Note: Only count RESERVED orders (not PICKUPED) because PICKUPED orders have already been collected
+        // Note: Don't filter by createdAt - we want all orders with pickup date in period, regardless of when they were created
+        const futureIncomeWhereClause: any = {
+          orderType: ORDER_TYPE.RENT as any, // Only RENT orders
+          status: ORDER_STATUS.RESERVED as any, // Only RESERVED orders (not yet picked up)
+          pickupPlanAt: {
+            gte: startOfPeriod,
+            lte: endOfPeriod
+          }
+        };
+        
+        // Apply outlet filtering (same as realIncome)
+        if (outlet) {
+          futureIncomeWhereClause.outletId = outlet.id;
+        } else if (userScope.merchantId && !selectedOutletIds) {
+          const merchant = await db.merchants.findById(userScope.merchantId);
+          if (merchant && merchant.outlets) {
+            futureIncomeWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+          }
+        } else if (userScope.outletId) {
+          const outletObj = await db.outlets.findById(userScope.outletId);
+          if (outletObj) {
+            futureIncomeWhereClause.outletId = outletObj.id;
+          }
+        }
+        
         const futureIncomeOrders = await db.orders.search({
-          where: {
-            status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] },
-            pickupPlanAt: {
-              gte: startOfPeriod,
-              lte: endOfPeriod
-            },
-            ...orderWhereClause
-          },
+          where: futureIncomeWhereClause,
           select: {
             totalAmount: true,
             depositAmount: true
