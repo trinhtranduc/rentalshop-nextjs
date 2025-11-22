@@ -234,14 +234,14 @@ declare const ORDER_STATUS_BUTTON_COLORS: {
         readonly className: "bg-blue-50 text-blue-700 border-blue-200";
     };
     readonly PICKUPED: {
-        readonly bg: "bg-green-50";
-        readonly text: "text-green-700";
-        readonly border: "border-green-200";
-        readonly hex: "#22C55E";
-        readonly buttonBg: "#22C55E";
-        readonly buttonHover: "#16A34A";
+        readonly bg: "bg-orange-50";
+        readonly text: "text-orange-700";
+        readonly border: "border-orange-200";
+        readonly hex: "#F97316";
+        readonly buttonBg: "#F97316";
+        readonly buttonHover: "#EA580C";
         readonly buttonText: "#FFFFFF";
-        readonly className: "bg-green-50 text-green-700 border-green-200";
+        readonly className: "bg-orange-50 text-orange-700 border-orange-200";
     };
     readonly RETURNED: {
         readonly bg: "bg-green-50";
@@ -254,24 +254,24 @@ declare const ORDER_STATUS_BUTTON_COLORS: {
         readonly className: "bg-green-50 text-green-700 border-green-200";
     };
     readonly COMPLETED: {
-        readonly bg: "bg-green-50";
-        readonly text: "text-green-700";
-        readonly border: "border-green-200";
-        readonly hex: "#22C55E";
-        readonly buttonBg: "#22C55E";
-        readonly buttonHover: "#16A34A";
+        readonly bg: "bg-emerald-50";
+        readonly text: "text-emerald-700";
+        readonly border: "border-emerald-200";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
         readonly buttonText: "#FFFFFF";
-        readonly className: "bg-green-50 text-green-700 border-green-200";
+        readonly className: "bg-emerald-50 text-emerald-700 border-emerald-200";
     };
     readonly CANCELLED: {
-        readonly bg: "bg-gray-50";
-        readonly text: "text-gray-500";
-        readonly border: "border-gray-200";
-        readonly hex: "#94A3B8";
-        readonly buttonBg: "#94A3B8";
-        readonly buttonHover: "#64748B";
+        readonly bg: "bg-red-50";
+        readonly text: "text-red-700";
+        readonly border: "border-red-200";
+        readonly hex: "#EF4444";
+        readonly buttonBg: "#EF4444";
+        readonly buttonHover: "#DC2626";
         readonly buttonText: "#FFFFFF";
-        readonly className: "bg-gray-50 text-gray-500 border-gray-200";
+        readonly className: "bg-red-50 text-red-700 border-red-200";
     };
 };
 declare const ORDER_TYPE_BUTTON_COLORS: {
@@ -1027,14 +1027,14 @@ declare const ORDER_STATUS_COLORS: {
         readonly className: "bg-blue-50 text-blue-700 border-blue-200";
     };
     readonly PICKUPED: {
-        readonly bg: "bg-green-50";
-        readonly text: "text-green-700";
-        readonly border: "border-green-200";
-        readonly hex: "#22C55E";
-        readonly buttonBg: "#22C55E";
-        readonly buttonHover: "#16A34A";
+        readonly bg: "bg-orange-50";
+        readonly text: "text-orange-700";
+        readonly border: "border-orange-200";
+        readonly hex: "#F97316";
+        readonly buttonBg: "#F97316";
+        readonly buttonHover: "#EA580C";
         readonly buttonText: "#FFFFFF";
-        readonly className: "bg-green-50 text-green-700 border-green-200";
+        readonly className: "bg-orange-50 text-orange-700 border-orange-200";
     };
     readonly RETURNED: {
         readonly bg: "bg-green-50";
@@ -1047,24 +1047,24 @@ declare const ORDER_STATUS_COLORS: {
         readonly className: "bg-green-50 text-green-700 border-green-200";
     };
     readonly COMPLETED: {
-        readonly bg: "bg-green-50";
-        readonly text: "text-green-700";
-        readonly border: "border-green-200";
-        readonly hex: "#22C55E";
-        readonly buttonBg: "#22C55E";
-        readonly buttonHover: "#16A34A";
+        readonly bg: "bg-emerald-50";
+        readonly text: "text-emerald-700";
+        readonly border: "border-emerald-200";
+        readonly hex: "#10B981";
+        readonly buttonBg: "#10B981";
+        readonly buttonHover: "#059669";
         readonly buttonText: "#FFFFFF";
-        readonly className: "bg-green-50 text-green-700 border-green-200";
+        readonly className: "bg-emerald-50 text-emerald-700 border-emerald-200";
     };
     readonly CANCELLED: {
-        readonly bg: "bg-gray-50";
-        readonly text: "text-gray-500";
-        readonly border: "border-gray-200";
-        readonly hex: "#94A3B8";
-        readonly buttonBg: "#94A3B8";
-        readonly buttonHover: "#64748B";
+        readonly bg: "bg-red-50";
+        readonly text: "text-red-700";
+        readonly border: "border-red-200";
+        readonly hex: "#EF4444";
+        readonly buttonBg: "#EF4444";
+        readonly buttonHover: "#DC2626";
         readonly buttonText: "#FFFFFF";
-        readonly className: "bg-gray-50 text-gray-500 border-gray-200";
+        readonly className: "bg-red-50 text-red-700 border-red-200";
     };
 };
 declare const ORDER_TYPE_COLORS: {
@@ -1294,14 +1294,14 @@ declare function getOrderStatusColors(status: string): {
     readonly buttonText: "#FFFFFF";
     readonly className: "bg-blue-50 text-blue-700 border-blue-200";
 } | {
-    readonly bg: "bg-green-50";
-    readonly text: "text-green-700";
-    readonly border: "border-green-200";
-    readonly hex: "#22C55E";
-    readonly buttonBg: "#22C55E";
-    readonly buttonHover: "#16A34A";
+    readonly bg: "bg-orange-50";
+    readonly text: "text-orange-700";
+    readonly border: "border-orange-200";
+    readonly hex: "#F97316";
+    readonly buttonBg: "#F97316";
+    readonly buttonHover: "#EA580C";
     readonly buttonText: "#FFFFFF";
-    readonly className: "bg-green-50 text-green-700 border-green-200";
+    readonly className: "bg-orange-50 text-orange-700 border-orange-200";
 } | {
     readonly bg: "bg-green-50";
     readonly text: "text-green-700";
@@ -1312,23 +1312,23 @@ declare function getOrderStatusColors(status: string): {
     readonly buttonText: "#FFFFFF";
     readonly className: "bg-green-50 text-green-700 border-green-200";
 } | {
-    readonly bg: "bg-green-50";
-    readonly text: "text-green-700";
-    readonly border: "border-green-200";
-    readonly hex: "#22C55E";
-    readonly buttonBg: "#22C55E";
-    readonly buttonHover: "#16A34A";
+    readonly bg: "bg-emerald-50";
+    readonly text: "text-emerald-700";
+    readonly border: "border-emerald-200";
+    readonly hex: "#10B981";
+    readonly buttonBg: "#10B981";
+    readonly buttonHover: "#059669";
     readonly buttonText: "#FFFFFF";
-    readonly className: "bg-green-50 text-green-700 border-green-200";
+    readonly className: "bg-emerald-50 text-emerald-700 border-emerald-200";
 } | {
-    readonly bg: "bg-gray-50";
-    readonly text: "text-gray-500";
-    readonly border: "border-gray-200";
-    readonly hex: "#94A3B8";
-    readonly buttonBg: "#94A3B8";
-    readonly buttonHover: "#64748B";
+    readonly bg: "bg-red-50";
+    readonly text: "text-red-700";
+    readonly border: "border-red-200";
+    readonly hex: "#EF4444";
+    readonly buttonBg: "#EF4444";
+    readonly buttonHover: "#DC2626";
     readonly buttonText: "#FFFFFF";
-    readonly className: "bg-gray-50 text-gray-500 border-gray-200";
+    readonly className: "bg-red-50 text-red-700 border-red-200";
 };
 type BrandColor = keyof typeof BRAND_COLORS;
 type ActionColor = keyof typeof ACTION_COLORS;

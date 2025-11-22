@@ -299,13 +299,13 @@ export function getStatusColor(status: string, type: 'subscription' | 'order' | 
         case ORDER_STATUS.RESERVED:
           return 'bg-blue-50 text-blue-700 border border-blue-200';
         case ORDER_STATUS.PICKUPED:
-          return 'bg-green-50 text-green-700 border border-green-200';
+          return 'bg-orange-50 text-orange-700 border border-orange-200';
         case ORDER_STATUS.RETURNED:
           return 'bg-green-50 text-green-700 border border-green-200';
         case ORDER_STATUS.COMPLETED:
-          return 'bg-green-50 text-green-700 border border-green-200';
+          return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
         case ORDER_STATUS.CANCELLED:
-          return 'bg-gray-50 text-gray-500 border border-gray-200';
+          return 'bg-red-50 text-red-700 border border-red-200';
         default:
           return 'bg-gray-50 text-gray-600 border border-gray-200';
       }
