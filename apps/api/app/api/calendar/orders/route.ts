@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
-import { handleApiError, getUTCDateKey } from '@rentalshop/utils';
+import { handleApiError, getUTCDateKey, getLocalDateKey } from '@rentalshop/utils';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
@@ -186,7 +186,8 @@ export const GET = withReadOnlyAuth(async (
         // Add order only to pickup date (RESERVED and PICKUPED orders only)
         if (order.pickupPlanAt) {
           const pickupDate = new Date(order.pickupPlanAt);
-          const pickupDateKey = getUTCDateKey(pickupDate);
+          // Use local date key to match frontend calendar display (user's local timezone)
+          const pickupDateKey = getLocalDateKey(pickupDate);
           
           if (!calendarMap[pickupDateKey]) {
             calendarMap[pickupDateKey] = [];
