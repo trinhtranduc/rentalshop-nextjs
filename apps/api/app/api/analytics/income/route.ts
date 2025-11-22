@@ -169,20 +169,27 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           return sum + calculateOrderRevenue(order);
         }, 0);
 
-        // Get future income (pending orders with future return dates)
-        const futureIncome = await db.orders.aggregate({
+        // Get future income (orders with pickup date in this period)
+        // Future income = totalAmount - depositAmount (amount expected to receive on pickup day)
+        const futureIncomeOrders = await db.orders.search({
           where: {
             status: { in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] },
-            returnPlanAt: {
-            gte: startOfPeriod,
-            lte: endOfPeriod
+            pickupPlanAt: {
+              gte: startOfPeriod,
+              lte: endOfPeriod
             },
             ...orderWhereClause
           },
-          _sum: {
-            totalAmount: true
+          select: {
+            totalAmount: true,
+            depositAmount: true
           }
         });
+        
+        const futureIncome = futureIncomeOrders.data.reduce((sum: number, order: any) => {
+          // Future income = total - deposit (amount expected to receive on pickup day)
+          return sum + (order.totalAmount - (order.depositAmount || 0));
+        }, 0);
 
       // Get order count for the period
         const orderCount = await db.orders.getStats({
@@ -201,7 +208,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         month: groupByType === 'month' ? periodLabel : `${periodLabel}`,
           year: year,
           realIncome: realIncome,
-          futureIncome: futureIncome._sum?.totalAmount || 0,
+          futureIncome: futureIncome,
           orderCount: orderCount
       };
 
