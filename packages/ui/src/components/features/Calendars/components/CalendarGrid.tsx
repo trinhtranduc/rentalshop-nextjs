@@ -50,29 +50,38 @@ export function CalendarGrid({
       // Use local date key to match backend data (which uses local date keys)
       const currentDateKey = getLocalDateKey(tempDate);
       
-      // Backend đã filter chỉ RESERVED và PICKUPED orders, không cần filter lại ở frontend
+      // Backend đã filter chỉ RESERVED và PICKUPED orders và chỉ thêm vào pickup date
+      // Frontend chỉ cần match theo pickup date, không hiển thị return date
       const dateOrders = orders.filter(order => {
-        const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
-        const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
+        // RESERVED: hiển thị theo pickupPlanAt
+        // PICKUPED: hiển thị theo pickedUpAt (nếu có) hoặc pickupPlanAt
+        let displayDate: Date | null = null;
+        
+        if (order.status === 'RESERVED') {
+          displayDate = (order as any).pickupPlanAt ? new Date((order as any).pickupPlanAt) : null;
+        } else if (order.status === 'PICKUPED') {
+          // PICKUPED: ưu tiên pickedUpAt, nếu không có thì dùng pickupPlanAt
+          displayDate = (order as any).pickedUpAt 
+            ? new Date((order as any).pickedUpAt)
+            : ((order as any).pickupPlanAt ? new Date((order as any).pickupPlanAt) : null);
+        }
+        
+        if (!displayDate) return false;
         
         // Use getLocalDateKey to get local date (YYYY-MM-DD) to match backend
         // Backend returns "date": "2025-11-24" (local date key, not UTC)
-        const pickupDateKey = getLocalDateKey(pickupDate);
-        const returnDateKey = getLocalDateKey(returnDate);
+        const displayDateKey = getLocalDateKey(displayDate);
         
-        const matches = (
-          pickupDateKey === currentDateKey ||
-          returnDateKey === currentDateKey
-        );
+        const matches = displayDateKey === currentDateKey;
         
         // Debug logging for first week only
         if (tempDate.getDate() <= 7) {
           console.log('📅 CalendarGrid date matching:', {
             currentDateKey,
-            pickupDateKey,
-            returnDateKey,
+            displayDateKey,
             matches,
-            orderNumber: order.orderNumber
+            orderNumber: order.orderNumber,
+            status: order.status
           });
         }
         
