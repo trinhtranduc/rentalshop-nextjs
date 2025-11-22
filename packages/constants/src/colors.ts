@@ -73,53 +73,59 @@ export const BORDER_COLORS = {
 } as const;
 
 // ============================================================================
-// ORDER STATUS COLORS - Ocean Blue Theme
+// ORDER STATUS COLORS - Blue + Green Theme (Option 3)
 // ============================================================================
+// Blue for pending (RESERVED), Green for active/completed, Gray for cancelled
 export const ORDER_STATUS_COLORS = {
   RESERVED: {
-    bg: 'transparent',      // No background - minimal design
-    text: '#1D4ED8',        // Blue 700 - text color
-    border: '#BFDBFE',      // Blue 200 - border
-    hex: '#3B82F6',         // Blue 500 - primary color
-    buttonBg: '#3B82F6',    // Blue 500 - button background
-    buttonHover: '#2563EB', // Blue 600 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-blue-50',         // Blue 50 - light blue background
+    text: 'text-blue-700',    // Blue 700 - text color
+    border: 'border-blue-200', // Blue 200 - border
+    hex: '#3B82F6',          // Blue 500 - primary color
+    buttonBg: '#3B82F6',     // Blue 500 - button background
+    buttonHover: '#2563EB',  // Blue 600 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-blue-50 text-blue-700 border-blue-200', // Full className for badges
   },
   PICKUPED: {
-    bg: 'transparent',      // No background - minimal design
-    text: '#15803D',        // Green 700 - text color
-    border: '#BBF7D0',      // Green 200 - border
-    hex: '#22C55E',         // Green 500 - primary color (system brand color)
-    buttonBg: '#22C55E',    // Green 500 - button background
-    buttonHover: '#16A34A', // Green 600 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-green-50',       // Green 50 - light green background
+    text: 'text-green-700',  // Green 700 - text color
+    border: 'border-green-200', // Green 200 - border
+    hex: '#22C55E',          // Green 500 - primary color (system brand color)
+    buttonBg: '#22C55E',     // Green 500 - button background
+    buttonHover: '#16A34A',  // Green 600 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
   },
   RETURNED: {
-    bg: 'transparent',      // No background - minimal design
-    text: '#16A34A',        // Green 600 - lighter green text
-    border: '#BBF7D0',      // Green 200 - border
-    hex: '#22C55E',         // Green 500 - primary color
-    buttonBg: '#22C55E',    // Green 500 - button background
-    buttonHover: '#16A34A', // Green 600 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-green-50',        // Green 50 - light green background
+    text: 'text-green-700',  // Green 700 - text color
+    border: 'border-green-200', // Green 200 - border
+    hex: '#22C55E',          // Green 500 - primary color
+    buttonBg: '#22C55E',     // Green 500 - button background
+    buttonHover: '#16A34A',  // Green 600 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
   },
   COMPLETED: {
-    bg: 'transparent',      // No background - minimal design
-    text: '#475569',        // Gray 600 - neutral gray text
-    border: '#E2E8F0',      // Gray 200 - border
-    hex: '#64748B',         // Gray 500 - primary color
-    buttonBg: '#64748B',    // Gray 500 - button background
-    buttonHover: '#475569', // Gray 600 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-green-50',       // Green 50 - light green background
+    text: 'text-green-700',  // Green 700 - text color
+    border: 'border-green-200', // Green 200 - border
+    hex: '#22C55E',          // Green 500 - primary color
+    buttonBg: '#22C55E',     // Green 500 - button background
+    buttonHover: '#16A34A',  // Green 600 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
   },
   CANCELLED: {
-    bg: 'transparent',      // No background - minimal design
-    text: '#94A3B8',        // Gray 400 - muted gray text
-    border: '#E2E8F0',      // Gray 200 - border
-    hex: '#94A3B8',         // Gray 400 - primary color
-    buttonBg: '#94A3B8',    // Gray 400 - button background
-    buttonHover: '#64748B', // Gray 500 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-gray-50',         // Gray 50 - light gray background
+    text: 'text-gray-500',   // Gray 500 - muted gray text
+    border: 'border-gray-200', // Gray 200 - border
+    hex: '#94A3B8',          // Gray 400 - primary color
+    buttonBg: '#94A3B8',     // Gray 400 - button background
+    buttonHover: '#64748B',  // Gray 500 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-gray-50 text-gray-500 border-gray-200', // Full className for badges
   },
 } as const;
 
@@ -433,6 +439,35 @@ function getBorderClass(hex: string): string {
     '#FECACA': 'border border-red-200',
   };
   return colorMap[hex] || 'border border-gray-200';
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Get order status color className from ORDER_STATUS_COLORS
+ * Returns the full className string (bg + text + border) for badges
+ */
+export function getOrderStatusClassName(status: string): string {
+  const statusKey = status.toUpperCase() as keyof typeof ORDER_STATUS_COLORS;
+  const colors = ORDER_STATUS_COLORS[statusKey];
+  
+  if (colors && colors.className) {
+    return colors.className;
+  }
+  
+  // Fallback to default gray
+  return 'bg-gray-50 text-gray-600 border-gray-200';
+}
+
+/**
+ * Get order status color object from ORDER_STATUS_COLORS
+ * Returns the full color object with all properties
+ */
+export function getOrderStatusColors(status: string) {
+  const statusKey = status.toUpperCase() as keyof typeof ORDER_STATUS_COLORS;
+  return ORDER_STATUS_COLORS[statusKey] || ORDER_STATUS_COLORS.CANCELLED;
 }
 
 // ============================================================================

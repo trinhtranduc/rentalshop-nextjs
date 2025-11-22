@@ -212,11 +212,11 @@ declare const ORDER_TYPES: {
 };
 type OrderType = typeof ORDER_TYPES[keyof typeof ORDER_TYPES];
 declare const ORDER_STATUS_COLORS$1: {
-    readonly RESERVED: "bg-blue-100 text-blue-800";
-    readonly PICKUPED: "bg-amber-100 text-amber-900";
-    readonly RETURNED: "bg-emerald-100 text-emerald-800";
-    readonly COMPLETED: "bg-indigo-100 text-indigo-800";
-    readonly CANCELLED: "bg-red-100 text-red-800";
+    readonly RESERVED: "text-blue-700 border border-blue-200";
+    readonly PICKUPED: "text-green-700 border border-green-200";
+    readonly RETURNED: "text-green-600 border border-green-200";
+    readonly COMPLETED: "text-gray-700 border border-gray-200";
+    readonly CANCELLED: "text-gray-500 border border-gray-200";
 };
 declare const ORDER_TYPE_COLORS$1: {
     readonly RENT: "bg-blue-100 text-blue-800";
@@ -224,44 +224,54 @@ declare const ORDER_TYPE_COLORS$1: {
 };
 declare const ORDER_STATUS_BUTTON_COLORS: {
     readonly RESERVED: {
-        readonly bg: "#DBEAFE";
-        readonly text: "#1E40AF";
+        readonly bg: "bg-blue-50";
+        readonly text: "text-blue-700";
+        readonly border: "border-blue-200";
         readonly hex: "#3B82F6";
         readonly buttonBg: "#3B82F6";
         readonly buttonHover: "#2563EB";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-blue-50 text-blue-700 border-blue-200";
     };
     readonly PICKUPED: {
-        readonly bg: "#FEF3C7";
-        readonly text: "#92400E";
-        readonly hex: "#F59E0B";
-        readonly buttonBg: "#F59E0B";
-        readonly buttonHover: "#D97706";
+        readonly bg: "bg-green-50";
+        readonly text: "text-green-700";
+        readonly border: "border-green-200";
+        readonly hex: "#22C55E";
+        readonly buttonBg: "#22C55E";
+        readonly buttonHover: "#16A34A";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-green-50 text-green-700 border-green-200";
     };
     readonly RETURNED: {
-        readonly bg: "#D1FAE5";
-        readonly text: "#065F46";
-        readonly hex: "#10B981";
-        readonly buttonBg: "#10B981";
-        readonly buttonHover: "#059669";
+        readonly bg: "bg-green-50";
+        readonly text: "text-green-700";
+        readonly border: "border-green-200";
+        readonly hex: "#22C55E";
+        readonly buttonBg: "#22C55E";
+        readonly buttonHover: "#16A34A";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-green-50 text-green-700 border-green-200";
     };
     readonly COMPLETED: {
-        readonly bg: "#E0E7FF";
-        readonly text: "#3730A3";
-        readonly hex: "#6366F1";
-        readonly buttonBg: "#6366F1";
-        readonly buttonHover: "#4F46E5";
+        readonly bg: "bg-green-50";
+        readonly text: "text-green-700";
+        readonly border: "border-green-200";
+        readonly hex: "#22C55E";
+        readonly buttonBg: "#22C55E";
+        readonly buttonHover: "#16A34A";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-green-50 text-green-700 border-green-200";
     };
     readonly CANCELLED: {
-        readonly bg: "#FEE2E2";
-        readonly text: "#991B1B";
-        readonly hex: "#EF4444";
-        readonly buttonBg: "#EF4444";
-        readonly buttonHover: "#DC2626";
+        readonly bg: "bg-gray-50";
+        readonly text: "text-gray-500";
+        readonly border: "border-gray-200";
+        readonly hex: "#94A3B8";
+        readonly buttonBg: "#94A3B8";
+        readonly buttonHover: "#64748B";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-gray-50 text-gray-500 border-gray-200";
     };
 };
 declare const ORDER_TYPE_BUTTON_COLORS: {
@@ -1007,44 +1017,54 @@ declare const BORDER_COLORS: {
 };
 declare const ORDER_STATUS_COLORS: {
     readonly RESERVED: {
-        readonly bg: "#DBEAFE";
-        readonly text: "#1E40AF";
+        readonly bg: "bg-blue-50";
+        readonly text: "text-blue-700";
+        readonly border: "border-blue-200";
         readonly hex: "#3B82F6";
         readonly buttonBg: "#3B82F6";
         readonly buttonHover: "#2563EB";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-blue-50 text-blue-700 border-blue-200";
     };
     readonly PICKUPED: {
-        readonly bg: "#FEF3C7";
-        readonly text: "#92400E";
-        readonly hex: "#F59E0B";
-        readonly buttonBg: "#F59E0B";
-        readonly buttonHover: "#D97706";
+        readonly bg: "bg-green-50";
+        readonly text: "text-green-700";
+        readonly border: "border-green-200";
+        readonly hex: "#22C55E";
+        readonly buttonBg: "#22C55E";
+        readonly buttonHover: "#16A34A";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-green-50 text-green-700 border-green-200";
     };
     readonly RETURNED: {
-        readonly bg: "#D1FAE5";
-        readonly text: "#065F46";
-        readonly hex: "#10B981";
-        readonly buttonBg: "#10B981";
-        readonly buttonHover: "#059669";
+        readonly bg: "bg-green-50";
+        readonly text: "text-green-700";
+        readonly border: "border-green-200";
+        readonly hex: "#22C55E";
+        readonly buttonBg: "#22C55E";
+        readonly buttonHover: "#16A34A";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-green-50 text-green-700 border-green-200";
     };
     readonly COMPLETED: {
-        readonly bg: "#E0E7FF";
-        readonly text: "#3730A3";
-        readonly hex: "#6366F1";
-        readonly buttonBg: "#6366F1";
-        readonly buttonHover: "#4F46E5";
+        readonly bg: "bg-green-50";
+        readonly text: "text-green-700";
+        readonly border: "border-green-200";
+        readonly hex: "#22C55E";
+        readonly buttonBg: "#22C55E";
+        readonly buttonHover: "#16A34A";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-green-50 text-green-700 border-green-200";
     };
     readonly CANCELLED: {
-        readonly bg: "#FEE2E2";
-        readonly text: "#991B1B";
-        readonly hex: "#EF4444";
-        readonly buttonBg: "#EF4444";
-        readonly buttonHover: "#DC2626";
+        readonly bg: "bg-gray-50";
+        readonly text: "text-gray-500";
+        readonly border: "border-gray-200";
+        readonly hex: "#94A3B8";
+        readonly buttonBg: "#94A3B8";
+        readonly buttonHover: "#64748B";
         readonly buttonText: "#FFFFFF";
+        readonly className: "bg-gray-50 text-gray-500 border-gray-200";
     };
 };
 declare const ORDER_TYPE_COLORS: {
@@ -1255,6 +1275,61 @@ declare function getOrderStatusClass(status: keyof typeof ORDER_STATUS_COLORS): 
  * Get Tailwind class string for order type
  */
 declare function getOrderTypeClass(type: keyof typeof ORDER_TYPE_COLORS): string;
+/**
+ * Get order status color className from ORDER_STATUS_COLORS
+ * Returns the full className string (bg + text + border) for badges
+ */
+declare function getOrderStatusClassName(status: string): string;
+/**
+ * Get order status color object from ORDER_STATUS_COLORS
+ * Returns the full color object with all properties
+ */
+declare function getOrderStatusColors(status: string): {
+    readonly bg: "bg-blue-50";
+    readonly text: "text-blue-700";
+    readonly border: "border-blue-200";
+    readonly hex: "#3B82F6";
+    readonly buttonBg: "#3B82F6";
+    readonly buttonHover: "#2563EB";
+    readonly buttonText: "#FFFFFF";
+    readonly className: "bg-blue-50 text-blue-700 border-blue-200";
+} | {
+    readonly bg: "bg-green-50";
+    readonly text: "text-green-700";
+    readonly border: "border-green-200";
+    readonly hex: "#22C55E";
+    readonly buttonBg: "#22C55E";
+    readonly buttonHover: "#16A34A";
+    readonly buttonText: "#FFFFFF";
+    readonly className: "bg-green-50 text-green-700 border-green-200";
+} | {
+    readonly bg: "bg-green-50";
+    readonly text: "text-green-700";
+    readonly border: "border-green-200";
+    readonly hex: "#22C55E";
+    readonly buttonBg: "#22C55E";
+    readonly buttonHover: "#16A34A";
+    readonly buttonText: "#FFFFFF";
+    readonly className: "bg-green-50 text-green-700 border-green-200";
+} | {
+    readonly bg: "bg-green-50";
+    readonly text: "text-green-700";
+    readonly border: "border-green-200";
+    readonly hex: "#22C55E";
+    readonly buttonBg: "#22C55E";
+    readonly buttonHover: "#16A34A";
+    readonly buttonText: "#FFFFFF";
+    readonly className: "bg-green-50 text-green-700 border-green-200";
+} | {
+    readonly bg: "bg-gray-50";
+    readonly text: "text-gray-500";
+    readonly border: "border-gray-200";
+    readonly hex: "#94A3B8";
+    readonly buttonBg: "#94A3B8";
+    readonly buttonHover: "#64748B";
+    readonly buttonText: "#FFFFFF";
+    readonly className: "bg-gray-50 text-gray-500 border-gray-200";
+};
 type BrandColor = keyof typeof BRAND_COLORS;
 type ActionColor = keyof typeof ACTION_COLORS;
 type TextColor = keyof typeof TEXT_COLORS;
@@ -1484,4 +1559,4 @@ declare const CONSTANTS: {
     readonly STATUS: typeof STATUS;
 };
 
-export { ACTION_COLORS, API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ActionColor, type ApiValue, type AuditAction, type AuditEntityType, BACKGROUND_COLORS, BILLING_CYCLES, BILLING_INTERVAL, BORDER_COLORS, BRAND_COLORS, BUSINESS, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, BUTTON_COLORS, type BackgroundColor, type BillingInterval, type BorderColor, type BrandColor, type BusinessType, type BusinessTypeOption, type BusinessValue, type ButtonVariant, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENTITY_STATUS_COLORS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, MERCHANT_STATUS, type MerchantPricingConfig, type MerchantStatus, NAVIGATION_COLORS, type NavigationColor, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_STATUS_COLORS, PAYMENT_TYPE, PRICING_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_COLORS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_COLORS, SUPPORTED_CURRENCIES, type SearchValue, type SubscriptionStatus, TEXT_COLORS, TRIAL_CONFIG, type TextColor, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, formatCountryDisplay, getActivePlans, getAllPlans, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getOrderStatusClass, getOrderTypeClass, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isSubscriptionActive, isUnlimitedPlan, isValidCurrency, isValidSubscriptionStatus, normalizeSubscriptionStatus, requiresRentalDates, validatePlanConfig };
+export { ACTION_COLORS, API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ActionColor, type ApiValue, type AuditAction, type AuditEntityType, BACKGROUND_COLORS, BILLING_CYCLES, BILLING_INTERVAL, BORDER_COLORS, BRAND_COLORS, BUSINESS, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, BUTTON_COLORS, type BackgroundColor, type BillingInterval, type BorderColor, type BrandColor, type BusinessType, type BusinessTypeOption, type BusinessValue, type ButtonVariant, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENTITY_STATUS_COLORS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, MERCHANT_STATUS, type MerchantPricingConfig, type MerchantStatus, NAVIGATION_COLORS, type NavigationColor, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_STATUS_COLORS, PAYMENT_TYPE, PRICING_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_COLORS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_COLORS, SUPPORTED_CURRENCIES, type SearchValue, type SubscriptionStatus, TEXT_COLORS, TRIAL_CONFIG, type TextColor, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, formatCountryDisplay, getActivePlans, getAllPlans, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getOrderStatusClass, getOrderStatusClassName, getOrderStatusColors, getOrderTypeClass, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isSubscriptionActive, isUnlimitedPlan, isValidCurrency, isValidSubscriptionStatus, normalizeSubscriptionStatus, requiresRentalDates, validatePlanConfig };

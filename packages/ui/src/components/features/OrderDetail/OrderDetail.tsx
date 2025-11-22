@@ -39,7 +39,7 @@ import {
   Calculator
 } from 'lucide-react';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
-import { ORDER_STATUS_COLORS, ORDER_TYPE_COLORS, ORDER_TYPES, ORDER_STATUSES } from '@rentalshop/constants';
+import { getOrderStatusClassName, ORDER_TYPE_COLORS, ORDER_TYPES, ORDER_STATUSES } from '@rentalshop/constants';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { CollectionReturnModal } from './components/CollectionReturnModal';
@@ -589,7 +589,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">{t('status.label')}:</span>
                 <Badge 
-                  className={ORDER_STATUS_COLORS[order.status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800'}
+                  className={getOrderStatusClassName(order.status)}
                 >
                   {t(`status.${order.status}`)}
                 </Badge>
