@@ -1,7 +1,7 @@
 import React from 'react';
 import { CalendarDay, PickupOrder } from '@rentalshop/types';
 import { useCalendarTranslations } from '@rentalshop/hooks';
-import { getUTCDateKey } from '@rentalshop/utils';
+import { getLocalDateKey } from '@rentalshop/utils';
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -47,17 +47,18 @@ export function CalendarGrid({
       const isSelected = selectedDate?.toDateString() === tempDate.toDateString();
       
       // Get orders for this date using date without time for comparison
-      // Use UTC date key to match backend data (which uses UTC dates)
-      const currentDateKey = getUTCDateKey(tempDate);
+      // Use local date key to match backend data (which uses local date keys)
+      const currentDateKey = getLocalDateKey(tempDate);
       
+      // Backend đã filter chỉ RESERVED và PICKUPED orders, không cần filter lại ở frontend
       const dateOrders = orders.filter(order => {
         const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
         const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
         
-        // Use getUTCDateKey to get UTC date (YYYY-MM-DD) to match backend
-        // Backend returns "date": "2025-10-27" (UTC, no timezone conversion)
-        const pickupDateKey = getUTCDateKey(pickupDate);
-        const returnDateKey = getUTCDateKey(returnDate);
+        // Use getLocalDateKey to get local date (YYYY-MM-DD) to match backend
+        // Backend returns "date": "2025-11-24" (local date key, not UTC)
+        const pickupDateKey = getLocalDateKey(pickupDate);
+        const returnDateKey = getLocalDateKey(returnDate);
         
         const matches = (
           pickupDateKey === currentDateKey ||
@@ -78,9 +79,9 @@ export function CalendarGrid({
         return matches;
       });
       
-      // All orders are pickup orders (RESERVED and PICKUPED status only)
-      // Backend only adds orders to pickup date, so all orders here are pickup
-      const pickupOrders = dateOrders; // All orders are pickup orders
+      // Backend đã filter chỉ RESERVED và PICKUPED orders và chỉ thêm vào pickup date
+      // Tất cả orders từ backend đều là pickup orders
+      const pickupOrders = dateOrders; // Backend đã filter, không cần filter lại
       const returnOrders: any[] = []; // No return orders displayed in calendar
       
       days.push({

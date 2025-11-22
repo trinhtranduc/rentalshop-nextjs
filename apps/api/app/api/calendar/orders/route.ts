@@ -12,12 +12,11 @@ const calendarOrdersQuerySchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
   outletId: z.coerce.number().int().positive().optional(),
   merchantId: z.coerce.number().int().positive().optional(),
+  // Calendar chỉ hiển thị đơn dự kiến lấy (RESERVED) và đơn thực tế lấy (PICKUPED)
+  // KHÔNG cho phép filter các status khác
   status: z.enum([
     ORDER_STATUS.RESERVED,
-    ORDER_STATUS.PICKUPED,
-    ORDER_STATUS.RETURNED,
-    ORDER_STATUS.COMPLETED,
-    ORDER_STATUS.CANCELLED
+    ORDER_STATUS.PICKUPED
   ] as [string, ...string[]]).optional(),
   orderType: z.enum([
     ORDER_TYPE.RENT,
@@ -77,10 +76,14 @@ export const GET = withReadOnlyAuth(async (
       where.orderType = ORDER_TYPE.RENT as any;
     }
     
+    // Calendar chỉ hiển thị đơn dự kiến lấy (RESERVED) và đơn thực tế lấy (PICKUPED)
+    // KHÔNG hiển thị: RETURNED, COMPLETED, CANCELLED
+    // Luôn filter chỉ RESERVED và PICKUPED, bất kể user có truyền status hay không
     if (status) {
-      where.status = status;
+      // Nếu user truyền status, chỉ cho phép RESERVED hoặc PICKUPED
+      where.status = status; // Schema đã validate chỉ cho phép RESERVED hoặc PICKUPED
     } else {
-      // Default to only active pickup orders (not returned)
+      // Default: luôn chỉ lấy RESERVED và PICKUPED
       where.status = {
         in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
       };
