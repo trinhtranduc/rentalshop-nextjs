@@ -206,8 +206,53 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Generate order number using the outlet's ID
-    const orderNumber = `${parsed.data.outletId.toString().padStart(3, '0')}-${Date.now().toString().slice(-6)}`;
+    // Generate order number: 6-digit sequence number only (e.g., 277832)
+    // Use atomic transaction to ensure uniqueness
+    const orderNumberResult = await db.prisma.$transaction(async (tx: any) => {
+      // Get all orders and find the highest 6-digit numeric order number
+      // Filter in memory since Prisma doesn't support regex in where clause
+      const allOrders = await tx.order.findMany({
+        orderBy: {
+          createdAt: 'desc'
+        },
+        select: {
+          orderNumber: true
+        },
+        take: 1000 // Get recent orders to find max sequence
+      });
+
+      // Find the highest 6-digit numeric order number
+      let maxSequence = 0;
+      for (const order of allOrders) {
+        // Check if orderNumber is exactly 6 digits (numeric only, no dashes)
+        if (/^\d{6}$/.test(order.orderNumber)) {
+          const sequence = parseInt(order.orderNumber);
+          if (sequence > maxSequence) {
+            maxSequence = sequence;
+          }
+        }
+      }
+
+      // Next sequence is max + 1, starting from 1 if no orders found
+      const nextSequence = maxSequence > 0 ? maxSequence + 1 : 1;
+
+      // Ensure 6 digits with padding
+      const orderNumber = nextSequence.toString().padStart(6, '0');
+
+      // Check for uniqueness (double-check)
+      const existingOrder = await tx.order.findUnique({
+        where: { orderNumber },
+        select: { id: true }
+      });
+
+      if (existingOrder) {
+        throw new Error('Order number collision detected');
+      }
+
+      return orderNumber;
+    });
+    
+    const orderNumber = orderNumberResult;
 
     // Determine initial status based on order type
     // SALE orders start as COMPLETED (immediate purchase)
