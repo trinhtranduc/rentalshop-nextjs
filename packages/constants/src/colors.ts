@@ -73,9 +73,10 @@ export const BORDER_COLORS = {
 } as const;
 
 // ============================================================================
-// ORDER STATUS COLORS - Blue + Green Theme (Option 3)
+// ORDER STATUS COLORS - Colorful Theme (Option A: 5-Color)
 // ============================================================================
-// Blue for pending (RESERVED), Green for active/completed, Gray for cancelled
+// Each status has its own distinct color for better visual distinction
+// Blue (RESERVED), Orange (PICKUPED), Green (RETURNED), Emerald (COMPLETED), Red (CANCELLED)
 export const ORDER_STATUS_COLORS = {
   RESERVED: {
     bg: 'bg-blue-50',         // Blue 50 - light blue background
@@ -88,14 +89,14 @@ export const ORDER_STATUS_COLORS = {
     className: 'bg-blue-50 text-blue-700 border-blue-200', // Full className for badges
   },
   PICKUPED: {
-    bg: 'bg-green-50',       // Green 50 - light green background
-    text: 'text-green-700',  // Green 700 - text color
-    border: 'border-green-200', // Green 200 - border
-    hex: '#22C55E',          // Green 500 - primary color (system brand color)
-    buttonBg: '#22C55E',     // Green 500 - button background
-    buttonHover: '#16A34A',  // Green 600 - button hover
+    bg: 'bg-orange-50',       // Orange 50 - light orange background
+    text: 'text-orange-700',  // Orange 700 - text color
+    border: 'border-orange-200', // Orange 200 - border
+    hex: '#F97316',          // Orange 500 - primary color
+    buttonBg: '#F97316',     // Orange 500 - button background
+    buttonHover: '#EA580C',  // Orange 600 - button hover
     buttonText: '#FFFFFF',   // White - button text
-    className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
+    className: 'bg-orange-50 text-orange-700 border-orange-200', // Full className for badges
   },
   RETURNED: {
     bg: 'bg-green-50',        // Green 50 - light green background
@@ -108,24 +109,24 @@ export const ORDER_STATUS_COLORS = {
     className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
   },
   COMPLETED: {
-    bg: 'bg-green-50',       // Green 50 - light green background
-    text: 'text-green-700',  // Green 700 - text color
-    border: 'border-green-200', // Green 200 - border
-    hex: '#22C55E',          // Green 500 - primary color
-    buttonBg: '#22C55E',     // Green 500 - button background
-    buttonHover: '#16A34A',  // Green 600 - button hover
+    bg: 'bg-emerald-50',       // Emerald 50 - light emerald background
+    text: 'text-emerald-700',  // Emerald 700 - text color
+    border: 'border-emerald-200', // Emerald 200 - border
+    hex: '#10B981',          // Emerald 500 - primary color
+    buttonBg: '#10B981',     // Emerald 500 - button background
+    buttonHover: '#059669',  // Emerald 600 - button hover
     buttonText: '#FFFFFF',   // White - button text
-    className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
+    className: 'bg-emerald-50 text-emerald-700 border-emerald-200', // Full className for badges
   },
   CANCELLED: {
-    bg: 'bg-gray-50',         // Gray 50 - light gray background
-    text: 'text-gray-500',   // Gray 500 - muted gray text
-    border: 'border-gray-200', // Gray 200 - border
-    hex: '#94A3B8',          // Gray 400 - primary color
-    buttonBg: '#94A3B8',     // Gray 400 - button background
-    buttonHover: '#64748B',  // Gray 500 - button hover
+    bg: 'bg-red-50',         // Red 50 - light red background
+    text: 'text-red-700',   // Red 700 - text color
+    border: 'border-red-200', // Red 200 - border
+    hex: '#EF4444',          // Red 500 - primary color
+    buttonBg: '#EF4444',     // Red 500 - button background
+    buttonHover: '#DC2626',  // Red 600 - button hover
     buttonText: '#FFFFFF',   // White - button text
-    className: 'bg-gray-50 text-gray-500 border-gray-200', // Full className for badges
+    className: 'bg-red-50 text-red-700 border-red-200', // Full className for badges
   },
 } as const;
 
