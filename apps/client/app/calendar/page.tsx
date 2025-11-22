@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Calendars, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate, getUTCDateKey } from '@rentalshop/utils';
+import { useFormattedFullDate, getUTCDateKey, getLocalDateKey } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 
@@ -118,8 +118,8 @@ export default function CalendarPage() {
   const handleDateClick = useCallback((date: Date) => {
     console.log('📅 Date clicked:', date);
     
-    // Convert date to YYYY-MM-DD format using UTC to match backend (which uses UTC dates)
-    const dateKey = getUTCDateKey(date);
+    // Convert date to YYYY-MM-DD format using local timezone to match backend (which uses local date keys)
+    const dateKey = getLocalDateKey(date);
     const dayData = calendarData.calendar.find(day => day.date === dateKey);
     
     console.log('📅 Looking for dateKey:', dateKey);
