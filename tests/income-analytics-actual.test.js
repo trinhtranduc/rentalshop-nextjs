@@ -308,7 +308,7 @@ describe('Income Analytics Calculation Logic', () => {
       const realIncome = 
         calculateRealIncome.reserved(day22Orders) + 
         calculateRealIncome.sale(day22Orders);
-      expect(realIncome).toBe(2500000); // 200k + 300k + 1000k = 1500k
+      expect(realIncome).toBe(1500000); // 200k + 300k + 1000k = 1500k
 
       const futureIncome = calculateFutureIncome(day22Orders);
       expect(futureIncome).toBe(300000); // (300-200) + (500-300) = 300k
