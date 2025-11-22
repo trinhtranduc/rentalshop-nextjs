@@ -177,6 +177,7 @@ export const GET = withReadOnlyAuth(async (
           outletName: order.outlet?.name,
           pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
           returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
+          pickedUpAt: (order as any).pickedUpAt ? new Date((order as any).pickedUpAt).toISOString() : undefined,
           // Product summary for calendar display
           productName: firstProduct?.name || 'Multiple Products',
           productCount: totalProductCount,

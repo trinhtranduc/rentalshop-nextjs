@@ -28,6 +28,7 @@ export interface CalendarOrderSummary {
   notes?: string;
   pickupPlanAt?: string;
   returnPlanAt?: string;
+  pickedUpAt?: string; // Actual pickup date for PICKUPED orders
   isOverdue?: boolean;
   duration?: number;
   // Product summary for calendar display

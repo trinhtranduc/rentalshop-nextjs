@@ -181,8 +181,12 @@ export default function CalendarPage() {
           notes: order.notes || '',
           isOverdue: order.status === 'PICKUPED' && order.returnPlanAt ? new Date(order.returnPlanAt) < new Date() : false,
           duration: order.pickupPlanAt && order.returnPlanAt ? 
-            Math.ceil((new Date(order.returnPlanAt).getTime() - new Date(order.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : 0
-        });
+            Math.ceil((new Date(order.returnPlanAt).getTime() - new Date(order.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : 0,
+          // Keep original fields for CalendarGrid to match dates correctly
+          pickupPlanAt: order.pickupPlanAt,
+          returnPlanAt: order.returnPlanAt,
+          pickedUpAt: (order as any).pickedUpAt // Include if available
+        } as any);
       });
       
       // Only process pickup orders - no return orders needed
