@@ -130,6 +130,7 @@
     "reviewBeforeConfirm": "Review your order details before confirming"
   },
   "messages": {
+    "createOrder": "Create Order",
     "createSuccess": "Order created successfully",
     "createFailed": "Failed to create order",
     "updateSuccess": "Order updated successfully",
@@ -257,6 +258,28 @@
     "averageOrderValue": "Average Order Value",
     "overdueRentals": "Overdue Rentals",
     "revenueMetrics": "Revenue Metrics"
+  },
+  "receipt": {
+    "previewTitle": "Preview Order Receipt",
+    "printOptions": "Print Options",
+    "printViaPDF": "Print via PDF",
+    "printDescription": "Create PDF file and send to printer",
+    "order": "Order",
+    "customer": "Customer",
+    "deposit": "Deposit",
+    "noDeposit": "NO DEPOSIT",
+    "createdDate": "Created Date",
+    "rentDate": "Rent Date",
+    "returnDate": "Return Date",
+    "saleDate": "Sale Date",
+    "subtotal": "SUBTOTAL",
+    "discount": "DISCOUNT",
+    "total": "TOTAL",
+    "note": "Note",
+    "customerSignature": "Customer Signature",
+    "storeSignature": "Store Signature",
+    "thankYou": "THANK YOU FOR SHOPPING",
+    "downloadApp": "Download RentalShop on App Store"
   }
 }
 

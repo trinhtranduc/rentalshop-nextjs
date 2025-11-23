@@ -40,8 +40,9 @@ export const validateEmail = (email: string): string | null => {
 };
 
 export const validatePhone = (phone: string): string | null => {
-  if (!phone.trim()) {
-    return 'Phone number is required';
+  // Phone is optional - if empty, no validation needed
+  if (!phone || !phone.trim()) {
+    return null; // Phone is optional
   }
   
   // Remove all non-digit characters for validation
@@ -97,18 +98,24 @@ export const validateUserCreateInput = (data: UserCreateFormData): Record<string
   console.log('🔍 UserFormValidation: Validating create input:', data);
 
   // Name validation (split from full name)
+  // firstName and lastName are optional - allow empty name
   const nameParts = data.name?.trim().split(' ') || [];
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
 
   console.log('🔍 UserFormValidation: Name parts:', { firstName, lastName });
 
+  // firstName and lastName are optional - only validate if provided
+  if (firstName) {
   const firstNameError = validateName(firstName, 'First name');
   if (firstNameError) errors.firstName = firstNameError;
+  }
 
-  // Only validate lastName if it exists (allow single name entry)
-  const lastNameError = lastName ? validateName(lastName, 'Last name') : null;
+  // lastName is optional - only validate if provided
+  if (lastName) {
+    const lastNameError = validateName(lastName, 'Last name');
   if (lastNameError) errors.lastName = lastNameError;
+  }
 
   // Email validation
   const emailError = validateEmail(data.email || '');
@@ -164,13 +171,17 @@ export const validateUserUpdateInput = (data: UserUpdateFormData): Record<string
 
   console.log('🔍 UserFormValidation: Validating update input:', data);
 
-  // First Name validation
-  const firstNameError = validateName(data.firstName || '', 'First name');
+  // First Name validation - optional
+  if (data.firstName && data.firstName.trim()) {
+    const firstNameError = validateName(data.firstName, 'First name');
   if (firstNameError) errors.firstName = firstNameError;
+  }
 
-  // Last Name validation
-  const lastNameError = validateName(data.lastName || '', 'Last name');
+  // Last Name validation - optional
+  if (data.lastName && data.lastName.trim()) {
+    const lastNameError = validateName(data.lastName, 'Last name');
   if (lastNameError) errors.lastName = lastNameError;
+  }
 
   // Email validation
   const emailError = validateEmail(data.email || '');

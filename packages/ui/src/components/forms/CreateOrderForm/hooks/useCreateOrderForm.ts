@@ -103,7 +103,6 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   }, [orderItems]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showOrderPreview, setShowOrderPreview] = useState(false);
 
   // Toast notifications
   const { toastSuccess, toastError } = useToast();
@@ -285,19 +284,6 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     setOrderItems(updatedItems);
   }, [orderItems, calculateRentalDays]);
 
-  // Handle preview button click
-  const handlePreviewClick = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('🔍 Preview clicked - Current orderItems:', orderItems);
-    console.log('🔍 Preview clicked - orderItems length:', orderItems.length);
-    console.log('🔍 Preview clicked - orderItems details:', orderItems.map(item => ({
-      productId: item.productId,
-      productName: item.product?.name,
-      quantity: item.quantity
-    })));
-    setShowOrderPreview(true);
-  }, [orderItems]);
-
   // Handle form submission
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -356,14 +342,6 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       setIsSubmitting(false);
     }
   }, [formData, isEditMode, initialOrder, props, isSubmitting]);
-
-  // Handle order confirmation from preview
-  const handleOrderConfirm = useCallback(async () => {
-    setShowOrderPreview(false);
-    // Create a mock event for handleSubmit
-    const mockEvent = { preventDefault: () => {} } as React.FormEvent;
-    await handleSubmit(mockEvent);
-  }, [orderItems, handleSubmit]);
 
   // Reset form to initial state
   const resetForm = useCallback(() => {
@@ -441,16 +419,12 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     orderItems,
     setOrderItems,
     isSubmitting,
-    showOrderPreview,
-    setShowOrderPreview,
     
     // Actions
     addProductToOrder,
     removeProductFromOrder,
     updateOrderItem,
     updateRentalDates,
-    handlePreviewClick,
-    handleOrderConfirm,
     handleSubmit,
     resetForm,
     

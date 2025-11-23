@@ -80,16 +80,16 @@ export function CalendarGrid({
         const matches = displayDateKey === currentDateKey;
         
         // Debug logging for all dates to troubleshoot
-        console.log('📅 CalendarGrid date matching:', {
-          currentDateKey,
+          console.log('📅 CalendarGrid date matching:', {
+            currentDateKey,
           displayDateKey,
-          matches,
+            matches,
           orderNumber: order.orderNumber,
           status: order.status,
           pickupPlanAt: (order as any).pickupPlanAt,
           pickupDate: order.pickupDate,
           pickedUpAt: (order as any).pickedUpAt
-        });
+          });
         
         return matches;
       });

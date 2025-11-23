@@ -111,6 +111,22 @@ export const authApi = {
   },
 
   /**
+   * Verify email with token
+   */
+  async verifyEmail(token: string): Promise<ApiResponse<{ token: string; user: User }>> {
+    try {
+      const response = await publicFetch(apiUrls.auth.verifyEmail, {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      });
+      return await parseApiResponse<{ token: string; user: User }>(response);
+    } catch (error) {
+      console.error('Verify email error:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Resend verification email
    */
   async resendVerificationEmail(email: string): Promise<ApiResponse<{ message: string }>> {

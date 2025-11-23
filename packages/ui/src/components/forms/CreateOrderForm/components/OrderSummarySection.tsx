@@ -27,7 +27,7 @@ interface OrderSummarySectionProps {
   isEditMode: boolean;
   loading: boolean;
   isFormValid: boolean;
-  onPreviewClick: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent) => void;
   onCancel?: () => void;
 }
 
@@ -37,7 +37,7 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
   isEditMode,
   loading,
   isFormValid,
-  onPreviewClick,
+  onSubmit,
   onCancel,
 }) => {
   // Use formatCurrency hook - automatically uses merchant's currency
@@ -169,10 +169,10 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
             <Button
               type="button"
               disabled={loading || !isFormValid}
-              onClick={onPreviewClick}
+              onClick={onSubmit}
               className="flex-1"
             >
-              {loading ? t('messages.processing') : isEditMode ? t('messages.updateOrder') : t('messages.preview')}
+              {loading ? t('messages.processing') : isEditMode ? t('messages.updateOrder') : t('messages.createOrder')}
             </Button>
             {onCancel && (
               <Button

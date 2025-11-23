@@ -287,6 +287,28 @@
     "customerInformationRequired": "Thông tin khách hàng bắt buộc",
     "rentalPeriodRequired": "Thời gian thuê bắt buộc (ngày lấy & trả)",
     "outletSelectionRequired": "Chọn cửa hàng bắt buộc"
+  },
+  "receipt": {
+    "previewTitle": "Xem trước hóa đơn",
+    "printOptions": "Tùy chọn in",
+    "printViaPDF": "In qua PDF",
+    "printDescription": "Tạo file PDF và gửi đến máy in",
+    "order": "Đơn hàng",
+    "customer": "Khách hàng",
+    "deposit": "Tiền cọc",
+    "noDeposit": "KHÔNG CÓ CỌC",
+    "createdDate": "Ngày tạo",
+    "rentDate": "Ngày thuê",
+    "returnDate": "Ngày trả",
+    "saleDate": "Ngày bán",
+    "subtotal": "TẠM TÍNH",
+    "discount": "GIẢM GIÁ",
+    "total": "TỔNG CỘNG",
+    "note": "Ghi chú",
+    "customerSignature": "Chữ ký khách hàng",
+    "storeSignature": "Chữ ký cửa hàng",
+    "thankYou": "CẢM ƠN BẠN ĐÃ MUA SẮM",
+    "downloadApp": "Tải RentalShop trên App Store"
   }
 }
 

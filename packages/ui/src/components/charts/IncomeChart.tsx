@@ -78,15 +78,15 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
 
   // Detect outlet comparison mode
   const detectMode = () => {
-    const firstItem = data[0] || {};
+  const firstItem = data[0] || {};
     const outletKeys = outlets?.length > 0
-      ? outlets.map(outlet => ({
-          actual: `${outlet.name}_actual`,
-          projected: `${outlet.name}_projected`,
-          outletName: outlet.name
-        }))
-      : [];
-    
+    ? outlets.map(outlet => ({
+        actual: `${outlet.name}_actual`,
+        projected: `${outlet.name}_projected`,
+        outletName: outlet.name
+      }))
+    : [];
+
     const hasOutletKeys = outletKeys.length > 0 && 
       outletKeys.some(key => 
         firstItem.hasOwnProperty(key.actual) || 
@@ -153,37 +153,37 @@ export const IncomeChart: React.FC<IncomeChartProps> = ({
         {hasOutletComparison && outletKeys.length > 0 ? (
           outletKeys.map((key, index) => {
             const color = outletColors[index % outletColors.length];
-            return (
+              return (
               <React.Fragment key={key.outletName}>
-                <Bar 
+                  <Bar 
                   dataKey={`${key.outletName} (Actual)`}
                   fill={color}
-                  radius={[4, 4, 0, 0]}
+                    radius={[4, 4, 0, 0]}
                   name={`${key.outletName} (Actual)`}
-                />
-                <Bar 
+                  />
+                  <Bar 
                   dataKey={`${key.outletName} (Projected)`}
                   fill={`${color}80`}
-                  radius={[4, 4, 0, 0]}
+                    radius={[4, 4, 0, 0]}
                   name={`${key.outletName} (Projected)`}
-                />
-              </React.Fragment>
-            );
+                  />
+                </React.Fragment>
+              );
           })
         ) : (
           <>
-            <Bar 
-              dataKey={actualLabel} 
+        <Bar 
+          dataKey={actualLabel} 
               fill={ACTUAL_COLOR}
-              radius={[4, 4, 0, 0]}
-              name={actualLabel}
-            />
-            <Bar 
-              dataKey={projectedLabel} 
+          radius={[4, 4, 0, 0]}
+          name={actualLabel}
+        />
+        <Bar 
+          dataKey={projectedLabel} 
               fill={PROJECTED_COLOR}
-              radius={[4, 4, 0, 0]}
-              name={projectedLabel}
-            />
+          radius={[4, 4, 0, 0]}
+          name={projectedLabel}
+        />
           </>
         )}
       </BarChart>

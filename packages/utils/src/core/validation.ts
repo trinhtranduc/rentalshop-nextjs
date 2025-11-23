@@ -383,20 +383,20 @@ export const usersQuerySchema = z.object({
 
 export const userCreateSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
-  firstName: z.string().min(1),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  firstName: z.string().min(1).or(z.literal('')), // Allow empty string for firstName
   lastName: z.string().min(1).or(z.literal('')), // Allow empty string for lastName
-  phone: z.string().min(1, 'Phone number is required'), // Phone is now required
+  phone: z.string().optional(), // Phone is optional
   role: userRoleEnum.optional(),
   merchantId: z.coerce.number().int().positive().optional(),
   outletId: z.coerce.number().int().positive().optional(),
 });
 
 export const userUpdateSchema = z.object({
-  firstName: z.string().min(1).optional(),
+  firstName: z.string().min(1).or(z.literal('')).optional(), // Allow empty string for firstName
   lastName: z.string().min(1).or(z.literal('')).optional(), // Allow empty string for lastName
   email: z.string().email().optional(),
-  phone: z.string().min(1, 'Phone number is required').optional(), // Phone is required when provided
+  phone: z.string().optional(), // Phone is optional
   role: userRoleEnum.optional(),
   isActive: z.boolean().optional(),
   merchantId: z.coerce.number().int().positive().optional(),

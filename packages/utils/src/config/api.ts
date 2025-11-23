@@ -45,6 +45,7 @@ export interface ApiUrls {
     login: string;
     register: string;
     verify: string;
+      verifyEmail: string;
     refresh: string;
     logout: string;
     forgotPassword: string;
@@ -489,6 +490,7 @@ function createApiUrls(): ApiUrls {
       login: `${base}/api/auth/login`,
       register: `${base}/api/auth/register`,
       verify: `${base}/api/auth/verify`,
+      verifyEmail: `${base}/api/auth/verify-email`,
       refresh: `${base}/api/auth/refresh`,
       logout: `${base}/api/auth/logout`,
       forgotPassword: `${base}/api/auth/forgot-password`,

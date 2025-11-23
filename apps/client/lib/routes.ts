@@ -15,6 +15,7 @@ export const PUBLIC_ROUTES = [
   '/forget-password',
   '/reset-password',
   '/email-verification',
+  '/verify-email',
   '/terms',
   '/privacy',
 ] as const;
@@ -34,6 +35,7 @@ export const AUTH_ROUTES = [
  */
 export const PUBLIC_INFO_ROUTES = [
   '/email-verification',
+  '/verify-email',
   '/terms',
   '/privacy',
 ] as const;
