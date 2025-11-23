@@ -185,7 +185,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     // NOTE: Only MERCHANT users need email verification
     // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
     const isOutletUser = parsed.data.role === 'OUTLET_ADMIN' || parsed.data.role === 'OUTLET_STAFF';
-    
+
     const userData = {
       ...parsed.data,
       password: hashedPassword || parsed.data.password, // Use hashed password if provided
@@ -292,9 +292,21 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
       console.log('✅ Password hashed successfully');
     }
 
+    // Check if user is being deactivated (isActive changed from true to false)
+    const isBeingDeactivated = existingUser.isActive && updateData.isActive === false;
+
     const updatedUser = await db.users.update(id, updateData);
     
     console.log(`✅ Updated user: ${updatedUser.email} (ID: ${updatedUser.id})`);
+
+    // If user is being deactivated, delete all their sessions to force logout
+    if (isBeingDeactivated) {
+      const { prisma } = await import('@rentalshop/database');
+      const deletedSessionsCount = await prisma.userSession.deleteMany({
+        where: { userId: id }
+      });
+      console.log(`🗑️ Deactivated user ${id}: Deleted ${deletedSessionsCount.count} session(s) to force logout`);
+    }
 
     return NextResponse.json({
       success: true,
