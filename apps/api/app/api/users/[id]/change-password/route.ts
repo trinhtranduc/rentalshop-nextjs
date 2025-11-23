@@ -131,14 +131,49 @@ export async function PATCH(
 
     // Hash new password using centralized password hashing
     console.log('🔐 Hashing new password...');
-    const hashedPassword = await hashPassword(newPassword);
-    console.log('✅ Password hashed successfully');
+    let hashedPassword: string;
+    try {
+      hashedPassword = await hashPassword(newPassword);
+      console.log('✅ Password hashed successfully');
+    } catch (hashError: any) {
+      console.error('❌ Error hashing password:', hashError);
+      return NextResponse.json(
+        ResponseBuilder.error('PASSWORD_HASH_FAILED', `Failed to hash password: ${hashError?.message || 'Unknown error'}`),
+        { status: 500 }
+      );
+    }
 
     // Update password using user ID
-    console.log('💾 Updating password for user ID:', targetUser.id);
-    const updatedUser = await db.users.update(targetUser.id, {
-      password: hashedPassword
-    });
+    console.log('💾 Updating password for user ID:', targetUser.id, 'Type:', typeof targetUser.id);
+    
+    // Validate targetUser.id is a number
+    if (!targetUser.id || typeof targetUser.id !== 'number') {
+      console.error('❌ Invalid targetUser.id:', targetUser.id, 'Type:', typeof targetUser.id);
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_USER_ID', 'Invalid user ID format'),
+        { status: 400 }
+      );
+    }
+
+    let updatedUser: any;
+    try {
+      updatedUser = await db.users.update(targetUser.id, {
+        password: hashedPassword
+      });
+      console.log('✅ Password updated successfully in database');
+    } catch (updateError: any) {
+      console.error('❌ Error updating password in database:', updateError);
+      console.error('❌ Update error details:', {
+        message: updateError?.message,
+        code: updateError?.code,
+        meta: updateError?.meta,
+        stack: updateError?.stack
+      });
+      return NextResponse.json(
+        ResponseBuilder.error('PASSWORD_UPDATE_FAILED', `Failed to update password: ${updateError?.message || 'Unknown error'}`),
+        { status: 500 }
+      );
+    }
 
     console.log('✅ Password changed successfully for user:', targetUser.email);
 
