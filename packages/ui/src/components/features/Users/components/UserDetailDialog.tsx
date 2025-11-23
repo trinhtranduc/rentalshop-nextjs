@@ -47,7 +47,8 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
   const handleDeactivateUser = async () => {
     setIsLoading(true);
     try {
-      const response = await usersApi.updateUserStatus(user.id, 'inactive');
+      // Use dedicated deactivateUser API method
+      const response = await usersApi.deactivateUser(user.id);
       
       if (response.success) {
         // Update local user state
@@ -70,7 +71,8 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
   const handleActivateUser = async () => {
     setIsLoading(true);
     try {
-      const response = await usersApi.updateUserStatus(user.id, 'active');
+      // Use dedicated activateUser API method
+      const response = await usersApi.activateUser(user.id);
       
       if (response.success) {
         // Update local user state
@@ -102,7 +104,8 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
   const handleDeleteUser = async () => {
     setIsLoading(true);
     try {
-      const response = await usersApi.deleteUserByPublicId(user.id);
+      // Use dedicated deleteUser API method
+      const response = await usersApi.deleteUser(user.id);
       
       if (response.success) {
         // Close dialog and notify parent

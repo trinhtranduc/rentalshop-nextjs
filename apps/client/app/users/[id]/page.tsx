@@ -181,8 +181,8 @@ export default function UserPage() {
     
     try {
       setIsUpdating(true);
-      // Use id for activation as the API expects numeric id
-      const response = await usersApi.activateUserByPublicId(userData.id);
+      // Use dedicated activateUser API method
+      const response = await usersApi.activateUser(userData.id);
       if (response.success) {
         // Refresh user data
         await refreshUserData();
@@ -210,8 +210,8 @@ export default function UserPage() {
     
     try {
       setIsUpdating(true);
-      // Use id for deactivation as the API expects numeric id
-      const response = await usersApi.deactivateUserByPublicId(userData.id);
+      // Use dedicated deactivateUser API method
+      const response = await usersApi.deactivateUser(userData.id);
       if (response.success) {
         // Refresh user data
         await refreshUserData();
