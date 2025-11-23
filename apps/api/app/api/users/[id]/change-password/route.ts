@@ -16,15 +16,18 @@ import {API} from '@rentalshop/constants';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Handle both sync and async params (Next.js 13+ compatibility)
+  const resolvedParams = await Promise.resolve(params);
+  
   return withAnyAuth(async (request: NextRequest, { user, userScope }) => {
     try {
-      console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', params.id);
+      console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', resolvedParams.id);
       
       const currentUser = user;
 
-    const { id } = params;
+    const { id } = resolvedParams;
     const body = await request.json();
     const { newPassword, confirmPassword } = body;
 
