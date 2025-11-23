@@ -341,6 +341,25 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     }
 
     // ============================================================================
+    // USER ACTIVE STATUS CHECK
+    // ============================================================================
+    // Check if user account is active (not deactivated)
+    const userRecord = await db.users.findById(user.id);
+    if (!userRecord || !userRecord.isActive) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          { 
+            success: false, 
+            code: 'ACCOUNT_DEACTIVATED', 
+            message: 'Your account has been deactivated. Please contact an administrator.' 
+          },
+          { status: 401 }
+        )
+      };
+    }
+
+    // ============================================================================
     // SESSION VALIDATION (Single Session Enforcement)
     // ============================================================================
     // Check if session is still valid (not invalidated by a newer login)
