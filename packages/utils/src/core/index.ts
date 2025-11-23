@@ -25,6 +25,17 @@ export {
   handleApiResponse
 } from './common';
 
+// Export mobile detection utilities
+export {
+  isMobileDevice,
+  isIOS,
+  isAndroid,
+  getMobileDeepLink,
+  getIOSUniversalLink,
+  getAndroidAppLink,
+  tryOpenMobileApp
+} from './mobile-detection';
+
 // Export unified ApiResponse type from errors.ts (re-exported from response-builder)
 export type { 
   ApiResponse,

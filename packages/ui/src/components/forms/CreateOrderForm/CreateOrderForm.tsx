@@ -52,7 +52,6 @@ import { ProductsSection } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
 import { OrderSummarySection } from './components/OrderSummarySection';
 import { CustomerCreationDialog } from './components/CustomerCreationDialog';
-import { OrderPreviewDialog } from './components/OrderPreviewDialog';
 
 import type { 
   CreateOrderFormProps, 
@@ -89,14 +88,10 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     orderItems,
     setOrderItems,
     isSubmitting,
-    showOrderPreview,
-    setShowOrderPreview,
     addProductToOrder,
     removeProductFromOrder,
     updateOrderItem,
     updateRentalDates,
-    handlePreviewClick,
-    handleOrderConfirm,
     handleSubmit,
     resetForm,
     calculateRentalDays,
@@ -563,7 +558,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                 isEditMode={isEditMode}
                 loading={loading || isSubmitting}
                 isFormValid={isFormValidForUI}
-                onPreviewClick={handlePreviewClick}
+                onSubmit={handleSubmit}
                 onCancel={onCancel}
                 currency={currency}
               />
@@ -579,52 +574,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         onCustomerCreated={handleAddNewCustomer}
         merchantId={merchantId}
       />
-
-      {/* Order Preview Dialog */}
-      <OrderPreviewDialog
-        open={showOrderPreview}
-        onOpenChange={setShowOrderPreview}
-        orderData={{
-          orderType: formData.orderType,
-          customerId: formData.customerId || 0,
-          customerName: selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName}` : undefined,
-          customerPhone: selectedCustomer?.phone,
-          customerEmail: selectedCustomer?.email,
-          outletId: formData.outletId || 0,
-          outletName: outlets.find(o => o.id === formData.outletId)?.name,
-          pickupPlanAt: formData.pickupPlanAt,
-          returnPlanAt: formData.returnPlanAt,
-          subtotal: formData.subtotal,
-          taxAmount: formData.taxAmount,
-          discountAmount: formData.discountAmount,
-          totalAmount: formData.totalAmount,
-          depositAmount: formData.depositAmount,
-          securityDeposit: formData.securityDeposit,
-          lateFee: formData.lateFee,
-          damageFee: formData.damageFee,
-          notes: formData.notes,
-          orderItems: (() => {
-            console.log('🔍 Creating preview data - orderItems from state:', orderItems);
-            console.log('🔍 Creating preview data - orderItems length:', orderItems.length);
-            return orderItems.map(item => ({
-              productId: item.productId,
-              product: item.product, // Include the full product information
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              totalPrice: item.quantity * item.unitPrice,
-              deposit: item.deposit ?? 0, // Ensure deposit is always a number
-              notes: item.notes || ''
-            }));
-          })()
-        }}
-        products={products}
-        onConfirm={handleOrderConfirm}
-        onEdit={() => setShowOrderPreview(false)}
-        loading={loading || isSubmitting}
-        confirmText={isEditMode ? t('actions.updateOrder') : t('actions.confirmCreate')}
-        editText={t('actions.backToEdit')}
-        title={t('actions.orderPreview')}
-        subtitle={t('actions.reviewBeforeConfirm')}
-      />    </div>
+    </div>
   );
 };

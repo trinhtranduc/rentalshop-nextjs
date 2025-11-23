@@ -2257,6 +2257,7 @@ var actions = {
 	reviewBeforeConfirm: "Review your order details before confirming"
 };
 var messages$1 = {
+	createOrder: "Create Order",
 	createSuccess: "Order created successfully",
 	createFailed: "Failed to create order",
 	updateSuccess: "Order updated successfully",
@@ -2385,6 +2386,28 @@ var stats$1 = {
 	overdueRentals: "Overdue Rentals",
 	revenueMetrics: "Revenue Metrics"
 };
+var receipt = {
+	previewTitle: "Preview Order Receipt",
+	printOptions: "Print Options",
+	printViaPDF: "Print via PDF",
+	printDescription: "Create PDF file and send to printer",
+	order: "Order",
+	customer: "Customer",
+	deposit: "Deposit",
+	noDeposit: "NO DEPOSIT",
+	createdDate: "Created Date",
+	rentDate: "Rent Date",
+	returnDate: "Return Date",
+	saleDate: "Sale Date",
+	subtotal: "SUBTOTAL",
+	discount: "DISCOUNT",
+	total: "TOTAL",
+	note: "Note",
+	customerSignature: "Customer Signature",
+	storeSignature: "Store Signature",
+	thankYou: "THANK YOU FOR SHOPPING",
+	downloadApp: "Download RentalShop on App Store"
+};
 var orders = {
 	title: title$1,
 	createOrder: createOrder,
@@ -2405,7 +2428,8 @@ var orders = {
 	productOrders: productOrders,
 	filters: filters,
 	search: search,
-	stats: stats$1
+	stats: stats$1,
+	receipt: receipt
 };
 
 declare const _________locales_en_orders_json_actions: typeof actions;
@@ -2422,11 +2446,12 @@ declare const _________locales_en_orders_json_orderNumber: typeof orderNumber;
 declare const _________locales_en_orders_json_orderType: typeof orderType;
 declare const _________locales_en_orders_json_payment: typeof payment;
 declare const _________locales_en_orders_json_productOrders: typeof productOrders;
+declare const _________locales_en_orders_json_receipt: typeof receipt;
 declare const _________locales_en_orders_json_search: typeof search;
 declare const _________locales_en_orders_json_status: typeof status;
 declare const _________locales_en_orders_json_viewOrder: typeof viewOrder;
 declare namespace _________locales_en_orders_json {
-  export { _________locales_en_orders_json_actions as actions, _________locales_en_orders_json_amount as amount, _________locales_en_orders_json_createOrder as createOrder, _________locales_en_orders_json_customer as customer, _________locales_en_orders_json_dates as dates, orders as default, _________locales_en_orders_json_detail as detail, _________locales_en_orders_json_editOrder as editOrder, _________locales_en_orders_json_filters as filters, _________locales_en_orders_json_items as items, messages$1 as messages, _________locales_en_orders_json_orderDetails as orderDetails, _________locales_en_orders_json_orderNumber as orderNumber, _________locales_en_orders_json_orderType as orderType, _________locales_en_orders_json_payment as payment, _________locales_en_orders_json_productOrders as productOrders, _________locales_en_orders_json_search as search, stats$1 as stats, _________locales_en_orders_json_status as status, title$1 as title, _________locales_en_orders_json_viewOrder as viewOrder };
+  export { _________locales_en_orders_json_actions as actions, _________locales_en_orders_json_amount as amount, _________locales_en_orders_json_createOrder as createOrder, _________locales_en_orders_json_customer as customer, _________locales_en_orders_json_dates as dates, orders as default, _________locales_en_orders_json_detail as detail, _________locales_en_orders_json_editOrder as editOrder, _________locales_en_orders_json_filters as filters, _________locales_en_orders_json_items as items, messages$1 as messages, _________locales_en_orders_json_orderDetails as orderDetails, _________locales_en_orders_json_orderNumber as orderNumber, _________locales_en_orders_json_orderType as orderType, _________locales_en_orders_json_payment as payment, _________locales_en_orders_json_productOrders as productOrders, _________locales_en_orders_json_receipt as receipt, _________locales_en_orders_json_search as search, stats$1 as stats, _________locales_en_orders_json_status as status, title$1 as title, _________locales_en_orders_json_viewOrder as viewOrder };
 }
 
 var title = "Dashboard";

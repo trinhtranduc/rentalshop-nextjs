@@ -332,10 +332,17 @@ export async function sendVerificationEmail(
   // Lazy load env to avoid initialization issues in browser
   const { env } = await import('@rentalshop/env');
   
-  // Use API_URL so the link goes to backend first, which verifies token
-  // and then redirects back to CLIENT_URL with success/error.
-  const apiUrl = env.API_URL || env.CLIENT_URL;
-  const verificationUrl = `${apiUrl}/api/auth/verify-email?token=${verificationToken}`;
+  // Use CLIENT_URL so the link goes to client app first, which is more trusted by browsers
+  // The client app will then call the API to verify the token
+  // IMPORTANT: Always use HTTPS for production to avoid browser warnings
+  let clientUrl = env.CLIENT_URL || 'http://localhost:3000';
+  
+  // Ensure HTTPS in production (except localhost)
+  if (process.env.NODE_ENV === 'production' && !clientUrl.includes('localhost')) {
+    clientUrl = clientUrl.replace(/^http:/, 'https:');
+  }
+  
+  const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
 
   const html = generateVerificationEmail({
     name,

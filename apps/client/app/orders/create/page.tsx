@@ -16,7 +16,8 @@ import { CreateOrderForm } from '@rentalshop/ui';
 import { ProductAddDialog } from '@rentalshop/ui';
 import { AddCategoryDialog } from '@rentalshop/ui';
 import { AddCustomerDialog } from '@rentalshop/ui';
-import type { CustomerSearchResult, ProductWithStock, OrderInput, Category } from '@rentalshop/types';
+import { ReceiptPreviewModal } from '@rentalshop/ui';
+import type { CustomerSearchResult, ProductWithStock, OrderInput, Category, Order } from '@rentalshop/types';
 import { 
   customersApi, 
   productsApi, 
@@ -46,6 +47,10 @@ export default function CreateOrderPage() {
   const [showProductDialog, setShowProductDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
+  
+  // Receipt preview state
+  const [showReceiptPreview, setShowReceiptPreview] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
 
   // Toast notifications
   const { toastSuccess, toastError, removeToast } = useToast();
@@ -153,11 +158,12 @@ export default function CreateOrderPage() {
     try {
       setSubmitting(true);
       const result = await ordersApi.createOrder(orderData);
-      if (result.success) {
+      if (result.success && result.data) {
         // Show success message
         toastSuccess(t('messages.createSuccess'));
-        // Navigate back to orders list after successful creation
-        router.push('/orders');
+        // Store created order and show receipt preview
+        setCreatedOrder(result.data as Order);
+        setShowReceiptPreview(true);
       } else {
         throw new Error(result.error || 'Failed to create order');
       }
@@ -388,6 +394,20 @@ export default function CreateOrderPage() {
               onOpenChange={setShowCustomerDialog}
               onCustomerCreated={handleCustomerCreated}
               onError={(error: string) => toastError(tc('labels.error'), error)}
+            />
+
+            {/* Receipt Preview Modal */}
+            <ReceiptPreviewModal
+              isOpen={showReceiptPreview}
+              onClose={() => {
+                setShowReceiptPreview(false);
+                setCreatedOrder(null);
+                // Navigate to orders list after closing receipt
+                router.push('/orders');
+              }}
+              order={createdOrder}
+              outlet={createdOrder?.outletId ? outlets.find(o => o.id === createdOrder?.outletId) as any : null}
+              merchant={user?.merchant || null}
             />
           </>
         )}

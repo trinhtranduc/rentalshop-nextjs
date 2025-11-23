@@ -221,7 +221,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         // Revenue when returning: -(securityDeposit - damageFee) = money returned to customer (negative)
         const refund = (order.securityDeposit || 0) - (order.damageFee || 0);
         return sum - refund; // Negative because we return money
-      }, 0);
+        }, 0);
 
         // Get future income (RENT orders with pickup date in this period)
         // Future income = totalAmount - depositAmount (amount expected to receive on pickup day)

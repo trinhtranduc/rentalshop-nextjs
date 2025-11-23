@@ -312,21 +312,26 @@ export const UserForm: React.FC<UserFormProps> = ({
         const updateData = formData as UserUpdateFormData;
         submitData = {
           id: user?.id || 0,
-          firstName: updateData.firstName.trim(),
-          lastName: updateData.lastName.trim(),
+          firstName: updateData.firstName?.trim() || '',
+          lastName: updateData.lastName?.trim() || '',
           email: updateData.email.trim().toLowerCase(),
-          phone: updateData.phone.trim(),
+          phone: updateData.phone?.trim() || undefined, // Optional phone
           role: updateData.role,
           merchantId: updateData.merchantId ? Number(updateData.merchantId) : undefined,
           outletId: updateData.outletId ? Number(updateData.outletId) : undefined
         } as UserUpdateInput;
       } else {
         const createData = formData as UserCreateFormData;
+        // Split name into firstName and lastName, but allow empty
+        const nameParts = createData.name.trim().split(' ').filter(part => part.length > 0);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
         submitData = {
-          firstName: createData.name.trim().split(' ')[0] || '',
-          lastName: createData.name.trim().split(' ').slice(1).join(' ') || '',
+          firstName: firstName,
+          lastName: lastName,
           email: createData.email.trim().toLowerCase(),
-          phone: createData.phone.trim(),
+          phone: createData.phone?.trim() || undefined, // Optional phone
           role: createData.role,
           password: createData.password,
           merchantId: createData.merchantId ? Number(createData.merchantId) : undefined,
@@ -423,7 +428,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               onChange={(value) => handleInputChange('phone', value)}
               error={errors.phone}
               disabled={isSubmitting}
-              required
+              required={false}
               placeholder={t('placeholders.enterPhone')}
             />
 

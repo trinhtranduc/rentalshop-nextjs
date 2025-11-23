@@ -16,7 +16,8 @@ export {
   OrderStats,
   OrderPagination,
   OrdersLoading,
-  OrderDetailLoading
+  OrderDetailLoading,
+  ReceiptPreviewModal
 } from './components';
 
 // Types

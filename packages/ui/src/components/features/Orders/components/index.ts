@@ -7,3 +7,4 @@ export { OrderActions } from './OrderActions';
 export { OrderStats } from './OrderStats';
 export { OrderPagination } from './OrderPagination';
 export { OrdersLoading, OrderDetailLoading } from './OrdersLoading';
+export { ReceiptPreviewModal } from './ReceiptPreviewModal';
