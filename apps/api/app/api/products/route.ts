@@ -392,12 +392,47 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 
     // Handle outletStock after merchant is determined
     if (parsed.data.outletStock && Array.isArray(parsed.data.outletStock) && parsed.data.outletStock.length > 0) {
-      // Use provided outletStock
-      outletStock = parsed.data.outletStock.map((os: any) => ({
-        outletId: os.outletId,
-        stock: os.stock || 0,
-      }));
-      console.log('🔍 Using provided outletStock:', outletStock);
+      // Verify all outlets exist and belong to the merchant
+      console.log('🔍 Verifying outletStock outlets...');
+      const validOutletStock = [];
+      for (const stock of parsed.data.outletStock) {
+        if (stock.outletId && typeof stock.stock === 'number') {
+          console.log(`🔍 Verifying outlet ID: ${stock.outletId}`);
+          // Find outlet by id (number) - db.outlets.findById expects id (number)
+          const outlet = await db.outlets.findById(stock.outletId);
+          if (outlet) {
+            // Verify outlet belongs to the merchant (security check)
+            const outletMerchantId = outlet.merchant?.id || (outlet as any).merchantId;
+            if (outletMerchantId !== merchant.id) {
+              console.log(`❌ Outlet ${stock.outletId} does not belong to merchant ${merchant.id}`);
+              return NextResponse.json(
+                ResponseBuilder.error('OUTLET_NOT_IN_MERCHANT', `Outlet with ID ${stock.outletId} does not belong to your merchant`),
+                { status: 403 }
+              );
+            }
+            console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name, merchantId: outletMerchantId });
+            // Use outlet's id (number) for Prisma connect
+            validOutletStock.push({
+              outletId: outlet.id, // Use id (number) for Prisma connect
+              stock: stock.stock || 0,
+            });
+          } else {
+            console.log(`❌ Outlet not found for ID: ${stock.outletId}`);
+            return NextResponse.json(
+              ResponseBuilder.error('OUTLET_NOT_FOUND', `Outlet with ID ${stock.outletId} not found`),
+              { status: 404 }
+            );
+          }
+        } else {
+          console.log(`❌ Invalid outletStock entry:`, stock);
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_OUTLET_STOCK', 'Invalid outletStock entry. Both outletId (number) and stock (number) are required.'),
+            { status: 400 }
+          );
+        }
+      }
+      outletStock = validOutletStock;
+      console.log('✅ Verified outletStock:', outletStock);
     } else {
       // Auto-create outletStock from default outlet
       console.log('🔍 No outletStock provided, using default outlet');
