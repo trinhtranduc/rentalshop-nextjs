@@ -182,11 +182,20 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       console.log('✅ Password hashed successfully');
     }
 
+    // NOTE: Only MERCHANT users need email verification
+    // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
+    const isOutletUser = parsed.data.role === 'OUTLET_ADMIN' || parsed.data.role === 'OUTLET_STAFF';
+    
     const userData = {
       ...parsed.data,
       password: hashedPassword || parsed.data.password, // Use hashed password if provided
       merchantId,
-      outletId
+      outletId,
+      // Auto-verify email for outlet users (they can use any email)
+      ...(isOutletUser && {
+        emailVerified: true,
+        emailVerifiedAt: new Date()
+      })
     };
 
     // Remove plain password from data to avoid logging it
