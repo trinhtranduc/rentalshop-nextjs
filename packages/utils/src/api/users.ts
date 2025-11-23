@@ -160,40 +160,24 @@ export const usersApi = {
 
   /**
    * Activate user
+   * Uses updateUser API to set isActive to true
    */
   async activateUser(userId: number): Promise<UserApiResponse> {
-    const response = await authenticatedFetch(`${apiUrls.users.update(userId)}/activate`, {
-      method: 'PATCH',
-      body: JSON.stringify({ isActive: true }),
-    });
-    return await parseApiResponse<UserApiResponse>(response);
+    return this.updateUser(userId, { isActive: true });
   },
 
   /**
    * Deactivate user
+   * Uses updateUser API to set isActive to false
    */
   async deactivateUser(userId: number): Promise<UserApiResponse> {
-    const response = await authenticatedFetch(`${apiUrls.users.update(userId)}/deactivate`, {
-      method: 'PATCH',
-      body: JSON.stringify({ isActive: false }),
-    });
-    return await parseApiResponse<UserApiResponse>(response);
+    return this.updateUser(userId, { isActive: false });
   },
 
   /**
    * Change user password
    */
   async changePassword(userId: number, newPassword: string): Promise<UserApiResponse> {
-    // ✅ CRITICAL DEBUG: This log MUST appear if method is called
-    console.log('🚨🚨🚨 changePassword METHOD CALLED 🚨🚨🚨', {
-      userId,
-      timestamp: new Date().toISOString(),
-      'apiUrls.base': apiUrls.base,
-      'apiUrls.users.update(1009)': apiUrls.users.update(1009),
-      'typeof apiUrls.users.update': typeof apiUrls.users.update,
-      stackTrace: new Error().stack
-    });
-    
     const baseUrl = apiUrls.users.update(userId);
     const fullUrl = `${baseUrl}/change-password`;
     
