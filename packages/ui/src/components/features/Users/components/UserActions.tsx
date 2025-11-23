@@ -6,6 +6,7 @@ import { Button } from '../../../ui/button';
 import { ConfirmationDialog } from '@rentalshop/ui';
 import { UserDetailDialog } from './UserDetailDialog';
 import type { User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
+import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
 // formatPublicId removed - using single id system
 
 interface UserActionsProps {
@@ -24,6 +25,8 @@ export function UserActions({
   onSuccess
 }: UserActionsProps) {
   const router = useRouter();
+  const t = useUsersTranslations();
+  const tc = useCommonTranslations();
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -134,10 +137,10 @@ export function UserActions({
         open={isDeactivateDialogOpen}
         onOpenChange={setIsDeactivateDialogOpen}
         type="warning"
-        title="Deactivate User"
-        description={`Are you sure you want to deactivate ${userToDeactivate?.name}? This action will prevent them from accessing the system.`}
-        confirmText="Deactivate"
-        cancelText="Cancel"
+        title={t('messages.confirmDeactivateAccount')}
+        description={`${t('messages.confirmDeactivate')} ${userToDeactivate?.name}? ${t('messages.confirmDeactivateDetails')}`}
+        confirmText={t('actions.deactivate')}
+        cancelText={tc('buttons.cancel')}
         onConfirm={handleConfirmDeactivate}
       />
     </>

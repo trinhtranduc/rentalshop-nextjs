@@ -33,6 +33,7 @@ export default function PricingPage() {
 
   const getPlanIcon = (planId: string) => {
     switch (planId) {
+      case 'trial': return <Zap className="h-6 w-6" />;
       case 'basic': return <Zap className="h-6 w-6" />;
       case 'professional': return <Shield className="h-6 w-6" />;
       case 'enterprise': return <Building className="h-6 w-6" />;
@@ -109,6 +110,7 @@ export default function PricingPage() {
               
               <CardHeader className="text-center pb-4">
                 <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg mb-4 ${
+                  plan.id === 'trial' ? 'bg-green-100 text-green-700' :
                   plan.id === 'basic' ? 'bg-blue-100 text-blue-700' :
                   plan.id === 'professional' ? 'bg-purple-100 text-purple-600' :
                   'bg-yellow-100 text-yellow-600'
