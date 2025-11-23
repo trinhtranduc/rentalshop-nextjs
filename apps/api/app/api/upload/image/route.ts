@@ -118,7 +118,33 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
+
+    // Compress image to reduce file size
+    try {
+      const sharp = (await import('sharp')).default as any;
+      const originalSize = buffer.length;
+      
+      // Compress image: resize max width 1920px, quality 85%, convert to JPEG
+      buffer = await sharp(buffer)
+        .resize(1920, null, {
+          withoutEnlargement: true,
+          fit: 'inside'
+        })
+        .jpeg({ 
+          quality: 85,
+          progressive: true,
+          mozjpeg: true
+        })
+        .toBuffer();
+      
+      const compressedSize = buffer.length;
+      const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+      console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction)`);
+    } catch (compressError) {
+      console.warn('⚠️ Image compression failed, using original:', compressError);
+      // Continue with original buffer if compression fails
+    }
 
     // Smart filename handling: prioritize originalName, then file.name, with preservation option
     const effectiveFileName = (() => {
@@ -145,11 +171,11 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
       size: file.size
     });
 
-    // Upload to AWS S3 staging folder - Simple validation only
+    // Upload compressed image to AWS S3 staging folder
     const result = await uploadToS3(buffer, {
       folder: 'staging',
       fileName: effectiveFileName || undefined,
-      contentType: file.type,
+      contentType: 'image/jpeg', // Always JPEG after compression
       preserveOriginalName: preserveFilename
     });
     console.log('✅ Image uploaded to AWS S3');
