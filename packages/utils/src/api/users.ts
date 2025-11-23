@@ -184,13 +184,24 @@ export const usersApi = {
    * Change user password
    */
   async changePassword(userId: number, newPassword: string): Promise<UserApiResponse> {
+    // Debug: Log before constructing URL
+    console.log('🔍 changePassword START:', {
+      userId,
+      'apiUrls.base': apiUrls.base,
+      'apiUrls.users.update(1009)': apiUrls.users.update(1009),
+      'typeof apiUrls.users.update': typeof apiUrls.users.update
+    });
+    
     const baseUrl = apiUrls.users.update(userId);
     const fullUrl = `${baseUrl}/change-password`;
+    
     console.log('🔍 changePassword URL Debug:', {
       userId,
       baseUrl,
       fullUrl,
-      apiUrlsBase: apiUrls.base
+      apiUrlsBase: apiUrls.base,
+      'baseUrl starts with http': baseUrl.startsWith('http'),
+      'baseUrl starts with /': baseUrl.startsWith('/')
     });
     
     const response = await authenticatedFetch(fullUrl, {
