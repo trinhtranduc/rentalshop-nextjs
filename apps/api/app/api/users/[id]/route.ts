@@ -194,7 +194,6 @@ export async function DELETE(
         success: true,
         data: deletedUser,
         code: 'USER_DELETED_SUCCESS',
-        code: 'USER_DELETED_SUCCESS',
         message: 'User deleted successfully'
       });
 
