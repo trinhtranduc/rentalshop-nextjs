@@ -184,24 +184,28 @@ export const usersApi = {
    * Change user password
    */
   async changePassword(userId: number, newPassword: string): Promise<UserApiResponse> {
-    // Debug: Log before constructing URL
-    console.log('🔍 changePassword START:', {
+    // ✅ CRITICAL DEBUG: This log MUST appear if method is called
+    console.log('🚨🚨🚨 changePassword METHOD CALLED 🚨🚨🚨', {
       userId,
+      timestamp: new Date().toISOString(),
       'apiUrls.base': apiUrls.base,
       'apiUrls.users.update(1009)': apiUrls.users.update(1009),
-      'typeof apiUrls.users.update': typeof apiUrls.users.update
+      'typeof apiUrls.users.update': typeof apiUrls.users.update,
+      stackTrace: new Error().stack
     });
     
     const baseUrl = apiUrls.users.update(userId);
     const fullUrl = `${baseUrl}/change-password`;
     
-    console.log('🔍 changePassword URL Debug:', {
+    console.log('🔍 changePassword URL Construction:', {
       userId,
       baseUrl,
       fullUrl,
       apiUrlsBase: apiUrls.base,
       'baseUrl starts with http': baseUrl.startsWith('http'),
-      'baseUrl starts with /': baseUrl.startsWith('/')
+      'baseUrl starts with /': baseUrl.startsWith('/'),
+      'baseUrl includes dev.anyrent': baseUrl.includes('dev.anyrent'),
+      'baseUrl includes dev-api.anyrent': baseUrl.includes('dev-api.anyrent')
     });
     
     const response = await authenticatedFetch(fullUrl, {
