@@ -509,35 +509,35 @@ export async function getOrderCount(outletId?: number, status?: string): Promise
 }
 
 export async function generateOrderNumber(outletId: number): Promise<string> {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  
-  const prefix = `${year}${month}${day}`
-  
-  const latestOrder = await prisma.order.findFirst({
-    where: {
-      orderNumber: {
-        startsWith: prefix,
-      },
-      outletId,
-    },
-    orderBy: {
-      orderNumber: 'desc',
-    },
-    select: {
-      orderNumber: true,
-    },
-  })
+  const outlet = await prisma.outlet.findUnique({
+    where: { id: outletId },
+    select: { id: true }
+  });
 
-  let sequence = 1
-  if (latestOrder?.orderNumber) {
-    const lastSequence = parseInt(latestOrder.orderNumber.split('-').pop() || '0')
-    sequence = lastSequence + 1
+  if (!outlet) {
+    throw new Error(`Outlet with id ${outletId} not found`);
   }
 
-  return `${prefix}-${String(sequence).padStart(4, '0')}`
+  // Generate random 6-digit number (100000 to 999999)
+  const generateRandom6Digits = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const maxRetries = 10;
+  for (let i = 0; i < maxRetries; i++) {
+    const orderNumber = generateRandom6Digits();
+    
+    // Check if order number already exists
+    const existingOrder = await prisma.order.findUnique({
+      where: { orderNumber }
+    });
+
+    if (!existingOrder) {
+      return orderNumber;
+    }
+  }
+
+  throw new Error('Failed to generate unique 6-digit random order number after maximum retries');
 }
 
 // ============================================================================
