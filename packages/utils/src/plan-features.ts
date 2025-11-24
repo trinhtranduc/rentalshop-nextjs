@@ -54,7 +54,7 @@ export const BASIC_PLAN_FEATURES: PlanFeatureKey[] = [
 ];
 
 /**
- * Default features for Professional plan (7 features)
+ * Default features for Professional plan (8 features)
  * Includes all Basic features plus additional ones
  */
 export const PROFESSIONAL_PLAN_FEATURES: PlanFeatureKey[] = [
@@ -66,6 +66,21 @@ export const PROFESSIONAL_PLAN_FEATURES: PlanFeatureKey[] = [
   'apiIntegration',
   'teamCollaborationTools',
   'prioritySupport',
+];
+
+/**
+ * Default features for Enterprise plan (8 features)
+ * Includes all Professional features plus additional enterprise-level ones
+ */
+export const ENTERPRISE_PLAN_FEATURES: PlanFeatureKey[] = [
+  'allProfessionalFeatures', // Represents all Professional plan features
+  'multipleOutlets',
+  'advancedTeamManagement',
+  'customIntegrations',
+  'dedicatedAccountManager',
+  'customReporting',
+  'whiteLabelSolution',
+  '247PhoneSupport',
 ];
 
 /**
@@ -87,11 +102,11 @@ export function translatePlanFeature(feature: string, t: (key: string) => string
   }
   
   // Normalize feature key: lowercase, remove spaces and special chars (including checkmark symbols)
+  // Note: Don't remove "check" as it's part of feature names like "productPublicCheck"
   const featureKey = cleanFeature.toLowerCase()
     .replace(/\s+/g, '')
     .replace(/[^a-z0-9]/g, '')
-    .replace(/✓/g, '') // Remove checkmark symbols
-    .replace(/check/g, ''); // Remove "check" suffix if present
+    .replace(/✓/g, ''); // Remove checkmark symbols only
   
   // Common feature translations mapping
   const featureMap: Record<string, string> = {
@@ -163,7 +178,24 @@ export function translatePlanFeature(feature: string, t: (key: string) => string
     }
   }
   
-  // Fallback 2: try direct translation key with normalized key (lowercase)
+  // Fallback 2: try to convert featureKey to camelCase
+  // Convert "productpubliccheck" -> "productPublicCheck"
+  try {
+    // Split by common word boundaries and convert to camelCase
+    const words = featureKey.match(/[a-z]+/g) || [];
+    if (words.length > 0) {
+      const camelCaseKey = words[0] + words.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+      const directKey = `features.${camelCaseKey}`;
+      const translated = t(directKey);
+      if (translated && translated !== directKey) {
+        return translated;
+      }
+    }
+  } catch {
+    // Ignore
+  }
+  
+  // Fallback 3: try direct translation key with normalized key (lowercase)
   try {
     const directKey = `features.${featureKey}`;
     const translated = t(directKey);
@@ -174,33 +206,17 @@ export function translatePlanFeature(feature: string, t: (key: string) => string
     // Ignore
   }
   
-  // Fallback 3: try to convert normalized key to camelCase and translate
-  // Convert "allbasicfeatures" -> "allBasicFeatures"
-  try {
-    const camelCaseKey = featureKey
-      .split(/(?=[A-Z])|(?=\d)/)
-      .map((word, index) => index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1))
-      .join('');
-    
-    // Try different camelCase variations
-    const variations = [
-      `features.${camelCaseKey}`,
-      `features.${featureKey.charAt(0).toUpperCase() + featureKey.slice(1)}`,
-      `features.${cleanFeature}`,
-    ];
-    
-    for (const key of variations) {
-      try {
-        const translated = t(key);
-        if (translated && translated !== key) {
-          return translated;
-        }
-      } catch {
-        // Continue to next variation
+  // Fallback 4: try original cleanFeature if it's different from normalized
+  if (cleanFeature !== featureKey) {
+    try {
+      const directKey = `features.${cleanFeature}`;
+      const translated = t(directKey);
+      if (translated && translated !== directKey) {
+        return translated;
       }
+    } catch {
+      // Ignore
     }
-  } catch {
-    // Ignore
   }
   
   // Return original if no translation found (log for debugging in development)

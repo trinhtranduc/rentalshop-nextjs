@@ -80,7 +80,8 @@ import {
   translatePlanFeature,
   AVAILABLE_PLAN_FEATURES,
   BASIC_PLAN_FEATURES,
-  PROFESSIONAL_PLAN_FEATURES
+  PROFESSIONAL_PLAN_FEATURES,
+  ENTERPRISE_PLAN_FEATURES
 } from '@rentalshop/utils';
 import { usePlansTranslations } from '@rentalshop/hooks';
 
@@ -981,6 +982,15 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                 className="text-xs"
               >
                 Use Professional Plan Features ({PROFESSIONAL_PLAN_FEATURES.length})
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleInputChange('features', [...ENTERPRISE_PLAN_FEATURES])}
+                className="text-xs"
+              >
+                Use Enterprise Plan Features ({ENTERPRISE_PLAN_FEATURES.length})
               </Button>
               <Button
                 type="button"
