@@ -7,9 +7,9 @@
     "login": "Đăng nhập"
   },
   "hero": {
-    "title": "Hệ thống Quản lý",
-    "subtitle": "Cửa hàng cho thuê Hiện đại",
-    "description": "Giải pháp quản lý cửa hàng cho thuê chuyên nghiệp. Quản lý sản phẩm, khách hàng và đơn hàng hiệu quả với nền tảng hiện đại, dễ sử dụng của chúng tôi.",
+    "title": "Phần mềm Quản lý",
+    "subtitle": "Cửa hàng Cho thuê Chuyên nghiệp",
+    "description": "Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện phù hợp cho nhiều ngành nghề: quản lý cho thuê áo dài, quản lý cho thuê áo cưới, quản lý cho thuê trang thiết bị, quản lý cho thuê xe, quản lý cho thuê trang phục biểu diễn, quản lý cho thuê máy in. Giải pháp quản lý cửa hàng cho thuê hiện đại, dễ sử dụng với hỗ trợ đa nền tảng iOS, Android và Web.",
     "downloadApp": "Tải ứng dụng",
     "tryWebPortal": "Dùng thử Web Portal"
   },
@@ -25,32 +25,32 @@
     "downloadOnAppStore": "Tải xuống trên App Store"
   },
   "features": {
-    "title": "Tính năng mạnh mẽ",
-    "description": "Mọi thứ bạn cần để quản lý hiệu quả doanh nghiệp cho thuê của mình",
-    "orderManagement": "Quản lý đơn hàng",
-    "orderManagementDesc": "Tạo, theo dõi và quản lý đơn hàng cho thuê một cách dễ dàng. Theo dõi trạng thái và lịch sử đơn hàng.",
-    "customerManagement": "Quản lý khách hàng",
-    "customerManagementDesc": "Lưu trữ thông tin khách hàng, theo dõi lịch sử cho thuê và quản lý quan hệ khách hàng.",
-    "calendarScheduling": "Lịch & Lên lịch",
-    "calendarSchedulingDesc": "Lịch trực quan để theo dõi các khoản cho thuê, trả lại và tình trạng sẵn có của sản phẩm.",
-    "financialReports": "Báo cáo tài chính",
-    "financialReportsDesc": "Tạo báo cáo tài chính chi tiết, theo dõi doanh thu và phân tích hiệu suất kinh doanh.",
-    "duplicatePrevention": "Ngăn chặn đơn hàng trùng lặp",
-    "duplicatePreventionDesc": "Hệ thống thông minh ngăn chặn đơn hàng trùng lặp và đảm bảo quản lý hàng tồn kho chính xác.",
-    "multiPlatform": "Hỗ trợ đa nền tảng",
-    "multiPlatformDesc": "Truy cập dữ liệu của bạn từ iOS, Android và các nền tảng web một cách liền mạch."
+    "title": "Tính năng Quản lý Cửa hàng Cho thuê",
+    "description": "Hệ thống quản lý cho thuê với đầy đủ tính năng cần thiết để quản lý hiệu quả doanh nghiệp cho thuê của bạn. Phần mềm quản lý cửa hàng cho thuê phù hợp cho nhiều ngành nghề: cho thuê áo dài, cho thuê áo cưới, cho thuê trang thiết bị, cho thuê xe, cho thuê trang phục biểu diễn, cho thuê máy in. Tích hợp quản lý đơn hàng, quản lý kho và quản lý khách hàng.",
+    "orderManagement": "Quản lý Đơn hàng Cho thuê",
+    "orderManagementDesc": "Hệ thống quản lý đơn hàng cho thuê chuyên nghiệp. Tạo, theo dõi và quản lý đơn hàng cho thuê một cách dễ dàng. Theo dõi trạng thái và lịch sử đơn hàng cho thuê với phần mềm quản lý cửa hàng cho thuê.",
+    "customerManagement": "Quản lý Khách hàng",
+    "customerManagementDesc": "Quản lý khách hàng hiệu quả với hệ thống quản lý cho thuê. Lưu trữ thông tin khách hàng, theo dõi lịch sử cho thuê và quản lý quan hệ khách hàng trong phần mềm quản lý cửa hàng cho thuê.",
+    "calendarScheduling": "Lịch & Lên lịch Cho thuê",
+    "calendarSchedulingDesc": "Lịch trực quan trong hệ thống quản lý cho thuê để theo dõi các khoản cho thuê, trả lại và tình trạng sẵn có của sản phẩm. Quản lý kho cho thuê hiệu quả với phần mềm quản lý cửa hàng cho thuê.",
+    "financialReports": "Báo cáo Tài chính",
+    "financialReportsDesc": "Tạo báo cáo tài chính chi tiết với hệ thống quản lý cho thuê. Theo dõi doanh thu và phân tích hiệu suất kinh doanh với phần mềm quản lý cửa hàng cho thuê chuyên nghiệp.",
+    "duplicatePrevention": "Ngăn chặn Đơn hàng Trùng lặp",
+    "duplicatePreventionDesc": "Hệ thống thông minh trong phần mềm quản lý cửa hàng cho thuê ngăn chặn đơn hàng trùng lặp và đảm bảo quản lý hàng tồn kho chính xác. Quản lý kho cho thuê hiệu quả với hệ thống quản lý cho thuê.",
+    "multiPlatform": "Hỗ trợ Đa nền tảng",
+    "multiPlatformDesc": "Hệ thống quản lý cho thuê đa nền tảng. Truy cập dữ liệu quản lý cửa hàng cho thuê từ iOS, Android và các nền tảng web một cách liền mạch với phần mềm quản lý cửa hàng cho thuê."
   },
   "whyChoose": {
-    "title": "Tại sao chọn AnyRent?",
-    "description": "Tham gia cùng hàng trăm doanh nghiệp cho thuê tin tưởng nền tảng của chúng tôi",
+    "title": "Tại sao chọn Phần mềm Quản lý Cửa hàng Cho thuê AnyRent?",
+    "description": "Tham gia cùng hàng trăm doanh nghiệp cho thuê tin tưởng hệ thống quản lý cho thuê của chúng tôi. Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam.",
     "easyToUse": "Dễ sử dụng",
-    "easyToUseDesc": "Giao diện trực quan được thiết kế cho chủ cửa hàng cho thuê, không cần kỹ năng kỹ thuật.",
+    "easyToUseDesc": "Giao diện trực quan của phần mềm quản lý cửa hàng cho thuê được thiết kế cho chủ cửa hàng cho thuê, không cần kỹ năng kỹ thuật. Hệ thống quản lý cho thuê dễ sử dụng và thân thiện.",
     "timeSaving": "Tiết kiệm thời gian",
-    "timeSavingDesc": "Tự động hóa các nhiệm vụ thường xuyên và tập trung vào việc phát triển kinh doanh thay vì giấy tờ.",
+    "timeSavingDesc": "Hệ thống quản lý cho thuê tự động hóa các nhiệm vụ thường xuyên và tập trung vào việc phát triển kinh doanh thay vì giấy tờ. Phần mềm quản lý cửa hàng cho thuê giúp tiết kiệm thời gian.",
     "increaseRevenue": "Tăng doanh thu",
-    "increaseRevenueDesc": "Quản lý hàng tồn kho và theo dõi khách hàng tốt hơn dẫn đến tăng doanh số.",
+    "increaseRevenueDesc": "Quản lý kho cho thuê và quản lý khách hàng tốt hơn với hệ thống quản lý cho thuê dẫn đến tăng doanh số. Phần mềm quản lý cửa hàng cho thuê giúp tối ưu hóa doanh thu.",
     "support": "Hỗ trợ 24/7",
-    "supportDesc": "Nhận trợ giúp bất cứ khi nào bạn cần với đội ngũ hỗ trợ khách hàng chuyên dụng của chúng tôi.",
+    "supportDesc": "Nhận trợ giúp bất cứ khi nào bạn cần với đội ngũ hỗ trợ khách hàng chuyên dụng của phần mềm quản lý cửa hàng cho thuê. Hệ thống quản lý cho thuê với hỗ trợ 24/7.",
     "activeStores": "Cửa hàng hoạt động",
     "rating": "Đánh giá 4.9/5"
   },
@@ -69,24 +69,24 @@
     "description": "Tham gia cùng hàng nghìn doanh nghiệp cho thuê tin tưởng nền tảng của chúng tôi"
   },
   "faq": {
-    "title": "Câu hỏi thường gặp",
-    "description": "Mọi thứ bạn cần biết về AnyRent",
+    "title": "Câu hỏi thường gặp về Phần mềm Quản lý Cửa hàng Cho thuê",
+    "description": "Mọi thứ bạn cần biết về hệ thống quản lý cho thuê AnyRent - phần mềm quản lý cửa hàng cho thuê hàng đầu",
     "items": {
       "freeUse": {
-        "question": "AnyRent có miễn phí không?",
-        "answer": "AnyRent cung cấp phiên bản dùng thử miễn phí. Bạn có thể đăng ký và sử dụng các tính năng cơ bản mà không mất phí."
+        "question": "Phần mềm quản lý cửa hàng cho thuê AnyRent có miễn phí không?",
+        "answer": "Hệ thống quản lý cho thuê AnyRent cung cấp phiên bản dùng thử miễn phí. Bạn có thể đăng ký và sử dụng các tính năng cơ bản của phần mềm quản lý cửa hàng cho thuê mà không mất phí. Trải nghiệm quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng miễn phí."
       },
       "multipleDevices": {
-        "question": "Tôi có thể sử dụng trên nhiều thiết bị không?",
-        "answer": "Có, AnyRent hỗ trợ nhiều nền tảng. Bạn có thể sử dụng trên iOS, Android và trình duyệt web."
+        "question": "Tôi có thể sử dụng phần mềm quản lý cửa hàng cho thuê trên nhiều thiết bị không?",
+        "answer": "Có, hệ thống quản lý cho thuê AnyRent hỗ trợ nhiều nền tảng. Bạn có thể sử dụng phần mềm quản lý cửa hàng cho thuê trên iOS, Android và trình duyệt web. Quản lý cửa hàng cho thuê của bạn từ mọi nơi với hệ thống quản lý cho thuê đa nền tảng."
       },
       "dataSecure": {
-        "question": "Dữ liệu của tôi có an toàn không?",
-        "answer": "Chúng tôi cam kết bảo vệ dữ liệu của bạn. Tất cả thông tin được mã hóa và lưu trữ an toàn trên đám mây."
+        "question": "Dữ liệu quản lý cửa hàng cho thuê của tôi có an toàn không?",
+        "answer": "Chúng tôi cam kết bảo vệ dữ liệu của bạn trong hệ thống quản lý cho thuê. Tất cả thông tin quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng được mã hóa và lưu trữ an toàn trên đám mây. Phần mềm quản lý cửa hàng cho thuê AnyRent đảm bảo an toàn dữ liệu."
       },
       "support": {
-        "question": "Bạn có cung cấp hỗ trợ khách hàng không?",
-        "answer": "Có, chúng tôi cung cấp hỗ trợ khách hàng 24/7 qua chat, email và điện thoại."
+        "question": "Bạn có cung cấp hỗ trợ khách hàng cho hệ thống quản lý cho thuê không?",
+        "answer": "Có, chúng tôi cung cấp hỗ trợ khách hàng 24/7 cho phần mềm quản lý cửa hàng cho thuê AnyRent. Đội ngũ hỗ trợ chuyên nghiệp sẵn sàng giúp bạn với mọi vấn đề về hệ thống quản lý cho thuê qua chat, email và điện thoại."
       }
     }
   },
@@ -142,7 +142,7 @@
     "training": "Đào tạo"
   },
   "footer": {
-    "description": "Phần mềm quản lý cho thuê hàng đầu tại Việt Nam",
+    "description": "AnyRent - Phần mềm quản lý cửa hàng cho thuê và hệ thống quản lý cho thuê hàng đầu tại Việt Nam. Giải pháp chuyên nghiệp cho quản lý cho thuê áo dài, cho thuê áo cưới, cho thuê trang thiết bị, cho thuê xe, cho thuê trang phục biểu diễn, cho thuê máy in. Quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng hiệu quả.",
     "product": {
       "title": "Sản phẩm",
       "features": "Tính năng",
