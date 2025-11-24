@@ -3,6 +3,71 @@
 // ============================================================================
 
 /**
+ * Hard-coded list of all available plan features
+ * These are the only features that can be assigned to plans
+ * Translation keys are in locales/[lang]/plans.json under "features"
+ */
+export const AVAILABLE_PLAN_FEATURES = [
+  'mobileAppAccess',
+  'basicInventoryManagement',
+  'customerManagement',
+  'orderProcessing',
+  'basicReporting',
+  'publicProductCatalog',
+  'productPublicCheck',
+  'webDashboard',
+  'advancedReporting',
+  'customBranding',
+  'prioritySupport',
+  'apiIntegration',
+  'multiOutletManagement',
+  'advancedAnalytics',
+  'whiteLabel',
+  'allBasicFeatures',
+  'webDashboardAccess',
+  'advancedReportingAnalytics',
+  'inventoryForecasting',
+  'onlinePayments',
+  'teamCollaborationTools',
+  'allProfessionalFeatures',
+  'multipleOutlets',
+  'advancedTeamManagement',
+  'customIntegrations',
+  'dedicatedAccountManager',
+  'customReporting',
+  'whiteLabelSolution',
+  '247PhoneSupport',
+] as const;
+
+export type PlanFeatureKey = typeof AVAILABLE_PLAN_FEATURES[number];
+
+/**
+ * Default features for Basic plan (5 features)
+ */
+export const BASIC_PLAN_FEATURES: PlanFeatureKey[] = [
+  'mobileAppAccess',
+  'basicInventoryManagement',
+  'customerManagement',
+  'orderProcessing',
+  'basicReporting',
+];
+
+/**
+ * Default features for Professional plan (7 features)
+ * Includes all Basic features plus additional ones
+ */
+export const PROFESSIONAL_PLAN_FEATURES: PlanFeatureKey[] = [
+  'allBasicFeatures', // Represents all Basic plan features
+  'webDashboardAccess',
+  'advancedReportingAnalytics',
+  'inventoryForecasting',
+  'onlinePayments',
+  'apiIntegration',
+  'teamCollaborationTools',
+  'prioritySupport',
+];
+
+/**
  * Translate plan feature name to localized string
  * 
  * @param feature - Feature name (e.g., "Mobile app access")
@@ -12,8 +77,16 @@
 export function translatePlanFeature(feature: string, t: (key: string) => string): string {
   if (!feature) return feature;
   
+  // Remove translation key prefix if present (e.g., "plans.features.allbasicfeatures" -> "allbasicfeatures")
+  let cleanFeature = feature;
+  if (feature.startsWith('plans.features.')) {
+    cleanFeature = feature.replace('plans.features.', '');
+  } else if (feature.startsWith('features.')) {
+    cleanFeature = feature.replace('features.', '');
+  }
+  
   // Normalize feature key: lowercase, remove spaces and special chars
-  const featureKey = feature.toLowerCase()
+  const featureKey = cleanFeature.toLowerCase()
     .replace(/\s+/g, '')
     .replace(/[^a-z0-9]/g, '');
   
@@ -34,6 +107,21 @@ export function translatePlanFeature(feature: string, t: (key: string) => string
     'multioutletmanagement': 'features.multiOutletManagement',
     'advancedanalytics': 'features.advancedAnalytics',
     'whitelabel': 'features.whiteLabel',
+    // New features
+    'allbasicfeatures': 'features.allBasicFeatures',
+    'webdashboardaccess': 'features.webDashboardAccess',
+    'advancedreportinganalytics': 'features.advancedReportingAnalytics',
+    'inventoryforecasting': 'features.inventoryForecasting',
+    'onlinepayments': 'features.onlinePayments',
+    'teamcollaborationtools': 'features.teamCollaborationTools',
+    'allprofessionalfeatures': 'features.allProfessionalFeatures',
+    'multipleoutlets': 'features.multipleOutlets',
+    'advancedteammanagement': 'features.advancedTeamManagement',
+    'customintegrations': 'features.customIntegrations',
+    'dedicatedaccountmanager': 'features.dedicatedAccountManager',
+    'customreporting': 'features.customReporting',
+    'whitelabelsolution': 'features.whiteLabelSolution',
+    '247phonesupport': 'features.247PhoneSupport',
   };
   
   // Try to find translation key

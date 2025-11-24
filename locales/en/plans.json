@@ -19,7 +19,9 @@
     "mobileAccessDescription": "Access via mobile app (iOS, Android)",
     "noPlatformAccessWarning": "Warning: This plan has no platform access enabled. Users won't be able to access the system.",
     "allPlatformsEnabled": "This plan allows access from both web and mobile platforms.",
-    "selectPlatforms": "Select which platforms users can access with this plan"
+    "selectPlatforms": "Select which platforms users can access with this plan",
+    "selectFeatures": "Select features included in this plan",
+    "noFeaturesSelected": "No features selected"
   },
   "types": {
     "free": "Free",
@@ -83,7 +85,21 @@
     "apiIntegration": "API integration",
     "multiOutletManagement": "Multi-outlet management",
     "advancedAnalytics": "Advanced analytics",
-    "whiteLabel": "White label"
+    "whiteLabel": "White label",
+    "allBasicFeatures": "All basic features",
+    "webDashboardAccess": "Web dashboard access",
+    "advancedReportingAnalytics": "Advanced reporting & analytics",
+    "inventoryForecasting": "Inventory forecasting",
+    "onlinePayments": "Online payments",
+    "teamCollaborationTools": "Team collaboration tools",
+    "allProfessionalFeatures": "All professional features",
+    "multipleOutlets": "Multiple outlets",
+    "advancedTeamManagement": "Advanced team management",
+    "customIntegrations": "Custom integrations",
+    "dedicatedAccountManager": "Dedicated account manager",
+    "customReporting": "Custom reporting",
+    "whiteLabelSolution": "White label solution",
+    "247PhoneSupport": "24/7 phone support"
   },
   "pricing": {
     "addOnUserPrice": "Additional user price",

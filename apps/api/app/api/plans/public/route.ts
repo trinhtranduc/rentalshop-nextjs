@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       ResponseBuilder.success('PLANS_RETRIEVED_SUCCESS', plans),
       {
-        headers: buildCorsHeaders(request)
+      headers: buildCorsHeaders(request)
       }
     );
 
