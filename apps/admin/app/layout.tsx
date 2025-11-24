@@ -15,6 +15,18 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'AnyRent - Admin',
   description: 'AnyRent administration system',
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'none',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },

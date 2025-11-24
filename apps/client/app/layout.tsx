@@ -46,26 +46,232 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
-export const metadata: Metadata = {
-  title: 'AnyRent - Client',
-  description: 'AnyRent management system for shop owners',
-  icons: {
-    icon: [
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon.ico', sizes: 'any' },
+// Generate metadata based on locale
+export async function generateMetadata(): Promise<Metadata> {
+  // Get locale from cookies (same logic as RootLayout)
+  let locale: 'en' | 'vi' = 'vi';
+  
+  try {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const localeCookie = cookieStore.get('NEXT_LOCALE');
+    
+    if (localeCookie?.value && (localeCookie.value === 'en' || localeCookie.value === 'vi')) {
+      locale = localeCookie.value;
+    }
+  } catch (error) {
+    // Fallback to Vietnamese
+    locale = 'vi';
+  }
+
+  // Vietnamese metadata
+  if (locale === 'vi') {
+    return {
+      title: {
+        default: 'AnyRent - Phần mềm Quản lý Cửa hàng Cho thuê Chuyên nghiệp',
+        template: '%s | AnyRent',
+      },
+      description: 'Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện với quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng. Hỗ trợ đa nền tảng iOS, Android và Web.',
+      keywords: [
+        'phần mềm quản lý cửa hàng cho thuê',
+        'hệ thống quản lý cho thuê',
+        'quản lý đơn hàng cho thuê',
+        'quản lý kho cho thuê',
+        'quản lý khách hàng',
+        'phần mềm cho thuê',
+        'hệ thống quản lý cửa hàng',
+        'phần mềm quản lý cho thuê áo dài',
+        'phần mềm quản lý cho thuê áo cưới',
+        'phần mềm quản lý cho thuê trang thiết bị',
+        'phần mềm quản lý cho thuê xe',
+        'phần mềm quản lý cho thuê trang phục biểu diễn',
+        'phần mềm quản lý cho thuê máy in',
+        'quản lý cho thuê áo dài',
+        'quản lý cho thuê áo cưới',
+        'quản lý cho thuê trang thiết bị',
+        'quản lý cho thuê xe',
+        'quản lý cho thuê trang phục',
+        'quản lý cho thuê máy in',
+        'AnyRent',
+      ],
+      authors: [{ name: 'AnyRent Team' }],
+      creator: 'AnyRent',
+      publisher: 'AnyRent',
+      formatDetection: {
+        email: false,
+        address: false,
+        telephone: false,
+      },
+      metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
+      alternates: {
+        canonical: '/',
+        languages: {
+          'vi': '/vi',
+          'en': '/en',
+        },
+      },
+      openGraph: {
+        type: 'website',
+        locale: 'vi_VN',
+        alternateLocale: ['en_US'],
+        url: '/',
+        siteName: 'AnyRent',
+        title: 'AnyRent - Phần mềm Quản lý Cửa hàng Cho thuê Chuyên nghiệp',
+        description: 'Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện với quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng.',
+        images: [
+          {
+            url: '/anyrent-logo-light.svg',
+            width: 1200,
+            height: 630,
+            alt: 'AnyRent - Phần mềm Quản lý Cửa hàng Cho thuê',
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: 'AnyRent - Phần mềm Quản lý Cửa hàng Cho thuê',
+        description: 'Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện.',
+        images: ['/anyrent-logo-light.svg'],
+        creator: '@anyrent',
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
+      icons: {
+        icon: [
+          { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+          { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+          { url: '/favicon.ico', sizes: 'any' },
+        ],
+        apple: [
+          { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+        ],
+      },
+      manifest: '/manifest.json',
+      themeColor: '#3b82f6',
+      appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: 'AnyRent',
+      },
+      verification: {
+        google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+        yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+        yahoo: process.env.NEXT_PUBLIC_YAHOO_VERIFICATION,
+      },
+    };
+  }
+
+  // English metadata
+  return {
+    title: {
+      default: 'AnyRent - Rental Shop Management Software & System',
+      template: '%s | AnyRent',
+    },
+    description: 'Leading rental shop management software in Vietnam. Comprehensive rental management system with rental order management, rental inventory management, and customer management. Multi-platform support for iOS, Android, and Web.',
+    keywords: [
+      'rental shop management software',
+      'rental management system',
+      'rental order management',
+      'rental inventory management',
+      'customer management',
+      'rental software',
+      'shop management system',
+      'ao dai rental management software',
+      'wedding dress rental management',
+      'equipment rental management software',
+      'vehicle rental management software',
+      'costume rental management software',
+      'printer rental management software',
+      'dress rental management',
+      'equipment rental software',
+      'vehicle rental software',
+      'costume rental software',
+      'printer rental software',
+      'AnyRent',
     ],
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
-  },
-  manifest: '/manifest.json',
-  themeColor: '#3b82f6',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'AnyRent Client',
-  },
+    authors: [{ name: 'AnyRent Team' }],
+    creator: 'AnyRent',
+    publisher: 'AnyRent',
+    formatDetection: {
+      email: false,
+      address: false,
+      telephone: false,
+    },
+    metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
+    alternates: {
+      canonical: '/',
+      languages: {
+        'vi': '/vi',
+        'en': '/en',
+      },
+    },
+    openGraph: {
+      type: 'website',
+      locale: 'en_US',
+      alternateLocale: ['vi_VN'],
+      url: '/',
+      siteName: 'AnyRent',
+      title: 'AnyRent - Rental Shop Management Software & System',
+      description: 'Leading rental shop management software in Vietnam. Comprehensive rental management system with rental order management, rental inventory management, and customer management.',
+      images: [
+        {
+          url: '/anyrent-logo-light.svg',
+          width: 1200,
+          height: 630,
+          alt: 'AnyRent - Rental Shop Management Software',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'AnyRent - Rental Shop Management Software',
+      description: 'Leading rental shop management software in Vietnam. Comprehensive rental management system.',
+      images: ['/anyrent-logo-light.svg'],
+      creator: '@anyrent',
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    icons: {
+      icon: [
+        { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+        { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/favicon.ico', sizes: 'any' },
+      ],
+      apple: [
+        { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      ],
+    },
+    manifest: '/manifest.json',
+    themeColor: '#3b82f6',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: 'AnyRent',
+    },
+    verification: {
+      google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+      yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+      yahoo: process.env.NEXT_PUBLIC_YAHOO_VERIFICATION,
+    },
+  };
 }
 
 // Combine all messages by locale
