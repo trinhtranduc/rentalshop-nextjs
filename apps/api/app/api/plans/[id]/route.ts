@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdminAuth } from '@rentalshop/auth';
+import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
@@ -13,7 +13,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAdminAuth(async (request, { user, userScope }) => {
+  return withAuthRoles(['ADMIN'])(async (request: NextRequest, { user, userScope }) => {
     try {
       const { id } = params;
       console.log('🔍 GET /api/plans/[id] - Looking for plan with ID:', id);
@@ -66,7 +66,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAdminAuth(async (request, { user, userScope }) => {
+  return withAuthRoles(['ADMIN'])(async (req: NextRequest, { user, userScope }) => {
     try {
       const { id } = params;
 
@@ -81,7 +81,7 @@ export async function PUT(
       const planId = parseInt(id);
 
       // Parse and validate request body
-      const body = await request.json();
+      const body = await req.json();
       console.log('🔍 PUT /api/plans/[id] - Update request body:', body);
 
       // Check if plan exists
@@ -108,37 +108,102 @@ export async function PUT(
         }
       });
 
-      // Transform limits: if it's a string (JSON), keep it; if object, stringify
+      // Transform limits: if it's a string (JSON), validate and keep it; if object, stringify
       if (body.limits !== undefined) {
         if (typeof body.limits === 'string') {
-          // Already a JSON string
-          updateData.limits = body.limits;
-        } else if (typeof body.limits === 'object') {
+          // Validate JSON string
+          try {
+            JSON.parse(body.limits);
+            updateData.limits = body.limits;
+          } catch (e) {
+            console.error('❌ Invalid JSON string for limits:', body.limits);
+            return NextResponse.json(
+              ResponseBuilder.error('INVALID_LIMITS_FORMAT', 'Limits must be a valid JSON string'),
+              { status: 400 }
+            );
+          }
+        } else if (typeof body.limits === 'object' && body.limits !== null) {
           // Convert object to JSON string
           updateData.limits = JSON.stringify(body.limits);
         }
       }
 
-      // Transform features: if it's an array, stringify; if string, keep it
+      // Transform features: if it's an array, stringify; if string, validate and keep it
       if (body.features !== undefined) {
         if (Array.isArray(body.features)) {
           // Convert array to JSON string
           updateData.features = JSON.stringify(body.features);
         } else if (typeof body.features === 'string') {
-          // Already a JSON string
-          updateData.features = body.features;
+          // Validate JSON string
+          try {
+            JSON.parse(body.features);
+            updateData.features = body.features;
+          } catch (e) {
+            console.error('❌ Invalid JSON string for features:', body.features);
+            return NextResponse.json(
+              ResponseBuilder.error('INVALID_FEATURES_FORMAT', 'Features must be a valid JSON string or array'),
+              { status: 400 }
+            );
+          }
         }
       }
 
-      console.log('🔍 Transformed update data:', updateData);
+      console.log('🔍 Transformed update data:', JSON.stringify(updateData, null, 2));
+
+      // Validate that we have at least one field to update
+      if (Object.keys(updateData).length === 0) {
+        return NextResponse.json(
+          ResponseBuilder.error('NO_FIELDS_TO_UPDATE', 'No valid fields provided for update'),
+          { status: 400 }
+        );
+      }
 
       // Update the plan using the simplified database API
-      const updatedPlan = await db.plans.update(planId, updateData);
-      console.log('✅ Plan updated successfully:', updatedPlan);
+      let updatedPlan;
+      try {
+        updatedPlan = await db.plans.update(planId, updateData);
+        console.log('✅ Plan updated successfully:', updatedPlan);
+      } catch (dbError: any) {
+        console.error('❌ Database error updating plan:', dbError);
+        
+        // Handle specific Prisma errors
+        if (dbError.code === 'P2002') {
+          return NextResponse.json(
+            ResponseBuilder.error('PLAN_NAME_EXISTS', `Plan with name "${updateData.name}" already exists`),
+            { status: 409 }
+          );
+        }
+        
+        if (dbError.code === 'P2025') {
+          return NextResponse.json(
+            ResponseBuilder.error('PLAN_NOT_FOUND', 'Plan not found'),
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
+        
+        throw dbError; // Re-throw to be caught by outer catch
+      }
+      
+      // Transform response to match Plan interface
+      const transformedPlan = {
+        id: updatedPlan.id,
+        name: updatedPlan.name,
+        description: updatedPlan.description,
+        basePrice: updatedPlan.basePrice,
+        currency: updatedPlan.currency,
+        trialDays: updatedPlan.trialDays,
+        limits: typeof updatedPlan.limits === 'string' ? JSON.parse(updatedPlan.limits) : updatedPlan.limits,
+        features: typeof updatedPlan.features === 'string' ? JSON.parse(updatedPlan.features || '[]') : updatedPlan.features,
+        isActive: updatedPlan.isActive,
+        isPopular: updatedPlan.isPopular,
+        sortOrder: updatedPlan.sortOrder,
+        createdAt: updatedPlan.createdAt,
+        updatedAt: updatedPlan.updatedAt,
+      };
 
       return NextResponse.json({
         success: true,
-        data: updatedPlan,
+        data: transformedPlan,
         code: 'PLAN_UPDATED_SUCCESS',
         message: 'Plan updated successfully'
       });
@@ -161,7 +226,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAdminAuth(async (request, { user, userScope }) => {
+  return withAuthRoles(['ADMIN'])(async (request: NextRequest, { user, userScope }) => {
     try {
       const { id } = params;
 
