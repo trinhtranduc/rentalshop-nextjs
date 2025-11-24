@@ -24,14 +24,14 @@ export interface PricingConfig {
   discounts: {
     monthly: number;
     quarterly: number;
-    sixMonths: number;
-    yearly: number;
+    semi_annual: number;
+    annual: number;
   };
   intervals: {
     monthly: { interval: BillingInterval; intervalCount: number };
     quarterly: { interval: BillingInterval; intervalCount: number };
-    sixMonths: { interval: BillingInterval; intervalCount: number };
-    yearly: { interval: BillingInterval; intervalCount: number };
+    semi_annual: { interval: BillingInterval; intervalCount: number };
+    annual: { interval: BillingInterval; intervalCount: number };
   };
 }
 
@@ -128,8 +128,8 @@ export class BillingIntervalCalculator {
     const intervalMap: Record<BillingInterval, number> = {
       monthly: 1,
       quarterly: 3,
-      sixMonths: 6,
-      yearly: 12
+      semi_annual: 6,
+      annual: 12
     };
 
     return intervalMap[billingInterval] || 1;
@@ -139,7 +139,7 @@ export class BillingIntervalCalculator {
    * Get all available billing intervals
    */
   getAllIntervals(): BillingInterval[] {
-    return ['monthly', 'quarterly', 'sixMonths', 'yearly'];
+    return ['monthly', 'quarterly', 'semi_annual', 'annual'];
   }
 }
 
@@ -226,8 +226,8 @@ export class PriceFormatter {
     const intervalMap: Record<BillingInterval, string> = {
       monthly: 'Monthly',
       quarterly: 'Quarterly',
-      sixMonths: 'Six Months',
-      yearly: 'Yearly'
+      semi_annual: 'Semi-Annual',
+      annual: 'Annual'
     };
 
     return intervalMap[interval] || interval;
@@ -430,15 +430,15 @@ export function createPricingComparisonEngine(config: PricingConfig): PricingCom
 export const DEFAULT_PRICING_CONFIG: PricingConfig = {
   discounts: {
     monthly: 0,        // 0% discount
-    quarterly: 10,     // 10% discount
-    sixMonths: 15,     // 15% discount
-    yearly: 20         // 20% discount
+    quarterly: 5,      // 5% discount
+    semi_annual: 10,   // 10% discount
+    annual: 20         // 20% discount
   },
   intervals: {
-    monthly: { interval: 'monthly' as const, intervalCount: 1 },
-    quarterly: { interval: 'quarterly' as const, intervalCount: 3 },
-    sixMonths: { interval: 'sixMonths' as const, intervalCount: 6 },
-    yearly: { interval: 'yearly' as const, intervalCount: 1 }
+    monthly: { interval: 'monthly' as BillingInterval, intervalCount: 1 },
+    quarterly: { interval: 'quarterly' as BillingInterval, intervalCount: 3 },
+    semi_annual: { interval: 'semi_annual' as BillingInterval, intervalCount: 6 },
+    annual: { interval: 'annual' as BillingInterval, intervalCount: 12 }
   }
 };
 
@@ -482,10 +482,10 @@ export const formatBillingCycle = (billingInterval: BillingInterval): string => 
       return 'Monthly';
     case 'quarterly':
       return 'Quarterly';
-    case 'sixMonths':
-      return 'Six Months';
-    case 'yearly':
-      return 'Yearly';
+    case 'semi_annual':
+      return 'Semi-Annual';
+    case 'annual':
+      return 'Annual';
     default:
       return billingInterval;
   }
