@@ -103,16 +103,16 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, planId, initialPlan?.id]); // plan is intentionally excluded to avoid infinite loops
 
-  // Reset plan when dialog closes or initialPlan changes
+  // Reset plan when dialog closes
   useEffect(() => {
     if (!open) {
       // Reset to initial plan when dialog closes
       setPlan(initialPlan);
-    } else if (initialPlan && initialPlan.id !== plan?.id) {
-      // Update if initialPlan changes
-      setPlan(initialPlan);
     }
-  }, [open, initialPlan]);
+    // Note: We don't update plan when initialPlan changes while dialog is open
+    // because the first useEffect handles loading plan data
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   /**
    * Transform plan data from API to ensure proper format for PlanForm
@@ -148,12 +148,23 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
       }
     }
 
+    // Check if this is a contact price plan (basePrice = 0 and description contains contact text)
+    let basePrice: number | string = planData.basePrice ?? 0;
+    const description = planData.description || '';
+    if (basePrice === 0 && description) {
+      const descLower = description.toLowerCase();
+      if (descLower.includes('liên hệ') || descLower.includes('contact')) {
+        // Keep basePrice as 0 but we'll detect it in PlanForm via description
+        basePrice = 0;
+      }
+    }
+
     // Ensure all required fields are present
     return {
       id: planData.id,
       name: planData.name || '',
-      description: planData.description || '',
-      basePrice: planData.basePrice ?? 0,
+      description: description,
+      basePrice: basePrice,
       currency: planData.currency || 'USD',
       trialDays: planData.trialDays ?? 0,
       limits: {

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Card, 
   CardHeader, 
@@ -77,7 +77,8 @@ import {
   calculateDiscountedPrice,
   getBillingCycleDiscount,
   formatBillingCycle,
-  translatePlanFeature
+  translatePlanFeature,
+  AVAILABLE_PLAN_FEATURES
 } from '@rentalshop/utils';
 import { usePlansTranslations } from '@rentalshop/hooks';
 
@@ -150,16 +151,26 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     return [];
   };
 
-  // Determine initial price type (check against both Vietnamese and English)
+  // Determine initial price type (check basePrice and description)
   const getInitialPriceType = (): 'fixed' | 'contact' => {
-    if (initialData?.basePrice === undefined) return 'fixed';
-    if (typeof initialData.basePrice === 'string') {
+    // Check if basePrice is string (already contact)
+    if (typeof initialData?.basePrice === 'string') {
       const priceStr = initialData.basePrice.toLowerCase();
       const contactText = t('fields.contactPrice').toLowerCase();
       if (priceStr === 'liên hệ' || priceStr === 'contact' || priceStr === contactText) {
         return 'contact';
       }
     }
+    
+    // Check if basePrice is 0 and description contains contact text
+    if (initialData?.basePrice === 0 && initialData?.description) {
+      const desc = initialData.description.toLowerCase();
+      const contactText = t('fields.contactPrice').toLowerCase();
+      if (desc.includes('liên hệ') || desc.includes('contact') || desc.includes(contactText)) {
+        return 'contact';
+      }
+    }
+    
     return 'fixed';
   };
 
@@ -222,35 +233,42 @@ export const PlanForm: React.FC<PlanFormProps> = ({
 
   const [errors, setErrors] = useState<Partial<Record<keyof PlanFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newFeature, setNewFeature] = useState('');
 
-  // Update formData when initialData changes (e.g., after loading plan from API)
+  // Update formData when initialData changes (only when plan ID changes to prevent infinite loops)
+  const planId = (initialData as any)?.id;
+  const prevPlanIdRef = useRef<number | undefined>(undefined);
+  
   useEffect(() => {
-    if (initialData) {
-      const updatedLimits = (initialData as any)?.limits || {};
-      const updatedFeatures = parseFeatures(initialData?.features || []);
-      
-      setFormData(prev => ({
-        ...prev,
-        name: initialData.name || prev.name,
-        description: initialData.description || prev.description,
-        basePrice: getInitialBasePrice(),
-        priceType: getInitialPriceType(),
-        currency: initialData.currency || prev.currency,
-        trialDays: initialData.trialDays ?? prev.trialDays,
-        maxOutlets: updatedLimits.outlets ?? prev.maxOutlets,
-        maxUsers: updatedLimits.users ?? prev.maxUsers,
-        maxProducts: updatedLimits.products ?? prev.maxProducts,
-        maxCustomers: updatedLimits.customers ?? prev.maxCustomers,
-        features: updatedFeatures,
-        isActive: initialData.isActive !== undefined ? initialData.isActive : prev.isActive,
-        isPopular: initialData.isPopular !== undefined ? initialData.isPopular : prev.isPopular,
-        allowWebAccess: updatedLimits.allowWebAccess !== undefined ? updatedLimits.allowWebAccess : prev.allowWebAccess,
-        allowMobileAccess: updatedLimits.allowMobileAccess !== undefined ? updatedLimits.allowMobileAccess : prev.allowMobileAccess,
-        sortOrder: initialData.sortOrder ?? prev.sortOrder,
-      }));
+    // Only update if plan ID changed (new plan loaded)
+    if (!planId || planId === prevPlanIdRef.current) {
+      return;
     }
-  }, [initialData]);
+    
+    const limits = (initialData as any)?.limits || {};
+    
+    setFormData(prev => ({
+      ...prev,
+      name: initialData.name || prev.name,
+      description: initialData.description || prev.description,
+      basePrice: getInitialBasePrice(),
+      priceType: getInitialPriceType(),
+      currency: initialData.currency || prev.currency,
+      trialDays: initialData.trialDays ?? prev.trialDays,
+      maxOutlets: limits.outlets ?? prev.maxOutlets,
+      maxUsers: limits.users ?? prev.maxUsers,
+      maxProducts: limits.products ?? prev.maxProducts,
+      maxCustomers: limits.customers ?? prev.maxCustomers,
+      features: parseFeatures(initialData?.features || []),
+      isActive: initialData.isActive ?? prev.isActive,
+      isPopular: initialData.isPopular ?? prev.isPopular,
+      allowWebAccess: limits.allowWebAccess ?? prev.allowWebAccess,
+      allowMobileAccess: limits.allowMobileAccess ?? prev.allowMobileAccess,
+      sortOrder: initialData.sortOrder ?? prev.sortOrder,
+    }));
+    
+    prevPlanIdRef.current = planId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId]);
 
   const handleInputChange = (field: keyof PlanFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -373,17 +391,13 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     }
   };
 
-  const addFeature = () => {
+  const toggleFeature = (featureKey: string) => {
     const currentFeatures = Array.isArray(formData.features) ? formData.features : [];
-    if (newFeature.trim() && !currentFeatures.includes(newFeature.trim())) {
-      handleInputChange('features', [...currentFeatures, newFeature.trim()]);
-      setNewFeature('');
+    if (currentFeatures.includes(featureKey)) {
+      handleInputChange('features', currentFeatures.filter(f => f !== featureKey));
+    } else {
+      handleInputChange('features', [...currentFeatures, featureKey]);
     }
-  };
-
-  const removeFeature = (index: number) => {
-    const currentFeatures = Array.isArray(formData.features) ? formData.features : [];
-    handleInputChange('features', currentFeatures.filter((_, i) => i !== index));
   };
 
   const getLimitText = (limit: number) => {
@@ -532,12 +546,12 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                         </p>
                       </div>
                     </div>
-                    <Switch
-                      id="allowWebAccess"
-                      checked={formData.allowWebAccess}
-                      onCheckedChange={(checked) => handleInputChange('allowWebAccess', checked)}
+                  <Switch
+                    id="allowWebAccess"
+                    checked={formData.allowWebAccess}
+                    onCheckedChange={(checked) => handleInputChange('allowWebAccess', checked)}
                       className="ml-2"
-                    />
+                  />
                   </div>
                 </div>
 
@@ -560,21 +574,21 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                         <div className="flex items-center gap-2 mb-1">
                           <Label htmlFor="allowMobileAccess" className="cursor-pointer font-medium text-text-primary">
                             {t('fields.mobileAccess')}
-                          </Label>
-                        </div>
+                  </Label>
+                </div>
                         <p className="text-xs text-text-tertiary">
                           {t('fields.mobileAccessDescription')}
                         </p>
                       </div>
                     </div>
-                    <Switch
-                      id="allowMobileAccess"
-                      checked={formData.allowMobileAccess}
-                      onCheckedChange={(checked) => handleInputChange('allowMobileAccess', checked)}
+                  <Switch
+                    id="allowMobileAccess"
+                    checked={formData.allowMobileAccess}
+                    onCheckedChange={(checked) => handleInputChange('allowMobileAccess', checked)}
                       className="ml-2"
-                    />
-                  </div>
+                  />
                 </div>
+              </div>
               </div>
 
               {/* Platform Access Summary */}
@@ -730,12 +744,12 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                   formatCurrency(typeof formData.basePrice === 'number' ? formData.basePrice : 0, formData.currency)
                 )}
                 {formData.priceType === 'fixed' && (
-                  <span className="text-lg text-text-secondary font-normal ml-2">
-                    /{formatBillingCycle(formData.billingCycle).toLowerCase()}
-                  </span>
+                <span className="text-lg text-text-secondary font-normal ml-2">
+                  /{formatBillingCycle(formData.billingCycle).toLowerCase()}
+                </span>
                 )}
               </div>
-
+              
               {/* Add-on Users Pricing (30,000 VND per additional user) */}
               {formData.priceType === 'fixed' && formData.currency === 'VND' && formData.maxUsers > 1 && formData.maxUsers !== -1 && (
                 <div className="pt-3 border-t border-border">
@@ -807,10 +821,10 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                     
                     {/* Show discount if applicable (simple case) */}
                     {addOnUsersPrice === 0 && discount > 0 && (
-                      <div className="text-sm text-action-success mt-1">
+                <div className="text-sm text-action-success mt-1">
                         {discount}% discount applied
-                      </div>
-                    )}
+                </div>
+              )}
                   </>
                 );
               })()}
@@ -933,44 +947,47 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5" />
-              Features
+              {t('fields.features')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                value={newFeature}
-                onChange={(e) => setNewFeature(e.target.value)}
-                placeholder="Add a feature..."
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-              />
-              <Button type="button" onClick={addFeature} disabled={!newFeature.trim()}>
-                <Plus className="w-4 h-4" />
-              </Button>
+            <div className="text-sm text-text-secondary mb-4">
+              {t('fields.selectFeatures') || 'Select features included in this plan'}
             </div>
 
-            {formData.features && Array.isArray(formData.features) && formData.features.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-text-primary">Plan Features:</div>
-                <div className="space-y-2">
-                  {formData.features.map((feature, index) => (
-                    <div key={index} className="flex items-center justify-between bg-bg-secondary p-3 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-action-success" />
-                        <span className="text-sm text-text-primary">{translateFeature(feature)}</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFeature(index)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Trash2 className="w-4 h-4 text-text-tertiary" />
-                      </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {AVAILABLE_PLAN_FEATURES.map((featureKey: string) => {
+                const isSelected = formData.features.includes(featureKey);
+                return (
+                  <div
+                    key={featureKey}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-action-primary bg-action-primary/5'
+                        : 'border-border bg-bg-secondary hover:border-action-primary/50'
+                    }`}
+                    onClick={() => toggleFeature(featureKey)}
+                  >
+                    <div className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      isSelected
+                        ? 'border-action-primary bg-action-primary'
+                        : 'border-border'
+                    }`}>
+                      {isSelected && (
+                        <CheckCircle className="w-4 h-4 text-text-inverted" />
+                      )}
                     </div>
-                  ))}
+                    <span className="text-sm text-text-primary flex-1">
+                      {translateFeature(featureKey)}
+                    </span>
                 </div>
+                );
+              })}
+            </div>
+
+            {formData.features.length === 0 && (
+              <div className="text-sm text-text-tertiary text-center py-4">
+                {t('fields.noFeaturesSelected') || 'No features selected'}
               </div>
             )}
           </CardContent>
