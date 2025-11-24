@@ -99,7 +99,8 @@
     "dedicatedAccountManager": "Dedicated account manager",
     "customReporting": "Custom reporting",
     "whiteLabelSolution": "White label solution",
-    "247PhoneSupport": "24/7 phone support"
+    "247PhoneSupport": "24/7 phone support",
+    "additionalUserPricing": "30,000 VND per additional user"
   },
   "pricing": {
     "addOnUserPrice": "Additional user price",
