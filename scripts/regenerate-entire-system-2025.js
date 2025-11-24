@@ -934,6 +934,7 @@ async function createPlans() {
     maxUsers: plan.limits.users,
     maxProducts: plan.limits.products,
     maxCustomers: plan.limits.customers,
+    maxOrders: plan.limits.orders || 0,
     features: JSON.stringify(plan.features.map(f => f.name)),
     isPopular: plan.isPopular,
     sortOrder: plan.sortOrder
@@ -951,7 +952,8 @@ async function createPlans() {
           outlets: plan.maxOutlets,
           users: plan.maxUsers,
           products: plan.maxProducts,
-          customers: plan.maxCustomers
+          customers: plan.maxCustomers,
+          orders: plan.maxOrders || 0
         }),
         features: plan.features,
         isActive: true,

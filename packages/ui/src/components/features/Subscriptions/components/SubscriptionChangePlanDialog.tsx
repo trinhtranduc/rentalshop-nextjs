@@ -115,13 +115,13 @@ export function SubscriptionChangePlanDialog({
             <Label className="text-lg font-semibold">Select New Plan</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {plans.map((plan) => {
-                // Type the pricing to ensure sixMonths is available
-                const pricing: { monthly?: any; quarterly?: any; sixMonths?: any; yearly?: any } = plan.pricing || {};
-                let periodKey: 'monthly' | 'quarterly' | 'sixMonths' | 'yearly';
+                // Type the pricing to ensure semi_annual is available
+                const pricing: { monthly?: any; quarterly?: any; semi_annual?: any; annual?: any } = plan.pricing || {};
+                let periodKey: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
                 if (selectedPeriod === 1) periodKey = 'monthly';
                 else if (selectedPeriod === 3) periodKey = 'quarterly';
-                else if (selectedPeriod === 6) periodKey = 'sixMonths';
-                else periodKey = 'yearly';
+                else if (selectedPeriod === 6) periodKey = 'semi_annual';
+                else periodKey = 'annual';
                 
                 const periodPricing = pricing[periodKey] || { price: plan.basePrice, discount: 0, discountedPrice: plan.basePrice, savings: 0 };
                 

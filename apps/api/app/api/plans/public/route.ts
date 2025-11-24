@@ -60,15 +60,15 @@ function generatePlanPricing(basePrice: number) {
       discount: 5,
       savings: basePrice * 3 * 0.05
     },
-    sixMonths: {
+    semi_annual: {
       price: basePrice * 6 * 0.90, // 10% discount
       discount: 10,
       savings: basePrice * 6 * 0.10
     },
-    yearly: {
-      price: basePrice * 12 * 0.85, // 15% discount
-      discount: 15,
-      savings: basePrice * 12 * 0.15
+    annual: {
+      price: basePrice * 12 * 0.80, // 20% discount
+      discount: 20,
+      savings: basePrice * 12 * 0.20
     }
   };
 }

@@ -31,7 +31,7 @@ interface MerchantPlanDialogProps {
   onClose: () => void;
   onConfirm: (planData: {
     planId: number;
-    billingCycle?: 'monthly' | 'quarterly' | 'yearly';
+    billingCycle?: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
     reason?: string;
     effectiveDate?: string;
     notifyMerchant?: boolean;
@@ -64,7 +64,7 @@ export function MerchantPlanDialog({
   loading = false
 }: MerchantPlanDialogProps) {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-  const [selectedBillingCycle, setSelectedBillingCycle] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
+  const [selectedBillingCycle, setSelectedBillingCycle] = useState<'monthly' | 'quarterly' | 'semi_annual' | 'annual'>('monthly');
   const [reason, setReason] = useState('');
   const [effectiveDate, setEffectiveDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -92,7 +92,8 @@ export function MerchantPlanDialog({
     if (effectiveDate && selectedPlan) {
       const startDate = new Date(effectiveDate);
       const months = selectedBillingCycle === 'monthly' ? 1 : 
-                    selectedBillingCycle === 'quarterly' ? 3 : 12;
+                    selectedBillingCycle === 'quarterly' ? 3 :
+                    selectedBillingCycle === 'semi_annual' ? 6 : 12;
       const endDate = new Date(startDate.getTime() + (months * 30 * 24 * 60 * 60 * 1000));
       setEndDate(endDate.toISOString().slice(0, 16));
     } else {
@@ -239,7 +240,7 @@ export function MerchantPlanDialog({
               <Label htmlFor="billingCycle">Select Billing Cycle</Label>
               <Select
                 value={selectedBillingCycle}
-                onValueChange={(value) => setSelectedBillingCycle(value as 'monthly' | 'quarterly' | 'yearly')}
+                onValueChange={(value) => setSelectedBillingCycle(value as 'monthly' | 'quarterly' | 'semi_annual' | 'annual')}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Choose billing cycle..." />
@@ -280,21 +281,41 @@ export function MerchantPlanDialog({
                       </div>
                     </div>
                   </SelectItem>
-                  <SelectItem value="yearly">
+                  <SelectItem value="semi_annual">
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">Yearly</span>
+                      <span className="font-medium">Semi-Annual</span>
                       <div className="flex items-center gap-2 ml-4">
                         <span className="text-sm text-gray-500">
-                          {formatPrice(selectedPlan.pricing.yearly.price, selectedPlan.currency)}
+                          {formatPrice(selectedPlan.pricing.semi_annual.price, selectedPlan.currency)}
                         </span>
-                        {selectedPlan.pricing.yearly.discount > 0 && (
+                        {selectedPlan.pricing.semi_annual.discount > 0 && (
                           <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-200">
-                            {selectedPlan.pricing.yearly.discount}% off
+                            {selectedPlan.pricing.semi_annual.discount}% off
                           </Badge>
                         )}
-                        {selectedPlan.pricing.yearly.savings > 0 && (
+                        {selectedPlan.pricing.semi_annual.savings > 0 && (
                           <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
-                            Save {formatPrice(selectedPlan.pricing.yearly.savings, selectedPlan.currency)}
+                            Save {formatPrice(selectedPlan.pricing.semi_annual.savings, selectedPlan.currency)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="annual">
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-medium">Annual</span>
+                      <div className="flex items-center gap-2 ml-4">
+                        <span className="text-sm text-gray-500">
+                          {formatPrice(selectedPlan.pricing.annual.price, selectedPlan.currency)}
+                        </span>
+                        {selectedPlan.pricing.annual.discount > 0 && (
+                          <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-200">
+                            {selectedPlan.pricing.annual.discount}% off
+                          </Badge>
+                        )}
+                        {selectedPlan.pricing.annual.savings > 0 && (
+                          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                            Save {formatPrice(selectedPlan.pricing.annual.savings, selectedPlan.currency)}
                           </Badge>
                         )}
                       </div>
