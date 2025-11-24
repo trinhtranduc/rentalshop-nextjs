@@ -161,8 +161,8 @@ export async function PATCH(
     let updatedUser: any;
     try {
       updatedUser = await db.users.update(targetUser.id, {
-        password: hashedPassword
-      });
+      password: hashedPassword
+    });
       console.log('✅ Password updated successfully in database');
     } catch (updateError: any) {
       console.error('❌ Error updating password in database:', updateError);

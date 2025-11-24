@@ -17,11 +17,21 @@
   },
   "billingCycle": {
     "monthly": "Hàng tháng",
+    "quarterly": "Hàng quý",
+    "semiAnnual": "Nửa năm",
+    "annual": "Hàng năm",
     "yearly": "Hàng năm",
     "perMonth": "mỗi tháng",
+    "perQuarter": "mỗi quý",
     "perYear": "mỗi năm",
     "billedMonthly": "Thanh toán hàng tháng",
-    "billedYearly": "Thanh toán hàng năm"
+    "billedQuarterly": "Thanh toán hàng quý",
+    "billedYearly": "Thanh toán hàng năm",
+    "cancelAnytime": "Thanh toán hàng tháng, hủy bất cứ lúc nào",
+    "quarterlyCancelAnytime": "Thanh toán hàng quý, hủy bất cứ lúc nào",
+    "savePercent": "Tiết kiệm {percent}%",
+    "saveWithSemiAnnual": "Tiết kiệm 5% với thanh toán nửa năm",
+    "saveWithAnnual": "Tiết kiệm 10% với thanh toán hàng năm"
   },
   "actions": {
     "subscribe": "Đăng ký",

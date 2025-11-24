@@ -21,7 +21,18 @@
     "method": "Phương thức thanh toán",
     "monthly": "Hàng tháng",
     "yearly": "Hàng năm",
-    "quarterly": "Hàng quý"
+    "annual": "Hàng năm",
+    "quarterly": "Hàng quý",
+    "semiAnnual": "Nửa năm",
+    "perMonth": "mỗi tháng",
+    "perQuarter": "mỗi quý",
+    "perYear": "mỗi năm",
+    "cancelAnytime": "Thanh toán hàng tháng, hủy bất cứ lúc nào",
+    "quarterlyCancelAnytime": "Thanh toán hàng quý, hủy bất cứ lúc nào",
+    "save": "Tiết kiệm",
+    "savePercent": "Tiết kiệm {percent}%",
+    "saveWithSemiAnnual": "Tiết kiệm 5% với thanh toán nửa năm",
+    "saveWithAnnual": "Tiết kiệm 10% với thanh toán hàng năm"
   },
   "trial": {
     "status": "Trạng thái dùng thử",

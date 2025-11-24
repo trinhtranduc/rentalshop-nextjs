@@ -42,9 +42,9 @@ interface PlanDetailModalProps {
 // Billing cycle options
 const BILLING_CYCLES: BillingCycle[] = [
   { value: 'monthly', label: 'Monthly', months: 1, discount: 0 },
-  { value: 'quarterly', label: 'Quarterly', months: 3, discount: 5 },
-  { value: 'semi_annual', label: 'Semi-Annual', months: 6, discount: 10 },
-  { value: 'annual', label: 'Annual', months: 12, discount: 20 }
+  { value: 'quarterly', label: 'Quarterly', months: 3, discount: 0 },
+  { value: 'semi_annual', label: 'Semi-Annual', months: 6, discount: 5 },
+  { value: 'annual', label: 'Annual', months: 12, discount: 10 }
 ];
 
 // Helper functions

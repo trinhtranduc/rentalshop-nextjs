@@ -12,7 +12,7 @@ import {
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
-import { userApiClient } from '../lib/UserApiClient';
+import { usersApi } from '@rentalshop/utils';
 import { Eye, EyeOff } from 'lucide-react';
 import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
@@ -88,7 +88,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
     setIsLoading(true);
     try {
-      const response = await userApiClient.changePassword(
+      const response = await usersApi.changePassword(
         userId,
         formData.newPassword
       );

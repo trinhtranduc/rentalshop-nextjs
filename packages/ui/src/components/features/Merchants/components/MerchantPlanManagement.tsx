@@ -51,24 +51,24 @@ const BILLING_INTERVALS = [
     id: 'quarter',
     name: 'Quarterly',
     months: 3,
-    discountPercentage: 5,
-    description: '5% discount for quarterly billing',
+    discountPercentage: 0,
+    description: 'No discount for quarterly billing',
     isActive: true
   },
   {
     id: 'semiAnnual',
     name: '6 Months',
     months: 6,
-    discountPercentage: 10,
-    description: '10% discount for 6-month billing',
+    discountPercentage: 5,
+    description: '5% discount for 6-month billing',
     isActive: true
   },
   {
     id: 'year',
     name: 'Yearly',
     months: 12,
-    discountPercentage: 20,
-    description: '20% discount for yearly billing',
+    discountPercentage: 10,
+    description: '10% discount for yearly billing',
     isActive: true
   }
 ];
