@@ -33,6 +33,7 @@ async function main() {
         users: 5,
         products: 500,
         customers: 2000,
+        orders: 2000,
       }),
       features: JSON.stringify([
         'Basic inventory management',

@@ -137,8 +137,8 @@ export type ProductAvailabilityStatus = typeof PRODUCT_AVAILABILITY_STATUS[keyof
 export const BILLING_INTERVAL = {
   MONTHLY: 'monthly',
   QUARTERLY: 'quarterly',
-  SIX_MONTHS: 'sixMonths',
-  YEARLY: 'yearly'
+  SEMI_ANNUAL: 'semi_annual',
+  ANNUAL: 'annual'
 } as const;
 
 export type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];

@@ -396,7 +396,7 @@ model Plan {
   basePrice     Float
   currency      String         @default("USD")
   trialDays     Int            @default(14)
-  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
+  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0, \"orders\": 0}")
   features      String         @default("[]")
   isActive      Boolean        @default(true)
   isPopular     Boolean        @default(false)
