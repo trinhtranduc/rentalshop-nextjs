@@ -946,8 +946,8 @@ type OrderType = typeof ORDER_TYPE[keyof typeof ORDER_TYPE];
 declare const BILLING_INTERVAL: {
     readonly MONTHLY: "monthly";
     readonly QUARTERLY: "quarterly";
-    readonly SIX_MONTHS: "sixMonths";
-    readonly YEARLY: "yearly";
+    readonly SEMI_ANNUAL: "semi_annual";
+    readonly ANNUAL: "annual";
 };
 type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];
 
@@ -980,8 +980,8 @@ interface Plan {
     pricing: {
         monthly: PlanPricing;
         quarterly: PlanPricing;
-        sixMonths: PlanPricing;
-        yearly: PlanPricing;
+        semi_annual: PlanPricing;
+        annual: PlanPricing;
     };
     createdAt: Date;
     updatedAt: Date;
@@ -5567,7 +5567,12 @@ declare const db: {
                     discount: number;
                     savings: number;
                 };
-                yearly: {
+                semi_annual: {
+                    price: number;
+                    discount: number;
+                    savings: number;
+                };
+                annual: {
                     price: number;
                     discount: number;
                     savings: number;

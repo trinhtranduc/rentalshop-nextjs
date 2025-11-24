@@ -106,7 +106,7 @@ async function main() {
       data: {
         merchantId: merchant.id,
         planId: trialPlan.id,
-        status: 'trial',
+        status: 'TRIAL',
         currentPeriodStart: now,
         currentPeriodEnd: trialEnd,
         trialStart: now,

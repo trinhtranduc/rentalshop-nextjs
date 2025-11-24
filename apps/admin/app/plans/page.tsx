@@ -26,10 +26,10 @@ import {
   Badge,
   useToast
 } from '@rentalshop/ui';
-import { PlanTable } from '@rentalshop/ui';
+import { PlanTable, PlanDialog } from '@rentalshop/ui';
 import { Plus, Search, Filter } from 'lucide-react';
 import { usePlansData } from '@rentalshop/hooks';
-import type { Plan } from '@rentalshop/types';
+import type { Plan, PlanCreateInput, PlanUpdateInput } from '@rentalshop/types';
 
 /**
  * ✅ MODERN PLANS PAGE (URL State Pattern)
@@ -67,7 +67,7 @@ export default function PlansPage() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [deletingPlan, setDeletingPlan] = useState<Plan | null>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [savingPlan, setSavingPlan] = useState(false);
 
   // ============================================================================
   // DATA FETCHING - Clean & Simple with Deduplication
@@ -137,24 +137,6 @@ export default function PlansPage() {
   // ============================================================================
   
   const handleCreatePlan = useCallback(() => {
-    setFormData({
-      name: '',
-      description: '',
-      basePrice: 0,
-      currency: 'USD',
-      trialDays: 0,
-        limits: {
-          outlets: 1,
-          users: 3,
-          products: 100,
-          customers: 500,
-          orders: -1
-        },
-      features: [],
-      isActive: true,
-      isPopular: false,
-      sortOrder: 0
-    });
     setSelectedPlan(null);
     setShowCreateForm(true);
   }, []);
@@ -165,9 +147,10 @@ export default function PlansPage() {
   }, []);
 
   const handleEditPlan = useCallback((plan: Plan) => {
+    console.log('🔧 Edit Plan clicked:', plan);
     setSelectedPlan(plan);
-    setFormData(plan);
     setShowEditForm(true);
+    setShowViewDialog(false); // Close view dialog if open
   }, []);
 
   const handleCloseViewDialog = useCallback(() => {
@@ -175,10 +158,19 @@ export default function PlansPage() {
     setSelectedPlan(null);
   }, []);
 
-  const handleCloseEditDialog = useCallback(() => {
-    setShowEditForm(false);
-    setSelectedPlan(null);
-    setFormData({});
+  const handleCloseEditDialog = useCallback((open: boolean) => {
+    console.log('🔒 Edit Dialog onOpenChange:', open);
+    if (!open) {
+      setShowEditForm(false);
+      setSelectedPlan(null);
+    }
+  }, []);
+
+  const handleCloseCreateDialog = useCallback((open: boolean) => {
+    if (!open) {
+      setShowCreateForm(false);
+      setSelectedPlan(null);
+    }
   }, []);
 
   const handleDeletePlan = useCallback((plan: Plan) => {
@@ -205,38 +197,40 @@ export default function PlansPage() {
     }
   }, [deletingPlan, toastSuccess, toastError, refetch]);
 
-  const handleSavePlan = useCallback(async () => {
+  const handleSavePlan = useCallback(async (data: PlanCreateInput | PlanUpdateInput) => {
     try {
+      setSavingPlan(true);
       const { plansApi } = await import('@rentalshop/utils');
       
       if (selectedPlan) {
         // Update existing plan
-        const response = await plansApi.updatePlan(selectedPlan.id, formData as any);
+        const response = await plansApi.updatePlan(selectedPlan.id, data as PlanUpdateInput);
         if (response.success) {
-          toastSuccess('Plan Updated', `Plan "${formData.name}" has been updated successfully`);
+          toastSuccess('Plan Updated', `Plan has been updated successfully`);
           setShowEditForm(false);
+          setSelectedPlan(null);
           refetch(); // Refresh data
         } else {
           toastError('Update Failed', response.error || 'Failed to update plan');
         }
       } else {
         // Create new plan
-        const response = await plansApi.createPlan(formData as any);
+        const response = await plansApi.createPlan(data as PlanCreateInput);
         if (response.success) {
-          toastSuccess('Plan Created', `Plan "${formData.name}" has been created successfully`);
+          toastSuccess('Plan Created', `Plan has been created successfully`);
           setShowCreateForm(false);
           refetch(); // Refresh data
         } else {
           toastError('Create Failed', response.error || 'Failed to create plan');
         }
       }
-      
-      setFormData({});
     } catch (error) {
       console.error('Error saving plan:', error);
       toastError('Save Failed', 'An error occurred while saving the plan');
+    } finally {
+      setSavingPlan(false);
     }
-  }, [selectedPlan, formData, toastSuccess, toastError, refetch]);
+  }, [selectedPlan, toastSuccess, toastError, refetch]);
     
   const handleToggleStatus = useCallback(async (plan: Plan) => {
     try {
@@ -268,6 +262,14 @@ export default function PlansPage() {
 
   const plans = data?.plans || [];
   const totalPlans = data?.total || 0;
+
+  // Debug logs
+  console.log('🔍 Plans Page State:', {
+    showEditForm,
+    showCreateForm,
+    selectedPlan: selectedPlan?.id,
+    savingPlan
+  });
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
@@ -509,8 +511,9 @@ export default function PlansPage() {
                 Close
               </Button>
               <Button onClick={() => {
-                handleCloseViewDialog();
-                handleEditPlan(selectedPlan);
+                if (selectedPlan) {
+                  handleEditPlan(selectedPlan);
+                }
               }}>
                 Edit Plan
               </Button>
@@ -519,8 +522,24 @@ export default function PlansPage() {
         </Dialog>
       )}
 
-      {/* Create/Edit Form Dialogs would go here */}
-      {/* Keeping simplified for now - full forms can be added later */}
+      {/* Create Plan Dialog */}
+      <PlanDialog
+        open={showCreateForm}
+        onOpenChange={handleCloseCreateDialog}
+        mode="create"
+        onSubmit={handleSavePlan}
+        loading={savingPlan}
+      />
+
+      {/* Edit Plan Dialog */}
+      <PlanDialog
+        open={showEditForm}
+        onOpenChange={handleCloseEditDialog}
+        mode="edit"
+        plan={selectedPlan || undefined}
+        onSubmit={handleSavePlan}
+        loading={savingPlan}
+      />
     </PageWrapper>
   );
 }

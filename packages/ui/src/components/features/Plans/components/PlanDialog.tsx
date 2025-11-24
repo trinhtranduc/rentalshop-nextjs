@@ -32,6 +32,15 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
   onSubmit,
   loading = false
 }) => {
+  // Debug logs
+  console.log('📝 PlanDialog render:', {
+    open,
+    mode,
+    hasPlan: !!plan,
+    planId: plan?.id,
+    planName: plan?.name
+  });
+
   const getDialogTitle = () => {
     switch (mode) {
       case 'create':

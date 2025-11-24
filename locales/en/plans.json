@@ -17,11 +17,21 @@
   },
   "billingCycle": {
     "monthly": "Monthly",
+    "quarterly": "Quarterly",
+    "semiAnnual": "Semi-Annual",
+    "annual": "Annual",
     "yearly": "Yearly",
     "perMonth": "per month",
+    "perQuarter": "per quarter",
     "perYear": "per year",
     "billedMonthly": "Billed monthly",
-    "billedYearly": "Billed yearly"
+    "billedQuarterly": "Billed quarterly",
+    "billedYearly": "Billed yearly",
+    "cancelAnytime": "Pay monthly, cancel anytime",
+    "quarterlyCancelAnytime": "Pay quarterly, cancel anytime",
+    "savePercent": "Save {percent}%",
+    "saveWithSemiAnnual": "Save 5% with semi-annual billing",
+    "saveWithAnnual": "Save 10% with annual billing"
   },
   "actions": {
     "subscribe": "Subscribe",

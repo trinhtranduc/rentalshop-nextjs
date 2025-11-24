@@ -35,6 +35,7 @@ import {
   Zap
 } from 'lucide-react';
 import { Plan, BillingCycle } from '@rentalshop/types';
+import { useSubscriptionTranslations, usePlansTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -58,39 +59,41 @@ export interface BillingCycleOption {
 }
 
 // ============================================================================
-// BILLING CYCLE OPTIONS
+// BILLING CYCLE OPTIONS (Will be generated from translations)
 // ============================================================================
 
-const BILLING_CYCLES: BillingCycleOption[] = [
-  {
-    value: 'monthly',
-    label: 'Monthly',
-    months: 1,
-    discount: 0,
-    description: 'Pay monthly, cancel anytime'
-  },
-  {
-    value: 'quarterly',
-    label: 'Quarterly',
-    months: 3,
-    discount: 10,
-    description: 'Save 10% with quarterly billing'
-  },
-  {
-    value: 'semi_annual',
-    label: 'Semi-Annual',
-    months: 6,
-    discount: 15,
-    description: 'Save 15% with semi-annual billing'
-  },
-  {
-    value: 'annual',
-    label: 'Annual',
-    months: 12,
-    discount: 25,
-    description: 'Save 25% with annual billing'
-  }
-];
+function getBillingCycles(t: ReturnType<typeof useSubscriptionTranslations>, tp: ReturnType<typeof usePlansTranslations>): BillingCycleOption[] {
+  return [
+    {
+      value: 'monthly',
+      label: t('billing.monthly'),
+      months: 1,
+      discount: 0,
+      description: t('billing.cancelAnytime')
+    },
+    {
+      value: 'quarterly',
+      label: t('billing.quarterly'),
+      months: 3,
+      discount: 0,
+      description: t('billing.quarterlyCancelAnytime')
+    },
+    {
+      value: 'semi_annual',
+      label: t('billing.semiAnnual'),
+      months: 6,
+      discount: 5,
+      description: t('billing.saveWithSemiAnnual')
+    },
+    {
+      value: 'annual',
+      label: t('billing.annual'),
+      months: 12,
+      discount: 10,
+      description: t('billing.saveWithAnnual')
+    }
+  ];
+}
 
 // ============================================================================
 // PAYMENT METHODS
@@ -115,6 +118,9 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
   currentPlan,
   loading = false
 }) => {
+  const t = useSubscriptionTranslations();
+  const tp = usePlansTranslations();
+  const BILLING_CYCLES = getBillingCycles(t, tp);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [selectedBillingCycle, setSelectedBillingCycle] = useState<BillingCycle>('monthly');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('STRIPE');
@@ -312,20 +318,27 @@ export const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
                     <span className="font-medium">Plan:</span>
                     <span>{selectedPlan.name}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Billing Cycle:</span>
-                    <span>{getBillingCycleInfo()?.label}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Base Price:</span>
-                    <span>{formatPrice(selectedPlan.price, selectedPlan.currency)}</span>
-                  </div>
-                  {getBillingCycleInfo()?.discount > 0 && (
-                    <div className="flex justify-between items-center text-green-600">
-                      <span className="font-medium">Discount ({getBillingCycleInfo()?.discount}%):</span>
-                      <span>-{formatPrice(selectedPlan.price * getBillingCycleInfo()!.discount / 100, selectedPlan.currency)}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const billingCycleInfo = getBillingCycleInfo();
+                    return (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Billing Cycle:</span>
+                          <span>{billingCycleInfo?.label}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Base Price:</span>
+                          <span>{formatPrice(selectedPlan.price, selectedPlan.currency)}</span>
+                        </div>
+                        {billingCycleInfo && billingCycleInfo.discount > 0 && (
+                          <div className="flex justify-between items-center text-green-600">
+                            <span className="font-medium">Discount ({billingCycleInfo.discount}%):</span>
+                            <span>-{formatPrice(selectedPlan.price * billingCycleInfo.discount / 100, selectedPlan.currency)}</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                   <Separator />
                   <div className="flex justify-between items-center text-lg font-bold">
                     <span>Total:</span>

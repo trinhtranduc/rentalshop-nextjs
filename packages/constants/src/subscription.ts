@@ -57,21 +57,21 @@ export const BILLING_CYCLES = {
     name: 'Quarterly',
     duration: 3,
     unit: 'months',
-    discount: 0.05 // 5% discount
+    discount: 0 // 0% discount
   },
   SEMI_ANNUAL: {
     id: 'semi_annual',
     name: 'Semi-Annual',
     duration: 6,
     unit: 'months',
-    discount: 0.10 // 10% discount
+    discount: 0.05 // 5% discount
   },
   ANNUAL: {
     id: 'annual',
     name: 'Annual',
     duration: 12,
     unit: 'months',
-    discount: 0.20 // 20% discount
+    discount: 0.10 // 10% discount
   }
 };
 

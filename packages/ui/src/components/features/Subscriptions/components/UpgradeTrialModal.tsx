@@ -13,6 +13,7 @@ import {
   Card
 } from '@rentalshop/ui';
 import { formatDate, formatCurrency } from '@rentalshop/utils';
+import { useSubscriptionTranslations, usePlansTranslations } from '@rentalshop/hooks';
 import { Check, CreditCard, Building2, Sparkles } from 'lucide-react';
 
 interface Plan {
@@ -45,6 +46,8 @@ export function UpgradeTrialModal({
   onUpgrade,
   loading = false
 }: UpgradeTrialModalProps) {
+  const t = useSubscriptionTranslations();
+  const tp = usePlansTranslations();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [billingCycle, setBillingCycle] = useState<'month' | 'quarter' | 'year'>('month');
   const [paymentMethod, setPaymentMethod] = useState<'STRIPE' | 'TRANSFER'>('STRIPE');
@@ -62,9 +65,9 @@ export function UpgradeTrialModal({
   const calculatePrice = (basePrice: number, cycle: string) => {
     switch (cycle) {
       case 'quarter':
-        return basePrice * 3 * 0.9; // 10% discount
+        return basePrice * 3; // 0% discount
       case 'year':
-        return basePrice * 12 * 0.8; // 20% discount
+        return basePrice * 12 * 0.9; // 10% discount
       default:
         return basePrice;
     }
@@ -177,7 +180,7 @@ export function UpgradeTrialModal({
           {/* Billing Cycle */}
           {selectedPlan && (
             <div className="space-y-4">
-              <Label className="text-lg font-semibold">Billing Cycle *</Label>
+              <Label className="text-lg font-semibold">{t('billing.cycle')} *</Label>
               <div className="space-y-2">
                 <div 
                   className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
@@ -193,8 +196,8 @@ export function UpgradeTrialModal({
                       className="cursor-pointer"
                     />
                     <div>
-                      <p className="font-medium">Monthly</p>
-                      <p className="text-sm text-gray-600">{formatCurrency(selectedPlan.basePrice, 'USD')}/month</p>
+                      <p className="font-medium">{t('billing.monthly')}</p>
+                      <p className="text-sm text-gray-600">{formatCurrency(selectedPlan.basePrice, 'USD')}/{tp('billingCycle.perMonth')}</p>
                     </div>
                   </div>
                 </div>
@@ -213,13 +216,11 @@ export function UpgradeTrialModal({
                       className="cursor-pointer"
                     />
                     <div>
-                      <p className="font-medium">Quarterly</p>
-                      <p className="text-sm text-gray-600">{formatCurrency(calculatePrice(selectedPlan.basePrice, 'quarter'), 'USD')}/quarter</p>
+                      <p className="font-medium">{t('billing.quarterly')}</p>
+                      <p className="text-sm text-gray-600">{formatCurrency(calculatePrice(selectedPlan.basePrice, 'quarter'), 'USD')}/{tp('billingCycle.perQuarter')}</p>
                     </div>
                   </div>
-                  <div className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">
-                    Save 10%
-                  </div>
+                  {/* No discount badge for quarterly */}
                 </div>
 
                 <div 
@@ -236,12 +237,12 @@ export function UpgradeTrialModal({
                       className="cursor-pointer"
                     />
                     <div>
-                      <p className="font-medium">Yearly</p>
-                      <p className="text-sm text-gray-600">{formatCurrency(calculatePrice(selectedPlan.basePrice, 'year'), 'USD')}/year</p>
+                      <p className="font-medium">{t('billing.annual')}</p>
+                      <p className="text-sm text-gray-600">{formatCurrency(calculatePrice(selectedPlan.basePrice, 'year'), 'USD')}/{tp('billingCycle.perYear')}</p>
                     </div>
                   </div>
                   <div className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">
-                    Save 20%
+                    {t('billing.savePercent', { percent: 10 })}
                   </div>
                 </div>
               </div>

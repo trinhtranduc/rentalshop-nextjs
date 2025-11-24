@@ -35,19 +35,19 @@ function generatePricingFromBasePrice(basePrice: number) {
       savings: 0
     },
     quarterly: {
-      price: quarterlyPrice * 0.95, // 5% discount
-      discount: 5,
-      savings: quarterlyPrice * 0.05
+      price: quarterlyPrice, // 0% discount
+      discount: 0,
+      savings: 0
     },
     semi_annual: {
-      price: semiAnnualPrice * 0.90, // 10% discount
-      discount: 10,
-      savings: semiAnnualPrice * 0.10
+      price: semiAnnualPrice * 0.95, // 5% discount
+      discount: 5,
+      savings: semiAnnualPrice * 0.05
     },
     annual: {
-      price: annualPrice * 0.80, // 20% discount
-      discount: 20,
-      savings: annualPrice * 0.20
+      price: annualPrice * 0.90, // 10% discount
+      discount: 10,
+      savings: annualPrice * 0.10
     }
   };
 }
@@ -86,19 +86,19 @@ function generatePlanPricing(basePrice: number) {
       savings: 0
     },
     quarterly: {
-      price: basePrice * 3 * 0.95, // 5% discount for quarterly
-      discount: 5,
-      savings: basePrice * 3 * 0.05
+      price: basePrice * 3, // 0% discount for quarterly
+      discount: 0,
+      savings: 0
     },
     semi_annual: {
-      price: basePrice * 6 * 0.90, // 10% discount for semi-annual
-      discount: 10,
-      savings: basePrice * 6 * 0.10
+      price: basePrice * 6 * 0.95, // 5% discount for semi-annual
+      discount: 5,
+      savings: basePrice * 6 * 0.05
     },
     annual: {
-      price: basePrice * 12 * 0.80, // 20% discount for annual
-      discount: 20,
-      savings: basePrice * 12 * 0.20
+      price: basePrice * 12 * 0.90, // 10% discount for annual
+      discount: 10,
+      savings: basePrice * 12 * 0.10
     }
   };
 }

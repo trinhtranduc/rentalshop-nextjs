@@ -111,9 +111,9 @@ export function SubscriptionEditDialog({
   const calculateDiscountBreakdown = (basePrice: number, currency: string) => {
     const periods = [
       { duration: 1, label: 'Monthly', discount: 0 },
-      { duration: 3, label: 'Quarterly', discount: 10 },
-      { duration: 6, label: '6 Months', discount: 15 },
-      { duration: 12, label: 'Yearly', discount: 20 }
+      { duration: 3, label: 'Quarterly', discount: 0 },
+      { duration: 6, label: '6 Months', discount: 5 },
+      { duration: 12, label: 'Yearly', discount: 10 }
     ];
 
     return periods.map(period => {

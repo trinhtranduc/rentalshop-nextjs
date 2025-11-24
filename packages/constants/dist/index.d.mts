@@ -73,8 +73,8 @@ type ProductAvailabilityStatus = typeof PRODUCT_AVAILABILITY_STATUS[keyof typeof
 declare const BILLING_INTERVAL: {
     readonly MONTHLY: "monthly";
     readonly QUARTERLY: "quarterly";
-    readonly SIX_MONTHS: "sixMonths";
-    readonly YEARLY: "yearly";
+    readonly SEMI_ANNUAL: "semi_annual";
+    readonly ANNUAL: "annual";
 };
 type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];
 declare const AUDIT_ACTION: {
@@ -631,7 +631,14 @@ declare const BILLING_CYCLES: {
         unit: string;
         discount: number;
     };
-    YEARLY: {
+    SEMI_ANNUAL: {
+        id: string;
+        name: string;
+        duration: number;
+        unit: string;
+        discount: number;
+    };
+    ANNUAL: {
         id: string;
         name: string;
         duration: number;
@@ -639,6 +646,31 @@ declare const BILLING_CYCLES: {
         discount: number;
     };
 };
+declare const BILLING_CYCLES_ARRAY: ({
+    value: "monthly";
+    label: string;
+    months: number;
+    discount: number;
+    description: string;
+} | {
+    value: "quarterly";
+    label: string;
+    months: number;
+    discount: number;
+    description: string;
+} | {
+    value: "semi_annual";
+    label: string;
+    months: number;
+    discount: number;
+    description: string;
+} | {
+    value: "annual";
+    label: string;
+    months: number;
+    discount: number;
+    description: string;
+})[];
 declare const RENEWAL_DURATIONS: {
     id: string;
     name: string;
@@ -1559,4 +1591,4 @@ declare const CONSTANTS: {
     readonly STATUS: typeof STATUS;
 };
 
-export { ACTION_COLORS, API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ActionColor, type ApiValue, type AuditAction, type AuditEntityType, BACKGROUND_COLORS, BILLING_CYCLES, BILLING_INTERVAL, BORDER_COLORS, BRAND_COLORS, BUSINESS, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, BUTTON_COLORS, type BackgroundColor, type BillingInterval, type BorderColor, type BrandColor, type BusinessType, type BusinessTypeOption, type BusinessValue, type ButtonVariant, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENTITY_STATUS_COLORS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, MERCHANT_STATUS, type MerchantPricingConfig, type MerchantStatus, NAVIGATION_COLORS, type NavigationColor, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_STATUS_COLORS, PAYMENT_TYPE, PRICING_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_COLORS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_COLORS, SUPPORTED_CURRENCIES, type SearchValue, type SubscriptionStatus, TEXT_COLORS, TRIAL_CONFIG, type TextColor, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, formatCountryDisplay, getActivePlans, getAllPlans, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getOrderStatusClass, getOrderStatusClassName, getOrderStatusColors, getOrderTypeClass, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isSubscriptionActive, isUnlimitedPlan, isValidCurrency, isValidSubscriptionStatus, normalizeSubscriptionStatus, requiresRentalDates, validatePlanConfig };
+export { ACTION_COLORS, API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ActionColor, type ApiValue, type AuditAction, type AuditEntityType, BACKGROUND_COLORS, BILLING_CYCLES, BILLING_CYCLES_ARRAY, BILLING_INTERVAL, BORDER_COLORS, BRAND_COLORS, BUSINESS, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, BUTTON_COLORS, type BackgroundColor, type BillingInterval, type BorderColor, type BrandColor, type BusinessType, type BusinessTypeOption, type BusinessValue, type ButtonVariant, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENTITY_STATUS_COLORS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, MERCHANT_STATUS, type MerchantPricingConfig, type MerchantStatus, NAVIGATION_COLORS, type NavigationColor, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_STATUS_COLORS, PAYMENT_TYPE, PRICING_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_COLORS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_COLORS, SUPPORTED_CURRENCIES, type SearchValue, type SubscriptionStatus, TEXT_COLORS, TRIAL_CONFIG, type TextColor, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, CONSTANTS as default, formatCountryDisplay, getActivePlans, getAllPlans, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getOrderStatusClass, getOrderStatusClassName, getOrderStatusColors, getOrderTypeClass, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isSubscriptionActive, isUnlimitedPlan, isValidCurrency, isValidSubscriptionStatus, normalizeSubscriptionStatus, requiresRentalDates, validatePlanConfig };

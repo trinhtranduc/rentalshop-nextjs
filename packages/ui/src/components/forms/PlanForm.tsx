@@ -37,7 +37,7 @@ import type {
   Plan,
   BillingCycle
 } from '@rentalshop/types';
-import { BILLING_CYCLES } from '@rentalshop/constants';
+import { BILLING_CYCLES_ARRAY } from '@rentalshop/constants';
 import { 
   calculateDiscountedPrice,
   getBillingCycleDiscount,
@@ -121,7 +121,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   };
 
   const handleBillingCycleChange = (cycle: BillingCycle) => {
-    const cycleOption = BILLING_CYCLES.find(option => option.value === cycle);
+    const cycleOption = BILLING_CYCLES_ARRAY.find(option => option.value === cycle);
     setFormData(prev => ({ 
       ...prev, 
       billingCycle: cycle,
@@ -359,7 +359,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {BILLING_CYCLES.map((cycle) => (
+                    {BILLING_CYCLES_ARRAY.map((cycle) => (
                       <SelectItem key={cycle.value} value={cycle.value}>
                         <div className="flex flex-col">
                           <span className="font-medium">{cycle.label}</span>

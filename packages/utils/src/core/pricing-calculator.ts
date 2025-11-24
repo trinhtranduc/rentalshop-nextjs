@@ -430,9 +430,9 @@ export function createPricingComparisonEngine(config: PricingConfig): PricingCom
 export const DEFAULT_PRICING_CONFIG: PricingConfig = {
   discounts: {
     monthly: 0,        // 0% discount
-    quarterly: 5,      // 5% discount
-    semi_annual: 10,   // 10% discount
-    annual: 20         // 20% discount
+    quarterly: 0,      // 0% discount
+    semi_annual: 5,    // 5% discount
+    annual: 10         // 10% discount
   },
   intervals: {
     monthly: { interval: 'monthly' as BillingInterval, intervalCount: 1 },
