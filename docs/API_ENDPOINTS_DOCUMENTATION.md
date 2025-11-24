@@ -31,11 +31,11 @@ All API requests must include these headers:
 
 ```json
 {
-  "Content-Type": "application/json",
-  "Authorization": "Bearer YOUR_JWT_TOKEN",
-  "X-Client-Platform": "mobile",
+    "Content-Type": "application/json",
+    "Authorization": "Bearer YOUR_JWT_TOKEN",
+    "X-Client-Platform": "mobile",
   "X-Device-Type": "ios|android",
-  "X-App-Version": "1.0.0",
+    "X-App-Version": "1.0.0",
   "User-Agent": "RentalShop-Mobile/1.0.0"
 }
 ```
@@ -55,8 +55,8 @@ All API responses follow this standard format:
 ```json
 {
   "success": true,
-  "code": "SUCCESS_CODE",
-  "message": "Success message",
+    "code": "SUCCESS_CODE",
+    "message": "Success message",
   "data": {
     // Response data here
   }
@@ -108,33 +108,33 @@ X-Device-Type: ios|android
 **Request Body:**
 ```json
 {
-  "email": "user@example.com",
-  "password": "password123"
+    "email": "user@example.com",
+    "password": "password123"
 }
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "success": true,
-  "code": "LOGIN_SUCCESS",
-  "message": "Login successful",
-  "data": {
-    "user": {
-      "id": 123,
-      "email": "user@example.com",
-      "firstName": "John",
-      "lastName": "Doe",
-      "name": "John Doe",
-      "phone": "+1234567890",
-      "role": "OUTLET_ADMIN",
-      "merchantId": 456,
-      "outletId": 789,
+    "success": true,
+    "code": "LOGIN_SUCCESS",
+    "message": "Login successful",
+    "data": {
+        "user": {
+            "id": 123,
+            "email": "user@example.com",
+            "firstName": "John",
+            "lastName": "Doe",
+            "name": "John Doe",
+            "phone": "+1234567890",
+            "role": "OUTLET_ADMIN",
+            "merchantId": 456,
+            "outletId": 789,
       "emailVerified": true,
       "emailVerifiedAt": "2024-01-01T00:00:00Z",
-      "merchant": {
-        "id": 456,
-        "name": "Merchant Name",
+            "merchant": {
+                "id": 456,
+                "name": "Merchant Name",
         "email": "merchant@example.com",
         "phone": "+1234567890",
         "address": "123 Main St",
@@ -184,16 +184,16 @@ X-Device-Type: ios|android
             "isPopular": false
           }
         }
-      },
-      "outlet": {
-        "id": 789,
-        "name": "Outlet Name",
+            },
+            "outlet": {
+                "id": 789,
+                "name": "Outlet Name",
         "address": "123 Main St",
         "merchantId": 456
-      }
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
+            }
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
 }
 ```
 
@@ -243,8 +243,8 @@ X-Client-Platform: mobile
 **Request Body (Merchant Registration):**
 ```json
 {
-  "firstName": "John",
-  "lastName": "Doe",
+    "firstName": "John",
+    "lastName": "Doe",
   "email": "merchant@example.com",
   "password": "password123",
   "phone": "+1234567890",
@@ -267,9 +267,9 @@ X-Client-Platform: mobile
 {
   "firstName": "Jane",
   "lastName": "Smith",
-  "email": "user@example.com",
-  "password": "password123",
-  "phone": "+1234567890",
+    "email": "user@example.com",
+    "password": "password123",
+    "phone": "+1234567890",
   "role": "CLIENT" // Optional, defaults to CLIENT
 }
 ```
@@ -286,7 +286,7 @@ X-Client-Platform: mobile
       "email": "merchant@example.com",
       "firstName": "John",
       "lastName": "Doe",
-      "role": "MERCHANT",
+    "role": "MERCHANT",
       "emailVerified": false
     },
     "merchant": {
@@ -407,7 +407,7 @@ X-Client-Platform: mobile
 ```json
 {
   "currentPassword": "oldpassword123",
-  "newPassword": "newpassword123"
+    "newPassword": "newpassword123"
 }
 ```
 
@@ -464,7 +464,7 @@ X-Client-Platform: mobile
 **Response (200 OK):**
 ```json
 {
-  "success": true,
+    "success": true,
   "code": "PASSWORD_RESET_LINK_SENT",
   "message": "If email exists in system, password reset email has been sent",
   "data": {
@@ -506,7 +506,7 @@ X-Client-Platform: mobile
   "message": "Password has been reset successfully. Please login with new password",
   "data": {
     "message": "Password has been reset successfully. Please login with new password"
-  }
+    }
 }
 ```
 
@@ -573,7 +573,7 @@ X-Client-Platform: mobile
   "message": "Email verified successfully",
   "data": {
     "user": {
-      "id": 123,
+            "id": 123,
       "email": "user@example.com",
       "firstName": "John",
       "lastName": "Doe",
@@ -581,7 +581,7 @@ X-Client-Platform: mobile
       "emailVerified": true
     },
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
+        }
 }
 ```
 
@@ -665,25 +665,25 @@ GET /api/products?outletId=1&available=true&search=drill&page=1&limit=20&sortBy=
 **Response (200 OK):**
 ```json
 {
-  "success": true,
+    "success": true,
   "code": "PRODUCTS_FOUND",
   "message": "Products retrieved successfully",
-  "data": {
-    "products": [
-      {
-        "id": 123,
-        "name": "Drill Machine",
+    "data": {
+        "products": [
+            {
+                "id": 123,
+                "name": "Drill Machine",
         "description": "Heavy duty drill machine",
-        "barcode": "123456789",
-        "totalStock": 10,
+                "barcode": "123456789",
+                "totalStock": 10,
         "renting": 2,
         "available": 8,
-        "rentPrice": 25.00,
-        "salePrice": 150.00,
-        "deposit": 50.00,
+                "rentPrice": 25.00,
+                "salePrice": 150.00,
+                "deposit": 50.00,
         "images": ["image1.jpg", "image2.jpg"],
-        "categoryId": 456,
-        "merchantId": 789,
+                "categoryId": 456,
+                "merchantId": 789,
         "outletId": 1,
         "isActive": true,
         "createdAt": "2024-01-01T00:00:00Z",
@@ -692,14 +692,14 @@ GET /api/products?outletId=1&available=true&search=drill&page=1&limit=20&sortBy=
           "id": 456,
           "name": "Tools"
         }
-      }
-    ],
-    "total": 100,
-    "page": 1,
-    "limit": 20,
+            }
+        ],
+        "total": 100,
+        "page": 1,
+        "limit": 20,
     "hasMore": true,
     "totalPages": 5
-  }
+    }
 }
 ```
 
@@ -815,66 +815,66 @@ GET /api/products/availability?productId=12&date=2025-10-24&outletId=1
 **Response (200 OK):**
 ```json
 {
-  "success": true,
-  "code": "PRODUCT_AVAILABILITY_FOUND",
-  "message": "Product availability information retrieved successfully",
-  "data": {
-    "product": {
-      "id": 12,
-      "name": "Product 12 - Kitchen Appliances",
-      "barcode": "BAR000012",
-      "outletId": 1,
-      "outletName": "Main Branch"
-    },
-    "date": "2025-10-24",
-    "summary": {
-      "totalStock": 50,
+    "success": true,
+    "code": "PRODUCT_AVAILABILITY_FOUND",
+    "message": "Product availability information retrieved successfully",
+    "data": {
+        "product": {
+            "id": 12,
+            "name": "Product 12 - Kitchen Appliances",
+            "barcode": "BAR000012",
+            "outletId": 1,
+            "outletName": "Main Branch"
+        },
+        "date": "2025-10-24",
+        "summary": {
+            "totalStock": 50,
       "totalRented": 2,
       "totalReserved": 0,
       "totalAvailable": 48,
-      "isAvailable": true
-    },
-    "orders": [
-      {
-        "id": 1,
-        "orderNumber": "ORD-001-0001",
-        "orderType": "RENT",
-        "status": "PICKUPED",
-        "totalAmount": 100.00,
-        "depositAmount": 50.00,
-        "pickupPlanAt": "2025-10-06T10:00:00.000Z",
-        "returnPlanAt": "2025-10-11T18:00:00.000Z",
-        "pickedUpAt": "2025-10-06T10:30:00.000Z",
-        "returnedAt": null,
-        "createdAt": "2025-10-01T08:00:00.000Z",
-        "outletId": 1,
-        "outletName": "Main Branch",
-        "customerId": 123,
-        "customerName": "John Smith",
-        "customerPhone": "+1-555-1000",
-        "customerEmail": "john@example.com",
-        "merchantId": 1,
-        "merchantName": "ABC Rental Shop",
-        "orderItems": [
-          {
-            "id": 1,
-            "productId": 12,
-            "productName": "Product 12 - Kitchen Appliances",
-            "productBarcode": "BAR000012",
-            "quantity": 2,
-            "unitPrice": 25.00,
-            "totalPrice": 50.00,
-            "deposit": 25.00
-          }
-        ]
-      }
-    ],
-    "meta": {
-      "totalOrders": 2,
-      "date": "2025-10-24",
-      "checkedAt": "2025-10-24T15:48:00.000Z"
+            "isAvailable": true
+        },
+        "orders": [
+            {
+                "id": 1,
+                "orderNumber": "ORD-001-0001",
+                "orderType": "RENT",
+                "status": "PICKUPED",
+                "totalAmount": 100.00,
+                "depositAmount": 50.00,
+                "pickupPlanAt": "2025-10-06T10:00:00.000Z",
+                "returnPlanAt": "2025-10-11T18:00:00.000Z",
+                "pickedUpAt": "2025-10-06T10:30:00.000Z",
+                "returnedAt": null,
+                "createdAt": "2025-10-01T08:00:00.000Z",
+                "outletId": 1,
+                "outletName": "Main Branch",
+                "customerId": 123,
+                "customerName": "John Smith",
+                "customerPhone": "+1-555-1000",
+                "customerEmail": "john@example.com",
+                "merchantId": 1,
+                "merchantName": "ABC Rental Shop",
+                "orderItems": [
+                    {
+                        "id": 1,
+                        "productId": 12,
+                        "productName": "Product 12 - Kitchen Appliances",
+                        "productBarcode": "BAR000012",
+                        "quantity": 2,
+                        "unitPrice": 25.00,
+                        "totalPrice": 50.00,
+                        "deposit": 25.00
+                    }
+                ]
+            }
+        ],
+        "meta": {
+            "totalOrders": 2,
+            "date": "2025-10-24",
+            "checkedAt": "2025-10-24T15:48:00.000Z"
+        }
     }
-  }
 }
 ```
 
@@ -950,11 +950,11 @@ X-Client-Platform: mobile
 **Response (201 Created):**
 ```json
 {
-  "success": true,
+    "success": true,
   "code": "PRODUCT_CREATED_SUCCESS",
   "message": "Product created successfully",
   "data": {
-    "id": 123,
+            "id": 123,
     "name": "New Product",
     "description": "Product description",
     "barcode": "987654321",
@@ -964,10 +964,10 @@ X-Client-Platform: mobile
     "deposit": 30.00,
     "categoryId": 456,
     "merchantId": 789,
-    "isActive": true,
+            "isActive": true,
     "images": ["image1.jpg"],
     "createdAt": "2024-01-01T00:00:00Z"
-  }
+        }
 }
 ```
 
@@ -1006,14 +1006,14 @@ Same as Create Product, but all fields are optional (partial update).
 **Response (200 OK):**
 ```json
 {
-  "success": true,
+    "success": true,
   "code": "PRODUCT_UPDATED_SUCCESS",
   "message": "Product updated successfully",
-  "data": {
-    "id": 123,
+    "data": {
+                "id": 123,
     "name": "Updated Product Name",
     // ... updated product data
-  }
+    }
 }
 ```
 
@@ -1055,23 +1055,23 @@ GET /api/orders?orderType=RENT&status=PICKUPED&outletId=1&page=1&limit=20
 **Response (200 OK):**
 ```json
 {
-  "success": true,
+    "success": true,
   "code": "ORDERS_FOUND",
   "message": "Orders retrieved successfully",
-  "data": {
-    "orders": [
-      {
-        "id": 123,
-        "orderNumber": "ORD-001-0001",
-        "orderType": "RENT",
-        "status": "RESERVED",
-        "totalAmount": 100.00,
-        "depositAmount": 50.00,
+    "data": {
+        "orders": [
+            {
+                "id": 123,
+                "orderNumber": "ORD-001-0001",
+                "orderType": "RENT",
+                "status": "RESERVED",
+                "totalAmount": 100.00,
+                "depositAmount": 50.00,
         "securityDeposit": 0,
         "damageFee": 0,
         "lateFee": 0,
-        "pickupPlanAt": "2024-01-15T10:00:00Z",
-        "returnPlanAt": "2024-01-20T18:00:00Z",
+                "pickupPlanAt": "2024-01-15T10:00:00Z",
+                "returnPlanAt": "2024-01-20T18:00:00Z",
         "pickedUpAt": null,
         "returnedAt": null,
         "rentalDuration": 5,
@@ -1079,43 +1079,43 @@ GET /api/orders?orderType=RENT&status=PICKUPED&outletId=1&page=1&limit=20
         "notes": null,
         "pickupNotes": null,
         "returnNotes": null,
-        "createdAt": "2024-01-10T08:00:00Z",
+                "createdAt": "2024-01-10T08:00:00Z",
         "updatedAt": "2024-01-10T08:00:00Z",
-        "outletId": 456,
-        "customerId": 789,
-        "createdById": 101,
-        "customer": {
-          "id": 789,
-          "firstName": "John",
-          "lastName": "Doe",
+                "outletId": 456,
+                "customerId": 789,
+                "createdById": 101,
+                "customer": {
+                    "id": 789,
+                    "firstName": "John",
+                    "lastName": "Doe",
           "phone": "+1234567890",
           "email": "john@example.com"
         },
         "outlet": {
           "id": 456,
           "name": "Main Store"
-        },
-        "orderItems": [
-          {
-            "id": 201,
-            "productId": 301,
-            "productName": "Drill Machine",
+                },
+                "orderItems": [
+                    {
+                        "id": 201,
+                        "productId": 301,
+                        "productName": "Drill Machine",
             "productBarcode": "123456789",
-            "quantity": 1,
-            "unitPrice": 25.00,
-            "totalPrice": 25.00,
+                        "quantity": 1,
+                        "unitPrice": 25.00,
+                        "totalPrice": 25.00,
             "deposit": 50.00,
             "productImages": ["image1.jpg"]
-          }
-        ]
-      }
-    ],
-    "total": 200,
-    "page": 1,
-    "limit": 20,
+                    }
+                ]
+            }
+        ],
+        "total": 200,
+        "page": 1,
+        "limit": 20,
     "hasMore": true,
     "totalPages": 10
-  }
+    }
 }
 ```
 
@@ -1153,16 +1153,16 @@ X-Client-Platform: mobile
 **Request Body:**
 ```json
 {
-  "orderType": "RENT",
-  "outletId": 456,
-  "customerId": 789,
-  "totalAmount": 100.00,
-  "depositAmount": 50.00,
+    "orderType": "RENT",
+    "outletId": 456,
+    "customerId": 789,
+    "totalAmount": 100.00,
+    "depositAmount": 50.00,
   "securityDeposit": 0,
   "damageFee": 0,
   "lateFee": 0,
-  "pickupPlanAt": "2024-01-15T10:00:00Z",
-  "returnPlanAt": "2024-01-20T18:00:00Z",
+    "pickupPlanAt": "2024-01-15T10:00:00Z",
+    "returnPlanAt": "2024-01-20T18:00:00Z",
   "isReadyToDeliver": false,
   "notes": "Customer requested early pickup",
   "pickupNotes": null,
@@ -1172,15 +1172,15 @@ X-Client-Platform: mobile
   "discountAmount": 0,
   "collateralType": null,
   "collateralDetails": null,
-  "orderItems": [
-    {
-      "productId": 301,
-      "quantity": 1,
-      "unitPrice": 25.00,
-      "totalPrice": 25.00,
-      "deposit": 50.00
-    }
-  ]
+    "orderItems": [
+        {
+            "productId": 301,
+            "quantity": 1,
+            "unitPrice": 25.00,
+            "totalPrice": 25.00,
+            "deposit": 50.00
+        }
+    ]
 }
 ```
 
@@ -1268,11 +1268,11 @@ GET /api/orders/123
 **Response (200 OK):**
 ```json
 {
-  "success": true,
+    "success": true,
   "code": "ORDER_RETRIEVED_SUCCESS",
   "message": "Order retrieved successfully",
   "data": {
-    "id": 123,
+            "id": 123,
     "orderNumber": "ORD-001-0001",
     "orderType": "RENT",
     "status": "RESERVED",
@@ -1396,16 +1396,16 @@ X-Client-Platform: mobile
 **Response (200 OK):**
 ```json
 {
-  "success": true,
+    "success": true,
   "code": "ORDER_STATUS_UPDATED_SUCCESS",
   "message": "Order status updated to PICKUPED successfully",
-  "data": {
+    "data": {
     "id": 123,
     "orderNumber": "ORD-001-0001",
     "status": "PICKUPED",
     "pickedUpAt": "2024-01-15T10:30:00Z",
     // ... updated order data
-  }
+    }
 }
 ```
 
@@ -1587,10 +1587,10 @@ GET /api/customers/123
 **Response (200 OK):**
 ```json
 {
-  "success": true,
+    "success": true,
   "code": "CUSTOMER_RETRIEVED_SUCCESS",
   "message": "Customer retrieved successfully",
-  "data": {
+    "data": {
     "id": 123,
     "firstName": "John",
     "lastName": "Doe",
@@ -1605,7 +1605,7 @@ GET /api/customers/123
     "merchantId": 456,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
-  }
+    }
 }
 ```
 
@@ -1747,8 +1747,8 @@ GET /api/categories
       "merchantId": 456,
       "createdAt": "2024-01-01T00:00:00Z"
     }
-  ]
-}
+        ]
+    }
 ```
 
 **Example Request (With Pagination):**
@@ -1815,7 +1815,7 @@ X-Client-Platform: mobile
     "merchantId": 456,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
-  }
+    }
 }
 ```
 
@@ -1887,7 +1887,7 @@ X-Client-Platform: mobile
         "name": "Merchant Name"
       }
     }
-  }
+    }
 }
 ```
 
@@ -1972,7 +1972,7 @@ X-Client-Platform: mobile
 
 **GET** `/api/analytics/dashboard`
 
-Get dashboard analytics with key metrics. Results are automatically filtered based on user role.
+Get comprehensive dashboard analytics with overview metrics, order status breakdown, and today's orders. Results are automatically filtered based on user role.
 
 **Request Headers:**
 ```
@@ -1981,7 +1981,9 @@ X-Client-Platform: mobile
 ```
 
 **Query Parameters:**
-- `period` (string, optional): Time period filter (today, week, month, year). Default: "today"
+- `period` (string, optional): Time period filter. Default: "today"
+  - `today`: Filter orders created today
+  - Other values: No date filtering (all orders)
 
 **Example Request:**
 ```
@@ -1991,37 +1993,499 @@ GET /api/analytics/dashboard?period=today
 **Response (200 OK):**
 ```json
 {
-  "success": true,
-  "code": "DASHBOARD_ANALYTICS_FOUND",
-  "message": "Dashboard analytics retrieved successfully",
-  "data": {
+  "overview": {
     "totalOrders": 150,
     "totalRevenue": 15000.00,
-    "activeRentals": 25,
-    "recentOrders": [
-      {
-        "id": 123,
-        "orderNumber": "ORD-001-0001",
-        "orderType": "RENT",
-        "status": "PICKUPED",
-        "totalAmount": 100.00,
-        "customerName": "John Doe",
-        "createdAt": "2024-01-10T08:00:00Z"
-      }
-    ],
-    "reservedOrders": 10,
-    "pickupOrders": 15,
-    "completedOrders": 100,
-    "cancelledOrders": 5,
-    "returnedOrders": 20
-  }
+    "activeOrders": 25,
+    "completionRate": "83.3"
+  },
+  "orderStatusCounts": {
+    "reserved": 10,
+    "pickup": 15,
+    "completed": 100,
+    "cancelled": 5,
+    "returned": 20
+  },
+  "todayOrders": [
+    {
+      "id": 123,
+      "orderNumber": "ORD-001-0001",
+      "status": "PICKUPED",
+      "totalAmount": 100.00,
+      "customerName": "John Doe",
+      "outletName": "Main Store",
+      "createdAt": "2024-01-10T08:00:00Z",
+      "pickupPlanAt": "2024-01-15T10:00:00Z",
+      "returnPlanAt": "2024-01-20T18:00:00Z",
+      "productNames": "Drill Machine, Hammer"
+    }
+  ]
 }
 ```
+
+**Response Headers:**
+- `ETag`: For caching (304 Not Modified if unchanged)
+- `Cache-Control`: `private, max-age=60`
 
 **Role-Based Filtering:**
 - **OUTLET_ADMIN/OUTLET_STAFF**: See analytics for their outlet only
 - **MERCHANT**: See analytics for all their outlets
 - **ADMIN**: See system-wide analytics
+
+**Note:** Revenue calculation:
+- **SALE orders**: Count `totalAmount` on creation date
+- **RENT RESERVED**: Count `depositAmount` on creation date
+- **RENT PICKUPED**: Count `(totalAmount - depositAmount + securityDeposit)` on pickup date
+- **RENT RETURNED**: Count `-(securityDeposit - damageFee)` on return date (negative = refund)
+
+---
+
+### 2. Order Statistics
+
+**GET** `/api/orders/statistics`
+
+Get optimized order statistics with aggregation. Results are automatically filtered based on user role.
+
+**Request Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+X-Client-Platform: mobile
+```
+
+**Query Parameters:**
+- `startDate` (string, optional): Start date filter (ISO 8601 format)
+- `endDate` (string, optional): End date filter (ISO 8601 format)
+
+**Example Request:**
+```
+GET /api/orders/statistics?startDate=2024-01-01&endDate=2024-01-31
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "code": "STATISTICS_FOUND",
+  "message": "Order statistics retrieved successfully",
+  "data": {
+    "totalOrders": 500,
+    "totalRevenue": 50000.00,
+    "statusBreakdown": {
+      "RESERVED": 50,
+      "PICKUPED": 100,
+      "RETURNED": 200,
+      "COMPLETED": 150,
+      "CANCELLED": 0
+    }
+  }
+}
+```
+
+**Role-Based Filtering:**
+- **OUTLET_ADMIN/OUTLET_STAFF**: See statistics for their outlet only
+- **MERCHANT**: See statistics for all their outlets
+- **ADMIN**: See system-wide statistics
+
+---
+
+### 3. Today's Metrics
+
+**GET** `/api/analytics/today-metrics`
+
+Get today's operational metrics including orders, revenue, stock, and overdue items.
+
+**Request Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+X-Client-Platform: mobile
+```
+
+**Query Parameters:** None (always returns today's data)
+
+**Example Request:**
+```
+GET /api/analytics/today-metrics
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "code": "TODAY_METRICS_SUCCESS",
+  "message": "Today metrics retrieved successfully",
+  "data": {
+    "totalOrders": 25,
+    "activeRentals": 10,
+    "completedOrders": 15,
+    "totalRevenue": 2500.00,
+    "overdueItems": 2,
+    "totalStock": 500,
+    "availableStock": 450,
+    "rentingStock": 50
+  }
+}
+```
+
+**Role-Based Filtering:**
+- **OUTLET_ADMIN/OUTLET_STAFF**: See metrics for their outlet only
+- **MERCHANT**: See metrics for all their outlets
+- **ADMIN**: See system-wide metrics
+
+---
+
+### 4. Top Customers
+
+**GET** `/api/analytics/top-customers`
+
+Get top-performing customers by total spending. Results are automatically filtered based on user role.
+
+**Request Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+X-Client-Platform: mobile
+```
+
+**Query Parameters:**
+- `startDate` (string, optional): Start date filter (ISO 8601 format). Default: last 30 days
+- `endDate` (string, optional): End date filter (ISO 8601 format). Default: today
+
+**Example Request:**
+```
+GET /api/analytics/top-customers?startDate=2024-01-01&endDate=2024-01-31
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 123,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "+1234567890",
+      "location": "123 Main St",
+      "orderCount": 25,
+      "rentalCount": 20,
+      "saleCount": 5,
+      "totalSpent": 5000.00
+    },
+    {
+      "id": 456,
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "phone": "+0987654321",
+      "location": "456 Oak Ave",
+      "orderCount": 15,
+      "rentalCount": 12,
+      "saleCount": 3,
+      "totalSpent": 3000.00
+    }
+  ],
+  "userRole": "MERCHANT"
+}
+```
+
+**Note:** 
+- `totalSpent` is hidden for `OUTLET_STAFF` role (returns `null`)
+- Results are sorted by `totalSpent` in descending order
+- Maximum 10 customers returned
+
+**Response Headers:**
+- `ETag`: For caching (304 Not Modified if unchanged)
+- `Cache-Control`: `private, max-age=60`
+
+**Role-Based Filtering:**
+- **OUTLET_ADMIN/OUTLET_STAFF**: See top customers for their outlet only
+- **MERCHANT**: See top customers for all their outlets
+- **ADMIN**: See system-wide top customers
+
+---
+
+### 5. Top Products
+
+**GET** `/api/analytics/top-products`
+
+Get top-performing products by total revenue. Results are automatically filtered based on user role.
+
+**Request Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+X-Client-Platform: mobile
+```
+
+**Query Parameters:**
+- `startDate` (string, optional): Start date filter (ISO 8601 format)
+- `endDate` (string, optional): End date filter (ISO 8601 format)
+- `limit` (number, optional): Number of products to return. Default: 10
+
+**Example Request:**
+```
+GET /api/analytics/top-products?startDate=2024-01-01&endDate=2024-01-31&limit=10
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "code": "TOP_PRODUCTS_SUCCESS",
+  "message": "Top products retrieved successfully",
+  "data": [
+    {
+      "id": 123,
+      "name": "Drill Machine",
+      "rentPrice": 25.00,
+      "category": "Tools",
+      "rentalCount": 50,
+      "totalRevenue": 5000.00,
+      "image": "https://example.com/image1.jpg"
+    },
+    {
+      "id": 456,
+      "name": "Hammer",
+      "rentPrice": 10.00,
+      "category": "Tools",
+      "rentalCount": 100,
+      "totalRevenue": 3000.00,
+      "image": "https://example.com/image2.jpg"
+    }
+  ]
+}
+```
+
+**Note:** 
+- Results are sorted by `totalRevenue` in descending order
+- `rentalCount` includes all orders (both RENT and SALE) for the product
+- `image` is the first image from product's images array
+
+**Role-Based Filtering:**
+- **OUTLET_ADMIN/OUTLET_STAFF**: See top products for their outlet only
+- **MERCHANT**: See top products for all their outlets
+- **ADMIN**: See system-wide top products
+
+---
+
+### 6. Income Analytics
+
+**GET** `/api/analytics/income`
+
+Get income analytics with real income, future income, and order counts grouped by time period. Supports outlet comparison for merchants.
+
+**Request Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+X-Client-Platform: mobile
+```
+
+**Query Parameters:**
+- `startDate` (string, required): Start date (ISO 8601 format)
+- `endDate` (string, required): End date (ISO 8601 format)
+- `groupBy` (string, optional): Grouping type. Default: "month"
+  - `month`: Group by month (format: "MM/YY")
+  - `day`: Group by day (format: "DD/MM/YY")
+- `outletIds` (string, optional): Comma-separated outlet IDs for comparison (MERCHANT only)
+
+**Example Request (Monthly):**
+```
+GET /api/analytics/income?startDate=2024-01-01&endDate=2024-12-31&groupBy=month
+```
+
+**Example Request (Daily with Outlet Comparison):**
+```
+GET /api/analytics/income?startDate=2024-01-01&endDate=2024-01-31&groupBy=day&outletIds=1,2,3
+```
+
+**Response (200 OK) - Single Outlet/Aggregated:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "month": "01/24",
+      "year": 2024,
+      "realIncome": 10000.00,
+      "futureIncome": 5000.00,
+      "orderCount": 50
+    },
+    {
+      "month": "02/24",
+      "year": 2024,
+      "realIncome": 12000.00,
+      "futureIncome": 6000.00,
+      "orderCount": 60
+    }
+  ]
+}
+```
+
+**Response (200 OK) - Outlet Comparison:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "month": "01/24",
+      "year": 2024,
+      "outletId": 1,
+      "outletName": "Main Store",
+      "realIncome": 5000.00,
+      "futureIncome": 2500.00,
+      "orderCount": 25
+    },
+    {
+      "month": "01/24",
+      "year": 2024,
+      "outletId": 2,
+      "outletName": "Branch Store",
+      "realIncome": 3000.00,
+      "futureIncome": 1500.00,
+      "orderCount": 15
+    }
+  ]
+}
+```
+
+**Income Calculation:**
+- **Real Income:**
+  - **SALE orders**: `totalAmount` on `createdAt` date
+  - **RENT RESERVED**: `depositAmount` on `createdAt` date
+  - **RENT PICKUPED**: `(totalAmount - depositAmount + securityDeposit)` on `pickedUpAt` date
+  - **RENT RETURNED**: `-(securityDeposit - damageFee)` on `returnedAt` date (negative = refund)
+- **Future Income:**
+  - **RENT RESERVED**: `(totalAmount - depositAmount)` for orders with `pickupPlanAt` in the period
+
+**Response Headers:**
+- `ETag`: For caching (304 Not Modified if unchanged)
+- `Cache-Control`: `private, max-age=60`
+
+**Role-Based Filtering:**
+- **OUTLET_ADMIN/OUTLET_STAFF**: See income for their outlet only
+- **MERCHANT**: See income for all outlets (or specific outlets if `outletIds` provided)
+- **ADMIN**: See system-wide income
+
+**Error Responses:**
+- **400 Bad Request** - Missing dates:
+```json
+{
+  "success": false,
+  "error": "startDate and endDate are required"
+}
+```
+
+---
+
+### 7. Growth Metrics
+
+**GET** `/api/analytics/growth-metrics`
+
+Get growth metrics comparing current period with previous period (orders and revenue).
+
+**Request Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+X-Client-Platform: mobile
+```
+
+**Query Parameters:**
+- `startDate` (string, optional): Start date of current period (ISO 8601 format). Default: current month
+- `endDate` (string, optional): End date of current period (ISO 8601 format). Default: today
+
+**Example Request:**
+```
+GET /api/analytics/growth-metrics?startDate=2024-01-01&endDate=2024-01-31
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "code": "GROWTH_METRICS_SUCCESS",
+  "message": "Growth metrics retrieved successfully",
+  "data": {
+    "orders": {
+      "current": 150,
+      "previous": 120,
+      "growth": 25.00
+    },
+    "revenue": {
+      "current": 15000.00,
+      "previous": 12000.00,
+      "growth": 25.00
+    }
+  }
+}
+```
+
+**Growth Calculation:**
+- Growth percentage = `((current - previous) / previous) * 100`
+- Positive values indicate growth, negative values indicate decline
+
+**Role-Based Filtering:**
+- **OUTLET_ADMIN/OUTLET_STAFF**: See growth metrics for their outlet only
+- **MERCHANT**: See growth metrics for all their outlets
+- **ADMIN**: See system-wide growth metrics
+
+---
+
+### 8. Recent Orders
+
+**GET** `/api/analytics/recent-orders`
+
+Get recent orders with customer and product details. Results are automatically filtered based on user role.
+
+**Request Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+X-Client-Platform: mobile
+```
+
+**Query Parameters:**
+- `startDate` (string, optional): Start date filter (ISO 8601 format). Default: last 30 days
+- `endDate` (string, optional): End date filter (ISO 8601 format). Default: today
+
+**Example Request:**
+```
+GET /api/analytics/recent-orders?startDate=2024-01-01&endDate=2024-01-31
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 123,
+      "orderNumber": "ORD-001-0001",
+      "customerName": "John Doe",
+      "customerPhone": "+1234567890",
+      "productNames": "Drill Machine, Hammer",
+      "productImage": "https://example.com/image1.jpg",
+      "totalAmount": 100.00,
+      "status": "PICKUPED",
+      "orderType": "RENT",
+      "createdAt": "2024-01-10T08:00:00Z",
+      "createdBy": "",
+      "pickupPlanAt": "2024-01-15T10:00:00Z",
+      "returnPlanAt": "2024-01-20T18:00:00Z"
+    }
+  ]
+}
+```
+
+**Note:**
+- Maximum 20 orders returned
+- Results are sorted by `createdAt` in descending order
+- Excludes CANCELLED orders
+- `productImage` is the first image from the first product in the order
+
+**Response Headers:**
+- `ETag`: For caching (304 Not Modified if unchanged)
+- `Cache-Control`: `private, max-age=60`
+
+**Role-Based Filtering:**
+- **OUTLET_ADMIN/OUTLET_STAFF**: See recent orders for their outlet only
+- **MERCHANT**: See recent orders for all their outlets
+- **ADMIN**: See system-wide recent orders
 
 ---
 
