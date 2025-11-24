@@ -596,12 +596,12 @@ const Pricing = () => {
           // Sort plans by sortOrder and filter active ones
           const activePlans = response.data
             .filter(plan => plan.isActive)
-            // Hide trial plans: remove plans named like Trial or with 0 price and trialDays > 0
+            // Hide trial plans only: remove plans named like Trial
+            // Keep contact plans (basePrice = 0 but has "contact" in description)
             .filter(plan => {
               const name = (plan.name || '').toLowerCase();
               const isTrialName = name.includes('trial');
-              const isFreeTrial = (plan.trialDays && plan.trialDays > 0) && (plan.basePrice === 0);
-              return !isTrialName && !isFreeTrial;
+              return !isTrialName; // Only filter out plans with "trial" in name
             })
             .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
           setPlans(activePlans);
@@ -677,11 +677,18 @@ const Pricing = () => {
         included: true
       }));
 
+      // Check if it's a contact plan and format price accordingly
+      const description = (plan.description || '').toLowerCase();
+      const isContactPlan = (monthlyPrice === 0) && (description.includes('contact') || description.includes('liên hệ'));
+      const displayPrice = isContactPlan 
+        ? (tPlans('fields.contactPrice') || 'Contact') 
+        : formatCurrency(monthlyPrice, plan.currency);
+
       return {
         id: plan.id,
         name: plan.name,
         subtitle: plan.description || '',
-        price: formatCurrency(monthlyPrice, plan.currency),
+        price: displayPrice,
         period: periodLabel,
         description: plan.description || '',
         features: features,

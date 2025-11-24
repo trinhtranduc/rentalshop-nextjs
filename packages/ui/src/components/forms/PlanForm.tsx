@@ -78,7 +78,9 @@ import {
   getBillingCycleDiscount,
   formatBillingCycle,
   translatePlanFeature,
-  AVAILABLE_PLAN_FEATURES
+  AVAILABLE_PLAN_FEATURES,
+  BASIC_PLAN_FEATURES,
+  PROFESSIONAL_PLAN_FEATURES
 } from '@rentalshop/utils';
 import { usePlansTranslations } from '@rentalshop/hooks';
 
@@ -951,8 +953,44 @@ export const PlanForm: React.FC<PlanFormProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-sm text-text-secondary mb-4">
-              {t('fields.selectFeatures') || 'Select features included in this plan'}
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm text-text-secondary">
+                {t('fields.selectFeatures') || 'Select features included in this plan'}
+              </div>
+              <div className="text-sm text-text-primary font-medium">
+                {formData.features.length} {formData.features.length === 1 ? 'feature' : 'features'} selected
+              </div>
+            </div>
+
+            {/* Quick Select Buttons */}
+            <div className="flex gap-2 mb-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleInputChange('features', [...BASIC_PLAN_FEATURES])}
+                className="text-xs"
+              >
+                Use Basic Plan Features ({BASIC_PLAN_FEATURES.length})
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleInputChange('features', [...PROFESSIONAL_PLAN_FEATURES])}
+                className="text-xs"
+              >
+                Use Professional Plan Features ({PROFESSIONAL_PLAN_FEATURES.length})
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleInputChange('features', [])}
+                className="text-xs"
+              >
+                Clear All
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
