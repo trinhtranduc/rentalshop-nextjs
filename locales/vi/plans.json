@@ -5,9 +5,21 @@
   "fields": {
     "name": "Tên gói",
     "price": "Giá",
+    "basePrice": "Giá cơ bản",
     "features": "Tính năng",
     "billingCycle": "Chu kỳ thanh toán",
-    "description": "Mô tả"
+    "description": "Mô tả",
+    "contactPrice": "Liên hệ",
+    "enterPrice": "Nhập giá",
+    "priceType": "Loại giá",
+    "platformAccess": "Truy cập nền tảng",
+    "webAccess": "Truy cập Web",
+    "mobileAccess": "Truy cập Mobile",
+    "webAccessDescription": "Truy cập qua trình duyệt web (Máy tính, Máy tính bảng)",
+    "mobileAccessDescription": "Truy cập qua ứng dụng di động (iOS, Android)",
+    "noPlatformAccessWarning": "Cảnh báo: Gói này không có nền tảng nào được kích hoạt. Người dùng sẽ không thể truy cập hệ thống.",
+    "allPlatformsEnabled": "Gói này cho phép truy cập từ cả web và mobile.",
+    "selectPlatforms": "Chọn các nền tảng mà người dùng có thể truy cập với gói này"
   },
   "types": {
     "free": "Miễn phí",
@@ -56,7 +68,29 @@
     "limited": "Giới hạn",
     "basic": "Cơ bản",
     "advanced": "Nâng cao",
-    "priority": "Ưu tiên"
+    "priority": "Ưu tiên",
+    "mobileAppAccess": "Truy cập ứng dụng di động",
+    "basicInventoryManagement": "Quản lý kho cơ bản",
+    "customerManagement": "Quản lý khách hàng",
+    "orderProcessing": "Xử lý đơn hàng",
+    "basicReporting": "Báo cáo cơ bản",
+    "publicProductCatalog": "Danh mục sản phẩm công khai",
+    "productPublicCheck": "Kiểm tra sản phẩm công khai",
+    "webDashboard": "Bảng điều khiển web",
+    "advancedReporting": "Báo cáo nâng cao",
+    "customBranding": "Tùy chỉnh thương hiệu",
+    "prioritySupport": "Hỗ trợ ưu tiên",
+    "apiIntegration": "Tích hợp API",
+    "multiOutletManagement": "Quản lý nhiều cửa hàng",
+    "advancedAnalytics": "Phân tích nâng cao",
+    "whiteLabel": "Nhãn trắng"
+  },
+  "pricing": {
+    "addOnUserPrice": "Giá người dùng bổ sung",
+    "addOnUserDescription": "Thêm 30,000 VND cho mỗi người dùng bổ sung",
+    "basePrice": "Giá cơ bản",
+    "addOnUsers": "Người dùng bổ sung",
+    "totalPrice": "Tổng giá"
   },
   "messages": {
     "subscribeSuccess": "Đăng ký gói thành công",

@@ -41,19 +41,86 @@ export async function GET(
 
       console.log('✅ Plan found:', plan);
 
+      // Transform response to match Plan interface
+      // Handle limits and features - they may be JSON strings or already parsed
+      let limits: any;
+      let features: string[];
+
+      try {
+        limits = typeof plan.limits === 'string' 
+          ? JSON.parse(plan.limits) 
+          : plan.limits || {};
+      } catch (e) {
+        console.error('❌ Error parsing limits:', e);
+        limits = {};
+      }
+
+      try {
+        features = typeof plan.features === 'string' 
+          ? JSON.parse(plan.features || '[]') 
+          : (Array.isArray(plan.features) ? plan.features : []);
+      } catch (e) {
+        console.error('❌ Error parsing features:', e);
+        features = [];
+      }
+
+      // Generate pricing from basePrice
+      const generatePlanPricing = (basePrice: number) => {
+        return {
+          monthly: {
+            price: basePrice,
+            discount: 0,
+            savings: 0
+          },
+          quarterly: {
+            price: basePrice * 3,
+            discount: 0,
+            savings: 0
+          },
+          semi_annual: {
+            price: basePrice * 6 * 0.95,
+            discount: 5,
+            savings: basePrice * 6 * 0.05
+          },
+          annual: {
+            price: basePrice * 12 * 0.90,
+            discount: 10,
+            savings: basePrice * 12 * 0.10
+          }
+        };
+      };
+
+      const transformedPlan = {
+        id: plan.id,
+        name: plan.name,
+        description: plan.description,
+        basePrice: plan.basePrice,
+        currency: plan.currency || 'USD',
+        trialDays: plan.trialDays || 0,
+        limits: limits,
+        features: features,
+        isActive: plan.isActive ?? true,
+        isPopular: plan.isPopular ?? false,
+        sortOrder: plan.sortOrder || 0,
+        pricing: generatePlanPricing(plan.basePrice),
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt,
+        ...(plan.deletedAt && { deletedAt: plan.deletedAt })
+      };
+
       return NextResponse.json({
         success: true,
-        data: plan,
+        data: transformedPlan,
         code: 'PLAN_RETRIEVED_SUCCESS',
         message: 'Plan retrieved successfully'
       });
 
     } catch (error) {
       console.error('❌ Error fetching plan:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('FETCH_PLAN_FAILED', error instanceof Error ? error.message : 'Failed to fetch plan'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
+      
+      // Use unified error handling system (consistent with other APIs)
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
   })(request);
 }
@@ -210,10 +277,10 @@ export async function PUT(
 
     } catch (error) {
       console.error('❌ Error updating plan:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('UPDATE_PLAN_FAILED', error instanceof Error ? error.message : 'Failed to update plan'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
+      
+      // Use unified error handling system (consistent with other APIs)
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
   })(request);
 }

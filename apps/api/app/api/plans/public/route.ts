@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import type { Plan } from '@rentalshop/types';
 
 /**
@@ -154,12 +154,12 @@ export async function GET(request: NextRequest) {
     // Transform raw Prisma data to Plan type
     const plans = result.data.map(transformPlan).filter(plan => plan !== null);
 
-    return NextResponse.json({
-      success: true,
-      data: plans
-    }, {
-      headers: buildCorsHeaders(request)
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('PLANS_RETRIEVED_SUCCESS', plans),
+      {
+        headers: buildCorsHeaders(request)
+      }
+    );
 
   } catch (error) {
     console.error('Error fetching public plans:', error);

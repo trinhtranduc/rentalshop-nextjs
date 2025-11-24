@@ -5,7 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Button, Logo, LanguageSwitcher } from '@rentalshop/ui'
-import { publicPlansApi } from '@rentalshop/utils'
+import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
+import { usePlansTranslations } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
 import { 
   Check, 
@@ -574,6 +575,7 @@ const FAQ = () => {
 
 const Pricing = () => {
   const tPricing = useTranslations('landing.pricing')
+  const tPlans = usePlansTranslations()
   const [selectedDuration, setSelectedDuration] = useState<'3' | '6' | '12'>('3'); // '3', '6', '12'
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -669,9 +671,9 @@ const Pricing = () => {
         }
       }
 
-      // Transform features array to display format
+      // Transform features array to display format with translation
       const features = featuresArray.map((feature) => ({
-        text: feature,
+        text: translatePlanFeature(feature, tPlans),
         included: true
       }));
 
