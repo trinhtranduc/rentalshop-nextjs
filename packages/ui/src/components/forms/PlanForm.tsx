@@ -88,6 +88,21 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   hideSubmitButton = false,
   formId
 }) => {
+  // Helper function to parse features from various formats
+  const parseFeatures = (features: any): string[] => {
+    if (!features) return [];
+    if (Array.isArray(features)) return features;
+    if (typeof features === 'string') {
+      try {
+        const parsed = JSON.parse(features);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   const [formData, setFormData] = useState<PlanFormData>({
     name: '',
     description: '',
@@ -100,12 +115,13 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     maxUsers: 1,
     maxProducts: 10,
     maxCustomers: 50,
-    features: [],
     isActive: true,
     isPopular: false,
     mobileOnly: false,  // ✅ NEW: Default to false
     sortOrder: 0,
-    ...initialData
+    ...initialData,
+    // Ensure features is always an array (parse from string if needed)
+    features: parseFeatures(initialData?.features || [])
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof PlanFormData, string>>>({});
@@ -190,14 +206,16 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   };
 
   const addFeature = () => {
-    if (newFeature.trim() && !formData.features.includes(newFeature.trim())) {
-      handleInputChange('features', [...formData.features, newFeature.trim()]);
+    const currentFeatures = Array.isArray(formData.features) ? formData.features : [];
+    if (newFeature.trim() && !currentFeatures.includes(newFeature.trim())) {
+      handleInputChange('features', [...currentFeatures, newFeature.trim()]);
       setNewFeature('');
     }
   };
 
   const removeFeature = (index: number) => {
-    handleInputChange('features', formData.features.filter((_, i) => i !== index));
+    const currentFeatures = Array.isArray(formData.features) ? formData.features : [];
+    handleInputChange('features', currentFeatures.filter((_, i) => i !== index));
   };
 
   const getLimitText = (limit: number) => {
@@ -532,7 +550,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
               </Button>
             </div>
 
-            {formData.features.length > 0 && (
+            {formData.features && Array.isArray(formData.features) && formData.features.length > 0 && (
               <div className="space-y-2">
                 <div className="text-sm font-medium text-text-primary">Plan Features:</div>
                 <div className="space-y-2">

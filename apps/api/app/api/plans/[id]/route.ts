@@ -93,8 +93,47 @@ export async function PUT(
         );
       }
 
+      // Transform data: filter out read-only fields and transform features/limits
+      const updateData: any = {};
+      
+      // Only include allowed fields (based on Plan schema)
+      const allowedFields = [
+        'name', 'description', 'basePrice', 'currency', 'trialDays',
+        'isActive', 'isPopular', 'sortOrder'
+      ];
+      
+      allowedFields.forEach(field => {
+        if (body[field] !== undefined) {
+          updateData[field] = body[field];
+        }
+      });
+
+      // Transform limits: if it's a string (JSON), keep it; if object, stringify
+      if (body.limits !== undefined) {
+        if (typeof body.limits === 'string') {
+          // Already a JSON string
+          updateData.limits = body.limits;
+        } else if (typeof body.limits === 'object') {
+          // Convert object to JSON string
+          updateData.limits = JSON.stringify(body.limits);
+        }
+      }
+
+      // Transform features: if it's an array, stringify; if string, keep it
+      if (body.features !== undefined) {
+        if (Array.isArray(body.features)) {
+          // Convert array to JSON string
+          updateData.features = JSON.stringify(body.features);
+        } else if (typeof body.features === 'string') {
+          // Already a JSON string
+          updateData.features = body.features;
+        }
+      }
+
+      console.log('🔍 Transformed update data:', updateData);
+
       // Update the plan using the simplified database API
-      const updatedPlan = await db.plans.update(planId, body);
+      const updatedPlan = await db.plans.update(planId, updateData);
       console.log('✅ Plan updated successfully:', updatedPlan);
 
       return NextResponse.json({
