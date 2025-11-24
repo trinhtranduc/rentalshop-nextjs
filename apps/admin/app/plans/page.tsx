@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
   PageWrapper,
@@ -66,6 +66,7 @@ export default function PlansPage() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [loadingViewPlan, setLoadingViewPlan] = useState(false);
   const [deletingPlan, setDeletingPlan] = useState<Plan | null>(null);
   const [savingPlan, setSavingPlan] = useState(false);
 
@@ -145,6 +146,45 @@ export default function PlansPage() {
     setSelectedPlan(plan);
     setShowViewDialog(true);
   }, []);
+
+  // Auto-load plan when view dialog opens
+  useEffect(() => {
+    const loadPlanForView = async () => {
+      if (!showViewDialog || !selectedPlan?.id) {
+        return;
+      }
+
+      try {
+        setLoadingViewPlan(true);
+        const { plansApi } = await import('@rentalshop/utils');
+        
+        const response = await plansApi.getPlanById(selectedPlan.id);
+        
+        if (response.success && response.data) {
+          // Transform plan data to ensure limits and features are parsed
+          const planData = response.data;
+          const transformedPlan: Plan = {
+            ...planData,
+            limits: typeof planData.limits === 'string' 
+              ? JSON.parse(planData.limits) 
+              : planData.limits || {},
+            features: typeof planData.features === 'string'
+              ? JSON.parse(planData.features || '[]')
+              : (Array.isArray(planData.features) ? planData.features : [])
+          };
+          
+          setSelectedPlan(transformedPlan);
+        }
+      } catch (error) {
+        console.error('Error loading plan for view:', error);
+        // Don't show error toast, just use existing plan data
+      } finally {
+        setLoadingViewPlan(false);
+      }
+    };
+
+    loadPlanForView();
+  }, [showViewDialog, selectedPlan?.id]);
 
   const handleEditPlan = useCallback((plan: Plan) => {
     console.log('🔧 Edit Plan clicked:', plan);
@@ -412,7 +452,15 @@ export default function PlansPage() {
               </DialogTitle>
             </DialogHeader>
 
-            <div className="mt-6 space-y-6">
+            {loadingViewPlan ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
+                  <p className="text-text-secondary">Loading plan data...</p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6 space-y-6">
               {/* Plan Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -504,20 +552,21 @@ export default function PlansPage() {
                   </div>
                 );
               })()}
-            </div>
 
-            <div className="mt-6 flex justify-end gap-2">
-              <Button variant="outline" onClick={handleCloseViewDialog}>
-                Close
-              </Button>
-              <Button onClick={() => {
-                if (selectedPlan) {
-                  handleEditPlan(selectedPlan);
-                }
-              }}>
-                Edit Plan
-              </Button>
-            </div>
+              <div className="mt-6 flex justify-end gap-2">
+                <Button variant="outline" onClick={handleCloseViewDialog}>
+                  Close
+                </Button>
+                <Button onClick={() => {
+                  if (selectedPlan) {
+                    handleEditPlan(selectedPlan);
+                  }
+                }}>
+                  Edit Plan
+                </Button>
+              </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       )}

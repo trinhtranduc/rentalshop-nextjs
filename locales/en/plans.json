@@ -5,9 +5,21 @@
   "fields": {
     "name": "Plan Name",
     "price": "Price",
+    "basePrice": "Base Price",
     "features": "Features",
     "billingCycle": "Billing Cycle",
-    "description": "Description"
+    "description": "Description",
+    "contactPrice": "Contact",
+    "enterPrice": "Enter Price",
+    "priceType": "Price Type",
+    "platformAccess": "Platform Access",
+    "webAccess": "Web Access",
+    "mobileAccess": "Mobile Access",
+    "webAccessDescription": "Access via web browser (Desktop, Tablet)",
+    "mobileAccessDescription": "Access via mobile app (iOS, Android)",
+    "noPlatformAccessWarning": "Warning: This plan has no platform access enabled. Users won't be able to access the system.",
+    "allPlatformsEnabled": "This plan allows access from both web and mobile platforms.",
+    "selectPlatforms": "Select which platforms users can access with this plan"
   },
   "types": {
     "free": "Free",
@@ -56,7 +68,29 @@
     "limited": "Limited",
     "basic": "Basic",
     "advanced": "Advanced",
-    "priority": "Priority"
+    "priority": "Priority",
+    "mobileAppAccess": "Mobile app access",
+    "basicInventoryManagement": "Basic inventory management",
+    "customerManagement": "Customer management",
+    "orderProcessing": "Order processing",
+    "basicReporting": "Basic reporting",
+    "publicProductCatalog": "Public product catalog",
+    "productPublicCheck": "Product public check",
+    "webDashboard": "Web dashboard",
+    "advancedReporting": "Advanced reporting",
+    "customBranding": "Custom branding",
+    "prioritySupport": "Priority support",
+    "apiIntegration": "API integration",
+    "multiOutletManagement": "Multi-outlet management",
+    "advancedAnalytics": "Advanced analytics",
+    "whiteLabel": "White label"
+  },
+  "pricing": {
+    "addOnUserPrice": "Additional user price",
+    "addOnUserDescription": "Add 30,000 VND per additional user",
+    "basePrice": "Base price",
+    "addOnUsers": "Add-on users",
+    "totalPrice": "Total price"
   },
   "messages": {
     "subscribeSuccess": "Successfully subscribed to plan",
