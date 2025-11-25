@@ -8,6 +8,7 @@
 
 import { prisma } from './client';
 import type { ProductSearchFilter } from '@rentalshop/types';
+import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 
 // ============================================================================
 // PRODUCT LOOKUP FUNCTIONS (BY PUBLIC ID)
@@ -416,10 +417,14 @@ export async function createProduct(input: any): Promise<any> {
     totalStock: input.totalStock || 0,
     rentPrice: input.rentPrice,
     salePrice: input.salePrice,
+    costPrice: input.costPrice,
     deposit: input.deposit || 0,
     images: input.images,
     isActive: input.isActive ?? true,
     merchantId: merchant.id, // Use CUID
+    // Optional pricing configuration (default FIXED if null)
+    pricingType: input.pricingType || null,
+    durationConfig: input.durationConfig || null,
   };
 
   // Only add categoryId if category is provided
@@ -497,8 +502,12 @@ export async function updateProduct(
   if (input.description !== undefined) updateData.description = input.description;
   if (input.barcode !== undefined) updateData.barcode = input.barcode;
   if (input.totalStock !== undefined) updateData.totalStock = input.totalStock;
+  // Optional pricing configuration
+  if (input.pricingType !== undefined) updateData.pricingType = input.pricingType;
+  if (input.durationConfig !== undefined) updateData.durationConfig = input.durationConfig;
   if (input.rentPrice !== undefined) updateData.rentPrice = input.rentPrice;
   if (input.salePrice !== undefined) updateData.salePrice = input.salePrice;
+  if (input.costPrice !== undefined) updateData.costPrice = input.costPrice;
   if (input.deposit !== undefined) updateData.deposit = input.deposit;
   if (input.images !== undefined) updateData.images = input.images;
   if (input.isActive !== undefined) updateData.isActive = input.isActive;
@@ -640,6 +649,233 @@ export async function updateProductStock(
 }
 
 /**
+ * Sync OutletStock.available field to ensure it equals stock - renting
+ * This ensures data consistency after any stock or renting updates
+ */
+export async function syncOutletStockAvailable(
+  productId: number,
+  outletId: number
+): Promise<void> {
+  // Find product and outlet by id
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true }
+  });
+  
+  if (!product) {
+    throw new Error(`Product with id ${productId} not found`);
+  }
+
+  const outlet = await prisma.outlet.findUnique({
+    where: { id: outletId },
+    select: { id: true }
+  });
+  
+  if (!outlet) {
+    throw new Error(`Outlet with id ${outletId} not found`);
+  }
+
+  // Get current outlet stock
+  const outletStock = await prisma.outletStock.findUnique({
+    where: {
+      productId_outletId: {
+        productId: product.id,
+        outletId: outlet.id,
+      },
+    },
+  });
+
+  if (!outletStock) {
+    console.warn(`OutletStock not found for product ${productId} and outlet ${outletId}`);
+    return;
+  }
+
+  // Recalculate available = stock - renting
+  const calculatedAvailable = Math.max(0, outletStock.stock - outletStock.renting);
+
+  // Update if different
+  if (outletStock.available !== calculatedAvailable) {
+    await prisma.outletStock.update({
+      where: { id: outletStock.id },
+      data: { available: calculatedAvailable },
+    });
+    console.log(`✅ Synced OutletStock.available: ${outletStock.available} → ${calculatedAvailable} (product ${productId}, outlet ${outletId})`);
+  }
+}
+
+/**
+ * Update OutletStock when order status changes
+ * Handles both RENT and SALE orders according to Odoo best practices:
+ * - RENT: Uses renting field (temporary), stock doesn't change
+ * - SALE: Decreases stock permanently (sold, not returned)
+ */
+export async function updateOutletStockForOrder(
+  orderId: number,
+  oldStatus: string | null,
+  newStatus: string,
+  orderType: 'RENT' | 'SALE',
+  outletId: number,
+  orderItems: Array<{ productId: number; quantity: number }>
+): Promise<void> {
+  console.log(`🔄 Updating outlet stock for order ${orderId}: ${oldStatus} → ${newStatus} (${orderType})`);
+
+  // Find outlet by id
+  const outlet = await prisma.outlet.findUnique({
+    where: { id: outletId },
+    select: { id: true }
+  });
+  
+  if (!outlet) {
+    throw new Error(`Outlet with id ${outletId} not found`);
+  }
+
+  // Process each order item
+  for (const item of orderItems) {
+    if (!item.productId || !item.quantity || item.quantity <= 0) {
+      console.warn(`⚠️ Skipping invalid order item:`, item);
+      continue;
+    }
+
+    // Find product by id
+    const product = await prisma.product.findUnique({
+      where: { id: item.productId },
+      select: { id: true }
+    });
+
+    if (!product) {
+      console.warn(`⚠️ Product ${item.productId} not found, skipping stock update`);
+      continue;
+    }
+
+    // Get or create outlet stock
+    let outletStock = await prisma.outletStock.findUnique({
+      where: {
+        productId_outletId: {
+          productId: product.id,
+          outletId: outlet.id,
+        },
+      },
+    });
+
+    if (!outletStock) {
+      console.warn(`⚠️ OutletStock not found for product ${item.productId} and outlet ${outletId}, creating...`);
+      outletStock = await prisma.outletStock.create({
+        data: {
+          productId: product.id,
+          outletId: outlet.id,
+          stock: 0,
+          available: 0,
+          renting: 0,
+        },
+      });
+    }
+
+    // Determine stock changes based on order type and status transition
+    let stockChange = 0;
+    let rentingChange = 0;
+    let availableChange = 0;
+
+    if (orderType === ORDER_TYPE.SALE) {
+      // SALE orders: Permanently decrease stock when COMPLETED/PICKUPED
+      if (newStatus === ORDER_STATUS.COMPLETED || newStatus === ORDER_STATUS.PICKUPED) {
+        // Only decrease if wasn't already completed/pickuped
+        if (oldStatus !== ORDER_STATUS.COMPLETED && oldStatus !== ORDER_STATUS.PICKUPED) {
+          stockChange = -item.quantity;
+          availableChange = -item.quantity;
+          console.log(`📉 SALE order ${orderId}: Decreasing stock by ${item.quantity} for product ${item.productId}`);
+        }
+      } else if (newStatus === ORDER_STATUS.CANCELLED) {
+        // Rollback stock if was previously completed/pickuped
+        if (oldStatus === ORDER_STATUS.COMPLETED || oldStatus === ORDER_STATUS.PICKUPED) {
+          stockChange = item.quantity;
+          availableChange = item.quantity;
+          console.log(`📈 SALE order ${orderId}: Rolling back stock by ${item.quantity} for product ${item.productId}`);
+        }
+      }
+      // RESERVED status doesn't change stock (just reserved, not sold yet)
+    } else if (orderType === ORDER_TYPE.RENT) {
+      // RENT orders: Use renting field (temporary), stock doesn't change
+      if (newStatus === ORDER_STATUS.RESERVED) {
+        // Reserve: Decrease available (temporary reservation)
+        // Only if not already reserved
+        if (oldStatus !== ORDER_STATUS.RESERVED && oldStatus !== ORDER_STATUS.PICKUPED) {
+          availableChange = -item.quantity;
+          console.log(`🔒 RENT order ${orderId}: Reserving ${item.quantity} for product ${item.productId}`);
+        }
+      } else if (newStatus === ORDER_STATUS.PICKUPED) {
+        // Pickup: Increase renting, decrease available (if not already picked up)
+        if (oldStatus !== ORDER_STATUS.PICKUPED) {
+          if (oldStatus === ORDER_STATUS.RESERVED) {
+            // From RESERVED: renting increases, available already decreased in RESERVED
+            rentingChange = item.quantity;
+            // availableChange = 0 (already decreased in RESERVED)
+          } else {
+            // From other status (e.g., directly to PICKUPED): both renting and available change
+            rentingChange = item.quantity;
+            availableChange = -item.quantity;
+          }
+          console.log(`📤 RENT order ${orderId}: Picking up ${item.quantity} for product ${item.productId}`);
+        }
+      } else if (newStatus === ORDER_STATUS.RETURNED) {
+        // Return: Decrease renting, increase available
+        if (oldStatus === ORDER_STATUS.PICKUPED) {
+          rentingChange = -item.quantity;
+          availableChange = item.quantity;
+          console.log(`📥 RENT order ${orderId}: Returning ${item.quantity} for product ${item.productId}`);
+        }
+      } else if (newStatus === ORDER_STATUS.CANCELLED) {
+        // Cancel: Rollback based on previous status
+        if (oldStatus === ORDER_STATUS.PICKUPED) {
+          // Was picked up: rollback renting and available
+          rentingChange = -item.quantity;
+          availableChange = item.quantity;
+          console.log(`↩️ RENT order ${orderId}: Cancelling pickup, rolling back ${item.quantity} for product ${item.productId}`);
+        } else if (oldStatus === ORDER_STATUS.RESERVED) {
+          // Was only reserved: rollback available
+          availableChange = item.quantity;
+          console.log(`↩️ RENT order ${orderId}: Cancelling reservation, rolling back ${item.quantity} for product ${item.productId}`);
+        }
+      }
+    }
+
+    // Apply changes if any
+    if (stockChange !== 0 || rentingChange !== 0 || availableChange !== 0) {
+      const updateData: any = {};
+      
+      // Use increment for stock and renting
+      if (stockChange !== 0) {
+        updateData.stock = { increment: stockChange };
+      }
+      
+      if (rentingChange !== 0) {
+        updateData.renting = { increment: rentingChange };
+      }
+
+      // Calculate final available value to ensure consistency: available = stock - renting
+      // This is more reliable than using increment, as it ensures the formula is always correct
+      const newStock = outletStock.stock + stockChange;
+      const newRenting = outletStock.renting + rentingChange;
+      const finalAvailable = Math.max(0, newStock - newRenting);
+      updateData.available = finalAvailable;
+
+      await prisma.outletStock.update({
+        where: { id: outletStock.id },
+        data: updateData,
+      });
+
+      console.log(`✅ Updated OutletStock for product ${item.productId}, outlet ${outletId}:`, {
+        stockChange,
+        rentingChange,
+        availableChange,
+        newStock,
+        newRenting,
+        newAvailable: finalAvailable,
+      });
+    }
+  }
+}
+
+/**
  * Delete product - follows dual ID system
  * Input: id (number), Output: deleted product data
  */
@@ -727,7 +963,7 @@ export const simplifiedProducts = {
         category: { select: { id: true, name: true } },
         outletStock: {
           include: {
-            outlet: { select: { id: true, name: true } }
+            outlet: { select: { id: true, name: true, address: true } }
           }
         }
       }
@@ -850,21 +1086,99 @@ export const simplifiedProducts = {
 
   /**
    * Search products with simple filters (simplified API)
+   * Handles conversion of public IDs (numbers) to CUIDs for database queries
    */
   search: async (filters: any) => {
-    const { page = 1, limit = 20, ...whereFilters } = filters;
+    const { page = 1, limit = 20, sortBy, sortOrder, ...whereFilters } = filters;
     const skip = (page - 1) * limit;
 
     // Build where clause
-    const where: any = {};
+    const where: any = {
+      isActive: whereFilters.isActive !== undefined ? whereFilters.isActive : true
+    };
     
-    if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
-    if (whereFilters.categoryId) where.categoryId = whereFilters.categoryId;
-    // Default to active products only unless explicitly requesting all
-    if (whereFilters.isActive !== undefined) {
-      where.isActive = whereFilters.isActive;
-    } else {
-      where.isActive = true; // Default: only show active products
+    // Convert merchantId (public ID) to CUID
+    if (whereFilters.merchantId) {
+      const merchant = await prisma.merchant.findUnique({
+        where: { id: whereFilters.merchantId },
+        select: { id: true }
+      });
+      if (merchant) {
+        where.merchantId = merchant.id; // Use CUID
+      } else {
+        // Merchant not found, return empty result
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          hasMore: false
+        };
+      }
+    }
+    
+    // Convert categoryId (public ID) to CUID
+    if (whereFilters.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: whereFilters.categoryId },
+        select: { id: true }
+      });
+      if (category) {
+        where.categoryId = category.id; // Use CUID
+      } else {
+        // Category not found, return empty result
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          hasMore: false
+        };
+      }
+    }
+    
+    // Convert outletId (public ID) to CUID and filter by outlet stock
+    if (whereFilters.outletId) {
+      const outlet = await prisma.outlet.findUnique({
+        where: { id: whereFilters.outletId },
+        select: { id: true }
+      });
+      if (outlet) {
+        where.outletStock = {
+          some: {
+            outletId: outlet.id, // Use CUID
+            stock: { gt: 0 }
+          }
+        };
+      } else {
+        // Outlet not found, return empty result
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          hasMore: false
+        };
+      }
+    }
+    
+    // Availability filter
+    if (whereFilters.available !== undefined) {
+      if (whereFilters.available) {
+        where.outletStock = {
+          ...(where.outletStock || {}),
+          some: {
+            available: { gt: 0 }
+          }
+        };
+      } else {
+        where.outletStock = {
+          ...(where.outletStock || {}),
+          none: {
+            available: { gt: 0 }
+          }
+        };
+      }
     }
     
     // Text search (case-insensitive)
@@ -884,6 +1198,9 @@ export const simplifiedProducts = {
       if (whereFilters.maxPrice !== undefined) where.rentPrice.lte = whereFilters.maxPrice;
     }
 
+    // Build orderBy clause
+    const orderBy = buildProductOrderByClause(sortBy, sortOrder);
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
@@ -892,11 +1209,11 @@ export const simplifiedProducts = {
           category: { select: { id: true, name: true } },
           outletStock: {
             include: {
-              outlet: { select: { id: true, name: true } }
+              outlet: { select: { id: true, name: true, address: true } }
             }
           }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit
       }),

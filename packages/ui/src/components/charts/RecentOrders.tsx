@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
+import { getOrderStatusClassName } from '@rentalshop/constants';
 
 interface RecentOrder {
   id: number;
@@ -25,7 +25,7 @@ interface RecentOrdersProps {
 }
 
 const getStatusColor = (status: string) => {
-  return ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || 'bg-gray-100 text-gray-800';
+  return getOrderStatusClassName(status);
 };
 
 const getOrderTypeColor = (orderType: string) => {

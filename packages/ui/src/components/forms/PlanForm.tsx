@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Card, 
   CardHeader, 
@@ -29,7 +29,10 @@ import {
   CheckCircle,
   XCircle,
   Star,
-  Settings
+  Settings,
+  Monitor,
+  Smartphone,
+  Globe
 } from 'lucide-react';
 import type { 
   PlanCreateInput, 
@@ -37,17 +40,56 @@ import type {
   Plan,
   BillingCycle
 } from '@rentalshop/types';
-import { BILLING_CYCLES } from '@rentalshop/constants';
+// Import billing cycles - use the array directly from constants
+// Note: BILLING_CYCLES_ARRAY should be exported from @rentalshop/constants
+// For now, we'll define it locally based on the constants structure
+const BILLING_CYCLES_ARRAY = [
+  {
+    value: 'monthly' as const,
+    label: 'Monthly',
+    months: 1,
+    discount: 0,
+    description: 'Pay monthly, cancel anytime'
+  },
+  {
+    value: 'quarterly' as const,
+    label: 'Quarterly',
+    months: 3,
+    discount: 0,
+    description: 'Pay quarterly, cancel anytime'
+  },
+  {
+    value: 'semi_annual' as const,
+    label: 'Semi-Annual',
+    months: 6,
+    discount: 5,
+    description: 'Save 5% with semi-annual billing'
+  },
+  {
+    value: 'annual' as const,
+    label: 'Annual',
+    months: 12,
+    discount: 10,
+    description: 'Save 10% with annual billing'
+  }
+];
 import { 
   calculateDiscountedPrice,
   getBillingCycleDiscount,
-  formatBillingCycle
+  formatBillingCycle,
+  translatePlanFeature,
+  AVAILABLE_PLAN_FEATURES,
+  BASIC_PLAN_FEATURES,
+  PROFESSIONAL_PLAN_FEATURES,
+  ENTERPRISE_PLAN_FEATURES
 } from '@rentalshop/utils';
+import { usePlansTranslations } from '@rentalshop/hooks';
 
 interface PlanFormData {
   name: string;
   description: string;
-  basePrice: number;  // ✅ Updated: Use basePrice instead of price
+  basePrice: number | string;  // ✅ Can be number or "Liên hệ" (Contact)
+  priceType: 'fixed' | 'contact';  // ✅ NEW: Price type selector
   currency: string;
   billingCycle: BillingCycle;
   billingCycleMonths: number;
@@ -60,6 +102,8 @@ interface PlanFormData {
   isActive: boolean;
   isPopular: boolean;
   mobileOnly: boolean;  // ✅ NEW: Mobile-only plan flag
+  allowWebAccess: boolean;  // ✅ NEW: Allow web access
+  allowMobileAccess: boolean;  // ✅ NEW: Allow mobile access
   sortOrder: number;
 }
 
@@ -88,29 +132,146 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   hideSubmitButton = false,
   formId
 }) => {
+  const t = usePlansTranslations();
+  
+  // Helper function to translate feature names (using utility)
+  const translateFeature = (feature: string): string => {
+    return translatePlanFeature(feature, t);
+  };
+  
+  // Helper function to parse features from various formats
+  const parseFeatures = (features: any): string[] => {
+    if (!features) return [];
+    if (Array.isArray(features)) return features;
+    if (typeof features === 'string') {
+      try {
+        const parsed = JSON.parse(features);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  // Determine initial price type (check basePrice and description)
+  const getInitialPriceType = (): 'fixed' | 'contact' => {
+    // Check if basePrice is string (already contact)
+    if (typeof initialData?.basePrice === 'string') {
+      const priceStr = initialData.basePrice.toLowerCase();
+      const contactText = t('fields.contactPrice').toLowerCase();
+      if (priceStr === 'liên hệ' || priceStr === 'contact' || priceStr === contactText) {
+        return 'contact';
+      }
+    }
+    
+    // Check if basePrice is 0 and description contains contact text
+    if (initialData?.basePrice === 0 && initialData?.description) {
+      const desc = initialData.description.toLowerCase();
+      const contactText = t('fields.contactPrice').toLowerCase();
+      if (desc.includes('liên hệ') || desc.includes('contact') || desc.includes(contactText)) {
+        return 'contact';
+      }
+    }
+    
+    return 'fixed';
+  };
+
+  // Get initial basePrice value
+  const getInitialBasePrice = (): number | string => {
+    const priceType = getInitialPriceType();
+    if (priceType === 'contact') {
+      return t('fields.contactPrice');
+    }
+    return typeof initialData?.basePrice === 'number' ? initialData.basePrice : 0;
+  };
+
+  // Initialize form data with proper defaults
+  const initialPriceType = getInitialPriceType();
+  const initialBasePrice = getInitialBasePrice();
+  
+  // Extract limits from initialData - handle both direct limits object and nested structure
+  const limits = (initialData as any)?.limits || {};
+  const initialAllowWebAccess = limits.allowWebAccess !== undefined 
+    ? limits.allowWebAccess 
+    : true;
+  const initialAllowMobileAccess = limits.allowMobileAccess !== undefined 
+    ? limits.allowMobileAccess 
+    : true;
+
+  // Get limit values - check both limits object and direct properties (for backward compatibility)
+  const getLimitValue = (limitKey: string, directKey: string, defaultValue: number) => {
+    // First check limits object (correct structure from API)
+    if (limits[limitKey] !== undefined) {
+      return limits[limitKey];
+    }
+    // Fallback to direct property (backward compatibility)
+    if ((initialData as any)?.[directKey] !== undefined) {
+      return (initialData as any)[directKey];
+    }
+    return defaultValue;
+  };
+
   const [formData, setFormData] = useState<PlanFormData>({
-    name: '',
-    description: '',
-    basePrice: 0,  // ✅ Updated: Use basePrice instead of price
-    currency: 'USD',
-    billingCycle: 'monthly',
-    billingCycleMonths: 1,
-    trialDays: 0,
-    maxOutlets: 1,
-    maxUsers: 1,
-    maxProducts: 10,
-    maxCustomers: 50,
-    features: [],
-    isActive: true,
-    isPopular: false,
-    mobileOnly: false,  // ✅ NEW: Default to false
-    sortOrder: 0,
-    ...initialData
+    name: initialData?.name || '',
+    description: initialData?.description || '',
+    basePrice: initialBasePrice,
+    priceType: initialPriceType,
+    currency: initialData?.currency || 'USD',
+    billingCycle: (initialData as any)?.billingCycle || 'monthly',
+    billingCycleMonths: (initialData as any)?.billingCycleMonths || 1,
+    trialDays: initialData?.trialDays || 0,
+    maxOutlets: getLimitValue('outlets', 'maxOutlets', 1),
+    maxUsers: getLimitValue('users', 'maxUsers', 1),
+    maxProducts: getLimitValue('products', 'maxProducts', 10),
+    maxCustomers: getLimitValue('customers', 'maxCustomers', 50),
+    features: parseFeatures(initialData?.features || []),
+    isActive: initialData?.isActive !== undefined ? initialData.isActive : true,
+    isPopular: initialData?.isPopular !== undefined ? initialData.isPopular : false,
+    mobileOnly: (initialData as any)?.mobileOnly || false,
+    allowWebAccess: initialAllowWebAccess,
+    allowMobileAccess: initialAllowMobileAccess,
+    sortOrder: initialData?.sortOrder || 0,
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof PlanFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newFeature, setNewFeature] = useState('');
+
+  // Update formData when initialData changes (only when plan ID changes to prevent infinite loops)
+  const planId = (initialData as any)?.id;
+  const prevPlanIdRef = useRef<number | undefined>(undefined);
+  
+  useEffect(() => {
+    // Only update if plan ID changed (new plan loaded)
+    if (!planId || planId === prevPlanIdRef.current) {
+      return;
+    }
+    
+    const limits = (initialData as any)?.limits || {};
+    
+    setFormData(prev => ({
+      ...prev,
+      name: initialData.name || prev.name,
+      description: initialData.description || prev.description,
+      basePrice: getInitialBasePrice(),
+      priceType: getInitialPriceType(),
+      currency: initialData.currency || prev.currency,
+      trialDays: initialData.trialDays ?? prev.trialDays,
+      maxOutlets: limits.outlets ?? prev.maxOutlets,
+      maxUsers: limits.users ?? prev.maxUsers,
+      maxProducts: limits.products ?? prev.maxProducts,
+      maxCustomers: limits.customers ?? prev.maxCustomers,
+      features: parseFeatures(initialData?.features || []),
+      isActive: initialData.isActive ?? prev.isActive,
+      isPopular: initialData.isPopular ?? prev.isPopular,
+      allowWebAccess: limits.allowWebAccess ?? prev.allowWebAccess,
+      allowMobileAccess: limits.allowMobileAccess ?? prev.allowMobileAccess,
+      sortOrder: initialData.sortOrder ?? prev.sortOrder,
+    }));
+    
+    prevPlanIdRef.current = planId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId]);
 
   const handleInputChange = (field: keyof PlanFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -121,7 +282,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   };
 
   const handleBillingCycleChange = (cycle: BillingCycle) => {
-    const cycleOption = BILLING_CYCLES.find(option => option.value === cycle);
+    const cycleOption = BILLING_CYCLES_ARRAY.find((option: any) => option.value === cycle);
     setFormData(prev => ({ 
       ...prev, 
       billingCycle: cycle,
@@ -144,8 +305,12 @@ export const PlanForm: React.FC<PlanFormProps> = ({
       newErrors.description = 'Plan description is required';
     }
 
-    if (formData.basePrice < 0) {
+    // Validate basePrice: can be number >= 0 or "Liên hệ"
+    if (typeof formData.basePrice === 'number' && formData.basePrice < 0) {
       newErrors.basePrice = 'Price must be non-negative';
+    }
+    if (typeof formData.basePrice === 'string' && formData.basePrice.trim() === '') {
+      newErrors.basePrice = 'Price is required';
     }
 
     if (formData.trialDays < 0) {
@@ -181,7 +346,47 @@ export const PlanForm: React.FC<PlanFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
+      // Transform formData to match PlanCreateInput/PlanUpdateInput
+      // Convert basePrice: if priceType is 'contact', use 0; otherwise use number
+      const basePriceValue = formData.priceType === 'contact' 
+        ? 0  // Use 0 as placeholder for "Liên hệ"
+        : typeof formData.basePrice === 'number' 
+          ? formData.basePrice 
+          : parseFloat(String(formData.basePrice)) || 0;
+
+      // Include platform access in limits
+      const limits = {
+        outlets: formData.maxOutlets,
+        users: formData.maxUsers,
+        products: formData.maxProducts,
+        customers: formData.maxCustomers,
+        orders: 0, // Default, can be updated later
+        allowWebAccess: formData.allowWebAccess,
+        allowMobileAccess: formData.allowMobileAccess,
+      };
+
+      // Build submit data
+      const submitData: any = {
+        name: formData.name,
+        description: formData.description,
+        basePrice: basePriceValue,
+        currency: formData.currency,
+        trialDays: formData.trialDays,
+        limits: limits,
+        features: formData.features,
+        isActive: formData.isActive,
+        isPopular: formData.isPopular,
+        sortOrder: formData.sortOrder,
+      };
+
+      // If priceType is 'contact', append to description
+      if (formData.priceType === 'contact') {
+        submitData.description = formData.description 
+          ? `${formData.description} (${t('fields.contactPrice')})`
+          : t('fields.contactPrice');
+      }
+      
+      await onSubmit(submitData);
     } catch (error) {
       console.error('Error submitting plan:', error);
     } finally {
@@ -189,15 +394,13 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     }
   };
 
-  const addFeature = () => {
-    if (newFeature.trim() && !formData.features.includes(newFeature.trim())) {
-      handleInputChange('features', [...formData.features, newFeature.trim()]);
-      setNewFeature('');
+  const toggleFeature = (featureKey: string) => {
+    const currentFeatures = Array.isArray(formData.features) ? formData.features : [];
+    if (currentFeatures.includes(featureKey)) {
+      handleInputChange('features', currentFeatures.filter(f => f !== featureKey));
+    } else {
+      handleInputChange('features', [...currentFeatures, featureKey]);
     }
-  };
-
-  const removeFeature = (index: number) => {
-    handleInputChange('features', formData.features.filter((_, i) => i !== index));
   };
 
   const getLimitText = (limit: number) => {
@@ -310,6 +513,106 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                 </Label>
               </div>
             </div>
+
+            {/* Platform Access Controls */}
+            <div className="pt-4 border-t border-border">
+              <div className="mb-4">
+                <Label className="text-sm font-medium mb-1 block">{t('fields.platformAccess')}</Label>
+                <p className="text-xs text-text-tertiary">
+                  {t('fields.selectPlatforms')}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Web Access Card */}
+                <div className={`relative border-2 rounded-lg p-4 transition-all ${
+                  formData.allowWebAccess 
+                    ? 'border-action-primary bg-action-primary/5' 
+                    : 'border-border bg-bg-secondary'
+                }`}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className={`p-2 rounded-lg ${
+                        formData.allowWebAccess 
+                          ? 'bg-action-primary/10 text-action-primary' 
+                          : 'bg-bg-tertiary text-text-tertiary'
+                      }`}>
+                        <Monitor className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Label htmlFor="allowWebAccess" className="cursor-pointer font-medium text-text-primary">
+                            {t('fields.webAccess')}
+                          </Label>
+                        </div>
+                        <p className="text-xs text-text-tertiary">
+                          {t('fields.webAccessDescription')}
+                        </p>
+                      </div>
+                    </div>
+                  <Switch
+                    id="allowWebAccess"
+                    checked={formData.allowWebAccess}
+                    onCheckedChange={(checked) => handleInputChange('allowWebAccess', checked)}
+                      className="ml-2"
+                  />
+                  </div>
+                </div>
+
+                {/* Mobile Access Card */}
+                <div className={`relative border-2 rounded-lg p-4 transition-all ${
+                  formData.allowMobileAccess 
+                    ? 'border-action-primary bg-action-primary/5' 
+                    : 'border-border bg-bg-secondary'
+                }`}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className={`p-2 rounded-lg ${
+                        formData.allowMobileAccess 
+                          ? 'bg-action-primary/10 text-action-primary' 
+                          : 'bg-bg-tertiary text-text-tertiary'
+                      }`}>
+                        <Smartphone className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Label htmlFor="allowMobileAccess" className="cursor-pointer font-medium text-text-primary">
+                            {t('fields.mobileAccess')}
+                  </Label>
+                </div>
+                        <p className="text-xs text-text-tertiary">
+                          {t('fields.mobileAccessDescription')}
+                        </p>
+                      </div>
+                    </div>
+                  <Switch
+                    id="allowMobileAccess"
+                    checked={formData.allowMobileAccess}
+                    onCheckedChange={(checked) => handleInputChange('allowMobileAccess', checked)}
+                      className="ml-2"
+                  />
+                </div>
+              </div>
+              </div>
+
+              {/* Platform Access Summary */}
+              {(!formData.allowWebAccess && !formData.allowMobileAccess) && (
+                <div className="mt-3 p-3 bg-action-warning/10 border border-action-warning/20 rounded-lg">
+                  <p className="text-xs text-action-warning flex items-center gap-2">
+                    <XCircle className="w-4 h-4" />
+                    <span>{t('fields.noPlatformAccessWarning')}</span>
+                  </p>
+                </div>
+              )}
+
+              {formData.allowWebAccess && formData.allowMobileAccess && (
+                <div className="mt-3 p-3 bg-action-success/10 border border-action-success/20 rounded-lg">
+                  <p className="text-xs text-action-success flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>{t('fields.allPlatformsEnabled')}</span>
+                  </p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -324,17 +627,65 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="basePrice">Base Price *</Label>
-                <Input
-                  id="basePrice"
-                  type="number"
-                  step="0.01"
-                  value={formData.basePrice}
-                  onChange={(e) => handleInputChange('basePrice', parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                  min="0"
-                  className={errors.basePrice ? 'border-red-500' : ''}
-                />
+                <Label>{t('fields.basePrice')} *</Label>
+                
+                {/* Price Type Selector */}
+                <div className="flex gap-4 mb-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="priceTypeFixed"
+                      name="priceType"
+                      checked={formData.priceType === 'fixed'}
+                      onChange={() => {
+                        handleInputChange('priceType', 'fixed');
+                        handleInputChange('basePrice', 0);
+                      }}
+                      className="cursor-pointer"
+                    />
+                    <Label htmlFor="priceTypeFixed" className="cursor-pointer">
+                      {t('fields.enterPrice')}
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="priceTypeContact"
+                      name="priceType"
+                      checked={formData.priceType === 'contact'}
+                      onChange={() => {
+                        handleInputChange('priceType', 'contact');
+                        handleInputChange('basePrice', t('fields.contactPrice'));
+                      }}
+                      className="cursor-pointer"
+                    />
+                    <Label htmlFor="priceTypeContact" className="cursor-pointer">
+                      {t('fields.contactPrice')}
+                    </Label>
+                  </div>
+                </div>
+
+                {/* Price Input */}
+                {formData.priceType === 'fixed' ? (
+                  <Input
+                    id="basePrice"
+                    type="number"
+                    step="0.01"
+                    value={typeof formData.basePrice === 'number' ? formData.basePrice : 0}
+                    onChange={(e) => {
+                      const numValue = parseFloat(e.target.value);
+                      handleInputChange('basePrice', isNaN(numValue) ? 0 : numValue);
+                    }}
+                    placeholder="0.00"
+                    min="0"
+                    className={errors.basePrice ? 'border-red-500' : ''}
+                  />
+                ) : (
+                  <div className="p-3 bg-bg-secondary rounded-lg border border-border">
+                    <span className="text-text-primary font-medium">{t('fields.contactPrice')}</span>
+                  </div>
+                )}
+                
                 {errors.basePrice && <p className="text-sm text-red-500">{errors.basePrice}</p>}
               </div>
 
@@ -359,7 +710,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {BILLING_CYCLES.map((cycle) => (
+                    {BILLING_CYCLES_ARRAY.map((cycle: any) => (
                       <SelectItem key={cycle.value} value={cycle.value}>
                         <div className="flex flex-col">
                           <span className="font-medium">{cycle.label}</span>
@@ -387,26 +738,109 @@ export const PlanForm: React.FC<PlanFormProps> = ({
             </div>
 
             {/* Price Preview */}
-            <div className="bg-bg-secondary p-4 rounded-lg">
-              <div className="text-sm text-text-secondary mb-2">Price Preview:</div>
+            <div className="bg-bg-secondary p-4 rounded-lg space-y-3">
+              <div className="text-sm text-text-secondary mb-2">{t('pricing.basePrice')}:</div>
               <div className="text-2xl font-bold text-text-primary">
-                {formatCurrency(formData.basePrice, formData.currency)}
+                {formData.priceType === 'contact' ? (
+                  <span>{t('fields.contactPrice')}</span>
+                ) : (
+                  formatCurrency(typeof formData.basePrice === 'number' ? formData.basePrice : 0, formData.currency)
+                )}
+                {formData.priceType === 'fixed' && (
                 <span className="text-lg text-text-secondary font-normal ml-2">
                   /{formatBillingCycle(formData.billingCycle).toLowerCase()}
                 </span>
+                )}
               </div>
               
-              {/* Show discount if applicable */}
-              {getBillingCycleDiscount(formData.billingCycle) > 0 && (
-                <div className="text-sm text-action-success mt-1">
-                  {getBillingCycleDiscount(formData.billingCycle)}% discount applied
+              {/* Add-on Users Pricing (30,000 VND per additional user) */}
+              {formData.priceType === 'fixed' && formData.currency === 'VND' && formData.maxUsers > 1 && formData.maxUsers !== -1 && (
+                <div className="pt-3 border-t border-border">
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-text-secondary">{t('pricing.addOnUserDescription')}</span>
+                    <span className="font-medium text-text-primary">
+                      {formatCurrency((formData.maxUsers - 1) * 30000, formData.currency)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-text-tertiary">
+                    ({formData.maxUsers - 1} {t('pricing.addOnUsers')} × 30,000 VND)
+                  </div>
                 </div>
               )}
+
+              {/* Calculate total price with add-on users */}
+              {(() => {
+                if (formData.priceType !== 'fixed' || typeof formData.basePrice !== 'number') return null;
+                
+                const basePrice = formData.basePrice;
+                const addOnUsersPrice = (formData.currency === 'VND' && formData.maxUsers > 1 && formData.maxUsers !== -1) 
+                  ? (formData.maxUsers - 1) * 30000 
+                  : 0;
+                const totalBeforeDiscount = basePrice + addOnUsersPrice;
+                const discount = getBillingCycleDiscount(formData.billingCycle);
+                const discountAmount = (totalBeforeDiscount * discount) / 100;
+                const finalPrice = totalBeforeDiscount - discountAmount;
+                
+                return (
+                  <>
+                    {/* Total Price with Add-on Users */}
+                    {(addOnUsersPrice > 0 || discount > 0) && (
+                      <div className="pt-3 border-t border-border space-y-2">
+                        {addOnUsersPrice > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-text-secondary">{t('pricing.basePrice')}:</span>
+                            <span className="font-medium text-text-primary">
+                              {formatCurrency(basePrice, formData.currency)}
+                            </span>
+                          </div>
+                        )}
+                        {addOnUsersPrice > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-text-secondary">{t('pricing.addOnUserPrice')}:</span>
+                            <span className="font-medium text-text-primary">
+                              {formatCurrency(addOnUsersPrice, formData.currency)}
+                            </span>
+                          </div>
+                        )}
+                        {discount > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-text-secondary">Discount ({discount}%):</span>
+                            <span className="font-medium text-action-success">
+                              -{formatCurrency(discountAmount, formData.currency)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between pt-2 border-t border-border">
+                          <span className="text-sm font-medium text-text-primary">{t('pricing.totalPrice')}:</span>
+                          <span className="text-xl font-bold text-action-primary">
+                            {formatCurrency(finalPrice, formData.currency)}
+                            <span className="text-lg text-text-secondary font-normal ml-2">
+                              /{formatBillingCycle(formData.billingCycle).toLowerCase()}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Show discount if applicable (simple case) */}
+                    {addOnUsersPrice === 0 && discount > 0 && (
+                <div className="text-sm text-action-success mt-1">
+                        {discount}% discount applied
+                </div>
+              )}
+                  </>
+                );
+              })()}
               
               {/* Show total price for longer cycles */}
-              {formData.billingCycleMonths > 1 && (
+              {formData.billingCycleMonths > 1 && formData.priceType === 'fixed' && typeof formData.basePrice === 'number' && (
                 <div className="text-sm text-text-secondary mt-1">
-                  Total: {formatCurrency(calculateDiscountedPrice(formData.basePrice, formData.billingCycle), formData.currency)} for {formData.billingCycleMonths} months
+                  {(() => {
+                    const discount = getBillingCycleDiscount(formData.billingCycle);
+                    const totalPrice = formData.basePrice * formData.billingCycleMonths;
+                    const discountedPrice = calculateDiscountedPrice(totalPrice, discount);
+                    return `Total: ${formatCurrency(discountedPrice, formData.currency)} for ${formData.billingCycleMonths} months`;
+                  })()}
                 </div>
               )}
               
@@ -516,44 +950,92 @@ export const PlanForm: React.FC<PlanFormProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5" />
-              Features
+              {t('fields.features')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                value={newFeature}
-                onChange={(e) => setNewFeature(e.target.value)}
-                placeholder="Add a feature..."
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-              />
-              <Button type="button" onClick={addFeature} disabled={!newFeature.trim()}>
-                <Plus className="w-4 h-4" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm text-text-secondary">
+                {t('fields.selectFeatures') || 'Select features included in this plan'}
+              </div>
+              <div className="text-sm text-text-primary font-medium">
+                {formData.features.length} {formData.features.length === 1 ? 'feature' : 'features'} selected
+              </div>
+            </div>
+
+            {/* Quick Select Buttons */}
+            <div className="flex gap-2 mb-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleInputChange('features', [...BASIC_PLAN_FEATURES])}
+                className="text-xs"
+              >
+                Use Basic Plan Features ({BASIC_PLAN_FEATURES.length})
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleInputChange('features', [...PROFESSIONAL_PLAN_FEATURES])}
+                className="text-xs"
+              >
+                Use Professional Plan Features ({PROFESSIONAL_PLAN_FEATURES.length})
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleInputChange('features', [...ENTERPRISE_PLAN_FEATURES])}
+                className="text-xs"
+              >
+                Use Enterprise Plan Features ({ENTERPRISE_PLAN_FEATURES.length})
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleInputChange('features', [])}
+                className="text-xs"
+              >
+                Clear All
               </Button>
             </div>
 
-            {formData.features.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-text-primary">Plan Features:</div>
-                <div className="space-y-2">
-                  {formData.features.map((feature, index) => (
-                    <div key={index} className="flex items-center justify-between bg-bg-secondary p-3 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-action-success" />
-                        <span className="text-sm text-text-primary">{feature}</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFeature(index)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Trash2 className="w-4 h-4 text-text-tertiary" />
-                      </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {AVAILABLE_PLAN_FEATURES.map((featureKey: string) => {
+                const isSelected = formData.features.includes(featureKey);
+                return (
+                  <div
+                    key={featureKey}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-action-primary bg-action-primary/5'
+                        : 'border-border bg-bg-secondary hover:border-action-primary/50'
+                    }`}
+                    onClick={() => toggleFeature(featureKey)}
+                  >
+                    <div className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      isSelected
+                        ? 'border-action-primary bg-action-primary'
+                        : 'border-border'
+                    }`}>
+                      {isSelected && (
+                        <CheckCircle className="w-4 h-4 text-text-inverted" />
+                      )}
                     </div>
-                  ))}
+                    <span className="text-sm text-text-primary flex-1">
+                      {translateFeature(featureKey)}
+                    </span>
                 </div>
+                );
+              })}
+            </div>
+
+            {formData.features.length === 0 && (
+              <div className="text-sm text-text-tertiary text-center py-4">
+                {t('fields.noFeaturesSelected') || 'No features selected'}
               </div>
             )}
           </CardContent>

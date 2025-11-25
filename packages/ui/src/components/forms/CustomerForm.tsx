@@ -77,16 +77,11 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       newErrors.firstName = 'First name is required';
     }
 
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    }
+    // lastName is optional - no validation needed
+    // phone is optional - no validation needed
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
-    }
-
-    if (!formData.phone || !formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
     }
 
     if (!formData.merchantId) {
@@ -157,7 +152,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             
             <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name *
+                Last Name
               </label>
               <Input
                 type="text"

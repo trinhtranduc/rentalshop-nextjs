@@ -13,7 +13,9 @@ export const PUBLIC_ROUTES = [
   '/login',
   '/register',
   '/forget-password',
+  '/reset-password',
   '/email-verification',
+  '/verify-email',
   '/terms',
   '/privacy',
 ] as const;
@@ -33,6 +35,7 @@ export const AUTH_ROUTES = [
  */
 export const PUBLIC_INFO_ROUTES = [
   '/email-verification',
+  '/verify-email',
   '/terms',
   '/privacy',
 ] as const;
@@ -48,6 +51,13 @@ export function isPublicRoute(pathname: string): boolean {
   
   // Check dynamic routes (e.g., /register/step-1)
   if (pathname.startsWith('/register')) {
+    return true;
+  }
+  
+  // Check public product pages (e.g., /tenant-key/products)
+  // Pattern: /[tenantKey]/products
+  const publicProductPagePattern = /^\/[a-z0-9\-]+\/products$/i;
+  if (publicProductPagePattern.test(pathname)) {
     return true;
   }
   

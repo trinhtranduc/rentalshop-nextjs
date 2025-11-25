@@ -130,6 +130,7 @@
     "reviewBeforeConfirm": "Review your order details before confirming"
   },
   "messages": {
+    "createOrder": "Create Order",
     "createSuccess": "Order created successfully",
     "createFailed": "Failed to create order",
     "updateSuccess": "Order updated successfully",
@@ -181,16 +182,13 @@
     "deposit": "Deposit",
     "product": "Product",
     "unknownProduct": "Unknown Product",
-    "noBarcode": "No Barcode",
     "clearSelectedCustomer": "Clear selected customer",
     "useAddNewCustomerButton": "Use the \"Add New Customer\" button above to create one",
     "rentalPeriod": "Rental Period",
     "selectRentalPeriod": "Select rental period",
-    "orders": "Orders",
-    "editOrder": "Edit Order",
+    "selectOutlet": "Select outlet",
     "createNewOrder": "Create New Order",
     "confirmOrder": "Confirm Order",
-    "editOrder": "Edit Order",
     "orderPreview": "Order Preview",
     "reviewOrderDetails": "Review your order details before confirming",
     "customerInformationMissing": "Customer information is missing",
@@ -200,7 +198,12 @@
     "notSet": "Not set",
     "notSelected": "Not selected",
     "totalPrice": "Total Price",
-    "additionalInformation": "Additional Information"
+    "additionalInformation": "Additional Information",
+    "enterDepositAmount": "Enter deposit amount...",
+    "quantity": "Quantity",
+    "unitPrice": "Unit Price",
+    "addNotesForItem": "Add notes for this item...",
+    "addNotesAboutProduct": "Add notes about this product..."
   },
   "productOrders": {
     "title": "Product Orders",
@@ -255,6 +258,28 @@
     "averageOrderValue": "Average Order Value",
     "overdueRentals": "Overdue Rentals",
     "revenueMetrics": "Revenue Metrics"
+  },
+  "receipt": {
+    "previewTitle": "Preview Order Receipt",
+    "printOptions": "Print Options",
+    "printViaPDF": "Print via PDF",
+    "printDescription": "Create PDF file and send to printer",
+    "order": "Order",
+    "customer": "Customer",
+    "deposit": "Deposit",
+    "noDeposit": "NO DEPOSIT",
+    "createdDate": "Created Date",
+    "rentDate": "Rent Date",
+    "returnDate": "Return Date",
+    "saleDate": "Sale Date",
+    "subtotal": "SUBTOTAL",
+    "discount": "DISCOUNT",
+    "total": "TOTAL",
+    "note": "Note",
+    "customerSignature": "Customer Signature",
+    "storeSignature": "Store Signature",
+    "thankYou": "THANK YOU FOR SHOPPING",
+    "downloadApp": "Download RentalShop on App Store"
   }
 }
 

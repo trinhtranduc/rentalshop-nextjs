@@ -45,6 +45,7 @@ export interface ApiUrls {
     login: string;
     register: string;
     verify: string;
+      verifyEmail: string;
     refresh: string;
     logout: string;
     forgotPassword: string;
@@ -489,6 +490,7 @@ function createApiUrls(): ApiUrls {
       login: `${base}/api/auth/login`,
       register: `${base}/api/auth/register`,
       verify: `${base}/api/auth/verify`,
+      verifyEmail: `${base}/api/auth/verify-email`,
       refresh: `${base}/api/auth/refresh`,
       logout: `${base}/api/auth/logout`,
       forgotPassword: `${base}/api/auth/forgot-password`,
@@ -516,7 +518,7 @@ function createApiUrls(): ApiUrls {
       create: `${base}/api/orders`,
       update: (id: number) => `${base}/api/orders/${id}`,
       delete: (id: number) => `${base}/api/orders/${id}`,
-      getByNumber: (orderNumber: string) => `${base}/api/orders/by-number/${orderNumber}`,
+      getByNumber: (orderNumber: string) => `${base}/api/orders/by-number/${encodeURIComponent(orderNumber)}`,
       updateStatus: (id: number) => `${base}/api/orders/${id}/status`,
       stats: `${base}/api/orders/stats`,
     },

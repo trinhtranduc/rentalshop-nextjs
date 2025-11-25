@@ -13,6 +13,7 @@ import {
   MerchantReference,
   OutletReference
 } from '../common/base';
+import type { PricingType } from '@rentalshop/constants';
 
 // ============================================================================
 // CORE PRODUCT INTERFACES
@@ -30,12 +31,21 @@ export interface Product extends BaseEntityWithMerchant {
   categoryId: number; // Required - every product must have a category
   rentPrice: number;
   salePrice?: number; // Optional sale price for direct purchase
+  costPrice?: number; // Optional cost price (giá vốn) for profit calculation
   deposit: number;
   stock: number;
   renting: number;
   available: number; // Computed field: stock - renting
   isActive: boolean;
   images?: string[];
+  
+  // Optional product-level pricing configuration (default: FIXED if null)
+  pricingType?: PricingType | null; // NULL = FIXED (default), uses enum from @rentalshop/constants
+  durationConfig?: string | { // JSON: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
+    minDuration?: number;
+    maxDuration?: number;
+    defaultDuration?: number;
+  } | null;
   
   // Related entities (populated when needed)
   category?: CategoryReference;
@@ -87,6 +97,7 @@ export interface ProductCreateInput extends BaseFormInput {
   categoryId: number; // Required - every product must have a category
   rentPrice: number;
   salePrice?: number;
+  costPrice?: number; // Optional cost price (giá vốn) for profit calculation
   deposit: number;
   totalStock: number;
   images?: string[];
@@ -218,12 +229,16 @@ export interface ProductInput {
   totalStock: number;
   rentPrice: number;
   salePrice?: number;
+  costPrice?: number; // Optional cost price (giá vốn) for profit calculation
   deposit: number;
   images?: string[];
   outletStock: Array<{ // Required - every product must have outlet stock
     outletId: number; // Required - every outlet stock must reference an outlet
     stock: number;
   }>;
+  // Optional pricing configuration (default FIXED if null)
+  pricingType?: PricingType | null; // NULL = FIXED (default)
+  durationConfig?: string | null; // JSON string: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
 }
 
 /**

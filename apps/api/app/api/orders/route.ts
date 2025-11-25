@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, ResponseBuilder } from '@rentalshop/utils';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder } from '@rentalshop/utils';
+import type { PricingType } from '@rentalshop/constants';
+import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
 import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
 
@@ -16,7 +18,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/orders - UserScope:`, userScope);
   
   // Validate that non-admin users have merchant association
-  if (user.role !== 'ADMIN' && !userScope.merchantId) {
+  if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
     console.log('❌ Non-admin user without merchant association:', {
       role: user.role,
       merchantId: userScope.merchantId,
@@ -93,13 +95,13 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     // Role-based outlet filtering:
     // - MERCHANT role: Can see orders from all outlets of their merchant (unless queryOutletId is specified)
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
-    if (user.role === 'MERCHANT') {
+    if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       searchFilters.outletId = queryOutletId;
-    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
       // Outlet users can only see orders from their assigned outlet
       searchFilters.outletId = userScope.outletId;
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all orders (no outlet filtering unless specified)
       searchFilters.outletId = queryOutletId;
     }
@@ -204,8 +206,34 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Generate order number using the outlet's ID
-    const orderNumber = `${parsed.data.outletId.toString().padStart(3, '0')}-${Date.now().toString().slice(-6)}`;
+    // Generate order number: 6-digit random number (e.g., 123456, 789012)
+    // Use atomic transaction to ensure uniqueness
+    const orderNumberResult = await db.prisma.$transaction(async (tx: any) => {
+      const maxRetries = 10;
+      
+      // Generate random 6-digit number (100000 to 999999)
+      const generateRandom6Digits = (): string => {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+      };
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const orderNumber = generateRandom6Digits();
+
+        // Check for uniqueness
+        const existingOrder = await tx.order.findUnique({
+          where: { orderNumber },
+          select: { id: true }
+        });
+
+        if (!existingOrder) {
+          return orderNumber;
+        }
+      }
+
+      throw new Error('Failed to generate unique 6-digit random order number after maximum retries');
+    });
+    
+    const orderNumber = orderNumberResult;
 
     // Determine initial status based on order type
     // SALE orders start as COMPLETED (immediate purchase)
@@ -213,13 +241,38 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     const initialStatus = parsed.data.orderType === ORDER_TYPE.SALE ? ORDER_STATUS.COMPLETED : ORDER_STATUS.RESERVED;
 
     // Calculate rentalDuration from pickup and return dates
+    // Duration calculation depends on product pricing type
     let rentalDuration: number | null = null;
+    
     if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
       const pickup = new Date(parsed.data.pickupPlanAt);
       const returnDate = new Date(parsed.data.returnPlanAt);
+      
+      // Get pricing type from first product (all products in order should have same type)
+      // Default to FIXED if not set (uses enum)
+      let pricingType: PricingType = 'FIXED';
+      if (parsed.data.orderItems && parsed.data.orderItems.length > 0) {
+        const firstProductId = parsed.data.orderItems[0].productId;
+        const firstProduct = await db.products.findById(firstProductId) as any;
+        if (firstProduct?.pricingType) {
+          pricingType = firstProduct.pricingType as PricingType;
+        }
+      }
+      
+      // Calculate duration based on pricing type
+      if (pricingType === 'HOURLY') {
+        const diffTime = returnDate.getTime() - pickup.getTime();
+        rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60)); // Convert to hours
+        console.log('🔍 Calculated rental duration:', rentalDuration, 'hours');
+      } else if (pricingType === 'DAILY') {
       const diffTime = returnDate.getTime() - pickup.getTime();
       rentalDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
       console.log('🔍 Calculated rental duration:', rentalDuration, 'days');
+      } else {
+        // FIXED pricing: duration is 1 (per rental)
+        rentalDuration = 1;
+        console.log('🔍 FIXED pricing: rental duration = 1 rental');
+      }
     }
 
     // Create order with proper relations (Order does NOT have direct merchant relation)
@@ -250,34 +303,59 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       orderItems: {
         create: await Promise.all(parsed.data.orderItems?.map(async item => {
           // Get product details for snapshot
-          const product = await db.products.findById(item.productId);
+          const product = await db.products.findById(item.productId) as any;
           if (!product) {
             throw new Error(`Product with ID ${item.productId} not found`);
           }
 
-          // Calculate pricing using PricingResolver
+          // Calculate pricing using PricingResolver with product pricing type
           let pricing;
           try {
-            // Use fallback pricing since PricingResolver expects specific Product type
-            pricing = {
-              unitPrice: item.unitPrice,
-              totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
-              deposit: item.deposit || 0,
-              pricingType: 'FIXED'
-            };
+            // Get product pricing type (defaults to FIXED if null)
+            const productPricingType = PricingResolver.resolvePricingType(product as Product, merchant);
+            
+            // Calculate duration for this item if dates are provided
+            let itemDuration: number | undefined;
+            if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
+              const pickup = new Date(parsed.data.pickupPlanAt);
+              const returnDate = new Date(parsed.data.returnPlanAt);
+              const { duration } = calculateDurationInUnit(pickup, returnDate, productPricingType);
+              itemDuration = duration;
+            }
+            
+            // Calculate pricing based on product pricing type
+            pricing = PricingResolver.calculatePricing(
+              product as Product,
+              merchant,
+              itemDuration,
+              item.quantity
+            );
           } catch (pricingError) {
             console.error('Pricing calculation error:', pricingError);
-            // Fallback to provided values
+            // Fallback to provided values (default FIXED)
             pricing = {
               unitPrice: item.unitPrice,
               totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
               deposit: item.deposit || 0,
-              pricingType: 'FIXED' // Default pricing type
+              pricingType: 'FIXED' as PricingType,
+              duration: undefined,
+              durationUnit: 'rental'
             };
           }
 
-          // Calculate rentalDays for this item (use order-level rentalDuration)
-          const rentalDays = rentalDuration || 1;
+          // Calculate rentalDays for this item based on pricing type
+          // For FIXED: rentalDays = 1 (per rental)
+          // For HOURLY/DAILY: use calculated duration
+          let rentalDays: number | null = null;
+          if (pricing.pricingType === 'FIXED') {
+            rentalDays = 1; // Per rental, not time-based
+          } else if (pricing.duration) {
+            rentalDays = pricing.duration; // Use calculated duration from pricing
+          } else if (rentalDuration) {
+            rentalDays = rentalDuration; // Fallback to order-level duration
+          } else {
+            rentalDays = 1; // Default
+          }
 
           // Snapshot product info to preserve it even if product is deleted later
           return {

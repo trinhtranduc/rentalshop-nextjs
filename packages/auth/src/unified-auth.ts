@@ -264,23 +264,42 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
   const requireSubscription = options?.requireActiveSubscription !== false; // Default to true
   return function (handler: AuthenticatedHandler) {
     return async function (request: NextRequest): Promise<NextResponse> {
-      console.log(`🔐 Auth check for ${request.method} ${request.url}`);
+      const url = new URL(request.url);
+      const pathname = url.pathname;
+      console.log(`🔐 [AUTH] Auth check for ${request.method} ${pathname}`);
+      
+      // Log Authorization header (first 20 chars only)
+      const authHeader = request.headers.get('authorization');
+      if (authHeader) {
+        const tokenPreview = authHeader.substring(0, 30) + '...';
+        console.log(`🔐 [AUTH] Authorization header present: ${tokenPreview}`);
+      } else {
+        console.log(`🔐 [AUTH] No Authorization header found`);
+      }
       
       try {
         // Step 1: Authenticate request
         const authResult = await authenticateRequest(request);
         if (!authResult.success) {
-          console.log('❌ Authentication failed');
+          console.log('❌ [AUTH] Authentication failed - returning 401');
+          // Try to log error details if available
+          try {
+            const clonedResponse = authResult.response.clone();
+            const responseBody = await clonedResponse.json().catch(() => ({}));
+            console.log('❌ [AUTH] Error response:', responseBody);
+          } catch (e) {
+            console.log('❌ [AUTH] Could not parse error response');
+          }
           return authResult.response;
         }
 
         const user = authResult.user;
-        console.log(`✅ User authenticated: ${user.email} (${user.role})`);
+        console.log(`✅ [AUTH] User authenticated: ${user.email} (${user.role})`);
 
         // Step 2: Check role permissions if specified
         if (allowedRoles && allowedRoles.length > 0) {
           if (!hasAnyRole(user, allowedRoles)) {
-            console.log(`❌ Insufficient permissions: ${user.role} not in [${allowedRoles.join(', ')}]`);
+            console.log(`❌ [AUTH] Insufficient permissions: ${user.role} not in [${allowedRoles.join(', ')}]`);
             return NextResponse.json(
               { 
                 success: false,
@@ -292,7 +311,7 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
               { status: 403 }
             );
           }
-          console.log(`✅ Role authorized: ${user.role}`);
+          console.log(`✅ [AUTH] Role authorized: ${user.role}`);
         }
 
         // Step 3: Check subscription status if required

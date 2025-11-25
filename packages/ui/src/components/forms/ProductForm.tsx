@@ -45,6 +45,19 @@ import type {
   ProductInput, 
   ProductUpdateInput
 } from '@rentalshop/types';
+import { 
+  PRICING_TYPE_OPTIONS, 
+  getPricingTypeLabel, 
+  getPricingTypeDescription, 
+  type PricingType 
+} from '@rentalshop/constants';
+
+// Import PRICING_TYPE constants for type-safe comparisons
+const PRICING_TYPE = {
+  FIXED: 'FIXED' as const,
+  HOURLY: 'HOURLY' as const,
+  DAILY: 'DAILY' as const,
+} as const;
 
 // Define Category interface locally since it's not exported from database
 interface Category {
@@ -61,6 +74,7 @@ interface ProductFormData {
   categoryId: number;
   rentPrice: number;
   salePrice: number;
+  costPrice: number;
   deposit: number;
   totalStock: number;
   images: string[];
@@ -69,6 +83,13 @@ interface ProductFormData {
     stock: number;
   }>;
   sku: string;
+  // Optional pricing configuration (default FIXED if null)
+  pricingType?: PricingType | null;
+  durationConfig?: {
+    minDuration?: number;
+    maxDuration?: number;
+    defaultDuration?: number;
+  } | null;
 }
 
 interface ProductFormProps {
@@ -114,11 +135,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     categoryId: 0,
     rentPrice: 0,
     salePrice: 0,
+    costPrice: 0,
     deposit: 0,
     totalStock: 0,
     images: [],
     outletStock: [],
     sku: '',
+    pricingType: null, // Always FIXED (null = FIXED) - Pricing type selection disabled for now
+    durationConfig: null,
     ...initialData
   });
 
@@ -164,6 +188,29 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
       console.log('🔍 ProductForm - Re-initializing form with new initialData:', initialData);
+      
+      // Parse durationConfig if it's a string
+      let parsedInitialData = { ...initialData };
+      if (initialData.durationConfig && typeof initialData.durationConfig === 'string') {
+        try {
+          parsedInitialData.durationConfig = JSON.parse(initialData.durationConfig);
+        } catch (e) {
+          console.error('Error parsing durationConfig:', e);
+          parsedInitialData.durationConfig = null;
+        }
+      }
+      
+      // Initialize durationConfig if pricingType is HOURLY/DAILY but durationConfig is missing
+      if (parsedInitialData.pricingType && (parsedInitialData.pricingType === PRICING_TYPE.HOURLY || parsedInitialData.pricingType === PRICING_TYPE.DAILY)) {
+        if (!parsedInitialData.durationConfig) {
+          parsedInitialData.durationConfig = {
+            minDuration: parsedInitialData.pricingType === PRICING_TYPE.HOURLY ? 1 : 1,
+            maxDuration: parsedInitialData.pricingType === PRICING_TYPE.HOURLY ? 168 : 30,
+            defaultDuration: parsedInitialData.pricingType === PRICING_TYPE.HOURLY ? 4 : 3
+          };
+        }
+      }
+      
       setFormData({
         name: '',
         description: '',
@@ -171,12 +218,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         categoryId: 0,
         rentPrice: 0,
         salePrice: 0,
+        costPrice: 0,
         deposit: 0,
         totalStock: 0,
         images: [],
         outletStock: [],
         sku: '',
-        ...initialData
+        pricingType: null,
+        durationConfig: null,
+        ...parsedInitialData
       });
     }
   }, [initialData]);
@@ -289,6 +339,33 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       newErrors.totalStock = 'Total stock is required and must be greater than 0';
     }
 
+    // Validate duration config if pricingType is HOURLY or DAILY
+    if (formData.pricingType === PRICING_TYPE.HOURLY || formData.pricingType === PRICING_TYPE.DAILY) {
+      if (!formData.durationConfig) {
+        newErrors.durationConfig = 'Duration configuration is required for HOURLY and DAILY pricing types';
+      } else {
+        const { minDuration, maxDuration, defaultDuration } = formData.durationConfig;
+        if (!minDuration || minDuration <= 0) {
+          newErrors.durationConfig = 'Minimum duration is required and must be greater than 0';
+        }
+        if (!maxDuration || maxDuration <= 0) {
+          newErrors.durationConfig = 'Maximum duration is required and must be greater than 0';
+        }
+        if (minDuration && maxDuration && minDuration > maxDuration) {
+          newErrors.durationConfig = 'Minimum duration must be less than or equal to maximum duration';
+        }
+        if (!defaultDuration || defaultDuration <= 0) {
+          newErrors.durationConfig = 'Default duration is required and must be greater than 0';
+        }
+        if (defaultDuration && minDuration && defaultDuration < minDuration) {
+          newErrors.durationConfig = 'Default duration must be at least the minimum duration';
+        }
+        if (defaultDuration && maxDuration && defaultDuration > maxDuration) {
+          newErrors.durationConfig = 'Default duration must not exceed maximum duration';
+        }
+      }
+    }
+
     // Check if outlets are available
     if (outlets.length === 0) {
       newErrors.outletStock = 'No outlets available. Please contact your administrator to set up outlets.';
@@ -373,7 +450,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     
 
 
-    const productData: ProductInput = {
+    const productData: ProductInput & { pricingType?: PricingType | null; durationConfig?: string | null; costPrice?: number | null } = {
       merchantId: typeof merchantId === 'string' ? parseInt(merchantId) || 0 : merchantId || 0,
       categoryId: formData.categoryId,
       name: formData.name,
@@ -382,9 +459,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       totalStock: formData.totalStock,
       rentPrice: formData.rentPrice,
       salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
+      costPrice: formData.costPrice > 0 ? formData.costPrice : undefined,
       deposit: formData.deposit,
       images: useMultipartUpload ? [] : formData.images, // Empty array for multipart, existing images for immediate upload
       outletStock: formData.outletStock,
+      // Optional pricing configuration (null = FIXED default)
+      pricingType: formData.pricingType || null,
+      durationConfig: formData.pricingType === PRICING_TYPE.HOURLY || formData.pricingType === PRICING_TYPE.DAILY 
+        ? (formData.durationConfig ? JSON.stringify(formData.durationConfig) : null)
+        : null,
     };
 
     // Pass files when using multipart upload
@@ -402,12 +485,60 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     if (field === 'categoryId') {
       // Convert string to number for categoryId
       processedValue = parseInt(value) || 0;
-    } else if (field === 'rentPrice' || field === 'salePrice' || field === 'deposit') {
+    } else if (field === 'rentPrice' || field === 'salePrice' || field === 'costPrice' || field === 'deposit') {
       // Ensure numeric fields are numbers
       processedValue = parseFloat(value) || 0;
     } else if (field === 'totalStock') {
       // Ensure stock is a number
       processedValue = parseInt(value) || 0;
+    } else if (field === 'pricingType') {
+      // When pricingType changes, reset durationConfig if switching to FIXED
+      const pricingTypeValue = value as PricingType | typeof PRICING_TYPE.FIXED | null;
+      processedValue = pricingTypeValue === PRICING_TYPE.FIXED ? null : (pricingTypeValue || null);
+      if (pricingTypeValue === PRICING_TYPE.FIXED || !pricingTypeValue) {
+        setFormData(prev => ({
+          ...prev,
+          pricingType: null,
+          durationConfig: null
+        }));
+        // Clear validation errors
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.durationConfig;
+          return newErrors;
+        });
+        return;
+      } else if (pricingTypeValue === PRICING_TYPE.HOURLY || pricingTypeValue === PRICING_TYPE.DAILY) {
+        // Initialize durationConfig with defaults if not exists
+        setFormData(prev => ({
+          ...prev,
+          pricingType: pricingTypeValue,
+          durationConfig: prev.durationConfig || {
+            minDuration: pricingTypeValue === PRICING_TYPE.HOURLY ? 1 : 1,
+            maxDuration: pricingTypeValue === PRICING_TYPE.HOURLY ? 168 : 30,
+            defaultDuration: pricingTypeValue === PRICING_TYPE.HOURLY ? 4 : 3
+          }
+        }));
+        return;
+      }
+    } else if (field === 'durationConfig' && typeof value === 'object') {
+      // Handle nested durationConfig updates
+      setFormData(prev => ({
+        ...prev,
+        durationConfig: {
+          ...prev.durationConfig,
+          ...value
+        }
+      }));
+      // Clear validation error
+      if (errors.durationConfig) {
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.durationConfig;
+          return newErrors;
+        });
+      }
+      return;
     }
     
     setFormData(prev => ({
@@ -740,16 +871,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               />
             </div>
 
-            {/* Pricing Section - Merged into Product Details */}
+            {/* Pricing Type Configuration - REMOVED: Will be supported in the future */}
+            {/* TODO: Re-add pricing type selection when ready to support HOURLY/DAILY pricing */}
+            {/* Code has been removed to prevent any pricing type selection UI from appearing */}
+
+            {/* Rental Price - Always Fixed Price (FIXED pricing type) */}
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                {t('pricing.title')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <NumericInput
-                  label={t('fields.rentPrice')}
+                  label={t('pricing.pricePerRental')}
                   value={formData.rentPrice}
                   onChange={(value) => handleInputChange('rentPrice', value)}
                   placeholder="0.00"
@@ -759,6 +889,34 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   maxDecimalPlaces={2}
                 />
                 {errors.rentPrice && <p className="text-sm text-red-500">{errors.rentPrice}</p>}
+                <p className="text-xs text-gray-500">
+                  {t('pricing.fixedDescription')}
+                </p>
+              </div>
+            </div>
+
+            {/* Other Pricing & Inventory Section */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                {t('pricing.title')}
+              </h3>
+              
+              <div className="space-y-4">
+                {/* Deposit, Sale Price, and Cost Price */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <NumericInput
+                      label={t('fields.deposit')}
+                      value={formData.deposit}
+                      onChange={(value) => handleInputChange('deposit', value)}
+                  placeholder="0.00"
+                      error={!!errors.deposit}
+                  required
+                  allowDecimals={true}
+                  maxDecimalPlaces={2}
+                />
+                    {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
               </div>
 
               <div className="space-y-2">
@@ -777,19 +935,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
               <div className="space-y-2">
                 <NumericInput
-                  label={t('fields.deposit')}
-                  value={formData.deposit}
-                  onChange={(value) => handleInputChange('deposit', value)}
+                  label={t('fields.costPrice')}
+                  value={formData.costPrice}
+                  onChange={(value) => handleInputChange('costPrice', value)}
                   placeholder="0.00"
-                  error={!!errors.deposit}
-                  required
+                  error={!!errors.costPrice}
                   allowDecimals={true}
                   maxDecimalPlaces={2}
                 />
-                {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
+                {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
               </div>
             </div>
 
+                {/* Stock */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <NumericInput
@@ -804,6 +962,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 />
                 {errors.totalStock && <p className="text-sm text-red-500">{errors.totalStock}</p>}
               </div>
+            </div>
             </div>
             </div>
           </CardContent>

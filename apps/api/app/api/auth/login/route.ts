@@ -40,8 +40,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email verification is required AND if email is not verified
+    // NOTE: Only MERCHANT users need email verification
+    // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
     const emailVerificationEnabled = process.env.ENABLE_EMAIL_VERIFICATION === 'true';
-    if (emailVerificationEnabled && !user.emailVerified) {
+    const isMerchantUser = user.role === 'MERCHANT';
+    if (emailVerificationEnabled && isMerchantUser && !user.emailVerified) {
       return NextResponse.json(
         ResponseBuilder.error('EMAIL_NOT_VERIFIED'),
         { status: 403 }

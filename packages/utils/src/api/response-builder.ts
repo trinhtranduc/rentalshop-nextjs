@@ -106,6 +106,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   'API_KEY_NAME_REQUIRED': 'API key name is required',
   'VALID_USER_ID_REQUIRED': 'Valid user ID is required',
   
+  // Password Reset Errors
+  'PASSWORD_RESET_TOKEN_INVALID': 'Password reset token is invalid',
+  'PASSWORD_RESET_TOKEN_EXPIRED': 'Password reset token has expired',
+  'PASSWORD_RESET_TOKEN_USED': 'Password reset token has already been used',
+  
   // System Errors
   'INTERNAL_SERVER_ERROR': 'Internal server error',
   'FETCH_MERCHANTS_FAILED': 'Failed to fetch merchants',

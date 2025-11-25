@@ -212,13 +212,17 @@ export async function uploadToS3(
       // ACL removed - bucket does not allow ACLs
     });
 
+    // Validate bucket exists before upload
+    if (!BUCKET_NAME) {
+      throw new Error('AWS_S3_BUCKET_NAME environment variable is not set');
+    }
+
     // Sử dụng client đơn giản
     const client = createS3Client();
     await client.send(command);
 
-    // Generate URLs
-    const region = AWS_REGION || process.env.AWS_REGION || 'us-east-1';
-    const s3Url = `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${key}`;
+    // Generate URLs - use AWS_REGION constant instead of redeclaring
+    const s3Url = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${key}`;
     const cdnUrl = CLOUDFRONT_DOMAIN ? `https://${CLOUDFRONT_DOMAIN}/${key}` : s3Url;
 
     return {
@@ -227,16 +231,29 @@ export async function uploadToS3(
         url: cdnUrl, // Use CloudFront URL as primary
         key,
         bucket: BUCKET_NAME!,
-        region,
+        region: AWS_REGION,
         cdnUrl,
         s3Url // Keep S3 URL as fallback
       }
     };
 
   } catch (error) {
+    let errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Provide more helpful error messages for common S3 errors
+    if (errorMessage.includes('does not exist')) {
+      errorMessage = `S3 bucket "${BUCKET_NAME}" does not exist or is not accessible. Please check your AWS_S3_BUCKET_NAME environment variable and ensure the bucket exists in region ${AWS_REGION}.`;
+    } else if (errorMessage.includes('Access Denied') || errorMessage.includes('Forbidden')) {
+      errorMessage = `Access denied to S3 bucket "${BUCKET_NAME}". Please check your AWS credentials and bucket permissions.`;
+    } else if (errorMessage.includes('InvalidAccessKeyId')) {
+      errorMessage = 'Invalid AWS Access Key ID. Please check your AWS_ACCESS_KEY_ID environment variable.';
+    } else if (errorMessage.includes('SignatureDoesNotMatch')) {
+      errorMessage = 'AWS signature mismatch. Please check your AWS_SECRET_ACCESS_KEY environment variable.';
+    }
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage
     };
   }
 }
@@ -482,18 +499,24 @@ export async function generatePresignedUrl(
 
 /**
  * Generate clean S3 URL for file access (direct or CDN)
+ * Prefers CloudFront URL if configured (faster, cleaner, CDN caching)
+ * Falls back to presigned URL only if CloudFront is not available
  */
 export async function generateAccessUrl(
   key: string,
-  expiresIn: number = 3600
+  expiresIn: number = 3600,
+  forcePresigned: boolean = false
 ): Promise<string | null> {
   try {
-    // Prefer CloudFront URL if available (much cleaner and no access issues)
-    if (CLOUDFRONT_DOMAIN) {
+    // If CloudFront is configured, use it for all files (staging and production)
+    // CloudFront provides better performance, CDN caching, and cleaner URLs
+    if (CLOUDFRONT_DOMAIN && !forcePresigned) {
       return `https://${CLOUDFRONT_DOMAIN}/${key}`;
     }
     
-    // Fallback to presigned URL since bucket is not public
+    // Fallback to presigned URL only if:
+    // 1. CloudFront is not configured, OR
+    // 2. forcePresigned is explicitly requested
     // This ensures access works but URLs are longer
     const command = new GetObjectCommand({
       Bucket: BUCKET_NAME,

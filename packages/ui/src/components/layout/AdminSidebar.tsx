@@ -23,7 +23,8 @@ import {
   Store,
   LogOut,
   User,
-  Bell
+  Bell,
+  RefreshCw
 } from 'lucide-react';
 
 export interface AdminSidebarProps {
@@ -99,6 +100,11 @@ const adminMenuItems: MenuItem[] = [
         icon: Package 
       }
     ]
+  },
+  {
+    label: 'Data Sync',
+    href: '/sync',
+    icon: RefreshCw,
   }
 ];
 

@@ -18,7 +18,8 @@ import {
   useToast,
   Button,
   AddCustomerDialog,
-  ProductAddDialog } from '@rentalshop/ui';
+  ProductAddDialog,
+  useFormatCurrency } from '@rentalshop/ui';
 import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
@@ -31,8 +32,9 @@ import {
   Minus
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi, useFormattedFullDate, useFormattedMonthOnly } from '@rentalshop/utils';
+import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi, useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils';
 import { useLocale as useNextIntlLocale } from 'next-intl';
+import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
 
 // ============================================================================
@@ -84,6 +86,82 @@ interface RecentOrder {
 }
 
 // ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+// Map status key to ORDER_STATUS constant and get color
+// Option 5: Minimal text-only design - extract dot color from text color
+const getStatusDotColor = (statusKey: string): string => {
+  const statusMap: Record<string, string> = {
+    'reserved': 'RESERVED',
+    'pickup': 'PICKUPED',
+    'return': 'RETURNED',
+    'returned': 'RETURNED',
+    'completed': 'COMPLETED',
+    'cancelled': 'CANCELLED'
+  };
+  
+  const status = statusMap[statusKey.toLowerCase()] || 'RESERVED';
+  const colorClass = ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS] || ORDER_STATUS_COLORS.RESERVED;
+  
+  // Extract dot color from text color (minimal design)
+  if (colorClass.includes('blue-700')) return 'bg-blue-700';
+  if (colorClass.includes('green-700')) return 'bg-green-700';
+  if (colorClass.includes('green-600')) return 'bg-green-600';
+  if (colorClass.includes('gray-700')) return 'bg-gray-700';
+  if (colorClass.includes('gray-500')) return 'bg-gray-500';
+  return 'bg-gray-600';
+};
+
+// Get status badge color class
+const getStatusBadgeColor = (status: string): string => {
+  const normalizedStatus = status.toUpperCase();
+  return ORDER_STATUS_COLORS[normalizedStatus as keyof typeof ORDER_STATUS_COLORS] || ORDER_STATUS_COLORS.RESERVED;
+};
+
+// Format date as YYYY-MM-DD using local date components (avoids timezone conversion issues)
+const formatDateAsYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Parse date from API format: "dd/mm/yy" (daily) or "mm/yy" (monthly)
+const parseDateFromAPIFormat = (monthStr: string, year: number): Date => {
+  // Check if format is "dd/mm/yy" (daily) or "mm/yy" (monthly)
+  const parts = monthStr.split('/');
+  
+  if (parts.length === 3) {
+    // Daily format: "dd/mm/yy" (e.g., "21/11/25")
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+    // Handle 2-digit year: assume 20xx for years < 50, 19xx for years >= 50
+    const fullYear = parseInt(parts[2], 10) < 50 ? 2000 + parseInt(parts[2], 10) : 1900 + parseInt(parts[2], 10);
+    return new Date(fullYear, month, day);
+  } else if (parts.length === 2) {
+    // Monthly format: "mm/yy" (e.g., "11/25")
+    const month = parseInt(parts[0], 10) - 1; // Month is 0-indexed
+    // Handle 2-digit year: assume 20xx for years < 50, 19xx for years >= 50
+    const fullYear = parseInt(parts[1], 10) < 50 ? 2000 + parseInt(parts[1], 10) : 1900 + parseInt(parts[1], 10);
+    return new Date(fullYear, month, 1); // First day of month
+  }
+  
+  // Fallback: try to parse as old format "Nov 21" or "Nov"
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthParts = monthStr.trim().split(' ');
+  const monthName = monthParts[0];
+  const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1;
+  
+  const monthIndex = monthNames.indexOf(monthName);
+  if (monthIndex >= 0) {
+    return new Date(year, monthIndex, day);
+  }
+  
+  // Last fallback: use provided year and current date
+  return new Date(year, 0, 1);
+};
+
+// ============================================================================
 // COMPONENTS
 // ============================================================================
 const StatCard = ({ title, value, change, description, tooltip, color, trend, activeTooltip, setActiveTooltip, position }: {
@@ -98,6 +176,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
   setActiveTooltip: (title: string | null) => void;
   position?: 'left' | 'center' | 'right';
 }) => {
+  const formatMoney = useFormatCurrency();
   const shouldShowDollar = title.toLowerCase().includes('revenue') || title.toLowerCase().includes('income');
   const isTooltipActive = activeTooltip === title;
   
@@ -153,7 +232,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
         <p className={`text-3xl font-bold ${color} mb-2`}>
           {typeof value === 'number' 
             ? shouldShowDollar 
-              ? `$${value.toLocaleString()}`
+              ? formatMoney(value)
               : value.toLocaleString()
             : value}
         </p>
@@ -184,6 +263,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toastError, toastSuccess } = useToast();
+  const formatMoney = useFormatCurrency();
   const t = useDashboardTranslations();
   const tc = useCommonTranslations();
   const router = useRouter();
@@ -230,6 +310,9 @@ export default function DashboardPage() {
   // Data for product dialog
   const [categories, setCategories] = useState<any[]>([]);
   const [outlets, setOutlets] = useState<any[]>([]);
+  
+  // Outlet comparison state (MERCHANT only)
+  const [selectedOutlets, setSelectedOutlets] = useState<number[]>([]); // Empty = all outlets
 
   // Fetch categories and outlets for product dialog
   useEffect(() => {
@@ -287,7 +370,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [timePeriod]); // Fetch when time period changes
+  }, [timePeriod, selectedOutlets]); // Fetch when time period or selected outlets change
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -359,8 +442,8 @@ export default function DashboardPage() {
       console.log('  📊 Enhanced Dashboard:', `/api/analytics/enhanced-dashboard?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
       console.log('  📈 Today Metrics:', '/api/analytics/today-metrics');
       console.log('  📉 Growth Metrics:', `/api/analytics/growth-metrics?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
-      console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
-      console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
+      console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${selectedOutlets.length > 0 ? `&outletIds=${selectedOutlets.join(',')}` : ''}`);
+      console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${selectedOutlets.length > 0 ? `&outletIds=${selectedOutlets.join(',')}` : ''}`);
       console.log('  🏆 Top Products:', `/api/analytics/top-products?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
       console.log('  👥 Top Customers:', `/api/analytics/top-customers?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
       console.log('  📋 Dashboard Summary:', '/api/analytics/dashboard');
@@ -387,11 +470,17 @@ export default function DashboardPage() {
           console.log('📉 Growth Metrics API:', response);
           return response;
         }),
-        analyticsApi.getIncomeAnalytics(defaultFilters).then(response => {
+        analyticsApi.getIncomeAnalytics({
+          ...defaultFilters,
+          outletIds: selectedOutlets.length > 0 ? selectedOutlets : undefined
+        }).then(response => {
           console.log('💰 Income Analytics API:', response);
           return response;
         }),
-        analyticsApi.getOrderAnalytics(defaultFilters).then(response => {
+        analyticsApi.getOrderAnalytics({
+          ...defaultFilters,
+          outletIds: selectedOutlets.length > 0 ? selectedOutlets : undefined
+        }).then(response => {
           console.log('📦 Order Analytics API:', response);
           return response;
         }),
@@ -574,47 +663,208 @@ export default function DashboardPage() {
   };
 
   const getRevenueData = () => {
-    // Transform income data to match chart component expectations
-    return incomeData.map((item: any) => {
-      // Create a proper date object from month name and year
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthIndex = monthNames.indexOf(item.month);
-      const date = new Date(item.year, monthIndex, 1);
+    // Check if data has outlet information (outlet comparison mode)
+    const hasOutletData = incomeData.length > 0 && incomeData.some((item: any) => item.outletId !== undefined);
+    
+    if (hasOutletData && selectedOutlets.length > 0) {
+      // Group by period and outlet for comparison mode
+      const groupedByPeriod: { [key: string]: any } = {};
+      const outletMap = new Map<number, string>();
       
-      return {
-        period: date.toISOString(),  // Return ISO string for consistent date formatting
+      // Build outlet map from data
+      incomeData.forEach((item: any) => {
+        if (item.outletId && item.outletName) {
+          outletMap.set(item.outletId, item.outletName);
+        }
+      });
+      
+      incomeData.forEach((item: any) => {
+        // Parse period from API response
+        // API returns: month: "21/11/25" (for daily) or "11/25" (for monthly), year: 2025
+        let date: Date;
+        
+        if (item.month && item.year) {
+          date = parseDateFromAPIFormat(item.month, item.year);
+        } else {
+          date = new Date();
+        }
+        
+        const periodKey = formatDateAsYYYYMMDD(date);
+        
+        if (!groupedByPeriod[periodKey]) {
+          groupedByPeriod[periodKey] = {
+            period: periodKey,
+            outlets: {} as { [outletId: string]: { actual: number; projected: number; outletName: string } }
+          };
+        }
+        
+        const outletKey = item.outletId || 'all';
+        const outletName = item.outletName || outletMap.get(item.outletId) || 'All Outlets';
+        groupedByPeriod[periodKey].outlets[outletKey] = {
+          actual: item.realIncome || 0,
+          projected: item.futureIncome || 0,
+          outletName: outletName
+        };
+      });
+      
+      // Convert to array format for chart
+      return Object.values(groupedByPeriod).map((group: any) => {
+        const result: any = { period: group.period };
+        Object.entries(group.outlets).forEach(([outletId, outletData]: [string, any]) => {
+          result[`${outletData.outletName}_actual`] = outletData.actual;
+          result[`${outletData.outletName}_projected`] = outletData.projected;
+        });
+        return result;
+      });
+    }
+    
+    // Default behavior: aggregate data (no outlet comparison)
+    return incomeData.map((item: any) => {
+      // Parse period from API response
+      // API returns: month: "21/11/25" (for daily) or "11/25" (for monthly), year: 2025
+      let date: Date;
+      
+      if (item.month && item.year) {
+        date = parseDateFromAPIFormat(item.month, item.year);
+      } else if (item.period) {
+        // If period is already a date string
+        date = new Date(item.period);
+      } else {
+        // Fallback to current date
+        date = new Date();
+      }
+      
+      const result = {
+        period: formatDateAsYYYYMMDD(date),  // Return YYYY-MM-DD format to avoid timezone conversion issues
         actual: item.realIncome || 0,
         projected: item.futureIncome || 0
       };
+      
+      // Debug: log first few items and items with data to verify parsing
+      if (incomeData.indexOf(item) < 3 || item.realIncome > 0) {
+        console.log('🔍 Revenue data item:', {
+          original: { month: item.month, year: item.year, realIncome: item.realIncome },
+          parsed: { period: result.period, actual: result.actual, projected: result.projected },
+          date: formatDateAsYYYYMMDD(date),
+          parsedDate: date.toString()
+        });
+      }
+      
+      return result;
     });
   };
 
   const getOrderData = () => {
-    // Transform order data to match chart component expectations
+    // Check if data has outlet information (outlet comparison mode)
+    const hasOutletData = orderData.length > 0 && orderData.some((item: any) => item.outletId !== undefined);
+    
+    if (hasOutletData && selectedOutlets.length > 0 && outlets.length > 1) {
+      // Group by period and outlet for comparison mode
+      const groupedByPeriod: { [key: string]: any } = {};
+      const outletMap = new Map<number, string>();
+      
+      // Build outlet map from data
+      orderData.forEach((item: any) => {
+        if (item.outletId && item.outletName) {
+          outletMap.set(item.outletId, item.outletName);
+        }
+      });
+      
+      orderData.forEach((item: any) => {
+        // Handle different date formats from API
+        let periodKey: string;
+        
+        if (item.period) {
+          // Try to parse as date, otherwise use as-is
+          try {
+            const date = new Date(item.period);
+            periodKey = formatDateAsYYYYMMDD(date);
+          } catch {
+            periodKey = item.period;
+          }
+        } else if (item.month && item.year) {
+          // Parse month/year - handle "Nov 25" format (daily) or "Nov" format (monthly)
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const monthParts = item.month.trim().split(' ');
+          const monthName = monthParts[0]; // Extract "Nov" from "Nov 25"
+          const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1; // Extract day if present, default to 1
+          
+          const monthIndex = monthNames.indexOf(monthName);
+          if (monthIndex >= 0) {
+            const date = new Date(item.year, monthIndex, day);
+          periodKey = formatDateAsYYYYMMDD(date);
+          } else {
+            periodKey = 'unknown';
+          }
+        } else {
+          periodKey = 'unknown';
+        }
+        
+        if (!groupedByPeriod[periodKey]) {
+          groupedByPeriod[periodKey] = {
+            period: periodKey,
+            outlets: {} as { [outletId: string]: { actual: number; outletName: string } }
+          };
+        }
+        
+        const outletKey = item.outletId || 'all';
+        const outletName = item.outletName || outletMap.get(item.outletId) || 'All Outlets';
+        groupedByPeriod[periodKey].outlets[outletKey] = {
+          actual: item.count || item.orderCount || 0,
+          outletName: outletName
+        };
+      });
+      
+      // Convert to array format for chart
+      return Object.values(groupedByPeriod).map((group: any) => {
+        // Format period label for display
+        let periodLabel: string;
+        try {
+          const date = new Date(group.period);
+          if (timePeriod === 'year') {
+            periodLabel = useFormattedMonthOnly(date);
+          } else {
+            periodLabel = useFormattedDaily(date);
+          }
+        } catch {
+          periodLabel = group.period;
+        }
+        
+        const result: any = { period: periodLabel };
+        Object.entries(group.outlets).forEach(([outletId, outletData]: [string, any]) => {
+          result[outletData.outletName] = outletData.actual;
+        });
+        return result;
+      });
+    }
+    
+    // Default behavior: aggregate data (no outlet comparison)
     return orderData.map((item: any) => {
-      // Handle different date formats from API
-      let periodLabel: string;
+      // Parse period from API response
+      let date: Date;
       
       if (item.period) {
         // Order Analytics API returns format like "2025-10-02" or "2025-10"
-        const date = new Date(item.period);
-        // Determine if it's day or month format based on string length
-        if (item.period.includes('-') && item.period.split('-').length === 3) {
-          // Day format: "2025-10-02"
-          periodLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        } else {
-          // Month format: "2025-10"
-          periodLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        }
+        date = new Date(item.period);
       } else if (item.month && item.year) {
-        // Income Analytics API returns format like "Oct 2025"
-        periodLabel = `${item.month} ${item.year}`;
+        // Parse month/year - handle "Nov 25" format (daily) or "Nov" format (monthly)
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthParts = item.month.trim().split(' ');
+        const monthName = monthParts[0]; // Extract "Nov" from "Nov 25"
+        const day = monthParts.length > 1 ? parseInt(monthParts[1]) : 1; // Extract day if present, default to 1
+        
+        const monthIndex = monthNames.indexOf(monthName);
+        if (monthIndex >= 0) {
+          date = new Date(item.year, monthIndex, day);
+        } else {
+          date = new Date(item.month + ' ' + item.year);
+        }
       } else {
-        periodLabel = 'Unknown';
+        date = new Date();
       }
       
       return {
-        period: periodLabel,
+        period: formatDateAsYYYYMMDD(date),  // Return YYYY-MM-DD format to avoid timezone conversion issues
         actual: item.count || item.orderCount || 0,
         projected: item.count || item.orderCount || 0
       };
@@ -636,6 +886,21 @@ export default function DashboardPage() {
   const currentOrderData = getOrderData();
   const currentTopProducts = getTopProducts();
   const currentTopCustomers = getTopCustomers();
+  
+  // Debug: log revenue data for chart
+  useEffect(() => {
+    if (currentRevenueData.length > 0) {
+      const itemsWithData = currentRevenueData.filter(item => item.actual > 0 || item.projected > 0);
+      console.log('📊 Revenue data for chart:', {
+        totalItems: currentRevenueData.length,
+        first3: currentRevenueData.slice(0, 3),
+        last3: currentRevenueData.slice(-3),
+        hasData: currentRevenueData.some(item => item.actual > 0 || item.projected > 0),
+        itemsWithData: itemsWithData,
+        allPeriods: currentRevenueData.map(item => ({ period: item.period, actual: item.actual, projected: item.projected }))
+      });
+    }
+  }, [currentRevenueData]);
   
   // Debug popular data
   console.log('🔍 Current Top Products:', currentTopProducts);
@@ -781,7 +1046,7 @@ export default function DashboardPage() {
                   change=""
                   description=""
                   tooltip={t('tooltips.todayRevenue')}
-                  color="text-green-600"
+                  color="text-blue-700"
                   trend="neutral"
                   activeTooltip={activeTooltip}
                   setActiveTooltip={setActiveTooltip}
@@ -806,7 +1071,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.activeRentals')}
-                color="text-purple-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -818,7 +1083,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.overdueReturns')}
-                color="text-red-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -854,25 +1119,40 @@ export default function DashboardPage() {
                     </div>
                   ) : (todayOrders || []).length > 0 ? (
                     <div className="space-y-2">
-                      {(todayOrders || []).slice(0, 6).map(order => (
-                        <div key={order.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <Package className="w-4 h-4 text-blue-700" />
-                            <div>
-                              <div className="font-semibold text-sm text-gray-900">{order.orderNumber}</div>
+                      {(todayOrders || []).slice(0, 6).map(order => {
+                        const statusColor = getStatusBadgeColor(order.status);
+                        // Extract text color for icon and amount
+                        const textColor = statusColor.includes('blue-700') ? 'text-blue-700' :
+                                         statusColor.includes('green-700') ? 'text-green-700' :
+                                         statusColor.includes('green-600') ? 'text-green-600' :
+                                         statusColor.includes('gray-700') ? 'text-gray-700' :
+                                         statusColor.includes('gray-500') ? 'text-gray-500' :
+                                         'text-gray-700';
+                        
+                        return (
+                          <div key={order.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 transition-colors hover:border-gray-300">
+                            <div className="flex items-center space-x-3 flex-1 min-w-0">
+                              <Package className={`w-4 h-4 ${textColor} shrink-0`} />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-sm text-gray-900 truncate">{order.orderNumber}</div>
                               <div className="text-xs text-gray-600 font-normal mt-0.5">
                                 {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'} • 
                                 {order.returnPlanAt ? useFormattedFullDate(order.returnPlanAt) : 'N/A'}
                               </div>
-                              <div className="text-xs text-gray-500 font-normal">{order.productNames || 'N/A'}</div>
+                                <div className="text-xs text-gray-500 font-normal truncate">{order.productNames || 'N/A'}</div>
+                                <div className="mt-1.5">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+                                    {order.status}
+                                  </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-bold text-sm text-blue-700">${(order.totalAmount || 0).toLocaleString()}</div>
-                            <div className="text-xs text-gray-500 font-normal mt-0.5">{order.status}</div>
                           </div>
+                            <div className="text-right ml-3 shrink-0">
+                              <div className={`font-bold text-sm ${textColor}`}>{formatMoney(order.totalAmount || 0)}</div>
                         </div>
-                      ))}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
@@ -891,15 +1171,18 @@ export default function DashboardPage() {
                 <CardContentClean>
                   <div className="space-y-3">
                     {[
-                      { statusKey: 'reserved', count: orderStatusCounts.reserved || 0, dotColor: 'bg-blue-500' },
-                      { statusKey: 'pickup', count: orderStatusCounts.pickup || 0, dotColor: 'bg-green-500' },
-                      { statusKey: 'return', count: orderStatusCounts.returned || 0, dotColor: 'bg-yellow-500' },
-                      { statusKey: 'completed', count: orderStatusCounts.completed || 0, dotColor: 'bg-gray-500' },
-                      { statusKey: 'cancelled', count: orderStatusCounts.cancelled || 0, dotColor: 'bg-red-500' }
-                    ].map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      { statusKey: 'reserved', count: orderStatusCounts.reserved || 0 },
+                      { statusKey: 'pickup', count: orderStatusCounts.pickup || 0 },
+                      { statusKey: 'return', count: orderStatusCounts.returned || 0 },
+                      { statusKey: 'completed', count: orderStatusCounts.completed || 0 },
+                      { statusKey: 'cancelled', count: orderStatusCounts.cancelled || 0 }
+                    ].map((item, index) => {
+                      const dotColor = getStatusDotColor(item.statusKey);
+                      
+                      return (
+                        <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-all">
                         <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${item.dotColor}`}></div>
+                            <div className={`w-3 h-3 rounded-full ${dotColor} shrink-0`}></div>
                           <span className="text-sm font-semibold text-gray-900 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -907,7 +1190,8 @@ export default function DashboardPage() {
                           <span className="text-xs text-gray-400 font-normal">{t('orderStatuses.ordersCount')}</span>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContentClean>
               </CardClean>
@@ -930,7 +1214,7 @@ export default function DashboardPage() {
                   change={currentStats.revenueGrowth > 0 ? `+${currentStats.revenueGrowth.toFixed(1)}%` : ''}
                   description=""
                   tooltip={t('tooltips.totalRevenue')}
-                  color="text-green-600"
+                  color="text-blue-700"
                   trend={currentStats.revenueGrowth > 0 ? "up" : "neutral"}
                   activeTooltip={activeTooltip}
                   setActiveTooltip={setActiveTooltip}
@@ -953,7 +1237,7 @@ export default function DashboardPage() {
                 change=""
                 description=""
                 tooltip={t('tooltips.completedOrders')}
-                color="text-purple-600"
+                color="text-blue-700"
                 trend="neutral"
                 activeTooltip={activeTooltip}
                 setActiveTooltip={setActiveTooltip}
@@ -966,13 +1250,81 @@ export default function DashboardPage() {
                   change=""
                   description=""
                   tooltip={t('tooltips.futureRevenue')}
-                  color="text-orange-600"
+                  color="text-blue-700"
                   trend="neutral"
                   activeTooltip={activeTooltip}
                   setActiveTooltip={setActiveTooltip}
                 />
               )}
             </div>
+
+            {/* Outlet Selector - Only for MERCHANT role in month/year views */}
+            {user?.role === 'MERCHANT' && outlets.length > 1 && (timePeriod === 'month' || timePeriod === 'year') && (
+              <CardClean size="md" className="mb-6">
+                <CardHeaderClean>
+                  <CardTitleClean size="sm">{t('charts.compareOutlets')}</CardTitleClean>
+                </CardHeaderClean>
+                <CardContentClean>
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600">{t('charts.selectOutletsToCompare')}</p>
+                    <div className="flex flex-wrap gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedOutlets.length === 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedOutlets([]); // All outlets
+                            } else {
+                              // If unchecking "All", select first outlet
+                              if (outlets.length > 0) {
+                                setSelectedOutlets([outlets[0].id]);
+                              }
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">{t('charts.allOutlets')}</span>
+                      </label>
+                      {outlets.map((outlet) => {
+                        const isChecked = selectedOutlets.length === 0 ? true : selectedOutlets.includes(outlet.id);
+                        return (
+                          <label key={outlet.id} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  // Add outlet to selection
+                                  if (selectedOutlets.length === 0) {
+                                    // If "all" was selected, replace with this outlet
+                                    setSelectedOutlets([outlet.id]);
+                                  } else if (!selectedOutlets.includes(outlet.id)) {
+                                    setSelectedOutlets([...selectedOutlets, outlet.id]);
+                                  }
+                                } else {
+                                  // Remove outlet from selection
+                                  if (selectedOutlets.length === 0) {
+                                    // If "all" was checked, select all except this one
+                                    setSelectedOutlets(outlets.filter(o => o.id !== outlet.id).map(o => o.id));
+                                  } else {
+                                    const newSelection = selectedOutlets.filter(id => id !== outlet.id);
+                                    // If no outlets selected, default to all (empty array)
+                                    setSelectedOutlets(newSelection.length > 0 ? newSelection : []);
+                                  }
+                                }
+                              }}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">{outlet.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </CardContentClean>
+              </CardClean>
+            )}
 
             {/* Revenue Charts - Hidden for OUTLET_STAFF */}
             {user?.role !== 'OUTLET_STAFF' && (
@@ -995,6 +1347,11 @@ export default function DashboardPage() {
                       noDataText={t('charts.noData')}
                       loadingText={tc('labels.loading')}
                       timePeriod={timePeriod}
+                      outlets={
+                        selectedOutlets.length > 0 && selectedOutlets.length < outlets.length
+                          ? outlets.filter(o => selectedOutlets.includes(o.id)).map(o => ({ id: o.id, name: o.name }))
+                          : outlets.map(o => ({ id: o.id, name: o.name }))
+                      }
                     />
                   </CardContentClean>
                 </CardClean>
@@ -1015,6 +1372,10 @@ export default function DashboardPage() {
                     legendLabel={t('charts.rentalOrders')}
                     tooltipLabel={t('charts.ordersCount')}
                     timePeriod={timePeriod}
+                    outlets={selectedOutlets.length > 0 
+                      ? outlets.filter(o => selectedOutlets.includes(o.id)).map(o => ({ id: o.id, name: o.name }))
+                      : []
+                    }
                   />
                 </CardContentClean>
               </CardClean>
@@ -1054,7 +1415,7 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-600">{product.category}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-green-600 text-lg">${(product.totalRevenue || 0).toLocaleString()}</p>
+                            <p className="font-semibold text-green-600 text-lg">{formatMoney(product.totalRevenue || 0)}</p>
                             <p className="text-sm text-gray-500">{product.rentalCount || 0} total orders</p>
                           </div>
                         </div>
@@ -1100,7 +1461,7 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-600">{customer.location}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-green-600 text-lg">${(customer.totalSpent || 0).toLocaleString()}</p>
+                            <p className="font-semibold text-green-600 text-lg">{formatMoney(customer.totalSpent || 0)}</p>
                             <p className="text-sm text-gray-500">{customer.orderCount || 0} total orders</p>
                             <p className="text-xs text-gray-400">
                               {customer.rentalCount || 0} rentals • {customer.saleCount || 0} sales

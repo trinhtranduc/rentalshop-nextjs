@@ -3,6 +3,52 @@ import * as _prisma_client_runtime_library from '@prisma/client/runtime/library'
 import { Prisma, PrismaClient } from '@prisma/client';
 
 /**
+ * Sync Session Operations
+ * Temporary implementation for sync-standalone endpoint
+ * TODO: Implement proper sync session tracking with database model
+ */
+interface SyncSession {
+    id: number;
+    merchantId: number;
+    entities: string[];
+    config: {
+        endpoint: string;
+        token: string;
+    };
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+    stats?: any;
+    errorLog?: any[];
+    createdAt: Date;
+    updatedAt: Date;
+}
+interface CreateSessionInput {
+    merchantId: number;
+    entities: string[];
+    config: {
+        endpoint: string;
+        token: string;
+    };
+}
+interface UpdateStatusInput {
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+    stats?: any;
+    errorLog?: any[];
+}
+interface AddRecordInput {
+    syncSessionId: number;
+    entityType: 'customer' | 'product' | 'order';
+    entityId: number;
+    oldServerId: string;
+    status: 'created' | 'updated' | 'failed';
+    logMessage?: string;
+}
+interface CreatedRecord {
+    entityType: 'customer' | 'product' | 'order';
+    entityId: number;
+    oldServerId: string;
+}
+
+/**
  * Generate a unique session ID
  */
 declare function generateSessionId(): string;
@@ -157,13 +203,26 @@ interface MerchantUpdateData extends Partial<MerchantCreateData> {
 /**
  * Find merchant by ID
  */
-declare function findById$1(id: number): Promise<({
+declare function findById$1(id: number): Promise<{
     _count: {
         products: number;
         users: number;
         customers: number;
         outlets: number;
     };
+    id: number;
+    name: string;
+    address: string | null;
+    description: string | null;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    phone: string | null;
+    city: string | null;
+    country: string | null;
+    state: string | null;
+    zipCode: string | null;
+    email: string;
     subscription: ({
         plan: {
             id: number;
@@ -203,36 +262,19 @@ declare function findById$1(id: number): Promise<({
         discount: number;
         savings: number;
     }) | null;
+    tenantKey: string | null;
+    businessType: _prisma_client.$Enums.BusinessType;
+    taxId: string | null;
+    website: string | null;
+    pricingConfig: string | null;
+    pricingType: _prisma_client.$Enums.PricingType;
+    currency: string;
     outlets: {
         id: number;
         name: string;
         isActive: boolean;
     }[];
-} & {
-    id: number;
-    name: string;
-    address: string | null;
-    description: string | null;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-    phone: string | null;
-    city: string | null;
-    country: string | null;
-    state: string | null;
-    zipCode: string | null;
-    email: string;
-    tenantKey: string | null;
-    businessType: _prisma_client.$Enums.BusinessType;
-    taxId: string | null;
-    website: string | null;
-    planId: number | null;
-    totalRevenue: number;
-    lastActiveAt: Date | null;
-    pricingConfig: string | null;
-    pricingType: _prisma_client.$Enums.PricingType;
-    currency: string;
-}) | null>;
+} | null>;
 /**
  * Find merchant by email
  */
@@ -300,6 +342,25 @@ declare function findByEmail(email: string): Promise<({
     pricingType: _prisma_client.$Enums.PricingType;
     currency: string;
 }) | null>;
+/**
+ * Find merchant by tenantKey
+ * Used for public product pages where merchant shares link with customers
+ */
+declare function findByTenantKey(tenantKey: string): Promise<{
+    id: number;
+    name: string;
+    address: string | null;
+    description: string | null;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    phone: string | null;
+    city: string | null;
+    country: string | null;
+    email: string;
+    website: string | null;
+    currency: string;
+} | null>;
 /**
  * Search merchants with filtering and pagination
  */
@@ -869,11 +930,24 @@ declare const SUBSCRIPTION_STATUS: {
     readonly EXPIRED: "EXPIRED";
 };
 type SubscriptionStatus = typeof SUBSCRIPTION_STATUS[keyof typeof SUBSCRIPTION_STATUS];
+declare const ORDER_STATUS: {
+    readonly RESERVED: "RESERVED";
+    readonly PICKUPED: "PICKUPED";
+    readonly RETURNED: "RETURNED";
+    readonly COMPLETED: "COMPLETED";
+    readonly CANCELLED: "CANCELLED";
+};
+type OrderStatus = typeof ORDER_STATUS[keyof typeof ORDER_STATUS];
+declare const ORDER_TYPE: {
+    readonly RENT: "RENT";
+    readonly SALE: "SALE";
+};
+type OrderType = typeof ORDER_TYPE[keyof typeof ORDER_TYPE];
 declare const BILLING_INTERVAL: {
     readonly MONTHLY: "monthly";
     readonly QUARTERLY: "quarterly";
-    readonly SIX_MONTHS: "sixMonths";
-    readonly YEARLY: "yearly";
+    readonly SEMI_ANNUAL: "semi_annual";
+    readonly ANNUAL: "annual";
 };
 type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];
 
@@ -906,8 +980,8 @@ interface Plan {
     pricing: {
         monthly: PlanPricing;
         quarterly: PlanPricing;
-        sixMonths: PlanPricing;
-        yearly: PlanPricing;
+        semi_annual: PlanPricing;
+        annual: PlanPricing;
     };
     createdAt: Date;
     updatedAt: Date;
@@ -958,14 +1032,6 @@ interface Subscription {
     plan?: Plan;
 }
 
-/**
- * Order types - simplified to RENT and SALE only
- */
-type OrderType = 'RENT' | 'SALE';
-/**
- * Order statuses - simplified status flow
- */
-type OrderStatus = 'RESERVED' | 'PICKUPED' | 'RETURNED' | 'COMPLETED' | 'CANCELLED';
 /**
  * Order item with product details
  * Used for order item displays
@@ -1092,6 +1158,112 @@ var custom = {
 	priceGreaterThanZero: "Price must be greater than zero",
 	quantityGreaterThanZero: "Quantity must be greater than zero"
 };
+var fields$2 = {
+	firstName: {
+		required: "First name is required"
+	},
+	lastName: {
+		required: "Last name is required"
+	},
+	name: {
+		required: "Name is required",
+		minLength: "Name must be at least {min} characters"
+	},
+	productName: {
+		required: "Product name is required"
+	},
+	outletName: {
+		required: "Outlet name is required"
+	},
+	planName: {
+		required: "Plan name is required"
+	},
+	planDescription: {
+		required: "Plan description is required"
+	},
+	variantName: {
+		required: "Variant name is required"
+	},
+	phone: {
+		required: "Phone number is required"
+	},
+	email: {
+		invalid: "Invalid email address",
+		invalidFormat: "Invalid email format"
+	},
+	password: {
+		minLength6: "Password must be at least 6 characters"
+	},
+	country: {
+		invalid: "Please select a valid country"
+	},
+	tenantKey: {
+		invalid: "Tenant key must be alphanumeric"
+	},
+	product: {
+		required: "Product is required"
+	},
+	outlet: {
+		required: "Outlet is required"
+	},
+	merchantId: {
+		required: "Merchant ID is required"
+	},
+	planId: {
+		required: "Plan ID is required"
+	},
+	planVariantId: {
+		required: "Plan variant ID is required"
+	},
+	rentPrice: {
+		nonNegative: "Rent price must be non-negative"
+	},
+	salePrice: {
+		nonNegative: "Sale price must be non-negative"
+	},
+	costPrice: {
+		nonNegative: "Cost price must be non-negative"
+	},
+	deposit: {
+		nonNegative: "Deposit must be non-negative"
+	},
+	stock: {
+		nonNegative: "Stock must be non-negative"
+	},
+	totalStock: {
+		nonNegative: "Total stock must be non-negative"
+	},
+	basePrice: {
+		nonNegative: "Base price must be non-negative"
+	},
+	price: {
+		nonNegative: "Price must be non-negative"
+	},
+	amount: {
+		nonNegative: "Amount must be non-negative"
+	},
+	duration: {
+		positive: "Duration must be positive"
+	},
+	trialDays: {
+		nonNegative: "Trial days must be non-negative"
+	},
+	discount: {
+		range: "Discount must be between 0 and 100"
+	},
+	durationConfig: {
+		required: "Duration configuration is required and must be valid JSON for HOURLY and DAILY pricing types"
+	},
+	endDate: {
+		afterStart: "End date must be after start date"
+	},
+	nameOrFullName: {
+		required: "Either 'name' or both 'firstName' and 'lastName' must be provided"
+	},
+	businessTypePricingType: {
+		required: "Business type and pricing type are required for merchant registration"
+	}
+};
 var validation$1 = {
 	required: required,
 	email: email,
@@ -1113,7 +1285,8 @@ var validation$1 = {
 	file: file,
 	unique: unique,
 	exists: exists,
-	custom: custom
+	custom: custom,
+	fields: fields$2
 };
 
 declare const _________locales_en_validation_json_custom: typeof custom;
@@ -1137,7 +1310,7 @@ declare const _________locales_en_validation_json_required: typeof required;
 declare const _________locales_en_validation_json_unique: typeof unique;
 declare const _________locales_en_validation_json_url: typeof url;
 declare namespace _________locales_en_validation_json {
-  export { _________locales_en_validation_json_custom as custom, _________locales_en_validation_json_date as date, _________locales_en_validation_json_dateRange as dateRange, validation$1 as default, _________locales_en_validation_json_email as email, _________locales_en_validation_json_exists as exists, _________locales_en_validation_json_file as file, _________locales_en_validation_json_integer as integer, _________locales_en_validation_json_max as max, _________locales_en_validation_json_maxLength as maxLength, _________locales_en_validation_json_min as min, _________locales_en_validation_json_minLength as minLength, _________locales_en_validation_json_negative as negative, _________locales_en_validation_json_number as number, _________locales_en_validation_json_password as password, _________locales_en_validation_json_pattern as pattern, _________locales_en_validation_json_phone as phone, _________locales_en_validation_json_positive as positive, _________locales_en_validation_json_required as required, time$1 as time, _________locales_en_validation_json_unique as unique, _________locales_en_validation_json_url as url };
+  export { _________locales_en_validation_json_custom as custom, _________locales_en_validation_json_date as date, _________locales_en_validation_json_dateRange as dateRange, validation$1 as default, _________locales_en_validation_json_email as email, _________locales_en_validation_json_exists as exists, fields$2 as fields, _________locales_en_validation_json_file as file, _________locales_en_validation_json_integer as integer, _________locales_en_validation_json_max as max, _________locales_en_validation_json_maxLength as maxLength, _________locales_en_validation_json_min as min, _________locales_en_validation_json_minLength as minLength, _________locales_en_validation_json_negative as negative, _________locales_en_validation_json_number as number, _________locales_en_validation_json_password as password, _________locales_en_validation_json_pattern as pattern, _________locales_en_validation_json_phone as phone, _________locales_en_validation_json_positive as positive, _________locales_en_validation_json_required as required, time$1 as time, _________locales_en_validation_json_unique as unique, _________locales_en_validation_json_url as url };
 }
 
 var title$4 = "Settings";
@@ -1233,7 +1406,13 @@ var merchant = {
 	vietnameseDong: "Vietnamese Dong",
 	selected: "Selected",
 	selectCurrency: "Select Currency",
-	savingCurrency: "Updating currency..."
+	savingCurrency: "Updating currency...",
+	publicProductLink: "Public Product Link",
+	publicProductLinkDesc: "Share this link with your customers so they can browse your products. This link is public and doesn't require login.",
+	copy: "Copy Link",
+	copied: "Copied!",
+	share: "Share",
+	viewPublicPage: "View Public Page"
 };
 var outlet = {
 	title: "Outlet Settings",
@@ -1590,7 +1769,10 @@ var messages$3 = {
 	getStarted: "Get started by adding your first customer",
 	loadingCustomers: "Loading customers...",
 	na: "N/A",
-	noChanges: "No changes detected"
+	noChanges: "No changes detected",
+	unexpectedError: "An unexpected error occurred",
+	duplicatePhone: "A customer with this phone number already exists",
+	duplicateEmail: "A customer with this email address already exists"
 };
 var filters$2 = {
 	all: "All Customers",
@@ -1693,6 +1875,7 @@ var fields = {
 	price: "Price",
 	rentPrice: "Rental Price",
 	salePrice: "Sale Price",
+	costPrice: "Cost Price",
 	deposit: "Deposit",
 	stock: "Stock",
 	available: "Available",
@@ -1753,15 +1936,40 @@ var availability = {
 };
 var pricing = {
 	title: "Pricing",
+	pricingType: "Pricing Type",
+	pricingTypeOptional: "Pricing Type (Optional - Default: Fixed Price)",
+	selectPricingType: "Select pricing type (default: Fixed)",
+	fixed: "Fixed Price",
+	fixedDescription: "Same price regardless of rental duration",
+	fixedDescriptionDefault: "Fixed price per rental (default). Duration configuration not required.",
+	pricePerRental: "Price per rental",
+	pricePerHour: "Price per hour",
+	pricePerDay: "Price per day",
 	hourly: "Hourly Rate",
+	hourlyLabel: "Hourly",
+	hourlyDescription: "Price per hour (e.g., vehicles, tools)",
 	daily: "Daily Rate",
+	dailyLabel: "Daily",
+	dailyDescription: "Price per day (e.g., construction equipment)",
 	weekly: "Weekly Rate",
 	monthly: "Monthly Rate",
 	custom: "Custom Rate",
-	depositRequired: "Deposit Required"
+	depositRequired: "Deposit Required",
+	durationConfiguration: "Duration Configuration",
+	durationConfigurationRequired: "Duration Configuration (Required for {type} Pricing)",
+	durationConfigurationRequiredHourly: "Duration Configuration (Required for Hourly Pricing)",
+	durationConfigurationRequiredDaily: "Duration Configuration (Required for Daily Pricing)",
+	minimumDuration: "Minimum Duration",
+	maximumDuration: "Maximum Duration",
+	defaultDuration: "Default Duration",
+	durationUnitHours: "hours",
+	durationUnitDays: "days",
+	exampleHourly: "Example: Min 1 hour, Max 168 hours (1 week), Default 4 hours",
+	exampleDaily: "Example: Min 1 day, Max 30 days, Default 3 days"
 };
 var actions$1 = {
 	viewDetails: "View Details",
+	view: "View",
 	edit: "Edit Product",
 	viewOrders: "View Orders",
 	activate: "Activate",
@@ -1772,6 +1980,9 @@ var actions$1 = {
 	archive: "Archive Product",
 	restore: "Restore Product"
 };
+var rentNow = "Rent Now";
+var details = "Details";
+var rent = "Rent";
 var messages$2 = {
 	createSuccess: "Product created successfully",
 	createFailed: "Failed to create product",
@@ -1826,6 +2037,19 @@ var selectedProducts = "Selected Products";
 var noProductsSelected = "No Products Selected";
 var productInformationNotAvailable = "Product information not available";
 var productId = "Product ID";
+var showingProducts = "Showing {count} of {total} products";
+var noProductsFound = "No products found";
+var tryDifferentSearch = "Try adjusting your search or filters";
+var checkBackLater = "This store does not have any products available at the moment. Please check back later.";
+var clearFilters = "Clear Filters";
+var allCategories = "All Categories";
+var noCategories = "No categories";
+var uncategorized = "Uncategorized";
+var store = "Store";
+var productsPlural = "products";
+var storeNotFound = "Store Not Found";
+var storeNotFoundMessage = "The store you're looking for could not be found. Please check the URL or contact the store owner.";
+var goToHomepage = "Go to Homepage";
 var products = {
 	title: title$2,
 	productName: productName,
@@ -1841,6 +2065,9 @@ var products = {
 	availability: availability,
 	pricing: pricing,
 	actions: actions$1,
+	rentNow: rentNow,
+	details: details,
+	rent: rent,
 	messages: messages$2,
 	filters: filters$1,
 	search: search$1,
@@ -1848,14 +2075,34 @@ var products = {
 	selectedProducts: selectedProducts,
 	noProductsSelected: noProductsSelected,
 	productInformationNotAvailable: productInformationNotAvailable,
-	productId: productId
+	productId: productId,
+	showingProducts: showingProducts,
+	noProductsFound: noProductsFound,
+	tryDifferentSearch: tryDifferentSearch,
+	checkBackLater: checkBackLater,
+	clearFilters: clearFilters,
+	allCategories: allCategories,
+	noCategories: noCategories,
+	uncategorized: uncategorized,
+	store: store,
+	productsPlural: productsPlural,
+	storeNotFound: storeNotFound,
+	storeNotFoundMessage: storeNotFoundMessage,
+	goToHomepage: goToHomepage
 };
 
+declare const _________locales_en_products_json_allCategories: typeof allCategories;
 declare const _________locales_en_products_json_availability: typeof availability;
+declare const _________locales_en_products_json_checkBackLater: typeof checkBackLater;
+declare const _________locales_en_products_json_clearFilters: typeof clearFilters;
 declare const _________locales_en_products_json_createProduct: typeof createProduct;
+declare const _________locales_en_products_json_details: typeof details;
 declare const _________locales_en_products_json_editProduct: typeof editProduct;
 declare const _________locales_en_products_json_fields: typeof fields;
+declare const _________locales_en_products_json_goToHomepage: typeof goToHomepage;
 declare const _________locales_en_products_json_inventory: typeof inventory;
+declare const _________locales_en_products_json_noCategories: typeof noCategories;
+declare const _________locales_en_products_json_noProductsFound: typeof noProductsFound;
 declare const _________locales_en_products_json_noProductsSelected: typeof noProductsSelected;
 declare const _________locales_en_products_json_price: typeof price;
 declare const _________locales_en_products_json_pricing: typeof pricing;
@@ -1863,11 +2110,20 @@ declare const _________locales_en_products_json_productDetails: typeof productDe
 declare const _________locales_en_products_json_productId: typeof productId;
 declare const _________locales_en_products_json_productInformationNotAvailable: typeof productInformationNotAvailable;
 declare const _________locales_en_products_json_productName: typeof productName;
+declare const _________locales_en_products_json_productsPlural: typeof productsPlural;
+declare const _________locales_en_products_json_rent: typeof rent;
+declare const _________locales_en_products_json_rentNow: typeof rentNow;
 declare const _________locales_en_products_json_selectedProducts: typeof selectedProducts;
+declare const _________locales_en_products_json_showingProducts: typeof showingProducts;
 declare const _________locales_en_products_json_stock: typeof stock;
+declare const _________locales_en_products_json_store: typeof store;
+declare const _________locales_en_products_json_storeNotFound: typeof storeNotFound;
+declare const _________locales_en_products_json_storeNotFoundMessage: typeof storeNotFoundMessage;
+declare const _________locales_en_products_json_tryDifferentSearch: typeof tryDifferentSearch;
+declare const _________locales_en_products_json_uncategorized: typeof uncategorized;
 declare const _________locales_en_products_json_viewProduct: typeof viewProduct;
 declare namespace _________locales_en_products_json {
-  export { actions$1 as actions, _________locales_en_products_json_availability as availability, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_noProductsSelected as noProductsSelected, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productId as productId, _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable, _________locales_en_products_json_productName as productName, search$1 as search, _________locales_en_products_json_selectedProducts as selectedProducts, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, title$2 as title, _________locales_en_products_json_viewProduct as viewProduct };
+  export { actions$1 as actions, _________locales_en_products_json_allCategories as allCategories, _________locales_en_products_json_availability as availability, _________locales_en_products_json_checkBackLater as checkBackLater, _________locales_en_products_json_clearFilters as clearFilters, _________locales_en_products_json_createProduct as createProduct, products as default, _________locales_en_products_json_details as details, _________locales_en_products_json_editProduct as editProduct, _________locales_en_products_json_fields as fields, filters$1 as filters, _________locales_en_products_json_goToHomepage as goToHomepage, _________locales_en_products_json_inventory as inventory, messages$2 as messages, _________locales_en_products_json_noCategories as noCategories, _________locales_en_products_json_noProductsFound as noProductsFound, _________locales_en_products_json_noProductsSelected as noProductsSelected, _________locales_en_products_json_price as price, _________locales_en_products_json_pricing as pricing, _________locales_en_products_json_productDetails as productDetails, _________locales_en_products_json_productId as productId, _________locales_en_products_json_productInformationNotAvailable as productInformationNotAvailable, _________locales_en_products_json_productName as productName, _________locales_en_products_json_productsPlural as productsPlural, _________locales_en_products_json_rent as rent, _________locales_en_products_json_rentNow as rentNow, search$1 as search, _________locales_en_products_json_selectedProducts as selectedProducts, _________locales_en_products_json_showingProducts as showingProducts, stats$2 as stats, status$1 as status, _________locales_en_products_json_stock as stock, _________locales_en_products_json_store as store, _________locales_en_products_json_storeNotFound as storeNotFound, _________locales_en_products_json_storeNotFoundMessage as storeNotFoundMessage, title$2 as title, _________locales_en_products_json_tryDifferentSearch as tryDifferentSearch, _________locales_en_products_json_uncategorized as uncategorized, _________locales_en_products_json_viewProduct as viewProduct };
 }
 
 var title$1 = "Orders";
@@ -2001,6 +2257,7 @@ var actions = {
 	reviewBeforeConfirm: "Review your order details before confirming"
 };
 var messages$1 = {
+	createOrder: "Create Order",
 	createSuccess: "Order created successfully",
 	createFailed: "Failed to create order",
 	updateSuccess: "Order updated successfully",
@@ -2056,7 +2313,7 @@ var messages$1 = {
 	useAddNewCustomerButton: "Use the \"Add New Customer\" button above to create one",
 	rentalPeriod: "Rental Period",
 	selectRentalPeriod: "Select rental period",
-	editOrder: "Edit Order",
+	selectOutlet: "Select outlet",
 	createNewOrder: "Create New Order",
 	confirmOrder: "Confirm Order",
 	orderPreview: "Order Preview",
@@ -2068,7 +2325,12 @@ var messages$1 = {
 	notSet: "Not set",
 	notSelected: "Not selected",
 	totalPrice: "Total Price",
-	additionalInformation: "Additional Information"
+	additionalInformation: "Additional Information",
+	enterDepositAmount: "Enter deposit amount...",
+	quantity: "Quantity",
+	unitPrice: "Unit Price",
+	addNotesForItem: "Add notes for this item...",
+	addNotesAboutProduct: "Add notes about this product..."
 };
 var productOrders = {
 	title: "Product Orders",
@@ -2124,6 +2386,28 @@ var stats$1 = {
 	overdueRentals: "Overdue Rentals",
 	revenueMetrics: "Revenue Metrics"
 };
+var receipt = {
+	previewTitle: "Preview Order Receipt",
+	printOptions: "Print Options",
+	printViaPDF: "Print via PDF",
+	printDescription: "Create PDF file and send to printer",
+	order: "Order",
+	customer: "Customer",
+	deposit: "Deposit",
+	noDeposit: "NO DEPOSIT",
+	createdDate: "Created Date",
+	rentDate: "Rent Date",
+	returnDate: "Return Date",
+	saleDate: "Sale Date",
+	subtotal: "SUBTOTAL",
+	discount: "DISCOUNT",
+	total: "TOTAL",
+	note: "Note",
+	customerSignature: "Customer Signature",
+	storeSignature: "Store Signature",
+	thankYou: "THANK YOU FOR SHOPPING",
+	downloadApp: "Download RentalShop on App Store"
+};
 var orders = {
 	title: title$1,
 	createOrder: createOrder,
@@ -2144,7 +2428,8 @@ var orders = {
 	productOrders: productOrders,
 	filters: filters,
 	search: search,
-	stats: stats$1
+	stats: stats$1,
+	receipt: receipt
 };
 
 declare const _________locales_en_orders_json_actions: typeof actions;
@@ -2161,11 +2446,12 @@ declare const _________locales_en_orders_json_orderNumber: typeof orderNumber;
 declare const _________locales_en_orders_json_orderType: typeof orderType;
 declare const _________locales_en_orders_json_payment: typeof payment;
 declare const _________locales_en_orders_json_productOrders: typeof productOrders;
+declare const _________locales_en_orders_json_receipt: typeof receipt;
 declare const _________locales_en_orders_json_search: typeof search;
 declare const _________locales_en_orders_json_status: typeof status;
 declare const _________locales_en_orders_json_viewOrder: typeof viewOrder;
 declare namespace _________locales_en_orders_json {
-  export { _________locales_en_orders_json_actions as actions, _________locales_en_orders_json_amount as amount, _________locales_en_orders_json_createOrder as createOrder, _________locales_en_orders_json_customer as customer, _________locales_en_orders_json_dates as dates, orders as default, _________locales_en_orders_json_detail as detail, _________locales_en_orders_json_editOrder as editOrder, _________locales_en_orders_json_filters as filters, _________locales_en_orders_json_items as items, messages$1 as messages, _________locales_en_orders_json_orderDetails as orderDetails, _________locales_en_orders_json_orderNumber as orderNumber, _________locales_en_orders_json_orderType as orderType, _________locales_en_orders_json_payment as payment, _________locales_en_orders_json_productOrders as productOrders, _________locales_en_orders_json_search as search, stats$1 as stats, _________locales_en_orders_json_status as status, title$1 as title, _________locales_en_orders_json_viewOrder as viewOrder };
+  export { _________locales_en_orders_json_actions as actions, _________locales_en_orders_json_amount as amount, _________locales_en_orders_json_createOrder as createOrder, _________locales_en_orders_json_customer as customer, _________locales_en_orders_json_dates as dates, orders as default, _________locales_en_orders_json_detail as detail, _________locales_en_orders_json_editOrder as editOrder, _________locales_en_orders_json_filters as filters, _________locales_en_orders_json_items as items, messages$1 as messages, _________locales_en_orders_json_orderDetails as orderDetails, _________locales_en_orders_json_orderNumber as orderNumber, _________locales_en_orders_json_orderType as orderType, _________locales_en_orders_json_payment as payment, _________locales_en_orders_json_productOrders as productOrders, _________locales_en_orders_json_receipt as receipt, _________locales_en_orders_json_search as search, stats$1 as stats, _________locales_en_orders_json_status as status, title$1 as title, _________locales_en_orders_json_viewOrder as viewOrder };
 }
 
 var title = "Dashboard";
@@ -2222,6 +2508,11 @@ var charts = {
 	customerActivity: "Customer Activity",
 	rentalTrends: "Rental Trends",
 	noData: "No data available for this period",
+	compareOutlets: "Compare Outlets",
+	selectOutletsToCompare: "Select outlets to compare",
+	allOutlets: "All Outlets",
+	compareRevenue: "Compare Monthly Revenue by Outlet",
+	compareOrders: "Compare Monthly Orders by Outlet",
 	actualRevenue: "Actual Revenue",
 	projectedRevenue: "Projected Revenue",
 	rentalOrders: "Rental Orders",
@@ -2247,6 +2538,7 @@ var quickActions = {
 	title: "Quick Actions",
 	createOrder: "Create Order",
 	addProduct: "Add Product",
+	addCategory: "Add Category",
 	addCustomer: "Add Customer",
 	viewCalendar: "View Calendar",
 	viewReports: "View Reports"
@@ -2457,6 +2749,22 @@ var forgotPassword = {
 	emailNotFound: "Email not found",
 	checkEmail: "Check your email for the reset link"
 };
+var resetPassword = {
+	title: "Reset Password",
+	subtitle: "Enter your new password",
+	password: "New Password",
+	confirmPassword: "Confirm New Password",
+	resetButton: "Reset Password",
+	success: "Password reset successfully",
+	failed: "Failed to reset password",
+	passwordMismatch: "Passwords do not match",
+	tokenInvalid: "Reset link is invalid or expired",
+	tokenExpired: "Reset link has expired. Please request a new one",
+	tokenUsed: "This reset link has already been used",
+	passwordMinLength: "Password must be at least 6 characters",
+	passwordRequired: "Password is required",
+	confirmPasswordRequired: "Please confirm your password"
+};
 var changePassword = {
 	title: "Change Password",
 	currentPassword: "Current Password",
@@ -2500,6 +2808,7 @@ var auth = {
 	login: login,
 	register: register,
 	forgotPassword: forgotPassword,
+	resetPassword: resetPassword,
 	changePassword: changePassword,
 	logout: logout,
 	checkEmail: checkEmail
@@ -2511,8 +2820,9 @@ declare const _________locales_en_auth_json_forgotPassword: typeof forgotPasswor
 declare const _________locales_en_auth_json_login: typeof login;
 declare const _________locales_en_auth_json_logout: typeof logout;
 declare const _________locales_en_auth_json_register: typeof register;
+declare const _________locales_en_auth_json_resetPassword: typeof resetPassword;
 declare namespace _________locales_en_auth_json {
-  export { _________locales_en_auth_json_changePassword as changePassword, _________locales_en_auth_json_checkEmail as checkEmail, auth as default, _________locales_en_auth_json_forgotPassword as forgotPassword, _________locales_en_auth_json_login as login, _________locales_en_auth_json_logout as logout, _________locales_en_auth_json_register as register };
+  export { _________locales_en_auth_json_changePassword as changePassword, _________locales_en_auth_json_checkEmail as checkEmail, auth as default, _________locales_en_auth_json_forgotPassword as forgotPassword, _________locales_en_auth_json_login as login, _________locales_en_auth_json_logout as logout, _________locales_en_auth_json_register as register, _________locales_en_auth_json_resetPassword as resetPassword };
 }
 
 var buttons = {
@@ -2542,6 +2852,7 @@ var buttons = {
 	apply: "Apply",
 	browse: "Browse Files",
 	saving: "Saving...",
+	creating: "Creating...",
 	tryAgain: "Try Again"
 };
 var labels = {
@@ -2585,9 +2896,33 @@ var labels = {
 	inactive: "Inactive",
 	"default": "Default",
 	create: "Create",
-	unknown: "Unknown"
+	unknown: "Unknown",
+	addProduct: "Add Product",
+	addCategory: "Add Category",
+	addCustomer: "Add Customer"
 };
 var messages = {
+	saveSuccess: "Saved successfully",
+	saveFailed: "Failed to save",
+	deleteSuccess: "Deleted successfully",
+	deleteFailed: "Failed to delete",
+	updateSuccess: "Updated successfully",
+	updateFailed: "Failed to update",
+	createSuccess: "Created successfully",
+	createFailed: "Failed to create",
+	confirmDelete: "Are you sure you want to delete this item?",
+	confirmAction: "Are you sure you want to proceed?",
+	noData: "No data available",
+	loadingData: "Loading data...",
+	errorLoadingData: "Error loading data",
+	invalidInput: "Invalid input",
+	requiredField: "This field is required",
+	sessionExpired: "Your session has expired. Please login again.",
+	unauthorized: "You are not authorized to perform this action",
+	serverError: "Server error. Please try again later.",
+	networkError: "Network error. Please check your connection.",
+	comingSoon: "Feature coming soon!",
+	notFound: "The item you're looking for doesn't exist or has been removed.",
 	noBillingCycles: "No billing cycles found",
 	getStartedBillingCycle: "Get started by creating your first billing cycle",
 	noPlanVariants: "No plan variants found",
@@ -3002,6 +3337,48 @@ declare function isEmailVerified(userId: number): Promise<boolean>;
  * Delete expired verification tokens (cleanup job)
  */
 declare function deleteExpiredTokens(): Promise<number>;
+
+interface PasswordResetToken {
+    id: number;
+    userId: number;
+    token: string;
+    email: string;
+    used: boolean;
+    usedAt: Date | null;
+    expiresAt: Date;
+    createdAt: Date;
+}
+/**
+ * Generate a secure random token for password reset
+ */
+declare function generatePasswordResetToken(): string;
+/**
+ * Create password reset record
+ */
+declare function createPasswordResetToken(userId: number, email: string, expiresInHours?: number): Promise<PasswordResetToken>;
+/**
+ * Verify password reset token
+ */
+declare function verifyPasswordResetToken(token: string): Promise<{
+    success: boolean;
+    user?: {
+        id: number;
+        email: string;
+    };
+    error?: string;
+}>;
+/**
+ * Mark password reset token as used
+ */
+declare function markTokenAsUsed(token: string): Promise<void>;
+/**
+ * Get password reset token by userId
+ */
+declare function getPasswordResetTokenByUserId(userId: number): Promise<PasswordResetToken | null>;
+/**
+ * Delete expired password reset tokens (cleanup job)
+ */
+declare function deleteExpiredPasswordResetTokens(): Promise<number>;
 
 interface SimpleFilters {
     merchantId?: number;
@@ -3420,6 +3797,7 @@ declare const db: {
                 outlet: {
                     id: number;
                     name: string;
+                    address: string | null;
                 };
             } & {
                 id: number;
@@ -3439,13 +3817,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }) | null>;
         findByBarcode: (barcode: string) => Promise<({
             merchant: {
@@ -3479,13 +3860,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }) | null>;
         create: (data: any) => Promise<{
             merchant: {
@@ -3519,13 +3903,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }>;
         update: (id: number, data: any) => Promise<{
             merchant: {
@@ -3559,13 +3946,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }>;
         delete: (id: number) => Promise<{
             id: number;
@@ -3575,13 +3965,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }>;
         findFirst: (whereClause: any) => Promise<({
             merchant: {
@@ -3615,13 +4008,16 @@ declare const db: {
             createdAt: Date;
             updatedAt: Date;
             merchantId: number;
+            pricingType: _prisma_client.$Enums.PricingType | null;
             barcode: string | null;
             totalStock: number;
             rentPrice: number;
             salePrice: number | null;
+            costPrice: number | null;
             deposit: number;
             images: _prisma_client_runtime_library.JsonValue | null;
             categoryId: number;
+            durationConfig: string | null;
         }) | null>;
         getStats: (whereClause?: any) => Promise<number>;
         search: (filters: any) => Promise<{
@@ -3638,6 +4034,7 @@ declare const db: {
                     outlet: {
                         id: number;
                         name: string;
+                        address: string | null;
                     };
                 } & {
                     id: number;
@@ -3657,13 +4054,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             })[];
             total: number;
             page: any;
@@ -5019,6 +5419,7 @@ declare const db: {
     merchants: {
         findById: typeof findById$1;
         findByEmail: typeof findByEmail;
+        findByTenantKey: typeof findByTenantKey;
         findFirst: (whereClause: any) => Promise<{
             id: number;
             name: string;
@@ -5166,7 +5567,12 @@ declare const db: {
                     discount: number;
                     savings: number;
                 };
-                yearly: {
+                semi_annual: {
+                    price: number;
+                    discount: number;
+                    savings: number;
+                };
+                annual: {
                     price: number;
                     discount: number;
                     savings: number;
@@ -5214,13 +5620,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             } | {
                 id: number;
                 name: string;
@@ -5229,13 +5638,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             })[] | {
                 id: number;
                 name: string;
@@ -5244,13 +5656,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             }[];
             [x: number]: never;
             [x: symbol]: never;
@@ -5417,13 +5832,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             };
         } & {
             id: number;
@@ -5479,13 +5897,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             };
         } & {
             id: number;
@@ -5541,13 +5962,16 @@ declare const db: {
                 createdAt: Date;
                 updatedAt: Date;
                 merchantId: number;
+                pricingType: _prisma_client.$Enums.PricingType | null;
                 barcode: string | null;
                 totalStock: number;
                 rentPrice: number;
                 salePrice: number | null;
+                costPrice: number | null;
                 deposit: number;
                 images: _prisma_client_runtime_library.JsonValue | null;
                 categoryId: number;
+                durationConfig: string | null;
             };
         } & {
             id: number;
@@ -6045,6 +6469,18 @@ declare const db: {
         getUserActiveSessions: typeof getUserActiveSessions;
         cleanupExpiredSessions: typeof cleanupExpiredSessions;
     };
+    sync: {
+        createdRecords: Map<number, CreatedRecord[]>;
+        trackRecord(sessionId: number, record: CreatedRecord): void;
+        rollback(sessionId: number): Promise<{
+            deleted: number;
+            errors: string[];
+        }>;
+        clearTracking(sessionId: number): void;
+        createSession(input: CreateSessionInput): Promise<SyncSession>;
+        updateStatus(sessionId: number, input: UpdateStatusInput): Promise<void>;
+        addRecord(input: AddRecordInput): Promise<void>;
+    };
 };
 /**
  * Check database connection health
@@ -6061,4 +6497,4 @@ declare const checkDatabaseConnection: () => Promise<{
  */
 declare const generateOrderNumber: (outletId: number) => Promise<string>;
 
-export { type AuditContext, AuditLogger, type EmailVerificationToken, type OrderNumberFormat, type RegistrationInput, type RegistrationResult, type SimpleFilters, type SimpleResponse, checkDatabaseConnection, createEmailVerification, createOrderNumberWithFormat, createSubscriptionPayment, db, deleteExpiredTokens, extractAuditContext, generateOrderNumber, generateVerificationToken, getAuditLogger, getDefaultOutlet, getExpiredSubscriptions, getOutletOrderStats, getSubscriptionById, getSubscriptionByMerchantId, getVerificationTokenByUserId, isEmailVerified, prisma, registerMerchantWithTrial, registerUser, resendVerificationToken, searchOrders, simplifiedPayments, simplifiedSubscriptionActivities, updateSubscription, verifyEmailByToken };
+export { type AuditContext, AuditLogger, type EmailVerificationToken, type OrderNumberFormat, type PasswordResetToken, type RegistrationInput, type RegistrationResult, type SimpleFilters, type SimpleResponse, checkDatabaseConnection, createEmailVerification, createOrderNumberWithFormat, createPasswordResetToken, createSubscriptionPayment, db, deleteExpiredPasswordResetTokens, deleteExpiredTokens, extractAuditContext, generateOrderNumber, generatePasswordResetToken, generateVerificationToken, getAuditLogger, getDefaultOutlet, getExpiredSubscriptions, getOutletOrderStats, getPasswordResetTokenByUserId, getSubscriptionById, getSubscriptionByMerchantId, getVerificationTokenByUserId, isEmailVerified, markTokenAsUsed, prisma, registerMerchantWithTrial, registerUser, resendVerificationToken, searchOrders, simplifiedPayments, simplifiedSubscriptionActivities, updateSubscription, verifyEmailByToken, verifyPasswordResetToken };

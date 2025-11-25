@@ -358,9 +358,9 @@ export async function updateOrder(
   
   // Extract relationship IDs and orderItems from data
   const { 
-    orderItems, 
+    orderItems: inputOrderItems, 
     customerId, 
-    outletId,
+    outletId: inputOutletId,
     ...allFields 
   } = data;
   
@@ -394,18 +394,18 @@ export async function updateOrder(
   }
   
   // Handle outlet relationship if provided (should not change usually)
-  if (outletId !== undefined) {
-    updateData.outlet = { connect: { id: outletId } };
+  if (inputOutletId !== undefined) {
+    updateData.outlet = { connect: { id: inputOutletId } };
   }
   
   // Handle order items separately if provided
-  if (orderItems && orderItems.length > 0) {
-    console.log('🔧 Processing', orderItems.length, 'order items');
+  if (inputOrderItems && inputOrderItems.length > 0) {
+    console.log('🔧 Processing', inputOrderItems.length, 'order items');
     updateData.orderItems = {
       // Delete all existing order items
       deleteMany: {},
       // Create new order items
-      create: orderItems.map(item => ({
+      create: inputOrderItems.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
@@ -424,13 +424,68 @@ export async function updateOrder(
     hasOutlet: !!updateData.outlet
   });
   
+  // Get old order status before update (for stock/renting updates)
+  const oldOrder = await prisma.order.findUnique({
+    where: { id },
+    select: {
+      orderType: true,
+      status: true,
+      outletId: true,
+      orderItems: {
+        select: {
+          productId: true,
+          quantity: true,
+        },
+      },
+    },
+  });
+
+  const oldStatus = oldOrder?.status || null;
+  const newStatus = updateData.status;
+  const orderType = (updateData.orderType || oldOrder?.orderType) as 'RENT' | 'SALE' | undefined;
+  const oldOutletId = oldOrder?.outletId;
+  const oldOrderItems = oldOrder?.orderItems || [];
+  
+  // Update the order
   const order = await prisma.order.update({
     where: { id },
     data: updateData,
     include: orderInclude,
-  })
+  });
 
   console.log('✅ Order updated successfully');
+
+  // Update outlet stock if status changed and we have order items
+  if (newStatus && newStatus !== oldStatus && orderType && oldOutletId && oldOrderItems.length > 0) {
+    try {
+      // Import the function from product module
+      const productModule = await import('./product');
+      const { updateOutletStockForOrder } = productModule;
+      
+      if (!updateOutletStockForOrder) {
+        console.error('❌ updateOutletStockForOrder function not found in product module');
+        return transformOrder(order);
+      }
+      
+      await updateOutletStockForOrder(
+        id,
+        oldStatus,
+        newStatus,
+        orderType as 'RENT' | 'SALE',
+        oldOutletId,
+        oldOrderItems.map(item => ({
+          productId: item.productId || 0,
+          quantity: item.quantity,
+        })).filter(item => item.productId > 0)
+      );
+      console.log('✅ Outlet stock updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating outlet stock:', error);
+      // Don't throw - order update succeeded, stock update failed
+      // Log error for manual review
+    }
+  }
+
   return transformOrder(order)
 }
 
@@ -454,35 +509,35 @@ export async function getOrderCount(outletId?: number, status?: string): Promise
 }
 
 export async function generateOrderNumber(outletId: number): Promise<string> {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  
-  const prefix = `${year}${month}${day}`
-  
-  const latestOrder = await prisma.order.findFirst({
-    where: {
-      orderNumber: {
-        startsWith: prefix,
-      },
-      outletId,
-    },
-    orderBy: {
-      orderNumber: 'desc',
-    },
-    select: {
-      orderNumber: true,
-    },
-  })
+  const outlet = await prisma.outlet.findUnique({
+    where: { id: outletId },
+    select: { id: true }
+  });
 
-  let sequence = 1
-  if (latestOrder?.orderNumber) {
-    const lastSequence = parseInt(latestOrder.orderNumber.split('-').pop() || '0')
-    sequence = lastSequence + 1
+  if (!outlet) {
+    throw new Error(`Outlet with id ${outletId} not found`);
   }
 
-  return `${prefix}-${String(sequence).padStart(4, '0')}`
+  // Generate random 6-digit number (100000 to 999999)
+  const generateRandom6Digits = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const maxRetries = 10;
+  for (let i = 0; i < maxRetries; i++) {
+    const orderNumber = generateRandom6Digits();
+    
+    // Check if order number already exists
+    const existingOrder = await prisma.order.findUnique({
+      where: { orderNumber }
+    });
+
+    if (!existingOrder) {
+      return orderNumber;
+    }
+  }
+
+  throw new Error('Failed to generate unique 6-digit random order number after maximum retries');
 }
 
 // ============================================================================

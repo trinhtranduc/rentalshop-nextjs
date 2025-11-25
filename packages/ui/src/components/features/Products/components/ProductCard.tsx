@@ -6,8 +6,12 @@ import { Button } from '../../../ui/button';
 import { cn } from '../../../../lib/cn';
 import { Eye, Edit, Package } from 'lucide-react';
 import { getProductImageUrl } from '@rentalshop/utils';
+import { useTranslations } from 'next-intl';
+import { getRentalPriceLabel, formatRentalPrice } from '../utils';
+import { formatCurrency } from '../../../../lib';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
+import type { PricingType } from '@rentalshop/constants';
 
 export interface ProductCardProps {
   id: number;
@@ -26,6 +30,7 @@ export interface ProductCardProps {
   outlet: {
     name: string;
   };
+  pricingType?: PricingType | null;
   onRent?: (productId: number) => void;
   onView?: (productId: number) => void;
   onEdit?: (productId: number) => void;
@@ -53,6 +58,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   images,
   category,
   outlet,
+  pricingType,
   onRent,
   onView,
   onEdit,
@@ -67,6 +73,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onError
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const t = useTranslations('products');
   
   // Normalize images to check if we have any
   const normalizeImages = (images: string[] | string | null | undefined): string[] => {
@@ -106,17 +113,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   // Transform current product data to ProductWithDetails format for editing
-  const getProductForEdit = (): ProductWithDetails => ({
+  const getProductForEdit = (): ProductWithDetails => {
+    const normalizedImages = Array.isArray(images) ? images : (typeof images === 'string' ? [images] : []);
+    const normalizedMerchantId = typeof merchantId === 'number' ? merchantId : (typeof merchantId === 'string' ? parseInt(merchantId) || 0 : 0);
+    
+    return {
     id,
     name,
     description: description || '',
     barcode: '',
+      merchantId: normalizedMerchantId,
     categoryId: 0, // This would need to be passed from parent
     rentPrice,
     salePrice,
     deposit,
-    totalStock: stock,
-    images: Array.isArray(images) ? images.join(',') : (typeof images === 'string' ? images : ''),
+      stock,
+      renting,
+      available,
+      images: normalizedImages,
     isActive: true,
     outletStock: [{
       id: 0, // This would need to be passed from parent
@@ -124,13 +138,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       stock,
       available,
       renting,
-      outlet: { id: 0, name: outlet.name, merchantId: merchantId || 0 }
+        outlet: { id: 0, name: outlet.name, merchantId: normalizedMerchantId }
     }],
     category: { id: 0, name: category.name },
-    merchant: { id: typeof merchantId === 'number' ? merchantId : 0, name: '' },
+      merchant: { id: normalizedMerchantId, name: '' },
     createdAt: new Date(),
     updatedAt: new Date()
-  });
+    };
+  };
 
   const handleSuccess = (updatedProduct: ProductWithDetails) => {
     onProductUpdated?.(updatedProduct);
@@ -164,7 +179,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
           {!isAvailable && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <span className="text-white font-semibold text-lg">Out of Stock</span>
+              <span className="text-white font-semibold text-lg">{t('status.outOfStock')}</span>
             </div>
           )}
           <div className="absolute top-2 left-2">
@@ -212,15 +227,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Stock Information */}
           <div className="mb-3 space-y-1">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Total Stock:</span>
+              <span className="text-gray-600">{t('inventory.totalStock')}:</span>
               <span className="font-medium">{stock}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Currently Rented:</span>
+              <span className="text-gray-600">{t('fields.renting')}:</span>
               <span className="font-medium text-orange-600">{renting}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Available:</span>
+              <span className="text-gray-600">{t('fields.available')}:</span>
               <span className={cn('font-medium', isAvailable ? 'text-green-600' : 'text-red-600')}>
                 {available}
               </span>
@@ -230,21 +245,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Pricing */}
           <div className="mb-4 space-y-1">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Rent Price:</span>
+              <span className="text-sm text-gray-600">{getRentalPriceLabel(pricingType, t)}:</span>
               <span className="font-semibold text-lg text-blue-700">
-                ${rentPrice.toFixed(2)}/day
+                {formatRentalPrice(rentPrice, pricingType, t, formatCurrency)}
               </span>
             </div>
             {salePrice && (
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Sale Price:</span>
+                <span className="text-sm text-gray-600">{t('fields.salePrice')}:</span>
                 <span className="font-semibold text-green-600">
                   ${salePrice.toFixed(2)}
                 </span>
               </div>
             )}
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Deposit:</span>
+              <span className="text-sm text-gray-600">{t('fields.deposit')}:</span>
               <span className="font-medium text-gray-700">
                 ${deposit.toFixed(2)}
               </span>
@@ -262,7 +277,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     onClick={() => onView(id)}
                     className="flex-1"
                   >
-                    View Details
+                    {t('actions.viewDetails')}
                   </Button>
                 )}
                 {onRent && isAvailable && (
@@ -272,7 +287,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     className="flex-1"
                     disabled={!isAvailable}
                   >
-                    Rent Now
+                    {t('rentNow')}
                   </Button>
                 )}
               </>
@@ -287,7 +302,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     onClick={() => onView(id)}
                     className="flex-1"
                   >
-                    Details
+                    {t('details')}
                   </Button>
                 )}
                 {onRent && isAvailable && (
@@ -297,7 +312,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     className="flex-1"
                     disabled={!isAvailable}
                   >
-                    Rent
+                    {t('rent')}
                   </Button>
                 )}
               </>
@@ -312,7 +327,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     onClick={() => onView(id)}
                     className="flex-1"
                   >
-                    View
+                    {t('actions.view')}
                   </Button>
                 )}
                 {onEdit && (
@@ -321,7 +336,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     onClick={handleEdit}
                     className="flex-1"
                   >
-                    Edit
+                    {t('actions.edit')}
                   </Button>
                 )}
               </>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import type { Plan } from '@rentalshop/types';
 
 /**
@@ -56,19 +56,19 @@ function generatePlanPricing(basePrice: number) {
       savings: 0
     },
     quarterly: {
-      price: basePrice * 3 * 0.95, // 5% discount
+      price: basePrice * 3, // 0% discount
+      discount: 0,
+      savings: 0
+    },
+    semi_annual: {
+      price: basePrice * 6 * 0.95, // 5% discount
       discount: 5,
-      savings: basePrice * 3 * 0.05
+      savings: basePrice * 6 * 0.05
     },
-    sixMonths: {
-      price: basePrice * 6 * 0.90, // 10% discount
+    annual: {
+      price: basePrice * 12 * 0.90, // 10% discount
       discount: 10,
-      savings: basePrice * 6 * 0.10
-    },
-    yearly: {
-      price: basePrice * 12 * 0.85, // 15% discount
-      discount: 15,
-      savings: basePrice * 12 * 0.15
+      savings: basePrice * 12 * 0.10
     }
   };
 }
@@ -154,12 +154,12 @@ export async function GET(request: NextRequest) {
     // Transform raw Prisma data to Plan type
     const plans = result.data.map(transformPlan).filter(plan => plan !== null);
 
-    return NextResponse.json({
-      success: true,
-      data: plans
-    }, {
+    return NextResponse.json(
+      ResponseBuilder.success('PLANS_RETRIEVED_SUCCESS', plans),
+      {
       headers: buildCorsHeaders(request)
-    });
+      }
+    );
 
   } catch (error) {
     console.error('Error fetching public plans:', error);

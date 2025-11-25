@@ -54,16 +54,8 @@ COPY . .
 # Generate Prisma Client with all binary targets
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
-# Run database migrations (if DATABASE_URL is available at build time)
-# This ensures database schema is up to date before build
-ARG DATABASE_URL
-ENV DATABASE_URL=${DATABASE_URL}
-RUN if [ -n "$DATABASE_URL" ]; then \
-      echo "Running database migrations..." && \
-      npx prisma migrate deploy --schema=./prisma/schema.prisma || echo "Migration failed or skipped"; \
-    else \
-      echo "DATABASE_URL not provided, skipping migrations at build time"; \
-    fi
+# Note: Database migrations run at runtime via start.sh
+# This ensures migrations run when database is available, not during build
 
 # Build packages using Turbo (respects dependency order)
 ENV NODE_ENV=production
@@ -107,7 +99,7 @@ RUN mkdir -p ./apps/api/public/uploads
 # Copy Prisma schema (needed for runtime migrations)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
-# Copy start script
+# Copy start script (runs migrations + starts server)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/api/start.sh ./apps/api/start.sh
 RUN chmod +x ./apps/api/start.sh
 
@@ -124,5 +116,5 @@ EXPOSE 3002
 
 WORKDIR /app/apps/api
 
-# Run start script (includes migrations + server start)
+# Run start script (automatically runs migrations then starts server)
 CMD ["sh", "start.sh"]

@@ -97,7 +97,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const now = new Date();
     const overdueWhereClause = {
       ...orderWhereClause,
-      status: 'PICKUPED',
+      status: ORDER_STATUS.PICKUPED,
       returnPlanAt: { lt: now }
     };
     const overdueOrders = await db.orders.search({

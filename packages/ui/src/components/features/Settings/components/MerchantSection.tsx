@@ -11,8 +11,9 @@ import {
   Badge,
   SearchableCountrySelect
 } from '@rentalshop/ui';
-import { CheckCircle2, DollarSign } from 'lucide-react';
-import { merchantsApi, formatCurrency, getCurrency } from '@rentalshop/utils';
+import { CheckCircle2, Copy, ExternalLink } from 'lucide-react';
+import { merchantsApi } from '@rentalshop/utils';
+import { useLocale } from 'next-intl';
 import { 
   getBusinessTypeDescription, 
   getPricingTypeDescription,
@@ -67,17 +68,18 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   onCurrencyChange
 }) => {
   const t = useSettingsTranslations();
+  const locale = useLocale() as 'en' | 'vi';
   const [merchantData, setMerchantData] = useState<any>(null);
   const [loadingMerchant, setLoadingMerchant] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(currentCurrency);
-  const [isSavingCurrency, setIsSavingCurrency] = useState(false);
+  const [copied, setCopied] = useState(false);
   const fetchingRef = useRef(false);
+  const currencyUpdateRef = useRef<string | null>(null); // Track last currency update to prevent loops
   
-  // Currency options
-  const CURRENCY_OPTIONS: Array<{ value: CurrencyCode; label: string; symbol: string }> = [
-    { value: 'USD', label: t('merchant.usDollar'), symbol: '$' },
-    { value: 'VND', label: t('merchant.vietnameseDong'), symbol: 'đ' },
-  ];
+  // Auto-set currency based on language
+  // EN → USD, VI → VND
+  const getCurrencyForLocale = (locale: string): CurrencyCode => {
+    return locale === 'vi' ? 'VND' : 'USD';
+  };
   
   // Debug logging
   console.log('🔍 MerchantSection render - user:', user);
@@ -104,6 +106,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
             // Handle nested structure: result.data.merchant or direct result.data
             const merchantInfo = (result.data as any).merchant || result.data;
             console.log('✅ Merchant data extracted:', merchantInfo);
+            console.log('🔍 Merchant tenantKey:', merchantInfo?.tenantKey);
             setMerchantData(merchantInfo);
           } else {
             console.error('❌ Failed to fetch merchant data:', result);
@@ -128,26 +131,68 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
   // Use merchant data from user object or fetched data
   const merchant = user?.merchant || merchantData;
   
-  // Update selected currency when current currency changes
-  useEffect(() => {
-    setSelectedCurrency(currentCurrency);
-  }, [currentCurrency]);
+  // Debug merchant data for Public Product Link
+  console.log('🔍 MerchantSection - Merchant data for Public Product Link:', {
+    merchant,
+    'merchant?.tenantKey': merchant?.tenantKey,
+    'user?.merchant': user?.merchant,
+    merchantData,
+    'user?.merchantId': user?.merchantId
+  });
   
-  // Handle currency change
-  const handleCurrencySelect = async (currency: CurrencyCode) => {
-    if (currency === currentCurrency) return;
+  // Auto-update currency when locale changes
+  useEffect(() => {
+    if (!merchant) return; // Wait for merchant data
     
-    setIsSavingCurrency(true);
+    const targetCurrency = getCurrencyForLocale(locale);
+    const updateKey = `${locale}-${targetCurrency}`;
+    
+    // Prevent duplicate updates for the same locale-currency combination
+    if (currencyUpdateRef.current === updateKey) return;
+    
+    // Only update if currency doesn't match locale
+    if (currentCurrency !== targetCurrency) {
+      console.log(`🌍 Auto-updating currency: ${currentCurrency} → ${targetCurrency} (locale: ${locale})`);
+      currencyUpdateRef.current = updateKey;
+      
+      onCurrencyChange(targetCurrency)
+        .then(() => {
+          console.log(`✅ Currency updated to ${targetCurrency}`);
+        })
+        .catch(error => {
+          console.error('Failed to auto-update currency:', error);
+          currencyUpdateRef.current = null; // Reset on error to allow retry
+        });
+    } else {
+      // Currency already matches locale, update ref to prevent unnecessary updates
+      currencyUpdateRef.current = updateKey;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, merchant, currentCurrency]); // Include currentCurrency to avoid stale closure
+  
+  // Get public product link
+  const getPublicProductLink = () => {
+    if (!merchant?.tenantKey) return null;
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : process.env.NEXT_PUBLIC_CLIENT_URL || 'https://dev.anyrent.shop';
+    return `${baseUrl}/${merchant.tenantKey}/products`;
+  };
+  
+  const publicProductLink = getPublicProductLink();
+  
+  // Copy link to clipboard
+  const handleCopyLink = async () => {
+    if (!publicProductLink) return;
     try {
-      await onCurrencyChange(currency);
-      setSelectedCurrency(currency);
+      await navigator.clipboard.writeText(publicProductLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to update currency:', error);
-      setSelectedCurrency(currentCurrency); // Revert on error
-    } finally {
-      setIsSavingCurrency(false);
+      console.error('Failed to copy link:', error);
     }
   };
+  
   
   // Debug merchant data
   console.log('🔍 MerchantSection - Final merchant data:', {
@@ -274,7 +319,9 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 )}
               </div>
 
-              <div className="md:col-span-2">
+              {/* Business Type and Pricing Type - HIDDEN */}
+              {/* Removed: Business Type and Pricing Type fields as per user request */}
+              {/* <div className="md:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-2">
@@ -316,7 +363,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 </p>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               <div className="md:col-span-2">
                 <Label htmlFor="merchantAddress" className="block text-sm font-medium text-gray-700 mb-2">
@@ -436,77 +483,66 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
         </CardContent>
       </Card>
 
-      {/* Currency Settings Card */}
+      {/* Public Product Link Card */}
+      {merchant?.tenantKey ? (
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <DollarSign className="h-5 w-5 text-blue-700" />
-            <h3 className="text-lg font-semibold text-gray-900">{t('merchant.currencySettings')}</h3>
+              <ExternalLink className="h-5 w-5 text-blue-700" />
+              <h3 className="text-lg font-semibold text-gray-900">{t('merchant.publicProductLink')}</h3>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            {t('merchant.currencyDesc')}
+              {t('merchant.publicProductLinkDesc')}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {CURRENCY_OPTIONS.map((option) => {
-              const config = getCurrency(option.value);
-              const isSelected = selectedCurrency === option.value;
-              const isCurrent = currentCurrency === option.value;
-              
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => handleCurrencySelect(option.value)}
-                  disabled={isSavingCurrency || isCurrent}
-                  className={`
-                    relative p-4 border-2 rounded-lg text-left transition-all
-                    ${isCurrent 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
-                    }
-                    ${isSavingCurrency ? 'opacity-50 cursor-wait' : isCurrent ? 'cursor-default' : 'cursor-pointer'}
-                  `}
+            <div className="space-y-4">
+              {/* Link Display - Clickable */}
+              <div className="flex items-center gap-2">
+                <Input
+                  value={publicProductLink || ''}
+                  readOnly
+                  onClick={handleCopyLink}
+                  className="flex-1 bg-gray-50 text-gray-900 font-mono text-sm cursor-pointer hover:bg-gray-100 transition-colors"
+                  title="Click to copy link"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="h-10 whitespace-nowrap"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{option.symbol}</div>
-                      <div>
-                        <div className="font-semibold text-gray-900">
-                          {option.label}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {option.value}
-                        </div>
-                      </div>
-                    </div>
-                    {isCurrent && (
-                      <Badge variant="default" className="bg-green-100 text-green-800">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        {t('merchant.selected')}
-                      </Badge>
-                    )}
+                  {copied ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      {t('merchant.copied')}
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      {t('merchant.copy')}
+                    </>
+                  )}
+                </Button>
                   </div>
 
-                  {/* Preview */}
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">{t('merchant.selectCurrency')}:</div>
-                    <div className="flex gap-4 text-sm text-gray-700">
-                      <span>{formatCurrency(100, option.value)}</span>
-                      <span>{formatCurrency(10000, option.value)}</span>
+              {/* Clickable Link */}
+              {publicProductLink && (
+                <div className="pt-4 border-t border-gray-200">
+                  <a
+                    href={publicProductLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    {t('merchant.viewPublicPage')}
+                  </a>
                     </div>
-                  </div>
-                </button>
-              );
-            })}
+              )}
           </div>
-
-          {isSavingCurrency && (
-            <p className="text-sm text-blue-700 mt-3">
-              {t('merchant.savingCurrency')}
-            </p>
-          )}
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 };

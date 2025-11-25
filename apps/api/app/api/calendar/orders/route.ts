@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import type { CalendarOrderSummary, DayOrders, CalendarResponse, CalendarDay } from '@rentalshop/utils';
-import { handleApiError, getUTCDateKey } from '@rentalshop/utils';
+import { handleApiError, getUTCDateKey, getLocalDateKey } from '@rentalshop/utils';
 
 // Validation schema for calendar orders query
 const calendarOrdersQuerySchema = z.object({
@@ -12,8 +12,16 @@ const calendarOrdersQuerySchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format'),
   outletId: z.coerce.number().int().positive().optional(),
   merchantId: z.coerce.number().int().positive().optional(),
-  status: z.enum(['RESERVED', 'PICKUPED', 'RETURNED', 'COMPLETED', 'CANCELLED']).optional(),
-  orderType: z.enum(['RENT', 'SALE']).optional(),
+  // Calendar chỉ hiển thị đơn RESERVED (đã cọc) - đơn dự kiến lấy
+  // RESERVED: hiển thị theo pickupPlanAt (ngày dự kiến lấy)
+  // KHÔNG hiển thị: PICKUPED, RETURNED, COMPLETED, CANCELLED
+  status: z.enum([
+    ORDER_STATUS.RESERVED
+  ] as [string, ...string[]]).optional(),
+  orderType: z.enum([
+    ORDER_TYPE.RENT,
+    ORDER_TYPE.SALE
+  ] as [string, ...string[]]).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(10), // Max 50 orders per day
 });
 
@@ -52,7 +60,7 @@ export const GET = withReadOnlyAuth(async (
     console.log('📅 Date range:', { startDate, endDate });
 
     // Build where clause with role-based filtering
-    // Calendar should show orders by pickup date, not return date
+    // Calendar chỉ hiển thị đơn RESERVED (đã cọc) theo pickupPlanAt (ngày dự kiến lấy)
     const where: any = {
       pickupPlanAt: {
         gte: startDate,
@@ -68,13 +76,16 @@ export const GET = withReadOnlyAuth(async (
       where.orderType = ORDER_TYPE.RENT as any;
     }
     
+    // Calendar chỉ hiển thị đơn RESERVED (đã cọc) - đơn dự kiến lấy
+    // RESERVED: hiển thị theo pickupPlanAt (ngày dự kiến lấy)
+    // KHÔNG hiển thị: PICKUPED, RETURNED, COMPLETED, CANCELLED
+    // Luôn filter chỉ RESERVED, bất kể user có truyền status hay không
     if (status) {
-      where.status = status;
+      // Nếu user truyền status, chỉ cho phép RESERVED
+      where.status = status; // Schema đã validate chỉ cho phép RESERVED
     } else {
-      // Default to only active pickup orders (not returned)
-      where.status = {
-        in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any]
-      };
+      // Default: luôn chỉ lấy RESERVED (đơn đã cọc)
+      where.status = ORDER_STATUS.RESERVED as any;
     }
 
     // Role-based filtering
@@ -84,7 +95,7 @@ export const GET = withReadOnlyAuth(async (
         where.outletId = outletId;
       }
       // No restrictions for ADMIN - they can see all merchants and outlets
-    } else if (user.role === 'MERCHANT') {
+    } else if (user.role === USER_ROLE.MERCHANT) {
       // MERCHANT: Can see orders from all their outlets
       // Filter by outlet.merchantId through relation
       where.outlet = {
@@ -95,7 +106,7 @@ export const GET = withReadOnlyAuth(async (
         // Remove outlet filter if outletId is specified
         delete where.outlet;
       }
-    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
       // OUTLET users: Can only see orders from their assigned outlet
       where.outletId = userScope.outletId;
     }
@@ -149,6 +160,7 @@ export const GET = withReadOnlyAuth(async (
           outletName: order.outlet?.name,
           pickupPlanAt: order.pickupPlanAt ? new Date(order.pickupPlanAt).toISOString() : undefined,
           returnPlanAt: order.returnPlanAt ? new Date(order.returnPlanAt).toISOString() : undefined,
+          pickedUpAt: (order as any).pickedUpAt ? new Date((order as any).pickedUpAt).toISOString() : undefined,
           // Product summary for calendar display
           productName: firstProduct?.name || 'Multiple Products',
           productCount: totalProductCount,
@@ -174,19 +186,21 @@ export const GET = withReadOnlyAuth(async (
           })
         };
 
-        // Add order only to pickup date (RESERVED and PICKUPED orders only)
-        if (order.pickupPlanAt) {
-          const pickupDate = new Date(order.pickupPlanAt);
-          const pickupDateKey = getUTCDateKey(pickupDate);
+        // Calendar chỉ hiển thị đơn RESERVED (đã cọc) theo pickupPlanAt (ngày dự kiến lấy)
+        // Chỉ xử lý RESERVED orders
+        if (order.status === ORDER_STATUS.RESERVED && order.pickupPlanAt) {
+          const displayDate = new Date(order.pickupPlanAt);
+          // Use local date key to match frontend calendar display (user's local timezone)
+          const dateKey = getLocalDateKey(displayDate);
           
-          if (!calendarMap[pickupDateKey]) {
-            calendarMap[pickupDateKey] = [];
+          if (!calendarMap[dateKey]) {
+            calendarMap[dateKey] = [];
           }
           
           // Check if already added to avoid duplicates
-          const alreadyInMap = calendarMap[pickupDateKey].some(o => o.id === order.id);
-          if (!alreadyInMap && calendarMap[pickupDateKey].length < limit) {
-            calendarMap[pickupDateKey].push(orderSummary);
+          const alreadyInMap = calendarMap[dateKey].some(o => o.id === order.id);
+          if (!alreadyInMap && calendarMap[dateKey].length < limit) {
+            calendarMap[dateKey].push(orderSummary);
           }
         }
       }
@@ -199,8 +213,8 @@ export const GET = withReadOnlyAuth(async (
       for (const [dateKey, dayOrders] of Object.entries(calendarMap)) {
         const dayRevenue = dayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
         
-        // All orders in calendarMap are pickup orders only (RESERVED and PICKUPED)
-        // Orders are only added to their pickup date
+        // All orders in calendarMap are RESERVED orders only (đơn đã cọc)
+        // RESERVED: hiển thị theo pickupPlanAt (ngày dự kiến lấy)
         const dayPickups = dayOrders.length;
         const dayReturns = 0; // No return orders displayed
         

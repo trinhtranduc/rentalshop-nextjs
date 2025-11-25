@@ -52,7 +52,6 @@ import { ProductsSection } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
 import { OrderSummarySection } from './components/OrderSummarySection';
 import { CustomerCreationDialog } from './components/CustomerCreationDialog';
-import { OrderPreviewDialog } from './components/OrderPreviewDialog';
 
 import type { 
   CreateOrderFormProps, 
@@ -89,14 +88,10 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     orderItems,
     setOrderItems,
     isSubmitting,
-    showOrderPreview,
-    setShowOrderPreview,
     addProductToOrder,
     removeProductFromOrder,
     updateOrderItem,
     updateRentalDates,
-    handlePreviewClick,
-    handleOrderConfirm,
     handleSubmit,
     resetForm,
     calculateRentalDays,
@@ -179,7 +174,20 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     try {
       const searchResults = await searchProducts(query);
       setSearchedProducts(searchResults);
-      return searchResults.map(product => ({
+      
+      // Get the selected outlet ID from form data
+      const selectedOutletId = formData.outletId;
+      
+      return searchResults.map(product => {
+        // Find outlet stock for the selected outlet, or use first one if no outlet selected
+        const outletStock = selectedOutletId
+          ? product.outletStock?.find((os: any) => os.outletId === selectedOutletId)
+          : product.outletStock?.[0];
+        
+        const available = outletStock?.available ?? 0;
+        const stock = outletStock?.stock ?? 0;
+        
+        return {
         value: String(product.id),
         label: product.name,
         image: product.images?.[0],
@@ -187,17 +195,18 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         details: [
           formatCurrency(product.rentPrice || 0, currency as any),
           `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
-          `Available: ${product.outletStock?.[0]?.available || 0}`,
-          `Total Stock: ${product.outletStock?.[0]?.stock || 0}`,
+            `Available: ${available}`,
+            `Total Stock: ${stock}`,
           product.category?.name || t('messages.noCategory')
         ].filter(Boolean),
         type: 'product' as const
-      }));
+        };
+      });
     } catch (error) {
       console.error('Error searching products:', error);
       return [];
     }
-  }, [searchProducts, currency]);
+  }, [searchProducts, currency, formData.outletId, t]);
 
   // Create a custom getProductAvailabilityStatus function using new API
   const getProductAvailabilityStatus = useCallback(async (
@@ -219,7 +228,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       const requestParams: ProductAvailabilityRequest = {
         quantity: requestedQuantity,
         includeTimePrecision: true,
-        timeZone: 'UTC'
+        timeZone: 'UTC',
+        outletId: formData.outletId // Required for MERCHANT and ADMIN roles
       };
 
       // Add rental dates if provided (for RENT mode)
@@ -246,10 +256,16 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           };
         }
 
-        if (startDate && endDate && formData.orderType === 'RENT') {
-          // For rental orders with dates, check if available considering conflicts
-          if (!availabilityData.isAvailable || !availabilityData.hasNoConflicts) {
-            const conflictCount = availabilityData.totalConflictsFound;
+        // Simplified: Use canFulfillRequest as the single source of truth
+        // It already accounts for stock, conflicts, and requested quantity
+        const canFulfill = availabilityData.availabilityByOutlet?.some((outlet: any) => outlet.canFulfillRequest);
+        const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
+          sum + outlet.effectivelyAvailable, 0) || availabilityData.totalAvailableStock;
+
+        // Use isAvailable from API (which is now = canFulfillRequest)
+        // This is the authoritative source that accounts for everything
+        if (!availabilityData.isAvailable) {
+          const conflictCount = availabilityData.totalConflictsFound || 0;
             return {
               status: 'unavailable',
               text: conflictCount > 0 
@@ -258,26 +274,16 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               color: 'bg-orange-100 text-orange-600'
             };
           }
-        }
 
-        // Check if any outlet can fulfill the request
-        const canFulfill = availabilityData.availabilityByOutlet?.some((outlet: any) => outlet.canFulfillRequest);
-        const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
-          sum + outlet.effectivelyAvailable, 0) || availabilityData.totalAvailableStock;
-
-        if (canFulfill) {
+        // Available: isAvailable is true (which means canFulfillRequest is also true)
+        const conflictCount = availabilityData.totalConflictsFound || 0;
           return {
             status: 'available',
-            text: `Available (${effectivelyAvailable} units)`,
+          text: conflictCount > 0 
+            ? `Available (${effectivelyAvailable} units) - ${conflictCount} conflict(s) but sufficient stock`
+            : `Available (${effectivelyAvailable} units)`,
             color: 'bg-green-100 text-green-600'
           };
-        } else {
-          return {
-            status: 'low-stock',
-            text: `Low Stock (${effectivelyAvailable}/${requestedQuantity})`,
-            color: 'bg-orange-100 text-orange-600'
-          };
-        }
       } else {
         // API call failed, fallback to basic stock check
         console.warn('Availability API failed, falling back to basic stock check');
@@ -340,40 +346,42 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       console.log('🔍 handleAddNewCustomer: Merchant ID found:', currentMerchantId);
       
-      // Check for duplicate phone number before creating
-      const normalizedPhone = customerData.phone.replace(/[\s\-\(\)\+]/g, '');
-      
-      // First, check in the already loaded search results for immediate feedback
-      const localDuplicate = customerSearchResults.find(customer => {
-        if (customer.phone) {
-          const existingNormalizedPhone = customer.phone.replace(/[\s\-\(\)\+]/g, '');
-          return normalizedPhone === existingNormalizedPhone;
-        }
-        return false;
-      });
-      
-      if (localDuplicate) {
-        const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName}). Please use a different phone number or search for the existing customer.`;
-        toastError(t('messages.duplicateCustomer'), errorMsg);
-        throw new Error(errorMsg);
-      }
-      
-      console.log('🔍 handleAddNewCustomer: No local duplicates found, checking API...');
-      
-      // Then check with the API for a more comprehensive check
-      const duplicateCheck = await customersApi.getCustomerByPhone(customerData.phone);
-      
-      if (duplicateCheck.success && duplicateCheck.data) {
-        const existingCustomers = duplicateCheck.data.customers || duplicateCheck.data.customer || [];
-        const customersArray = Array.isArray(existingCustomers) ? existingCustomers : [existingCustomers];
+      // Check for duplicate phone number before creating (only if phone is provided)
+      if (customerData.phone && customerData.phone.trim()) {
+        const normalizedPhone = customerData.phone.replace(/[\s\-\(\)\+]/g, '');
         
-        for (const existingCustomer of customersArray) {
-          if (existingCustomer.phone) {
-            const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
-            if (normalizedPhone === existingNormalizedPhone) {
-              const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName}). Please use a different phone number or search for the existing customer.`;
-              toastError(t('messages.duplicateCustomer'), errorMsg);
-              throw new Error(errorMsg);
+        // First, check in the already loaded search results for immediate feedback
+        const localDuplicate = customerSearchResults.find(customer => {
+          if (customer.phone) {
+            const existingNormalizedPhone = customer.phone.replace(/[\s\-\(\)\+]/g, '');
+            return normalizedPhone === existingNormalizedPhone;
+          }
+          return false;
+        });
+        
+        if (localDuplicate) {
+          const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${localDuplicate.firstName} ${localDuplicate.lastName || ''}). Please use a different phone number or search for the existing customer.`;
+          toastError(t('messages.duplicateCustomer'), errorMsg);
+          throw new Error(errorMsg);
+        }
+        
+        console.log('🔍 handleAddNewCustomer: No local duplicates found, checking API...');
+        
+        // Then check with the API for a more comprehensive check
+        const duplicateCheck = await customersApi.getCustomerByPhone(customerData.phone);
+        
+        if (duplicateCheck.success && duplicateCheck.data) {
+          const existingCustomers = duplicateCheck.data.customers || duplicateCheck.data.customer || [];
+          const customersArray = Array.isArray(existingCustomers) ? existingCustomers : [existingCustomers];
+          
+          for (const existingCustomer of customersArray) {
+            if (existingCustomer.phone) {
+              const existingNormalizedPhone = existingCustomer.phone.replace(/[\s\-\(\)\+]/g, '');
+              if (normalizedPhone === existingNormalizedPhone) {
+                const errorMsg = `A customer with phone number "${customerData.phone}" already exists (${existingCustomer.firstName} ${existingCustomer.lastName || ''}). Please use a different phone number or search for the existing customer.`;
+                toastError(t('messages.duplicateCustomer'), errorMsg);
+                throw new Error(errorMsg);
+              }
             }
           }
         }
@@ -550,7 +558,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                 isEditMode={isEditMode}
                 loading={loading || isSubmitting}
                 isFormValid={isFormValidForUI}
-                onPreviewClick={handlePreviewClick}
+                onSubmit={handleSubmit}
                 onCancel={onCancel}
                 currency={currency}
               />
@@ -566,52 +574,6 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         onCustomerCreated={handleAddNewCustomer}
         merchantId={merchantId}
       />
-
-      {/* Order Preview Dialog */}
-      <OrderPreviewDialog
-        open={showOrderPreview}
-        onOpenChange={setShowOrderPreview}
-        orderData={{
-          orderType: formData.orderType,
-          customerId: formData.customerId || 0,
-          customerName: selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName}` : undefined,
-          customerPhone: selectedCustomer?.phone,
-          customerEmail: selectedCustomer?.email,
-          outletId: formData.outletId || 0,
-          outletName: outlets.find(o => o.id === formData.outletId)?.name,
-          pickupPlanAt: formData.pickupPlanAt,
-          returnPlanAt: formData.returnPlanAt,
-          subtotal: formData.subtotal,
-          taxAmount: formData.taxAmount,
-          discountAmount: formData.discountAmount,
-          totalAmount: formData.totalAmount,
-          depositAmount: formData.depositAmount,
-          securityDeposit: formData.securityDeposit,
-          lateFee: formData.lateFee,
-          damageFee: formData.damageFee,
-          notes: formData.notes,
-          orderItems: (() => {
-            console.log('🔍 Creating preview data - orderItems from state:', orderItems);
-            console.log('🔍 Creating preview data - orderItems length:', orderItems.length);
-            return orderItems.map(item => ({
-              productId: item.productId,
-              product: item.product, // Include the full product information
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              totalPrice: item.quantity * item.unitPrice,
-              deposit: item.deposit ?? 0, // Ensure deposit is always a number
-              notes: item.notes || ''
-            }));
-          })()
-        }}
-        products={products}
-        onConfirm={handleOrderConfirm}
-        onEdit={() => setShowOrderPreview(false)}
-        loading={loading || isSubmitting}
-        confirmText={isEditMode ? t('actions.updateOrder') : t('actions.confirmCreate')}
-        editText={t('actions.backToEdit')}
-        title={t('actions.orderPreview')}
-        subtitle={t('actions.reviewBeforeConfirm')}
-      />    </div>
+    </div>
   );
 };

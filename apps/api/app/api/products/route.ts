@@ -3,7 +3,7 @@ import { withManagementAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 
 /**
@@ -58,7 +58,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     // - MERCHANT role: Can only see products from their own merchant
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their merchant
     let filterMerchantId = userScope.merchantId;
-    if (user.role === 'ADMIN') {
+    if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all merchants unless specifically filtering by merchant
       filterMerchantId = queryMerchantId || userScope.merchantId;
     }
@@ -67,10 +67,10 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     // - MERCHANT role: Can see products from all outlets of their merchant (unless queryOutletId is specified)
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their assigned outlet
     let filterOutletId = userScope.outletId;
-    if (user.role === 'MERCHANT') {
+    if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       filterOutletId = queryOutletId || userScope.outletId;
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all products (no outlet filtering unless specified)
       filterOutletId = queryOutletId;
     }
@@ -135,11 +135,17 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     });
 
   } catch (error) {
-    console.error('Error in GET /api/products:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('FETCH_PRODUCTS_FAILED'),
-      { status: 500 }
-    );
+    console.error('❌ Error in GET /api/products:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userScope,
+      userRole: user.role
+    });
+    
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
@@ -243,14 +249,41 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
             );
           }
           
-          // Convert file to buffer and upload to S3
+          // Convert file to buffer
           const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
+          let buffer = Buffer.from(bytes);
           
+          // Compress image to reduce file size
+          try {
+            const sharp = (await import('sharp')).default as any;
+            const originalSize = buffer.length;
+            
+            // Compress image: resize max width 1920px, quality 85%, convert to JPEG
+            buffer = await sharp(buffer)
+              .resize(1920, null, {
+                withoutEnlargement: true,
+                fit: 'inside'
+              })
+              .jpeg({ 
+                quality: 85,
+                progressive: true,
+                mozjpeg: true
+              })
+              .toBuffer();
+            
+            const compressedSize = buffer.length;
+            const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+            console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction)`);
+          } catch (compressError) {
+            console.warn('⚠️ Image compression failed, using original:', compressError);
+            // Continue with original buffer if compression fails
+          }
+          
+          // Upload compressed image to S3
           const uploadResult = await uploadToS3(buffer, {
             folder: 'staging',
             fileName: file.name,
-            contentType: file.type,
+            contentType: 'image/jpeg', // Always JPEG after compression
             preserveOriginalName: false
           });
           
@@ -302,7 +335,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
           productDataFromRequest.images = productDataFromRequest.images
             .split(',')
             .filter(Boolean)
-            .map(url => url.trim());
+            .map((url: string) => url.trim());
         }
         
         if (productDataFromRequest.images.length === 0) {
@@ -349,11 +382,11 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     
     // For ADMIN users, they need to specify merchantId in the request
     // For other roles, use their assigned merchantId
-    if (user.role === 'ADMIN' && parsed.data.merchantId) {
+    if (user.role === USER_ROLE.ADMIN && parsed.data.merchantId) {
       merchantId = parsed.data.merchantId;
     } else if (!merchantId) {
       return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_ID_REQUIRED', user.role === 'ADMIN' 
+        ResponseBuilder.error('MERCHANT_ID_REQUIRED', user.role === USER_ROLE.ADMIN 
           ? 'MerchantId is required for ADMIN users when creating products' 
           : 'User is not associated with any merchant'),
         { status: 400 }
@@ -385,35 +418,55 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     }
 
     // Handle outletStock after merchant is determined
-    if (parsed.data.outletStock && Array.isArray(parsed.data.outletStock) && parsed.data.outletStock.length > 0) {
-      // Use provided outletStock
-      outletStock = parsed.data.outletStock.map((os: any) => ({
-        outletId: os.outletId,
-        stock: os.stock || 0,
-      }));
-      console.log('🔍 Using provided outletStock:', outletStock);
-    } else {
-      // Auto-create outletStock from default outlet
-      console.log('🔍 No outletStock provided, using default outlet');
-      
-      try {
-        const { getDefaultOutlet } = await import('@rentalshop/database');
-        const defaultOutlet = await getDefaultOutlet(merchant.id);
-        
-        outletStock = [{
-          outletId: defaultOutlet.id,
-          stock: parsed.data.totalStock || 0
-        }];
-        
-        console.log('✅ Using default outlet:', defaultOutlet.name, 'with stock:', outletStock[0].stock);
-      } catch (error) {
-        console.error('❌ Error getting default outlet:', error);
+    // outletStock is REQUIRED - mobile must provide it
+    if (!parsed.data.outletStock || !Array.isArray(parsed.data.outletStock) || parsed.data.outletStock.length === 0) {
+      return NextResponse.json(
+        ResponseBuilder.error('OUTLET_STOCK_REQUIRED', 'outletStock is required. Please provide at least one outlet with stock.'),
+        { status: 400 }
+      );
+    }
+
+    // Verify all outlets exist and belong to the merchant
+    console.log('🔍 Verifying outletStock outlets...');
+    const validOutletStock = [];
+    for (const stock of parsed.data.outletStock) {
+      if (stock.outletId && typeof stock.stock === 'number') {
+        console.log(`🔍 Verifying outlet ID: ${stock.outletId}`);
+        // Find outlet by id (number) - db.outlets.findById expects id (number)
+        const outlet = await db.outlets.findById(stock.outletId);
+        if (outlet) {
+          // Verify outlet belongs to the merchant (security check)
+          const outletMerchantId = outlet.merchant?.id || (outlet as any).merchantId;
+          if (outletMerchantId !== merchant.id) {
+            console.log(`❌ Outlet ${stock.outletId} does not belong to merchant ${merchant.id}`);
+            return NextResponse.json(
+              ResponseBuilder.error('OUTLET_NOT_IN_MERCHANT', `Outlet with ID ${stock.outletId} does not belong to your merchant`),
+              { status: 403 }
+            );
+          }
+          console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name, merchantId: outletMerchantId });
+          // Use outlet's id (number) for Prisma connect
+          validOutletStock.push({
+            outletId: outlet.id, // Use id (number) for Prisma connect
+            stock: stock.stock || 0,
+          });
+        } else {
+          console.log(`❌ Outlet not found for ID: ${stock.outletId}`);
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_NOT_FOUND', `Outlet with ID ${stock.outletId} not found`),
+            { status: 404 }
+          );
+        }
+      } else {
+        console.log(`❌ Invalid outletStock entry:`, stock);
         return NextResponse.json(
-          ResponseBuilder.error('DEFAULT_OUTLET_NOT_FOUND'),
+          ResponseBuilder.error('INVALID_OUTLET_STOCK', 'Invalid outletStock entry. Both outletId (number) and stock (number) are required.'),
           { status: 400 }
         );
       }
     }
+    outletStock = validOutletStock;
+    console.log('✅ Verified outletStock:', outletStock);
     
     totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
     console.log('🔍 Final outletStock:', outletStock);
@@ -527,10 +580,15 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       salePrice: parsed.data.salePrice ?? undefined,
       deposit: parsed.data.deposit ?? 0,
       images: imagesValue,
+      // Optional pricing configuration (default FIXED if null)
+      pricingType: parsed.data.pricingType || null,
+      durationConfig: parsed.data.durationConfig || null,
       outletStock: {
         create: outletStock.map(os => ({
           outlet: { connect: { id: os.outletId } },
-          stock: os.stock
+          stock: os.stock,
+          available: os.stock, // available = stock when creating new product (no items rented yet)
+          renting: 0 // No items rented when creating product
         }))
       }
     };
@@ -557,7 +615,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
         imageUrls = product.images.split(',').filter(Boolean);
       }
     } else if (Array.isArray(product.images)) {
-      imageUrls = product.images;
+      imageUrls = product.images.map(String).filter(Boolean);
     }
 
     // Return product with parsed images

@@ -65,6 +65,7 @@
     "deleteAccount": "Delete Account",
     "deleting": "Deleting...",
     "changePassword": "Change Password",
+    "changingPassword": "Changing...",
     "viewDetails": "View Details",
     "edit": "Edit",
     "editUser": "Edit User",
@@ -90,12 +91,17 @@
     "deactivateSuccess": "User deactivated successfully",
     "deactivateFailed": "Failed to deactivate user",
     "passwordChangeSuccess": "Password changed successfully",
+    "passwordChangeFailed": "Failed to change password",
+    "passwordMinLength": "Password must be at least 6 characters long",
+    "newPasswordRequired": "New password is required",
+    "confirmPasswordRequired": "Please confirm your new password",
+    "passwordsDoNotMatch": "Passwords do not match",
     "confirmDelete": "Are you sure you want to delete this user?",
     "confirmDeleteAccount": "Deactivate User Account",
     "confirmDeleteDetails": "Are you sure you want to permanently delete this user account? This action cannot be undone.",
-    "confirmDeactivate": "Are you sure you want to deactivate this user?",
-    "confirmDeactivateAccount": "Deactivate User Account",
-    "confirmDeactivateDetails": "Are you sure you want to deactivate this user account? The user will no longer be able to access the system.",
+    "confirmDeactivate": "Are you sure you want to deactivate",
+    "confirmDeactivateAccount": "Deactivate User",
+    "confirmDeactivateDetails": "This action will prevent them from accessing the system.",
     "confirmActivate": "Are you sure you want to activate this user?",
     "confirmActivateAccount": "Activate User Account",
     "confirmActivateDetails": "Are you sure you want to activate this user account? The user will be able to access the system again.",
@@ -135,7 +141,7 @@
   },
   "dialogs": {
     "changePasswordTitle": "Change Password",
-    "changePasswordDescription": "Enter a new password for this user",
+    "changePasswordDescription": "Change password for user",
     "newPassword": "New Password",
     "confirmNewPassword": "Confirm New Password"
   },
@@ -149,7 +155,9 @@
     "selectRole": "Select role",
     "selectOutlet": "Select outlet",
     "enterPassword": "Enter password",
-    "confirmPassword": "Confirm password"
+    "confirmPassword": "Confirm password",
+    "enterNewPassword": "Enter new password",
+    "confirmNewPassword": "Confirm new password"
   }
 }
 

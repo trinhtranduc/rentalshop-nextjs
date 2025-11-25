@@ -2,7 +2,7 @@
 // REFACTORED PRICING CALCULATOR SYSTEM
 // ============================================================================
 
-import { Plan, Product, Merchant, PricingType, BusinessType, PricingDurationLimits, PricingBusinessRules } from '@rentalshop/types';
+import { Plan, Product, Merchant, PricingType, PricingDurationLimits } from '@rentalshop/types';
 import { BillingInterval, BUSINESS_TYPE_DEFAULTS } from '@rentalshop/constants';
 
 // ============================================================================
@@ -24,14 +24,14 @@ export interface PricingConfig {
   discounts: {
     monthly: number;
     quarterly: number;
-    sixMonths: number;
-    yearly: number;
+    semi_annual: number;
+    annual: number;
   };
   intervals: {
     monthly: { interval: BillingInterval; intervalCount: number };
     quarterly: { interval: BillingInterval; intervalCount: number };
-    sixMonths: { interval: BillingInterval; intervalCount: number };
-    yearly: { interval: BillingInterval; intervalCount: number };
+    semi_annual: { interval: BillingInterval; intervalCount: number };
+    annual: { interval: BillingInterval; intervalCount: number };
   };
 }
 
@@ -128,8 +128,8 @@ export class BillingIntervalCalculator {
     const intervalMap: Record<BillingInterval, number> = {
       monthly: 1,
       quarterly: 3,
-      sixMonths: 6,
-      yearly: 12
+      semi_annual: 6,
+      annual: 12
     };
 
     return intervalMap[billingInterval] || 1;
@@ -139,7 +139,7 @@ export class BillingIntervalCalculator {
    * Get all available billing intervals
    */
   getAllIntervals(): BillingInterval[] {
-    return ['monthly', 'quarterly', 'sixMonths', 'yearly'];
+    return ['monthly', 'quarterly', 'semi_annual', 'annual'];
   }
 }
 
@@ -226,8 +226,8 @@ export class PriceFormatter {
     const intervalMap: Record<BillingInterval, string> = {
       monthly: 'Monthly',
       quarterly: 'Quarterly',
-      sixMonths: 'Six Months',
-      yearly: 'Yearly'
+      semi_annual: 'Semi-Annual',
+      annual: 'Annual'
     };
 
     return intervalMap[interval] || interval;
@@ -430,15 +430,15 @@ export function createPricingComparisonEngine(config: PricingConfig): PricingCom
 export const DEFAULT_PRICING_CONFIG: PricingConfig = {
   discounts: {
     monthly: 0,        // 0% discount
-    quarterly: 10,     // 10% discount
-    sixMonths: 15,     // 15% discount
-    yearly: 20         // 20% discount
+    quarterly: 0,      // 0% discount
+    semi_annual: 5,    // 5% discount
+    annual: 10         // 10% discount
   },
   intervals: {
-    monthly: { interval: 'monthly' as const, intervalCount: 1 },
-    quarterly: { interval: 'quarterly' as const, intervalCount: 3 },
-    sixMonths: { interval: 'sixMonths' as const, intervalCount: 6 },
-    yearly: { interval: 'yearly' as const, intervalCount: 1 }
+    monthly: { interval: 'monthly' as BillingInterval, intervalCount: 1 },
+    quarterly: { interval: 'quarterly' as BillingInterval, intervalCount: 3 },
+    semi_annual: { interval: 'semi_annual' as BillingInterval, intervalCount: 6 },
+    annual: { interval: 'annual' as BillingInterval, intervalCount: 12 }
   }
 };
 
@@ -482,10 +482,10 @@ export const formatBillingCycle = (billingInterval: BillingInterval): string => 
       return 'Monthly';
     case 'quarterly':
       return 'Quarterly';
-    case 'sixMonths':
-      return 'Six Months';
-    case 'yearly':
-      return 'Yearly';
+    case 'semi_annual':
+      return 'Semi-Annual';
+    case 'annual':
+      return 'Annual';
     default:
       return billingInterval;
   }
@@ -528,24 +528,146 @@ export const calculateDiscountedPrice = (originalPrice: number, discountPercenta
 };
 
 // ============================================================================
+// HELPER FUNCTIONS FOR DURATION CONFIGURATION
+// ============================================================================
+
+/**
+ * Parse product duration limits from durationConfig
+ * Returns duration limits or null if not found
+ */
+export function parseProductDurationLimits(product: Product): PricingDurationLimits | null {
+  try {
+    if (!product.durationConfig) {
+      return null;
+    }
+
+    // Parse durationConfig if it's a string
+    let config: any = null;
+    if (typeof product.durationConfig === 'string') {
+      config = JSON.parse(product.durationConfig);
+    } else {
+      config = product.durationConfig;
+    }
+
+    // Extract duration limits from config
+    if (config && (config.minDuration !== undefined || config.maxDuration !== undefined || config.defaultDuration !== undefined)) {
+      return {
+        minDuration: config.minDuration || 1,
+        maxDuration: config.maxDuration || 365,
+        defaultDuration: config.defaultDuration || 1
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error parsing product duration limits:', error);
+    return null;
+  }
+}
+
+/**
+ * Get effective duration limits from product only (no merchant fallback)
+ * Only required for HOURLY/DAILY pricing types
+ */
+export function getEffectiveDurationLimits(product: Product, merchant: Merchant): PricingDurationLimits {
+  // Get pricing type directly from product (defaults to FIXED if null)
+  const pricingType = (product.pricingType as PricingType) || 'FIXED';
+  
+  // FIXED pricing doesn't need duration limits
+  if (pricingType === 'FIXED') {
+    return {
+      minDuration: 1,
+      maxDuration: 1,
+      defaultDuration: 1
+    };
+  }
+  
+  // HOURLY/DAILY require durationConfig
+  const productLimits = parseProductDurationLimits(product);
+  if (productLimits) {
+    return productLimits;
+  }
+
+  // If HOURLY/DAILY but no durationConfig, throw error
+  throw new Error(
+    `Product ${product.id} (${product.name}) has pricingType ${pricingType} but missing durationConfig. ` +
+    `Duration configuration is required for HOURLY and DAILY pricing types.`
+  );
+}
+
+/**
+ * Calculate duration in the correct unit based on pricing type
+ * Returns duration and unit
+ */
+export function calculateDurationInUnit(
+  start: Date,
+  end: Date,
+  pricingType: PricingType
+): { duration: number; unit: 'hour' | 'day' | 'rental' } {
+  const durationMs = end.getTime() - start.getTime();
+
+  switch (pricingType) {
+    case 'HOURLY':
+      return {
+        duration: Math.ceil(durationMs / (1000 * 60 * 60)), // hours
+        unit: 'hour'
+      };
+    case 'DAILY':
+      return {
+        duration: Math.ceil(durationMs / (1000 * 60 * 60 * 24)), // days
+        unit: 'day'
+      };
+    case 'FIXED':
+    default:
+      return {
+        duration: 1, // 1 rental
+        unit: 'rental'
+      };
+  }
+}
+
+/**
+ * Get duration unit label for pricing type
+ */
+export function getDurationUnitLabel(pricingType: PricingType): string {
+  switch (pricingType) {
+    case 'HOURLY':
+      return 'hour';
+    case 'DAILY':
+      return 'day';
+    case 'FIXED':
+      return 'rental';
+    default:
+      return 'unit';
+  }
+}
+
+// ============================================================================
 // PRICING RESOLVER CLASS (from pricing-resolver.ts)
 // ============================================================================
 
 export class PricingResolver {
   /**
-   * Resolve pricing type cho product dựa trên merchant config
-   * Simple: Chỉ dùng pricingType từ merchant (không cần pricingConfig object)
+   * Resolve pricing type cho product
+   * Default to FIXED if product.pricingType is null (minimal changes, backward compatible)
    */
   static resolvePricingType(
     product: Product,
     merchant: Merchant
   ): PricingType {
-    // Use pricingType directly from merchant
-    return (merchant.pricingType as PricingType) || 'FIXED';
+    // Product pricingType is source of truth
+    // NULL or undefined → Default to FIXED (backward compatible)
+    if (product.pricingType) {
+      return product.pricingType as PricingType;
+    }
+    
+    // Default to FIXED if null (minimal changes, backward compatible)
+    return 'FIXED';
   }
   
   /**
    * Get effective pricing config cho product
+   * Uses product config only, defaults to FIXED if not set
    */
   static getEffectivePricingConfig(
     product: Product,
@@ -553,18 +675,35 @@ export class PricingResolver {
   ): PricingInfo {
     const pricingType = this.resolvePricingType(product, merchant);
     
+    // Get duration limits from product (only for HOURLY/DAILY)
+    let minDuration = 1;
+    let maxDuration = 365;
+    
+    if (pricingType !== 'FIXED') {
+      try {
+        const durationLimits = getEffectiveDurationLimits(product, merchant);
+        minDuration = durationLimits.minDuration;
+        maxDuration = durationLimits.maxDuration;
+      } catch (error) {
+        // If HOURLY/DAILY but no durationConfig, will throw error
+        // This is handled by validation
+        console.error('Error getting duration limits:', error);
+      }
+    }
+    
     return {
       pricingType,
       pricePerUnit: product.rentPrice || 0,
-      minDuration: 1,
-      maxDuration: 365,
-      requireRentalDates: false,
-      showPricingOptions: true
+      minDuration,
+      maxDuration,
+      requireRentalDates: pricingType !== 'FIXED',
+      showPricingOptions: pricingType !== 'FIXED'
     };
   }
 
   /**
    * Calculate pricing cho product
+   * Now calculates duration in correct unit based on pricing type
    */
   static calculatePricing(
     product: Product,
@@ -574,16 +713,52 @@ export class PricingResolver {
   ): CalculatedPricing {
     const config = this.getEffectivePricingConfig(product, merchant);
     const unitPrice = config.pricePerUnit;
-    const totalPrice = unitPrice * quantity * (duration || 1);
+    
+    // Calculate total price based on pricing type
+    let totalPrice: number;
+    let durationUnit: string;
+    let effectiveDuration = duration || 1;
+    
+    if (config.pricingType === 'FIXED') {
+      // Fixed pricing: don't multiply by duration
+      totalPrice = unitPrice * quantity;
+      durationUnit = 'rental';
+    } else {
+      // Time-based pricing: apply minimum charge if duration < minDuration
+      // Minimum Charge: If duration < minDuration, charge for minDuration
+      if (duration && duration < config.minDuration) {
+        effectiveDuration = config.minDuration;
+      }
+      
+      totalPrice = unitPrice * quantity * effectiveDuration;
+      durationUnit = getDurationUnitLabel(config.pricingType);
+    }
     
     return {
       unitPrice,
       totalPrice,
       deposit: product.deposit || 0,
       pricingType: config.pricingType,
-      duration,
-      durationUnit: 'days'
+      duration: effectiveDuration, // Return effective duration (may be adjusted for minimum charge)
+      durationUnit
     };
+  }
+
+  /**
+   * Calculate price with rental dates
+   * Calculates duration and price based on start/end dates
+   */
+  static calculatePrice(
+    product: Product,
+    merchant: Merchant,
+    rentalStartAt: Date,
+    rentalEndAt: Date,
+    quantity: number = 1
+  ): CalculatedPricing {
+    const pricingType = this.resolvePricingType(product, merchant);
+    const { duration, unit } = calculateDurationInUnit(rentalStartAt, rentalEndAt, pricingType);
+    
+    return this.calculatePricing(product, merchant, duration, quantity);
   }
 }
 
@@ -594,6 +769,7 @@ export class PricingResolver {
 export class PricingValidator {
   /**
    * Validate rental period for a product
+   * Only validates duration for HOURLY/DAILY, skips for FIXED
    */
   static validateRentalPeriod(
     product: Product,
@@ -606,31 +782,70 @@ export class PricingValidator {
     const warnings: string[] = [];
     const suggestions: string[] = [];
 
-    // Get pricing type from merchant (simplified - no need for pricingConfig object)
-    const pricingType = merchant.pricingType || 'FIXED';
-    const businessType = merchant.businessType || 'GENERAL';
+    // Get pricing type from product (defaults to FIXED if null)
+    const pricingType = PricingResolver.resolvePricingType(product, merchant);
 
+    // For FIXED pricing, skip duration validation
+    if (pricingType === 'FIXED') {
+      // Only validate quantity and stock for FIXED
+      if (quantity <= 0) {
+        errors.push('Quantity must be greater than 0');
+      }
+      if (quantity > 100) {
+        warnings.push('Large quantity rental detected');
+        suggestions.push('Consider bulk pricing or contact for custom quote');
+      }
+      if (product.stock < quantity) {
+        errors.push(`Insufficient stock. Available: ${product.stock}, Requested: ${quantity}`);
+      }
+      if (!product.rentPrice || product.rentPrice <= 0) {
+        errors.push('Invalid product pricing');
+      }
+      return {
+        isValid: errors.length === 0,
+        errors,
+        warnings,
+        suggestions
+      };
+    }
+
+    // For HOURLY/DAILY, validate duration
     // Validate rental dates
     if (rentalStartAt >= rentalEndAt) {
       errors.push('Rental start date must be before end date');
     }
 
-    // Calculate duration in days
-    const durationMs = rentalEndAt.getTime() - rentalStartAt.getTime();
-    const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+    // Calculate duration in correct unit based on pricing type
+    const { duration, unit } = calculateDurationInUnit(rentalStartAt, rentalEndAt, pricingType);
 
-    // Use default duration limits (simplified)
-    const minDuration = 1;
-    const maxDuration = 365;
+    // Get duration limits from product (required for HOURLY/DAILY)
+    try {
+      const durationLimits = getEffectiveDurationLimits(product, merchant);
+      const minDuration = durationLimits.minDuration;
+      const maxDuration = durationLimits.maxDuration;
     
-    if (durationDays < minDuration) {
-      errors.push(`Minimum rental duration is ${minDuration} day`);
-      suggestions.push(`Please select at least ${minDuration} day`);
+      // Validate duration against limits
+      // Minimum Charge: Show warning (not error) if duration < minDuration
+      // System will automatically charge for minDuration
+      if (duration < minDuration) {
+        const unitLabel = unit === 'hour' ? 'hour' : unit === 'day' ? 'day' : 'rental';
+        const unitLabelPlural = minDuration === 1 ? unitLabel : `${unitLabel}s`;
+        warnings.push(
+          `Rental duration (${duration} ${unitLabelPlural}) is less than minimum (${minDuration} ${unitLabelPlural}). ` +
+          `You will be charged for the minimum duration of ${minDuration} ${unitLabelPlural}.`
+        );
+        suggestions.push(`Consider selecting at least ${minDuration} ${unitLabelPlural} to get full value`);
     }
 
-    if (durationDays > maxDuration) {
-      warnings.push(`Rental duration (${durationDays} days) exceeds recommended maximum (${maxDuration} days)`);
-      suggestions.push('Consider splitting into multiple rentals');
+      if (duration > maxDuration) {
+        const unitLabel = unit === 'hour' ? 'hour' : unit === 'day' ? 'day' : 'rental';
+        const unitLabelPlural = duration === 1 ? unitLabel : `${unitLabel}s`;
+        warnings.push(`Rental duration (${duration} ${unitLabelPlural}) exceeds maximum (${maxDuration} ${unitLabelPlural})`);
+        suggestions.push('Consider splitting into multiple rentals or contact for custom quote');
+      }
+    } catch (error: any) {
+      // If HOURLY/DAILY but no durationConfig, add error
+      errors.push(error.message || 'Duration configuration is required for this pricing type');
     }
 
     // Validate quantity

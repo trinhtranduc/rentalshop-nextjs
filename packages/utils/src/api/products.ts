@@ -19,6 +19,7 @@ export interface ProductAvailabilityRequest {
   quantity?: number;
   includeTimePrecision?: boolean;
   timeZone?: string;
+  outletId?: number; // Required for MERCHANT and ADMIN roles
 }
 
 export interface ProductAvailabilityResponse {
@@ -280,6 +281,7 @@ export const productsApi = {
     if (request.quantity !== undefined) params.append('quantity', request.quantity.toString());
     if (request.includeTimePrecision !== undefined) params.append('includeTimePrecision', request.includeTimePrecision.toString());
     if (request.timeZone) params.append('timeZone', request.timeZone);
+    if (request.outletId !== undefined) params.append('outletId', request.outletId.toString());
 
     const url = `${apiUrls.products.availability(productId)}?${params.toString()}`;
     const response = await authenticatedFetch(url);

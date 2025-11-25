@@ -21,7 +21,18 @@
     "method": "Payment Method",
     "monthly": "Monthly",
     "yearly": "Yearly",
-    "quarterly": "Quarterly"
+    "annual": "Annual",
+    "quarterly": "Quarterly",
+    "semiAnnual": "Semi-Annual",
+    "perMonth": "per month",
+    "perQuarter": "per quarter",
+    "perYear": "per year",
+    "cancelAnytime": "Pay monthly, cancel anytime",
+    "quarterlyCancelAnytime": "Pay quarterly, cancel anytime",
+    "save": "Save",
+    "savePercent": "Save {percent}%",
+    "saveWithSemiAnnual": "Save 5% with semi-annual billing",
+    "saveWithAnnual": "Save 10% with annual billing"
   },
   "trial": {
     "status": "Trial Status",

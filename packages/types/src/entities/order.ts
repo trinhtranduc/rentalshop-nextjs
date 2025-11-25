@@ -16,20 +16,13 @@ import {
   ProductReference,
   UserReference
 } from '../common/base';
+import type { OrderType, OrderStatus } from '@rentalshop/constants';
 
 // ============================================================================
 // ORDER ENUMS AND TYPES
 // ============================================================================
-
-/**
- * Order types - simplified to RENT and SALE only
- */
-export type OrderType = 'RENT' | 'SALE';
-
-/**
- * Order statuses - simplified status flow
- */
-export type OrderStatus = 'RESERVED' | 'PICKUPED' | 'RETURNED' | 'COMPLETED' | 'CANCELLED';
+// Note: OrderType and OrderStatus are now imported from @rentalshop/constants
+// for type safety and consistency across the codebase
 
 // ============================================================================
 // CORE ORDER INTERFACES
@@ -54,6 +47,8 @@ export interface Order extends BaseEntityWithOutlet {
   returnPlanAt?: Date | string;
   pickedUpAt?: Date | string;
   returnedAt?: Date | string;
+  rentalDuration?: number; // Duration value (hours, days, or 1 for rental)
+  rentalDurationUnit?: 'hour' | 'day' | 'rental'; // Unit for rentalDuration
   
   // Additional order details
   damageFee?: number;

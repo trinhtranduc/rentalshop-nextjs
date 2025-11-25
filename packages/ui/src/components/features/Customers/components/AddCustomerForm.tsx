@@ -73,11 +73,14 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
       newErrors.firstName = t("validation.firstNameMinLength");
     }
 
-    // Last name validation - required
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = t("validation.lastNameRequired");
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = t("validation.lastNameMinLength");
+    // Last name validation - optional, no validation needed
+    // Phone validation - optional, validate format only if provided
+    if (formData.phone && formData.phone.trim()) {
+      if (!/^[0-9+\-\s()]+$/.test(formData.phone.trim())) {
+        newErrors.phone = t("validation.phoneInvalid");
+      } else if (formData.phone.trim().length < 8) {
+        newErrors.phone = t("validation.phoneMinLength");
+      }
     }
 
     // Email validation - optional but validate format if provided
@@ -85,15 +88,6 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
       if (!/\S+@\S+\.\S+/.test(formData.email.trim())) {
         newErrors.email = t("validation.emailInvalid");
       }
-    }
-
-    // Phone validation - required and validate format
-    if (!formData.phone.trim()) {
-      newErrors.phone = t("validation.phoneRequired");
-    } else if (!/^[0-9+\-\s()]+$/.test(formData.phone.trim())) {
-      newErrors.phone = t("validation.phoneInvalid");
-    } else if (formData.phone.trim().length < 8) {
-      newErrors.phone = t("validation.phoneMinLength");
     }
 
     setErrors(newErrors);
@@ -166,7 +160,7 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="lastName">{t("fields.lastName")} *</Label>
+              <Label htmlFor="lastName">{t("fields.lastName")}</Label>
               <Input
                 id="lastName"
                 type="text"
@@ -199,7 +193,7 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="phone">{t("fields.phone")} *</Label>
+              <Label htmlFor="phone">{t("fields.phone")}</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -207,7 +201,6 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
                 onChange={(e) => handleInputChange("phone", e.target.value)}
                 placeholder={t("placeholders.enterPhone")}
                 className={errors.phone ? "border-red-500" : ""}
-                required
               />
               {errors.phone && (
                 <p className="text-sm text-red-600">{errors.phone}</p>

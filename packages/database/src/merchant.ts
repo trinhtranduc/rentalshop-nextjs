@@ -59,8 +59,27 @@ export interface MerchantUpdateData extends Partial<MerchantCreateData> {
 export async function findById(id: number) {
   return await prisma.merchant.findUnique({
     where: { id },
-    include: {
-      // Plan removed - use subscription.plan instead (single source of truth)
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      address: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      country: true,
+      website: true,
+      description: true,
+      businessType: true,
+      pricingType: true,
+      pricingConfig: true,
+      taxId: true,
+      currency: true,
+      tenantKey: true, // Include tenantKey for public product links
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
       subscription: {
         include: {
           plan: true
@@ -94,6 +113,31 @@ export async function findByEmail(email: string) {
     include: {
       Plan: true,
       subscription: true
+    }
+  });
+}
+
+/**
+ * Find merchant by tenantKey
+ * Used for public product pages where merchant shares link with customers
+ */
+export async function findByTenantKey(tenantKey: string) {
+  return await prisma.merchant.findUnique({
+    where: { tenantKey },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      address: true,
+      phone: true,
+      email: true,
+      website: true,
+      city: true,
+      country: true,
+      currency: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true
     }
   });
 }
@@ -366,6 +410,7 @@ export const findFirst = async (whereClause: any) => {
 export const simplifiedMerchants = {
   findById,
   findByEmail,
+  findByTenantKey,
   findFirst,
   search,
   create,

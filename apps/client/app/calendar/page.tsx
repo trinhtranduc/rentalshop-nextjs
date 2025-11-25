@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Calendars, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate, getUTCDateKey } from '@rentalshop/utils';
+import { useFormattedFullDate, getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 
@@ -118,8 +118,8 @@ export default function CalendarPage() {
   const handleDateClick = useCallback((date: Date) => {
     console.log('📅 Date clicked:', date);
     
-    // Convert date to YYYY-MM-DD format using UTC to match backend (which uses UTC dates)
-    const dateKey = getUTCDateKey(date);
+    // Convert date to YYYY-MM-DD format using local timezone to match backend (which uses local date keys)
+    const dateKey = getLocalDateKey(date);
     const dayData = calendarData.calendar.find(day => day.date === dateKey);
     
     console.log('📅 Looking for dateKey:', dateKey);
@@ -181,8 +181,12 @@ export default function CalendarPage() {
           notes: order.notes || '',
           isOverdue: order.status === 'PICKUPED' && order.returnPlanAt ? new Date(order.returnPlanAt) < new Date() : false,
           duration: order.pickupPlanAt && order.returnPlanAt ? 
-            Math.ceil((new Date(order.returnPlanAt).getTime() - new Date(order.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : 0
-        });
+            Math.ceil((new Date(order.returnPlanAt).getTime() - new Date(order.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : 0,
+          // Keep original fields for CalendarGrid to match dates correctly
+          pickupPlanAt: order.pickupPlanAt,
+          returnPlanAt: order.returnPlanAt,
+          pickedUpAt: (order as any).pickedUpAt // Include if available
+        } as any);
       });
       
       // Only process pickup orders - no return orders needed
@@ -341,7 +345,7 @@ export default function CalendarPage() {
                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                {(order.totalAmount && order.totalAmount > 0) && (
                                  <span className="font-semibold">
-                                   ${order.totalAmount.toFixed(2)}
+                                   {formatCurrencyAdvanced(order.totalAmount, { currency: 'VND', showSymbol: true })}
                                  </span>
                                )}
                              </td>

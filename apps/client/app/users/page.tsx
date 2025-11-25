@@ -259,10 +259,8 @@ export default function UsersPage() {
     if (!userToActivate) return;
     
     try {
-      const response = await usersApi.updateUser(userToActivate.id, {
-        id: userToActivate.id,
-        isActive: true
-      });
+      // Use dedicated activateUser API method instead of updateUser
+      const response = await usersApi.activateUser(userToActivate.id);
       if (response.success) {
         toastSuccess(tu('messages.activateSuccess'), `${tu('messages.activateSuccess')} - "${userToActivate.firstName} ${userToActivate.lastName}"`);
         setShowActivateConfirm(false);
@@ -281,10 +279,8 @@ export default function UsersPage() {
     if (!userToDeactivate) return;
     
     try {
-      const response = await usersApi.updateUser(userToDeactivate.id, {
-        id: userToDeactivate.id,
-        isActive: false
-      });
+      // Use dedicated deactivateUser API method instead of updateUser
+      const response = await usersApi.deactivateUser(userToDeactivate.id);
       if (response.success) {
         toastSuccess(tu('messages.deactivateSuccess'), `${tu('messages.deactivateSuccess')} - "${userToDeactivate.firstName} ${userToDeactivate.lastName}"`);
         setShowDeactivateConfirm(false);

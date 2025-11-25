@@ -12,6 +12,7 @@
     "test:product-availability": "jest product-availability-actual",
     "test:duplicate-account": "jest duplicate-account-actual",
     "test:subscription-admin": "jest subscription-admin-actual",
+    "test:income-analytics": "jest income-analytics-actual",
     "test:all": "jest --verbose",
     "test:actual": "jest *-actual.test.js",
     "test:ci": "jest --ci --coverage --watchAll=false",

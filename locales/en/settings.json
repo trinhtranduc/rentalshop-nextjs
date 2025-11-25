@@ -92,7 +92,13 @@
     "vietnameseDong": "Vietnamese Dong",
     "selected": "Selected",
     "selectCurrency": "Select Currency",
-    "savingCurrency": "Updating currency..."
+    "savingCurrency": "Updating currency...",
+    "publicProductLink": "Public Product Link",
+    "publicProductLinkDesc": "Share this link with your customers so they can browse your products. This link is public and doesn't require login.",
+    "copy": "Copy Link",
+    "copied": "Copied!",
+    "share": "Share",
+    "viewPublicPage": "View Public Page"
   },
   "outlet": {
     "title": "Outlet Settings",

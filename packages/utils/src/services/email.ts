@@ -24,6 +24,12 @@ export interface EmailVerificationData {
   verificationUrl: string;
 }
 
+export interface PasswordResetData {
+  name: string;
+  email: string;
+  resetUrl: string;
+}
+
 // ============================================================================
 // EMAIL SERVICE
 // ============================================================================
@@ -326,10 +332,17 @@ export async function sendVerificationEmail(
   // Lazy load env to avoid initialization issues in browser
   const { env } = await import('@rentalshop/env');
   
-  // Use API_URL so the link goes to backend first, which verifies token
-  // and then redirects back to CLIENT_URL with success/error.
-  const apiUrl = env.API_URL || env.CLIENT_URL;
-  const verificationUrl = `${apiUrl}/api/auth/verify-email?token=${verificationToken}`;
+  // Use CLIENT_URL so the link goes to client app first, which is more trusted by browsers
+  // The client app will then call the API to verify the token
+  // IMPORTANT: Always use HTTPS for production to avoid browser warnings
+  let clientUrl = env.CLIENT_URL || 'http://localhost:3000';
+  
+  // Ensure HTTPS in production (except localhost)
+  if (process.env.NODE_ENV === 'production' && !clientUrl.includes('localhost')) {
+    clientUrl = clientUrl.replace(/^http:/, 'https:');
+  }
+  
+  const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
 
   const html = generateVerificationEmail({
     name,
@@ -340,6 +353,98 @@ export async function sendVerificationEmail(
   return await sendEmail({
     to: email,
     subject: 'Xác thực email của bạn - AnyRent',
+    html,
+  });
+}
+
+/**
+ * Generate password reset email HTML
+ */
+export function generatePasswordResetEmail(data: PasswordResetData): string {
+  const { name, email, resetUrl } = data;
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đặt lại mật khẩu của bạn</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+  <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">AnyRent</h1>
+      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Hệ thống quản lý cho thuê</p>
+    </div>
+    
+    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">Đặt lại mật khẩu của bạn</h2>
+    
+    <p style="color: #374151; font-size: 16px;">Xin chào <strong>${name}</strong>,</p>
+    
+    <p style="color: #374151; font-size: 16px;">
+      Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại AnyRent. 
+      Để tạo mật khẩu mới, vui lòng nhấp vào nút bên dưới:
+    </p>
+    
+    <div style="text-align: center; margin: 40px 0;">
+      <a href="${resetUrl}" 
+         style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; 
+                padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; 
+                box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">
+        Đặt lại mật khẩu
+      </a>
+    </div>
+    
+    <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+      Nếu nút không hoạt động, bạn có thể sao chép và dán liên kết sau vào trình duyệt của mình:
+    </p>
+    
+    <p style="color: #2563eb; font-size: 14px; word-break: break-all; background-color: #f3f4f6; 
+              padding: 12px; border-radius: 4px; margin: 10px 0;">
+      ${resetUrl}
+    </p>
+    
+    <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+      <strong>Lưu ý:</strong> Liên kết này sẽ hết hạn sau 24 giờ. Nếu bạn không yêu cầu đặt lại mật khẩu, 
+      vui lòng bỏ qua email này và mật khẩu của bạn sẽ không thay đổi.
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
+    
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      © ${new Date().getFullYear()} AnyRent. Tất cả các quyền được bảo lưu.
+    </p>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Send password reset email
+ */
+export async function sendPasswordResetEmail(
+  email: string,
+  name: string,
+  resetToken: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Lazy load env to avoid initialization issues in browser
+  const { env } = await import('@rentalshop/env');
+  
+  // Use CLIENT_URL for password reset link (users reset password via client app)
+  const clientUrl = env.CLIENT_URL || env.ADMIN_URL || 'http://localhost:3000';
+  const resetUrl = `${clientUrl}/reset-password?token=${resetToken}`;
+
+  const html = generatePasswordResetEmail({
+    name,
+    email,
+    resetUrl,
+  });
+
+  return await sendEmail({
+    to: email,
+    subject: 'Đặt lại mật khẩu của bạn - AnyRent',
     html,
   });
 }

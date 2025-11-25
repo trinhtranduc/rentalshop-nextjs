@@ -31,15 +31,21 @@ export const createApiUrl = (endpoint: string): string => {
   
   // For relative endpoints, construct full URL
   if (cleanEndpoint.startsWith('api/')) {
-    // Use centralized API URL configuration
-    try {
-      const { apiUrls } = require('../config/api');
-      return `${apiUrls.base}/${cleanEndpoint}`;
-    } catch {
-      // Fallback to environment variable if centralized config not available
+    // Always use environment variable for server-side rendering compatibility
+    // In server components, require() may fail, so we use env var directly
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
-      return `${baseUrl}/${cleanEndpoint}`;
+    
+    // Debug logging to track URL construction
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+      console.log('🔍 createApiUrl debug:', {
+        endpoint: cleanEndpoint,
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+        baseUrl,
+        finalUrl: `${baseUrl}/${cleanEndpoint}`
+      });
     }
+    
+      return `${baseUrl}/${cleanEndpoint}`;
   }
   
   // Default to relative API path
@@ -80,13 +86,34 @@ export const publicFetch = async (
   // Create full URL
   const fullUrl = createApiUrl(url);
 
-  // Merge headers
+  // Convert options.headers to plain object if it's a Headers object
+  let optionsHeaders: Record<string, string> = {};
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => {
+        optionsHeaders[key] = value;
+      });
+    } else if (Array.isArray(options.headers)) {
+      // Handle array of [key, value] tuples
+      options.headers.forEach(([key, value]) => {
+        optionsHeaders[key] = value;
+      });
+    } else {
+      optionsHeaders = options.headers as Record<string, string>;
+    }
+  }
+
+  // Merge headers - ensure Content-Type is always application/json
+  const mergedHeaders: Record<string, string> = {
+    ...headers,
+    ...optionsHeaders,
+    // Force Content-Type to be application/json for JSON body
+    [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
+  };
+
   const requestOptions: RequestInit = {
     ...options,
-    headers: {
-      ...headers,
-      ...options.headers,
-    },
+    headers: mergedHeaders,
   };
 
   console.log(`🌐 PUBLIC REQUEST: ${requestOptions.method || 'GET'} ${fullUrl}`);

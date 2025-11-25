@@ -5,7 +5,7 @@ import { Card, CardContent } from '../../../ui/card';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils';
-import { ORDER_STATUS_COLORS, ORDER_TYPE_COLORS } from '@rentalshop/constants';
+import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
 
@@ -59,7 +59,7 @@ export const OrderTable = React.memo(function OrderTable({
 
   const getStatusBadge = (status: string) => {
     return (
-      <Badge variant="outline" className={ORDER_STATUS_COLORS[status as keyof typeof ORDER_STATUS_COLORS]}>
+      <Badge variant="outline" className={getOrderStatusClassName(status)}>
         {t(`status.${status}`)}
       </Badge>
     );

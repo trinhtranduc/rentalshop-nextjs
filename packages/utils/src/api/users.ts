@@ -160,31 +160,39 @@ export const usersApi = {
 
   /**
    * Activate user
+   * Uses updateUser API to set isActive to true
    */
   async activateUser(userId: number): Promise<UserApiResponse> {
-    const response = await authenticatedFetch(`${apiUrls.users.update(userId)}/activate`, {
-      method: 'PATCH',
-      body: JSON.stringify({ isActive: true }),
-    });
-    return await parseApiResponse<UserApiResponse>(response);
+    return this.updateUser(userId, { isActive: true });
   },
 
   /**
    * Deactivate user
+   * Uses updateUser API to set isActive to false
    */
   async deactivateUser(userId: number): Promise<UserApiResponse> {
-    const response = await authenticatedFetch(`${apiUrls.users.update(userId)}/deactivate`, {
-      method: 'PATCH',
-      body: JSON.stringify({ isActive: false }),
-    });
-    return await parseApiResponse<UserApiResponse>(response);
+    return this.updateUser(userId, { isActive: false });
   },
 
   /**
    * Change user password
    */
   async changePassword(userId: number, newPassword: string): Promise<UserApiResponse> {
-    const response = await authenticatedFetch(`${apiUrls.users.update(userId)}/change-password`, {
+    const baseUrl = apiUrls.users.update(userId);
+    const fullUrl = `${baseUrl}/change-password`;
+    
+    console.log('🔍 changePassword URL Construction:', {
+      userId,
+      baseUrl,
+      fullUrl,
+      apiUrlsBase: apiUrls.base,
+      'baseUrl starts with http': baseUrl.startsWith('http'),
+      'baseUrl starts with /': baseUrl.startsWith('/'),
+      'baseUrl includes dev.anyrent': baseUrl.includes('dev.anyrent'),
+      'baseUrl includes dev-api.anyrent': baseUrl.includes('dev-api.anyrent')
+    });
+    
+    const response = await authenticatedFetch(fullUrl, {
       method: 'PATCH',
       body: JSON.stringify({ newPassword }),
     });

@@ -5,7 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Button, Logo, LanguageSwitcher } from '@rentalshop/ui'
-import { publicPlansApi } from '@rentalshop/utils'
+import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
+import { usePlansTranslations } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
 import { 
   Check, 
@@ -36,11 +37,133 @@ import {
 
 const LandingPage = () => {
   const t = useTranslations('landing')
+  
+  // Structured Data for SEO (JSON-LD)
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'AnyRent',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: ['iOS', 'Android', 'Web'],
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'VND',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      ratingCount: '150',
+    },
+    description: t('hero.description'),
+    url: process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop',
+  }
+
+  const organizationData = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'AnyRent',
+    url: process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop',
+    logo: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/anyrent-logo-light.svg`,
+    description: t('hero.description'),
+    sameAs: [
+      'https://apps.apple.com/vn/app/rentalshop/id1500115668',
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'Customer Service',
+      availableLanguage: ['Vietnamese', 'English'],
+    },
+  }
+
+  // BreadcrumbList Structured Data for SEO
+  const breadcrumbData = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: t('navigation.features'),
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}#features`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: t('navigation.pricing'),
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}#pricing`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: t('navigation.faq'),
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}#faq`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 5,
+        name: t('navigation.contact'),
+        item: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}#contact`,
+      },
+    ],
+  };
+
+  // Article Schema for landing page content
+  const articleData = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: t('hero.title') + ' ' + t('hero.subtitle'),
+    description: t('hero.description'),
+    author: {
+      '@type': 'Organization',
+      name: 'AnyRent',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'AnyRent',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/anyrent-logo-light.svg`,
+      },
+    },
+    datePublished: '2024-01-01',
+    dateModified: new Date().toISOString().split('T')[0],
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop',
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-bg-card to-bg-tertiary">
+    <>
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleData) }}
+      />
       
+      <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-bg-card to-bg-tertiary">
+        
         {/* Header */}
-        <header className="bg-bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
+        <header className="bg-bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50" role="banner">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
@@ -75,7 +198,7 @@ const LandingPage = () => {
         </header>
 
         {/* Hero Banner */}
-        <section className="relative overflow-hidden">
+        <section className="relative overflow-hidden" aria-label="Hero section">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div className="text-center">
               <h1 className="text-5xl md:text-6xl font-bold text-text-primary mb-6">
@@ -84,7 +207,7 @@ const LandingPage = () => {
                   {" "}{t('hero.subtitle')}
                 </span>
               </h1>
-              <p className="text-xl text-text-secondary mb-8 max-w-3xl mx-auto">
+              <p className="text-xl text-text-secondary mb-8 max-w-3xl mx-auto" role="text">
                 {t('hero.description')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -117,7 +240,7 @@ const LandingPage = () => {
         </section>
 
       {/* App Download Section */}
-      <section id="download" className="py-20 bg-bg-card">
+      <section id="download" className="py-20 bg-bg-card" aria-label="Download section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-text-primary mb-4">
@@ -166,11 +289,11 @@ const LandingPage = () => {
                 <div className="w-full flex items-center justify-center">
                   <Image 
                     src="/anyrent-iphone-splashscreen.jpg"
-                    alt="AnyRent iPhone Splashscreen"
+                    alt="AnyRent phần mềm quản lý cửa hàng cho thuê trên iPhone - Hệ thống quản lý cho thuê di động"
                     width={288}
                     height={576}
-                    className="rounded-3xl shadow-2xl border border-border"
                     priority
+                    className="rounded-3xl shadow-2xl border border-border"
                   />
                 </div>
                 <div className="mt-8">
@@ -191,7 +314,7 @@ const LandingPage = () => {
       </section>
 
         {/* Features Section */}
-        <section id="features" className="py-20 bg-bg-secondary">
+        <section id="features" className="py-20 bg-bg-secondary" aria-label="Features section">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-text-primary mb-4">
@@ -350,13 +473,14 @@ const LandingPage = () => {
       <Footer />
       <FloatingButtons />
     </div>
+    </>
   );
 };
 
 // Simple component implementations for the landing page
 const Stats = () => {
   return (
-    <section className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary text-text-inverted relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary text-text-inverted relative overflow-hidden" aria-label="Statistics section">
       <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid md:grid-cols-4 gap-8 text-center">
@@ -385,7 +509,7 @@ const Stats = () => {
 const Testimonials = () => {
   const t = useTranslations('landing.testimonials')
   return (
-    <section className="py-20 bg-bg-card">
+    <section className="py-20 bg-bg-card" aria-label="Testimonials section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-text-primary mb-4">
@@ -466,7 +590,7 @@ const CTA = () => {
   const t = useTranslations('landing.cta')
   const tHero = useTranslations('landing.hero')
   return (
-      <section className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary relative overflow-hidden" aria-label="Call to action section">
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h2 className="text-4xl font-bold text-text-inverted mb-4">
@@ -531,9 +655,29 @@ const FAQ = () => {
       answer: tFaq('support.answer')
     }
   ];
+
+  // FAQ Structured Data for SEO
+  const faqStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqItems.map(item => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  };
   
   return (
-    <section id="faq" className="py-20 bg-bg-secondary">
+    <>
+      {/* FAQ Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+      />
+      <section id="faq" className="py-20 bg-bg-secondary" aria-label="Frequently asked questions">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-text-primary mb-4">
@@ -569,11 +713,13 @@ const FAQ = () => {
         </div>
       </div>
     </section>
+    </>
   );
 };
 
 const Pricing = () => {
   const tPricing = useTranslations('landing.pricing')
+  const tPlans = usePlansTranslations()
   const [selectedDuration, setSelectedDuration] = useState<'3' | '6' | '12'>('3'); // '3', '6', '12'
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -594,12 +740,12 @@ const Pricing = () => {
           // Sort plans by sortOrder and filter active ones
           const activePlans = response.data
             .filter(plan => plan.isActive)
-            // Hide trial plans: remove plans named like Trial or with 0 price and trialDays > 0
+            // Hide trial plans only: remove plans named like Trial
+            // Keep contact plans (basePrice = 0 but has "contact" in description)
             .filter(plan => {
               const name = (plan.name || '').toLowerCase();
               const isTrialName = name.includes('trial');
-              const isFreeTrial = (plan.trialDays && plan.trialDays > 0) && (plan.basePrice === 0);
-              return !isTrialName && !isFreeTrial;
+              return !isTrialName; // Only filter out plans with "trial" in name
             })
             .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
           setPlans(activePlans);
@@ -635,21 +781,21 @@ const Pricing = () => {
 
     return plans.map((plan) => {
       // Compute monthly price based on selected duration
-      // Discounts: 3m=0%, 6m=5%, 12m=15% (applied to monthly price)
+      // Discounts: 3m=0%, 6m=5%, 12m=10% (applied to monthly price)
       let monthlyPrice = 0;
       const periodLabel = tPricing('plans.basic.period');
       let savings = 0;
 
       const base = plan.basePrice || 0;
       if (selectedDuration === '3') {
-        monthlyPrice = base; // no discount
+        monthlyPrice = base; // 0% discount
         savings = 0;
       } else if (selectedDuration === '6') {
         monthlyPrice = base * 0.95; // 5% discount per month
-        savings = base * 0.05 * 6; // total savings for context if needed
+        savings = base * 0.05 * 6; // total savings for 6 months
       } else if (selectedDuration === '12') {
-        monthlyPrice = base * 0.85; // 15% discount per month
-        savings = base * 0.15 * 12;
+        monthlyPrice = base * 0.90; // 10% discount per month
+        savings = base * 0.10 * 12; // total savings for 12 months
       } else {
         // Monthly (fallback)
         monthlyPrice = base;
@@ -669,19 +815,48 @@ const Pricing = () => {
         }
       }
 
-      // Transform features array to display format
+      // Transform features array to display format with translation
       const features = featuresArray.map((feature) => ({
-        text: feature,
+        text: translatePlanFeature(feature, tPlans),
         included: true
       }));
+
+      // Check if it's a contact plan and format price accordingly
+      let description = plan.description || '';
+      // Remove duplicate "(Contact)" patterns
+      description = description.replace(/\s*\(Contact\)\s*/gi, ' ').replace(/\s*\(Liên hệ\)\s*/gi, ' ').trim();
+      // Remove multiple spaces
+      description = description.replace(/\s+/g, ' ');
+      
+      const descriptionLower = description.toLowerCase();
+      const planNameLower = (plan.name || '').toLowerCase();
+      // Check if it's a contact plan: basePrice = 0 AND (description has contact OR plan name is Enterprise)
+      const isContactPlan = (monthlyPrice === 0) && (
+        descriptionLower.includes('contact') || 
+        descriptionLower.includes('liên hệ') ||
+        planNameLower.includes('enterprise')
+      );
+      const displayPrice = isContactPlan 
+        ? (tPlans('fields.contactPrice') || 'Contact') 
+        : formatCurrency(monthlyPrice, plan.currency);
+
+      // Translate description based on plan name
+      let translatedDescription = description;
+      if (planNameLower.includes('basic')) {
+        translatedDescription = tPlans('descriptions.basic') || description;
+      } else if (planNameLower.includes('professional')) {
+        translatedDescription = tPlans('descriptions.professional') || description;
+      } else if (planNameLower.includes('enterprise')) {
+        translatedDescription = tPlans('descriptions.enterprise') || description;
+      }
 
       return {
         id: plan.id,
         name: plan.name,
-        subtitle: plan.description || '',
-        price: formatCurrency(monthlyPrice, plan.currency),
-        period: periodLabel,
-        description: plan.description || '',
+        subtitle: translatedDescription,
+        price: displayPrice,
+        period: isContactPlan ? '' : periodLabel, // Don't show period for contact plans
+        description: translatedDescription,
         features: features,
         popular: plan.isPopular || false,
         buttonText: "Get Started",
@@ -697,7 +872,7 @@ const Pricing = () => {
   const pricingData = getPricingData();
 
   return (
-    <section id="pricing" className="py-20 bg-bg-card">
+    <section id="pricing" className="py-20 bg-bg-card" aria-label="Pricing plans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-text-primary mb-4">
@@ -741,7 +916,7 @@ const Pricing = () => {
             >
               <div className="text-center">
                 <div>{tPricing('months.twelve')}</div>
-                <div className="text-lg text-action-danger font-bold">-15%</div>
+                <div className="text-lg text-action-danger font-bold">-10%</div>
               </div>
             </Button>
           </div>
@@ -869,7 +1044,7 @@ const Pricing = () => {
 const Footer = () => {
   const tf = useTranslations('landing.footer')
   return (
-    <footer id="contact" className="bg-gray-900 text-white py-12">
+    <footer id="contact" className="bg-gray-900 text-white py-12" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8">
           <div>

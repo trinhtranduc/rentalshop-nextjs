@@ -93,9 +93,21 @@ export async function PUT(
         );
       }
 
+      // Check if user is being deactivated (isActive changed from true to false)
+      const isBeingDeactivated = existingUser.isActive && body.isActive === false;
+
       // Update the user using the simplified database API
       const updatedUser = await db.users.update(userId, body);
       console.log('✅ User updated successfully:', updatedUser);
+
+      // If user is being deactivated, delete all their sessions to force logout
+      if (isBeingDeactivated) {
+        const { prisma } = await import('@rentalshop/database');
+        const deletedSessionsCount = await prisma.userSession.deleteMany({
+          where: { userId: userId }
+        });
+        console.log(`🗑️ Deactivated user ${userId}: Deleted ${deletedSessionsCount.count} session(s) to force logout`);
+      }
 
       return NextResponse.json({
         success: true,
@@ -181,7 +193,6 @@ export async function DELETE(
       return NextResponse.json({
         success: true,
         data: deletedUser,
-        code: 'USER_DELETED_SUCCESS',
         code: 'USER_DELETED_SUCCESS',
         message: 'User deleted successfully'
       });

@@ -81,7 +81,7 @@ export const authApi = {
    * Request password reset
    */
   async requestPasswordReset(email: string): Promise<ApiResponse<void>> {
-    const response = await fetch(apiUrls.auth.forgotPassword, {
+    const response = await publicFetch(apiUrls.auth.forgotPassword, {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -91,10 +91,10 @@ export const authApi = {
   /**
    * Reset password with token
    */
-  async resetPassword(token: string, newPassword: string): Promise<ApiResponse<void>> {
-    const response = await fetch(apiUrls.auth.resetPassword, {
+  async resetPassword(token: string, password: string, confirmPassword: string): Promise<ApiResponse<void>> {
+    const response = await publicFetch(apiUrls.auth.resetPassword, {
       method: 'POST',
-      body: JSON.stringify({ token, newPassword }),
+      body: JSON.stringify({ token, password, confirmPassword }),
     });
     return await parseApiResponse<void>(response);
   },
@@ -108,6 +108,22 @@ export const authApi = {
       body: JSON.stringify({ currentPassword, newPassword }),
     });
     return await parseApiResponse<void>(response);
+  },
+
+  /**
+   * Verify email with token
+   */
+  async verifyEmail(token: string): Promise<ApiResponse<{ token: string; user: User }>> {
+    try {
+      const response = await publicFetch(apiUrls.auth.verifyEmail, {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      });
+      return await parseApiResponse<{ token: string; user: User }>(response);
+    } catch (error) {
+      console.error('Verify email error:', error);
+      throw error;
+    }
   },
 
   /**

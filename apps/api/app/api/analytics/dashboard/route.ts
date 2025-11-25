@@ -34,7 +34,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     }
     
     const paymentWhereClause: any = {
-      status: 'COMPLETED'
+      status: ORDER_STATUS.COMPLETED
     };
 
     // Apply role-based filtering
@@ -148,7 +148,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       // Pickup orders count
       db.orders.getStats({ 
         ...orderWhereClause, 
-        status: 'PICKUPED' 
+        status: ORDER_STATUS.PICKUPED 
       }),
       
       // Today's orders (orders created today)
@@ -175,31 +175,31 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       // Reserved orders count
       db.orders.getStats({
         ...orderWhereClause,
-        status: 'RESERVED'
+        status: ORDER_STATUS.RESERVED
       }),
       
       // Pickup orders count (duplicate - already above)
       db.orders.getStats({
         ...orderWhereClause,
-        status: 'PICKUPED'
+        status: ORDER_STATUS.PICKUPED
       }),
       
       // Completed orders count
       db.orders.getStats({
         ...orderWhereClause,
-        status: 'COMPLETED'
+        status: ORDER_STATUS.COMPLETED
       }),
       
       // Cancelled orders count
       db.orders.getStats({
         ...orderWhereClause,
-        status: 'CANCELLED'
+        status: ORDER_STATUS.CANCELLED
       }),
       
       // Returned orders count
       db.orders.getStats({
         ...orderWhereClause,
-        status: 'RETURNED'
+        status: ORDER_STATUS.RETURNED
       })
     ]);
 

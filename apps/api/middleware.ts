@@ -25,8 +25,11 @@ const publicRoutes = [
   '/api/system/integrity',
   '/api/docs',
   '/api/plans/public',
+  '/api/public', // Public product pages for merchants to share with customers
   '/api/test',
   '/api/debug', // Debug endpoints for troubleshooting
+  '/api/sync-proxy', // Sync proxy endpoint (no authentication required)
+  '/api/sync-standalone', // Sync standalone endpoint
 ];
 
 // Note: Subscription validation routes are now defined in @rentalshop/middleware

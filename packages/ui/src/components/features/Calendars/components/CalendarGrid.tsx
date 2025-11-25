@@ -1,7 +1,7 @@
 import React from 'react';
 import { CalendarDay, PickupOrder } from '@rentalshop/types';
 import { useCalendarTranslations } from '@rentalshop/hooks';
-import { getUTCDateKey } from '@rentalshop/utils';
+import { getLocalDateKey } from '@rentalshop/utils';
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -47,40 +47,56 @@ export function CalendarGrid({
       const isSelected = selectedDate?.toDateString() === tempDate.toDateString();
       
       // Get orders for this date using date without time for comparison
-      // Use UTC date key to match backend data (which uses UTC dates)
-      const currentDateKey = getUTCDateKey(tempDate);
+      // Use local date key to match backend data (which uses local date keys)
+      const currentDateKey = getLocalDateKey(tempDate);
       
+      // Backend đã filter chỉ RESERVED và PICKUPED orders và chỉ thêm vào pickup date
+      // Frontend chỉ cần match theo pickup date, không hiển thị return date
       const dateOrders = orders.filter(order => {
-        const pickupDate = new Date((order as any).pickupPlanAt || order.pickupDate);
-        const returnDate = new Date((order as any).returnPlanAt || order.returnDate);
+        // RESERVED: hiển thị theo pickupPlanAt
+        // PICKUPED: hiển thị theo pickedUpAt (nếu có) hoặc pickupPlanAt
+        let displayDate: Date | null = null;
         
-        // Use getUTCDateKey to get UTC date (YYYY-MM-DD) to match backend
-        // Backend returns "date": "2025-10-27" (UTC, no timezone conversion)
-        const pickupDateKey = getUTCDateKey(pickupDate);
-        const returnDateKey = getUTCDateKey(returnDate);
+        if (order.status === 'RESERVED') {
+          // RESERVED: ưu tiên pickupPlanAt, nếu không có thì dùng pickupDate (từ transform)
+          displayDate = (order as any).pickupPlanAt 
+            ? new Date((order as any).pickupPlanAt)
+            : (order.pickupDate ? new Date(order.pickupDate) : null);
+        } else if (order.status === 'PICKUPED') {
+          // PICKUPED: ưu tiên pickedUpAt, nếu không có thì dùng pickupPlanAt, cuối cùng là pickupDate
+          displayDate = (order as any).pickedUpAt 
+            ? new Date((order as any).pickedUpAt)
+            : ((order as any).pickupPlanAt 
+              ? new Date((order as any).pickupPlanAt)
+              : (order.pickupDate ? new Date(order.pickupDate) : null));
+        }
         
-        const matches = (
-          pickupDateKey === currentDateKey ||
-          returnDateKey === currentDateKey
-        );
+        if (!displayDate) return false;
         
-        // Debug logging for first week only
-        if (tempDate.getDate() <= 7) {
+        // Use getLocalDateKey to get local date (YYYY-MM-DD) to match backend
+        // Backend returns "date": "2025-11-24" (local date key, not UTC)
+        const displayDateKey = getLocalDateKey(displayDate);
+        
+        const matches = displayDateKey === currentDateKey;
+        
+        // Debug logging for all dates to troubleshoot
           console.log('📅 CalendarGrid date matching:', {
             currentDateKey,
-            pickupDateKey,
-            returnDateKey,
+          displayDateKey,
             matches,
-            orderNumber: order.orderNumber
+          orderNumber: order.orderNumber,
+          status: order.status,
+          pickupPlanAt: (order as any).pickupPlanAt,
+          pickupDate: order.pickupDate,
+          pickedUpAt: (order as any).pickedUpAt
           });
-        }
         
         return matches;
       });
       
-      // All orders are pickup orders (RESERVED and PICKUPED status only)
-      // Backend only adds orders to pickup date, so all orders here are pickup
-      const pickupOrders = dateOrders; // All orders are pickup orders
+      // Backend đã filter chỉ RESERVED và PICKUPED orders và chỉ thêm vào pickup date
+      // Tất cả orders từ backend đều là pickup orders
+      const pickupOrders = dateOrders; // Backend đã filter, không cần filter lại
       const returnOrders: any[] = []; // No return orders displayed in calendar
       
       days.push({

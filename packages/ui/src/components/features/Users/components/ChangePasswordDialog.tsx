@@ -12,8 +12,9 @@ import {
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
-import { userApiClient } from '../lib/UserApiClient';
+import { usersApi } from '@rentalshop/utils';
 import { Eye, EyeOff } from 'lucide-react';
+import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -32,6 +33,9 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   onSuccess,
   onError
 }) => {
+  const t = useUsersTranslations();
+  const tc = useCommonTranslations();
+  
   const [formData, setFormData] = useState({
     newPassword: '',
     confirmPassword: ''
@@ -60,15 +64,15 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.newPassword.trim()) {
-      newErrors.newPassword = 'New password is required';
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = 'New password must be at least 8 characters long';
+      newErrors.newPassword = t('messages.newPasswordRequired');
+    } else if (formData.newPassword.length < 6) {
+      newErrors.newPassword = t('messages.passwordMinLength');
     }
 
     if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword = 'Please confirm your new password';
+      newErrors.confirmPassword = t('messages.confirmPasswordRequired');
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('messages.passwordsDoNotMatch');
     }
 
     setErrors(newErrors);
@@ -84,7 +88,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
     setIsLoading(true);
     try {
-      const response = await userApiClient.changePassword(
+      const response = await usersApi.changePassword(
         userId,
         formData.newPassword
       );
@@ -99,7 +103,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
         });
         setErrors({});
       } else {
-        onError?.(response.error || 'Failed to change password');
+        onError?.(response.error || t('messages.passwordChangeFailed'));
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
@@ -124,10 +128,10 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            Change Password
+            {t('dialogs.changePasswordTitle')}
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600 mt-1">
-            Change password for user: <span className="font-medium">{userName}</span>
+            {t('dialogs.changePasswordDescription')}: <span className="font-medium">{userName}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -135,14 +139,14 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
           <div className="mt-6 space-y-4">
             {/* New Password */}
             <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password *</Label>
+              <Label htmlFor="newPassword">{t('dialogs.newPassword')} *</Label>
               <div className="relative">
                 <Input
                   id="newPassword"
                   type={showPasswords.new ? 'text' : 'password'}
                   value={formData.newPassword}
                   onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                  placeholder="Enter new password"
+                  placeholder={t('placeholders.enterNewPassword')}
                   className={errors.newPassword ? 'border-red-500 pr-10' : 'pr-10'}
                 />
                 <Button
@@ -158,19 +162,19 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
               {errors.newPassword && (
                 <p className="text-sm text-red-600">{errors.newPassword}</p>
               )}
-              <p className="text-xs text-gray-500">Password must be at least 8 characters long</p>
+              <p className="text-xs text-gray-500">{t('messages.passwordMinLength')}</p>
             </div>
 
             {/* Confirm New Password */}
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password *</Label>
+              <Label htmlFor="confirmPassword">{t('dialogs.confirmNewPassword')} *</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showPasswords.confirm ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  placeholder="Confirm new password"
+                  placeholder={t('placeholders.confirmNewPassword')}
                   className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
                 />
                 <Button
@@ -196,14 +200,14 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
               onClick={handleCancel}
               disabled={isLoading}
             >
-              Cancel
+              {tc('buttons.cancel')}
             </Button>
             <Button 
               type="submit" 
               disabled={isLoading}
               className="bg-blue-700 hover:bg-blue-700"
             >
-              {isLoading ? 'Changing...' : 'Change Password'}
+              {isLoading ? t('actions.changingPassword') : t('actions.changePassword')}
             </Button>
           </DialogFooter>
         </form>

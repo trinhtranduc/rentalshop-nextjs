@@ -20,14 +20,18 @@ export const ORDER_TYPES = {
 export type OrderType = typeof ORDER_TYPES[keyof typeof ORDER_TYPES];
 
 // ============================================================================
-// ORDER STATUS COLORS - Ocean Blue Theme (Badge/Display)
+// ORDER STATUS COLORS - Minimal Text-Only (Option 5)
 // ============================================================================
+// Clean minimal design: text color only, no background
+// - Blue: RESERVED (pending/awaiting)
+// - Green: PICKUPED, RETURNED (active/completed)
+// - Gray: COMPLETED, CANCELLED (neutral/muted)
 export const ORDER_STATUS_COLORS = {
-  RESERVED: 'bg-blue-100 text-blue-800',
-  PICKUPED: 'bg-amber-100 text-amber-900',
-  RETURNED: 'bg-emerald-100 text-emerald-800',
-  COMPLETED: 'bg-indigo-100 text-indigo-800',
-  CANCELLED: 'bg-red-100 text-red-800'
+  RESERVED: 'text-blue-700 border border-blue-200',
+  PICKUPED: 'text-green-700 border border-green-200',
+  RETURNED: 'text-green-600 border border-green-200',
+  COMPLETED: 'text-gray-700 border border-gray-200',
+  CANCELLED: 'text-gray-500 border border-gray-200'
 } as const;
 
 // ============================================================================

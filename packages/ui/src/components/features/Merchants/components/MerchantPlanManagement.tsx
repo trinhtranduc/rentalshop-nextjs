@@ -51,24 +51,24 @@ const BILLING_INTERVALS = [
     id: 'quarter',
     name: 'Quarterly',
     months: 3,
-    discountPercentage: 5,
-    description: '5% discount for quarterly billing',
+    discountPercentage: 0,
+    description: 'No discount for quarterly billing',
     isActive: true
   },
   {
     id: 'semiAnnual',
     name: '6 Months',
     months: 6,
-    discountPercentage: 10,
-    description: '10% discount for 6-month billing',
+    discountPercentage: 5,
+    description: '5% discount for 6-month billing',
     isActive: true
   },
   {
     id: 'year',
     name: 'Yearly',
     months: 12,
-    discountPercentage: 20,
-    description: '20% discount for yearly billing',
+    discountPercentage: 10,
+    description: '10% discount for yearly billing',
     isActive: true
   }
 ];
@@ -657,13 +657,22 @@ export function MerchantPlanManagement({
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Current Plan Display */}
-            {currentSubscription?.plan && (
+            {/* Plan Change Indicator */}
+            {currentSubscription?.plan && selectedPlanId && (
               <div className="p-4 bg-gray-50 border rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Current Plan</p>
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-lg">{currentSubscription.plan.name}</p>
-                  <p className="font-semibold text-lg">{formatPrice(currentSubscription.plan.basePrice, currentSubscription.plan.currency)}/month</p>
+                <p className="text-sm text-gray-600 mb-2">Plan Change</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500">Current</p>
+                    <p className="font-semibold">{currentSubscription.plan.name}</p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-gray-400" />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500">New</p>
+                    <p className="font-semibold text-blue-600">
+                      {plans.find(p => p.id.toString() === selectedPlanId)?.name || 'Select plan'}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -678,7 +687,7 @@ export function MerchantPlanManagement({
                 <SelectContent>
                   {plans.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id.toString()}>
-                      {plan.name} - ${plan.basePrice}/month
+                      {plan.name} - {formatPrice(plan.basePrice, plan.currency)}/month
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -705,29 +714,23 @@ export function MerchantPlanManagement({
               </p>
             </div>
 
-            {/* Pricing Summary */}
+            {/* Simplified Pricing Summary */}
             {selectedPlanId && changeBillingInterval && (
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="font-medium text-blue-900 mb-2">Pricing Summary</p>
-                <div className="space-y-2 text-sm">
+                <p className="font-medium text-blue-900 mb-2">New Plan Pricing</p>
+                <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span>New Plan:</span>
+                    <span>Plan:</span>
                     <span className="font-medium">
                       {plans.find(p => p.id.toString() === selectedPlanId)?.name}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Billing:</span>
+                    <span>Billing Period:</span>
                     <span className="font-medium">{formatBillingInterval(changeBillingInterval)}</span>
                   </div>
-                  {getDiscountPercentage(changeBillingInterval) > 0 && (
-                    <div className="flex justify-between text-green-700">
-                      <span>Discount:</span>
-                      <span className="font-medium">{getDiscountPercentage(changeBillingInterval)}% off</span>
-                    </div>
-                  )}
                   <div className="flex justify-between pt-2 border-t text-base">
-                    <span className="font-semibold">Total:</span>
+                    <span className="font-semibold">Price:</span>
                     <span className="font-bold text-blue-900">
                       {(() => {
                         const selectedPlan = plans.find(p => p.id.toString() === selectedPlanId);

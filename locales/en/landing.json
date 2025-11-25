@@ -7,9 +7,9 @@
     "login": "Login"
   },
   "hero": {
-    "title": "Modern Rental Shop",
-    "subtitle": "Management System",
-    "description": "Professional rental shop management solution. Manage products, customers, and orders efficiently with our modern, easy-to-use platform.",
+    "title": "Rental Shop Management",
+    "subtitle": "Software & System",
+    "description": "Leading rental shop management software and rental management system. Comprehensive solution for various rental businesses: ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental management. Modern shop management software with multi-platform support for iOS, Android, and Web.",
     "downloadApp": "Download App",
     "tryWebPortal": "Try Web Portal"
   },
@@ -25,32 +25,32 @@
     "downloadOnAppStore": "Download on App Store"
   },
   "features": {
-    "title": "Powerful Features",
-    "description": "Everything you need to manage your rental business efficiently",
-    "orderManagement": "Order Management",
-    "orderManagementDesc": "Create, track, and manage rental orders with ease. Monitor order status and history.",
+    "title": "Rental Shop Management Features",
+    "description": "Comprehensive rental management system with all features needed to efficiently manage your rental business. Rental shop management software suitable for various industries: ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental. Integrated with order management, inventory management, and customer management.",
+    "orderManagement": "Rental Order Management",
+    "orderManagementDesc": "Professional rental order management system. Create, track, and manage rental orders with ease. Monitor rental order status and history with rental shop management software.",
     "customerManagement": "Customer Management",
-    "customerManagementDesc": "Store customer information, track rental history, and manage customer relationships.",
-    "calendarScheduling": "Calendar & Scheduling",
-    "calendarSchedulingDesc": "Visual calendar to track rentals, returns, and availability of products.",
+    "customerManagementDesc": "Efficient customer management with rental management system. Store customer information, track rental history, and manage customer relationships in rental shop management software.",
+    "calendarScheduling": "Rental Calendar & Scheduling",
+    "calendarSchedulingDesc": "Visual calendar in rental management system to track rentals, returns, and product availability. Efficient rental inventory management with rental shop management software.",
     "financialReports": "Financial Reports",
-    "financialReportsDesc": "Generate detailed financial reports, track revenue, and analyze business performance.",
+    "financialReportsDesc": "Generate detailed financial reports with rental management system. Track revenue and analyze business performance with professional rental shop management software.",
     "duplicatePrevention": "Duplicate Order Prevention",
-    "duplicatePreventionDesc": "Smart system prevents duplicate orders and ensures accurate inventory management.",
+    "duplicatePreventionDesc": "Smart system in rental shop management software prevents duplicate orders and ensures accurate inventory management. Efficient rental inventory management with rental management system.",
     "multiPlatform": "Multi-Platform Support",
-    "multiPlatformDesc": "Access your data from iOS, Android, and web platforms seamlessly."
+    "multiPlatformDesc": "Multi-platform rental management system. Access rental shop management data from iOS, Android, and web platforms seamlessly with rental shop management software."
   },
   "whyChoose": {
-    "title": "Why Choose AnyRent?",
-    "description": "Join hundreds of rental businesses that trust our platform",
+    "title": "Why Choose AnyRent Rental Shop Management Software?",
+    "description": "Join hundreds of rental businesses that trust our rental management system. Leading rental shop management software solution.",
     "easyToUse": "Easy to Use",
-    "easyToUseDesc": "Intuitive interface designed for rental business owners, no technical skills required.",
+    "easyToUseDesc": "Intuitive interface of rental shop management software designed for rental business owners, no technical skills required. User-friendly rental management system.",
     "timeSaving": "Time Saving",
-    "timeSavingDesc": "Automate routine tasks and focus on growing your business instead of paperwork.",
+    "timeSavingDesc": "Rental management system automates routine tasks and focuses on growing your business instead of paperwork. Rental shop management software saves time.",
     "increaseRevenue": "Increase Revenue",
-    "increaseRevenueDesc": "Better inventory management and customer tracking lead to increased sales.",
+    "increaseRevenueDesc": "Better rental inventory management and customer management with rental management system lead to increased sales. Rental shop management software optimizes revenue.",
     "support": "24/7 Support",
-    "supportDesc": "Get help whenever you need it with our dedicated customer support team.",
+    "supportDesc": "Get help whenever you need it with dedicated customer support team of rental shop management software. Rental management system with 24/7 support.",
     "activeStores": "Active Stores",
     "rating": "4.9/5 Rating"
   },
@@ -69,24 +69,24 @@
     "description": "Join thousands of rental businesses that trust our platform"
   },
   "faq": {
-    "title": "Frequently Asked Questions",
-    "description": "Everything you need to know about AnyRent",
+    "title": "Frequently Asked Questions about Rental Shop Management Software",
+    "description": "Everything you need to know about AnyRent rental management system - leading rental shop management software",
     "items": {
       "freeUse": {
-        "question": "Is AnyRent free to use?",
-        "answer": "AnyRent offers a free trial version. You can sign up and use basic features without any cost."
+        "question": "Is AnyRent rental shop management software free to use?",
+        "answer": "AnyRent rental management system offers a free trial version. You can sign up and use basic features of rental shop management software without any cost. Experience rental order management, rental inventory management, and customer management for free."
       },
       "multipleDevices": {
-        "question": "Can I use it on multiple devices?",
-        "answer": "Yes, AnyRent supports multiple platforms. You can use it on iOS, Android, and web browsers."
+        "question": "Can I use rental shop management software on multiple devices?",
+        "answer": "Yes, AnyRent rental management system supports multiple platforms. You can use rental shop management software on iOS, Android, and web browsers. Manage your rental shop from anywhere with multi-platform rental management system."
       },
       "dataSecure": {
-        "question": "Is my data secure?",
-        "answer": "We are committed to protecting your data. All information is encrypted and stored securely in the cloud."
+        "question": "Is my rental shop management data secure?",
+        "answer": "We are committed to protecting your data in rental management system. All rental order management, rental inventory management, and customer management information is encrypted and stored securely in the cloud. AnyRent rental shop management software ensures data security."
       },
       "support": {
-        "question": "Do you provide customer support?",
-        "answer": "Yes, we provide 24/7 customer support through chat, email, and phone."
+        "question": "Do you provide customer support for rental management system?",
+        "answer": "Yes, we provide 24/7 customer support for AnyRent rental shop management software. Professional support team is ready to help you with any rental management system issues through chat, email, and phone."
       }
     }
   },
@@ -142,7 +142,7 @@
     "training": "Training"
   },
   "footer": {
-    "description": "Leading rental management software in Vietnam",
+    "description": "AnyRent - Leading rental shop management software and rental management system in Vietnam. Professional solution for ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental management. Efficient rental order management, rental inventory management, and customer management.",
     "product": {
       "title": "Product",
       "features": "Features",

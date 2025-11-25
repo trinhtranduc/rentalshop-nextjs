@@ -4,7 +4,14 @@
 
 // Local type definitions to avoid circular dependency
 export type BusinessType = 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-export type PricingType = 'FIXED' | 'HOURLY' | 'DAILY' ;
+export type PricingType = 'FIXED' | 'HOURLY' | 'DAILY';
+
+// Type-safe constants for PricingType enum values
+export const PRICING_TYPE = {
+  FIXED: 'FIXED' as const,
+  HOURLY: 'HOURLY' as const,
+  DAILY: 'DAILY' as const,
+} as const;
 
 // ============================================================================
 // BUSINESS TYPE & PRICING TYPE DESCRIPTIONS

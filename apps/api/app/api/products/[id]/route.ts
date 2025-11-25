@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withManagementAuth } from '@rentalshop/auth';
 import { productUpdateSchema, handleApiError, ResponseBuilder, uploadToS3, generateAccessUrl, commitStagingFiles } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * Helper function to validate image file
@@ -70,17 +70,8 @@ export async function GET(
 
       const productId = parseInt(id);
       
-      // Get user scope for merchant isolation
-      const userMerchantId = userScope.merchantId;
-      
-      if (!userMerchantId) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
-        );
-      }
-      
       // Get product using the simplified database API
+      // Note: ADMIN users can access all products, non-admin users are filtered by merchantId in database layer
       const product = await db.products.findById(productId);
 
       if (!product) {
@@ -100,7 +91,7 @@ export async function GET(
           imageUrls = product.images.split(',').filter(Boolean);
         }
       } else if (Array.isArray(product.images)) {
-        imageUrls = product.images;
+        imageUrls = product.images.map(String).filter(Boolean);
       }
 
       // Transform the data to match the expected format
@@ -112,10 +103,14 @@ export async function GET(
         categoryId: product.categoryId,
         rentPrice: product.rentPrice,
         salePrice: product.salePrice,
+        costPrice: (product as any).costPrice ?? null, // Include costPrice (giá vốn)
         deposit: product.deposit,
         totalStock: product.totalStock,
         images: imageUrls,
         isActive: product.isActive,
+        // Optional pricing configuration
+        pricingType: (product as any).pricingType ?? null,
+        durationConfig: (product as any).durationConfig ?? null,
         category: product.category,
         merchant: product.merchant,
         outletStock: product.outletStock.map((os: any) => ({
@@ -178,7 +173,9 @@ export async function PUT(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // ADMIN users can update products without merchantId (they have system-wide access)
+      // Non-admin users need merchantId
+      if (user.role !== USER_ROLE.ADMIN && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
@@ -224,7 +221,7 @@ export async function PUT(
               productDataFromRequest.images = productDataFromRequest.images
                 .split(',')
                 .filter(Boolean)
-                .map(url => url.trim());
+                .map((url: string) => url.trim());
             }
             
             if (productDataFromRequest.images.length === 0) {
@@ -252,14 +249,41 @@ export async function PUT(
               );
             }
             
-            // Convert file to buffer and upload to S3
+            // Convert file to buffer
             const bytes = await file.arrayBuffer();
-            const buffer = Buffer.from(bytes);
+            let buffer = Buffer.from(bytes);
             
+            // Compress image to reduce file size
+            try {
+              const sharp = (await import('sharp')).default as any;
+              const originalSize = buffer.length;
+              
+              // Compress image: resize max width 1920px, quality 85%, convert to JPEG
+              buffer = await sharp(buffer)
+                .resize(1920, null, {
+                  withoutEnlargement: true,
+                  fit: 'inside'
+                })
+                .jpeg({ 
+                  quality: 85,
+                  progressive: true,
+                  mozjpeg: true
+                })
+                .toBuffer();
+              
+              const compressedSize = buffer.length;
+              const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+              console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction)`);
+            } catch (compressError) {
+              console.warn('⚠️ Image compression failed, using original:', compressError);
+              // Continue with original buffer if compression fails
+            }
+            
+            // Upload compressed image to S3
             const uploadResult = await uploadToS3(buffer, {
               folder: 'staging',
               fileName: file.name,
-              contentType: file.type,
+              contentType: 'image/jpeg', // Always JPEG after compression
               preserveOriginalName: false
             });
             
@@ -471,6 +495,7 @@ export async function PUT(
         categoryId: updatedProduct.categoryId,
         rentPrice: updatedProduct.rentPrice,
         salePrice: updatedProduct.salePrice,
+        costPrice: (updatedProduct as any).costPrice ?? null, // Include costPrice (giá vốn)
         deposit: updatedProduct.deposit,
         totalStock: updatedProduct.totalStock,
         images: updatedProduct.images,
@@ -523,7 +548,9 @@ export async function DELETE(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // ADMIN users can delete products without merchantId (they have system-wide access)
+      // Non-admin users need merchantId
+      if (user.role !== USER_ROLE.ADMIN && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
@@ -550,7 +577,7 @@ export async function DELETE(
           imageUrls = deletedProduct.images.split(',').filter(Boolean);
         }
       } else if (Array.isArray(deletedProduct.images)) {
-        imageUrls = deletedProduct.images;
+        imageUrls = deletedProduct.images.map(String).filter(Boolean);
       }
 
       // Return product with parsed images

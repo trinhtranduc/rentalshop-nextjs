@@ -218,6 +218,15 @@ export function ProductTable({
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white">
                       {formatMoney(product.rentPrice || 0)}
+                      {(product as any).pricingType && (
+                        <span className="text-xs text-gray-500 ml-1">
+                          {((product as any).pricingType === 'HOURLY' 
+                            ? `/${t('pricing.durationUnitHours')}`
+                            : (product as any).pricingType === 'DAILY'
+                            ? `/${t('pricing.durationUnitDays')}`
+                            : '')}
+                        </span>
+                      )}
                     </div>
                     {product.salePrice && product.salePrice > 0 && (
                       <div className="text-gray-500 dark:text-gray-400 text-xs">

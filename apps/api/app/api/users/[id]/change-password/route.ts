@@ -1,8 +1,7 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { withAnyAuth } from '@rentalshop/auth';
+import { withAnyAuth, hashPassword } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import bcrypt from 'bcryptjs';
 import {API} from '@rentalshop/constants';
 
 /**
@@ -17,15 +16,18 @@ import {API} from '@rentalshop/constants';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Handle both sync and async params (Next.js 13+ compatibility)
+  const resolvedParams = await Promise.resolve(params);
+  
   return withAnyAuth(async (request: NextRequest, { user, userScope }) => {
     try {
-      console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', params.id);
+      console.log('🔐 PATCH /api/users/[id]/change-password - Changing password for user:', resolvedParams.id);
       
       const currentUser = user;
 
-    const { id } = params;
+    const { id } = resolvedParams;
     const body = await request.json();
     const { newPassword, confirmPassword } = body;
 
@@ -68,21 +70,49 @@ export async function PATCH(
     // ✅ Authorization check: Ensure user can change password for this target user
     let canChangePassword = false;
     
+    // Get outletId from targetUser (can be from outletId field or outlet.id relation)
+    const targetOutletId = targetUser.outletId || (targetUser.outlet as any)?.id;
+    const targetMerchantId = targetUser.merchantId || (targetUser.merchant as any)?.id;
+    
+    console.log('🔍 Authorization check:', {
+      currentUserRole: currentUser.role,
+      currentUserMerchantId: userScope.merchantId,
+      currentUserOutletId: userScope.outletId,
+      targetUserId: numericId,
+      targetUserMerchantId: targetMerchantId,
+      targetUserOutletId: targetOutletId,
+      targetUserOutletIdField: targetUser.outletId,
+      targetUserOutletRelation: targetUser.outlet?.id
+    });
+    
     if (currentUser.role === 'ADMIN') {
       // ADMIN can change any user's password
       canChangePassword = true;
       console.log('✅ ADMIN access granted for password change');
     } else if (currentUser.role === 'MERCHANT') {
       // MERCHANT can change passwords for users in their merchant
-      if (targetUser.merchantId && userScope.merchantId && targetUser.merchantId === userScope.merchantId) {
+      if (targetMerchantId && userScope.merchantId && targetMerchantId === userScope.merchantId) {
         canChangePassword = true;
         console.log('✅ MERCHANT access granted for password change');
+      } else {
+        console.log('❌ MERCHANT access denied - merchant mismatch:', {
+          targetMerchantId,
+          userScopeMerchantId: userScope.merchantId
+        });
       }
     } else if (currentUser.role === 'OUTLET_ADMIN' || currentUser.role === 'OUTLET_STAFF') {
       // OUTLET_* can change passwords for users in their outlet
-      if (targetUser.outletId && userScope.outletId && targetUser.outletId === userScope.outletId) {
+      // Compare both outletId (direct field) and outlet.id (relation) with userScope.outletId
+      if (targetOutletId && userScope.outletId && targetOutletId === userScope.outletId) {
         canChangePassword = true;
         console.log(`✅ ${currentUser.role} access granted for password change`);
+      } else {
+        console.log(`❌ ${currentUser.role} access denied - outlet mismatch:`, {
+          targetOutletId,
+          userScopeOutletId: userScope.outletId,
+          targetUserOutletIdField: targetUser.outletId,
+          targetUserOutletRelation: targetUser.outlet?.id
+        });
       }
     }
 
@@ -91,8 +121,8 @@ export async function PATCH(
         currentUserRole: currentUser.role,
         targetUserId: numericId,
         userScope: userScope,
-        targetUserMerchantId: targetUser.merchantId,
-        targetUserOutletId: targetUser.outletId
+        targetUserMerchantId: targetMerchantId,
+        targetUserOutletId: targetOutletId
       });
       return NextResponse.json(
         ResponseBuilder.error('INSUFFICIENT_PERMISSIONS', 'Insufficient permissions to change password for this user'),
@@ -102,28 +132,73 @@ export async function PATCH(
 
     // Note: Current password verification removed - users can change their password without providing current password
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    // Hash new password using centralized password hashing
+    console.log('🔐 Hashing new password...');
+    let hashedPassword: string;
+    try {
+      hashedPassword = await hashPassword(newPassword);
+      console.log('✅ Password hashed successfully');
+    } catch (hashError: any) {
+      console.error('❌ Error hashing password:', hashError);
+      return NextResponse.json(
+        ResponseBuilder.error('PASSWORD_HASH_FAILED', `Failed to hash password: ${hashError?.message || 'Unknown error'}`),
+        { status: 500 }
+      );
+    }
 
-    // Update password using internal ID
-    await db.users.update(targetUser.id, {
+    // Update password using user ID
+    console.log('💾 Updating password for user ID:', targetUser.id, 'Type:', typeof targetUser.id);
+    
+    // Validate targetUser.id is a number
+    if (!targetUser.id || typeof targetUser.id !== 'number') {
+      console.error('❌ Invalid targetUser.id:', targetUser.id, 'Type:', typeof targetUser.id);
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_USER_ID', 'Invalid user ID format'),
+        { status: 400 }
+      );
+    }
+
+    let updatedUser: any;
+    try {
+      updatedUser = await db.users.update(targetUser.id, {
       password: hashedPassword
     });
+      console.log('✅ Password updated successfully in database');
+    } catch (updateError: any) {
+      console.error('❌ Error updating password in database:', updateError);
+      console.error('❌ Update error details:', {
+        message: updateError?.message,
+        code: updateError?.code,
+        meta: updateError?.meta,
+        stack: updateError?.stack
+      });
+      return NextResponse.json(
+        ResponseBuilder.error('PASSWORD_UPDATE_FAILED', `Failed to update password: ${updateError?.message || 'Unknown error'}`),
+        { status: 500 }
+      );
+    }
 
     console.log('✅ Password changed successfully for user:', targetUser.email);
 
-    return NextResponse.json({
-      success: true,
-        code: 'PASSWORD_CHANGED_SUCCESS',
-        message: 'Password changed successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('PASSWORD_CHANGED_SUCCESS', {
+        message: 'Password changed successfully',
+        userId: updatedUser.id
+      })
+    );
 
-  } catch (error) {
+  } catch (error: any) {
       console.error('❌ Error changing password:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('CHANGE_PASSWORD_FAILED', 'Failed to change password'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
+      console.error('❌ Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        code: error?.code,
+        name: error?.name
+      });
+      
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
   })(request);
 }

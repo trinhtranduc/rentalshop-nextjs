@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
 
@@ -16,21 +16,68 @@ export async function GET(
 ) {
   return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
     try {
-      const { orderNumber } = params;
+      let { orderNumber } = params;
       console.log('🔍 GET /api/orders/by-number/[orderNumber] - Looking for order with number:', orderNumber);
 
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
+      // Check if user is ADMIN (handle both enum and string comparison)
+      // USER_ROLE.ADMIN is 'ADMIN' string, so check both
+      const isAdmin = user.role === USER_ROLE.ADMIN || 
+                     user.role === 'ADMIN' || 
+                     (typeof user.role === 'string' && user.role.toUpperCase() === 'ADMIN');
       
-      if (!userMerchantId) {
+      console.log('🔍 User role check:', {
+        userRole: user.role,
+        userRoleType: typeof user.role,
+        USER_ROLE_ADMIN: USER_ROLE.ADMIN,
+        USER_ROLE_ADMIN_type: typeof USER_ROLE.ADMIN,
+        isAdmin,
+        userMerchantId,
+        userScope,
+        userObject: JSON.stringify(user, null, 2)
+      });
+      
+      // Non-admin users need merchantId, admin can have null merchantId but should have one
+      // For now, allow admin without merchantId to proceed (they can see all orders)
+      // But ideally admin should have merchantId assigned
+      if (!isAdmin && !userMerchantId) {
+        console.log('❌ Non-admin user without merchantId - blocking access');
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
         );
       }
       
-      // Get order by order number using the simplified database API
-      const order: any = await db.orders.findByNumber(orderNumber);
+      // Warn if admin doesn't have merchantId (should be assigned)
+      if (isAdmin && !userMerchantId) {
+        console.log('⚠️ Admin user without merchantId - allowing access but should be assigned');
+      }
+      
+      // If admin has merchantId, log it
+      if (isAdmin && userMerchantId) {
+        console.log('✅ Admin user with merchantId:', userMerchantId);
+      }
+      
+      // Try to find order - first try with the orderNumber as-is, then try without ORD- prefix
+      let order: any = await db.orders.findByNumber(orderNumber);
+      
+      // If not found and orderNumber has ORD- prefix, try without it
+      if (!order && orderNumber.startsWith('ORD-')) {
+        const orderNumberWithoutPrefix = orderNumber.replace(/^ORD-/, '');
+        console.log('🔄 Trying without ORD- prefix:', orderNumberWithoutPrefix);
+        order = await db.orders.findByNumber(orderNumberWithoutPrefix);
+        if (order) {
+          orderNumber = orderNumberWithoutPrefix; // Update for logging
+        }
+      }
+      
+      // If still not found and orderNumber doesn't have ORD- prefix, try with it
+      if (!order && !orderNumber.startsWith('ORD-')) {
+        const orderNumberWithPrefix = `ORD-${orderNumber}`;
+        console.log('🔄 Trying with ORD- prefix:', orderNumberWithPrefix);
+        order = await db.orders.findByNumber(orderNumberWithPrefix);
+      }
 
       if (!order) {
         console.log('❌ Order not found in database for orderNumber:', orderNumber);
@@ -38,6 +85,28 @@ export async function GET(
           ResponseBuilder.error('ORDER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
+      }
+
+      // Verify the order belongs to user's merchant
+      // Order merchantId can be from order.merchantId or order.outlet.merchantId
+      // Admin users with merchantId can only see orders from their merchant
+      // Admin users without merchantId can see all orders
+      if (!isAdmin || userMerchantId) {
+        const orderMerchantId = order.merchantId || order.outlet?.merchantId;
+        if (orderMerchantId !== userMerchantId) {
+          console.log('❌ Order does not belong to user merchant:', {
+            orderMerchantId,
+            userMerchantId,
+            isAdmin
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('ORDER_NOT_FOUND'),
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
+      } else {
+        // Admin without merchantId can see all orders
+        console.log('✅ Admin without merchantId - allowing access to all orders');
       }
 
       console.log('✅ Order found:', order);

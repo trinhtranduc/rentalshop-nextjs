@@ -1,0 +1,223 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@rentalshop/database';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+
+/**
+ * Get allowed CORS origins
+ */
+function getAllowedOrigins(): string[] {
+  const corsOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  
+  return [
+    ...corsOrigins,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'https://anyrent.shop',
+    'https://www.anyrent.shop',
+    'https://api.anyrent.shop',
+    'https://admin.anyrent.shop',
+    'https://dev.anyrent.shop',
+    'https://dev-api.anyrent.shop',
+    'https://dev-admin.anyrent.shop'
+  ];
+}
+
+/**
+ * Build CORS headers for response
+ */
+function buildCorsHeaders(request: NextRequest): Record<string, string> {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = getAllowedOrigins();
+  const isAllowedOrigin = allowedOrigins.includes(origin);
+  const allowOrigin = isAllowedOrigin ? origin : 'null';
+  
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, X-CSRF-Token, X-Client-Platform, X-App-Version, X-Device-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+/**
+ * OPTIONS /api/public/[tenantKey]/products
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: buildCorsHeaders(request),
+  });
+}
+
+/**
+ * GET /api/public/[tenantKey]/products
+ * Get products by tenant key (public endpoint, no authentication required)
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { tenantKey: string } }
+) {
+  try {
+    const { tenantKey } = params;
+    const { searchParams } = new URL(request.url);
+    
+    // Validate tenantKey format (alphanumeric + hyphen)
+    if (!tenantKey || !/^[a-z0-9\-]+$/i.test(tenantKey)) {
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_TENANT_KEY'),
+        { 
+          status: 400,
+          headers: buildCorsHeaders(request)
+        }
+      );
+    }
+
+    // Find merchant by tenantKey
+    console.log('🔍 Looking for merchant with tenantKey:', tenantKey);
+    const merchant = await db.merchants.findByTenantKey(tenantKey);
+    
+    if (!merchant) {
+      console.error('❌ Merchant not found with tenantKey:', tenantKey);
+      return NextResponse.json(
+        ResponseBuilder.error('MERCHANT_NOT_FOUND'),
+        { 
+          status: 404,
+          headers: buildCorsHeaders(request)
+        }
+      );
+    }
+    
+    console.log('✅ Found merchant:', merchant.name, 'ID:', merchant.id);
+
+    // Check if merchant is active
+    if (!merchant.isActive) {
+      return NextResponse.json(
+        ResponseBuilder.error('MERCHANT_INACTIVE'),
+        { 
+          status: 403,
+          headers: buildCorsHeaders(request)
+        }
+      );
+    }
+
+    // Parse query parameters
+    const categoryId = searchParams.get('categoryId');
+    const search = searchParams.get('search') || searchParams.get('q');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+
+    // Build product filters
+    // Note: For public pages, we only show active products
+    const productFilters: any = {
+      merchantId: merchant.id,
+      isActive: true, // Only show active products
+      page,
+      limit
+    };
+    
+    console.log('🔍 Product filters:', JSON.stringify(productFilters, null, 2));
+
+    if (categoryId) {
+      const categoryIdNum = parseInt(categoryId, 10);
+      if (!isNaN(categoryIdNum)) {
+        productFilters.categoryId = categoryIdNum;
+      }
+    }
+
+    if (search) {
+      productFilters.search = search;
+    }
+
+    // Get products
+    console.log('🔍 Searching products with filters:', productFilters);
+    const productsResult = await db.products.search(productFilters);
+    console.log('📦 Products result:', {
+      total: productsResult.total,
+      dataLength: productsResult.data?.length || 0,
+      hasMore: productsResult.hasMore
+    });
+
+    // Get categories for this merchant
+    const categoriesResult = await db.categories.findMany({
+      where: {
+        merchantId: merchant.id,
+        isActive: true
+      },
+      orderBy: { name: 'asc' }
+    });
+    console.log('📂 Categories found:', categoriesResult.length);
+
+    // Transform products to ensure they have categoryId
+    const transformedProducts = (productsResult.data || []).map((product: any) => ({
+      ...product,
+      categoryId: product.categoryId || product.category?.id,
+      // Ensure images is an array
+      images: Array.isArray(product.images) 
+        ? product.images 
+        : typeof product.images === 'string' 
+          ? (() => {
+              try {
+                const parsed = JSON.parse(product.images);
+                return Array.isArray(parsed) ? parsed : [];
+              } catch {
+                return product.images.split(',').filter(Boolean);
+              }
+            })()
+          : []
+    }));
+
+    const responseData = {
+      merchant: {
+        id: merchant.id,
+        name: merchant.name,
+        description: merchant.description,
+        address: merchant.address,
+        phone: merchant.phone,
+        email: merchant.email,
+        website: merchant.website,
+        city: merchant.city,
+        country: merchant.country,
+        currency: merchant.currency,
+        isActive: merchant.isActive
+      },
+      products: transformedProducts,
+      categories: categoriesResult || [],
+      pagination: {
+        total: productsResult.total || 0,
+        page: productsResult.page || page,
+        limit: productsResult.limit || limit,
+        hasMore: productsResult.hasMore || false
+      }
+    };
+    
+    console.log('✅ Returning response with:', {
+      merchantName: responseData.merchant.name,
+      productsCount: responseData.products.length,
+      categoriesCount: responseData.categories.length,
+      total: responseData.pagination.total
+    });
+
+    return NextResponse.json(
+      ResponseBuilder.success('PRODUCTS_FETCHED', responseData),
+      {
+        headers: buildCorsHeaders(request)
+      }
+    );
+
+  } catch (error) {
+    console.error('Error fetching public products:', error);
+    
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { 
+      status: statusCode,
+      headers: buildCorsHeaders(request)
+    });
+  }
+}
+

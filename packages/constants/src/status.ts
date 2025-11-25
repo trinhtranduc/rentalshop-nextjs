@@ -108,6 +108,18 @@ export const ENTITY_STATUS = {
 export type EntityStatus = typeof ENTITY_STATUS[keyof typeof ENTITY_STATUS];
 
 // ============================================================================
+// MERCHANT STATUSES
+// ============================================================================
+export const MERCHANT_STATUS = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  TRIAL: 'TRIAL',
+  EXPIRED: 'EXPIRED'
+} as const;
+
+export type MerchantStatus = typeof MERCHANT_STATUS[keyof typeof MERCHANT_STATUS];
+
+// ============================================================================
 // PRODUCT AVAILABILITY STATUSES
 // ============================================================================
 export const PRODUCT_AVAILABILITY_STATUS = {
@@ -125,8 +137,8 @@ export type ProductAvailabilityStatus = typeof PRODUCT_AVAILABILITY_STATUS[keyof
 export const BILLING_INTERVAL = {
   MONTHLY: 'monthly',
   QUARTERLY: 'quarterly',
-  SIX_MONTHS: 'sixMonths',
-  YEARLY: 'yearly'
+  SEMI_ANNUAL: 'semi_annual',
+  ANNUAL: 'annual'
 } as const;
 
 export type BillingInterval = typeof BILLING_INTERVAL[keyof typeof BILLING_INTERVAL];
@@ -285,17 +297,17 @@ export function getStatusColor(status: string, type: 'subscription' | 'order' | 
     case 'order':
       switch (status) {
         case ORDER_STATUS.RESERVED:
-          return 'text-blue-800 bg-blue-100';
+          return 'bg-blue-50 text-blue-700 border border-blue-200';
         case ORDER_STATUS.PICKUPED:
-          return 'text-amber-900 bg-amber-100';
+          return 'bg-orange-50 text-orange-700 border border-orange-200';
         case ORDER_STATUS.RETURNED:
-          return 'text-emerald-800 bg-emerald-100';
+          return 'bg-green-50 text-green-700 border border-green-200';
         case ORDER_STATUS.COMPLETED:
-          return 'text-indigo-800 bg-indigo-100';
+          return 'bg-green-50 text-green-700 border border-green-200';
         case ORDER_STATUS.CANCELLED:
-          return 'text-red-800 bg-red-100';
+          return 'bg-red-50 text-red-700 border border-red-200';
         default:
-          return 'text-slate-600 bg-slate-100';
+          return 'bg-gray-50 text-gray-600 border border-gray-200';
       }
     case 'payment':
       switch (status) {

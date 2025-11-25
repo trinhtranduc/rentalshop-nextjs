@@ -5,9 +5,9 @@
 // This demonstrates the new standardized authentication pattern
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withManagementAuth } from '@rentalshop/auth';
+import { withManagementAuth, hashPassword } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API } from '@rentalshop/constants';
 
@@ -174,13 +174,33 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       outletId = parsed.data.outletId || userScope.outletId;
     }
 
+    // Hash password before creating user (same as merchant registration)
+    let hashedPassword: string | undefined;
+    if (parsed.data.password) {
+      console.log('🔐 Hashing password for new user...');
+      hashedPassword = await hashPassword(parsed.data.password);
+      console.log('✅ Password hashed successfully');
+    }
+
+    // NOTE: Only MERCHANT users need email verification
+    // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
+    const isOutletUser = parsed.data.role === 'OUTLET_ADMIN' || parsed.data.role === 'OUTLET_STAFF';
+
     const userData = {
       ...parsed.data,
+      password: hashedPassword || parsed.data.password, // Use hashed password if provided
       merchantId,
-      outletId
+      outletId,
+      // Auto-verify email for outlet users (they can use any email)
+      ...(isOutletUser && {
+        emailVerified: true,
+        emailVerifiedAt: new Date()
+      })
     };
 
-    console.log('🔍 POST /api/users: Creating user with data:', userData);
+    // Remove plain password from data to avoid logging it
+    const { password: _, ...userDataForLogging } = userData;
+    console.log('🔍 POST /api/users: Creating user with data:', userDataForLogging);
     console.log('🔍 POST /api/users: merchantId:', merchantId, 'outletId:', outletId);
 
     // Check plan limits before creating user (only for non-ADMIN users)
@@ -237,8 +257,8 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
     }
 
     // Get user ID from request body (assuming it's included)
-    const { id } = body;
-    const updateData = parsed.data;
+    const { id, password } = body;
+    const updateData: any = { ...parsed.data };
     
     if (!id) {
       return NextResponse.json(
@@ -264,9 +284,29 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
+    // Hash password if it's being updated (same as merchant registration)
+    // Password is handled separately since it's not in userUpdateSchema
+    if (password && typeof password === 'string' && password.length >= 6) {
+      console.log('🔐 Hashing password for user update...');
+      updateData.password = await hashPassword(password);
+      console.log('✅ Password hashed successfully');
+    }
+
+    // Check if user is being deactivated (isActive changed from true to false)
+    const isBeingDeactivated = existingUser.isActive && updateData.isActive === false;
+
     const updatedUser = await db.users.update(id, updateData);
     
     console.log(`✅ Updated user: ${updatedUser.email} (ID: ${updatedUser.id})`);
+
+    // If user is being deactivated, delete all their sessions to force logout
+    if (isBeingDeactivated) {
+      const { prisma } = await import('@rentalshop/database');
+      const deletedSessionsCount = await prisma.userSession.deleteMany({
+        where: { userId: id }
+      });
+      console.log(`🗑️ Deactivated user ${id}: Deleted ${deletedSessionsCount.count} session(s) to force logout`);
+    }
 
     return NextResponse.json({
       success: true,
@@ -286,7 +326,7 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
 
 /**
  * DELETE /api/users
- * Delete/deactivate a user
+ * Delete a user permanently (hard delete)
  * REFACTORED: Uses unified withAuth pattern
  */
 export const DELETE = withManagementAuth(async (request, { user, userScope }) => {
@@ -300,6 +340,14 @@ export const DELETE = withManagementAuth(async (request, { user, userScope }) =>
       return NextResponse.json(
         ResponseBuilder.error('USER_ID_REQUIRED', 'User ID is required'),
         { status: 400 }
+      );
+    }
+
+    // Prevent deleting yourself
+    if (userId === user.id) {
+      return NextResponse.json(
+        ResponseBuilder.error('CANNOT_DELETE_SELF', 'You cannot delete your own account. Please contact another administrator.'),
+        { status: 403 }
       );
     }
 
@@ -320,21 +368,72 @@ export const DELETE = withManagementAuth(async (request, { user, userScope }) =>
       );
     }
 
-    // Soft delete (deactivate)
-    await db.users.update(userId, { isActive: false, deletedAt: new Date() });
+    // Check if this is the last admin user for the merchant
+    if (existingUser.role === 'ADMIN' || (existingUser.role === 'MERCHANT' && existingUser.merchantId)) {
+      const merchantId = existingUser.merchantId;
+      const adminCount = await db.users.getStats({
+        merchantId: merchantId || null,
+        role: existingUser.role,
+        isActive: true
+      });
+
+      if (adminCount <= 1) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_DELETE_LAST_ADMIN', 'Cannot delete the last administrator. Please assign another administrator first.'),
+          { status: 403 }
+        );
+      }
+    }
+
+    // Check if user has created orders (Order.createdBy doesn't have cascade delete)
+    const { prisma } = await import('@rentalshop/database');
+    const orderCount = await prisma.order.count({
+      where: { createdById: userId }
+    });
+
+    if (orderCount > 0) {
+      return NextResponse.json(
+        ResponseBuilder.error('USER_HAS_ORDERS', `Cannot delete user because they have created ${orderCount} order(s). Please reassign or delete the orders first.`),
+        { status: 409 }
+      );
+    }
+
+    // Delete all user sessions first (explicit delete for clarity)
+    const deletedSessionsCount = await prisma.userSession.deleteMany({
+      where: { userId: userId }
+    });
+    console.log(`🗑️ Deleted ${deletedSessionsCount.count} session(s) for user ${userId}`);
+
+    // Hard delete (permanently remove from database)
+    // Note: Related data with onDelete: Cascade will be automatically deleted:
+    // - EmailVerification
+    // - PasswordReset
+    // - AuditLog (if any)
+    await prisma.user.delete({
+      where: { id: userId }
+    });
     
-    console.log(`✅ Deactivated user: ${existingUser.email} (ID: ${userId})`);
+    console.log(`✅ User permanently deleted: ${existingUser.email} (ID: ${userId})`);
 
     return NextResponse.json({
       success: true,
-      code: 'USER_DEACTIVATED_SUCCESS',
-        message: 'User deactivated successfully'
+      code: 'USER_DELETED_SUCCESS',
+      message: 'User deleted successfully'
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ DELETE /api/users error:', error);
+    
+    // Handle foreign key constraint errors
+    if (error.code === 'P2003' || error.message?.includes('Foreign key constraint')) {
+      return NextResponse.json(
+        ResponseBuilder.error('USER_HAS_RELATED_DATA', 'Cannot delete user because they have related data (orders, etc.). Please remove related data first.'),
+        { status: 409 }
+      );
+    }
+    
     return NextResponse.json(
-      ResponseBuilder.error('DELETE_USER_FAILED', 'Failed to delete user'),
+      ResponseBuilder.error('DELETE_USER_FAILED', error.message || 'Failed to delete user'),
       { status: 500 }
     );
   }

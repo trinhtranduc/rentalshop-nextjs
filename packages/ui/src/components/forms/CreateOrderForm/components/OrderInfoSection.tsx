@@ -207,21 +207,25 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         {/* 2. Rental Period Selection - Smart pricing based on merchant configuration */}
         {formData.orderType === 'RENT' && (
           <div className="space-y-2 w-full">
-            {/* Debug logs */}
-            {console.log('🔍 OrderInfoSection - Rental Period Check:', {
-              orderType: formData.orderType,
-              hasMerchantData: !!merchantData,
-              pricingType: merchantData?.pricingType,
-              businessType: merchantData?.businessType
-            })}
-            
             {merchantData ? (
               <RentalPeriodSelector
                 product={{
                   id: 0, // Placeholder - will be updated when product is selected
                   name: t('messages.rentalPeriod'),
                   rentPrice: 0, // Will be calculated based on merchant pricing
-                  deposit: 0
+                  deposit: 0,
+                  categoryId: 0,
+                  stock: 0,
+                  renting: 0,
+                  available: 0,
+                  salePrice: 0,
+                  description: '',
+                  images: undefined,
+                  barcode: '',
+                  isActive: true,
+                  merchantId: 0,
+                  createdAt: new Date(),
+                  updatedAt: new Date()
                 }}
                 merchant={merchantData}
                 initialStartDate={formData.pickupPlanAt}
@@ -292,7 +296,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             }}
           >
             <SelectTrigger variant="filled" className="w-full">
-              <SelectValue placeholder="Select outlet..." />
+              <SelectValue placeholder={t('messages.selectOutlet')} />
             </SelectTrigger>
             <SelectContent>
               {outlets.map(outlet => (
@@ -442,7 +446,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               onChange={(value) => onFormDataChange('depositAmount', value)}
               min={0}
               decimals={0}
-              placeholder="Enter deposit amount..."
+              placeholder={t('messages.enterDepositAmount')}
               className="w-full"
             />
           </div>

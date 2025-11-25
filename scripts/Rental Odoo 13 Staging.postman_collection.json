@@ -1,0 +1,2560 @@
+{
+	"info": {
+		"_postman_id": "2f2c1e64-b57e-4b56-aeb1-841a5b5424bc",
+		"name": "Rental Odoo 13 Staging",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "102399",
+		"_collection_link": "https://bold-capsule-272054.postman.co/workspace/My-Workspace~a04d00c6-8735-42b8-8064-63a7c5f15c26/collection/102399-2f2c1e64-b57e-4b56-aeb1-841a5b5424bc?action=share&source=collection_link&creator=102399"
+	},
+	"item": [
+		{
+			"name": "Authenticate",
+			"item": [
+				{
+					"name": "Register Account",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n        \"login\": \"dangkhoa@gmail.com\",\n        \"password\": \"123123\",\n        \"name\": \"Dang Khoa\",\n        \"city\": \"Da Nang\",\n        \"district\": \"Thanh Khe\",\n        \"ward\": \"Vinh Trung\",\n        \"phone\": \"01111111111\",\n        \"address\": \"Luong The Vinh, Da Nang\",\n        \"store_name\": \"Test\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/register_account",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"register_account"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TOKEN",
+								"value": "dfdsfdsf",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "lang",
+								"value": "en",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "source",
+								"value": "portal",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"params\" : {\n  \"login\":\"demo@gmail.com\",\n  \"password\":\"1234567890\"\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/login",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET profile details",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"name\": \"Mr Trieu\",\n    \"city\": \"Da Nang\",\n    \"district\": \"Thanh Khe\",\n    \"ward\": \"Vinh Trung\",\n    \"phone\": \"0389961171\",\n    \"address\": \"Luong The Vinh, Da Nang\",\n    \"store_id\": 65\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_profile",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update profile",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"name\": \"Mr Trieu\",\n    \"city\": \"Da Nang\",\n    \"district\": \"Thanh Khe\",\n    \"ward\": \"Vinh Trung\",\n    \"phone\": \"0389961171\",\n    \"address\": \"Luong The Vinh, Da Nang\",\n    \"store_id\": 65\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_profile",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update profile : Password",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"current_password\":\"12345\",\n    \"new_password\":\"12345\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_profile_password",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_profile_password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update profile avatar",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_profile_avatar",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_profile_avatar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Account",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/validate_account",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"validate_account"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Product",
+			"item": [
+				{
+					"name": "Create product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "ACCEPT_LANGUAGE",
+								"value": "en-VN;q=1.0, vi-VN;q=0.9, zh-Hant-VN;q=0.8",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "product_name",
+									"value": "Vest xám hàn quốc",
+									"type": "text"
+								},
+								{
+									"key": "variant",
+									"value": "Đỏ - Lớn",
+									"type": "text"
+								},
+								{
+									"key": "rent_price",
+									"value": "500.0",
+									"type": "text"
+								},
+								{
+									"key": "sale_price",
+									"value": "500.0",
+									"type": "text"
+								},
+								{
+									"key": "type",
+									"value": "product",
+									"description": "product / consu / service",
+									"type": "text"
+								},
+								{
+									"key": "quantity",
+									"value": "10",
+									"type": "text"
+								},
+								{
+									"key": "barcode",
+									"value": " 071848",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/rental/create_product",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"create_product"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create product NEW",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "ACCEPT_LANGUAGE",
+								"value": "en-VN;q=1.0, vi-VN;q=0.9, zh-Hant-VN;q=0.8",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"product_name\":\"Vest xám hàn quốc\",\n    \"variant\": \"Đỏ - Lớn\",\n    \"sale_price\": 500.0,\n    \"type\": \"product\",\n    \"quantity\": 10,\n    \"barcode\": \"07184822\",\n    \"rental_pricing\": [\n        {\n            \"price\": 500.0,\n            \"unit\": \"time\",\n            \"duration\": 1\n        }\n    ],\n    \"reservations\": {\n        \"extra_hourly\": 0,\n        \"extra_daily\": 50\n    },\n    \"images\": \"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\"\n    \n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/create_product_new",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"create_product_new"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Import Products",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"products\": [\n      {\n        \"product_id\": 557,\n        \"product_name\": \"Chân váy vàng cúc đũi\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 70000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1256\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1256\"\n        ],\n        \"barcode\": \"V33\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 547,\n        \"product_name\": \"Chân váy vàng xoè xô Sò\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 80000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 2.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1246\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1246\"\n        ],\n        \"barcode\": \"V18\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 558,\n        \"product_name\": \"Chân váy đỏ xoè xô Sò\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 80000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1257\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1257\"\n        ],\n        \"barcode\": \"D40\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 560,\n        \"product_name\": \"Chân váy đỏ đô xoè xô Sò\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 80000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1306\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1306\"\n        ],\n        \"barcode\": \"\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 559,\n        \"product_name\": \"Chân váy ấn\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 80000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1258\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1258\"\n        ],\n        \"barcode\": \"D41\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 611,\n        \"product_name\": \"Headchain vàng trắng rủ\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 20000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1355\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1355\"\n        ],\n        \"barcode\": \"368711\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 612,\n        \"product_name\": \"Hoa tai đỏ to\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 10000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1356\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1356\"\n        ],\n        \"barcode\": \"277664\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 553,\n        \"product_name\": \"Khăn Boho mỏng\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 30000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": -2.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1307\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1307\"\n        ],\n        \"barcode\": \"\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 610,\n        \"product_name\": \"Nơ đỏ\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 5000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1354\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1354\"\n        ],\n        \"barcode\": \"334359\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 651,\n        \"product_name\": \"Quần sọc xanh+ yếm thổ cẩm\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 90000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1402\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1402\"\n        ],\n        \"barcode\": \"153471\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 628,\n        \"product_name\": \"Set bikini xanh da báo\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 120000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 2.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1373\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1373\"\n        ],\n        \"barcode\": \"X11\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 522,\n        \"product_name\": \"Set nâu cv tầng Nana\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 150000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1215\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1215\"\n        ],\n        \"barcode\": \"H05\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 652,\n        \"product_name\": \"Set quần xanh vàng chanh\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 80000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1403\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1403\"\n        ],\n        \"barcode\": \"703702\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 587,\n        \"product_name\": \"Set thổ cẩm quần áo đỏ\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 90000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 2.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1309\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1309\"\n        ],\n        \"barcode\": \"\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 511,\n        \"product_name\": \"Set traby\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 150000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1350\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1350\"\n        ],\n        \"barcode\": \"\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 493,\n        \"product_name\": \"Set trắng Bikini MNĐ\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 140000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 3.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1325\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1325\"\n        ],\n        \"barcode\": \"\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 492,\n        \"product_name\": \"Set trắng Hải Phòng\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 160000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1260\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1260\"\n        ],\n        \"barcode\": \"\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 506,\n        \"product_name\": \"Set trắng Sò viền thổ cẩm xanh\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 160000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1199\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1199\"\n        ],\n        \"barcode\": \"T25\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 502,\n        \"product_name\": \"Set trắng bikini 3 mín rua dưới ngắn\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 100000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1195\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1195\"\n        ],\n        \"barcode\": \"T21\",\n        \"default_code\": \"\"\n      },\n      {\n        \"product_id\": 505,\n        \"product_name\": \"Set trắng bikini 3 món che ngực\",\n        \"product_variant\": false,\n        \"rental_pricing\": [\n            {\n                \"price\": 100000.0,\n                \"unit\": \"time\",\n                \"duration\": 1\n            }\n        ],\n        \"reservations\": {\n            \"extra_hourly\": 0,\n            \"extra_daily\": 0\n        },\n        \"sale_price\": 0.0,\n        \"quantity\": 1.0,\n        \"type\": \"product\",\n        \"avatar\": \"http://crm.rentalspos.com/web/image/1198\",\n        \"gallery\": [\n          \"http://crm.rentalspos.com/web/image/1198\"\n        ],\n        \"barcode\": \"T24\",\n        \"default_code\": \"\"\n      }\n    ]\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/import_products",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"import_products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Products",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"keyword_search\":\"cara\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_products",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Product Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"product_id\": 8506\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_products_details",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_products_details"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								},
+								{
+									"key": "product_name",
+									"value": "Alissa top trắng (X) chỉ thuê off ok 16/11",
+									"type": "text"
+								},
+								{
+									"key": "variant",
+									"value": "Đỏ - Lớn",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "rent_price",
+									"value": "300000",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "sale_price",
+									"value": "3000000",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "type",
+									"value": "product",
+									"description": "product / consu / service",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "quantity",
+									"value": "45",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "product_id",
+									"value": "8506",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_product",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_product"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update product NEW",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"product_id\": 11003,\n    \"product_name\":\"Vest xám hàn quốc 6\",\n    \"variant\": \"Đỏ - Lớn\",\n    \"sale_price\": 500.0,\n    \"type\": \"product\",\n    \"quantity\": 10,\n    \"barcode\": \"07184823\",\n    \"rental_pricing\": [\n        {\n            \"id\": 10950,\n            \"price\": 550.0,\n            \"unit\": \"time\",\n            \"duration\": 1\n        }\n    ],\n    \"reservations\": {\n        \"extra_hourly\": 0,\n        \"extra_daily\": 100\n    },\n    \"images\": \"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\"\n    \n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_product_new",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_product_new"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export Product",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "keyword_search",
+									"value": "aa",
+									"type": "text"
+								},
+								{
+									"key": "start_date",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "end_date",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/rental/export_products",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"export_products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE products",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"product_ids\":[144]\n  }\n}"
+						},
+						"url": {
+							"raw": "http://45.77.251.35:8069/rental/delete_products",
+							"protocol": "http",
+							"host": [
+								"45",
+								"77",
+								"251",
+								"35"
+							],
+							"port": "8069",
+							"path": [
+								"rental",
+								"delete_products"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Customer",
+			"item": [
+				{
+					"name": "GET Customers",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"keyword_search\":\"\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_customers",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_customers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Customers Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"customer_id\": 11931\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_customers_details",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_customers_details"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "email",
+									"value": "test@test.com",
+									"type": "text"
+								},
+								{
+									"key": "phone",
+									"value": "0766732508",
+									"type": "text"
+								},
+								{
+									"key": "full_name",
+									"value": "Customer Test 10/5",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/rental/create_customer",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"create_customer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Import Customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"customers\": [\n        {\n            \"email\": \"Email 1\",\n            \"phone\": \"11111111111\",\n            \"full_name\": \"Customer Import 1\",\n            \"gallery\": [\n                \"http://crm.rentalspos.com/web/image/1256\"\n            ]\n        },\n        {\n            \"email\": \"Email 2\",\n            \"phone\": \"2222222222\",\n            \"full_name\": \"Customer Import 2\",\n            \"gallery\": [\n                \"http://crm.rentalspos.com/web/image/1256\"\n            ]\n        },\n        {\n            \"email\": \"Email 3\",\n            \"phone\": \"3333333333\",\n            \"full_name\": \"Customer Import 3\",\n            \"gallery\": [\n                \"http://crm.rentalspos.com/web/image/1256\"\n            ]\n        }\n    ]\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/import_customer",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"import_customer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export Customers",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"start_date\": \"2025-01-04\",\n    \"end_date\": \"2025-05-30\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/export_customers",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"export_customers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "email",
+									"value": "dinhtrieu08t4@gmail.com",
+									"type": "text"
+								},
+								{
+									"key": "phone",
+									"value": "342234324sdas",
+									"type": "text"
+								},
+								{
+									"key": "full_name",
+									"value": "Customer Trieu",
+									"type": "text"
+								},
+								{
+									"key": "customer_id",
+									"value": "17",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://45.77.251.35:8069/rental/update_customer",
+							"protocol": "http",
+							"host": [
+								"45",
+								"77",
+								"251",
+								"35"
+							],
+							"port": "8069",
+							"path": [
+								"rental",
+								"update_customer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Customers",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"customer_ids\":[104]\n  }\n}"
+						},
+						"url": {
+							"raw": "http://45.77.251.35:8069/rental/delete_customers",
+							"protocol": "http",
+							"host": [
+								"45",
+								"77",
+								"251",
+								"35"
+							],
+							"port": "8069",
+							"path": [
+								"rental",
+								"delete_customers"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Order",
+			"item": [
+				{
+					"name": "GET Report Orders By Year",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"year\": \"2023\",\n    \"store_id\": 412\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/report_orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"report_orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Report Orders By Duration",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"date_from\": \"2023-01-01\",\n    \"date_to\": \"2023-01-30\",\n    \"store_id\": 412\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/report_orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"report_orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Report Top Product",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"date_from\": \"2023-01-01\",\n    \"date_to\": \"2023-03-01\",\n    \"store_id\": 412\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/report_orders_by_product",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"report_orders_by_product"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Report Details by Total Orders",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"date_from\": \"2023-01-01\",\n    \"date_to\": \"2023-03-01\",\n    \"store_id\": 412,\n    \"report_type\": \"user\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/report_orders_details_by_total_order",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"report_orders_details_by_total_order"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Orders",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"start_date\":\"2024-01-01\",\n    \"end_date\":\"2025-01-01\",\n    \"product_ids\":[],\n    \"keyword_search\":\"\",\n    \"after_time\": \"2024-01-01\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Order Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"order_id\": 16386\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_orders_details",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_orders_details"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export Orders",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "start_date",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "end_date",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "product_ids",
+									"value": "[123, 11]",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "keyword_search",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "customer_id",
+									"value": "2006",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "after_time",
+									"value": "2023-01-01 00:00:00",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/rental/export_order",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"export_order"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE Sale Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "products",
+									"value": "[{\"product_id\":163,\"quantity\":1,\"price\":130000,\"pickup_date\":\"2024-11-18 15:00:00\",\"return_date\":\"2024-11-19 15:00:00\", \"note\": \"this is note\"}]",
+									"type": "text"
+								},
+								{
+									"key": "customer_id",
+									"value": "3297",
+									"type": "text"
+								},
+								{
+									"key": "order_images",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "note",
+									"value": "Ghi chú",
+									"description": "Note",
+									"type": "text"
+								},
+								{
+									"key": "full_name",
+									"value": "trinh test",
+									"type": "text"
+								},
+								{
+									"key": "phone",
+									"value": "01230392333",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "\t\ntrinhtrinh@gmail.com",
+									"type": "text"
+								},
+								{
+									"key": "pickup_date",
+									"value": "2024-11-18 15:00:00",
+									"type": "text"
+								},
+								{
+									"key": "return_date",
+									"value": "2024-11-19 15:00:00",
+									"type": "text"
+								},
+								{
+									"key": "order_type",
+									"value": "rent",
+									"description": "rent/sale",
+									"type": "text"
+								},
+								{
+									"key": "discount",
+									"value": "10",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "discount_type",
+									"value": "percentage",
+									"description": "percentage/amount",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "deposit_amount",
+									"value": "200000",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "deliver_status",
+									"value": "false",
+									"description": "true/false",
+									"type": "text"
+								},
+								{
+									"key": "material",
+									"value": "banc",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "bail_amount",
+									"value": "0",
+									"type": "text"
+								},
+								{
+									"key": "damage_fee",
+									"value": "0",
+									"type": "text"
+								},
+								{
+									"key": "user_id",
+									"value": "121",
+									"description": "Sale Person",
+									"type": "text"
+								},
+								{
+									"key": "store_id",
+									"value": "65",
+									"description": "Store / Branch",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/rental/create_order",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"create_order"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE Sale Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "note",
+									"value": "Test",
+									"type": "text"
+								},
+								{
+									"key": "pickup_date",
+									"value": "2025-03-19 00:00:00",
+									"type": "text"
+								},
+								{
+									"key": "return_date",
+									"value": "2025-03-28 00:00:00",
+									"type": "text"
+								},
+								{
+									"key": "order_type",
+									"value": "rent",
+									"description": "rent/sale",
+									"type": "text"
+								},
+								{
+									"key": "order_id",
+									"value": "3",
+									"type": "text"
+								},
+								{
+									"key": "order_status",
+									"value": "reserved",
+									"type": "text"
+								},
+								{
+									"key": "damage_fee",
+									"value": "0.0",
+									"type": "text"
+								},
+								{
+									"key": "products",
+									"value": "[{\"product_id\":10,\"quantity\":1,\"price\":10000,\"pickup_date\":\"2025-03-19 00:00:00\",\"return_date\":\"2025-03-28 00:00:00\", \"note\": \"this is note\"}]",
+									"type": "text"
+								},
+								{
+									"key": "customer_id",
+									"value": "10",
+									"type": "text"
+								},
+								{
+									"key": "full_name",
+									"value": "Trinh",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_order",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_order"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CANCEL Orders",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"order_ids\":[16389]\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/cancel_orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"cancel_orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pickup Orders",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"order_id\": 16369\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/pickup_orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"pickup_orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Return Orders",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"order_id\": 16369\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/return_orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"return_orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Orders",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"order_ids\":[33,29,31,30,28,27,26,21,13,22,23,24,25]\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/delete_orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"delete_orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Orders overview",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"start_date\":\"2020-08-08\",\n    \"end_date\":\"2023-08-08\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/overview_orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"overview_orders"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "GET Accounts",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"from_date\": \"\",\n    \"to_date\": \"\",\n    \"keyword_search\":\"\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_accounts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_accounts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Account Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n        \"account_id\": 664\n    }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_accounts_details",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_accounts_details"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Account",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n        \"account_id\":326,\n        \"login\":\"trinh3NEWACC@gmail.com\",\n        \"name\":\"trinh3\",\n        \"city\":\"TP. Hồ Chí Minh\",\n        \"district\":\"Q1\",\n        \"ward\":\"Bến Nghé\",\n        \"phone\":\"974241423\",\n        \"address\":\"Chuong Duong Home\",\n        \"store_id\":580,\n        \"role\":\"employee\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_account",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_account"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Account",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n        \"login\": \"dangkhoa@gmail.com\",\n        \"password\": \"123123\",\n        \"name\": \"Dang Khoa\",\n        \"city\": \"Da Nang\",\n        \"district\": \"Thanh Khe\",\n        \"ward\": \"Vinh Trung\",\n        \"phone\": \"0389961171\",\n        \"address\": \"Luong The Vinh, Da Nang\",\n        \"store_id\": 65,\n        \"role\": \"employee\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/create_account",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"create_account"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Account Password",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n        \"account_id\": 559,\n        \"password\": \"123\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_account_password",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_account_password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Enable / Disable Account",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n        \"account_id\": 556,\n        \"type\": \"enable\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/enable_disable_account",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"enable_disable_account"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Store",
+			"item": [
+				{
+					"name": "GET Contract Period",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_contract_period",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_contract_period"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Language",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_lang",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_lang"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Store",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "lat",
+								"value": "15.985848",
+								"type": "text"
+							},
+							{
+								"key": "long",
+								"value": "108.2644128",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"keyword_search\":\"\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_store",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_store"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Store Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"store_id\": 516\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/get_store_details",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"get_store_details"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Store",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"name\":\"Test Store Created\",\n    \"owner\": \"Owner Name\",\n    \"phone\": \"0766111111\",\n    \"city\": \"Da Nang\",\n    \"district\": \"Thanh Khe\",\n    \"ward\": \"Vinh Trung\",\n    \"address\": \"Address\",\n    \"expire_date\": \"2024-02-05 14:28:58\",\n    \"plan_key\": \"basic\",\n    \"price_unit_key\": \"time\",\n    \"contract_ids\": [{\n                        \"contract_period_id\": 2, \n                        \"contract_plan_key\": \"basic\", \n                        \"contract_price\": 10.0, \n                        \"contract_note\": \"Basic Contract\"}],\n    \"user_list\": [{\n                    \"user_name\": \"NV1\", \n                    \"user_email\": \"nv1@test.com\", \n                    \"user_role_key\": \"admin\", \n                    \"user_start_date\": \"2023-02-06 14:28:58\"}],\n    \"branch_list\": [{\n                        \"branch_name\": \"Test Store Created Branch 1\", \n                        \"branch_address\": \"Address of Branch 1\"}],\n    \"note\": \"This is note of store\",\n    \"printer_note\": \"Note for Printer\",\n    \"lang\": \"en_US\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/create_store",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"create_store"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Store",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"id\": 516,\n    \"name\":\"Test Store Created\",\n    \"owner\": \"Owner Name\",\n    \"phone\": \"0766111111\",\n    \"city\": \"Da Nang\",\n    \"district\": \"Thanh Khe\",\n    \"ward\": \"Vinh Trung\",\n    \"address\": \"Address\",\n    \"expire_date\": \"2024-02-05 14:28:58\",\n    \"plan_key\": \"basic\",\n    \"price_unit_key\": \"time\",\n    \"contract_ids\": [{  \n                        \"contract_id\": 79,\n                        \"contract_period_id\": 2, \n                        \"contract_plan_key\": \"basic\", \n                        \"contract_price\": 10.0, \n                        \"contract_note\": \"Basic Contract Updated\"}],\n    \"user_list\": [{\n                    \"user_id\": 553,\n                    \"user_name\": \"NV1\", \n                    \"user_email\": \"nv1@test.com\", \n                    \"user_role_key\": \"admin\", \n                    \"user_start_date\": \"2023-02-06 14:28:58\"},\n                  {\n                    \"user_id\": -1,\n                    \"user_name\": \"NV2\", \n                    \"user_email\": \"nv2@test.com\", \n                    \"user_role_key\": \"admin\", \n                    \"user_start_date\": \"2023-02-08 14:28:58\"}],\n    \"branch_list\": [],\n    \"note\": \"This is note of store\",\n    \"printer_note\": \"Note for Printer\",\n    \"lang\": \"en_US\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_store",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_store"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Store Extension",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "device",
+								"value": "Iphone 6s",
+								"description": "version",
+								"type": "text"
+							},
+							{
+								"key": "version",
+								"value": "234",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"id\": 516,\n    \"contract_period_id\": 2, \n    \"contract_plan_key\": \"basic\", \n    \"contract_price\": 10.0, \n    \"contract_note\": \"Basic Contract\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/update_store_extension",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"update_store_extension"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Store",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "TOKEN",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"params\": {\n    \"store_ids\":[417]\n  }\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/rental/delete_store",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"rental",
+								"delete_store"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "LogOut",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "TOKEN",
+						"value": "{{TOKEN}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}"
+				},
+				"url": {
+					"raw": "http://45.77.251.35:8069/rental/logout",
+					"protocol": "http",
+					"host": [
+						"45",
+						"77",
+						"251",
+						"35"
+					],
+					"port": "8069",
+					"path": [
+						"rental",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

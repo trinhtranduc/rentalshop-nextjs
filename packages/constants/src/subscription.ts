@@ -57,16 +57,55 @@ export const BILLING_CYCLES = {
     name: 'Quarterly',
     duration: 3,
     unit: 'months',
+    discount: 0 // 0% discount
+  },
+  SEMI_ANNUAL: {
+    id: 'semi_annual',
+    name: 'Semi-Annual',
+    duration: 6,
+    unit: 'months',
     discount: 0.05 // 5% discount
   },
-  YEARLY: {
-    id: 'yearly',
-    name: 'Yearly',
+  ANNUAL: {
+    id: 'annual',
+    name: 'Annual',
     duration: 12,
     unit: 'months',
-    discount: 0.2 // 20% discount
+    discount: 0.10 // 10% discount
   }
 };
+
+// Array format for form components (synchronized with BILLING_CYCLES object)
+export const BILLING_CYCLES_ARRAY = [
+  {
+    value: 'monthly' as const,
+    label: BILLING_CYCLES.MONTHLY.name,
+    months: BILLING_CYCLES.MONTHLY.duration,
+    discount: BILLING_CYCLES.MONTHLY.discount * 100, // Convert to percentage
+    description: 'Pay monthly, cancel anytime'
+  },
+  {
+    value: 'quarterly' as const,
+    label: BILLING_CYCLES.QUARTERLY.name,
+    months: BILLING_CYCLES.QUARTERLY.duration,
+    discount: BILLING_CYCLES.QUARTERLY.discount * 100, // Convert to percentage
+    description: `Save ${BILLING_CYCLES.QUARTERLY.discount * 100}% with quarterly billing`
+  },
+  {
+    value: 'semi_annual' as const,
+    label: BILLING_CYCLES.SEMI_ANNUAL.name,
+    months: BILLING_CYCLES.SEMI_ANNUAL.duration,
+    discount: BILLING_CYCLES.SEMI_ANNUAL.discount * 100, // Convert to percentage
+    description: `Save ${BILLING_CYCLES.SEMI_ANNUAL.discount * 100}% with semi-annual billing`
+  },
+  {
+    value: 'annual' as const,
+    label: BILLING_CYCLES.ANNUAL.name,
+    months: BILLING_CYCLES.ANNUAL.duration,
+    discount: BILLING_CYCLES.ANNUAL.discount * 100, // Convert to percentage
+    description: `Save ${BILLING_CYCLES.ANNUAL.discount * 100}% with annual billing`
+  }
+];
 
 // ============================================================================
 // RENEWAL DURATIONS
@@ -101,8 +140,8 @@ export const RENEWAL_DURATIONS = [
     isPopular: false
   },
   {
-    id: 'yearly',
-    name: 'Yearly',
+    id: 'annual',
+    name: 'Annual',
     months: 12,
     duration: 12,
     unit: 'months',

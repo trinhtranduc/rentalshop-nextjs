@@ -37,6 +37,112 @@
     "invalidDateRange": "Ngày kết thúc phải sau ngày bắt đầu",
     "priceGreaterThanZero": "Giá phải lớn hơn 0",
     "quantityGreaterThanZero": "Số lượng phải lớn hơn 0"
+  },
+  "fields": {
+    "firstName": {
+      "required": "Tên là bắt buộc"
+    },
+    "lastName": {
+      "required": "Họ là bắt buộc"
+    },
+    "name": {
+      "required": "Tên là bắt buộc",
+      "minLength": "Tên phải có ít nhất {min} ký tự"
+    },
+    "productName": {
+      "required": "Tên sản phẩm là bắt buộc"
+    },
+    "outletName": {
+      "required": "Tên cửa hàng là bắt buộc"
+    },
+    "planName": {
+      "required": "Tên gói là bắt buộc"
+    },
+    "planDescription": {
+      "required": "Mô tả gói là bắt buộc"
+    },
+    "variantName": {
+      "required": "Tên biến thể là bắt buộc"
+    },
+    "phone": {
+      "required": "Số điện thoại là bắt buộc"
+    },
+    "email": {
+      "invalid": "Địa chỉ email không hợp lệ",
+      "invalidFormat": "Định dạng email không hợp lệ"
+    },
+    "password": {
+      "minLength6": "Mật khẩu phải có ít nhất 6 ký tự"
+    },
+    "country": {
+      "invalid": "Vui lòng chọn quốc gia hợp lệ"
+    },
+    "tenantKey": {
+      "invalid": "Tenant key phải là chữ số và chữ cái"
+    },
+    "product": {
+      "required": "Sản phẩm là bắt buộc"
+    },
+    "outlet": {
+      "required": "Cửa hàng là bắt buộc"
+    },
+    "merchantId": {
+      "required": "ID doanh nghiệp là bắt buộc"
+    },
+    "planId": {
+      "required": "ID gói là bắt buộc"
+    },
+    "planVariantId": {
+      "required": "ID biến thể gói là bắt buộc"
+    },
+    "rentPrice": {
+      "nonNegative": "Giá thuê phải không âm"
+    },
+    "salePrice": {
+      "nonNegative": "Giá bán phải không âm"
+    },
+    "costPrice": {
+      "nonNegative": "Giá vốn phải không âm"
+    },
+    "deposit": {
+      "nonNegative": "Đặt cọc phải không âm"
+    },
+    "stock": {
+      "nonNegative": "Tồn kho phải không âm"
+    },
+    "totalStock": {
+      "nonNegative": "Tổng tồn kho phải không âm"
+    },
+    "basePrice": {
+      "nonNegative": "Giá cơ bản phải không âm"
+    },
+    "price": {
+      "nonNegative": "Giá phải không âm"
+    },
+    "amount": {
+      "nonNegative": "Số tiền phải không âm"
+    },
+    "duration": {
+      "positive": "Thời gian phải là số dương"
+    },
+    "trialDays": {
+      "nonNegative": "Số ngày dùng thử phải không âm"
+    },
+    "discount": {
+      "range": "Giảm giá phải nằm trong khoảng 0 đến 100"
+    },
+    "durationConfig": {
+      "required": "Cấu hình thời gian là bắt buộc và phải là JSON hợp lệ cho loại định giá HOURLY và DAILY"
+    },
+    "endDate": {
+      "afterStart": "Ngày kết thúc phải sau ngày bắt đầu"
+    },
+    "nameOrFullName": {
+      "required": "Phải có 'name' hoặc cả 'firstName' và 'lastName'"
+    },
+    "businessTypePricingType": {
+      "required": "Loại hình kinh doanh và loại định giá là bắt buộc cho đăng ký doanh nghiệp"
+    }
   }
 }
 

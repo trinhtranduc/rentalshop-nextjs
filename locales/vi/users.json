@@ -65,6 +65,7 @@
     "deleteAccount": "Xóa tài khoản",
     "deleting": "Đang xóa...",
     "changePassword": "Đổi mật khẩu",
+    "changingPassword": "Đang đổi...",
     "viewDetails": "Xem chi tiết",
     "edit": "Sửa",
     "editUser": "Sửa người dùng",
@@ -90,12 +91,17 @@
     "deactivateSuccess": "Vô hiệu hóa người dùng thành công",
     "deactivateFailed": "Vô hiệu hóa người dùng thất bại",
     "passwordChangeSuccess": "Đổi mật khẩu thành công",
+    "passwordChangeFailed": "Đổi mật khẩu thất bại",
+    "passwordMinLength": "Mật khẩu phải có ít nhất 6 ký tự",
+    "newPasswordRequired": "Mật khẩu mới là bắt buộc",
+    "confirmPasswordRequired": "Vui lòng xác nhận mật khẩu mới của bạn",
+    "passwordsDoNotMatch": "Mật khẩu không khớp",
     "confirmDelete": "Bạn có chắc chắn muốn xóa người dùng này?",
     "confirmDeleteAccount": "Xóa tài khoản người dùng",
     "confirmDeleteDetails": "Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản người dùng này? Hành động này không thể hoàn tác.",
-    "confirmDeactivate": "Bạn có chắc chắn muốn vô hiệu hóa người dùng này?",
-    "confirmDeactivateAccount": "Vô hiệu hóa tài khoản người dùng",
-    "confirmDeactivateDetails": "Bạn có chắc chắn muốn vô hiệu hóa tài khoản người dùng này? Người dùng sẽ không thể truy cập hệ thống.",
+    "confirmDeactivate": "Bạn có chắc chắn muốn vô hiệu hóa",
+    "confirmDeactivateAccount": "Vô hiệu hóa người dùng",
+    "confirmDeactivateDetails": "Hành động này sẽ ngăn họ truy cập hệ thống.",
     "confirmActivate": "Bạn có chắc chắn muốn kích hoạt người dùng này?",
     "confirmActivateAccount": "Kích hoạt tài khoản người dùng",
     "confirmActivateDetails": "Bạn có chắc chắn muốn kích hoạt tài khoản người dùng này? Người dùng sẽ có thể truy cập hệ thống trở lại.",
@@ -135,7 +141,7 @@
   },
   "dialogs": {
     "changePasswordTitle": "Đổi mật khẩu",
-    "changePasswordDescription": "Nhập mật khẩu mới cho người dùng này",
+    "changePasswordDescription": "Đổi mật khẩu cho người dùng",
     "newPassword": "Mật khẩu mới",
     "confirmNewPassword": "Xác nhận mật khẩu mới"
   },
@@ -149,7 +155,9 @@
     "selectRole": "Chọn vai trò",
     "selectOutlet": "Chọn cửa hàng",
     "enterPassword": "Nhập mật khẩu",
-    "confirmPassword": "Xác nhận mật khẩu"
+    "confirmPassword": "Xác nhận mật khẩu",
+    "enterNewPassword": "Nhập mật khẩu mới",
+    "confirmNewPassword": "Xác nhận mật khẩu mới"
   }
 }
 

@@ -7,7 +7,7 @@ import type { SubscriptionStatus, BillingInterval } from '@rentalshop/constants'
 
 // Re-export types from centralized constants (Single Source of Truth)
 export type { SubscriptionStatus, BillingInterval };
-export type BillingPeriod = 1 | 3 | 6 | 12; // months (1=monthly, 3=quarterly, 6=sixMonths, 12=yearly)
+export type BillingPeriod = 1 | 3 | 6 | 12; // months (1=monthly, 3=quarterly, 6=semi_annual, 12=annual)
 
 export interface SubscriptionPeriod {
   startDate: Date;
@@ -31,7 +31,7 @@ export interface Subscription {
   
   // Status and billing
   status: SubscriptionStatus; // ✅ Type safe with enum
-  billingInterval: BillingInterval; // monthly, quarterly, sixMonths, yearly
+  billingInterval: BillingInterval; // monthly, quarterly, semi_annual, annual
   
   // Period information
   currentPeriodStart: Date | string;
@@ -72,7 +72,7 @@ export interface Subscription {
 export interface SubscriptionCreateInput {
   merchantId: number;
   planId: number;
-  billingInterval?: BillingInterval; // month, quarter, semiAnnual, year
+  billingInterval?: BillingInterval; // monthly, quarterly, semi_annual, annual
   status?: SubscriptionStatus;
   startDate?: Date;
 }
@@ -129,16 +129,16 @@ export interface PricingCalculation {
 // Modern SaaS pricing configuration
 export const PRICING_CONFIG = {
   DISCOUNTS: {
-    monthly: 0,      // 0% discount
-    quarterly: 10,   // 10% discount
-    sixMonths: 15,   // 15% discount
-    yearly: 20,      // 20% discount
+    monthly: 0,       // 0% discount
+    quarterly: 0,     // 0% discount
+    semi_annual: 5,  // 5% discount
+    annual: 10,       // 10% discount
   },
   INTERVALS: {
-    monthly: { interval: 'monthly' as const, intervalCount: 1 },
-    quarterly: { interval: 'quarterly' as const, intervalCount: 3 },
-    sixMonths: { interval: 'sixMonths' as const, intervalCount: 6 },
-    yearly: { interval: 'yearly' as const, intervalCount: 1 },
+    monthly: { interval: 'monthly' as BillingInterval, intervalCount: 1 },
+    quarterly: { interval: 'quarterly' as BillingInterval, intervalCount: 3 },
+    semi_annual: { interval: 'semi_annual' as BillingInterval, intervalCount: 6 },
+    annual: { interval: 'annual' as BillingInterval, intervalCount: 12 },
   }
 } as const;
 
@@ -156,11 +156,11 @@ export function calculatePricing(
     config = PRICING_CONFIG.INTERVALS.quarterly;
     discount = PRICING_CONFIG.DISCOUNTS.quarterly;
   } else if (period === 6) {
-    config = PRICING_CONFIG.INTERVALS.sixMonths;
-    discount = PRICING_CONFIG.DISCOUNTS.sixMonths;
+    config = PRICING_CONFIG.INTERVALS.semi_annual;
+    discount = PRICING_CONFIG.DISCOUNTS.semi_annual;
   } else {
-    config = PRICING_CONFIG.INTERVALS.yearly;
-    discount = PRICING_CONFIG.DISCOUNTS.yearly;
+    config = PRICING_CONFIG.INTERVALS.annual;
+    discount = PRICING_CONFIG.DISCOUNTS.annual;
   }
   
   const totalMonths = period;

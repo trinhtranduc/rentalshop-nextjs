@@ -152,9 +152,14 @@ export async function GET(
       }
 
       // Get stock info for single outlet
-      const totalAvailableStock = outletStock.available;
       const totalStock = outletStock.stock;
       const totalRenting = outletStock.renting;
+      
+      // Calculate available from actual orders (more accurate than OutletStock.available)
+      // For RENT: available = stock - renting (temporary)
+      // For SALE: available = stock - sold (permanent, but we track via stock directly)
+      // Since we're checking availability for a potential RENT order, use: available = stock - renting
+      const totalAvailableStock = Math.max(0, totalStock - totalRenting);
 
       console.log('🔍 Stock summary:', {
         totalStock,
@@ -163,6 +168,7 @@ export async function GET(
         requestedQuantity: quantity,
         outletId: finalOutletId,
         productId: productId,
+        note: 'Available calculated from stock - renting (for RENT orders)',
       });
 
       // 3. Check basic stock availability
@@ -237,16 +243,17 @@ export async function GET(
       });
 
       // 5. Find existing orders that overlap with the requested rental period
+      // IMPORTANT: Only check RENT orders for conflicts (SALE orders don't affect availability for rentals)
       // This checks for orders where:
       // - Order items contain this product
-      // - Order is a RENT type (not SALE)
+      // - Order is a RENT type (not SALE - SALE orders permanently reduce stock, not renting)
       // - Order status indicates it's active (RESERVED, PICKUPED)
       // - Rental period overlaps with requested period
       // - Order belongs to the SPECIFIC outlet (not all merchant outlets)
       
       const conflictingOrders = await db.prisma.order.findMany({
         where: {
-          orderType: ORDER_TYPE.RENT as any,
+          orderType: ORDER_TYPE.RENT as any, // Only RENT orders affect rental availability
           status: {
             in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any] // Active rental orders
           },
@@ -431,6 +438,10 @@ export async function GET(
       const conflictingQuantity = outletConflicts.conflictingQuantity;
       
       // Calculate available quantity considering conflicts during rental period
+      // Available = stock - renting (from OutletStock) - conflicts (from active RENT orders)
+      // This ensures we account for both:
+      // 1. Items currently rented (renting field)
+      // 2. Items reserved/picked up during the requested period (conflicts)
       const effectivelyAvailable = Math.max(0, totalAvailableStock - conflictingQuantity);
       const canFulfillRequest = effectivelyAvailable >= quantity;
 
@@ -465,8 +476,9 @@ export async function GET(
         conflicts: outletConflicts.conflicts,
       };
 
-      // Overall availability
-      const overallAvailable = canFulfillRequest;
+      // Overall availability - canFulfillRequest is the authoritative source
+      // It already accounts for stock, conflicts, and requested quantity
+      const isAvailable = canFulfillRequest;
 
       return NextResponse.json(
         ResponseBuilder.success('AVAILABILITY_CHECKED', {
@@ -491,7 +503,9 @@ export async function GET(
             timeZone,
             includeTimePrecision,
           },
-          isAvailable: overallAvailable && stockAvailable,
+          // Simplified: isAvailable = canFulfillRequest (already accounts for stock and conflicts)
+          isAvailable,
+          // Keep stockAvailable for backward compatibility and informational purposes
           stockAvailable,
           hasNoConflicts: conflictingOrders.length === 0,
           availabilityByOutlet: [availabilityResult],
@@ -502,7 +516,7 @@ export async function GET(
           },
           totalConflictsFound: outletConflicts.conflicts.length,
           // Enhanced message with time precision
-          message: overallAvailable && stockAvailable
+          message: isAvailable
             ? includeTimePrecision
               ? `Available for rental from ${rentalStart.toLocaleString('en-US', { timeZone, hour12: false })} to ${rentalEnd.toLocaleString('en-US', { timeZone, hour12: false })} (${Math.round(durationHours * 100) / 100} hours)`
               : `Available for rental from ${rentalStart.toLocaleDateString()} to ${rentalEnd.toLocaleDateString()} (${durationDays} days)`

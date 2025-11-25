@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { handleApiError } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { db, verifyPasswordResetToken, markTokenAsUsed } from '@rentalshop/database';
+import { hashPassword } from '@rentalshop/auth';
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),
@@ -19,24 +20,72 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = resetPasswordSchema.parse(body);
     
-    // TODO: Implement password reset logic
-    // 1. Validate reset token
-    // 2. Check if token is expired
-    // 3. Update user password
-    // 4. Invalidate reset token
-    // 5. Log the password change
+    console.log('🔐 [Reset Password] Password reset requested with token');
     
-    console.log('Password reset with token:', validatedData.token);
+    // Verify password reset token
+    const tokenVerification = await verifyPasswordResetToken(validatedData.token);
     
-    return NextResponse.json({
-      success: true,
-      code: 'PASSWORD_RESET_SUCCESS',
-        message: 'Password has been reset successfully'
+    if (!tokenVerification.success || !tokenVerification.user) {
+      console.error('❌ [Reset Password] Invalid or expired token:', tokenVerification.error);
+      
+      // Return appropriate error based on token status
+      if (tokenVerification.error?.includes('hết hạn')) {
+        return NextResponse.json(
+          ResponseBuilder.error('PASSWORD_RESET_TOKEN_EXPIRED', tokenVerification.error || 'Token đã hết hạn'),
+          { status: 400 }
+        );
+      }
+      
+      if (tokenVerification.error?.includes('đã được sử dụng')) {
+        return NextResponse.json(
+          ResponseBuilder.error('PASSWORD_RESET_TOKEN_USED', tokenVerification.error || 'Token đã được sử dụng'),
+          { status: 400 }
+        );
+      }
+      
+      return NextResponse.json(
+        ResponseBuilder.error('PASSWORD_RESET_TOKEN_INVALID', tokenVerification.error || 'Token không hợp lệ'),
+        { status: 400 }
+      );
+    }
+
+    const { user } = tokenVerification;
+    console.log('✅ [Reset Password] Token verified for user:', { userId: user.id, email: user.email });
+
+    // Hash new password
+    console.log('🔑 [Reset Password] Hashing new password...');
+    const hashedPassword = await hashPassword(validatedData.password);
+
+    // Update user password
+    console.log('💾 [Reset Password] Updating user password...');
+    await db.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
     });
+
+    // Mark token as used
+    console.log('✅ [Reset Password] Marking token as used...');
+    await markTokenAsUsed(validatedData.token);
+    
+    console.log('✅ [Reset Password] Password reset successful for user:', user.id);
+    
+    return NextResponse.json(
+      ResponseBuilder.success('PASSWORD_RESET_SUCCESS', {
+        message: 'Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập với mật khẩu mới.',
+      })
+    );
     
   } catch (error: any) {
-    console.error('Reset password error:', error);
-    // Use unified error handling system
+    console.error('❌ [Reset Password] Error:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ZodError') {
+      return NextResponse.json(
+        ResponseBuilder.validationError(error.flatten()),
+        { status: 400 }
+      );
+    }
+    
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }

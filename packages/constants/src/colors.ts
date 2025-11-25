@@ -73,48 +73,61 @@ export const BORDER_COLORS = {
 } as const;
 
 // ============================================================================
-// ORDER STATUS COLORS - Ocean Blue Theme
+// ORDER STATUS COLORS - Colorful Theme (4-Color)
 // ============================================================================
+// Each status has its own distinct color for better visual distinction
+// Blue (RESERVED), Orange (PICKUPED), Green (RETURNED/COMPLETED), Red (CANCELLED)
+// RETURNED and COMPLETED both use Green as they are both "completed states"
 export const ORDER_STATUS_COLORS = {
   RESERVED: {
-    bg: '#DBEAFE',          // Blue 100 - badge background
-    text: '#1E40AF',        // Blue 800 - badge text
-    hex: '#3B82F6',         // Blue 500 - primary color
-    buttonBg: '#3B82F6',    // Blue 500 - button background
-    buttonHover: '#2563EB', // Blue 600 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-blue-50',         // Blue 50 - light blue background
+    text: 'text-blue-700',    // Blue 700 - text color
+    border: 'border-blue-200', // Blue 200 - border
+    hex: '#3B82F6',          // Blue 500 - primary color
+    buttonBg: '#3B82F6',     // Blue 500 - button background
+    buttonHover: '#2563EB',  // Blue 600 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-blue-50 text-blue-700 border-blue-200', // Full className for badges
   },
   PICKUPED: {
-    bg: '#FEF3C7',          // Amber 100 - badge background
-    text: '#92400E',        // Amber 900 - badge text
-    hex: '#F59E0B',         // Amber 500 - primary color
-    buttonBg: '#F59E0B',    // Amber 500 - button background
-    buttonHover: '#D97706', // Amber 600 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-orange-50',       // Orange 50 - light orange background
+    text: 'text-orange-700',  // Orange 700 - text color
+    border: 'border-orange-200', // Orange 200 - border
+    hex: '#F97316',          // Orange 500 - primary color
+    buttonBg: '#F97316',     // Orange 500 - button background
+    buttonHover: '#EA580C',  // Orange 600 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-orange-50 text-orange-700 border-orange-200', // Full className for badges
   },
   RETURNED: {
-    bg: '#D1FAE5',          // Emerald 100 - badge background
-    text: '#065F46',        // Emerald 800 - badge text
-    hex: '#10B981',         // Emerald 500 - primary color
-    buttonBg: '#10B981',    // Emerald 500 - button background
-    buttonHover: '#059669', // Emerald 600 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-green-50',        // Green 50 - light green background
+    text: 'text-green-700',  // Green 700 - text color
+    border: 'border-green-200', // Green 200 - border
+    hex: '#22C55E',          // Green 500 - primary color
+    buttonBg: '#22C55E',     // Green 500 - button background
+    buttonHover: '#16A34A',  // Green 600 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
   },
   COMPLETED: {
-    bg: '#E0E7FF',          // Indigo 100 - badge background
-    text: '#3730A3',        // Indigo 800 - badge text
-    hex: '#6366F1',         // Indigo 500 - primary color
-    buttonBg: '#6366F1',    // Indigo 500 - button background
-    buttonHover: '#4F46E5', // Indigo 600 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-green-50',       // Green 50 - light green background (same as RETURNED for consistency)
+    text: 'text-green-700',  // Green 700 - text color
+    border: 'border-green-200', // Green 200 - border
+    hex: '#22C55E',          // Green 500 - primary color
+    buttonBg: '#22C55E',     // Green 500 - button background
+    buttonHover: '#16A34A',  // Green 600 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-green-50 text-green-700 border-green-200', // Full className for badges
   },
   CANCELLED: {
-    bg: '#FEE2E2',          // Red 100 - badge background
-    text: '#991B1B',        // Red 800 - badge text
-    hex: '#EF4444',         // Red 500 - primary color
-    buttonBg: '#EF4444',    // Red 500 - button background
-    buttonHover: '#DC2626', // Red 600 - button hover
-    buttonText: '#FFFFFF',  // White - button text
+    bg: 'bg-red-50',         // Red 50 - light red background
+    text: 'text-red-700',   // Red 700 - text color
+    border: 'border-red-200', // Red 200 - border
+    hex: '#EF4444',          // Red 500 - primary color
+    buttonBg: '#EF4444',     // Red 500 - button background
+    buttonHover: '#DC2626',  // Red 600 - button hover
+    buttonText: '#FFFFFF',   // White - button text
+    className: 'bg-red-50 text-red-700 border-red-200', // Full className for badges
   },
 } as const;
 
@@ -351,11 +364,12 @@ export const BUTTON_COLORS = {
  */
 export function getOrderStatusClass(status: keyof typeof ORDER_STATUS_COLORS): string {
   const colors = ORDER_STATUS_COLORS[status];
-  if (!colors) return 'bg-slate-100 text-slate-800';
+  if (!colors) return 'bg-gray-50 text-gray-600 border border-gray-200';
   
   const bgClass = getBgClass(colors.bg);
   const textClass = getTextClass(colors.text);
-  return `${bgClass} ${textClass}`;
+  const borderClass = colors.border ? getBorderClass(colors.border) : '';
+  return `${bgClass} ${textClass} ${borderClass}`.trim();
 }
 
 /**
@@ -375,6 +389,12 @@ export function getOrderTypeClass(type: keyof typeof ORDER_TYPE_COLORS): string 
  */
 function getBgClass(hex: string): string {
   const colorMap: Record<string, string> = {
+    // New lighter backgrounds (50)
+    '#EFF6FF': 'bg-blue-50',
+    '#FFF7ED': 'bg-orange-50',
+    '#F0FDF4': 'bg-green-50',
+    '#FEF2F2': 'bg-red-50',
+    // Old backgrounds (100) - kept for backward compatibility
     '#DBEAFE': 'bg-blue-100',
     '#FEF3C7': 'bg-amber-100',
     '#D1FAE5': 'bg-emerald-100',
@@ -384,7 +404,7 @@ function getBgClass(hex: string): string {
     '#F3E8FF': 'bg-purple-100',
     '#F1F5F9': 'bg-slate-100',
   };
-  return colorMap[hex] || 'bg-slate-100';
+  return colorMap[hex] || 'bg-gray-50';
 }
 
 /**
@@ -392,6 +412,12 @@ function getBgClass(hex: string): string {
  */
 function getTextClass(hex: string): string {
   const colorMap: Record<string, string> = {
+    // New text colors (700) - better contrast
+    '#1D4ED8': 'text-blue-700',
+    '#C2410C': 'text-orange-700',
+    '#15803D': 'text-green-700',
+    '#B91C1C': 'text-red-700',
+    // Old text colors - kept for backward compatibility
     '#1E40AF': 'text-blue-800',
     '#92400E': 'text-amber-900',
     '#065F46': 'text-emerald-800',
@@ -401,7 +427,49 @@ function getTextClass(hex: string): string {
     '#6B21A8': 'text-purple-800',
     '#475569': 'text-slate-600',
   };
-  return colorMap[hex] || 'text-slate-800';
+  return colorMap[hex] || 'text-gray-700';
+}
+
+/**
+ * Convert hex color to Tailwind border class
+ */
+function getBorderClass(hex: string): string {
+  const colorMap: Record<string, string> = {
+    '#BFDBFE': 'border border-blue-200',
+    '#FED7AA': 'border border-orange-200',
+    '#BBF7D0': 'border border-green-200',
+    '#FECACA': 'border border-red-200',
+  };
+  return colorMap[hex] || 'border border-gray-200';
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Get order status color className from ORDER_STATUS_COLORS
+ * Returns the full className string (bg + text + border) for badges
+ */
+export function getOrderStatusClassName(status: string): string {
+  const statusKey = status.toUpperCase() as keyof typeof ORDER_STATUS_COLORS;
+  const colors = ORDER_STATUS_COLORS[statusKey];
+  
+  if (colors && colors.className) {
+    return colors.className;
+  }
+  
+  // Fallback to default gray
+  return 'bg-gray-50 text-gray-600 border-gray-200';
+}
+
+/**
+ * Get order status color object from ORDER_STATUS_COLORS
+ * Returns the full color object with all properties
+ */
+export function getOrderStatusColors(status: string) {
+  const statusKey = status.toUpperCase() as keyof typeof ORDER_STATUS_COLORS;
+  return ORDER_STATUS_COLORS[statusKey] || ORDER_STATUS_COLORS.CANCELLED;
 }
 
 // ============================================================================

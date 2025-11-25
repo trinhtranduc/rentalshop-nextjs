@@ -25,8 +25,8 @@ import type {
 function generatePricingFromBasePrice(basePrice: number) {
   const monthlyPrice = basePrice;
   const quarterlyPrice = monthlyPrice * 3;
-  const sixMonthsPrice = monthlyPrice * 6;
-  const yearlyPrice = monthlyPrice * 12;
+  const semiAnnualPrice = monthlyPrice * 6;
+  const annualPrice = monthlyPrice * 12;
   
   return {
     monthly: {
@@ -35,19 +35,19 @@ function generatePricingFromBasePrice(basePrice: number) {
       savings: 0
     },
     quarterly: {
-      price: quarterlyPrice,
-      discount: 5, // 5% discount for quarterly
-      savings: quarterlyPrice * 0.05
+      price: quarterlyPrice, // 0% discount
+      discount: 0,
+      savings: 0
     },
-    sixMonths: {
-      price: sixMonthsPrice,
-      discount: 10, // 10% discount for 6 months
-      savings: sixMonthsPrice * 0.10
+    semi_annual: {
+      price: semiAnnualPrice * 0.95, // 5% discount
+      discount: 5,
+      savings: semiAnnualPrice * 0.05
     },
-    yearly: {
-      price: yearlyPrice,
-      discount: 15, // 15% discount for yearly
-      savings: yearlyPrice * 0.15
+    annual: {
+      price: annualPrice * 0.90, // 10% discount
+      discount: 10,
+      savings: annualPrice * 0.10
     }
   };
 }
@@ -86,19 +86,19 @@ function generatePlanPricing(basePrice: number) {
       savings: 0
     },
     quarterly: {
-      price: basePrice * 3 * 0.95, // 5% discount for quarterly
+      price: basePrice * 3, // 0% discount for quarterly
+      discount: 0,
+      savings: 0
+    },
+    semi_annual: {
+      price: basePrice * 6 * 0.95, // 5% discount for semi-annual
       discount: 5,
-      savings: basePrice * 3 * 0.05
+      savings: basePrice * 6 * 0.05
     },
-    sixMonths: {
-      price: basePrice * 6 * 0.90, // 10% discount for 6 months
+    annual: {
+      price: basePrice * 12 * 0.90, // 10% discount for annual
       discount: 10,
-      savings: basePrice * 6 * 0.10
-    },
-    yearly: {
-      price: basePrice * 12 * 0.85, // 15% discount for yearly
-      discount: 15,
-      savings: basePrice * 12 * 0.15
+      savings: basePrice * 12 * 0.10
     }
   };
 }
@@ -161,7 +161,7 @@ function transformSubscriptionFromDb(sub: any): Subscription {
 export function calculatePlanPricing(plan: Plan): Record<BillingInterval, number> {
   const pricing: Record<BillingInterval, number> = {} as any;
   
-  const intervals: BillingInterval[] = ['monthly', 'quarterly', 'sixMonths', 'yearly'];
+  const intervals: BillingInterval[] = ['monthly', 'quarterly', 'semi_annual', 'annual'];
   
   for (const interval of intervals) {
     pricing[interval] = calculateSubscriptionPrice(plan, interval);
@@ -180,10 +180,10 @@ export function calculatePeriodEnd(startDate: Date, billingInterval: BillingInte
     case 'quarterly':
       endDate.setMonth(endDate.getMonth() + 3);
       break;
-    case 'sixMonths':
+    case 'semi_annual':
       endDate.setMonth(endDate.getMonth() + 6);
       break;
-    case 'yearly':
+    case 'annual':
       endDate.setFullYear(endDate.getFullYear() + 1);
       break;
     default:
@@ -470,8 +470,8 @@ export async function changePlan(
     switch (interval) {
       case 'monthly': return 30;
       case 'quarterly': return 90;
-      case 'sixMonths': return 180;
-      case 'yearly': return 365;
+      case 'semi_annual': return 180;
+      case 'annual': return 365;
       default: return 30;
     }
   };

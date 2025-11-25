@@ -20,6 +20,7 @@ import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
 import { simplifiedOrderItems } from './order-items';
 import { sessions } from './sessions';
+import { simplifiedSync } from './sync';
 
 // Optimized order functions (temporarily disabled due to type issues)
 // export { 
@@ -152,7 +153,12 @@ const db = {
   // ============================================================================
   // SESSION OPERATIONS (Single Session Enforcement)
   // ============================================================================
-  sessions
+  sessions,
+
+  // ============================================================================
+  // SYNC OPERATIONS (Temporary - for sync-standalone endpoint)
+  // ============================================================================
+  sync: simplifiedSync
 };
 
 // ============================================================================
@@ -172,7 +178,7 @@ const checkDatabaseConnection = async () => {
 };
 
 /**
- * Generate next order number (simplified) - Random 8 digits
+ * Generate next order number (simplified) - Random 6 digits
  */
 const generateOrderNumber = async (outletId: number): Promise<string> => {
   const outlet = await prisma.outlet.findUnique({
@@ -184,15 +190,14 @@ const generateOrderNumber = async (outletId: number): Promise<string> => {
     throw new Error(`Outlet with id ${outletId} not found`);
   }
 
-  // Generate random 8-digit number
-  const generateRandom8Digits = (): string => {
-    return Math.floor(10000000 + Math.random() * 90000000).toString();
+  // Generate random 6-digit number (100000 to 999999)
+  const generateRandom6Digits = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
   };
 
   const maxRetries = 10;
   for (let i = 0; i < maxRetries; i++) {
-    const randomSequence = generateRandom8Digits();
-    const orderNumber = randomSequence; // Just 8 random digits, no prefix
+    const orderNumber = generateRandom6Digits();
     
     // Check if order number already exists
     const existingOrder = await prisma.order.findUnique({
@@ -204,7 +209,7 @@ const generateOrderNumber = async (outletId: number): Promise<string> => {
     }
   }
 
-  throw new Error('Failed to generate unique order number after maximum retries');
+  throw new Error('Failed to generate unique 6-digit random order number after maximum retries');
 };
 
 // ============================================================================
@@ -234,6 +239,9 @@ export type { RegistrationInput, RegistrationResult } from './registration';
 
 // Email verification functions
 export * from './email-verification';
+
+// Password reset functions
+export * from './password-reset';
 
 // ============================================================================
 // MIGRATION GUIDE
