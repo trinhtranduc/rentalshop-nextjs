@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { subscriptionCreateSchema, handleApiError } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 // ============================================================================
 // GET /api/subscriptions - Search subscriptions

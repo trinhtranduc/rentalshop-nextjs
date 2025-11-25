@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Calendars, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate, getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced } from '@rentalshop/utils';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
+import { getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import type { PickupOrder } from '@rentalshop/ui';
 

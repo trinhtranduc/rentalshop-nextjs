@@ -1,5 +1,6 @@
 import { format, addDays, differenceInDays, isAfter, isBefore, isValid, parseISO } from 'date-fns';
-import { useLocale as useNextIntlLocale } from 'next-intl';
+// Note: useLocale import removed - React hooks should not be in server-side code
+// Client-side date hooks are now in @rentalshop/utils/client
 
 /**
  * Safely convert any date input to a valid Date object
@@ -351,75 +352,27 @@ export function formatDateTimeByLocale(date: string | Date, locale: string): str
   });
 }
 
-/**
- * Hook to get formatted date using current locale
- * 
- * @param date - Date string or Date object
- * @param options - Intl.DateTimeFormat options
- * @returns Formatted date string
- */
-export function useFormattedDate(
-  date: string | Date, 
-  options: DateFormatOptions = { month: 'short', year: 'numeric' }
-): string {
-  const locale = useNextIntlLocale() as 'en' | 'vi';
-  return formatDateByLocale(date, locale, options);
-}
-
-/**
- * Hook to get formatted chart period using current locale
- * 
- * @param date - Date string or Date object
- * @returns Formatted period string for charts
- */
-export function useFormattedChartPeriod(date: string | Date): string {
-  const locale = useNextIntlLocale() as 'en' | 'vi';
-  return formatChartPeriod(date, locale);
-}
-
-/**
- * Hook to get formatted full date using current locale
- * 
- * @param date - Date string or Date object
- * @returns Formatted date string (dd/mm/yy for Vietnamese, standard for English)
- */
-export function useFormattedFullDate(date: string | Date): string {
-  const locale = useNextIntlLocale() as 'en' | 'vi';
-  return formatFullDateByLocale(date, locale);
-}
-
-/**
- * Hook to get formatted datetime using current locale
- * 
- * @param date - Date string or Date object
- * @returns Formatted datetime string (hh:mm dd/mm/yy for Vietnamese, standard for English)
- */
-export function useFormattedDateTime(date: string | Date): string {
-  const locale = useNextIntlLocale() as 'en' | 'vi';
-  return formatDateTimeByLocale(date, locale);
-}
-
-/**
- * Hook to get formatted month only using current locale
- * 
- * @param date - Date string or Date object
- * @returns Formatted month string (mm/yy for Vietnamese, standard for English)
- */
-export function useFormattedMonthOnly(date: string | Date): string {
-  const locale = useNextIntlLocale() as 'en' | 'vi';
-  return formatMonthOnlyByLocale(date, locale);
-}
-
-/**
- * Hook to get formatted daily using current locale
- * 
- * @param date - Date string or Date object
- * @returns Formatted daily string (dd/mm for Vietnamese, standard for English)
- */
-export function useFormattedDaily(date: string | Date): string {
-  const locale = useNextIntlLocale() as 'en' | 'vi';
-  return formatDailyByLocale(date, locale);
-}
+// ============================================================================
+// REACT HOOKS - MOVED TO CLIENT-SIDE
+// ============================================================================
+// These hooks use React hooks (useLocale from next-intl) and should not be
+// exported from server-side code. They are now available in @rentalshop/utils/client
+// 
+// Removed hooks:
+// - useFormattedDate
+// - useFormattedChartPeriod
+// - useFormattedFullDate
+// - useFormattedDateTime
+// - useFormattedMonthOnly
+// - useFormattedDaily
+//
+// Use the non-hook versions instead:
+// - formatDateByLocale(date, locale, options)
+// - formatChartPeriod(date, locale)
+// - formatFullDateByLocale(date, locale)
+// - formatDateTimeByLocale(date, locale)
+// - formatMonthOnlyByLocale(date, locale)
+// - formatDailyByLocale(date, locale)
 
 // ============================================================================
 // TIMEZONE UTILITIES

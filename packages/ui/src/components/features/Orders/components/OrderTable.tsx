@@ -4,7 +4,7 @@ import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate } from '@rentalshop/utils';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';

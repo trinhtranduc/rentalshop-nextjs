@@ -132,11 +132,12 @@ export {
   type PricingConfig
 } from './pricing-calculator';
 
-// UI utilities
-export * from './badge-utils';
-export * from './customer-utils';
-export * from './product-utils';
-export * from './user-utils';
+// UI utilities - MOVED to client.ts (React components should not be in server-side exports)
+// These are now exported from '@rentalshop/utils/client' for client-side use only
+// export * from './badge-utils';
+// export * from './customer-utils';
+// export * from './product-utils';
+// export * from './user-utils';
 
 // Validation (plan limits validation now consolidated in validation.ts)
 export * from './validation';

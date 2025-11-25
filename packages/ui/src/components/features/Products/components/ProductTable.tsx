@@ -14,7 +14,7 @@ import {
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
-import { getProductImageUrl } from '@rentalshop/utils';
+import { getProductImageUrl } from '@rentalshop/utils/client';
 import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-react';
 
 interface ProductTableProps {
