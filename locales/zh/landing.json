@@ -1,0 +1,198 @@
+{
+  "navigation": {
+    "features": "功能",
+    "pricing": "定价",
+    "faq": "常见问题",
+    "contact": "联系我们",
+    "login": "登录"
+  },
+  "hero": {
+    "title": "租赁店管理",
+    "subtitle": "软件与系统",
+    "description": "领先的租赁店管理软件和租赁管理系统。适用于各种租赁业务的综合解决方案：旗袍租赁、婚纱租赁、设备租赁、车辆租赁、演出服装租赁、打印机租赁管理。具有iOS、Android和Web多平台支持的现代商店管理软件。",
+    "downloadApp": "下载应用",
+    "tryWebPortal": "试用Web门户"
+  },
+  "download": {
+    "title": "所有平台可用",
+    "description": "随时随地访问您的租赁店管理",
+    "mobileApp": "移动应用",
+    "mobileAppDesc": "使用我们的iOS和Android应用在旅途中管理您的租赁店",
+    "webPortal": "Web门户",
+    "webPortalDesc": "通过任何具有响应式设计的网络浏览器访问完整功能",
+    "analytics": "分析仪表板",
+    "analyticsDesc": "通过详细报告了解您的业务表现",
+    "downloadOnAppStore": "在App Store下载"
+  },
+  "features": {
+    "title": "租赁店管理功能",
+    "description": "全面的租赁管理系统，具有高效管理租赁业务所需的所有功能。适用于各种行业的租赁店管理软件：旗袍租赁、婚纱租赁、设备租赁、车辆租赁、演出服装租赁、打印机租赁。集成订单管理、库存管理和客户管理。",
+    "orderManagement": "租赁订单管理",
+    "orderManagementDesc": "专业的租赁订单管理系统。轻松创建、跟踪和管理租赁订单。使用租赁店管理软件监控租赁订单状态和历史。",
+    "customerManagement": "客户管理",
+    "customerManagementDesc": "使用租赁管理系统高效管理客户。在租赁店管理软件中存储客户信息、跟踪租赁历史和管理客户关系。",
+    "calendarScheduling": "租赁日历和调度",
+    "calendarSchedulingDesc": "租赁管理系统中的可视化日历，用于跟踪租赁、归还和产品可用性。使用租赁店管理软件高效管理租赁库存。",
+    "financialReports": "财务报告",
+    "financialReportsDesc": "使用租赁管理系统生成详细的财务报告。使用专业的租赁店管理软件跟踪收入和分析业务表现。",
+    "duplicatePrevention": "防止重复订单",
+    "duplicatePreventionDesc": "租赁店管理软件中的智能系统可防止重复订单并确保准确的库存管理。使用租赁管理系统高效管理租赁库存。",
+    "multiPlatform": "多平台支持",
+    "multiPlatformDesc": "多平台租赁管理系统。通过租赁店管理软件从iOS、Android和Web平台无缝访问租赁店管理数据。"
+  },
+  "customSolution": {
+    "title": "需要定制租赁解决方案？",
+    "description": "您的租赁业务有特殊需求吗？我们提供根据您的具体需求量身定制的定制租赁管理解决方案。从旗袍租赁、婚纱租赁、设备租赁、车辆租赁到其他专业行业 - 我们可以为您创建完美的解决方案。",
+    "benefits": {
+      "title": "定制解决方案优势",
+      "customized": "完全根据您的业务需求定制的解决方案",
+      "dedicated": "专家团队的专门支持和咨询",
+      "scalable": "随业务增长而扩展的系统",
+      "integration": "轻松与您现有系统集成"
+    },
+    "contact": {
+      "title": "联系我们",
+      "description": "联系我们讨论您租赁业务的定制解决方案",
+      "email": "电子邮件",
+      "whatsapp": "WhatsApp",
+      "emailSubject": "定制租赁解决方案咨询",
+      "emailBody": "您好，\n\n我对为我的业务提供定制租赁管理解决方案感兴趣。\n\n请联系我讨论详细信息。\n\n此致，",
+      "whatsappMessage": "您好，我对定制租赁管理解决方案感兴趣。请联系我。",
+      "responseTime": "我们将在24小时内回复"
+    }
+  },
+  "whyChoose": {
+    "title": "为什么选择AnyRent租赁店管理软件？",
+    "description": "加入数百家信任我们租赁管理系统的租赁企业。领先的租赁店管理软件解决方案。",
+    "easyToUse": "易于使用",
+    "easyToUseDesc": "租赁店管理软件的直观界面专为租赁企业主设计，无需技术技能。用户友好的租赁管理系统。",
+    "timeSaving": "节省时间",
+    "timeSavingDesc": "租赁管理系统自动化日常任务，专注于发展业务而不是文书工作。租赁店管理软件节省时间。",
+    "increaseRevenue": "增加收入",
+    "increaseRevenueDesc": "使用租赁管理系统更好地管理租赁库存和客户管理可带来销售增长。租赁店管理软件优化收入。",
+    "support": "24/7支持",
+    "supportDesc": "随时通过租赁店管理软件的专门客户支持团队获得帮助。提供24/7支持的租赁管理系统。",
+    "activeStores": "活跃商店",
+    "rating": "4.9/5评分"
+  },
+  "stats": {
+    "activeStores": "活跃商店",
+    "ordersProcessed": "已处理订单",
+    "customerRating": "客户评分",
+    "supportAvailable": "可用支持"
+  },
+  "testimonials": {
+    "title": "客户评价",
+    "description": "加入数百位满意的租赁企业主"
+  },
+  "cta": {
+    "title": "准备开始了吗？",
+    "description": "加入数千家信任我们平台的租赁企业"
+  },
+  "faq": {
+    "title": "关于租赁店管理软件的常见问题",
+    "description": "关于AnyRent租赁管理系统 - 领先的租赁店管理软件，您需要了解的一切",
+    "items": {
+      "freeUse": {
+        "question": "AnyRent租赁店管理软件免费使用吗？",
+        "answer": "AnyRent租赁管理系统提供免费试用版。您可以注册并使用租赁店管理软件的基本功能，无需任何费用。免费体验租赁订单管理、租赁库存管理和客户管理。"
+      },
+      "multipleDevices": {
+        "question": "我可以在多个设备上使用租赁店管理软件吗？",
+        "answer": "是的，AnyRent租赁管理系统支持多个平台。您可以在iOS、Android和Web浏览器上使用租赁店管理软件。使用多平台租赁管理系统从任何地方管理您的租赁店。"
+      },
+      "dataSecure": {
+        "question": "我的租赁店管理数据安全吗？",
+        "answer": "我们致力于在租赁管理系统中保护您的数据。所有租赁订单管理、租赁库存管理和客户管理信息都经过加密并安全存储在云端。AnyRent租赁店管理软件确保数据安全。"
+      },
+      "support": {
+        "question": "您是否为租赁管理系统提供客户支持？",
+        "answer": "是的，我们为AnyRent租赁店管理软件提供24/7客户支持。专业支持团队随时准备通过聊天、电子邮件和电话帮助您解决任何租赁管理系统问题。"
+      }
+    }
+  },
+  "pricing": {
+    "title": "简单定价",
+    "description": "选择适合您业务需求的计划",
+    "discounts": {
+      "three": "0%",
+      "six": "-5%",
+      "twelve": "-10%"
+    },
+    "months": {
+      "three": "3个月",
+      "six": "6个月",
+      "twelve": "12个月"
+    },
+    "loading": "正在加载套餐...",
+    "error": "无法加载套餐",
+    "retry": "重试",
+    "noPlans": "目前没有可用的套餐。",
+    "buttonText": "开始",
+    "plans": {
+      "freeTrial": {
+        "name": "免费试用",
+        "subtitle": "完美开始",
+        "period": "7天",
+        "description": "免费试用所有功能",
+        "buttonText": "开始试用"
+      },
+      "basic": {
+        "name": "基础套餐",
+        "subtitle": "适合小型租赁企业",
+        "period": "每月",
+        "description": "适合小型租赁店",
+        "buttonText": "开始",
+        "mostPopular": "最受欢迎"
+      },
+      "premium": {
+        "name": "高级套餐",
+        "subtitle": "适合成长中的企业",
+        "period": "每月",
+        "description": "适用于更大规模运营的高级功能",
+        "buttonText": "开始"
+      }
+    },
+    "features": {
+      "orderManagement": "订单管理",
+      "productManagement": "产品管理",
+      "customerManagement": "客户管理",
+      "revenueReports": "收入报告",
+      "singleAccount": "一个账户",
+      "twoAccounts": "两个账户",
+      "fiveAccounts": "五个账户",
+      "webPortal": "Web门户",
+      "additionalAccounts": "额外账户",
+      "freeUpdates": "免费更新",
+      "mobileApp": "移动应用"
+    },
+    "allPlansInclude": "所有计划包括",
+    "support24": "24/7支持",
+    "dataBackup": "数据备份",
+    "freeUpdates": "免费更新",
+    "training": "培训"
+  },
+  "footer": {
+    "description": "AnyRent - 越南领先的租赁店管理软件和租赁管理系统。适用于旗袍租赁、婚纱租赁、设备租赁、车辆租赁、演出服装租赁、打印机租赁的专业解决方案。高效的租赁订单管理、租赁库存管理和客户管理。",
+    "product": {
+      "title": "产品",
+      "features": "功能",
+      "pricing": "定价",
+      "downloadApp": "下载应用"
+    },
+    "support": {
+      "title": "支持",
+      "faq": "常见问题",
+      "documentation": "文档",
+      "contact": "联系我们"
+    },
+    "company": {
+      "title": "公司",
+      "aboutUs": "关于我们",
+      "terms": "条款",
+      "privacy": "隐私"
+    },
+    "copyright": "© 2024 AnyRent. 保留所有权利。"
+  }
+}
+

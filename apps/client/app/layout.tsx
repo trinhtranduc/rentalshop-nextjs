@@ -41,6 +41,17 @@ import viPlans from '../../../locales/vi/plans.json';
 import viSubscription from '../../../locales/vi/subscription.json';
 import viLanding from '../../../locales/vi/landing.json';
 
+// Import new locale files (Chinese, Korean, Japanese)
+import zhCommon from '../../../locales/zh/common.json';
+import zhLanding from '../../../locales/zh/landing.json';
+import zhPlans from '../../../locales/zh/plans.json';
+import koCommon from '../../../locales/ko/common.json';
+import koLanding from '../../../locales/ko/landing.json';
+import koPlans from '../../../locales/ko/plans.json';
+import jaCommon from '../../../locales/ja/common.json';
+import jaLanding from '../../../locales/ja/landing.json';
+import jaPlans from '../../../locales/ja/plans.json';
+
 const inter = Inter({ 
   subsets: ['latin'],
   variable: '--font-inter',
@@ -49,15 +60,15 @@ const inter = Inter({
 // Generate metadata based on locale
 export async function generateMetadata(): Promise<Metadata> {
   // Get locale from cookies (same logic as RootLayout)
-  let locale: 'en' | 'vi' = 'vi';
+  let locale: 'en' | 'vi' | 'zh' | 'ko' | 'ja' = 'vi';
   
   try {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     const localeCookie = cookieStore.get('NEXT_LOCALE');
     
-    if (localeCookie?.value && (localeCookie.value === 'en' || localeCookie.value === 'vi')) {
-      locale = localeCookie.value;
+    if (localeCookie?.value && ['en', 'vi', 'zh', 'ko', 'ja'].includes(localeCookie.value)) {
+      locale = localeCookie.value as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
     }
   } catch (error) {
     // Fallback to Vietnamese
@@ -108,12 +119,15 @@ export async function generateMetadata(): Promise<Metadata> {
         languages: {
           'vi': '/vi',
           'en': '/en',
+          'zh': '/zh',
+          'ko': '/ko',
+          'ja': '/ja',
         },
       },
       openGraph: {
         type: 'website',
         locale: 'vi_VN',
-        alternateLocale: ['en_US'],
+        alternateLocale: ['en_US', 'zh_CN', 'ko_KR', 'ja_JP'],
         url: '/',
         siteName: 'AnyRent',
         title: 'AnyRent - Phần mềm Quản lý Cửa hàng Cho thuê Chuyên nghiệp',
@@ -170,7 +184,316 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
 
-  // English metadata
+  // Chinese metadata
+  if (locale === 'zh') {
+    return {
+      title: {
+        default: 'AnyRent - 租赁店管理软件与系统',
+        template: '%s | AnyRent',
+      },
+      description: '领先的租赁店管理软件和租赁管理系统。适用于各种租赁业务的综合解决方案：旗袍租赁、婚纱租赁、设备租赁、车辆租赁、演出服装租赁、打印机租赁管理。',
+      keywords: [
+        '租赁店管理软件',
+        '租赁管理系统',
+        '租赁订单管理',
+        '租赁库存管理',
+        '客户管理',
+        '租赁软件',
+        '商店管理系统',
+        '旗袍租赁管理软件',
+        '婚纱租赁管理',
+        '设备租赁管理软件',
+        '车辆租赁管理软件',
+        '衣装租赁管理软件',
+        '打印机租赁管理软件',
+        'AnyRent',
+      ],
+      authors: [{ name: 'AnyRent Team' }],
+      creator: 'AnyRent',
+      publisher: 'AnyRent',
+      formatDetection: {
+        email: false,
+        address: false,
+        telephone: false,
+      },
+      metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
+      alternates: {
+        canonical: '/',
+        languages: {
+          'vi': '/vi',
+          'en': '/en',
+          'zh': '/zh',
+          'ko': '/ko',
+          'ja': '/ja',
+        },
+      },
+      openGraph: {
+        type: 'website',
+        locale: 'zh_CN',
+        alternateLocale: ['vi_VN', 'en_US', 'ko_KR', 'ja_JP'],
+        url: '/',
+        siteName: 'AnyRent',
+        title: 'AnyRent - 租赁店管理软件与系统',
+        description: '领先的租赁店管理软件和租赁管理系统。适用于各种租赁业务的综合解决方案。',
+        images: [
+          {
+            url: '/anyrent-logo-light.svg',
+            width: 1200,
+            height: 630,
+            alt: 'AnyRent - 租赁店管理软件',
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: 'AnyRent - 租赁店管理软件',
+        description: '领先的租赁店管理软件和租赁管理系统。',
+        images: ['/anyrent-logo-light.svg'],
+        creator: '@anyrent',
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
+      icons: {
+        icon: [
+          { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+          { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+          { url: '/favicon.ico', sizes: 'any' },
+        ],
+        apple: [
+          { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+        ],
+      },
+      manifest: '/manifest.json',
+      themeColor: '#3b82f6',
+      appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: 'AnyRent',
+      },
+      verification: {
+        google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+        yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+        yahoo: process.env.NEXT_PUBLIC_YAHOO_VERIFICATION,
+      },
+    };
+  }
+
+  // Korean metadata
+  if (locale === 'ko') {
+    return {
+      title: {
+        default: 'AnyRent - 렌탈샵 관리 소프트웨어 및 시스템',
+        template: '%s | AnyRent',
+      },
+      description: '선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템. 다양한 렌탈 비즈니스를 위한 포괄적인 솔루션: 아오자이 렌탈, 웨딩드레스 렌탈, 장비 렌탈, 차량 렌탈, 공연 의상 렌탈, 프린터 렌탈 관리.',
+      keywords: [
+        '렌탈샵 관리 소프트웨어',
+        '렌탈 관리 시스템',
+        '렌탈 주문 관리',
+        '렌탈 재고 관리',
+        '고객 관리',
+        '렌탈 소프트웨어',
+        '매장 관리 시스템',
+        '아오자이 렌탈 관리 소프트웨어',
+        '웨딩드레스 렌탈 관리',
+        '장비 렌탈 관리 소프트웨어',
+        '차량 렌탈 관리 소프트웨어',
+        '의상 렌탈 관리 소프트웨어',
+        '프린터 렌탈 관리 소프트웨어',
+        'AnyRent',
+      ],
+      authors: [{ name: 'AnyRent Team' }],
+      creator: 'AnyRent',
+      publisher: 'AnyRent',
+      formatDetection: {
+        email: false,
+        address: false,
+        telephone: false,
+      },
+      metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
+      alternates: {
+        canonical: '/',
+        languages: {
+          'vi': '/vi',
+          'en': '/en',
+          'zh': '/zh',
+          'ko': '/ko',
+          'ja': '/ja',
+        },
+      },
+      openGraph: {
+        type: 'website',
+        locale: 'ko_KR',
+        alternateLocale: ['vi_VN', 'en_US', 'zh_CN', 'ja_JP'],
+        url: '/',
+        siteName: 'AnyRent',
+        title: 'AnyRent - 렌탈샵 관리 소프트웨어 및 시스템',
+        description: '선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템. 다양한 렌탈 비즈니스를 위한 포괄적인 솔루션.',
+        images: [
+          {
+            url: '/anyrent-logo-light.svg',
+            width: 1200,
+            height: 630,
+            alt: 'AnyRent - 렌탈샵 관리 소프트웨어',
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: 'AnyRent - 렌탈샵 관리 소프트웨어',
+        description: '선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템.',
+        images: ['/anyrent-logo-light.svg'],
+        creator: '@anyrent',
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
+      icons: {
+        icon: [
+          { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+          { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+          { url: '/favicon.ico', sizes: 'any' },
+        ],
+        apple: [
+          { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+        ],
+      },
+      manifest: '/manifest.json',
+      themeColor: '#3b82f6',
+      appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: 'AnyRent',
+      },
+      verification: {
+        google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+        yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+        yahoo: process.env.NEXT_PUBLIC_YAHOO_VERIFICATION,
+      },
+    };
+  }
+
+  // Japanese metadata
+  if (locale === 'ja') {
+    return {
+      title: {
+        default: 'AnyRent - レンタルショップ管理ソフトウェアとシステム',
+        template: '%s | AnyRent',
+      },
+      description: 'トップクラスのレンタルショップ管理ソフトウェアとレンタル管理システム。様々なレンタル事業に対応する包括的なソリューション：アオザイレンタル、ウェディングドレスレンタル、設備レンタル、車両レンタル、衣装レンタル、プリンターレンタル管理。',
+      keywords: [
+        'レンタルショップ管理ソフトウェア',
+        'レンタル管理システム',
+        'レンタル注文管理',
+        'レンタル在庫管理',
+        '顧客管理',
+        'レンタルソフトウェア',
+        '店舗管理システム',
+        'アオザイレンタル管理ソフトウェア',
+        'ウェディングドレスレンタル管理',
+        '設備レンタル管理ソフトウェア',
+        '車両レンタル管理ソフトウェア',
+        '衣装レンタル管理ソフトウェア',
+        'プリンターレンタル管理ソフトウェア',
+        'AnyRent',
+      ],
+      authors: [{ name: 'AnyRent Team' }],
+      creator: 'AnyRent',
+      publisher: 'AnyRent',
+      formatDetection: {
+        email: false,
+        address: false,
+        telephone: false,
+      },
+      metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'),
+      alternates: {
+        canonical: '/',
+        languages: {
+          'vi': '/vi',
+          'en': '/en',
+          'zh': '/zh',
+          'ko': '/ko',
+          'ja': '/ja',
+        },
+      },
+      openGraph: {
+        type: 'website',
+        locale: 'ja_JP',
+        alternateLocale: ['vi_VN', 'en_US', 'zh_CN', 'ko_KR'],
+        url: '/',
+        siteName: 'AnyRent',
+        title: 'AnyRent - レンタルショップ管理ソフトウェアとシステム',
+        description: 'トップクラスのレンタルショップ管理ソフトウェアとレンタル管理システム。様々なレンタル事業に対応する包括的なソリューション。',
+        images: [
+          {
+            url: '/anyrent-logo-light.svg',
+            width: 1200,
+            height: 630,
+            alt: 'AnyRent - レンタルショップ管理ソフトウェア',
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: 'AnyRent - レンタルショップ管理ソフトウェア',
+        description: 'トップクラスのレンタルショップ管理ソフトウェアとレンタル管理システム。',
+        images: ['/anyrent-logo-light.svg'],
+        creator: '@anyrent',
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
+      icons: {
+        icon: [
+          { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+          { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+          { url: '/favicon.ico', sizes: 'any' },
+        ],
+        apple: [
+          { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+        ],
+      },
+      manifest: '/manifest.json',
+      themeColor: '#3b82f6',
+      appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: 'AnyRent',
+      },
+      verification: {
+        google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+        yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+        yahoo: process.env.NEXT_PUBLIC_YAHOO_VERIFICATION,
+      },
+    };
+  }
+
+  // English metadata (default fallback)
   return {
     title: {
       default: 'AnyRent - Rental Shop Management Software & System',
@@ -212,12 +535,15 @@ export async function generateMetadata(): Promise<Metadata> {
       languages: {
         'vi': '/vi',
         'en': '/en',
+        'zh': '/zh',
+        'ko': '/ko',
+        'ja': '/ja',
       },
     },
     openGraph: {
       type: 'website',
       locale: 'en_US',
-      alternateLocale: ['vi_VN'],
+      alternateLocale: ['vi_VN', 'zh_CN', 'ko_KR', 'ja_JP'],
       url: '/',
       siteName: 'AnyRent',
       title: 'AnyRent - Rental Shop Management Software & System',
@@ -312,6 +638,66 @@ const messages = {
     subscription: viSubscription,
     landing: viLanding,
   },
+  // Chinese (Simplified) - Landing page only
+  zh: {
+    common: zhCommon,
+    landing: zhLanding,
+    plans: zhPlans,
+    // Fallback to English for other sections
+    auth: enAuth,
+    dashboard: enDashboard,
+    orders: enOrders,
+    products: enProducts,
+    customers: enCustomers,
+    settings: enSettings,
+    validation: enValidation,
+    errors: enErrors,
+    users: enUsers,
+    outlets: enOutlets,
+    categories: enCategories,
+    calendar: enCalendar,
+    subscription: enSubscription,
+  },
+  // Korean - Landing page only
+  ko: {
+    common: koCommon,
+    landing: koLanding,
+    plans: koPlans,
+    // Fallback to English for other sections
+    auth: enAuth,
+    dashboard: enDashboard,
+    orders: enOrders,
+    products: enProducts,
+    customers: enCustomers,
+    settings: enSettings,
+    validation: enValidation,
+    errors: enErrors,
+    users: enUsers,
+    outlets: enOutlets,
+    categories: enCategories,
+    calendar: enCalendar,
+    subscription: enSubscription,
+  },
+  // Japanese - Landing page only
+  ja: {
+    common: jaCommon,
+    landing: jaLanding,
+    plans: jaPlans,
+    // Fallback to English for other sections
+    auth: enAuth,
+    dashboard: enDashboard,
+    orders: enOrders,
+    products: enProducts,
+    customers: enCustomers,
+    settings: enSettings,
+    validation: enValidation,
+    errors: enErrors,
+    users: enUsers,
+    outlets: enOutlets,
+    categories: enCategories,
+    calendar: enCalendar,
+    subscription: enSubscription,
+  },
 };
 
 export default async function RootLayout({
@@ -321,15 +707,15 @@ export default async function RootLayout({
 }) {
   // ✅ READ COOKIE SERVER-SIDE - No flash, correct locale from start
   // Default to Vietnamese for Vietnam market
-  let locale: 'en' | 'vi' = 'vi';
+  let locale: 'en' | 'vi' | 'zh' | 'ko' | 'ja' = 'vi';
   
   try {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     const localeCookie = cookieStore.get('NEXT_LOCALE');
     
-    if (localeCookie?.value && (localeCookie.value === 'en' || localeCookie.value === 'vi')) {
-      locale = localeCookie.value;
+    if (localeCookie?.value && ['en', 'vi', 'zh', 'ko', 'ja'].includes(localeCookie.value)) {
+      locale = localeCookie.value as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
     }
   } catch (error) {
     // Fallback to Vietnamese (primary market)

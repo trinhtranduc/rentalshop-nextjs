@@ -40,6 +40,27 @@
     "multiPlatform": "Hỗ trợ Đa nền tảng",
     "multiPlatformDesc": "Hệ thống quản lý cho thuê đa nền tảng. Truy cập dữ liệu quản lý cửa hàng cho thuê từ iOS, Android và các nền tảng web một cách liền mạch với phần mềm quản lý cửa hàng cho thuê."
   },
+  "customSolution": {
+    "title": "Cần Giải pháp Cho thuê Tùy chỉnh?",
+    "description": "Bạn có nhu cầu đặc biệt cho doanh nghiệp cho thuê của mình? Chúng tôi cung cấp giải pháp quản lý cho thuê tùy chỉnh được thiết kế riêng theo nhu cầu cụ thể của bạn. Từ quản lý cho thuê áo dài, cho thuê áo cưới, cho thuê trang thiết bị, cho thuê xe đến các ngành nghề đặc biệt khác - chúng tôi có thể tạo giải pháp phù hợp với bạn.",
+    "benefits": {
+      "title": "Lợi ích Giải pháp Tùy chỉnh",
+      "customized": "Giải pháp được tùy chỉnh hoàn toàn theo nhu cầu kinh doanh của bạn",
+      "dedicated": "Hỗ trợ chuyên dụng và tư vấn từ đội ngũ chuyên gia",
+      "scalable": "Hệ thống có thể mở rộng theo sự phát triển của doanh nghiệp",
+      "integration": "Tích hợp với các hệ thống hiện có của bạn một cách dễ dàng"
+    },
+    "contact": {
+      "title": "Liên hệ với Chúng tôi",
+      "description": "Hãy liên hệ để thảo luận về giải pháp tùy chỉnh cho doanh nghiệp cho thuê của bạn",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "emailSubject": "Yêu cầu Giải pháp Cho thuê Tùy chỉnh",
+      "emailBody": "Xin chào,\n\nTôi quan tâm đến giải pháp quản lý cho thuê tùy chỉnh cho doanh nghiệp của tôi.\n\nVui lòng liên hệ với tôi để thảo luận chi tiết.\n\nTrân trọng,",
+      "whatsappMessage": "Xin chào, tôi quan tâm đến giải pháp quản lý cho thuê tùy chỉnh. Vui lòng liên hệ với tôi.",
+      "responseTime": "Chúng tôi sẽ phản hồi trong vòng 24 giờ"
+    }
+  },
   "whyChoose": {
     "title": "Tại sao chọn Phần mềm Quản lý Cửa hàng Cho thuê AnyRent?",
     "description": "Tham gia cùng hàng trăm doanh nghiệp cho thuê tin tưởng hệ thống quản lý cho thuê của chúng tôi. Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam.",
@@ -93,11 +114,21 @@
   "pricing": {
     "title": "Bảng giá đơn giản",
     "description": "Chọn gói phù hợp với nhu cầu kinh doanh của bạn",
+    "discounts": {
+      "three": "0%",
+      "six": "-5%",
+      "twelve": "-10%"
+    },
     "months": {
       "three": "3 tháng",
       "six": "6 tháng",
       "twelve": "12 tháng"
     },
+    "loading": "Đang tải gói...",
+    "error": "Không thể tải gói",
+    "retry": "Thử lại",
+    "noPlans": "Hiện không có gói nào.",
+    "buttonText": "Bắt đầu",
     "plans": {
       "freeTrial": {
         "name": "Dùng thử miễn phí",

@@ -1,0 +1,198 @@
+{
+  "navigation": {
+    "features": "기능",
+    "pricing": "가격",
+    "faq": "자주 묻는 질문",
+    "contact": "문의하기",
+    "login": "로그인"
+  },
+  "hero": {
+    "title": "렌탈샵 관리",
+    "subtitle": "소프트웨어 및 시스템",
+    "description": "선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템. 다양한 렌탈 비즈니스를 위한 포괄적인 솔루션: 아오자이 렌탈, 웨딩드레스 렌탈, 장비 렌탈, 차량 렌탈, 공연 의상 렌탈, 프린터 렌탈 관리. iOS, Android 및 Web을 위한 멀티 플랫폼 지원을 갖춘 현대적인 매장 관리 소프트웨어.",
+    "downloadApp": "앱 다운로드",
+    "tryWebPortal": "웹 포털 체험하기"
+  },
+  "download": {
+    "title": "모든 플랫폼에서 사용 가능",
+    "description": "언제 어디서나 렌탈샵 관리를 액세스하세요",
+    "mobileApp": "모바일 앱",
+    "mobileAppDesc": "iOS 및 Android 앱으로 이동 중에도 렌탈샵을 관리하세요",
+    "webPortal": "웹 포털",
+    "webPortalDesc": "반응형 디자인의 모든 웹 브라우저를 통해 전체 기능에 액세스",
+    "analytics": "분석 대시보드",
+    "analyticsDesc": "상세한 보고서로 비즈니스 성과에 대한 인사이트를 얻으세요",
+    "downloadOnAppStore": "App Store에서 다운로드"
+  },
+  "features": {
+    "title": "렌탈샵 관리 기능",
+    "description": "렌탈 비즈니스를 효율적으로 관리하는 데 필요한 모든 기능을 갖춘 포괄적인 렌탈 관리 시스템. 다양한 업계에 적합한 렌탈샵 관리 소프트웨어: 아오자이 렌탈, 웨딩드레스 렌탈, 장비 렌탈, 차량 렌탈, 공연 의상 렌탈, 프린터 렌탈. 주문 관리, 재고 관리 및 고객 관리가 통합되어 있습니다.",
+    "orderManagement": "렌탈 주문 관리",
+    "orderManagementDesc": "전문적인 렌탈 주문 관리 시스템. 렌탈 주문을 쉽게 생성, 추적 및 관리하세요. 렌탈샵 관리 소프트웨어로 렌탈 주문 상태 및 이력을 모니터링하세요.",
+    "customerManagement": "고객 관리",
+    "customerManagementDesc": "렌탈 관리 시스템으로 고객을 효율적으로 관리하세요. 렌탈샵 관리 소프트웨어에서 고객 정보를 저장하고, 렌탈 이력을 추적하며, 고객 관계를 관리하세요.",
+    "calendarScheduling": "렌탈 캘린더 및 스케줄링",
+    "calendarSchedulingDesc": "렌탈, 반납 및 제품 가용성을 추적하기 위한 렌탈 관리 시스템의 시각적 캘린더. 렌탈샵 관리 소프트웨어로 렌탈 재고를 효율적으로 관리하세요.",
+    "financialReports": "재무 보고서",
+    "financialReportsDesc": "렌탈 관리 시스템으로 상세한 재무 보고서를 생성하세요. 전문적인 렌탈샵 관리 소프트웨어로 수익을 추적하고 비즈니스 성과를 분석하세요.",
+    "duplicatePrevention": "중복 주문 방지",
+    "duplicatePreventionDesc": "렌탈샵 관리 소프트웨어의 스마트 시스템이 중복 주문을 방지하고 정확한 재고 관리를 보장합니다. 렌탈 관리 시스템으로 렌탈 재고를 효율적으로 관리하세요.",
+    "multiPlatform": "멀티 플랫폼 지원",
+    "multiPlatformDesc": "멀티 플랫폼 렌탈 관리 시스템. 렌탈샵 관리 소프트웨어를 통해 iOS, Android 및 웹 플랫폼에서 렌탈샵 관리 데이터를 원활하게 액세스하세요."
+  },
+  "customSolution": {
+    "title": "맞춤형 렌탈 솔루션이 필요하신가요?",
+    "description": "렌탈 비즈니스에 특별한 요구사항이 있으신가요? 귀하의 특정 요구사항에 맞게 설계된 맞춤형 렌탈 관리 솔루션을 제공합니다. 아오자이 렌탈, 웨딩드레스 렌탈, 장비 렌탈, 차량 렌탈부터 기타 전문 업계까지 - 귀하를 위한 완벽한 솔루션을 만들 수 있습니다.",
+    "benefits": {
+      "title": "맞춤형 솔루션의 장점",
+      "customized": "비즈니스 요구사항에 완전히 맞춤화된 솔루션",
+      "dedicated": "전문가 팀의 전담 지원 및 컨설팅",
+      "scalable": "비즈니스 성장에 따라 확장 가능한 시스템",
+      "integration": "기존 시스템과 쉽게 통합"
+    },
+    "contact": {
+      "title": "문의하기",
+      "description": "렌탈 비즈니스를 위한 맞춤형 솔루션에 대해 논의하려면 문의하세요",
+      "email": "이메일",
+      "whatsapp": "WhatsApp",
+      "emailSubject": "맞춤형 렌탈 솔루션 문의",
+      "emailBody": "안녕하세요,\n\n저는 제 비즈니스를 위한 맞춤형 렌탈 관리 솔루션에 관심이 있습니다.\n\n자세한 내용을 논의하려면 연락해 주세요.\n\n감사합니다,",
+      "whatsappMessage": "안녕하세요, 맞춤형 렌탈 관리 솔루션에 관심이 있습니다. 연락해 주세요.",
+      "responseTime": "24시간 이내에 답변드리겠습니다"
+    }
+  },
+  "whyChoose": {
+    "title": "왜 AnyRent 렌탈샵 관리 소프트웨어를 선택해야 할까요?",
+    "description": "우리 렌탈 관리 시스템을 신뢰하는 수백 개의 렌탈 비즈니스에 합류하세요. 선도적인 렌탈샵 관리 소프트웨어 솔루션.",
+    "easyToUse": "사용하기 쉬움",
+    "easyToUseDesc": "렌탈샵 관리 소프트웨어의 직관적인 인터페이스는 렌탈 비즈니스 소유자를 위해 설계되었으며 기술적 기술이 필요하지 않습니다. 사용자 친화적인 렌탈 관리 시스템.",
+    "timeSaving": "시간 절약",
+    "timeSavingDesc": "렌탈 관리 시스템은 일상적인 작업을 자동화하고 서류 작업 대신 비즈니스 성장에 집중합니다. 렌탈샵 관리 소프트웨어는 시간을 절약합니다.",
+    "increaseRevenue": "수익 증가",
+    "increaseRevenueDesc": "렌탈 관리 시스템으로 렌탈 재고 및 고객 관리를 더 잘 관리하면 매출이 증가합니다. 렌탈샵 관리 소프트웨어는 수익을 최적화합니다.",
+    "support": "24/7 지원",
+    "supportDesc": "렌탈샵 관리 소프트웨어의 전담 고객 지원 팀을 통해 언제든지 도움을 받으세요. 24/7 지원을 제공하는 렌탈 관리 시스템.",
+    "activeStores": "활성 매장",
+    "rating": "4.9/5 평점"
+  },
+  "stats": {
+    "activeStores": "활성 매장",
+    "ordersProcessed": "처리된 주문",
+    "customerRating": "고객 평점",
+    "supportAvailable": "사용 가능한 지원"
+  },
+  "testimonials": {
+    "title": "고객 평가",
+    "description": "수백 명의 만족한 렌탈 비즈니스 소유자에 합류하세요"
+  },
+  "cta": {
+    "title": "시작할 준비가 되셨나요?",
+    "description": "우리 플랫폼을 신뢰하는 수천 개의 렌탈 비즈니스에 합류하세요"
+  },
+  "faq": {
+    "title": "렌탈샵 관리 소프트웨어에 대한 자주 묻는 질문",
+    "description": "AnyRent 렌탈 관리 시스템 - 선도적인 렌탈샵 관리 소프트웨어에 대해 알아야 할 모든 것",
+    "items": {
+      "freeUse": {
+        "question": "AnyRent 렌탈샵 관리 소프트웨어를 무료로 사용할 수 있나요?",
+        "answer": "AnyRent 렌탈 관리 시스템은 무료 체험판을 제공합니다. 비용 없이 렌탈샵 관리 소프트웨어의 기본 기능을 등록하고 사용할 수 있습니다. 렌탈 주문 관리, 렌탈 재고 관리 및 고객 관리를 무료로 체험하세요."
+      },
+      "multipleDevices": {
+        "question": "여러 기기에서 렌탈샵 관리 소프트웨어를 사용할 수 있나요?",
+        "answer": "예, AnyRent 렌탈 관리 시스템은 여러 플랫폼을 지원합니다. iOS, Android 및 웹 브라우저에서 렌탈샵 관리 소프트웨어를 사용할 수 있습니다. 멀티 플랫폼 렌탈 관리 시스템으로 어디서나 렌탈샵을 관리하세요."
+      },
+      "dataSecure": {
+        "question": "내 렌탈샵 관리 데이터가 안전한가요?",
+        "answer": "우리는 렌탈 관리 시스템에서 귀하의 데이터를 보호하기 위해 최선을 다하고 있습니다. 모든 렌탈 주문 관리, 렌탈 재고 관리 및 고객 관리 정보는 암호화되어 클라우드에 안전하게 저장됩니다. AnyRent 렌탈샵 관리 소프트웨어는 데이터 보안을 보장합니다."
+      },
+      "support": {
+        "question": "렌탈 관리 시스템에 대한 고객 지원을 제공하나요?",
+        "answer": "예, AnyRent 렌탈샵 관리 소프트웨어에 대한 24/7 고객 지원을 제공합니다. 전문 지원 팀이 채팅, 이메일 및 전화를 통해 렌탈 관리 시스템 관련 모든 문제를 도와드릴 준비가 되어 있습니다."
+      }
+    }
+  },
+  "pricing": {
+    "title": "간단한 가격",
+    "description": "비즈니스 요구사항에 맞는 플랜을 선택하세요",
+    "discounts": {
+      "three": "0%",
+      "six": "-5%",
+      "twelve": "-10%"
+    },
+    "months": {
+      "three": "3개월",
+      "six": "6개월",
+      "twelve": "12개월"
+    },
+    "loading": "플랜 로딩 중...",
+    "error": "플랜을 불러올 수 없습니다",
+    "retry": "다시 시도",
+    "noPlans": "현재 사용 가능한 플랜이 없습니다.",
+    "buttonText": "시작하기",
+    "plans": {
+      "freeTrial": {
+        "name": "무료 체험",
+        "subtitle": "시작하기에 완벽",
+        "period": "7일",
+        "description": "모든 기능을 무료로 체험",
+        "buttonText": "체험 시작"
+      },
+      "basic": {
+        "name": "기본 플랜",
+        "subtitle": "소규모 렌탈 비즈니스용",
+        "period": "월",
+        "description": "소규모 렌탈샵에 완벽",
+        "buttonText": "시작하기",
+        "mostPopular": "가장 인기"
+      },
+      "premium": {
+        "name": "프리미엄 플랜",
+        "subtitle": "성장하는 비즈니스용",
+        "period": "월",
+        "description": "더 큰 규모의 운영을 위한 고급 기능",
+        "buttonText": "시작하기"
+      }
+    },
+    "features": {
+      "orderManagement": "주문 관리",
+      "productManagement": "제품 관리",
+      "customerManagement": "고객 관리",
+      "revenueReports": "수익 보고서",
+      "singleAccount": "단일 계정",
+      "twoAccounts": "두 개의 계정",
+      "fiveAccounts": "다섯 개의 계정",
+      "webPortal": "웹 포털",
+      "additionalAccounts": "추가 계정",
+      "freeUpdates": "무료 업데이트",
+      "mobileApp": "모바일 앱"
+    },
+    "allPlansInclude": "모든 플랜 포함",
+    "support24": "24/7 지원",
+    "dataBackup": "데이터 백업",
+    "freeUpdates": "무료 업데이트",
+    "training": "교육"
+  },
+  "footer": {
+    "description": "AnyRent - 베트남의 선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템. 아오자이 렌탈, 웨딩드레스 렌탈, 장비 렌탈, 차량 렌탈, 공연 의상 렌탈, 프린터 렌탈을 위한 전문 솔루션. 효율적인 렌탈 주문 관리, 렌탈 재고 관리 및 고객 관리.",
+    "product": {
+      "title": "제품",
+      "features": "기능",
+      "pricing": "가격",
+      "downloadApp": "앱 다운로드"
+    },
+    "support": {
+      "title": "지원",
+      "faq": "자주 묻는 질문",
+      "documentation": "문서",
+      "contact": "문의하기"
+    },
+    "company": {
+      "title": "회사",
+      "aboutUs": "회사 소개",
+      "terms": "약관",
+      "privacy": "개인정보 보호"
+    },
+    "copyright": "© 2024 AnyRent. 모든 권리 보유."
+  }
+}
+

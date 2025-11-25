@@ -1,0 +1,19 @@
+{
+  "appName": "AnyRent",
+  "welcome": "환영합니다",
+  "loading": "로딩 중...",
+  "error": "오류",
+  "success": "성공",
+  "save": "저장",
+  "cancel": "취소",
+  "delete": "삭제",
+  "edit": "편집",
+  "create": "생성",
+  "search": "검색",
+  "filter": "필터",
+  "actions": "작업",
+  "noData": "데이터 없음",
+  "confirm": "확인",
+  "close": "닫기"
+}
+
