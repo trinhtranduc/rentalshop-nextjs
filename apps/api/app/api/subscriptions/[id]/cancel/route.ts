@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 
 /**
  * POST /api/subscriptions/[id]/cancel
@@ -12,7 +12,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
       const subscriptionId = parseInt(params.id);
       
@@ -31,7 +31,7 @@ export async function POST(
 
       // Cancel subscription
       const cancelledSubscription = await db.subscriptions.update(subscriptionId, {
-        status: 'CANCELLED',
+        status: SUBSCRIPTION_STATUS.CANCELLED,
         canceledAt: new Date(),
         cancelReason: reason
       });
@@ -46,14 +46,14 @@ export async function POST(
           planId: existing.planId,
           planName: existing.plan?.name,
           previousStatus: existing.status,
-          newStatus: 'CANCELLED',
+          newStatus: SUBSCRIPTION_STATUS.CANCELLED,
           performedBy: {
             userId: user.userId || user.id,
             email: user.email,
             role: user.role,
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
           },
-          source: user.role === 'ADMIN' ? 'admin_panel' : 'merchant_panel',
+          source: user.role === USER_ROLE.ADMIN ? 'admin_panel' : 'merchant_panel',
           severity: 'error',
           category: 'billing'
         },

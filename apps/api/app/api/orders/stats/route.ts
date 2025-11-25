@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS } from '@rentalshop/constants';
+import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
@@ -10,7 +10,7 @@ import {API} from '@rentalshop/constants';
  * REFACTORED: Now uses unified withAuthRoles pattern for all business roles
  * NOTE: Database functions getOrderStats and getOverdueRentals not implemented - using placeholders
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
   console.log(`📊 GET /api/orders/stats - User: ${user.email}, Role: ${user.role}`);
   
   try {
@@ -26,7 +26,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     } else if (userScope.merchantId) {
       filters.merchantId = userScope.merchantId;
     }
-    if (outletId && user.role === 'ADMIN') {
+    if (outletId && user.role === USER_ROLE.ADMIN) {
       filters.outletId = outletId;
     }
 
@@ -36,14 +36,14 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     const activeRentalsResult = await db.orders.search({ 
       ...filters, 
-      status: 'PICKUPED',
+      status: ORDER_STATUS.PICKUPED,
       limit: 1 
     });
     const activeRentals = activeRentalsResult.total;
 
     const completedOrdersResult = await db.orders.search({ 
       ...filters, 
-      status: 'COMPLETED',
+      status: ORDER_STATUS.COMPLETED,
       limit: 1 
     });
     const completedOrders = completedOrdersResult.total;
@@ -51,7 +51,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Get overdue rentals (return date passed but status still PICKUPED)
     const overdueResult = await db.orders.search({ 
       ...filters, 
-      status: 'PICKUPED',
+      status: ORDER_STATUS.PICKUPED,
       returnPlanAt: { lt: new Date() },
       limit: 100 // Get actual overdue orders
     });

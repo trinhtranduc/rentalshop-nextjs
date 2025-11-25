@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { z } from 'zod';
-import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, getDefaultPricingConfig, BusinessType } from '@rentalshop/constants';
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
           firstName: validatedData.userFirstName,
           lastName: validatedData.userLastName,
           phone: validatedData.userPhone,
-          role: 'MERCHANT',
+          role: USER_ROLE.MERCHANT,
           merchantId: merchant.id
         }
       });

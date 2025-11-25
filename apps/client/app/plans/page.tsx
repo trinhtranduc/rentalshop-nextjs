@@ -360,8 +360,8 @@ export default function PlansPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="monthly">Monthly - {formatCurrency(selectedPlan.basePrice, selectedPlan.currency)}</SelectItem>
-                    <SelectItem value="quarterly">Quarterly - {formatCurrency(selectedPlan.basePrice * 3 * 0.9, selectedPlan.currency)} (10% off)</SelectItem>
-                    <SelectItem value="yearly">Yearly - {formatCurrency(selectedPlan.basePrice * 12 * 0.8, selectedPlan.currency)} (20% off)</SelectItem>
+                    <SelectItem value="quarterly">Quarterly - {formatCurrency(selectedPlan.basePrice * 3, selectedPlan.currency)} (0% off)</SelectItem>
+                    <SelectItem value="yearly">Yearly - {formatCurrency(selectedPlan.basePrice * 12 * 0.9, selectedPlan.currency)} (10% off)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -13,7 +13,7 @@ import { downloadProductImagesForSync, imagesToBase64 } from '@rentalshop/utils/
 import { transformCustomer, transformProduct, transformOrder } from '@rentalshop/utils/src/sync/transformers';
 import { generateOrderNumber } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
-import { API, ORDER_STATUS } from '@rentalshop/constants';
+import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/sync-standalone
@@ -25,7 +25,7 @@ import { API, ORDER_STATUS } from '@rentalshop/constants';
  * - endpoint: Old server endpoint URL
  * - token: Old server admin token
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   try {
     const { searchParams } = new URL(request.url);
     const endpoint = searchParams.get('endpoint');
@@ -182,7 +182,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user,
  * Standalone sync endpoint - CẦN admin authentication
  * Old server API calls vẫn tách biệt (dùng token từ request body)
  */
-export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user, userScope }) => {
+export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   console.log('🔄 [SYNC API] POST /api/sync-standalone - Request received');
   
   try {

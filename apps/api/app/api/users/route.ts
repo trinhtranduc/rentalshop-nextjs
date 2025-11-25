@@ -9,10 +9,10 @@ import { withManagementAuth, hashPassword } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
 
 export interface UserFilters {
-  role?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+  role?: UserRole;
   isActive?: boolean;
   search?: string;
 }
@@ -59,7 +59,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     // - ADMIN role: Can see users from all merchants (unless queryMerchantId is specified)
     // - MERCHANT role: Can only see users from their own merchant
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see users from their merchant
-    if (user.role === 'ADMIN') {
+    if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all merchants unless specifically filtering by merchant
       searchFilters.merchantId = q.merchantId;
     } else {
@@ -70,26 +70,26 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     // Role-based outlet filtering:
     // - MERCHANT role: Can see users from all outlets of their merchant (unless queryOutletId is specified)
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see users from their assigned outlet
-    if (user.role === 'MERCHANT') {
+    if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       searchFilters.outletId = q.outletId;
-    } else if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
       // Outlet users can only see users from their assigned outlet
       searchFilters.outletId = userScope.outletId;
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all users (no outlet filtering unless specified)
       searchFilters.outletId = q.outletId;
     }
 
     // If user is MERCHANT, only return OUTLET_ADMIN and OUTLET_STAFF users
     // Do not return other MERCHANT users
-    if (user.role === 'MERCHANT') {
+    if (user.role === USER_ROLE.MERCHANT) {
       if (!q.role) {
         // If no specific role filter is requested, restrict to outlet-level roles only
-        searchFilters.roles = ['OUTLET_ADMIN', 'OUTLET_STAFF'];
+        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
         delete searchFilters.role; // Remove single role filter since we're using roles array
         console.log('🔒 MERCHANT user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
-      } else if (q.role === 'MERCHANT') {
+      } else if (q.role === USER_ROLE.MERCHANT) {
         // If merchant specifically requests MERCHANT role, return empty (merchants shouldn't see other merchants)
         console.log('🚫 MERCHANT user: Blocked request for MERCHANT role users');
         return NextResponse.json({
@@ -103,7 +103,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
             totalPages: 0
           }
         });
-      } else if (q.role === 'OUTLET_ADMIN' || q.role === 'OUTLET_STAFF') {
+      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
         // Allow these specific role requests from merchant
         console.log(`✅ MERCHANT user: Allowed request for ${q.role} users`);
       }
@@ -160,15 +160,15 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     let merchantId: number | undefined;
     let outletId: number | undefined;
 
-    if (parsed.data.role === 'ADMIN') {
+    if (parsed.data.role === USER_ROLE.ADMIN) {
       // ADMIN can be assigned to any merchant/outlet or none
       merchantId = parsed.data.merchantId;
       outletId = parsed.data.outletId;
-    } else if (parsed.data.role === 'MERCHANT') {
+    } else if (parsed.data.role === USER_ROLE.MERCHANT) {
       // MERCHANT must have merchantId, no outletId
       merchantId = parsed.data.merchantId || userScope.merchantId;
       outletId = undefined;
-    } else if (parsed.data.role === 'OUTLET_ADMIN' || parsed.data.role === 'OUTLET_STAFF') {
+    } else if (parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF) {
       // OUTLET users must have both merchantId and outletId
       merchantId = parsed.data.merchantId || userScope.merchantId;
       outletId = parsed.data.outletId || userScope.outletId;
@@ -184,7 +184,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 
     // NOTE: Only MERCHANT users need email verification
     // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
-    const isOutletUser = parsed.data.role === 'OUTLET_ADMIN' || parsed.data.role === 'OUTLET_STAFF';
+    const isOutletUser = parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF;
 
     const userData = {
       ...parsed.data,
@@ -204,7 +204,7 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
     console.log('🔍 POST /api/users: merchantId:', merchantId, 'outletId:', outletId);
 
     // Check plan limits before creating user (only for non-ADMIN users)
-    if (parsed.data.role !== 'ADMIN' && merchantId) {
+    if (parsed.data.role !== USER_ROLE.ADMIN && merchantId) {
       try {
         await assertPlanLimit(merchantId, 'users');
         console.log('✅ Plan limit check passed for users');
@@ -369,7 +369,7 @@ export const DELETE = withManagementAuth(async (request, { user, userScope }) =>
     }
 
     // Check if this is the last admin user for the merchant
-    if (existingUser.role === 'ADMIN' || (existingUser.role === 'MERCHANT' && existingUser.merchantId)) {
+    if (existingUser.role === USER_ROLE.ADMIN || (existingUser.role === USER_ROLE.MERCHANT && existingUser.merchantId)) {
       const merchantId = existingUser.merchantId;
       const adminCount = await db.users.getStats({
         merchantId: merchantId || null,

@@ -30,9 +30,9 @@ interface ExtendedBillingInterval extends BillingInterval {
 
 const DEFAULT_BILLING_INTERVALS: ExtendedBillingInterval[] = [
   { id: 'month', name: 'Monthly', duration: 1, unit: 'months', discountPercentage: 0, isActive: true },
-  { id: 'quarter', name: 'Quarterly', duration: 3, unit: 'months', discountPercentage: 5, isActive: true },
-  { id: '6months', name: '6 Months', duration: 6, unit: 'months', discountPercentage: 10, isActive: true },
-  { id: 'year', name: 'Yearly', duration: 12, unit: 'months', discountPercentage: 20, isActive: true }
+  { id: 'quarter', name: 'Quarterly', duration: 3, unit: 'months', discountPercentage: 0, isActive: true },
+  { id: '6months', name: '6 Months', duration: 6, unit: 'months', discountPercentage: 5, isActive: true },
+  { id: 'year', name: 'Yearly', duration: 12, unit: 'months', discountPercentage: 10, isActive: true }
 ];
 
 export default function BillingSettingsPage() {

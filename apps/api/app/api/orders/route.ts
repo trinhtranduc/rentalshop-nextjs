@@ -84,7 +84,7 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
     // - ADMIN role: Can see orders from all merchants (unless queryMerchantId is specified)
     // - MERCHANT role: Can only see orders from their own merchant
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their merchant
-    if (user.role === 'ADMIN') {
+    if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all merchants unless specifically filtering by merchant
       searchFilters.merchantId = queryMerchantId;
     } else {
@@ -194,16 +194,20 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
       );
     }
 
-    // Check plan limits before creating order (optional - orders are typically unlimited)
-    try {
-      await assertPlanLimit(outlet.merchantId, 'orders');
-      console.log('✅ Plan limit check passed for orders');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for orders:', error.message);
-      return NextResponse.json(
-        ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for orders'),
-        { status: 403 }
-      );
+    // Check plan limits before creating order (ADMIN bypass)
+    if (user.role !== USER_ROLE.ADMIN) {
+      try {
+        await assertPlanLimit(outlet.merchantId, 'orders');
+        console.log('✅ Plan limit check passed for orders');
+      } catch (error: any) {
+        console.log('❌ Plan limit exceeded for orders:', error.message);
+        return NextResponse.json(
+          ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for orders'),
+          { status: 403 }
+        );
+      }
+    } else {
+      console.log('✅ ADMIN user: Bypassing plan limit check for orders');
     }
 
     // Generate order number: 6-digit random number (e.g., 123456, 789012)
@@ -220,10 +224,10 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
         const orderNumber = generateRandom6Digits();
 
         // Check for uniqueness
-        const existingOrder = await tx.order.findUnique({
-          where: { orderNumber },
-          select: { id: true }
-        });
+      const existingOrder = await tx.order.findUnique({
+        where: { orderNumber },
+        select: { id: true }
+      });
 
         if (!existingOrder) {
           return orderNumber;

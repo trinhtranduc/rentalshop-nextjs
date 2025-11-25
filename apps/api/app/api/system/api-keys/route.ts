@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/system/api-keys
  * Get API keys
  */
 export async function GET(request: NextRequest) {
-  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN])(async (request, { user, userScope }) => {
     try {
       // TODO: Implement API keys functionality
       return NextResponse.json(
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
  * Create API key
  */
 export async function POST(request: NextRequest) {
-  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN])(async (request, { user, userScope }) => {
     try {
       const body = await request.json();
       const { name, description, permissions } = body;

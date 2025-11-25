@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { SUBSCRIPTION_STATUS } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -13,7 +13,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request: NextRequest, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
     try {
       const { id } = params;
       console.log('🔍 GET /api/plans/[id] - Looking for plan with ID:', id);
@@ -133,7 +133,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (req: NextRequest, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN])(async (req: NextRequest, { user, userScope }) => {
     try {
       const { id } = params;
 
@@ -293,7 +293,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN'])(async (request: NextRequest, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
     try {
       const { id } = params;
 

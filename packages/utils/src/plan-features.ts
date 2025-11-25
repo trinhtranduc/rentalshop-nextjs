@@ -26,16 +26,11 @@ export const AVAILABLE_PLAN_FEATURES = [
   'allBasicFeatures',
   'webDashboardAccess',
   'advancedReportingAnalytics',
-  'inventoryForecasting',
-  'onlinePayments',
-  'teamCollaborationTools',
   'allProfessionalFeatures',
   'multipleOutlets',
   'advancedTeamManagement',
-  'customIntegrations',
   'dedicatedAccountManager',
   'customReporting',
-  'whiteLabelSolution',
   '247PhoneSupport',
   'additionalUserPricing',
 ] as const;
@@ -61,10 +56,7 @@ export const PROFESSIONAL_PLAN_FEATURES: PlanFeatureKey[] = [
   'allBasicFeatures', // Represents all Basic plan features
   'webDashboardAccess',
   'advancedReportingAnalytics',
-  'inventoryForecasting',
-  'onlinePayments',
   'apiIntegration',
-  'teamCollaborationTools',
   'prioritySupport',
 ];
 
@@ -76,10 +68,8 @@ export const ENTERPRISE_PLAN_FEATURES: PlanFeatureKey[] = [
   'allProfessionalFeatures', // Represents all Professional plan features
   'multipleOutlets',
   'advancedTeamManagement',
-  'customIntegrations',
   'dedicatedAccountManager',
   'customReporting',
-  'whiteLabelSolution',
   '247PhoneSupport',
 ];
 
@@ -129,16 +119,11 @@ export function translatePlanFeature(feature: string, t: (key: string) => string
     'allbasicfeatures': 'features.allBasicFeatures',
     'webdashboardaccess': 'features.webDashboardAccess',
     'advancedreportinganalytics': 'features.advancedReportingAnalytics',
-    'inventoryforecasting': 'features.inventoryForecasting',
-    'onlinepayments': 'features.onlinePayments',
-    'teamcollaborationtools': 'features.teamCollaborationTools',
     'allprofessionalfeatures': 'features.allProfessionalFeatures',
     'multipleoutlets': 'features.multipleOutlets',
     'advancedteammanagement': 'features.advancedTeamManagement',
-    'customintegrations': 'features.customIntegrations',
     'dedicatedaccountmanager': 'features.dedicatedAccountManager',
     'customreporting': 'features.customReporting',
-    'whitelabelsolution': 'features.whiteLabelSolution',
     '247phonesupport': 'features.247PhoneSupport',
     'additionaluserpricing': 'features.additionalUserPricing',
   };

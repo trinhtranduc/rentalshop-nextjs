@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS } from '@rentalshop/constants';
+import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -10,7 +10,7 @@ import { API } from '@rentalshop/constants';
  * Requires: Any authenticated user (scoped by role)
  * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
   try {
     const today = new Date();
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -26,21 +26,21 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     let outletStockWhereClause: any = {};
 
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
+    if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
       // Find merchant by id to get outlets
       const merchant = await db.merchants.findById(userScope.merchantId);
       if (merchant && merchant.outlets) {
         orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
         outletStockWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {
         orderWhereClause.outletId = outlet.id;
         outletStockWhereClause.outletId = outlet.id;
       }
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === USER_ROLE.ADMIN) {
       // ADMIN users see all data (system-wide access)
       // No additional filtering needed for ADMIN role
       console.log('✅ ADMIN user accessing all system data:', {

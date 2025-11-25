@@ -252,16 +252,16 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
             </div>
           </div>
         ) : (
-          <PlanForm
-            initialData={plan}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            loading={loading}
+        <PlanForm
+          initialData={plan}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          loading={loading}
             mode={mode === 'view' ? 'edit' : mode} // PlanForm doesn't support 'view', use 'edit' instead
-            hideHeader={true}
-            title={getDialogTitle()}
+          hideHeader={true}
+          title={getDialogTitle()}
             submitText={mode === 'create' ? 'Create Plan' : mode === 'edit' || mode === 'view' ? 'Update Plan' : 'Save Changes'}
-          />
+        />
         )}
       </DialogContent>
     </Dialog>

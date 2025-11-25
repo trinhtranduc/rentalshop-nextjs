@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 
 /**
  * GET /api/subscriptions/[id]
@@ -94,7 +94,7 @@ export async function DELETE(
 
       // Cancel subscription by updating status
       const cancelledSubscription = await db.subscriptions.update(subscriptionId, { 
-        status: 'CANCELLED',
+        status: SUBSCRIPTION_STATUS.CANCELLED,
         cancelledAt: new Date()
       });
 

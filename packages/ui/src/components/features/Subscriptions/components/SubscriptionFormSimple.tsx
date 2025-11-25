@@ -207,9 +207,9 @@ export function SubscriptionFormSimple({
   const getDiscountPercentage = (period: number): number => {
     const discountMap: Record<number, number> = {
       1: 0,    // Monthly: 0% discount
-      3: 10,   // Quarterly: 10% discount
-      6: 15,   // 6 Months: 15% discount
-      12: 20   // Yearly: 20% discount
+      3: 0,    // Quarterly: 0% discount
+      6: 5,    // 6 Months: 5% discount
+      12: 10   // Yearly: 10% discount
     };
     return discountMap[period] || 0;
   };

@@ -6,9 +6,9 @@ import {API} from '@rentalshop/constants';
 let billingConfig = {
   intervals: [
     { id: 'month', name: 'Monthly', months: 1, discountPercentage: 0, isActive: true },
-    { id: 'quarter', name: 'Quarterly', months: 3, discountPercentage: 5, isActive: true },
-    { id: '6months', name: '6 Months', months: 6, discountPercentage: 10, isActive: true },
-    { id: 'year', name: 'Yearly', months: 12, discountPercentage: 20, isActive: true }
+    { id: 'quarter', name: 'Quarterly', months: 3, discountPercentage: 0, isActive: true },
+    { id: '6months', name: '6 Months', months: 6, discountPercentage: 5, isActive: true },
+    { id: 'year', name: 'Yearly', months: 12, discountPercentage: 10, isActive: true }
   ]
 };
 

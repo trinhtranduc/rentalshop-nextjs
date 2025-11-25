@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
             firstName: firstName,
             lastName: lastName,
             phone: validatedData.phone,
-            role: 'MERCHANT',
+            role: USER_ROLE.MERCHANT,
             merchantId: merchant.id,
             outletId: outlet.id,
             emailVerified: false, // Email needs to be verified after registration

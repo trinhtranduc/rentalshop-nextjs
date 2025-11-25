@@ -2,7 +2,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import {API} from '@rentalshop/constants';
+import {API, USER_ROLE} from '@rentalshop/constants';
 
 /**
  * GET /api/users/profile
@@ -174,7 +174,7 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
       // For other users, check within their merchant
       if (currentUser?.merchantId) {
         whereClause.merchantId = currentUser.merchantId;
-      } else if (currentUser?.role === 'ADMIN') {
+      } else if (currentUser?.role === USER_ROLE.ADMIN) {
         // Admin users can have unique phone numbers globally
         // No additional filter needed
       } else {
@@ -185,7 +185,7 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
       const existingUserWithPhone = await db.users.findFirst(whereClause);
 
       if (existingUserWithPhone) {
-        const scopeMessage = currentUser?.role === 'ADMIN' 
+        const scopeMessage = currentUser?.role === USER_ROLE.ADMIN 
           ? 'globally' 
           : 'in your organization';
         return NextResponse.json(

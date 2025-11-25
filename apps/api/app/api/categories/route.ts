@@ -20,15 +20,15 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
     // Determine merchantId based on role
     let filterMerchantId: number | undefined;
     
-    if (user.role === 'ADMIN') {
+    if (user.role === USER_ROLE.ADMIN) {
       // Admin can see any merchant's categories or all categories
       filterMerchantId = undefined;
-    } else if (user.role === 'MERCHANT' || user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+    } else if (user.role === USER_ROLE.MERCHANT || user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
       // Non-admin users restricted to their merchant
       filterMerchantId = userScope.merchantId;
       
       // For outlet users, get merchant from outlet
-      if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId && !filterMerchantId) {
+      if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId && !filterMerchantId) {
         const outlet = await db.outlets.findById(userScope.outletId);
         if (outlet) {
           filterMerchantId = outlet.merchantId;
@@ -82,7 +82,7 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
     });
 
     // Override merchantId from query if admin
-    if (user.role === 'ADMIN' && queryMerchantId) {
+    if (user.role === USER_ROLE.ADMIN && queryMerchantId) {
       filterMerchantId = queryMerchantId;
     }
 
@@ -131,7 +131,7 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
  * POST /api/categories
  * Create a new category
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
+export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
   console.log('🚀 POST /api/categories - Starting category creation...');
   
   try {
