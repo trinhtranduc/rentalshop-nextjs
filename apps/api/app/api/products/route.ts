@@ -395,16 +395,20 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 
     console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
 
-    // Check plan limits before creating product
-    try {
-      await assertPlanLimit(merchantId, 'products');
-      console.log('✅ Plan limit check passed for products');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for products:', error.message);
-      return NextResponse.json(
-        ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for products'),
-        { status: 403 }
-      );
+    // Check plan limits before creating product (ADMIN bypass)
+    if (user.role !== USER_ROLE.ADMIN) {
+      try {
+        await assertPlanLimit(merchantId, 'products');
+        console.log('✅ Plan limit check passed for products');
+      } catch (error: any) {
+        console.log('❌ Plan limit exceeded for products:', error.message);
+        return NextResponse.json(
+          ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for products'),
+          { status: 403 }
+        );
+      }
+    } else {
+      console.log('✅ ADMIN user: Bypassing plan limit check for products');
     }
 
     // Find merchant by publicId to get CUID

@@ -6,6 +6,7 @@ import { AdminSidebar } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
+import SubscriptionExpiryBanner from './SubscriptionExpiryBanner';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -105,6 +106,9 @@ export default function AdminLayout({
             <div className="w-8" /> {/* Spacer for centering */}
           </div>
         )}
+
+        {/* Subscription Expiry Banner - Top of page */}
+        {showSidebar && <SubscriptionExpiryBanner />}
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-bg-primary">

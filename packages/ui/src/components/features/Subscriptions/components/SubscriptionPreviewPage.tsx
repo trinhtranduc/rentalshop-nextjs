@@ -185,9 +185,9 @@ export const SubscriptionPreviewPage: React.FC<SubscriptionPreviewPageProps> = (
   // Get discount for selected duration
   const getDiscountForDuration = (duration: number) => {
     if (duration === 1) return 0;   // Monthly: 0% discount
-    if (duration === 3) return 10;  // Quarterly: 10% discount
-    if (duration === 6) return 15;  // 6 months: 15% discount
-    if (duration === 12) return 20; // Yearly: 20% discount
+    if (duration === 3) return 0;  // Quarterly: 0% discount
+    if (duration === 6) return 5;   // 6 months: 5% discount
+    if (duration === 12) return 10; // Yearly: 10% discount
     return 0;
   };
 

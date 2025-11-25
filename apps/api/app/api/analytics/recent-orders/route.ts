@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import {API, ORDER_STATUS} from '@rentalshop/constants';
 
 export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
   try {
@@ -30,7 +30,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     // Build where clause with date filtering
     const whereClause: any = {
-      status: { not: 'CANCELLED' },
+      status: { not: ORDER_STATUS.CANCELLED },
       createdAt: {
         gte: dateStart,
         lte: dateEnd

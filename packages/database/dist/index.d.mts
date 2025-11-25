@@ -6493,7 +6493,7 @@ declare const checkDatabaseConnection: () => Promise<{
     error: string;
 }>;
 /**
- * Generate next order number (simplified) - Random 8 digits
+ * Generate next order number (simplified) - Random 6 digits
  */
 declare const generateOrderNumber: (outletId: number) => Promise<string>;
 

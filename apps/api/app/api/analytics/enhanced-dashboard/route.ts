@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/enhanced-dashboard - Get comprehensive dashboard analytics
  * Requires: Any authenticated user (scoped by role)
  * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
   try {
     const { searchParams } = new URL(request.url);
     const startDateParam = searchParams.get('startDate');
@@ -67,7 +67,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         customerWhereClause.merchantId = merchant.id;
         outletStockWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {
@@ -76,7 +76,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         customerWhereClause.merchantId = outlet.merchantId;
         outletStockWhereClause.outletId = outlet.id;
       }
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === USER_ROLE.ADMIN) {
       // ADMIN users see all data (system-wide access)
       // No additional filtering needed for ADMIN role
       console.log('✅ ADMIN user accessing all system data:', {
@@ -144,7 +144,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const activeRentals = await db.orders.search({
       where: {
         ...orderWhereClause,
-        status: 'PICKUPED'
+        status: ORDER_STATUS.PICKUPED
       },
       limit: 1000
     });
@@ -153,7 +153,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     const todayPickups = await db.orders.search({
       where: {
         ...orderWhereClause,
-        status: 'PICKUPED',
+        status: ORDER_STATUS.PICKUPED,
         pickedUpAt: {
           gte: new Date(today.getFullYear(), today.getMonth(), today.getDate())
         }

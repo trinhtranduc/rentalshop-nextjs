@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/outlets
  * Get outlets with filtering and pagination
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -47,12 +47,12 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     // Use simplified database API with userScope and role-based filtering
     const searchFilters = {
       // Role-based merchant filtering
-      merchantId: user.role === 'ADMIN' 
+      merchantId: user.role === USER_ROLE.ADMIN 
         ? (queryMerchantId || undefined)  // Admin can see any merchant's outlets
         : userScope.merchantId,           // Others restricted to their merchant
       
       // Outlet-level users can only see their own outlet
-      outletId: (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') 
+      outletId: (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) 
         ? userScope.outletId 
         : undefined,
         
@@ -98,7 +98,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
  * Create a new outlet using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -117,7 +117,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
     let merchantId = userScope.merchantId;
     
     // If user is ADMIN and no merchantId in scope, allow them to specify merchantId in request
-    if (!merchantId && user.role === 'ADMIN' && body.merchantId) {
+    if (!merchantId && user.role === USER_ROLE.ADMIN && body.merchantId) {
       merchantId = body.merchantId;
     }
     
@@ -156,20 +156,24 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
       );
     }
 
-    // Check plan limits before creating outlet
-    try {
-      await assertPlanLimit(merchantId, 'outlets');
-      console.log('✅ Plan limit check passed for outlets');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for outlets:', error.message);
-      return NextResponse.json(
-        { 
-          success: false, 
-          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for outlets',
-          error: 'PLAN_LIMIT_EXCEEDED'
-        },
-        { status: 403 }
-      );
+    // Check plan limits before creating outlet (ADMIN bypass)
+    if (user.role !== USER_ROLE.ADMIN) {
+      try {
+        await assertPlanLimit(merchantId, 'outlets');
+        console.log('✅ Plan limit check passed for outlets');
+      } catch (error: any) {
+        console.log('❌ Plan limit exceeded for outlets:', error.message);
+        return NextResponse.json(
+          { 
+            success: false, 
+            code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for outlets',
+            error: 'PLAN_LIMIT_EXCEEDED'
+          },
+          { status: 403 }
+        );
+      }
+    } else {
+      console.log('✅ ADMIN user: Bypassing plan limit check for outlets');
     }
 
     // Create outlet with proper relations
@@ -219,7 +223,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user,
  * Update an outlet using simplified database API  
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -253,7 +257,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
     }
 
     // Check if user can access this outlet
-    if (user.role !== 'ADMIN' && existingOutlet.merchantId !== userScope.merchantId) {
+    if (user.role !== USER_ROLE.ADMIN && existingOutlet.merchantId !== userScope.merchantId) {
       return NextResponse.json(
         ResponseBuilder.error('FORBIDDEN'),
         { status: 403 }
@@ -330,7 +334,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, 
  * Delete an outlet (soft delete)
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+export const DELETE = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
   console.log(`🔍 DELETE /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -355,7 +359,7 @@ export const DELETE = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { use
     }
 
     // Check if user can access this outlet
-    if (user.role !== 'ADMIN' && existingOutlet.merchant.id !== userScope.merchantId) {
+    if (user.role !== USER_ROLE.ADMIN && existingOutlet.merchant.id !== userScope.merchantId) {
       return NextResponse.json(
         ResponseBuilder.error('FORBIDDEN'),
         { status: 403 }

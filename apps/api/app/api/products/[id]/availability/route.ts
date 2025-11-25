@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
+import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { z } from 'zod';
 
@@ -82,10 +82,10 @@ export async function GET(
       let finalOutletId: number;
       const { outletId } = query;
       
-      if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = outletId ? parseInt(outletId) : (userOutletId || 0);
-      } else if (user.role === 'MERCHANT' || user.role === 'ADMIN') {
+      } else if (user.role === USER_ROLE.MERCHANT || user.role === USER_ROLE.ADMIN) {
         // Merchants/Admins: outletId is required in query
         if (!outletId) {
           return NextResponse.json(
@@ -120,7 +120,7 @@ export async function GET(
       }
 
       // Verify product belongs to user's merchant scope
-      if (user.role !== 'ADMIN' && product.merchantId !== userMerchantId) {
+      if (user.role !== USER_ROLE.ADMIN && product.merchantId !== userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
           { status: 403 }

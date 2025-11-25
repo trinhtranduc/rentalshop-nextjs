@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/orders - Get order analytics
  * Requires: Any authenticated user (scoped by role)
  * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
   try {
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -20,7 +20,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     // Parse outletIds if provided (for MERCHANT comparison mode)
     let selectedOutletIds: number[] | null = null;
-    if (outletIdsParam && user.role === 'MERCHANT' && userScope.merchantId) {
+    if (outletIdsParam && user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
       try {
         selectedOutletIds = outletIdsParam.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
         if (selectedOutletIds.length === 0) {
@@ -34,7 +34,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
 
     // Helper function to get outlet IDs based on selected outlets or user scope
     const getOutletsToProcess = async () => {
-      if (selectedOutletIds && user.role === 'MERCHANT' && userScope.merchantId) {
+      if (selectedOutletIds && user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
         // Get outlet info for selected outlets
         const outlets = await Promise.all(
           selectedOutletIds.map(async (outletId) => {
@@ -83,18 +83,18 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
       // Apply outlet filtering
       if (outlet) {
         orderWhereClause.outletId = outlet.id;
-      } else if (user.role === 'MERCHANT' && userScope.merchantId && !selectedOutletIds) {
+      } else if (user.role === USER_ROLE.MERCHANT && userScope.merchantId && !selectedOutletIds) {
         // Aggregate all merchant outlets (default behavior when no outletIds specified)
         const merchant = await db.merchants.findById(userScope.merchantId);
         if (merchant && merchant.outlets) {
           orderWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
         }
-      } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+      } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
         const outletObj = await db.outlets.findById(userScope.outletId);
         if (outletObj) {
           orderWhereClause.outletId = outletObj.id;
       }
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === USER_ROLE.ADMIN) {
       // ADMIN users see all data (system-wide access)
       // No additional filtering needed for ADMIN role
     } else {

@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import {API, USER_ROLE, PAYMENT_STATUS} from '@rentalshop/constants';
 
 // Manual payment creation schema
 const createManualPaymentSchema = z.object({
@@ -30,7 +30,7 @@ const createManualPaymentSchema = z.object({
 // ============================================================================
 // POST /api/payments/manual - Create manual payment
 // ============================================================================
-export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user }) => {
+export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }) => {
   try {
 
     // Parse and validate request body
@@ -62,7 +62,7 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user
       amount: validatedData.amount,
       method: validatedData.method,
       type: 'SUBSCRIPTION_PAYMENT',
-      status: 'COMPLETED', // Manual payments are immediately completed
+      status: PAYMENT_STATUS.COMPLETED, // Manual payments are immediately completed
       reference: validatedData.invoiceNumber || `MANUAL-${Date.now()}`,
       notes: validatedData.description || `Manual payment for ${plan.name}`,
       // merchantId: merchant.id, // TODO: Add merchantId field to PaymentCreateInput type

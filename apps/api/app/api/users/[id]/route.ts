@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth, withMerchantAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/users/[id]
@@ -167,7 +167,7 @@ export async function DELETE(
       }
 
       // Check if this is the last admin user for the merchant
-      if (existingUser.role === 'ADMIN' || (existingUser.role === 'MERCHANT' && existingUser.merchantId)) {
+      if (existingUser.role === USER_ROLE.ADMIN || (existingUser.role === USER_ROLE.MERCHANT && existingUser.merchantId)) {
         const merchantId = existingUser.merchantId;
         const adminCount = await db.users.getStats({
           merchantId: merchantId || null,

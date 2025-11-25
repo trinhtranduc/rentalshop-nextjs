@@ -2,7 +2,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth, hashPassword } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import {API} from '@rentalshop/constants';
+import {API, USER_ROLE} from '@rentalshop/constants';
 
 /**
  * PATCH /api/users/[id]/change-password
@@ -85,11 +85,11 @@ export async function PATCH(
       targetUserOutletRelation: targetUser.outlet?.id
     });
     
-    if (currentUser.role === 'ADMIN') {
+    if (currentUser.role === USER_ROLE.ADMIN) {
       // ADMIN can change any user's password
       canChangePassword = true;
       console.log('✅ ADMIN access granted for password change');
-    } else if (currentUser.role === 'MERCHANT') {
+    } else if (currentUser.role === USER_ROLE.MERCHANT) {
       // MERCHANT can change passwords for users in their merchant
       if (targetMerchantId && userScope.merchantId && targetMerchantId === userScope.merchantId) {
         canChangePassword = true;
@@ -100,7 +100,7 @@ export async function PATCH(
           userScopeMerchantId: userScope.merchantId
         });
       }
-    } else if (currentUser.role === 'OUTLET_ADMIN' || currentUser.role === 'OUTLET_STAFF') {
+    } else if (currentUser.role === USER_ROLE.OUTLET_ADMIN || currentUser.role === USER_ROLE.OUTLET_STAFF) {
       // OUTLET_* can change passwords for users in their outlet
       // Compare both outletId (direct field) and outlet.id (relation) with userScope.outletId
       if (targetOutletId && userScope.outletId && targetOutletId === userScope.outletId) {

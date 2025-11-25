@@ -3,7 +3,7 @@ import { db } from '@rentalshop/database';
 import { comparePassword, generateToken } from '@rentalshop/auth';
 import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     // NOTE: Only MERCHANT users need email verification
     // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
     const emailVerificationEnabled = process.env.ENABLE_EMAIL_VERIFICATION === 'true';
-    const isMerchantUser = user.role === 'MERCHANT';
+    const isMerchantUser = user.role === USER_ROLE.MERCHANT;
     if (emailVerificationEnabled && isMerchantUser && !user.emailVerified) {
       return NextResponse.json(
         ResponseBuilder.error('EMAIL_NOT_VERIFIED'),

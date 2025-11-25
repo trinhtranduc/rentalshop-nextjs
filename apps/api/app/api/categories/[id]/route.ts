@@ -26,15 +26,15 @@ export async function GET(
     // Apply role-based filtering (consistent with other APIs)
     const where: any = { id: categoryId };
     
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
+    if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
       where.merchantId = userScope.merchantId;
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
       // Find outlet by id to get merchant
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {
         where.merchantId = outlet.merchantId;
       }
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === USER_ROLE.ADMIN) {
       // ADMIN users see all data (system-wide access)
       // No additional filtering needed for ADMIN role
       console.log('✅ ADMIN user accessing all system data:', {
@@ -97,7 +97,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
     try {
 
     // Check if user can manage categories
@@ -214,7 +214,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
     try {
 
     // Check if user can manage categories

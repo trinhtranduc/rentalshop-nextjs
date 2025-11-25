@@ -3,7 +3,7 @@ import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 import crypto from 'crypto';
 
 /**
@@ -11,7 +11,7 @@ import crypto from 'crypto';
  * Get customers with filtering and pagination using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/customers - User: ${user.email} (${user.role})`);
   
   try {
@@ -58,9 +58,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     
     // For ADMIN users, they can specify merchantId in query to view other merchants' customers
     // For other roles, use their assigned merchantId
-    if (user.role === 'ADMIN' && merchantId) {
+    if (user.role === USER_ROLE.ADMIN && merchantId) {
       filterMerchantId = merchantId;
-    } else if (user.role !== 'ADMIN' && merchantId && merchantId !== userScope.merchantId) {
+    } else if (user.role !== USER_ROLE.ADMIN && merchantId && merchantId !== userScope.merchantId) {
       // Non-ADMIN users cannot view other merchants' customers
       return NextResponse.json(
         { 
@@ -140,7 +140,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
  * Create a new customer using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/customers - User: ${user.email} (${user.role})`);
   
   try {
@@ -160,14 +160,14 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     
     // For ADMIN users, they need to specify merchantId in the request
     // For other roles, use their assigned merchantId
-    if (user.role === 'ADMIN' && parsed.data.merchantId) {
+    if (user.role === USER_ROLE.ADMIN && parsed.data.merchantId) {
       merchantId = parsed.data.merchantId;
     } else if (!merchantId) {
       return NextResponse.json(
         { 
           success: false, 
           code: 'MERCHANT_ID_REQUIRED',
-          message: user.role === 'ADMIN' 
+          message: user.role === USER_ROLE.ADMIN 
             ? 'MerchantId is required for ADMIN users when creating customers' 
             : 'User is not associated with any merchant'
         },
@@ -216,20 +216,24 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
       }
     }
 
-    // Check plan limits before creating customer
-    try {
-      await assertPlanLimit(merchantId, 'customers');
-      console.log('✅ Plan limit check passed for customers');
-    } catch (error: any) {
-      console.log('❌ Plan limit exceeded for customers:', error.message);
-      return NextResponse.json(
-        { 
-          success: false, 
-          code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for customers',
-          error: 'PLAN_LIMIT_EXCEEDED'
-        },
-        { status: 403 }
-      );
+    // Check plan limits before creating customer (ADMIN bypass)
+    if (user.role !== USER_ROLE.ADMIN) {
+      try {
+        await assertPlanLimit(merchantId, 'customers');
+        console.log('✅ Plan limit check passed for customers');
+      } catch (error: any) {
+        console.log('❌ Plan limit exceeded for customers:', error.message);
+        return NextResponse.json(
+          { 
+            success: false, 
+            code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for customers',
+            error: 'PLAN_LIMIT_EXCEEDED'
+          },
+          { status: 403 }
+        );
+      }
+    } else {
+      console.log('✅ ADMIN user: Bypassing plan limit check for customers');
     }
 
     // Find merchant by publicId to get CUID
@@ -281,7 +285,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
  * Update a customer using simplified database API  
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/customers - User: ${user.email} (${user.role})`);
   
   try {
@@ -317,7 +321,7 @@ export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     }
 
     // Check if user can access this customer (ADMIN can access all customers)
-    if (user.role !== 'ADMIN' && existingCustomer.merchantId !== userScope.merchantId) {
+    if (user.role !== USER_ROLE.ADMIN && existingCustomer.merchantId !== userScope.merchantId) {
       return NextResponse.json(
         ResponseBuilder.error('FORBIDDEN'),
         { status: 403 }

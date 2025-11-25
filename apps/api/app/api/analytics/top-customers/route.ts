@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
   try {
     // User is already authenticated and authorized to view analytics
 
@@ -40,19 +40,19 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     };
 
     // Apply role-based filtering
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
+    if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
       // Find merchant by id to get CUID, then filter by outlet
       const merchant = await db.merchants.findById(userScope.merchantId);
       if (merchant && merchant.outlets) {
         orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId );
       if (outlet) {
         orderWhereClause.outletId = outlet.id;
       }
-    } else if (user.role !== 'ADMIN') {
+    } else if (user.role !== USER_ROLE.ADMIN) {
       // New users without merchant/outlet assignment should see no data
       console.log('🚫 User without merchant/outlet assignment:', {
         role: user.role,
@@ -118,7 +118,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
         rentalCount: rentalCount, // Only rental orders
         saleCount: saleCount, // Only sale orders
         // Hide financial data from OUTLET_STAFF
-        totalSpent: user.role !== 'OUTLET_STAFF' ? (item._sum?.totalAmount || 0) : null,
+        totalSpent: user.role !== USER_ROLE.OUTLET_STAFF ? (item._sum?.totalAmount || 0) : null,
       });
     }
 
