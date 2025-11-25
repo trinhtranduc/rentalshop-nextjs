@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
+import { PerformanceMonitor } from '@rentalshop/utils';
 
 /**
  * GET /api/orders/statistics
