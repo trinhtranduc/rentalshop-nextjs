@@ -8,7 +8,7 @@
 import { getRequestConfig } from 'next-intl/server';
 
 // Supported locales
-export const locales = ['en', 'vi'] as const;
+export const locales = ['en', 'vi', 'zh', 'ko', 'ja'] as const;
 export const defaultLocale = 'vi' as const; // ✅ Vietnamese as default (Vietnam market)
 export type Locale = typeof locales[number];
 
@@ -50,6 +50,17 @@ import viCalendar from '../../locales/vi/calendar.json';
 import viPlans from '../../locales/vi/plans.json';
 import viSubscription from '../../locales/vi/subscription.json';
 
+// Import new locale files (Chinese, Korean, Japanese)
+import zhCommon from '../../locales/zh/common.json';
+import zhLanding from '../../locales/zh/landing.json';
+import zhPlans from '../../locales/zh/plans.json';
+import koCommon from '../../locales/ko/common.json';
+import koLanding from '../../locales/ko/landing.json';
+import koPlans from '../../locales/ko/plans.json';
+import jaCommon from '../../locales/ja/common.json';
+import jaLanding from '../../locales/ja/landing.json';
+import jaPlans from '../../locales/ja/plans.json';
+
 // Combine all messages by locale
 const messages = {
   en: {
@@ -86,6 +97,66 @@ const messages = {
     plans: viPlans,
     subscription: viSubscription,
   },
+  // Chinese (Simplified) - Landing page only
+  zh: {
+    common: zhCommon,
+    landing: zhLanding,
+    plans: zhPlans,
+    // Fallback to English for other sections
+    auth: enAuth,
+    dashboard: enDashboard,
+    orders: enOrders,
+    products: enProducts,
+    customers: enCustomers,
+    settings: enSettings,
+    validation: enValidation,
+    errors: enErrors,
+    users: enUsers,
+    outlets: enOutlets,
+    categories: enCategories,
+    calendar: enCalendar,
+    subscription: enSubscription,
+  },
+  // Korean - Landing page only
+  ko: {
+    common: koCommon,
+    landing: koLanding,
+    plans: koPlans,
+    // Fallback to English for other sections
+    auth: enAuth,
+    dashboard: enDashboard,
+    orders: enOrders,
+    products: enProducts,
+    customers: enCustomers,
+    settings: enSettings,
+    validation: enValidation,
+    errors: enErrors,
+    users: enUsers,
+    outlets: enOutlets,
+    categories: enCategories,
+    calendar: enCalendar,
+    subscription: enSubscription,
+  },
+  // Japanese - Landing page only
+  ja: {
+    common: jaCommon,
+    landing: jaLanding,
+    plans: jaPlans,
+    // Fallback to English for other sections
+    auth: enAuth,
+    dashboard: enDashboard,
+    orders: enOrders,
+    products: enProducts,
+    customers: enCustomers,
+    settings: enSettings,
+    validation: enValidation,
+    errors: enErrors,
+    users: enUsers,
+    outlets: enOutlets,
+    categories: enCategories,
+    calendar: enCalendar,
+    subscription: enSubscription,
+  },
 };
 
 // Export configuration for next-intl
@@ -93,7 +164,7 @@ const messages = {
 export default getRequestConfig(async () => {
   // Detect locale from cookie (server-side)
   // This runs on the server for each request
-  let locale = defaultLocale;
+  let locale: Locale = defaultLocale;
 
   // Check if running in browser or server
   if (typeof window === 'undefined') {

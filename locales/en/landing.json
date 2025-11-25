@@ -40,6 +40,27 @@
     "multiPlatform": "Multi-Platform Support",
     "multiPlatformDesc": "Multi-platform rental management system. Access rental shop management data from iOS, Android, and web platforms seamlessly with rental shop management software."
   },
+  "customSolution": {
+    "title": "Need a Custom Rental Solution?",
+    "description": "Have special requirements for your rental business? We provide custom rental management solutions tailored to your specific needs. From ao dai rental, wedding dress rental, equipment rental, vehicle rental to other specialized industries - we can create the perfect solution for you.",
+    "benefits": {
+      "title": "Custom Solution Benefits",
+      "customized": "Fully customized solution tailored to your business needs",
+      "dedicated": "Dedicated support and consultation from expert team",
+      "scalable": "System that scales with your business growth",
+      "integration": "Easy integration with your existing systems"
+    },
+    "contact": {
+      "title": "Contact Us",
+      "description": "Get in touch to discuss a custom solution for your rental business",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "emailSubject": "Custom Rental Solution Inquiry",
+      "emailBody": "Hello,\n\nI'm interested in a custom rental management solution for my business.\n\nPlease contact me to discuss details.\n\nBest regards,",
+      "whatsappMessage": "Hello, I'm interested in a custom rental management solution. Please contact me.",
+      "responseTime": "We'll respond within 24 hours"
+    }
+  },
   "whyChoose": {
     "title": "Why Choose AnyRent Rental Shop Management Software?",
     "description": "Join hundreds of rental businesses that trust our rental management system. Leading rental shop management software solution.",
@@ -93,11 +114,21 @@
   "pricing": {
     "title": "Simple Pricing",
     "description": "Choose the plan that fits your business needs",
+    "discounts": {
+      "three": "0%",
+      "six": "-5%",
+      "twelve": "-10%"
+    },
     "months": {
       "three": "3 months",
       "six": "6 months",
       "twelve": "12 months"
     },
+    "loading": "Loading plans...",
+    "error": "Failed to load plans",
+    "retry": "Retry",
+    "noPlans": "No plans available at the moment.",
+    "buttonText": "Get Started",
     "plans": {
       "freeTrial": {
         "name": "Free Trial",

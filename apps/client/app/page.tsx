@@ -32,7 +32,9 @@ import {
   Sparkles,
   ShoppingBag,
   Zap,
-  Loader2
+  Loader2,
+  MessageCircle,
+  Briefcase
 } from 'lucide-react'
 
 const LandingPage = () => {
@@ -72,7 +74,7 @@ const LandingPage = () => {
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Customer Service',
-      availableLanguage: ['Vietnamese', 'English'],
+      availableLanguage: ['Vietnamese', 'English', 'Chinese', 'Korean', 'Japanese'],
     },
   }
 
@@ -376,6 +378,94 @@ const LandingPage = () => {
             </div>
           </div>
         </section>
+
+      {/* Custom Solution Contact Section */}
+      <section id="custom-solution" className="py-20 bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary text-text-inverted relative overflow-hidden" aria-label="Custom solution contact section">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
+              <Briefcase className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-4xl font-bold mb-4">
+              {t('customSolution.title')}
+            </h2>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto">
+              {t('customSolution.description')}
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Benefits Card */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+              <h3 className="text-2xl font-semibold mb-6">{t('customSolution.benefits.title')}</h3>
+              <ul className="space-y-4">
+                {[
+                  'customSolution.benefits.customized',
+                  'customSolution.benefits.dedicated',
+                  'customSolution.benefits.scalable',
+                  'customSolution.benefits.integration'
+                ].map((key, index) => (
+                  <li key={index} className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-white/90">{t(key)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Contact Card */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+              <h3 className="text-2xl font-semibold mb-6">{t('customSolution.contact.title')}</h3>
+              <p className="text-white/80 mb-6">
+                {t('customSolution.contact.description')}
+              </p>
+              
+              <div className="space-y-4">
+                {/* Email */}
+                <a
+                  href={`mailto:trinhduc20@gmail.com?subject=${encodeURIComponent(t('customSolution.contact.emailSubject'))}&body=${encodeURIComponent(t('customSolution.contact.emailBody'))}`}
+                  className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
+                >
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                    <Mail className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm text-white/70 mb-1">{t('customSolution.contact.email')}</div>
+                    <div className="text-white font-semibold">trinhduc20@gmail.com</div>
+                  </div>
+                  <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
+                </a>
+
+                {/* WhatsApp */}
+                <a
+                  href={`https://wa.me/84764774647?text=${encodeURIComponent(t('customSolution.contact.whatsappMessage'))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 border border-white/20 hover:border-white/40 group"
+                >
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                    <MessageCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm text-white/70 mb-1">{t('customSolution.contact.whatsapp')}</div>
+                    <div className="text-white font-semibold">+84 76 4774647</div>
+                  </div>
+                  <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
+                </a>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-white/20">
+                <p className="text-sm text-white/70 text-center">
+                  {t('customSolution.contact.responseTime')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Why Choose Us Section */}
       <section className="py-20 bg-bg-card">
@@ -926,7 +1016,7 @@ const Pricing = () => {
         description: translatedDescription,
         features: allFeatures,
         popular: plan.isPopular || false,
-        buttonText: "Get Started",
+        buttonText: tPricing('buttonText'),
         buttonClass: plan.isPopular
           ? "bg-gradient-to-r from-brand-primary to-brand-secondary hover:from-brand-secondary hover:to-brand-primary"
           : "bg-gradient-to-r from-action-success to-action-primary hover:from-action-primary hover:to-action-success",
@@ -961,7 +1051,7 @@ const Pricing = () => {
             >
               <div className="text-center">
                 <div>{tPricing('months.three')}</div>
-                <div className="text-lg text-text-secondary font-bold">0%</div>
+                <div className="text-lg text-text-secondary font-bold">{tPricing('discounts.three')}</div>
               </div>
             </Button>
             <Button
@@ -972,7 +1062,7 @@ const Pricing = () => {
             >
               <div className="text-center">
                 <div>{tPricing('months.six')}</div>
-                <div className="text-lg text-action-success font-bold">-5%</div>
+                <div className="text-lg text-action-success font-bold">{tPricing('discounts.six')}</div>
               </div>
             </Button>
             <Button
@@ -983,7 +1073,7 @@ const Pricing = () => {
             >
               <div className="text-center">
                 <div>{tPricing('months.twelve')}</div>
-                <div className="text-lg text-action-danger font-bold">-10%</div>
+                <div className="text-lg text-action-danger font-bold">{tPricing('discounts.twelve')}</div>
               </div>
             </Button>
           </div>
@@ -993,19 +1083,19 @@ const Pricing = () => {
         {loading && (
           <div className="flex justify-center items-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
-            <span className="ml-3 text-text-secondary">Loading plans...</span>
+            <span className="ml-3 text-text-secondary">{tPricing('loading')}</span>
           </div>
         )}
 
         {/* Error State */}
         {error && !loading && (
           <div className="text-center py-20">
-            <p className="text-action-danger mb-4">{error}</p>
+            <p className="text-action-danger mb-4">{error || tPricing('error')}</p>
             <Button 
               onClick={() => window.location.reload()} 
               variant="outline"
             >
-              Retry
+              {tPricing('retry')}
             </Button>
           </div>
         )}
@@ -1058,7 +1148,7 @@ const Pricing = () => {
                   href="/login" 
                   className={`w-full py-4 px-6 rounded-xl font-semibold text-text-inverted transition-all duration-200 ${plan.buttonClass} inline-block text-center`}
                 >
-                  {tPricing('plans.basic.buttonText')}
+                  {plan.buttonText || tPricing('buttonText')}
                 </Link>
               </div>
             </div>
@@ -1069,7 +1159,7 @@ const Pricing = () => {
         {/* Empty State */}
         {!loading && !error && pricingData.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-text-secondary">No plans available at the moment.</p>
+            <p className="text-text-secondary">{tPricing('noPlans')}</p>
           </div>
         )}
         

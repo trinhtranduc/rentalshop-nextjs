@@ -3,11 +3,11 @@
 /**
  * Language Switcher Component
  * 
- * Provides a simple UI to switch between English and Vietnamese.
+ * Provides a simple UI to switch between multiple languages.
  * 
  * HOW IT WORKS:
- * 1. User clicks EN or VI button
- * 2. Component sets cookie: NEXT_LOCALE=en or NEXT_LOCALE=vi
+ * 1. User clicks language button
+ * 2. Component sets cookie: NEXT_LOCALE={locale}
  * 3. Component sets localStorage for client-side persistence
  * 4. Page refreshes to apply new locale
  * 5. Server reads cookie and renders with correct locale
@@ -18,13 +18,28 @@
  * - Both: Ensures consistency
  */
 
-import React, { useTransition } from 'react';
+import React, { useTransition, useMemo, useEffect } from 'react';
 import { useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { Button } from '@rentalshop/ui';
+import { useRouter, usePathname } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Globe } from 'lucide-react';
 
-type SupportedLocale = 'en' | 'vi';
+type SupportedLocale = 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+
+// All languages (for landing page)
+const allLanguages: Array<{ code: SupportedLocale; label: string; flag: string }> = [
+  { code: 'vi', label: 'VI', flag: '🇻🇳' },
+  { code: 'en', label: 'EN', flag: '🇺🇸' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
+];
+
+// Basic languages (for other pages)
+const basicLanguages: Array<{ code: SupportedLocale; label: string; flag: string }> = [
+  { code: 'vi', label: 'VI', flag: '🇻🇳' },
+  { code: 'en', label: 'EN', flag: '🇺🇸' },
+];
 
 interface LanguageSwitcherProps {
   variant?: 'default' | 'compact';
@@ -35,10 +50,50 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
 }) => {
   const currentLocale = useLocale() as SupportedLocale;
   const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+
+  // Check if we're on the landing page
+  const isLandingPage = useMemo(() => {
+    return pathname === '/' || pathname === '/vi' || pathname === '/en' || pathname === '/zh' || pathname === '/ko' || pathname === '/ja';
+  }, [pathname]);
+
+  // Get available languages based on page
+  const availableLanguages = useMemo(() => {
+    if (isLandingPage) {
+      return allLanguages;
+    }
+    // For non-landing pages, only show vi and en
+    return basicLanguages;
+  }, [isLandingPage]);
+
+  // Auto-fallback to vi/en if on non-landing page with zh/ko/ja locale
+  useEffect(() => {
+    if (!isLandingPage && ['zh', 'ko', 'ja'].includes(currentLocale)) {
+      // Auto-switch to Vietnamese (default) when on non-landing page
+      const fallbackLocale: SupportedLocale = 'vi';
+      document.cookie = `NEXT_LOCALE=${fallbackLocale};path=/;max-age=31536000;SameSite=Lax`;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user_language_preference', fallbackLocale);
+      }
+      router.refresh();
+    }
+  }, [isLandingPage, currentLocale, router]);
 
   const handleLanguageChange = (newLocale: SupportedLocale) => {
     if (newLocale === currentLocale) return; // Already selected
+
+    // If switching to zh/ko/ja on non-landing page, redirect to landing page
+    if (!isLandingPage && ['zh', 'ko', 'ja'].includes(newLocale)) {
+      startTransition(() => {
+        document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user_language_preference', newLocale);
+        }
+        router.push('/');
+      });
+      return;
+    }
 
     startTransition(() => {
       // Set cookie for server-side access
@@ -54,53 +109,40 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     });
   };
 
-  if (variant === 'compact') {
-    return (
-      <div className="flex items-center gap-1">
-        <Button
-          variant={currentLocale === 'en' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => handleLanguageChange('en')}
-          disabled={isPending}
-          className="text-xs px-2 py-1 min-w-[40px]"
-        >
-          EN
-        </Button>
-        <Button
-          variant={currentLocale === 'vi' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => handleLanguageChange('vi')}
-          disabled={isPending}
-          className="text-xs px-2 py-1 min-w-[40px]"
-        >
-          VI
-        </Button>
-      </div>
-    );
-  }
+  // Get current language display
+  const currentLanguage = availableLanguages.find(lang => lang.code === currentLocale) || availableLanguages[0];
 
   return (
     <div className="flex items-center gap-2">
-      <Globe className="w-4 h-4 text-text-tertiary" />
-      <Button
-        variant={currentLocale === 'en' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => handleLanguageChange('en')}
+      {variant !== 'compact' && <Globe className="w-4 h-4 text-text-tertiary" />}
+      <Select
+        value={currentLocale}
+        onValueChange={(value) => handleLanguageChange(value as SupportedLocale)}
         disabled={isPending}
-        className="min-w-[50px]"
       >
-        EN
-      </Button>
-      <Button
-        variant={currentLocale === 'vi' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => handleLanguageChange('vi')}
-        disabled={isPending}
-        className="min-w-[50px]"
-      >
-        VI
-      </Button>
-      {isPending && (
+        <SelectTrigger 
+          className={variant === 'compact' ? 'h-8 w-auto min-w-[80px] text-xs' : 'h-9 w-auto min-w-[120px]'}
+          variant="default"
+        >
+          <SelectValue>
+            <span className="flex items-center gap-1.5">
+              <span>{currentLanguage.flag}</span>
+              <span>{currentLanguage.label}</span>
+            </span>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {availableLanguages.map((lang) => (
+            <SelectItem key={lang.code} value={lang.code}>
+              <div className="flex items-center gap-2">
+                <span className="text-base">{lang.flag}</span>
+                <span>{lang.label}</span>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {isPending && variant !== 'compact' && (
         <div className="h-4 w-4 border-2 border-action-primary border-t-transparent rounded-full animate-spin" />
       )}
     </div>
