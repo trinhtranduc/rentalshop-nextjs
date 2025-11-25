@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { API, ORDER_STATUS } from '@rentalshop/constants';
 
 interface IntegrityCheck {
   name: string;
@@ -372,7 +372,7 @@ async function checkDataConsistency(checks: IntegrityCheck[]) {
     const zeroAmountOrders = await prisma.$queryRaw`
       SELECT o.id, o."orderNumber", o."totalAmount"
       FROM "Order" o
-      WHERE o."totalAmount" = 0 AND o."orderType" != 'CANCELLED'
+      WHERE o."totalAmount" = 0 AND o."orderType" != '${ORDER_STATUS.CANCELLED}'
     ` as Array<{ id: string; orderNumber: string; totalAmount: number }>;
 
     if (zeroAmountOrders.length > 0) {

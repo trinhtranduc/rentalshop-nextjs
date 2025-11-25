@@ -11,7 +11,7 @@ import {API} from '@rentalshop/constants';
 // ============================================================================
 // GET /api/subscriptions - Search subscriptions
 // ============================================================================
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
   try {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -27,7 +27,7 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
     };
 
     // Apply merchant scoping for non-admin users
-    if (user.role !== 'ADMIN') {
+    if (user.role !== USER_ROLE.ADMIN) {
       filters.merchantId = userScope.merchantId;
     }
 
@@ -55,13 +55,13 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequ
 // ============================================================================
 // POST /api/subscriptions - Create subscription
 // ============================================================================
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
+export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
   try {
     const body = await request.json();
     const validatedData = subscriptionCreateSchema.parse(body);
 
     // Role-based restrictions
-    if (user.role === 'MERCHANT' && userScope.merchantId) {
+    if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
       // Merchants can only create subscriptions for themselves
       validatedData.merchantId = userScope.merchantId;
     }

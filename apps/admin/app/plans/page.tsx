@@ -460,7 +460,7 @@ export default function PlansPage() {
                 </div>
               </div>
             ) : (
-              <div className="mt-6 space-y-6">
+            <div className="mt-6 space-y-6">
               {/* Plan Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -553,18 +553,18 @@ export default function PlansPage() {
                 );
               })()}
 
-              <div className="mt-6 flex justify-end gap-2">
-                <Button variant="outline" onClick={handleCloseViewDialog}>
-                  Close
-                </Button>
-                <Button onClick={() => {
-                  if (selectedPlan) {
-                    handleEditPlan(selectedPlan);
-                  }
-                }}>
-                  Edit Plan
-                </Button>
-              </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="outline" onClick={handleCloseViewDialog}>
+                Close
+              </Button>
+              <Button onClick={() => {
+                if (selectedPlan) {
+                  handleEditPlan(selectedPlan);
+                }
+              }}>
+                Edit Plan
+              </Button>
+            </div>
               </div>
             )}
           </DialogContent>

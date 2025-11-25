@@ -160,8 +160,8 @@ const LandingPage = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleData) }}
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-bg-card to-bg-tertiary">
-        
+    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-bg-card to-bg-tertiary">
+      
         {/* Header */}
         <header className="bg-bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50" role="banner">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -815,11 +815,78 @@ const Pricing = () => {
         }
       }
 
+      // Filter out unwanted features
+      const excludedFeatures = [
+        'inventoryForecasting',
+        'onlinePayments',
+        'customIntegrations',
+        'teamCollaborationTools'
+      ];
+      
+      const filteredFeatures = featuresArray.filter(feature => {
+        const normalizedFeature = feature.toLowerCase()
+          .replace(/\s+/g, '')
+          .replace(/[^a-z0-9]/g, '')
+          .replace(/plans\.features\./g, '')
+          .replace(/features\./g, '');
+        
+        return !excludedFeatures.some(excluded => 
+          normalizedFeature.includes(excluded.toLowerCase())
+        );
+      });
+
       // Transform features array to display format with translation
-      const features = featuresArray.map((feature) => ({
+      const features = filteredFeatures.map((feature) => ({
         text: translatePlanFeature(feature, tPlans),
         included: true
       }));
+
+      // Add limits as features
+      const limits = plan.limits || {};
+      const limitsFeatures = [];
+      
+      if (limits.outlets !== undefined) {
+        const outletsText = limits.outlets === -1 
+          ? tPlans('limits.unlimitedOutlets') || 'Unlimited Outlets'
+          : tPlans('limits.outlets', { count: limits.outlets }) || `${limits.outlets} Outlets`;
+        limitsFeatures.push({
+          text: outletsText,
+          included: true
+        });
+      }
+      
+      if (limits.users !== undefined) {
+        const usersText = limits.users === -1
+          ? tPlans('limits.unlimitedUsers') || 'Unlimited Users'
+          : tPlans('limits.users', { count: limits.users }) || `${limits.users} Users`;
+        limitsFeatures.push({
+          text: usersText,
+          included: true
+        });
+      }
+      
+      if (limits.products !== undefined) {
+        const productsText = limits.products === -1
+          ? tPlans('limits.unlimitedProducts') || 'Unlimited Products'
+          : tPlans('limits.products', { count: limits.products }) || `${limits.products.toLocaleString()} Products`;
+        limitsFeatures.push({
+          text: productsText,
+          included: true
+        });
+      }
+      
+      if (limits.customers !== undefined) {
+        const customersText = limits.customers === -1
+          ? tPlans('limits.unlimitedCustomers') || 'Unlimited Customers'
+          : tPlans('limits.customers', { count: limits.customers }) || `${limits.customers.toLocaleString()} Customers`;
+        limitsFeatures.push({
+          text: customersText,
+          included: true
+        });
+      }
+
+      // Combine features and limits
+      const allFeatures = [...features, ...limitsFeatures];
 
       // Check if it's a contact plan and format price accordingly
       let description = plan.description || '';
@@ -857,7 +924,7 @@ const Pricing = () => {
         price: displayPrice,
         period: isContactPlan ? '' : periodLabel, // Don't show period for contact plans
         description: translatedDescription,
-        features: features,
+        features: allFeatures,
         popular: plan.isPopular || false,
         buttonText: "Get Started",
         buttonClass: plan.isPopular

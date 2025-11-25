@@ -193,7 +193,7 @@ export async function middleware(request: NextRequest) {
 
     // Check admin-only routes
     const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
-    if (isAdminRoute && payload.role !== 'ADMIN') {
+    if (isAdminRoute && payload.role !== USER_ROLE.ADMIN) {
       // Exception: /api/plans/public should remain accessible to all authenticated users
       if (!pathname.startsWith('/api/plans/public')) {
         console.log('🔍 MIDDLEWARE: Admin access required for:', pathname);
@@ -207,7 +207,7 @@ export async function middleware(request: NextRequest) {
     // Basic plan only allows mobile app access
     // All other plans allow both web and mobile access
     
-    if (payload.role !== 'ADMIN' && platformInfo.platform === 'web') {
+    if (payload.role !== USER_ROLE.ADMIN && platformInfo.platform === 'web') {
       const planName = payload.planName || 'Trial'; // Default to Trial if not set
       
       // Only block Basic plan from web access; Trial and all other plans allow web access

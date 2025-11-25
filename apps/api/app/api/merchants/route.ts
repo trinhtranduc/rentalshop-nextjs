@@ -3,12 +3,10 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 // Force TypeScript refresh - address field added
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import {API, SUBSCRIPTION_STATUS, normalizeSubscriptionStatus} from '@rentalshop/constants';
-import { getDefaultPricingConfig } from '@rentalshop/constants';
+import {API, SUBSCRIPTION_STATUS, USER_ROLE, normalizeSubscriptionStatus, getDefaultPricingConfig, type SubscriptionStatus} from '@rentalshop/constants';
 import type { BusinessType } from '@rentalshop/types';
-import type { SubscriptionStatus } from '@rentalshop/constants';
 
-export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }) => {
   try {
 
     // Parse query parameters
@@ -234,7 +232,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user 
   }
 });
 
-export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest, { user }) => {
+export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }) => {
   try {
 
     const body = await request.json();

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * POST /api/subscriptions/[id]/resume
@@ -51,7 +51,7 @@ export async function POST(
             role: user.role,
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
           },
-          source: user.role === 'ADMIN' ? 'admin_panel' : 'merchant_panel',
+          source: user.role === USER_ROLE.ADMIN ? 'admin_panel' : 'merchant_panel',
           severity: 'success',
           category: 'billing'
         },

@@ -379,11 +379,18 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         sortOrder: formData.sortOrder,
       };
 
-      // If priceType is 'contact', append to description
+      // If priceType is 'contact', append to description (avoid duplicates)
       if (formData.priceType === 'contact') {
+        const contactText = t('fields.contactPrice');
+        const hasContact = formData.description && (
+          formData.description.includes(`(${contactText})`) || 
+          formData.description.includes('(Contact)') || 
+          formData.description.includes('(Liên hệ)')
+        );
+        
         submitData.description = formData.description 
-          ? `${formData.description} (${t('fields.contactPrice')})`
-          : t('fields.contactPrice');
+          ? (hasContact ? formData.description : `${formData.description} (${contactText})`)
+          : contactText;
       }
       
       await onSubmit(submitData);
@@ -957,18 +964,18 @@ export const PlanForm: React.FC<PlanFormProps> = ({
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm text-text-secondary">
                 {t('fields.selectFeatures') || 'Select features included in this plan'}
-              </div>
+            </div>
               <div className="text-sm text-text-primary font-medium">
                 {formData.features.length} {formData.features.length === 1 ? 'feature' : 'features'} selected
-              </div>
+                      </div>
             </div>
 
             {/* Quick Select Buttons */}
             <div className="flex gap-2 mb-4">
-              <Button
-                type="button"
+                      <Button
+                        type="button"
                 variant="outline"
-                size="sm"
+                        size="sm"
                 onClick={() => handleInputChange('features', [...BASIC_PLAN_FEATURES])}
                 className="text-xs"
               >
@@ -1000,8 +1007,8 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                 className="text-xs"
               >
                 Clear All
-              </Button>
-            </div>
+                      </Button>
+                    </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {AVAILABLE_PLAN_FEATURES.map((featureKey: string) => {
@@ -1024,7 +1031,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                       {isSelected && (
                         <CheckCircle className="w-4 h-4 text-text-inverted" />
                       )}
-                    </div>
+                </div>
                     <span className="text-sm text-text-primary flex-1">
                       {translateFeature(featureKey)}
                     </span>

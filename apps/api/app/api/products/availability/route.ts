@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withReadOnlyAuth } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { z } from 'zod';
 
@@ -58,10 +58,10 @@ export const GET = withReadOnlyAuth(
       // Role-based outlet filtering
       let finalOutletId = queryOutletId;
       
-      if (user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') {
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = queryOutletId || userScope.outletId;
-      } else if (user.role === 'MERCHANT') {
+      } else if (user.role === USER_ROLE.MERCHANT) {
         // Merchants: outletId is required
         if (!queryOutletId) {
           return NextResponse.json(
@@ -70,7 +70,7 @@ export const GET = withReadOnlyAuth(
           );
         }
         finalOutletId = queryOutletId;
-      } else if (user.role === 'ADMIN') {
+      } else if (user.role === USER_ROLE.ADMIN) {
         // Admins: outletId is required
         if (!queryOutletId) {
           return NextResponse.json(

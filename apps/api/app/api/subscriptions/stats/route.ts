@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/subscriptions/stats
  * Get subscription statistics
  */
 export async function GET(request: NextRequest) {
-  return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN])(async (request, { user, userScope }) => {
     try {
       // TODO: Implement subscription statistics functionality
       return NextResponse.json(

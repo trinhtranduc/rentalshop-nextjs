@@ -9,7 +9,7 @@ import {API} from '@rentalshop/constants';
  * Update current user's outlet information
  * Only accessible by users with outlet access (OUTLET_ADMIN, OUTLET_STAFF) or admin
  */
-export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 DEBUG: Settings outlet PUT API called');
     
@@ -22,7 +22,7 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
 
     // Check if user has outlet access
     // Admin users can access any outlet, others need specific outlet access
-    if (!user.outletId && user.role !== 'ADMIN') {
+    if (!user.outletId && user.role !== USER_ROLE.ADMIN) {
       console.error('❌ DEBUG: User does not have outlet access:', {
         outletId: user.outletId,
         role: user.role
@@ -51,7 +51,7 @@ export const PUT = withAuthRoles(['ADMIN', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(asyn
     let outletId = user.outletId;
     
     // If admin user doesn't have outletId, we need to handle this differently
-    if (!outletId && user.role === 'ADMIN') {
+    if (!outletId && user.role === USER_ROLE.ADMIN) {
       console.log('🔍 DEBUG: Admin user without outletId, need to specify outlet');
       return NextResponse.json(
         ResponseBuilder.error('ADMIN_OUTLET_ID_REQUIRED'),

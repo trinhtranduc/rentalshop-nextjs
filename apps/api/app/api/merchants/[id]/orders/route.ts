@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/orders
@@ -12,7 +12,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
     try {
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
@@ -59,7 +59,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
     try {
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
@@ -88,7 +88,7 @@ export async function POST(
         orderItems,
         totalAmount,
         depositAmount,
-        status: 'RESERVED',
+        status: ORDER_STATUS.RESERVED,
         merchantId: merchant.id
       });
 

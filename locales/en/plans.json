@@ -29,6 +29,11 @@
     "professional": "Professional",
     "enterprise": "Enterprise"
   },
+  "descriptions": {
+    "basic": "Perfect for small rental businesses",
+    "professional": "Ideal for growing rental businesses with web access",
+    "enterprise": "For large rental operations with multiple outlets"
+  },
   "billingCycle": {
     "monthly": "Monthly",
     "quarterly": "Quarterly",
@@ -89,16 +94,11 @@
     "allBasicFeatures": "All basic features",
     "webDashboardAccess": "Web dashboard access",
     "advancedReportingAnalytics": "Advanced reporting & analytics",
-    "inventoryForecasting": "Inventory forecasting",
-    "onlinePayments": "Online payments",
-    "teamCollaborationTools": "Team collaboration tools",
     "allProfessionalFeatures": "All professional features",
     "multipleOutlets": "Multiple outlets",
     "advancedTeamManagement": "Advanced team management",
-    "customIntegrations": "Custom integrations",
     "dedicatedAccountManager": "Dedicated account manager",
     "customReporting": "Custom reporting",
-    "whiteLabelSolution": "White label solution",
     "247PhoneSupport": "24/7 phone support",
     "additionalUserPricing": "30,000 VND per additional user"
   },
@@ -136,6 +136,16 @@
     "currentPlan": "Current Plan",
     "contactSales": "Contact Sales",
     "getStarted": "Get Started"
+  },
+  "limits": {
+    "outlets": "{count} Outlets",
+    "users": "{count} Users",
+    "products": "{count} Products",
+    "customers": "{count} Customers",
+    "unlimitedOutlets": "Unlimited Outlets",
+    "unlimitedUsers": "Unlimited Users",
+    "unlimitedProducts": "Unlimited Products",
+    "unlimitedCustomers": "Unlimited Customers"
   }
 }
 

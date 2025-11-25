@@ -14,7 +14,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { orderNumber: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
     try {
       let { orderNumber } = params;
       console.log('🔍 GET /api/orders/by-number/[orderNumber] - Looking for order with number:', orderNumber);
@@ -24,8 +24,7 @@ export async function GET(
       // Check if user is ADMIN (handle both enum and string comparison)
       // USER_ROLE.ADMIN is 'ADMIN' string, so check both
       const isAdmin = user.role === USER_ROLE.ADMIN || 
-                     user.role === 'ADMIN' || 
-                     (typeof user.role === 'string' && user.role.toUpperCase() === 'ADMIN');
+                     (typeof user.role === 'string' && user.role.toUpperCase() === USER_ROLE.ADMIN);
       
       console.log('🔍 User role check:', {
         userRole: user.role,

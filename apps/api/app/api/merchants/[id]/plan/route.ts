@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/plan
@@ -12,7 +12,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
@@ -60,7 +60,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
@@ -153,7 +153,7 @@ export async function PUT(
               role: user.role,
               name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
             },
-            source: user.role === 'ADMIN' ? 'admin_panel' : 'merchant_panel',
+            source: user.role === USER_ROLE.ADMIN ? 'admin_panel' : 'merchant_panel',
             severity: 'info',
             category: 'plan'
           },

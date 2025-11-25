@@ -29,6 +29,11 @@
     "professional": "Chuyên nghiệp",
     "enterprise": "Doanh nghiệp"
   },
+  "descriptions": {
+    "basic": "Hoàn hảo cho các cửa hàng cho thuê nhỏ",
+    "professional": "Lý tưởng cho các cửa hàng cho thuê đang phát triển với quyền truy cập web",
+    "enterprise": "Dành cho các hoạt động cho thuê quy mô lớn với nhiều cửa hàng"
+  },
   "billingCycle": {
     "monthly": "Hàng tháng",
     "quarterly": "Hàng quý",
@@ -89,16 +94,11 @@
     "allBasicFeatures": "Tất cả tính năng cơ bản",
     "webDashboardAccess": "Truy cập bảng điều khiển web",
     "advancedReportingAnalytics": "Báo cáo và phân tích nâng cao",
-    "inventoryForecasting": "Dự báo tồn kho",
-    "onlinePayments": "Thanh toán trực tuyến",
-    "teamCollaborationTools": "Công cụ cộng tác nhóm",
     "allProfessionalFeatures": "Tất cả tính năng chuyên nghiệp",
     "multipleOutlets": "Nhiều cửa hàng",
     "advancedTeamManagement": "Quản lý nhóm nâng cao",
-    "customIntegrations": "Tích hợp tùy chỉnh",
     "dedicatedAccountManager": "Quản lý tài khoản chuyên dụng",
     "customReporting": "Báo cáo tùy chỉnh",
-    "whiteLabelSolution": "Giải pháp nhãn trắng",
     "247PhoneSupport": "Hỗ trợ điện thoại 24/7",
     "additionalUserPricing": "30,000 VND cho mỗi người dùng bổ sung"
   },
@@ -136,6 +136,16 @@
     "currentPlan": "Gói hiện tại",
     "contactSales": "Liên hệ bán hàng",
     "getStarted": "Bắt đầu"
+  },
+  "limits": {
+    "outlets": "{count} Cửa hàng",
+    "users": "{count} Người dùng",
+    "products": "{count} Sản phẩm",
+    "customers": "{count} Khách hàng",
+    "unlimitedOutlets": "Không giới hạn cửa hàng",
+    "unlimitedUsers": "Không giới hạn người dùng",
+    "unlimitedProducts": "Không giới hạn sản phẩm",
+    "unlimitedCustomers": "Không giới hạn khách hàng"
   }
 }
 
