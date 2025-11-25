@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { Info } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate } from '@rentalshop/utils';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 import type { OrderWithDetails } from '@rentalshop/types';
 
 interface OrderInformationProps {

@@ -7,7 +7,7 @@
 export interface BreadcrumbItem {
   label: string;
   href?: string;
-  icon?: React.ReactNode;
+  icon?: string | any; // Use any to avoid React import in server-side code
 }
 
 /**

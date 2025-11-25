@@ -5,7 +5,7 @@ import { Card } from '../../../ui/card';
 import { Button } from '../../../ui/button';
 import { cn } from '../../../../lib/cn';
 import { Eye, Edit, Package } from 'lucide-react';
-import { getProductImageUrl } from '@rentalshop/utils';
+import { getProductImageUrl } from '@rentalshop/utils/client';
 import { useTranslations } from 'next-intl';
 import { getRentalPriceLabel, formatRentalPrice } from '../utils';
 import { formatCurrency } from '../../../../lib';

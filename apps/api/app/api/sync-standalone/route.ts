@@ -7,10 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
-import { OldServerSyncService } from '@rentalshop/utils/src/sync/oldServerSync';
+import { OldServerSyncService, downloadProductImagesForSync, imagesToBase64, transformCustomer, transformProduct, transformOrder } from '@rentalshop/utils';
 import { db } from '@rentalshop/database';
-import { downloadProductImagesForSync, imagesToBase64 } from '@rentalshop/utils/src/sync/imageSync';
-import { transformCustomer, transformProduct, transformOrder } from '@rentalshop/utils/src/sync/transformers';
 import { generateOrderNumber } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
