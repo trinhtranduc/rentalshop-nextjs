@@ -19,7 +19,7 @@ import {
   SelectValue,
   ConfirmationDialog
 } from '@rentalshop/ui';
-import { useFormattedFullDate } from '@rentalshop/utils';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { 
   Info, 
   Package, 

@@ -32,7 +32,8 @@ import {
   Minus
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi, useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils';
+import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
+import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
 import { useLocale as useNextIntlLocale } from 'next-intl';
 import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';

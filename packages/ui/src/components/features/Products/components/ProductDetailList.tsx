@@ -11,7 +11,7 @@ import {
   Badge 
 } from '../../../ui';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { getProductImageUrl } from '@rentalshop/utils';
+import { getProductImageUrl } from '@rentalshop/utils/client';
 import { 
   Package, 
   DollarSign, 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { useCommonTranslations } from '@rentalshop/hooks';
-import { useFormattedDaily, useFormattedMonthOnly } from '@rentalshop/utils';
+import { useFormattedDaily, useFormattedMonthOnly } from '@rentalshop/utils/client';
 import { 
   LineChart, 
   Line, 

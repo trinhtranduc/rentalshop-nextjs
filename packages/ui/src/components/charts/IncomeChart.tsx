@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFormattedDaily, useFormattedMonthOnly } from '@rentalshop/utils';
+import { useFormattedDaily, useFormattedMonthOnly } from '@rentalshop/utils/client';
 import { useFormatCurrency } from '../../hooks/useFormatCurrency';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { 
