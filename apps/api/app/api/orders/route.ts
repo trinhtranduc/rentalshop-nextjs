@@ -6,7 +6,7 @@ import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimi
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
-import { PerformanceMonitor } from '@rentalshop/utils/src/performance';
+import { PerformanceMonitor } from '@rentalshop/utils';
 
 /**
  * GET /api/orders
