@@ -63,6 +63,17 @@ const nextConfig = {
   ...(process.env.NODE_ENV === 'development' && {
     staticPageGenerationTimeout: 0,
   }),
+  
+  // Webpack optimizations for proper module resolution
+  webpack: (config, { dev, isServer }) => {
+    // Ensure proper resolution of subpath exports
+    config.resolve.extensionAlias = {
+      '.js': ['.js', '.ts', '.tsx'],
+      '.jsx': ['.jsx', '.tsx'],
+    };
+    
+    return config;
+  },
 };
 
 // Export config wrapped with next-intl plugin
