@@ -15,7 +15,7 @@ export default defineConfig([
       'lucide-react',
       'next-intl'
     ],
-    clean: true,
+    clean: true, // Only clean on first entry
     sourcemap: true,
     minify: false,
     treeshake: true,
@@ -34,6 +34,7 @@ export default defineConfig([
       'lucide-react',
       'next-intl'
     ],
+    clean: false, // Don't clean - preserve files from first entry
     sourcemap: true,
     minify: false,
     treeshake: true,
