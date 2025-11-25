@@ -151,49 +151,12 @@ export const authenticatedFetch = async (
   }
 
   // Get token from localStorage (client-side only) - CONSOLIDATED APPROACH
+  // getAuthToken() already handles expiration checking, no need to double-check here
   const token = getAuthToken();
-  console.log('🔍 FRONTEND: Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
-  
-  // TEMPORARY DEBUG: Check if token is expired or invalid
-  if (token && typeof window !== 'undefined') {
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        const now = Math.floor(Date.now() / 1000);
-        console.log('🔍 FRONTEND: Token debug:', {
-          userId: payload.userId,
-          email: payload.email,
-          role: payload.role,
-          exp: payload.exp,
-          now: now,
-          expired: payload.exp < now,
-          timeUntilExpiry: payload.exp - now
-        });
-        
-        // If token is expired, clear it
-        if (payload.exp < now) {
-          console.log('🔍 FRONTEND: Token is expired, clearing auth data');
-          clearAuthData();
-          throw new Error('Token expired - please log in again');
-        }
-      }
-    } catch (error) {
-      console.log('🔍 FRONTEND: Token validation failed:', error);
-      clearAuthData();
-      throw new Error('Invalid token - please log in again');
-    }
-  }
   
   // Check if user is authenticated before making the request
   if (!token && typeof window !== 'undefined') {
-    console.log('🔍 FRONTEND: No token found, cleaning up and redirecting to login');
-    // Clean up any stale auth data
-    clearAuthData();
-    // Redirect to login page
-    setTimeout(() => {
-      // window.location.href = '/login';
-    }, 100);
+    console.log('🔍 FRONTEND: No token found, authentication required');
     throw new Error('Authentication required');
   }
   
