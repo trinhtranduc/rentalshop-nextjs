@@ -96,6 +96,12 @@ const nextConfig = {
   
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
+    // Ensure proper resolution of subpath exports
+    config.resolve.extensionAlias = {
+      '.js': ['.js', '.ts', '.tsx'],
+      '.jsx': ['.jsx', '.tsx'],
+    };
+    
     // Add aliases for workspace packages to ensure proper resolution
     config.resolve.alias = {
       ...config.resolve.alias
