@@ -16,11 +16,14 @@ import type { BusinessType, PricingType, MerchantPricingConfig } from '@rentalsh
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantId = parseInt(resolvedParams.id);
+  
   return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (req, { user, userScope }) => {
     try {
-      const merchantId = parseInt(params.id);
       console.log(`🔍 GET /api/merchants/${merchantId}/pricing - User: ${user.email} (${user.role})`);
       
       // Validate merchant access - all outlet users have merchantId in scope
@@ -88,11 +91,14 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantId = parseInt(resolvedParams.id);
+  
   return withAuthRoles(['ADMIN', 'MERCHANT'])(async (req, { user, userScope }) => {
     try {
-      const merchantId = parseInt(params.id);
       const body = await request.json();
       
       // Validate merchant access

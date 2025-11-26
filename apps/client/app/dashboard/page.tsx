@@ -31,11 +31,11 @@ import {
   ArrowDownRight,
   Minus
 } from 'lucide-react';
-import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
 import { useLocale as useNextIntlLocale } from 'next-intl';
-import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
+import { ORDER_STATUS_COLORS, getOrderStatusClassName } from '@rentalshop/constants';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
 
 // ============================================================================
@@ -113,10 +113,9 @@ const getStatusDotColor = (statusKey: string): string => {
   return 'bg-gray-600';
 };
 
-// Get status badge color class
+// Get status badge color class - use the same function as order pages
 const getStatusBadgeColor = (status: string): string => {
-  const normalizedStatus = status.toUpperCase();
-  return ORDER_STATUS_COLORS[normalizedStatus as keyof typeof ORDER_STATUS_COLORS] || ORDER_STATUS_COLORS.RESERVED;
+  return getOrderStatusClassName(status);
 };
 
 // Format date as YYYY-MM-DD using local date components (avoids timezone conversion issues)
@@ -211,13 +210,15 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
   };
   
   return (
-    <CardClean variant="default" size="md" className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-      <CardHeaderClean>
+    <CardClean variant="default" size="md" className="group bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
+      <CardHeaderClean className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitleClean size="md">{title}</CardTitleClean>
+          <CardTitleClean size="sm" className="text-gray-600 font-medium text-sm">
+            {title}
+          </CardTitleClean>
           <div className="relative">
             <Info 
-              className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" 
+              className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" 
               onClick={handleTooltipClick}
             />
             {isTooltipActive && (
@@ -229,30 +230,34 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
           </div>
         </div>
       </CardHeaderClean>
-      <CardContentClean>
-        <p className={`text-3xl font-bold ${color} mb-2`}>
+      <CardContentClean className="pt-0">
+        <p className={`text-3xl font-bold ${color} mb-3`}>
           {typeof value === 'number' 
             ? shouldShowDollar 
               ? formatMoney(value)
               : value.toLocaleString()
             : value}
         </p>
-        <div className="flex items-center gap-2 mb-1">
-          <div className={`flex items-center gap-1 text-sm font-medium ${
-            trend === 'up' ? 'text-green-600' : 
-            trend === 'down' ? 'text-red-600' : 'text-gray-600'
-          }`}>
-            {trend === 'up' ? (
-              <ArrowUpRight className="w-4 h-4" />
-            ) : trend === 'down' ? (
-              <ArrowDownRight className="w-4 h-4" />
-            ) : (
-              <Minus className="w-4 h-4" />
-            )}
-            {change}
+        {change && (
+          <div className="flex items-center gap-1.5">
+            <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md ${
+              trend === 'up' ? 'bg-green-50 text-green-700' : 
+              trend === 'down' ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'
+            }`}>
+              {trend === 'up' ? (
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              ) : trend === 'down' ? (
+                <ArrowDownRight className="w-3.5 h-3.5" />
+              ) : (
+                <Minus className="w-3.5 h-3.5" />
+              )}
+              {change}
+            </div>
           </div>
-        </div>
-        <p className="text-text-tertiary text-xs">{description}</p>
+        )}
+        {description && (
+          <p className="text-gray-500 text-xs mt-2">{description}</p>
+        )}
       </CardContentClean>
     </CardClean>
   );
@@ -267,6 +272,7 @@ export default function DashboardPage() {
   const formatMoney = useFormatCurrency();
   const t = useDashboardTranslations();
   const tc = useCommonTranslations();
+  const to = useOrderTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = useNextIntlLocale() as 'en' | 'vi';
@@ -1035,55 +1041,42 @@ export default function DashboardPage() {
       <PageWrapper>
       
       <PageContent>
-        {/* Welcome Header */}
+        {/* Welcome Header - Modern Style */}
         <div className="mb-8">
-          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold mb-1.5 text-gray-900">
-                  {t('welcome')}, {user?.name || tc('roles.owner')}! 👋
-                </h1>
-                <p className="text-base text-gray-700 font-medium">
-                  {timePeriod === 'today' 
-                    ? t('overview')
-                    : timePeriod === 'month'
-                    ? `${t('overview')} - ${new Date().toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { month: 'long', year: 'numeric' })}`
-                    : `${t('overview')} - ${new Date().getFullYear()}`
-                  }
-                </p>
-                <div className="mt-2">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    timePeriod === 'today' 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : timePeriod === 'month'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-purple-100 text-purple-800'
-                  }`}>
-                    {timePeriod === 'today' ? `📊 ${tc('periods.dailyOperations')}` : timePeriod === 'month' ? `📈 ${tc('periods.monthlyAnalytics')}` : `🎯 ${tc('periods.annualStrategy')}`}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Time Period Filter */}
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  {[
-                    { id: 'today', label: tc('time.today'), description: 'Operations' },
-                    { id: 'month', label: tc('time.thisMonth'), description: 'Statistics' },
-                    { id: 'year', label: tc('time.year'), description: tc('periods.annualStrategy') }
-                  ].map(period => (
-                    <Button
-                      key={period.id}
-                      onClick={() => updateTimePeriod(period.id as 'today' | 'month' | 'year')}
-                      variant={timePeriod === period.id ? 'default' : 'outline'}
-                      size="sm"
-                      title={period.description}
-                    >
-                      {period.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {t('welcome')}, {user?.name || tc('roles.owner')} 👋
+              </h1>
+              <p className="text-base text-gray-600">
+                {timePeriod === 'today' 
+                  ? t('overview')
+                  : timePeriod === 'month'
+                  ? `${t('overview')} - ${new Date().toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { month: 'long', year: 'numeric' })}`
+                  : `${t('overview')} - ${new Date().getFullYear()}`
+                }
+              </p>
+            </div>
+            
+            {/* Time Period Filter - Modern Pills */}
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
+              {[
+                { id: 'today', label: tc('time.today') },
+                { id: 'month', label: tc('time.thisMonth') },
+                { id: 'year', label: tc('time.year') }
+              ].map(period => (
+                <button
+                  key={period.id}
+                  onClick={() => updateTimePeriod(period.id as 'today' | 'month' | 'year')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    timePeriod === period.id
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {period.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -1091,9 +1084,9 @@ export default function DashboardPage() {
         {/* Today View - Operational Focus */}
         {timePeriod === 'today' && (
           <>
-            {/* Today's Key Metrics */}
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 ${
-              user?.role === 'OUTLET_STAFF' ? 'lg:grid-cols-3' : 'lg:grid-cols-4'
+            {/* Today's Key Metrics - Simplified Grid */}
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 ${
+              user?.role === 'OUTLET_STAFF' ? 'md:grid-cols-3' : ''
             }`}>
               {/* Revenue Card - Hidden for OUTLET_STAFF */}
               {user?.role !== 'OUTLET_STAFF' && (
@@ -1148,84 +1141,115 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* Today's Operations - 2 Columns */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* Recent Activity - Simple Design */}
-              <CardClean size="md">
-                <CardHeaderClean>
-                  <CardTitleClean size="md">{t('recentActivity.title')}</CardTitleClean>
+            {/* Today's Operations - 2 Columns - Modern Design */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Recent Activity - Modern Card Design */}
+              <CardClean size="md" className="bg-white shadow-sm">
+                <CardHeaderClean className="pb-4 border-b border-gray-100">
+                  <CardTitleClean size="md" className="text-gray-900 font-semibold">
+                    {t('recentActivity.title')}
+                  </CardTitleClean>
                 </CardHeaderClean>
-                <CardContentClean>
+                <CardContentClean className="pt-4">
                   {loadingCharts ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg animate-pulse">
+                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl animate-pulse">
                           <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                            <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
                             <div>
-                              <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                              <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
                               <div className="h-3 bg-gray-200 rounded w-32"></div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="h-4 bg-gray-200 rounded w-16 mb-1"></div>
-                            <div className="h-3 bg-gray-200 rounded w-12"></div>
-                          </div>
+                          <div className="h-4 bg-gray-200 rounded w-16"></div>
                         </div>
                       ))}
                     </div>
                   ) : (todayOrders || []).length > 0 ? (
                     <div className="space-y-2">
                       {(todayOrders || []).slice(0, 6).map(order => {
-                        const statusColor = getStatusBadgeColor(order.status);
-                        // Extract text color for icon and amount
-                        const textColor = statusColor.includes('blue-700') ? 'text-blue-700' :
-                                         statusColor.includes('green-700') ? 'text-green-700' :
-                                         statusColor.includes('green-600') ? 'text-green-600' :
-                                         statusColor.includes('gray-700') ? 'text-gray-700' :
-                                         statusColor.includes('gray-500') ? 'text-gray-500' :
-                                         'text-gray-700';
+                        const statusClassName = getStatusBadgeColor(order.status);
+                        const hasRentalDates = order.pickupPlanAt && order.returnPlanAt;
+                        
+                        // Translate order type
+                        const orderTypeKey = order.orderType ? `orderType.${order.orderType}` : null;
+                        const translatedOrderType = orderTypeKey ? to(orderTypeKey) : null;
+                        
+                        // Translate order status - map API status to translation key
+                        const statusMap: Record<string, string> = {
+                          'RESERVED': 'status.RESERVED',
+                          'PICKUPED': 'status.PICKUPED',
+                          'RETURNED': 'status.RETURNED',
+                          'COMPLETED': 'status.COMPLETED',
+                          'CANCELLED': 'status.CANCELLED'
+                        };
+                        const statusKey = statusMap[order.status] || `status.${order.status}`;
+                        const translatedStatus = to(statusKey);
                         
                         return (
-                          <div key={order.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 transition-colors hover:border-gray-300">
-                            <div className="flex items-center space-x-3 flex-1 min-w-0">
-                              <Package className={`w-4 h-4 ${textColor} shrink-0`} />
-                              <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-sm text-gray-900 truncate">{order.orderNumber}</div>
-                              <div className="text-xs text-gray-600 font-normal mt-0.5">
-                                {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'} • 
-                                {order.returnPlanAt ? useFormattedFullDate(order.returnPlanAt) : 'N/A'}
-                              </div>
-                                <div className="text-xs text-gray-500 font-normal truncate">{order.productNames || 'N/A'}</div>
-                                <div className="mt-1.5">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
-                                    {order.status}
+                          <div 
+                            key={order.id} 
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                            onClick={() => router.push(`/orders/${order.id}`)}
+                          >
+                            <Package className="w-5 h-5 text-blue-700 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-medium text-gray-800">#{order.orderNumber}</h4>
+                                {translatedOrderType && (
+                                  <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+                                    {translatedOrderType}
                                   </span>
+                                )}
+                              </div>
+                              {hasRentalDates ? (
+                                <>
+                                  <p className="text-sm text-gray-600">
+                                    {useFormattedFullDate(order.pickupPlanAt)} - {useFormattedFullDate(order.returnPlanAt)}
+                                  </p>
+                                  {order.customerName && (
+                                    <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-sm text-gray-600 truncate">{order.productNames || tc('labels.noData')}</p>
+                                  {order.customerName && (
+                                    <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
+                                  )}
+                                </>
+                              )}
                             </div>
-                          </div>
-                          </div>
-                            <div className="text-right ml-3 shrink-0">
-                              <div className={`font-bold text-sm ${textColor}`}>{formatMoney(order.totalAmount || 0)}</div>
-                        </div>
+                            <div className="text-right shrink-0">
+                              <p className="font-medium text-gray-900 text-base">{formatMoney(order.totalAmount || 0)}</p>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusClassName} mt-1`}>
+                                {translatedStatus}
+                              </span>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>{tc('labels.noData')}</p>
+                    <div className="text-center py-12 text-gray-500">
+                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                        <Package className="w-8 h-8 text-gray-300" />
+                      </div>
+                      <p className="text-sm">{tc('labels.noData')}</p>
                     </div>
                   )}
                 </CardContentClean>
               </CardClean>
 
-              {/* Order Status - Simple & Clean Design */}
-              <CardClean size="md">
-                <CardHeaderClean>
-                  <CardTitleClean size="md">{tc('labels.status')}</CardTitleClean>
+              {/* Order Status - Modern Design */}
+              <CardClean size="md" className="bg-white shadow-sm">
+                <CardHeaderClean className="pb-4 border-b border-gray-100">
+                  <CardTitleClean size="md" className="text-gray-900 font-semibold">
+                    {tc('labels.status')}
+                  </CardTitleClean>
                 </CardHeaderClean>
-                <CardContentClean>
+                <CardContentClean className="pt-4">
                   <div className="space-y-3">
                     {[
                       { statusKey: 'reserved', count: orderStatusCounts.reserved || 0 },
@@ -1237,16 +1261,21 @@ export default function DashboardPage() {
                       const dotColor = getStatusDotColor(item.statusKey);
                       
                       return (
-                        <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-all">
-                        <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${dotColor} shrink-0`}></div>
-                          <span className="text-sm font-semibold text-gray-900 capitalize">{t(`orderStatuses.${item.statusKey}`)}</span>
+                        <div 
+                          key={index} 
+                          className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-4 h-4 rounded-full ${dotColor} shrink-0 ring-2 ring-offset-2 ring-offset-gray-50 ${dotColor.replace('bg-', 'ring-')}`}></div>
+                            <span className="text-sm font-semibold text-gray-900 capitalize">
+                              {t(`orderStatuses.${item.statusKey}`)}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-bold text-gray-900">{item.count}</span>
+                            <span className="text-xs text-gray-500 font-medium">{t('orderStatuses.ordersCount')}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-bold text-gray-900">{item.count}</span>
-                          <span className="text-xs text-gray-400 font-normal">{t('orderStatuses.ordersCount')}</span>
-                        </div>
-                      </div>
                       );
                     })}
                   </div>
@@ -1259,9 +1288,9 @@ export default function DashboardPage() {
         {/* Month/Year View - Strategic Focus */}
         {(timePeriod === 'month' || timePeriod === 'year') && (
           <>
-            {/* Business Performance Metrics */}
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 ${
-              user?.role === 'OUTLET_STAFF' ? 'lg:grid-cols-3' : 'lg:grid-cols-4'
+            {/* Business Performance Metrics - Simplified */}
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 ${
+              user?.role === 'OUTLET_STAFF' ? 'md:grid-cols-3' : ''
             }`}>
               {/* Revenue Card - Hidden for OUTLET_STAFF */}
               {user?.role !== 'OUTLET_STAFF' && (
@@ -1383,9 +1412,9 @@ export default function DashboardPage() {
               </CardClean>
             )}
 
-            {/* Revenue Charts - Hidden for OUTLET_STAFF */}
+            {/* Revenue Charts - Hidden for OUTLET_STAFF - Simplified */}
             {user?.role !== 'OUTLET_STAFF' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                 <CardClean size="md">
                   <CardHeaderClean>
                     <CardTitleClean size="md">
@@ -1439,8 +1468,8 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Analytics Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Analytics Section - Simplified */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
               <CardClean size="md">
                 <CardHeaderClean>
                   <CardTitleClean size="md">{t('charts.topProducts')}</CardTitleClean>
@@ -1472,7 +1501,7 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-600">{product.category}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-green-600 text-lg">{formatMoney(product.totalRevenue || 0)}</p>
+                            <p className="font-medium text-green-600 text-base">{formatMoney(product.totalRevenue || 0)}</p>
                             <p className="text-sm text-gray-500">{product.rentalCount || 0} total orders</p>
                           </div>
                         </div>
@@ -1539,60 +1568,44 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Admin Quick Actions */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900">{t('quickActions.title')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Admin Quick Actions - Simple Design */}
+        <div className="bg-white rounded-lg p-4 border border-gray-200">
+          <h2 className="text-base font-medium mb-3 text-gray-900">{t('quickActions.title')}</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
+              className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
               onClick={() => router.push('/orders/create')}
             >
               <Package className="w-5 h-5 text-gray-700" />
-              <div className="text-left flex-1">
-                <p className="font-semibold text-sm text-gray-900">{t('quickActions.createOrder')}</p>
-                <p className="text-xs text-gray-600 font-normal">{tc('labels.create')}</p>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.createOrder')}</p>
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
+              className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
               onClick={() => setShowAddCustomerDialog(true)}
             >
               <Users className="w-5 h-5 text-gray-700" />
-              <div className="text-left flex-1">
-                <p className="font-semibold text-sm text-gray-900">{t('quickActions.addCustomer')}</p>
-                <p className="text-xs text-gray-600 font-normal">{tc('labels.create')}</p>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addCustomer')}</p>
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
+              className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
               onClick={() => setShowAddProductDialog(true)}
             >
               <PackageCheck className="w-5 h-5 text-gray-700" />
-              <div className="text-left flex-1">
-                <p className="font-semibold text-sm text-gray-900">{t('quickActions.addProduct')}</p>
-                <p className="text-xs text-gray-600 font-normal">{tc('labels.create')}</p>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addProduct')}</p>
             </Button>
             
             <Button
               variant="ghost"
-              className="flex items-center gap-3 p-4 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors duration-200 group justify-start"
+              className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
               onClick={() => router.push('/orders')}
             >
               <TrendingUp className="w-5 h-5 text-gray-700" />
-              <div className="text-left flex-1">
-                <p className="font-semibold text-sm text-gray-900">{t('quickActions.viewReports')}</p>
-                <p className="text-xs text-gray-600 font-normal">{tc('navigation.analytics')}</p>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.viewReports')}</p>
             </Button>
           </div>
         </div>

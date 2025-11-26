@@ -12,11 +12,14 @@ export const runtime = 'nodejs';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderNumber: string } }
+  { params }: { params: Promise<{ orderNumber: string }> | { orderNumber: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  let { orderNumber } = resolvedParams;
+  
   return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
     try {
-      let { orderNumber } = params;
       console.log('🔍 GET /api/orders/by-number/[orderNumber] - Looking for order with number:', orderNumber);
 
       // Get user scope for merchant isolation

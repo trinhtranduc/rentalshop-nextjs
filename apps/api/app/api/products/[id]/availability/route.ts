@@ -35,9 +35,11 @@ const availabilityQuerySchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  const { id } = params;
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { id } = resolvedParams;
   return withReadOnlyAuth(async (request, { user, userScope }) => {
     try {
       console.log('🔍 GET /api/products/[id]/availability - Product ID:', id);

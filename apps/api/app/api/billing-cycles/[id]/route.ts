@@ -10,11 +10,14 @@ import { API } from '@rentalshop/constants';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { id } = resolvedParams;
+  
   return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
     try {
-      const { id } = params;
       console.log('🔍 GET /api/billing-cycles/[id] - Looking for billing cycle with ID:', id);
 
       // TODO: Implement billing cycle functionality when model is added to schema
