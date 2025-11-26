@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast } from '@rentalshop/ui';
+import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast, ReceiptPreviewModal } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { orderBreadcrumbs } from '@rentalshop/utils';
 
 import { ArrowLeft } from 'lucide-react';
-import { ordersApi } from '@rentalshop/utils';
+import { ordersApi, outletsApi } from '@rentalshop/utils';
 import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 import type { Order } from '@rentalshop/types';
@@ -23,6 +23,10 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // Receipt preview state
+  const [showReceiptPreview, setShowReceiptPreview] = useState(false);
+  const [outlet, setOutlet] = useState<any>(null);
 
   const orderId = params.id as string;
   
@@ -40,7 +44,20 @@ export default function OrderDetailPage() {
         const result = await ordersApi.getOrderByNumber(`${numericOrderId}`);
 
         if (result.success && result.data) {
-          setOrder(result.data);
+          const orderData = result.data;
+          setOrder(orderData);
+          
+          // Fetch outlet data if order has outletId
+          if (orderData.outletId) {
+            try {
+              const outletResult = await outletsApi.getOutlet(orderData.outletId);
+              if (outletResult.success && outletResult.data) {
+                setOutlet(outletResult.data);
+              }
+            } catch (err) {
+              console.warn('Could not fetch outlet data:', err);
+            }
+          }
         } else {
           setError(result.error || tc('messages.errorLoadingData'));
         }
@@ -314,8 +331,18 @@ export default function OrderDetailPage() {
         onPickup={handlePickupWrapper}
         onReturn={handleReturnWrapper}
         onSaveSettings={handleSaveSettings}
+        onPrint={() => setShowReceiptPreview(true)}
         loading={actionLoading}
         showActions={true}
+      />
+
+      {/* Receipt Preview Modal */}
+      <ReceiptPreviewModal
+        isOpen={showReceiptPreview}
+        onClose={() => setShowReceiptPreview(false)}
+        order={order}
+        outlet={outlet}
+        merchant={user?.merchant || null}
       />
     </PageWrapper>
   );
