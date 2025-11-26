@@ -96,6 +96,15 @@
     "limit": "Giới hạn",
     "used": "Đã dùng",
     "remaining": "Còn lại"
+  },
+  "banner": {
+    "expiringSoon": "Gói đăng ký sắp hết hạn",
+    "expiresOn": "Gói đăng ký của bạn sẽ hết hạn vào {date}. Hãy xem xét gia hạn để tránh gián đoạn dịch vụ.",
+    "gracePeriodEnds": "Thời gian gia hạn kết thúc: {date}",
+    "contact": "Liên hệ",
+    "contactPhone": "Điện thoại",
+    "contactZalo": "Zalo",
+    "contactWhatsApp": "WhatsApp"
   }
 }
 

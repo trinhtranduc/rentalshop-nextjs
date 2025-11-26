@@ -49,6 +49,7 @@ export enum ErrorCode {
   // Resource Specific Errors
   EMAIL_EXISTS = 'EMAIL_EXISTS',
   PHONE_EXISTS = 'PHONE_EXISTS',
+  BUSINESS_NAME_EXISTS = 'BUSINESS_NAME_EXISTS',
   USER_NOT_FOUND = 'USER_NOT_FOUND',
   MERCHANT_NOT_FOUND = 'MERCHANT_NOT_FOUND',
   OUTLET_NOT_FOUND = 'OUTLET_NOT_FOUND',
@@ -130,6 +131,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   // Resource Specific Errors
   [ErrorCode.EMAIL_EXISTS]: 'Email address is already registered',
   [ErrorCode.PHONE_EXISTS]: 'Phone number is already registered',
+  [ErrorCode.BUSINESS_NAME_EXISTS]: 'Business name already exists',
   [ErrorCode.USER_NOT_FOUND]: 'User not found',
   [ErrorCode.MERCHANT_NOT_FOUND]: 'Merchant not found',
   [ErrorCode.OUTLET_NOT_FOUND]: 'Outlet not found',
@@ -196,6 +198,7 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   // Resource Specific Errors (4xx)
   [ErrorCode.EMAIL_EXISTS]: 409,
   [ErrorCode.PHONE_EXISTS]: 409,
+  [ErrorCode.BUSINESS_NAME_EXISTS]: 409,
   [ErrorCode.USER_NOT_FOUND]: 404,
   [ErrorCode.MERCHANT_NOT_FOUND]: 404,
   [ErrorCode.OUTLET_NOT_FOUND]: 404,
@@ -344,6 +347,15 @@ export function handlePrismaError(error: any): ApiError {
           `Phone number is already registered`,
           `Field: ${field}`,
           'phone'
+        );
+      }
+      
+      if (field?.includes('tenantKey')) {
+        return new ApiError(
+          ErrorCode.BUSINESS_NAME_EXISTS,
+          'Business name already exists',
+          'Trùng tên doanh nghiệp',
+          'businessName'
         );
       }
       
