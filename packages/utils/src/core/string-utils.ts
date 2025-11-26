@@ -42,10 +42,49 @@ export const truncateText = (text: string, maxLength: number): string => {
 
 /**
  * Validate email format
+ * @param email - Email string to validate
+ * @returns true if email is valid, false otherwise
  */
 export const isValidEmail = (email: string): boolean => {
+  if (!email || typeof email !== 'string') {
+    return false;
+  }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return emailRegex.test(email.trim());
+};
+
+/**
+ * Validate email format and return error message if invalid
+ * @param email - Email string to validate (optional)
+ * @param required - Whether email is required (default: false)
+ * @param errorMessages - Custom error messages
+ * @returns Error message string if invalid, undefined if valid
+ */
+export const validateEmail = (
+  email: string | undefined | null,
+  options?: {
+    required?: boolean;
+    requiredMessage?: string;
+    invalidMessage?: string;
+  }
+): string | undefined => {
+  const {
+    required = false,
+    requiredMessage = 'Email is required',
+    invalidMessage = 'Invalid email format'
+  } = options || {};
+
+  // Check if email is empty
+  if (!email || email.trim() === '') {
+    return required ? requiredMessage : undefined;
+  }
+
+  // Validate email format
+  if (!isValidEmail(email)) {
+    return invalidMessage;
+  }
+
+  return undefined;
 };
 
 /**

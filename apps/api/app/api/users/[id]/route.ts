@@ -167,12 +167,31 @@ export async function DELETE(
         );
       }
 
-      // Prevent deleting yourself
+      // If user is deleting themselves, disable account instead of returning error
       if (userId === user.id) {
-        return NextResponse.json(
-          ResponseBuilder.error('CANNOT_DELETE_SELF', 'You cannot delete your own account. Please contact another administrator.'),
-          { status: API.STATUS.CONFLICT }
-        );
+        // Soft delete (disable) the user's own account
+        const { prisma } = await import('@rentalshop/database');
+        
+        // Delete all user sessions to force logout
+        const deletedSessionsCount = await prisma.userSession.deleteMany({
+          where: { userId: userId }
+        });
+        console.log(`🗑️ User ${userId} deleting own account: Deleted ${deletedSessionsCount.count} session(s)`);
+        
+        // Disable the account (soft delete)
+        const disabledUser = await db.users.update(userId, { 
+          isActive: false,
+          deletedAt: new Date()
+        });
+        
+        console.log('✅ User account disabled successfully:', disabledUser);
+        
+        return NextResponse.json({
+          success: true,
+          data: disabledUser,
+          code: 'ACCOUNT_DISABLED_SUCCESS',
+          message: 'Your account has been disabled successfully'
+        });
       }
 
       // Check if this is the last admin user for the merchant

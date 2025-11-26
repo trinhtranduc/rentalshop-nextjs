@@ -35,8 +35,9 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import type { ProductWithStock } from '@rentalshop/types';
-import { formatCurrency, formatDate } from '../../../../lib';
+import { formatDate } from '../../../../lib';
 import { getRentalPriceLabel, formatRentalPrice } from '../utils';
+import { useFormatCurrency } from '@rentalshop/ui';
 
 interface ProductDetailListProps {
   product: ProductWithStock;
@@ -57,6 +58,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
 }) => {
   const router = useRouter();
   const t = useProductTranslations();
+  const formatCurrency = useFormatCurrency();
   const tc = useCommonTranslations();
 
   // Helper function to normalize images array
@@ -125,35 +127,13 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
               </div>
             </div>
             
-            {/* Product Details */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-              <div>
-                <span className="text-gray-500">{tc('labels.createdAt')}:</span>
-                <span className="ml-2 text-gray-900">{formatDate(product.createdAt)}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">{tc('labels.updatedAt')}:</span>
-                <span className="ml-2 text-gray-900">{formatDate(product.updatedAt)}</span>
-              </div>
-            </div>
-            
-            {/* Stock Information */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">{t('inventory.stockSummary')}</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">{totalStock}</div>
-                  <div className="text-sm text-gray-600">{t('inventory.totalStock')}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{totalAvailable}</div>
-                  <div className="text-sm text-gray-600">{t('inventory.availableStock')}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{totalRenting}</div>
-                  <div className="text-sm text-gray-600">{t('fields.renting')}</div>
-                </div>
-              </div>
+            {/* Product Details - Created and Updated on same line */}
+            <div className="text-sm mb-4">
+              <span className="text-gray-500">{tc('labels.createdAt')}:</span>
+              <span className="ml-2 text-gray-900">{formatDate(product.createdAt)}</span>
+              <span className="mx-4 text-gray-400">|</span>
+              <span className="text-gray-500">{tc('labels.updatedAt')}:</span>
+              <span className="ml-2 text-gray-900">{formatDate(product.updatedAt)}</span>
             </div>
           </div>
           
@@ -179,6 +159,25 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
               </div>
               <div className="text-sm text-gray-600">{t('fields.deposit')}</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stock Information - Full Width */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-3">{t('inventory.stockSummary')}</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-900">{totalStock}</div>
+            <div className="text-sm text-gray-600">{t('inventory.totalStock')}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">{totalAvailable}</div>
+            <div className="text-sm text-gray-600">{t('inventory.availableStock')}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">{totalRenting}</div>
+            <div className="text-sm text-gray-600">{t('fields.renting')}</div>
           </div>
         </div>
       </div>
