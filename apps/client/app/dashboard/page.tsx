@@ -31,11 +31,11 @@ import {
   ArrowDownRight,
   Minus
 } from 'lucide-react';
-import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
 import { useLocale as useNextIntlLocale } from 'next-intl';
-import { ORDER_STATUS_COLORS } from '@rentalshop/constants';
+import { ORDER_STATUS_COLORS, getOrderStatusClassName } from '@rentalshop/constants';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
 
 // ============================================================================
@@ -113,10 +113,9 @@ const getStatusDotColor = (statusKey: string): string => {
   return 'bg-gray-600';
 };
 
-// Get status badge color class
+// Get status badge color class - use the same function as order pages
 const getStatusBadgeColor = (status: string): string => {
-  const normalizedStatus = status.toUpperCase();
-  return ORDER_STATUS_COLORS[normalizedStatus as keyof typeof ORDER_STATUS_COLORS] || ORDER_STATUS_COLORS.RESERVED;
+  return getOrderStatusClassName(status);
 };
 
 // Format date as YYYY-MM-DD using local date components (avoids timezone conversion issues)
@@ -273,6 +272,7 @@ export default function DashboardPage() {
   const formatMoney = useFormatCurrency();
   const t = useDashboardTranslations();
   const tc = useCommonTranslations();
+  const to = useOrderTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = useNextIntlLocale() as 'en' | 'vi';
@@ -1169,8 +1169,23 @@ export default function DashboardPage() {
                   ) : (todayOrders || []).length > 0 ? (
                     <div className="space-y-2">
                       {(todayOrders || []).slice(0, 6).map(order => {
-                        const statusColor = getStatusBadgeColor(order.status);
+                        const statusClassName = getStatusBadgeColor(order.status);
                         const hasRentalDates = order.pickupPlanAt && order.returnPlanAt;
+                        
+                        // Translate order type
+                        const orderTypeKey = order.orderType ? `orderType.${order.orderType}` : null;
+                        const translatedOrderType = orderTypeKey ? to(orderTypeKey) : null;
+                        
+                        // Translate order status - map API status to translation key
+                        const statusMap: Record<string, string> = {
+                          'RESERVED': 'status.RESERVED',
+                          'PICKUPED': 'status.PICKUPED',
+                          'RETURNED': 'status.RETURNED',
+                          'COMPLETED': 'status.COMPLETED',
+                          'CANCELLED': 'status.CANCELLED'
+                        };
+                        const statusKey = statusMap[order.status] || `status.${order.status}`;
+                        const translatedStatus = to(statusKey);
                         
                         return (
                           <div 
@@ -1181,25 +1196,35 @@ export default function DashboardPage() {
                             <Package className="w-5 h-5 text-blue-700 shrink-0" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium text-gray-800">{order.orderNumber}</h4>
-                                {order.orderType && (
+                                <h4 className="font-medium text-gray-800">#{order.orderNumber}</h4>
+                                {translatedOrderType && (
                                   <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
-                                    {order.orderType}
+                                    {translatedOrderType}
                                   </span>
                                 )}
                               </div>
                               {hasRentalDates ? (
-                                <p className="text-sm text-gray-600">
-                                  {useFormattedFullDate(order.pickupPlanAt)} - {useFormattedFullDate(order.returnPlanAt)}
-                                </p>
+                                <>
+                                  <p className="text-sm text-gray-600">
+                                    {useFormattedFullDate(order.pickupPlanAt)} - {useFormattedFullDate(order.returnPlanAt)}
+                                  </p>
+                                  {order.customerName && (
+                                    <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
+                                  )}
+                                </>
                               ) : (
-                                <p className="text-sm text-gray-600 truncate">{order.productNames || 'N/A'}</p>
+                                <>
+                                  <p className="text-sm text-gray-600 truncate">{order.productNames || tc('labels.noData')}</p>
+                                  {order.customerName && (
+                                    <p className="text-xs text-gray-500 mt-0.5">{order.customerName}</p>
+                                  )}
+                                </>
                               )}
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="font-medium text-green-600 text-base">{formatMoney(order.totalAmount || 0)}</p>
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColor} mt-1`}>
-                                {order.status}
+                              <p className="font-medium text-gray-900 text-base">{formatMoney(order.totalAmount || 0)}</p>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusClassName} mt-1`}>
+                                {translatedStatus}
                               </span>
                             </div>
                           </div>

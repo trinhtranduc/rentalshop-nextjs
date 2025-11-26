@@ -58,11 +58,14 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantPublicId = parseInt(resolvedParams.id);
+  
   return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
     try {
-      const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),

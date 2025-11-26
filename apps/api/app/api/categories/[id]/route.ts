@@ -10,12 +10,14 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const categoryId = parseInt(resolvedParams.id);
+  
   return withAuthRoles()(async (request: NextRequest, { user, userScope }) => {
     try {
-
-    const categoryId = parseInt(params.id);
     if (isNaN(categoryId)) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_CATEGORY_ID'),
@@ -95,8 +97,12 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const categoryId = parseInt(resolvedParams.id);
+  
   return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
     try {
 
@@ -108,7 +114,7 @@ export async function PUT(
       );
     }
 
-    const categoryId = parseInt(params.id);
+    if (isNaN(categoryId)) {
     if (isNaN(categoryId)) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_CATEGORY_ID'),
@@ -212,8 +218,12 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const categoryId = parseInt(resolvedParams.id);
+  
   return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
     try {
 
@@ -225,7 +235,7 @@ export async function DELETE(
       );
     }
 
-    const categoryId = parseInt(params.id);
+    if (isNaN(categoryId)) {
     if (isNaN(categoryId)) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_CATEGORY_ID'),

@@ -6,7 +6,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, SUBSCRIPTION_STATUS, USER_ROLE, normalizeSubscriptionStatus, getDefaultPricingConfig, type SubscriptionStatus} from '@rentalshop/constants';
 import type { BusinessType } from '@rentalshop/types';
 
-export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }) => {
+export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   try {
 
     // Parse query parameters
@@ -232,7 +232,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
   }
 });
 
-export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }) => {
+export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   try {
 
     const body = await request.json();

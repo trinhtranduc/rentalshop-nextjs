@@ -10,11 +10,14 @@ import { API, USER_ROLE, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const subscriptionId = parseInt(resolvedParams.id);
+  
   return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
-      const subscriptionId = parseInt(params.id);
       
       if (isNaN(subscriptionId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_SUBSCRIPTION_ID'), { status: 400 });

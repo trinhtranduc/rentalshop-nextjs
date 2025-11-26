@@ -39,12 +39,14 @@ const statusUpdateSchema = z.object({
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> | { orderId: string } }
 ) {
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request: NextRequest, { user }) => {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { orderId } = resolvedParams;
+  
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request: NextRequest, { user, userScope }) => {
     try {
-
-      const { orderId } = params;
       
       if (!orderId) {
         return NextResponse.json(
