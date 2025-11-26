@@ -56,7 +56,10 @@
     "actualRevenue": "Doanh thu thực tế",
     "projectedRevenue": "Doanh thu dự kiến",
     "rentalOrders": "Đơn thuê",
-    "ordersCount": "đơn hàng"
+    "ordersCount": "đơn hàng",
+    "totalOrders": "tổng đơn hàng",
+    "rentals": "đơn thuê",
+    "sales": "đơn bán"
   },
   "chartTitles": {
     "dailyRevenue": "Doanh thu hàng ngày",

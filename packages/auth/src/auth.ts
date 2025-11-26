@@ -10,6 +10,10 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
     include: {
       merchant: true,
       outlet: true,
+      permissions: {
+        where: { enabled: true },
+        select: { permission: true },
+      },
     },
   });
 
@@ -55,6 +59,7 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
       phone: user.phone || undefined,
       merchantId: user.merchantId ? Number(user.merchantId) : undefined,
       outletId: user.outletId ? Number(user.outletId) : undefined,
+      permissions: user.permissions?.map(p => p.permission) || [],
       merchant: user.merchant ? {
         id: user.merchant.id, // Return merchant id to frontend (number)
         name: user.merchant.name,

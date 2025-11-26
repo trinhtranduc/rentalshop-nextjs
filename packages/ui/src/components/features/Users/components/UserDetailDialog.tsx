@@ -13,9 +13,11 @@ import { Button } from '@rentalshop/ui';
 import { ConfirmationDialog } from '@rentalshop/ui';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { UserDisplayInfo } from './UserDisplayInfo';
+import { PermissionManager } from './PermissionManager';
 import { usersApi } from '@rentalshop/utils';
 import type { User } from '@rentalshop/types';
 import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth } from '@rentalshop/hooks';
 
 interface UserDetailDialogProps {
   open: boolean;
@@ -34,6 +36,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
 }) => {
   const t = useUsersTranslations();
   const tc = useCommonTranslations();
+  const { user: currentUser } = useAuth();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = useState(false);
   const [isActivateConfirmOpen, setIsActivateConfirmOpen] = useState(false);
@@ -137,7 +140,7 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
             </div>
           </DialogHeader>
 
-          <div className="mt-6">
+          <div className="mt-6 space-y-6">
             <UserDisplayInfo
               user={user}
               showActions={true}
@@ -146,6 +149,17 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
               onDeactivate={() => setIsDeactivateConfirmOpen(true)}
               onDelete={() => setIsDeleteConfirmOpen(true)}
               isLoading={isLoading}
+            />
+            
+            {/* Permission Management */}
+            <PermissionManager
+              userId={user.id}
+              userRole={user.role}
+              currentUserRole={currentUser?.role}
+              onPermissionsUpdated={() => {
+                // Refresh user data if needed
+                onUserUpdated?.(user);
+              }}
             />
           </div>
 

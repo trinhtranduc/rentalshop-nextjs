@@ -1501,8 +1501,8 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-600">{product.category}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium text-green-600 text-base">{formatMoney(product.totalRevenue || 0)}</p>
-                            <p className="text-sm text-gray-500">{product.rentalCount || 0} total orders</p>
+                            <p className="font-medium text-gray-900 text-base">{formatMoney(product.totalRevenue || 0)}</p>
+                            <p className="text-sm text-gray-500">{product.rentalCount || 0} {t('charts.totalOrders')}</p>
                           </div>
                         </div>
                       ))}
@@ -1547,10 +1547,10 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-600">{customer.location}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-green-600 text-lg">{formatMoney(customer.totalSpent || 0)}</p>
-                            <p className="text-sm text-gray-500">{customer.orderCount || 0} total orders</p>
+                            <p className="font-semibold text-gray-900 text-lg">{formatMoney(customer.totalSpent || 0)}</p>
+                            <p className="text-sm text-gray-500">{customer.orderCount || 0} {t('charts.totalOrders')}</p>
                             <p className="text-xs text-gray-400">
-                              {customer.rentalCount || 0} rentals • {customer.saleCount || 0} sales
+                              {customer.rentalCount || 0} {t('charts.rentals')} • {customer.saleCount || 0} {t('charts.sales')}
                             </p>
                           </div>
                         </div>
