@@ -11,6 +11,7 @@ import { PermissionRoleView } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 import { useRouter } from 'next/navigation';
 import { Settings } from 'lucide-react';
+import { USER_ROLE } from '@rentalshop/constants';
 
 /**
  * Role Permissions View Page
@@ -23,9 +24,9 @@ export default function RolePermissionsPage() {
 
   // Check if user can view permissions
   const canViewPermissions =
-    currentUser?.role === 'OUTLET_ADMIN' ||
-    currentUser?.role === 'MERCHANT' ||
-    currentUser?.role === 'ADMIN';
+    currentUser?.role === USER_ROLE.OUTLET_ADMIN ||
+    currentUser?.role === USER_ROLE.MERCHANT ||
+    currentUser?.role === USER_ROLE.ADMIN;
 
   if (!canViewPermissions) {
     return (
