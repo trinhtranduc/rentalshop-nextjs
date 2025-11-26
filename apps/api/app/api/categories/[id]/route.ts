@@ -115,7 +115,6 @@ export async function PUT(
     }
 
     if (isNaN(categoryId)) {
-    if (isNaN(categoryId)) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_CATEGORY_ID'),
         { status: 400 }
@@ -194,7 +193,7 @@ export async function PUT(
       description: updatedCategory.description,
       isActive: updatedCategory.isActive,
       createdAt: updatedCategory.createdAt,
-      updatedAt: updatedCategory.updatedAt
+      updatedAt: updatedCategory.updatedAt,
       // DO NOT include category.id (internal CUID)
     };
 
@@ -235,7 +234,6 @@ export async function DELETE(
       );
     }
 
-    if (isNaN(categoryId)) {
     if (isNaN(categoryId)) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_CATEGORY_ID'),

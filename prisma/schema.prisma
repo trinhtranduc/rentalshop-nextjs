@@ -96,6 +96,7 @@ model User {
   subscriptionActivities SubscriptionActivity[]
   emailVerifications     EmailVerification[]
   passwordResets         PasswordReset[]
+  permissions            UserPermission[]
   merchant               Merchant?              @relation(fields: [merchantId], references: [id])
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
   sessions               UserSession[]
@@ -513,4 +514,19 @@ model PasswordReset {
   @@index([email])
   @@index([expiresAt])
   @@index([used])
+}
+
+model UserPermission {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  permission String   // e.g., 'orders.export', 'products.export', 'customers.export', 'users.manage', 'dashboard.view'
+  enabled   Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
+  @@index([userId])
+  @@index([permission])
+  @@index([enabled])
 }

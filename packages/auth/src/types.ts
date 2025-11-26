@@ -23,6 +23,7 @@ export interface AuthUser {
   phone?: string;
   merchantId?: number; // For quick access to merchant ID
   outletId?: number;   // For quick access to outlet ID
+  permissions?: string[]; // Custom permissions from UserPermission table
   merchant?: {
     id: number;
     name: string;

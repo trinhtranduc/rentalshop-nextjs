@@ -56,7 +56,10 @@
     "actualRevenue": "Actual Revenue",
     "projectedRevenue": "Projected Revenue",
     "rentalOrders": "Rental Orders",
-    "ordersCount": "orders"
+    "ordersCount": "orders",
+    "totalOrders": "total orders",
+    "rentals": "rentals",
+    "sales": "sales"
   },
   "chartTitles": {
     "dailyRevenue": "Daily Revenue",
