@@ -30,7 +30,7 @@ const createManualPaymentSchema = z.object({
 // ============================================================================
 // POST /api/payments/manual - Create manual payment
 // ============================================================================
-export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }) => {
+export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
   try {
 
     // Parse and validate request body

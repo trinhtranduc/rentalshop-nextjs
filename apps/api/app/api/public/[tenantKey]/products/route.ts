@@ -61,10 +61,13 @@ export async function OPTIONS(request: NextRequest) {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { tenantKey: string } }
+  { params }: { params: Promise<{ tenantKey: string }> | { tenantKey: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { tenantKey } = resolvedParams;
+  
   try {
-    const { tenantKey } = params;
     const { searchParams } = new URL(request.url);
     
     // Validate tenantKey format (alphanumeric + hyphen)

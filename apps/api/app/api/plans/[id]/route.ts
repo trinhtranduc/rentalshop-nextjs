@@ -11,11 +11,14 @@ import { API } from '@rentalshop/constants';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { id } = resolvedParams;
+  
   return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
     try {
-      const { id } = params;
       console.log('🔍 GET /api/plans/[id] - Looking for plan with ID:', id);
 
       // Check if the ID is numeric (public ID)
@@ -131,11 +134,14 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { id } = resolvedParams;
+  
   return withAuthRoles([USER_ROLE.ADMIN])(async (req: NextRequest, { user, userScope }) => {
     try {
-      const { id } = params;
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {
@@ -291,11 +297,14 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { id } = resolvedParams;
+  
   return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user, userScope }) => {
     try {
-      const { id } = params;
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(id)) {

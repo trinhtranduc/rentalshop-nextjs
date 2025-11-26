@@ -10,11 +10,14 @@ import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantPublicId = parseInt(resolvedParams.id);
+  
   return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
     try {
-      const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
@@ -57,11 +60,14 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantPublicId = parseInt(resolvedParams.id);
+  
   return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
     try {
-      const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),

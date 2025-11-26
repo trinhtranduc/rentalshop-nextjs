@@ -12,11 +12,14 @@ export const runtime = 'nodejs';
  */
 export const GET = async (
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> | { orderId: string } }
 ) => {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { orderId } = resolvedParams;
+  
   return withReadOnlyAuth(async (request, { user, userScope }) => {
     try {
-      const { orderId } = params;
       console.log('🔍 GET /api/orders/[orderId] - Looking for order with ID:', orderId);
 
       // Check if the ID is numeric (public ID)
@@ -101,11 +104,14 @@ export const GET = async (
  */
 export const PUT = async (
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> | { orderId: string } }
 ) => {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { orderId } = resolvedParams;
+  
   return withReadOnlyAuth(async (request, { user, userScope }) => {
     try {
-      const { orderId } = params;
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(orderId)) {

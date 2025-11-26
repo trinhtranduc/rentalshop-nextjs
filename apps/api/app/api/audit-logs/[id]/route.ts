@@ -10,11 +10,14 @@ import { API } from '@rentalshop/constants';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { id } = resolvedParams;
+  
   return withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
     try {
-      const { id } = params;
       console.log('🔍 GET /api/audit-logs/[id] - Looking for audit log with ID:', id);
 
       // Check if the ID is numeric (public ID)

@@ -10,12 +10,15 @@ import { API } from '@rentalshop/constants';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; outletId: string } }
+  { params }: { params: Promise<{ id: string; outletId: string }> | { id: string; outletId: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantPublicId = parseInt(resolvedParams.id);
+  const outletPublicId = parseInt(resolvedParams.outletId);
+  
   return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
     try {
-      const merchantPublicId = parseInt(params.id);
-      const outletPublicId = parseInt(params.outletId);
       
       if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
@@ -48,12 +51,15 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; outletId: string } }
+  { params }: { params: Promise<{ id: string; outletId: string }> | { id: string; outletId: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantPublicId = parseInt(resolvedParams.id);
+  const outletPublicId = parseInt(resolvedParams.outletId);
+  
   return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
     try {
-      const merchantPublicId = parseInt(params.id);
-      const outletPublicId = parseInt(params.outletId);
       
       if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
@@ -127,12 +133,15 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; outletId: string } }
+  { params }: { params: Promise<{ id: string; outletId: string }> | { id: string; outletId: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantPublicId = parseInt(resolvedParams.id);
+  const outletPublicId = parseInt(resolvedParams.outletId);
+  
   return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
     try {
-      const merchantPublicId = parseInt(params.id);
-      const outletPublicId = parseInt(params.outletId);
       
       if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
