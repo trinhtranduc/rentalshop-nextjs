@@ -31,7 +31,8 @@ export {
   canExportProducts,
   canExportCustomers,
   assertAnyRole,
-  hasAnyRole
+  hasAnyRole,
+  ROLE_PERMISSIONS
 } from './core';
 
 export {
