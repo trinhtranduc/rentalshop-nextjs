@@ -19,6 +19,7 @@ import { PermissionModule } from '@rentalshop/ui';
 import { UserSelector } from '@rentalshop/ui';
 import type { User } from '@rentalshop/types';
 import { useRouter } from 'next/navigation';
+import { USER_ROLE } from '@rentalshop/constants';
 
 /**
  * Permission Management Page
@@ -169,9 +170,9 @@ export default function PermissionsPage() {
 
   // Check if user can manage permissions
   const canManagePermissions =
-    currentUser?.role === 'OUTLET_ADMIN' ||
-    currentUser?.role === 'MERCHANT' ||
-    currentUser?.role === 'ADMIN';
+    currentUser?.role === USER_ROLE.OUTLET_ADMIN ||
+    currentUser?.role === USER_ROLE.MERCHANT ||
+    currentUser?.role === USER_ROLE.ADMIN;
 
   if (!canManagePermissions) {
     return (

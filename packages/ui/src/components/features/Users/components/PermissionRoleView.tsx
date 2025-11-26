@@ -16,7 +16,7 @@ import {
 import { Switch } from '@rentalshop/ui';
 import type { Permission, Role } from '@rentalshop/auth';
 import { ROLE_PERMISSIONS } from '@rentalshop/auth';
-import { USER_ROLE } from '@rentalshop/constants';
+import { USER_ROLE, type UserRole } from '@rentalshop/constants';
 
 interface PermissionGroup {
   module: string;
@@ -146,21 +146,25 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
   },
 ];
 
+type OutletRole = typeof USER_ROLE.OUTLET_ADMIN | typeof USER_ROLE.OUTLET_STAFF;
+
 interface PermissionRoleViewProps {
-  role?: 'OUTLET_ADMIN' | 'OUTLET_STAFF';
-  onRoleChange?: (role: 'OUTLET_ADMIN' | 'OUTLET_STAFF') => void;
+  role?: OutletRole;
+  onRoleChange?: (role: OutletRole) => void;
 }
 
 export const PermissionRoleView: React.FC<PermissionRoleViewProps> = ({
-  role: initialRole = 'OUTLET_STAFF',
+  role: initialRole = USER_ROLE.OUTLET_STAFF,
   onRoleChange,
 }) => {
-  const [selectedRole, setSelectedRole] = useState<'OUTLET_ADMIN' | 'OUTLET_STAFF'>(initialRole);
+  const [selectedRole, setSelectedRole] = useState<OutletRole>(initialRole);
 
   const handleRoleChange = (newRole: string) => {
-    const role = newRole as 'OUTLET_ADMIN' | 'OUTLET_STAFF';
-    setSelectedRole(role);
-    onRoleChange?.(role);
+    if (newRole === USER_ROLE.OUTLET_ADMIN || newRole === USER_ROLE.OUTLET_STAFF) {
+      const role = newRole as OutletRole;
+      setSelectedRole(role);
+      onRoleChange?.(role);
+    }
   };
 
   // Get permissions for selected role
