@@ -297,8 +297,16 @@ function getEnvironment(): Environment {
 
 /**
  * Get API base URL for current environment
+ * SOLUTION 1: Ensure consistent API URL across all calls
  */
 function getApiBaseUrlInternal(): string {
+  // PRIORITY 1: Always use NEXT_PUBLIC_API_URL if set (most reliable)
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL.trim();
+    console.log('✅ Using NEXT_PUBLIC_API_URL:', apiUrl);
+    return apiUrl;
+  }
+  
   const env = getEnvironment();
   
   // Debug logging
@@ -309,20 +317,26 @@ function getApiBaseUrlInternal(): string {
     RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
     RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
     detectedEnv: env,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'NOT SET'
   });
   
+  // PRIORITY 2: Use environment-based defaults
   switch (env) {
     case 'local':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
+      // For local, prefer localhost if available
+      const localUrl = 'http://localhost:3002';
+      console.log('⚠️ Local environment detected, using:', localUrl);
+      console.log('⚠️ If you need external API, set NEXT_PUBLIC_API_URL in .env');
+      return localUrl;
     
     case 'development':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://dev-api.anyrent.shop';
+      return 'https://dev-api.anyrent.shop';
     
     case 'production':
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.anyrent.shop';
+      return 'https://api.anyrent.shop';
     
     default:
+      console.warn('⚠️ Unknown environment, defaulting to production API');
       return 'https://api.anyrent.shop';
   }
 }
@@ -717,7 +731,26 @@ export const apiConfig = getApiConfig();
 export const apiEnvironment = getEnvironment();
 
 // Client-side configuration (for client apps)
-export const apiUrls = createApiUrls();
+// SOLUTION 1: Create apiUrls dynamically to ensure consistent base URL
+// This ensures NEXT_PUBLIC_API_URL is read correctly in browser context
+let _apiUrls: ApiUrls | null = null;
+
+export const getApiUrls = (): ApiUrls => {
+  // Recreate if needed to ensure we have latest env vars
+  // This is important for browser context where env vars might not be available at module load time
+  if (!_apiUrls || typeof window !== 'undefined') {
+    _apiUrls = createApiUrls();
+    console.log('🔍 API URLs created/refreshed, base URL:', _apiUrls.base);
+  }
+  return _apiUrls;
+};
+
+// Export apiUrls for backward compatibility (will be created on first access)
+export const apiUrls = new Proxy({} as ApiUrls, {
+  get(target, prop) {
+    return getApiUrls()[prop as keyof ApiUrls];
+  }
+});
 
 // Environment helpers
 export const getCurrentEnvironment = (): Environment => getEnvironment();

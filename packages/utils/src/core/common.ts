@@ -17,6 +17,10 @@ const API = CONSTANTS.API;
 
 // ApiResponse interface moved to errors.ts for unified error handling
 
+// ============================================================================
+// API UTILITIES
+// ============================================================================
+
 /**
  * Create API URL with proper base URL
  */
@@ -151,83 +155,104 @@ export const authenticatedFetch = async (
   }
 
   // Get token from localStorage (client-side only) - CONSOLIDATED APPROACH
+  // getAuthToken() already handles expiration checking, no need to double-check here
   const token = getAuthToken();
-  console.log('🔍 FRONTEND: Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
   
-  // TEMPORARY DEBUG: Check if token is expired or invalid
-  if (token && typeof window !== 'undefined') {
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        const now = Math.floor(Date.now() / 1000);
-        console.log('🔍 FRONTEND: Token debug:', {
-          userId: payload.userId,
-          email: payload.email,
-          role: payload.role,
-          exp: payload.exp,
-          now: now,
-          expired: payload.exp < now,
-          timeUntilExpiry: payload.exp - now
-        });
-        
-        // If token is expired, clear it
-        if (payload.exp < now) {
-          console.log('🔍 FRONTEND: Token is expired, clearing auth data');
-          clearAuthData();
-          throw new Error('Token expired - please log in again');
-        }
-      }
-    } catch (error) {
-      console.log('🔍 FRONTEND: Token validation failed:', error);
-      clearAuthData();
-      throw new Error('Invalid token - please log in again');
+  // Step 4: Defensive check - Improve error handling for missing token
+  if (!token && typeof window !== 'undefined') {
+    console.error('🚨 FRONTEND: No token found in authenticatedFetch');
+    console.error('🚨 This may indicate a race condition after login');
+    console.error('🚨 URL:', url);
+    console.error('🚨 Check if token was stored properly after login');
+    throw new Error('Authentication required - token not found. Please log in again.');
+  }
+  
+  // Extract and convert options.headers to plain object (handle Headers, array, and object formats)
+  // This prevents options.headers from overriding the Authorization header
+  let optionsHeaders: Record<string, string> = {};
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => {
+        optionsHeaders[key] = value;
+      });
+    } else if (Array.isArray(options.headers)) {
+      // Handle array of [key, value] tuples
+      options.headers.forEach(([key, value]) => {
+        optionsHeaders[key] = value;
+      });
+    } else {
+      optionsHeaders = options.headers as Record<string, string>;
     }
   }
   
-  // Check if user is authenticated before making the request
-  if (!token && typeof window !== 'undefined') {
-    console.log('🔍 FRONTEND: No token found, cleaning up and redirecting to login');
-    // Clean up any stale auth data
-    clearAuthData();
-    // Redirect to login page
-    setTimeout(() => {
-      // window.location.href = '/login';
-    }, 100);
-    throw new Error('Authentication required');
-  }
-  
-  // Set default headers using API constants
-  const headers: Record<string, string> = {
+  // Merge headers in correct order: default headers → options.headers → Authorization header
+  // This ensures Authorization header is ALWAYS preserved
+  const mergedHeaders: Record<string, string> = {
     [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
     [API.HEADERS.ACCEPT]: API.CONTENT_TYPES.JSON,
     // Platform detection headers for web clients
     'X-Client-Platform': 'web',
     'X-App-Version': '1.0.0',
     'X-Device-Type': 'browser',
-    ...(options.headers as Record<string, string>),
+    ...optionsHeaders,  // User-provided headers (merged before Authorization)
   };
   
-  // Add authorization header if token exists
+  // ALWAYS preserve Authorization header (set after merge to ensure it's never overridden)
   if (token) {
-    headers[API.HEADERS.AUTHORIZATION] = `Bearer ${token}`;
+    mergedHeaders[API.HEADERS.AUTHORIZATION] = `Bearer ${token}`;
     console.log('🔍 FRONTEND: Authorization header set:', `Bearer ${token.substring(0, 20)}...`);
   }
   
-  console.log('🔍 FRONTEND: Final headers:', headers);
+  console.log('🔍 FRONTEND: Final merged headers:', mergedHeaders);
+  console.log('🔍 FRONTEND: Authorization header in mergedHeaders:', mergedHeaders[API.HEADERS.AUTHORIZATION] ? 'PRESENT' : 'MISSING');
+  console.log('🔍 FRONTEND: API.HEADERS.AUTHORIZATION constant:', API.HEADERS.AUTHORIZATION);
   
-  // Set default options using API constants
+  // Create request options WITHOUT headers in options to prevent override
+  // Remove headers from options before spreading to ensure merged headers are used
+  const { headers: _unusedHeaders, ...optionsWithoutHeaders } = options;
   const defaultOptions: RequestInit = {
     method: API.METHODS.GET,
-    headers,
-    ...options,
+    ...optionsWithoutHeaders,  // Spread options without headers
+    headers: mergedHeaders,  // Apply merged headers last (prevents override)
   };
   
   console.log('🔍 FRONTEND: Final request options:', defaultOptions);
+  console.log('🔍 FRONTEND: Headers in defaultOptions:', defaultOptions.headers);
+  
+  // Defensive check: Verify Authorization header is present
+  const finalHeaders = defaultOptions.headers as Record<string, string> | undefined;
+  if (token) {
+    const authHeaderKey = API.HEADERS.AUTHORIZATION;
+    const authHeaderValue = finalHeaders?.[authHeaderKey];
+    console.log('🔍 FRONTEND: Checking Authorization header:', {
+      authHeaderKey,
+      authHeaderValue: authHeaderValue ? `${authHeaderValue.substring(0, 20)}...` : 'MISSING',
+      allHeaderKeys: finalHeaders ? Object.keys(finalHeaders) : 'NO HEADERS'
+    });
+    
+    if (!finalHeaders || !authHeaderValue) {
+      console.error('🚨 FRONTEND: Authorization header missing in final request options!');
+      console.error('🚨 This should never happen - headers:', finalHeaders);
+      console.error('🚨 Token exists:', !!token);
+      console.error('🚨 Merged headers had Authorization:', !!mergedHeaders[API.HEADERS.AUTHORIZATION]);
+    }
+  }
   
   try {
+    // SOLUTION 1: Log API URL being used for debugging
     console.log('🔍 FRONTEND: Making fetch request to:', url);
+    console.log('🔍 FRONTEND: API Base URL check:', {
+      url,
+      isFullUrl: url.startsWith('http'),
+      NEXT_PUBLIC_API_URL: typeof window !== 'undefined' ? (window as any).__NEXT_PUBLIC_API_URL__ || process.env.NEXT_PUBLIC_API_URL : process.env.NEXT_PUBLIC_API_URL
+    });
     console.log('🔍 FRONTEND: Request body:', options.body);
+    
+    // Final verification before making request
+    const requestHeadersBeforeFetch = defaultOptions.headers as Record<string, string> | undefined;
+    console.log('🔍 FRONTEND: Headers right before fetch:', requestHeadersBeforeFetch);
+    console.log('🔍 FRONTEND: Authorization header before fetch:', requestHeadersBeforeFetch?.[API.HEADERS.AUTHORIZATION] ? 'PRESENT' : 'MISSING');
+    
     const response = await fetch(url, defaultOptions);
     console.log('🔍 FRONTEND: Response received:', {
       status: response.status,
@@ -255,14 +280,110 @@ export const authenticatedFetch = async (
     
     // Handle authentication errors (401 Unauthorized)
     if (response.status === API.STATUS.UNAUTHORIZED) {
-      console.log('🔍 FRONTEND: 401 Unauthorized response received');
+      // Enhanced logging with stack trace to identify which API call failed
+      const stackTrace = new Error().stack;
+      // Get merged headers from defaultOptions (they were set earlier)
+      const requestHeaders = (defaultOptions.headers as Record<string, string>) || {};
+      // Enhanced error info with all debug data
+      const errorInfo = {
+        timestamp: new Date().toISOString(),
+        url: url,
+        responseUrl: response.url,
+        method: options.method || 'GET',
+        stackTrace: stackTrace,
+        headers: requestHeaders,
+        token: token ? `${token.substring(0, 20)}...` : 'NO TOKEN',
+        // Additional debug info
+        hasAuthorizationHeader: !!requestHeaders[API.HEADERS.AUTHORIZATION],
+        authorizationHeaderValue: requestHeaders[API.HEADERS.AUTHORIZATION] ? `${requestHeaders[API.HEADERS.AUTHORIZATION].substring(0, 30)}...` : 'MISSING',
+        allHeaderKeys: Object.keys(requestHeaders),
+        tokenLength: token ? token.length : 0,
+        // Request options debug
+        requestOptions: {
+          method: defaultOptions.method,
+          hasHeaders: !!defaultOptions.headers,
+          headersType: typeof defaultOptions.headers,
+        }
+      };
       
-      // Handle unauthorized - clean up auth data and redirect immediately
+      console.error('🚨 FRONTEND: 401 Unauthorized response received');
+      console.error('🚨 Request URL:', url);
+      console.error('🚨 Response URL:', response.url);
+      console.error('🚨 Stack trace:', stackTrace);
+      console.error('🚨 Request method:', options.method || 'GET');
+      console.error('🚨 Request headers:', requestHeaders);
+      console.error('🚨 Token available:', !!token);
+      
+      // Save error to localStorage for debugging (persist across redirects)
       if (typeof window !== 'undefined') {
-        console.log('🔍 FRONTEND: Cleaning up auth data and redirecting to login');
+        try {
+          const existingLogs = localStorage.getItem('auth_error_logs');
+          const logs = existingLogs ? JSON.parse(existingLogs) : [];
+          logs.push(errorInfo);
+          // Keep only last 10 errors
+          if (logs.length > 10) logs.shift();
+          localStorage.setItem('auth_error_logs', JSON.stringify(logs));
+          console.log('💾 Error logged to localStorage for debugging');
+        } catch (e) {
+          console.error('Failed to save error log:', e);
+        }
+        
+        // Check if this is right after login (within 5 seconds - increased from 2)
+        const loginTime = localStorage.getItem('last_login_time');
+        const isRecentLogin = loginTime && (Date.now() - parseInt(loginTime, 10)) < 5000;
+        
+        if (isRecentLogin) {
+          console.warn('⚠️ 401 received right after login - this might be a timing issue');
+          console.warn('⚠️ Token is present but backend returned 401');
+          console.warn('⚠️ This could be:');
+          console.warn('   1. Backend not ready to validate token yet');
+          console.warn('   2. Token format issue');
+          console.warn('   3. Backend authentication service issue');
+          console.warn('⚠️ Will retry once after 1 second delay');
+          
+          // Retry logic for recent login: wait and retry once
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Retry the request
+          try {
+            console.log('🔄 Retrying request after delay...');
+            const retryResponse = await fetch(url, defaultOptions);
+            
+            if (retryResponse.status === API.STATUS.UNAUTHORIZED) {
+              console.error('❌ Retry also failed with 401 - this is likely a real auth issue');
+              // Still 401 after retry - treat as real error
         clearAuthData();
-        // Immediate redirect on 401 error
         window.location.href = '/login';
+              throw new Error('Unauthorized access - retry failed');
+            } else {
+              console.log('✅ Retry successful!');
+              // Retry succeeded - return the successful response
+              return retryResponse;
+            }
+          } catch (retryError) {
+            console.error('❌ Retry request failed:', retryError);
+            clearAuthData();
+            window.location.href = '/login';
+            throw retryError;
+          }
+        } else {
+          // Normal 401 - check if token is still valid
+          const currentToken = getAuthToken();
+          if (!currentToken) {
+            console.error('❌ No token available, logging out');
+            clearAuthData();
+            window.location.href = '/login';
+          } else {
+            console.error('❌ Token exists but backend returned 401 - this is unusual');
+            console.error('❌ This could indicate:');
+            console.error('   1. Token is invalid or expired');
+            console.error('   2. Backend authentication service is down');
+            console.error('   3. Token was revoked');
+            console.error('❌ Logging out for security');
+            clearAuthData();
+            window.location.href = '/login';
+          }
+        }
       }
       throw new Error('Unauthorized access - redirecting to login');
     }
@@ -316,25 +437,29 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
     
     // Handle unauthorized responses by redirecting to login
     if (response.status === API.STATUS.UNAUTHORIZED) {
+      // Enhanced logging with stack trace to identify which API call failed
+      const stackTrace = new Error().stack;
+      console.error('🚨 parseApiResponse: 401 Unauthorized response received');
+      console.error('🚨 Response URL:', response.url);
+      console.error('🚨 Stack trace:', stackTrace);
+      
+      // Try to get response body for more details
+      let responseBody = '';
+      try {
+        responseBody = await response.clone().text();
+        console.error('🚨 Response body:', responseBody);
+      } catch (e) {
+        console.error('🚨 Could not read response body:', e);
+      }
+      
       if (typeof window !== 'undefined') {
-        console.error('🚨 DEBUG: parseApiResponse - UNAUTHORIZED RESPONSE!');
-        console.error('🚨 DEBUG: This will trigger auto-redirect to login page!');
-        console.error('🔒 parseApiResponse: Unauthorized access - token may be expired or invalid');
-        console.error('🔒 parseApiResponse: Response status:', response.status);
-        console.error('🔒 parseApiResponse: Response URL:', response.url);
-        
-        // Try to get response body for more details
-        try {
-          const responseText = await response.clone().text();
-          console.error('🔒 parseApiResponse - Response body:', responseText);
-        } catch (e) {
-          console.error('🔒 parseApiResponse - Could not read response body:', e);
-        }
+        console.error('🚨 parseApiResponse: 401 Unauthorized - logging out user');
+        console.error('🚨 This will trigger auto-redirect to login page!');
         
         clearAuthData();
         // Immediate redirect on 401 error
         console.error('🚨 DEBUG: parseApiResponse - REDIRECTING TO LOGIN PAGE NOW!');
-        // window.location.href = '/login';
+        window.location.href = '/login';
       }
       throw new Error('Unauthorized access - redirecting to login');
     }
@@ -547,13 +672,31 @@ export const getAuthToken = (): string | null => {
   if (authData) {
     try {
       const parsed = JSON.parse(authData);
-      if (parsed.token && parsed.expiresAt) {
-        // Check if token is expired
-        if (Date.now() > parsed.expiresAt) {
-          console.log('🔍 Token is expired, clearing auth data');
+      if (parsed.token) {
+        // SOLUTION 1: Decode JWT token and check exp field directly (more reliable)
+        try {
+          const parts = parsed.token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1]));
+            if (payload.exp) {
+              const now = Math.floor(Date.now() / 1000);
+              if (payload.exp < now) {
+                console.log('🔍 Token is expired (JWT exp check), clearing auth data');
           clearAuthData();
           return null;
         }
+            }
+          }
+        } catch (decodeError) {
+          console.warn('Failed to decode JWT for expiration check:', decodeError);
+          // Fallback to expiresAt check
+          if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
+            console.log('🔍 Token is expired (expiresAt check), clearing auth data');
+            clearAuthData();
+            return null;
+          }
+        }
+        
         return parsed.token;
       }
     } catch (error) {
@@ -681,12 +824,16 @@ export const storeAuthData = (token: string, user: User): void => {
   // CONSOLIDATED: Only store ONE item with everything
   localStorage.setItem('authData', JSON.stringify(authData));
   
+  // Mark login time for grace period check
+  localStorage.setItem('last_login_time', Date.now().toString());
+  
   // Clean up old redundant items
   localStorage.removeItem('authToken');
   localStorage.removeItem('user');
   localStorage.removeItem('userData');
   
   console.log('✅ Auth data stored in consolidated format');
+  console.log('✅ Login time marked for grace period');
 };
 
 /**
@@ -699,6 +846,9 @@ export const clearAuthData = (): void => {
   
   // Clear new consolidated format
   localStorage.removeItem('authData');
+  
+  // Clear login time marker
+  localStorage.removeItem('last_login_time');
   
   // Clear old redundant formats
   localStorage.removeItem('authToken');

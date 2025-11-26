@@ -1,28 +1,10 @@
 import { defineConfig } from 'tsup';
 
-export default defineConfig([
-  // Main entry point (server-side safe)
-  {
-    entry: ['src/index.ts'],
-    format: ['esm', 'cjs'],
-    dts: true,
-    external: [
-      'react',
-      'react-dom',
-      'next',
-      'zod',
-      'date-fns',
-      'lucide-react',
-      'next-intl'
-    ],
-    clean: true,
-    sourcemap: true,
-    minify: false,
-    treeshake: true,
+export default defineConfig({
+  entry: {
+    index: 'src/index.ts',
+    client: 'src/client.ts',
   },
-  // Client-side entry point (React components)
-  {
-    entry: ['src/client.ts'],
     format: ['esm', 'cjs'],
     dts: true,
     external: [
@@ -30,12 +12,13 @@ export default defineConfig([
       'react-dom',
       'next',
       'zod',
-      'date-fns',
-      'lucide-react',
-      'next-intl'
+    'date-fns',
+    'lucide-react',
+    'next-intl'
     ],
+  clean: true, // Clean once for all entries
     sourcemap: true,
     minify: false,
     treeshake: true,
-  }
-]); 
+  splitting: false, // Disable code splitting to ensure both entries build correctly
+}); 

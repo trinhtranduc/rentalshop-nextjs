@@ -3693,7 +3693,11 @@ function useAuth() {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       const { apiUrls } = await import("@rentalshop/utils");
-      const response = await fetch(apiUrls.auth.login, {
+      const urls = apiUrls;
+      console.log("\u{1F50D} LOGIN: Using API URL:", urls.auth.login);
+      console.log("\u{1F50D} LOGIN: API Base URL:", urls.base);
+      console.log("\u{1F50D} LOGIN: NEXT_PUBLIC_API_URL:", typeof window !== "undefined" ? window.__NEXT_PUBLIC_API_URL__ || "NOT SET IN WINDOW" : "SERVER SIDE");
+      const response = await fetch(urls.auth.login, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -3713,6 +3717,25 @@ function useAuth() {
       const data = await response.json();
       if (data.success && data.data?.token) {
         storeAuthData(data.data.token, data.data.user);
+        const { getAuthToken: getAuthToken2 } = await import("@rentalshop/utils");
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        const storedToken = getAuthToken2();
+        if (!storedToken) {
+          console.error("\u274C Login: Token was not stored properly, retrying...");
+          storeAuthData(data.data.token, data.data.user);
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          const retryToken = getAuthToken2();
+          if (!retryToken) {
+            console.error("\u274C Login: Failed to store token after retry");
+            setState((prev) => ({
+              ...prev,
+              error: "Failed to store authentication token",
+              loading: false
+            }));
+            return false;
+          }
+        }
+        console.log("\u2705 Login: Token verified and stored successfully");
         setState((prev) => ({
           ...prev,
           user: data.data.user,

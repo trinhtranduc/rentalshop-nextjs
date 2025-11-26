@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenSimple, type JWTPayload } from './lib/jwt-edge';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform, formatPlatformLog } from './lib/platform-detector';
 
 // Protected routes that require authentication
