@@ -233,7 +233,7 @@ export interface AuthorizedRequest {
 // ROLE-PERMISSION MAPPING (SINGLE SOURCE OF TRUTH)
 // ============================================================================
 
-const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   'ADMIN': [
     'system.manage', 'system.view',
     'merchant.manage', 'merchant.view',
@@ -475,10 +475,21 @@ export function getUserScope(user: AuthUser): UserScope {
 /**
  * Check if user has specific permission
  * This is the SINGLE permission checking function
+ * Checks both role-based permissions and custom user permissions
  */
 export function hasPermission(user: AuthUser, permission: Permission): boolean {
-  const userPermissions = ROLE_PERMISSIONS[user.role as Role] || [];
-  return userPermissions.includes(permission);
+  // First check role-based permissions
+  const rolePermissions = ROLE_PERMISSIONS[user.role as Role] || [];
+  if (rolePermissions.includes(permission)) {
+    return true;
+  }
+  
+  // Then check custom permissions (if user has any)
+  if (user.permissions && user.permissions.length > 0) {
+    return user.permissions.includes(permission);
+  }
+  
+  return false;
 }
 
 /**
