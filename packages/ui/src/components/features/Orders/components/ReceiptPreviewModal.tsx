@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Printer } from 'lucide-react';
 import { 
   Button,
@@ -49,13 +49,118 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
   const [isPrinting, setIsPrinting] = useState(false);
+  const receiptContentRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = async () => {
     setIsPrinting(true);
     try {
-      window.print();
+      // Get receipt content
+      const receiptContent = receiptContentRef.current || document.querySelector('[data-receipt-content]');
+      if (!receiptContent) {
+        throw new Error('Receipt content not found');
+      }
+
+      // Create a hidden iframe for printing (better than popup)
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+
+      // Create print HTML with thermal printer format (80mm width)
+      const printHTML = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Receipt - ${order?.orderNumber || order?.id}</title>
+            <style>
+              @page {
+                size: 80mm auto;
+                margin: 0;
+              }
+              
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              
+              body {
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1.4;
+                width: 80mm;
+                padding: 10mm 5mm;
+                background: white;
+                color: black;
+              }
+              
+              .text-center {
+                text-align: center;
+              }
+              
+              .text-right {
+                text-align: right;
+              }
+              
+              .font-bold {
+                font-weight: bold;
+              }
+              
+              .mb-2 {
+                margin-bottom: 8px;
+              }
+              
+              .mb-24 {
+                margin-bottom: 96px;
+              }
+            </style>
+          </head>
+          <body>
+            ${receiptContent.innerHTML}
+          </body>
+        </html>
+      `;
+
+      // Write content to iframe
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        throw new Error('Cannot access iframe document');
+      }
+      
+      iframeDoc.open();
+      iframeDoc.write(printHTML);
+      iframeDoc.close();
+
+      // Wait for content to load, then trigger print
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow?.print();
+          // Remove iframe after printing
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 500);
+        }, 250);
+      };
+
+      // Fallback: trigger print immediately if onload doesn't fire
+      setTimeout(() => {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.print();
+          setTimeout(() => {
+            if (iframe.parentNode) {
+              document.body.removeChild(iframe);
+            }
+          }, 500);
+        }
+      }, 500);
     } catch (error) {
       console.error('Print error:', error);
+      alert(`Lỗi khi in: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsPrinting(false);
     }
@@ -76,7 +181,11 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
           {/* Preview Section */}
           <div className={`flex-1 p-6 overflow-auto flex flex-col ${!isPreviewMode ? 'border-r border-gray-200' : ''}`}>
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex justify-center flex-1">
-              <div className="bg-white rounded shadow-sm p-4 min-h-[400px] max-w-lg">
+              <div 
+                ref={receiptContentRef}
+                className="bg-white rounded shadow-sm p-4 min-h-[400px] max-w-lg" 
+                data-receipt-content
+              >
                 <ReceiptPreviewContent 
                   order={order} 
                   outlet={outlet}

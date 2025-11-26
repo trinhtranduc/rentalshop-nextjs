@@ -60,6 +60,7 @@ interface OrderDetailProps {
   onPickup?: (orderId: number, data: any) => void;
   onReturn?: (orderId: number, data: any) => void;
   onSaveSettings?: (settings: SettingsForm) => Promise<void>;
+  onPrint?: () => void; // Print handler - opens receipt preview modal
   loading?: boolean;
   showActions?: boolean;
 }
@@ -235,6 +236,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   onPickup,
   onReturn,
   onSaveSettings,
+  onPrint,
   loading = false,
   showActions = true
 }) => {
@@ -450,11 +452,17 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   };
 
   const handlePrintOrder = () => {
-    try {
-      window.print();
-      // No toast for print - this is a browser action, not an API call
-    } catch (error) {
-      toastError('Print Error', 'Failed to start printing. Please try again.');
+    // If onPrint prop is provided, use it (opens receipt preview modal)
+    // Otherwise, fallback to window.print()
+    if (onPrint) {
+      onPrint();
+    } else {
+      try {
+        window.print();
+        // No toast for print - this is a browser action, not an API call
+      } catch (error) {
+        toastError('Print Error', 'Failed to start printing. Please try again.');
+      }
     }
   };
 
