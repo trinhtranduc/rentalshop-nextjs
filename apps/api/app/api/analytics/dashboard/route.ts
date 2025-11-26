@@ -256,6 +256,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
         id: order.id,
         orderNumber: order.orderNumber,
         status: order.status,
+        orderType: order.orderType,
         totalAmount: order.totalAmount,
         customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
         outletName: order.outlet?.name || 'Unknown',

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS } from '@rentalshop/constants';
+import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 import { handleApiError } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { API } from '@rentalshop/constants';
 
 // Schema for status update
 const statusUpdateSchema = z.object({
@@ -181,4 +181,6 @@ export async function PATCH(
       return NextResponse.json(response, { status: statusCode });
     }
   })(request);
-}export const runtime = 'nodejs';
+}
+
+export const runtime = 'nodejs';
