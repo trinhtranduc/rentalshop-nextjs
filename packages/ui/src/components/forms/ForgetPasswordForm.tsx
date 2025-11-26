@@ -6,6 +6,7 @@ import { useFormik } from "formik";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import { Button, Card, CardContent, Input, Logo, LanguageSwitcher } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
+import { isValidEmail } from "@rentalshop/utils";
 
 // Types for the forget password form
 interface ForgetPasswordFormData {
@@ -33,8 +34,11 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
   // Validation schema
   const validationSchema = Yup.object({
     email: Yup.string()
-      .email(t('login.invalidEmail'))
-      .required(t('login.invalidEmail')),
+      .required(t('emailRequired') || 'Email is required')
+      .test('email-format', t('login.invalidEmail') || 'Invalid email format', (value) => {
+        if (!value) return false;
+        return isValidEmail(value);
+      }),
   });
 
   const validation = useFormik<ForgetPasswordFormData>({
@@ -43,6 +47,8 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
       email: "",
     },
     validationSchema: validationSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
     onSubmit: async (values: ForgetPasswordFormData) => {
       try {
         if (onResetPassword) {

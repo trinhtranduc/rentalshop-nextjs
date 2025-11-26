@@ -18,6 +18,7 @@ import { Card,
   formatCurrency,
   SearchableSelect,
   useToast  } from '@rentalshop/ui';
+import { validateEmail } from '@rentalshop/utils';
 import type { 
   OrderInput, 
   OrderItemInput, 
@@ -105,6 +106,27 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(
     customers.find(c => c.id === formData.customerId) || null
   );
+
+  const [emailError, setEmailError] = useState<string | undefined>(undefined);
+
+  const handleEmailChange = (value: string) => {
+    setFormData(prev => ({ ...prev, customerEmail: value }));
+    // Validate email on change (email is optional)
+    const error = validateEmail(value, {
+      required: false,
+      invalidMessage: 'Invalid email format'
+    });
+    setEmailError(error);
+  };
+
+  const handleEmailBlur = () => {
+    // Validate email when user leaves the field
+    const error = validateEmail(formData.customerEmail, {
+      required: false,
+      invalidMessage: 'Invalid email format'
+    });
+    setEmailError(error);
+  };
 
   // Calculate totals when order items change
   useEffect(() => {
@@ -288,7 +310,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <Input type="email" variant="filled" value={formData.customerEmail || ''} onChange={(e) => setFormData(prev => ({ ...prev, customerEmail: e.target.value }))} placeholder="Email" />
+              <Input 
+                type="email" 
+                variant="filled" 
+                value={formData.customerEmail || ''} 
+                onChange={(e) => handleEmailChange(e.target.value)}
+                onBlur={handleEmailBlur}
+                placeholder="Email"
+                className={emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+              />
+              {emailError && (
+                <p className="mt-2 text-sm text-red-600">{emailError}</p>
+              )}
             </div>
           </div>
         )}

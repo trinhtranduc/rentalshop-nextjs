@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin } from "lucide-react";
-import { authApi } from "@rentalshop/utils";
+import { authApi, isValidEmail } from "@rentalshop/utils";
 import { 
   BUSINESS_TYPE_OPTIONS,
   PRICING_TYPE_OPTIONS,
@@ -79,8 +79,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   // Step 1 validation schema (Account Information)
   const step1ValidationSchema = Yup.object({
     login: Yup.string()
-      .email(t('login.invalidEmail'))
-      .required(t('register.emailRequired')),
+      .required(t('register.emailRequired') || 'Email is required')
+      .test('email-format', t('login.invalidEmail') || 'Invalid email format', (value) => {
+        if (!value) return false;
+        return isValidEmail(value);
+      }),
     password: Yup.string()
       .min(6, t('register.passwordMinLength'))
       .max(25, t('register.passwordMaxLength'))
@@ -150,6 +153,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       role: 'MERCHANT',
     },
     validationSchema: currentStep === 1 ? step1ValidationSchema : step2ValidationSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
     onSubmit: async (values: RegisterFormData) => {
       // Step 1 only advances UI; do not toggle submitting state
       if (currentStep === 1) {
