@@ -96,6 +96,15 @@
     "limit": "Limit",
     "used": "Used",
     "remaining": "Remaining"
+  },
+  "banner": {
+    "expiringSoon": "Subscription Expiring Soon",
+    "expiresOn": "Your subscription expires on {date}. Consider renewing to avoid service interruption.",
+    "gracePeriodEnds": "Grace period ends: {date}",
+    "contact": "Contact",
+    "contactPhone": "Phone",
+    "contactZalo": "Zalo",
+    "contactWhatsApp": "WhatsApp"
   }
 }
 

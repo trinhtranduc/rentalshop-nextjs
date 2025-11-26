@@ -54,20 +54,15 @@ export default function VerifyEmailPage() {
   };
 
   const handleVerifiedToken = (jwtToken: string, user?: any) => {
-    // Save token and user to localStorage
-    if (user) {
-      storeAuthData(jwtToken, user);
-    } else {
-      // If user data not provided, just save token
-      localStorage.setItem('token', jwtToken);
-    }
+    // Don't save token - user will need to login
+    // Email is verified, now redirect to login page
     
     setStatus('success');
     setMessage('Email đã được xác thực thành công!');
     
-    // Redirect to dashboard after 2 seconds
+    // Redirect to login after 2 seconds
     setTimeout(() => {
-      router.push('/dashboard');
+      router.push('/login');
     }, 2000);
   };
 
@@ -101,13 +96,13 @@ export default function VerifyEmailPage() {
           <CardContent className="space-y-4">
             <p className="text-center text-gray-600">{message}</p>
             <p className="text-center text-sm text-gray-500">
-              Đang chuyển hướng đến trang chủ...
+              Đang chuyển hướng đến trang đăng nhập...
             </p>
             <Button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/login')}
               className="w-full"
             >
-              Đi đến Dashboard
+              Đi tới Login
             </Button>
           </CardContent>
         </Card>

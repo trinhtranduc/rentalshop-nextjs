@@ -93,6 +93,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   // Conflict Errors
   'EMAIL_EXISTS': 'Email address is already registered',
   'PHONE_EXISTS': 'Phone number is already registered',
+  'BUSINESS_NAME_EXISTS': 'Business name already exists',
   'CUSTOMER_DUPLICATE': 'A customer with this email or phone already exists',
   'OUTLET_NAME_EXISTS': 'An outlet with this name already exists for this merchant',
   'CATEGORY_NAME_EXISTS': 'Category with this name already exists',

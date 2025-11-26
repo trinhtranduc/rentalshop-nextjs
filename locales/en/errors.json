@@ -32,6 +32,7 @@
   
   "EMAIL_EXISTS": "Email address is already registered",
   "PHONE_EXISTS": "Phone number is already registered",
+  "BUSINESS_NAME_EXISTS": "Business name already exists",
   "USER_NOT_FOUND": "User not found",
   "MERCHANT_NOT_FOUND": "Merchant not found",
   "OUTLET_NOT_FOUND": "Outlet not found",

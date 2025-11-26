@@ -1041,6 +1041,14 @@ export default function DashboardPage() {
       <PageWrapper>
       
       <PageContent>
+        {/* Subscription Status Banner - Show at top if subscription is expiring or expired */}
+        <div className="mb-6">
+          <SubscriptionStatusBanner
+            onUpgrade={() => router.push('/subscription')}
+            onPayment={() => router.push('/subscription')}
+          />
+        </div>
+
         {/* Welcome Header - Modern Style */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
