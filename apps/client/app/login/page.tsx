@@ -36,8 +36,22 @@ export default function LoginPage() {
       
       if (success) {
         console.log('✅ Login successful');
-        // Redirect immediately to avoid accidental extra keypress triggering other links
-        router.replace('/dashboard');
+        // Wait for React state to update and localStorage to be fully written
+        // This prevents race condition where dashboard mounts before user state is set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify token is actually stored before redirecting
+        const { getAuthToken } = await import('@rentalshop/utils');
+        const token = getAuthToken();
+        if (!token) {
+          console.error('❌ Login: Token not found after storage, cannot redirect');
+          setLocalError('Failed to store authentication token. Please try again.');
+          return;
+        }
+        
+        console.log('✅ Token verified, redirecting to dashboard');
+        // Use window.location.href for full page reload to ensure clean state
+        window.location.href = '/dashboard';
         return;
       } else {
         console.log('❌ Login failed');

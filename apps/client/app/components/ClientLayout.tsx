@@ -59,12 +59,17 @@ export default function ClientLayout({
   // But only redirect if we're not currently on a page that might be setting up auth
   if (!user && !isPublicPage && !loading) {
     if (typeof window !== 'undefined') {
-      // Check if there's a token in localStorage
-      const token = localStorage.getItem('authToken');
+      // Check if there's a token in localStorage (check both old and new format)
+      const authData = localStorage.getItem('authData');
+      const oldToken = localStorage.getItem('authToken');
+      const hasToken = authData || oldToken;
       
-      // If there's a token, wait a bit for auth state to sync
-      if (token) {
+      // If there's a token, wait for auth state to sync (give it more time)
+      if (hasToken) {
         // Don't redirect immediately - wait for auth state to sync
+        // This handles the case where user just logged in and token is stored
+        // but React state hasn't updated yet
+        console.log('⏳ ClientLayout: Token found but user state not loaded, waiting...');
         return (
           <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
             <LoadingIndicator 
@@ -77,6 +82,7 @@ export default function ClientLayout({
       }
       
       // No token and not loading - redirect to login
+      console.log('🚨 ClientLayout: No user, no token, redirecting to login');
       window.location.href = '/login';
     }
     return null;

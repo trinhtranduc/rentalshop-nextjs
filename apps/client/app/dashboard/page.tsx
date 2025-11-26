@@ -328,6 +328,15 @@ export default function DashboardPage() {
           return;
         }
 
+        // Check if this is right after login - add delay for backend to be ready
+        const loginTime = localStorage.getItem('last_login_time');
+        const isRecentLogin = loginTime && (Date.now() - parseInt(loginTime, 10)) < 3000;
+        
+        if (isRecentLogin) {
+          console.log('⏳ Recent login detected, waiting 500ms before API calls');
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         const [categoriesRes, outletsRes] = await Promise.all([
           categoriesApi.getCategories(),
           outletsApi.getOutletsByMerchant(Number(merchantId))
@@ -370,8 +379,27 @@ export default function DashboardPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [timePeriod, selectedOutlets]); // Fetch when time period or selected outlets change
+    // Guard: Only fetch data when user is confirmed loaded and token exists
+    if (!user) {
+      console.log('⏳ Dashboard: Waiting for user to be loaded before fetching data');
+      return;
+    }
+
+    // Verify token exists before making API calls
+    const checkTokenAndFetch = async () => {
+      const { getAuthToken } = await import('@rentalshop/utils');
+      const token = getAuthToken();
+      if (!token) {
+        console.warn('⚠️ Dashboard: No token found, skipping API calls. User may not be fully authenticated yet.');
+        return;
+      }
+
+      console.log('✅ Dashboard: User and token confirmed, fetching dashboard data');
+      fetchDashboardData();
+    };
+
+    checkTokenAndFetch();
+  }, [user, timePeriod, selectedOutlets]); // Add user dependency to wait for auth state
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -385,6 +413,34 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
+      // Step 1: Guard - Check token before making API calls
+      const { getAuthToken } = await import('@rentalshop/utils');
+      const token = getAuthToken();
+      
+      if (!token) {
+        console.warn('⚠️ fetchDashboardData: No token available, skipping API calls');
+        setLoadingCharts(false);
+        return;
+      }
+
+      // Step 2: Guard - Verify user is loaded
+      if (!user) {
+        console.warn('⚠️ fetchDashboardData: User not loaded, skipping API calls');
+        setLoadingCharts(false);
+        return;
+      }
+
+      console.log('✅ fetchDashboardData: Token and user confirmed, proceeding with API calls');
+      
+      // Check if this is right after login - add delay for backend to be ready
+      const loginTime = localStorage.getItem('last_login_time');
+      const isRecentLogin = loginTime && (Date.now() - parseInt(loginTime, 10)) < 3000;
+      
+      if (isRecentLogin) {
+        console.log('⏳ Recent login detected, waiting 500ms before API calls to allow backend to sync');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
       setLoadingCharts(true);
 
       // Dynamic date calculation based on time period
