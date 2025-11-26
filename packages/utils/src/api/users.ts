@@ -197,5 +197,37 @@ export const usersApi = {
       body: JSON.stringify({ newPassword }),
     });
     return await parseApiResponse<UserApiResponse>(response);
+  },
+
+  // ============================================================================
+  // PERMISSION MANAGEMENT OPERATIONS
+  // ============================================================================
+
+  /**
+   * Get user permissions
+   */
+  async getUserPermissions(userId: number): Promise<UserApiResponse> {
+    const baseUrl = apiUrls.users.update(userId);
+    const fullUrl = `${baseUrl}/permissions`;
+    
+    const response = await authenticatedFetch(fullUrl);
+    return await parseApiResponse<UserApiResponse>(response);
+  },
+
+  /**
+   * Update user permissions
+   */
+  async updateUserPermissions(
+    userId: number,
+    permissionsData: { permissions: Array<{ permission: string; enabled: boolean }> }
+  ): Promise<UserApiResponse> {
+    const baseUrl = apiUrls.users.update(userId);
+    const fullUrl = `${baseUrl}/permissions`;
+    
+    const response = await authenticatedFetch(fullUrl, {
+      method: 'PUT',
+      body: JSON.stringify(permissionsData),
+    });
+    return await parseApiResponse<UserApiResponse>(response);
   }
 };
