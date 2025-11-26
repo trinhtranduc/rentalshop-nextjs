@@ -457,11 +457,11 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     if (onPrint) {
       onPrint();
     } else {
-      try {
-        window.print();
-        // No toast for print - this is a browser action, not an API call
-      } catch (error) {
-        toastError('Print Error', 'Failed to start printing. Please try again.');
+    try {
+      window.print();
+      // No toast for print - this is a browser action, not an API call
+    } catch (error) {
+      toastError('Print Error', 'Failed to start printing. Please try again.');
       }
     }
   };

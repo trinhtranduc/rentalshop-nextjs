@@ -66,9 +66,9 @@ export const CardTitleClean: React.FC<CardTitleCleanProps> = ({
   size = 'md',
 }) => {
   const sizeClasses = {
-    sm: "text-lg font-medium",
-    md: "text-xl font-semibold",
-    lg: "text-2xl font-bold",
+    sm: "text-base font-medium",
+    md: "text-lg font-medium",
+    lg: "text-xl font-semibold",
   };
 
   return (

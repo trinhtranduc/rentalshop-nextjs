@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, ORDER_STATUS } from '@rentalshop/constants';
+import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/orders
