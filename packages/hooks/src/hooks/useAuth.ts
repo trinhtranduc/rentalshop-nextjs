@@ -79,8 +79,17 @@ export function useAuth() {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
+      // SOLUTION 1: Import apiUrls - it now uses Proxy to ensure consistent base URL
       const { apiUrls } = await import('@rentalshop/utils');
-      const response = await fetch(apiUrls.auth.login, {
+      // apiUrls is now a Proxy that calls getApiUrls() internally, ensuring consistent base URL
+      const urls = apiUrls;
+      
+      // SOLUTION 1: Log API URL being used for login
+      console.log('🔍 LOGIN: Using API URL:', urls.auth.login);
+      console.log('🔍 LOGIN: API Base URL:', urls.base);
+      console.log('🔍 LOGIN: NEXT_PUBLIC_API_URL:', typeof window !== 'undefined' ? (window as any).__NEXT_PUBLIC_API_URL__ || 'NOT SET IN WINDOW' : 'SERVER SIDE');
+      
+      const response = await fetch(urls.auth.login, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +112,35 @@ export function useAuth() {
       const data: LoginResponse = await response.json();
 
       if (data.success && data.data?.token) {
+        // Store auth data
         storeAuthData(data.data.token, data.data.user);
+        
+        // Step 3: Verify token was actually stored before proceeding
+        const { getAuthToken } = await import('@rentalshop/utils');
+        
+        // Wait a small amount to ensure localStorage write completes (localStorage is synchronous but we want to be safe)
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Verify token is accessible
+        const storedToken = getAuthToken();
+        if (!storedToken) {
+          console.error('❌ Login: Token was not stored properly, retrying...');
+          // Retry storing token once
+          storeAuthData(data.data.token, data.data.user);
+          await new Promise(resolve => setTimeout(resolve, 10));
+          const retryToken = getAuthToken();
+          if (!retryToken) {
+            console.error('❌ Login: Failed to store token after retry');
+            setState(prev => ({ 
+              ...prev, 
+              error: 'Failed to store authentication token',
+              loading: false 
+            }));
+            return false;
+          }
+        }
+        
+        console.log('✅ Login: Token verified and stored successfully');
         setState(prev => ({ 
           ...prev, 
           user: data.data.user, 
