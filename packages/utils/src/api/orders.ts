@@ -59,14 +59,12 @@ export const ordersApi = {
     if (filters.customerId) params.append('customerId', filters.customerId.toString());
     if (filters.productId) params.append('productId', filters.productId.toString());
     
-    // Handle date fields - convert to ISO string if it's a Date object
+    // Handle date fields - OrderFilters uses string dates (ISO format)
     if (filters.startDate) {
-      const startDate = filters.startDate instanceof Date ? filters.startDate.toISOString() : filters.startDate;
-      params.append('startDate', startDate);
+      params.append('startDate', filters.startDate);
     }
     if (filters.endDate) {
-      const endDate = filters.endDate instanceof Date ? filters.endDate.toISOString() : filters.endDate;
-      params.append('endDate', endDate);
+      params.append('endDate', filters.endDate);
     }
     
     if (filters.orderType) params.append('orderType', filters.orderType);
