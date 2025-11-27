@@ -38,25 +38,31 @@ export const subscriptionsApi = {
   /**
    * Search subscriptions with filters
    */
-  async search(filters: SubscriptionFilters = {}): Promise<ApiResponse<Subscription[]>> {
+  async search(filters: SubscriptionFilters = {}): Promise<ApiResponse<SubscriptionsResponse>> {
     const params = new URLSearchParams();
     
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.planId) params.append('planId', filters.planId.toString());
     if (filters.status) params.append('status', filters.status);
+    // Handle date fields - convert Date objects to ISO string, use strings as-is
     if (filters.startDate) {
-      const startDate = filters.startDate instanceof Date ? filters.startDate.toISOString() : filters.startDate;
-      params.append('startDate', startDate);
+      const startDate = typeof filters.startDate === 'object' && filters.startDate instanceof Date 
+        ? filters.startDate.toISOString() 
+        : filters.startDate;
+      params.append('startDate', String(startDate));
     }
     if (filters.endDate) {
-      const endDate = filters.endDate instanceof Date ? filters.endDate.toISOString() : filters.endDate;
-      params.append('endDate', endDate);
+      const endDate = typeof filters.endDate === 'object' && filters.endDate instanceof Date 
+        ? filters.endDate.toISOString() 
+        : filters.endDate;
+      params.append('endDate', String(endDate));
     }
     if (filters.limit) params.append('limit', filters.limit.toString());
-    if (filters.offset) params.append('offset', filters.offset.toString());
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.search) params.append('q', filters.search);
 
     const response = await authenticatedFetch(`${apiUrls.subscriptions.list}?${params.toString()}`);
-    return await parseApiResponse<Subscription[]>(response);
+    return await parseApiResponse<SubscriptionsResponse>(response);
   },
 
   /**
