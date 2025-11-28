@@ -28,27 +28,9 @@ BEGIN
         RAISE NOTICE 'Dropped index Merchant_status_idx';
     END IF;
     
-    -- Step 2: Check and drop any other indexes that might reference status
+    -- Step 2: Drop any other indexes that might reference status
     -- (in case there are composite indexes)
-    IF EXISTS (
-        SELECT 1 
-        FROM pg_indexes 
-        WHERE schemaname = 'public'
-        AND tablename = 'Merchant' 
-        AND indexdef LIKE '%status%'
-    ) THEN
-        -- Find and drop any indexes containing status
-        FOR rec IN 
-            SELECT indexname 
-            FROM pg_indexes 
-            WHERE schemaname = 'public'
-            AND tablename = 'Merchant' 
-            AND indexdef LIKE '%status%'
-        LOOP
-            EXECUTE format('DROP INDEX IF EXISTS %I', rec.indexname);
-            RAISE NOTICE 'Dropped index % containing status', rec.indexname;
-        END LOOP;
-    END IF;
+    -- Note: We'll drop them individually if they exist, but the main index was already dropped in Step 1
     
     -- Step 3: Check and drop the status column
     IF EXISTS (
