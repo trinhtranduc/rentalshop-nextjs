@@ -3,7 +3,7 @@
  * Validates JSON import data structure and content
  */
 
-export interface ValidationError {
+export interface ImportValidationError {
   row: number;
   entity: 'customer' | 'product' | 'order';
   field: string;
@@ -11,9 +11,9 @@ export interface ValidationError {
   value: any;
 }
 
-export interface ValidationResult {
+export interface ImportValidationResult {
   valid: boolean;
-  errors: ValidationError[];
+  errors: ImportValidationError[];
   preview?: {
     customers: any[];
     products: any[];
@@ -29,8 +29,8 @@ export interface ValidationResult {
 /**
  * Validate customer data
  */
-function validateCustomer(customer: any, index: number, merchantId: number): ValidationError[] {
-  const errors: ValidationError[] = [];
+function validateCustomer(customer: any, index: number, merchantId: number): ImportValidationError[] {
+  const errors: ImportValidationError[] = [];
 
   if (!customer.firstName || typeof customer.firstName !== 'string' || customer.firstName.trim() === '') {
     errors.push({
@@ -89,8 +89,8 @@ function validateCustomer(customer: any, index: number, merchantId: number): Val
 /**
  * Validate product data
  */
-function validateProduct(product: any, index: number, merchantId: number): ValidationError[] {
-  const errors: ValidationError[] = [];
+function validateProduct(product: any, index: number, merchantId: number): ImportValidationError[] {
+  const errors: ImportValidationError[] = [];
 
   if (!product.name || typeof product.name !== 'string' || product.name.trim() === '') {
     errors.push({
@@ -139,8 +139,8 @@ function validateProduct(product: any, index: number, merchantId: number): Valid
 /**
  * Validate order data
  */
-function validateOrder(order: any, index: number, merchantId: number): ValidationError[] {
-  const errors: ValidationError[] = [];
+function validateOrder(order: any, index: number, merchantId: number): ImportValidationError[] {
+  const errors: ImportValidationError[] = [];
 
   if (!order.orderType || !['RENT', 'SALE'].includes(order.orderType)) {
     errors.push({
@@ -215,8 +215,8 @@ export function validateImportData(
   data: any,
   merchantId: number,
   previewLimit: number = 10
-): ValidationResult {
-  const errors: ValidationError[] = [];
+): ImportValidationResult {
+  const errors: ImportValidationError[] = [];
   const preview: any = {
     customers: [],
     products: [],
