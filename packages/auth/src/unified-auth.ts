@@ -5,7 +5,7 @@
 // Goal: Replace 14+ auth wrappers with 1 unified approach
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, getUserScope, hasAnyRole, hasAnyPermission, type Permission } from './core';
+import { authenticateRequest, getUserScope, hasAnyRole, hasAnyPermission, getUserPermissions, type Permission } from './core';
 import { USER_ROLE, type UserRole } from '@rentalshop/constants';
 import { SubscriptionStatusChecker } from './subscription-checker';
 
@@ -302,10 +302,11 @@ export function withPermissions(
         const user = authResult.user;
         console.log(`✅ [AUTH] User authenticated: ${user.email} (${user.role})`);
 
-        // Step 2: Check permissions (reads from ROLE_PERMISSIONS automatically)
-        if (!hasAnyPermission(user, requiredPermissions)) {
-          const { ROLE_PERMISSIONS } = await import('./core');
-          const userPermissions = ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS] || [];
+        // Step 2: Check permissions (supports custom merchant permissions)
+        const hasPermission = await hasAnyPermission(user, requiredPermissions);
+        if (!hasPermission) {
+          const { getUserPermissions } = await import('./core');
+          const userPermissions = await getUserPermissions(user);
           console.log(`❌ [AUTH] Insufficient permissions: User ${user.role} does not have any of [${requiredPermissions.join(', ')}]`);
           console.log(`❌ [AUTH] User's permissions: [${userPermissions.join(', ')}]`);
           

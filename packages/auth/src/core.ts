@@ -360,6 +360,38 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     }
 
     // ============================================================================
+    // PASSWORD CHANGE CHECK (Invalidate old tokens when password changes)
+    // ============================================================================
+    // Check if password was changed after token was issued
+    // Get passwordChangedAt from database
+    const dbPasswordChangedAt = (userRecord as any).passwordChangedAt 
+      ? Math.floor((userRecord as any).passwordChangedAt.getTime() / 1000) // Convert to Unix timestamp
+      : null;
+    
+    // Get passwordChangedAt from token payload (from verifyTokenSimple)
+    const tokenPasswordChangedAt = (user as any).passwordChangedAt;
+    
+    // If password was changed after token was issued, invalidate token
+    if (dbPasswordChangedAt !== null) {
+      // If token doesn't have passwordChangedAt or it's older than database value, invalidate
+      if (tokenPasswordChangedAt === null || 
+          tokenPasswordChangedAt === undefined ||
+          tokenPasswordChangedAt < dbPasswordChangedAt) {
+        return {
+          success: false,
+          response: NextResponse.json(
+            { 
+              success: false, 
+              code: 'TOKEN_INVALIDATED', 
+              message: 'Your session has expired due to password change. Please login again.' 
+            },
+            { status: 401 }
+          )
+        };
+      }
+    }
+
+    // ============================================================================
     // SESSION VALIDATION (Single Session Enforcement)
     // ============================================================================
     // Check if session is still valid (not invalidated by a newer login)
@@ -473,18 +505,101 @@ export function getUserScope(user: AuthUser): UserScope {
 }
 
 /**
- * Check if user has specific permission
- * This is the SINGLE permission checking function
- * Checks both role-based permissions and custom user permissions
+ * Get permissions for a user (custom merchant permissions or default)
+ * Priority: Custom merchant permissions > Default ROLE_PERMISSIONS
+ * 
+ * @param user - User object with role and merchantId
+ * @returns Array of permissions for the user's role
  */
-export function hasPermission(user: AuthUser, permission: Permission): boolean {
-  // First check role-based permissions
+export async function getUserPermissions(user: AuthUser): Promise<Permission[]> {
+  // ADMIN users always use default permissions (no merchant-specific customization)
+  if (user.role === 'ADMIN') {
+    return ROLE_PERMISSIONS[user.role as Role] || [];
+  }
+
+  // For merchant/outlet users, check for custom roles or custom permissions
+  if (user.merchantId) {
+    try {
+      // Priority 1: Check if user has a custom role (customRoleId)
+      // This could be either a custom role OR a customized system role
+      if ((user as any).customRoleId) {
+        const merchantRole = await db.prisma.merchantRole.findUnique({
+          where: {
+            id: (user as any).customRoleId
+          },
+          select: {
+            permissions: true,
+            isActive: true,
+            roleName: true,
+            isSystemRole: true,
+            systemRole: true
+          }
+        });
+
+        // If merchant role exists and is active, use its permissions
+        if (merchantRole && merchantRole.isActive && merchantRole.permissions.length > 0) {
+          const roleType = merchantRole.isSystemRole ? 'customized system role' : 'custom role';
+          console.log(`🔍 Using ${roleType} "${merchantRole.roleName}" permissions for merchant ${user.merchantId}`);
+          return merchantRole.permissions as Permission[];
+        }
+      }
+
+      // Priority 2: Check for custom permissions for system role (if user doesn't have customRoleId)
+      // Look for MerchantRole where isSystemRole = true and systemRole matches user's role
+      const systemRoleCustomization = await db.prisma.merchantRole.findFirst({
+        where: {
+          merchantId: user.merchantId,
+          isSystemRole: true,
+          systemRole: user.role as any,
+          isActive: true
+        },
+        select: {
+          permissions: true,
+          isActive: true
+        }
+      });
+
+      // If custom permissions exist and are active, use them
+      if (systemRoleCustomization && systemRoleCustomization.isActive && systemRoleCustomization.permissions.length > 0) {
+        console.log(`🔍 Using custom permissions for merchant ${user.merchantId}, system role ${user.role}`);
+        return systemRoleCustomization.permissions as Permission[];
+      }
+    } catch (error) {
+      // If database error, fallback to default (backward compatible)
+      console.warn('⚠️ Error fetching custom permissions/roles, using default:', error);
+    }
+  }
+
+  // Fallback to default permissions for system role
+  return ROLE_PERMISSIONS[user.role as Role] || [];
+}
+
+/**
+ * Check if user has a specific permission (async - supports custom permissions)
+ * Uses custom merchant permissions if available, otherwise uses default ROLE_PERMISSIONS
+ * 
+ * @param user - User object with role and merchantId
+ * @param permission - Permission to check
+ * @returns true if user has the permission
+ */
+export async function hasPermission(user: AuthUser, permission: Permission): Promise<boolean> {
+  const permissions = await getUserPermissions(user);
+  return permissions.includes(permission);
+}
+
+/**
+ * Synchronous version of hasPermission (for backward compatibility)
+ * Uses default ROLE_PERMISSIONS only (doesn't check custom permissions)
+ * 
+ * @deprecated Use async hasPermission() instead for custom permissions support
+ */
+export function hasPermissionSync(user: AuthUser, permission: Permission): boolean {
   const rolePermissions = ROLE_PERMISSIONS[user.role as Role] || [];
   if (rolePermissions.includes(permission)) {
     return true;
   }
   
-  // Then check custom permissions (if user has any)
+  // Then check custom permissions (if user has any - from JWT token)
   if (user.permissions && user.permissions.length > 0) {
     return user.permissions.includes(permission);
   }
@@ -493,25 +608,48 @@ export function hasPermission(user: AuthUser, permission: Permission): boolean {
 }
 
 /**
- * Check if user has any of the specified permissions
+ * Check if user has any of the specified permissions (async - supports custom permissions)
  */
-export function hasAnyPermission(user: AuthUser, permissions: Permission[]): boolean {
-  return permissions.some(permission => hasPermission(user, permission));
+export async function hasAnyPermission(user: AuthUser, permissions: Permission[]): Promise<boolean> {
+  const userPermissions = await getUserPermissions(user);
+  return permissions.some(permission => userPermissions.includes(permission));
 }
 
 /**
- * Check if user has all of the specified permissions
+ * Check if user has all of the specified permissions (async - supports custom permissions)
  */
-export function hasAllPermissions(user: AuthUser, permissions: Permission[]): boolean {
-  return permissions.every(permission => hasPermission(user, permission));
+export async function hasAllPermissions(user: AuthUser, permissions: Permission[]): Promise<boolean> {
+  const userPermissions = await getUserPermissions(user);
+  return permissions.every(permission => userPermissions.includes(permission));
 }
 
 /**
- * Check if user can access a specific resource
+ * Synchronous versions (for backward compatibility - uses default permissions only)
+ * @deprecated Use async versions for custom permissions support
  */
-export function canAccessResource(user: AuthUser, resource: Resource, action: 'view' | 'manage' = 'view'): boolean {
+export function hasAnyPermissionSync(user: AuthUser, permissions: Permission[]): boolean {
+  return permissions.some(permission => hasPermissionSync(user, permission));
+}
+
+export function hasAllPermissionsSync(user: AuthUser, permissions: Permission[]): boolean {
+  return permissions.every(permission => hasPermissionSync(user, permission));
+}
+
+/**
+ * Check if user can access a specific resource (async - supports custom permissions)
+ */
+export async function canAccessResource(user: AuthUser, resource: Resource, action: 'view' | 'manage' = 'view'): Promise<boolean> {
   const permission = `${resource}.${action}` as Permission;
-  return hasPermission(user, permission);
+  return await hasPermission(user, permission);
+}
+
+/**
+ * Synchronous version (for backward compatibility - uses default permissions only)
+ * @deprecated Use async canAccessResource() instead for custom permissions support
+ */
+export function canAccessResourceSync(user: AuthUser, resource: Resource, action: 'view' | 'manage' = 'view'): boolean {
+  const permission = `${resource}.${action}` as Permission;
+  return hasPermissionSync(user, permission);
 }
 
 /**

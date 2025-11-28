@@ -15,15 +15,18 @@ model User {
   firstName              String
   lastName               String
   phone                  String?
-  role                   UserRole               @default(OUTLET_STAFF)
+  role                   UserRole               @default(OUTLET_STAFF) // System role (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+  customRoleId           Int?                   // Custom role for merchant (nullable - only for custom roles)
   isActive               Boolean                @default(true)
   emailVerified          Boolean                @default(false)
   emailVerifiedAt        DateTime?
+  passwordChangedAt      DateTime?              // Track when password was last changed to invalidate old tokens
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   merchantId             Int?
   outletId               Int?
   deletedAt              DateTime?
+  customRole              MerchantRole?          @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
   auditLogs              AuditLog[]
   emailVerifications     EmailVerification[]
   createdOrders          Order[]
@@ -93,6 +96,7 @@ model Merchant {
   products      Product[]
   subscription  Subscription?
   users         User[]
+  roles        MerchantRole[]             // All roles (system role customizations + custom roles)
 
   @@index([name])
   @@index([email])
@@ -507,4 +511,40 @@ enum UserRole {
   MERCHANT
   OUTLET_ADMIN
   OUTLET_STAFF
+}
+
+// ============================================================================
+// MERCHANT ROLES (Unified Model for System & Custom Roles)
+// ============================================================================
+// This model allows merchants to:
+// 1. Customize permissions for system roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+// 2. Create custom roles (e.g., WAREHOUSE_MANAGER, SALES_REP, ACCOUNTANT)
+// 
+// Logic:
+// - If isSystemRole = true: roleName must be one of system roles, systemRole must match
+// - If isSystemRole = false: roleName is custom role name, systemRole is null
+// - If no custom permissions exist, system uses default ROLE_PERMISSIONS
+// ============================================================================
+
+model MerchantRole {
+  id            Int       @id @default(autoincrement())
+  merchantId    Int
+  roleName      String    // Role name (system role name or custom role name)
+  isSystemRole  Boolean   @default(false) // true = system role customization, false = custom role
+  systemRole    UserRole? // System role enum (only set when isSystemRole = true)
+  description   String?   // Optional description
+  permissions   String[]  // Array of permission strings (e.g., ['products.view', 'orders.create'])
+  isActive      Boolean   @default(true) // Allow enabling/disabling this role
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  users         User[]    // Users assigned to this role
+
+  @@unique([merchantId, roleName]) // One role name per merchant (case-sensitive)
+  @@index([merchantId])
+  @@index([roleName])
+  @@index([merchantId, roleName])
+  @@index([merchantId, isSystemRole])
+  @@index([systemRole])
 }

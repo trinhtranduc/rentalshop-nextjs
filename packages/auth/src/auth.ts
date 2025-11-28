@@ -54,10 +54,16 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
   // Get permissions from ROLE_PERMISSIONS based on user role
   const permissions = ROLE_PERMISSIONS[user.role] || [];
 
+  // Include passwordChangedAt in token to invalidate old tokens when password changes
+  const passwordChangedAt = (user as any).passwordChangedAt 
+    ? Math.floor((user as any).passwordChangedAt.getTime() / 1000) // Convert to Unix timestamp
+    : null;
+
   const token = generateToken({
     userId: user.id, // Use id (number) for JWT token consistency
     email: user.email,
     role: user.role,
+    passwordChangedAt: passwordChangedAt,
   });
 
   return {
@@ -109,10 +115,16 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
     },
   });
 
+  // Include passwordChangedAt in token to invalidate old tokens when password changes
+  const passwordChangedAt = (user as any).passwordChangedAt 
+    ? Math.floor((user as any).passwordChangedAt.getTime() / 1000) // Convert to Unix timestamp
+    : null;
+
   const token = generateToken({
     userId: user.id, // Use id (number) for JWT token consistency
     email: user.email,
     role: user.role,
+    passwordChangedAt: passwordChangedAt,
   });
 
   return {
