@@ -57,9 +57,10 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password
+    // Update password and set passwordChangedAt to invalidate old tokens
     await db.users.update(user.id, {
-      password: hashedPassword
+      password: hashedPassword,
+      passwordChangedAt: new Date() // Invalidate all existing tokens
     });
 
     console.log('✅ Password changed successfully for user:', user.email);

@@ -6,6 +6,7 @@ import { API, ORDER_STATUS } from '@rentalshop/constants';
 interface IntegrityCheck {
   name: string;
   status: 'pass' | 'fail' | 'warning';
+  code?: string; // Error/success code for API responses
   message: string;
   details?: any;
   severity: 'low' | 'medium' | 'high' | 'critical';
@@ -368,12 +369,21 @@ async function checkAuditLogCompleteness(checks: IntegrityCheck[]) {
 
 async function checkDataConsistency(checks: IntegrityCheck[]) {
   try {
-    // Check for orders with zero total amount
-    const zeroAmountOrders = await prisma.$queryRaw`
-      SELECT o.id, o."orderNumber", o."totalAmount"
-      FROM "Order" o
-      WHERE o."totalAmount" = 0 AND o."orderType" != '${ORDER_STATUS.CANCELLED}'
-    ` as Array<{ id: string; orderNumber: string; totalAmount: number }>;
+    // Check for orders with zero total amount (excluding cancelled orders)
+    // Use Prisma client instead of raw SQL for type safety
+    const zeroAmountOrders = await prisma.order.findMany({
+      where: {
+        totalAmount: 0,
+        status: {
+          not: ORDER_STATUS.CANCELLED
+        }
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        totalAmount: true
+      }
+    });
 
     if (zeroAmountOrders.length > 0) {
       checks.push({

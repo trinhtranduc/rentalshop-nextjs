@@ -54,8 +54,16 @@ COPY . .
 # Generate Prisma Client with all binary targets
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
-# Note: Database migrations run at runtime via start.sh
-# This ensures migrations run when database is available, not during build
+# ============================================================================
+# MIGRATION STRATEGY
+# ============================================================================
+# Database migrations run at RUNTIME via start.sh (not during build)
+# This ensures:
+# 1. Migrations run when database is available (Railway injects DATABASE_URL)
+# 2. Migrations can retry if database is not ready yet
+# 3. Each deployment automatically applies pending migrations
+# 4. No need to manually run migrations after deployment
+# ============================================================================
 
 # Build packages using Turbo (respects dependency order)
 ENV NODE_ENV=production
@@ -96,7 +104,8 @@ RUN mkdir -p ./apps/api/public
 # Create uploads directory for Railway Volume mount
 RUN mkdir -p ./apps/api/public/uploads
 
-# Copy Prisma schema (needed for runtime migrations)
+# Copy Prisma schema AND migrations (needed for runtime migrations)
+# Migrations folder is required for 'prisma migrate deploy' to work
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Copy start script (runs migrations + starts server)
@@ -116,5 +125,14 @@ EXPOSE 3002
 
 WORKDIR /app/apps/api
 
-# Run start script (automatically runs migrations then starts server)
+# ============================================================================
+# STARTUP COMMAND
+# ============================================================================
+# The start.sh script will:
+# 1. Generate Prisma Client (if needed)
+# 2. Check database connection (with retries)
+# 3. Check migration status
+# 4. Run pending migrations (prisma migrate deploy)
+# 5. Start Next.js server
+# ============================================================================
 CMD ["sh", "start.sh"]

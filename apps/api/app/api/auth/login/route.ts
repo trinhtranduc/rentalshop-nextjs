@@ -5,7 +5,47 @@ import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
+/**
+ * Build CORS headers for response
+ */
+function buildCorsHeaders(request: NextRequest): Record<string, string> {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'https://anyrent.shop',
+    'https://www.anyrent.shop',
+    'https://api.anyrent.shop',
+    'https://admin.anyrent.shop',
+    'https://dev.anyrent.shop',
+    'https://dev-api.anyrent.shop',
+    'https://dev-admin.anyrent.shop',
+    ...(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
+  ];
+  
+  const isAllowed = allowedOrigins.includes(origin);
+  const allowOrigin = isAllowed ? origin : 'null';
+  
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const corsHeaders = buildCorsHeaders(request);
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
+
 export async function POST(request: NextRequest) {
+  const corsHeaders = buildCorsHeaders(request);
+  
   try {
     const body = await request.json();
     
@@ -18,7 +58,10 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_CREDENTIALS'),
-        { status: 401 }
+        { 
+          status: 401,
+          headers: corsHeaders
+        }
       );
     }
 
@@ -26,7 +69,10 @@ export async function POST(request: NextRequest) {
     if (!user.isActive) {
       return NextResponse.json(
         ResponseBuilder.error('ACCOUNT_DEACTIVATED'),
-        { status: 403 }
+        { 
+          status: 403,
+          headers: corsHeaders
+        }
       );
     }
 
@@ -35,7 +81,10 @@ export async function POST(request: NextRequest) {
     if (!isPasswordValid) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_CREDENTIALS'),
-        { status: 401 }
+        { 
+          status: 401,
+          headers: corsHeaders
+        }
       );
     }
 
@@ -47,7 +96,10 @@ export async function POST(request: NextRequest) {
     if (emailVerificationEnabled && isMerchantUser && !user.emailVerified) {
       return NextResponse.json(
         ResponseBuilder.error('EMAIL_NOT_VERIFIED'),
-        { status: 403 }
+        { 
+          status: 403,
+          headers: corsHeaders
+        }
       );
     }
 
@@ -179,13 +231,16 @@ export async function POST(request: NextRequest) {
       },
     };
     
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers: corsHeaders });
     
   } catch (error: any) {
     console.error('Login error:', error);
     
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
+    return NextResponse.json(response, { 
+      status: statusCode,
+      headers: corsHeaders
+    });
   }
 } 
