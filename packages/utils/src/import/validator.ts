@@ -1,7 +1,10 @@
 /**
  * Import Data Validator
  * Validates JSON import data structure and content
+ * Refactored to use generic validation helpers (DRY principle)
  */
+
+import { validateEntity, type ValidationConfig } from './validation-helpers';
 
 export interface ImportValidationError {
   row: number;
@@ -27,185 +30,132 @@ export interface ImportValidationResult {
 }
 
 /**
- * Validate customer data
+ * Validation configurations for each entity type
+ */
+const customerValidationConfig: ValidationConfig = {
+      entity: 'customer',
+  merchantIdField: 'merchantId',
+  rules: [
+    {
+      field: 'firstName',
+      required: true,
+      type: 'string',
+      minLength: 1
+    },
+    {
+      field: 'lastName',
+      required: true,
+      type: 'string',
+      minLength: 1
+    },
+    {
+      field: 'email',
+      required: false,
+      type: 'string'
+    },
+    {
+      field: 'phone',
+      required: false,
+      type: 'string'
+    }
+  ]
+};
+
+const productValidationConfig: ValidationConfig = {
+      entity: 'product',
+  merchantIdField: 'merchantId',
+  rules: [
+    {
+      field: 'name',
+      required: true,
+      type: 'string',
+      minLength: 1
+    },
+    {
+      field: 'rentPrice',
+      required: false,
+      type: 'number',
+      min: 0
+    },
+    {
+      field: 'totalStock',
+      required: false,
+      type: 'number',
+      min: 0
+    }
+  ]
+};
+
+const orderValidationConfig: ValidationConfig = {
+      entity: 'order',
+  rules: [
+    {
+      field: 'orderType',
+      required: true,
+      enum: ['RENT', 'SALE']
+    },
+    {
+      field: 'status',
+      required: true,
+      type: 'string'
+    },
+    {
+      field: 'orderItems',
+      required: true,
+      type: 'array',
+      custom: (value: any) => {
+        if (!Array.isArray(value) || value.length === 0) {
+          return 'Order must have at least one order item';
+        }
+        return null;
+      },
+      nested: [
+        {
+          field: 'productId',
+          required: false,
+          custom: (value: any, item: any) => {
+            if (!value && !item.oldProductId) {
+              return 'Order item must have productId or oldProductId';
+      }
+            return null;
+          }
+        },
+        {
+          field: 'quantity',
+          required: true,
+          type: 'number',
+          min: 1
+        }
+      ]
+    },
+    {
+      field: 'totalAmount',
+      required: true,
+      type: 'number',
+      min: 0
+    }
+  ]
+};
+
+/**
+ * Validate customer data using generic validation
  */
 function validateCustomer(customer: any, index: number, merchantId: number): ImportValidationError[] {
-  const errors: ImportValidationError[] = [];
-
-  if (!customer.firstName || typeof customer.firstName !== 'string' || customer.firstName.trim() === '') {
-    errors.push({
-      row: index,
-      entity: 'customer',
-      field: 'firstName',
-      error: 'First name is required',
-      value: customer.firstName
-    });
-  }
-
-  if (!customer.lastName || typeof customer.lastName !== 'string' || customer.lastName.trim() === '') {
-    errors.push({
-      row: index,
-      entity: 'customer',
-      field: 'lastName',
-      error: 'Last name is required',
-      value: customer.lastName
-    });
-  }
-
-  if (customer.email && typeof customer.email !== 'string') {
-    errors.push({
-      row: index,
-      entity: 'customer',
-      field: 'email',
-      error: 'Email must be a string',
-      value: customer.email
-    });
-  }
-
-  if (customer.phone && typeof customer.phone !== 'string') {
-    errors.push({
-      row: index,
-      entity: 'customer',
-      field: 'phone',
-      error: 'Phone must be a string',
-      value: customer.phone
-    });
-  }
-
-  // Validate merchantId matches
-  if (customer.merchantId && customer.merchantId !== merchantId) {
-    errors.push({
-      row: index,
-      entity: 'customer',
-      field: 'merchantId',
-      error: `Merchant ID mismatch. Expected ${merchantId}, got ${customer.merchantId}`,
-      value: customer.merchantId
-    });
-  }
-
-  return errors;
+  return validateEntity(customer, index, customerValidationConfig, merchantId);
 }
 
 /**
- * Validate product data
+ * Validate product data using generic validation
  */
 function validateProduct(product: any, index: number, merchantId: number): ImportValidationError[] {
-  const errors: ImportValidationError[] = [];
-
-  if (!product.name || typeof product.name !== 'string' || product.name.trim() === '') {
-    errors.push({
-      row: index,
-      entity: 'product',
-      field: 'name',
-      error: 'Product name is required',
-      value: product.name
-    });
+  return validateEntity(product, index, productValidationConfig, merchantId);
   }
-
-  if (product.rentPrice !== undefined && (typeof product.rentPrice !== 'number' || product.rentPrice < 0)) {
-    errors.push({
-      row: index,
-      entity: 'product',
-      field: 'rentPrice',
-      error: 'Rent price must be a non-negative number',
-      value: product.rentPrice
-    });
-  }
-
-  if (product.totalStock !== undefined && (typeof product.totalStock !== 'number' || product.totalStock < 0)) {
-    errors.push({
-      row: index,
-      entity: 'product',
-      field: 'totalStock',
-      error: 'Total stock must be a non-negative number',
-      value: product.totalStock
-    });
-  }
-
-  // Validate merchantId matches
-  if (product.merchantId && product.merchantId !== merchantId) {
-    errors.push({
-      row: index,
-      entity: 'product',
-      field: 'merchantId',
-      error: `Merchant ID mismatch. Expected ${merchantId}, got ${product.merchantId}`,
-      value: product.merchantId
-    });
-  }
-
-  return errors;
-}
 
 /**
- * Validate order data
+ * Validate order data using generic validation
  */
 function validateOrder(order: any, index: number, merchantId: number): ImportValidationError[] {
-  const errors: ImportValidationError[] = [];
-
-  if (!order.orderType || !['RENT', 'SALE'].includes(order.orderType)) {
-    errors.push({
-      row: index,
-      entity: 'order',
-      field: 'orderType',
-      error: 'Order type must be RENT or SALE',
-      value: order.orderType
-    });
-  }
-
-  if (!order.status || typeof order.status !== 'string') {
-    errors.push({
-      row: index,
-      entity: 'order',
-      field: 'status',
-      error: 'Order status is required',
-      value: order.status
-    });
-  }
-
-  if (!order.orderItems || !Array.isArray(order.orderItems) || order.orderItems.length === 0) {
-    errors.push({
-      row: index,
-      entity: 'order',
-      field: 'orderItems',
-      error: 'Order must have at least one order item',
-      value: order.orderItems
-    });
-  } else {
-    // Validate order items
-    order.orderItems.forEach((item: any, itemIndex: number) => {
-      if (!item.productId && !item.oldProductId) {
-        errors.push({
-          row: index,
-          entity: 'order',
-          field: `orderItems[${itemIndex}].productId`,
-          error: 'Order item must have productId or oldProductId',
-          value: item
-        });
-      }
-
-      if (!item.quantity || typeof item.quantity !== 'number' || item.quantity <= 0) {
-        errors.push({
-          row: index,
-          entity: 'order',
-          field: `orderItems[${itemIndex}].quantity`,
-          error: 'Order item quantity must be a positive number',
-          value: item.quantity
-        });
-      }
-    });
-  }
-
-  if (typeof order.totalAmount !== 'number' || order.totalAmount < 0) {
-    errors.push({
-      row: index,
-      entity: 'order',
-      field: 'totalAmount',
-      error: 'Total amount must be a non-negative number',
-      value: order.totalAmount
-    });
-  }
-
-  return errors;
+  return validateEntity(order, index, orderValidationConfig, merchantId);
 }
 
 /**

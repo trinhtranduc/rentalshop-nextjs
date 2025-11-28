@@ -47,7 +47,8 @@ export {
   withOutletScope,
   getUserScopeFromRequest,
   buildSecureWhereClause,
-  validateResourceBelongsToUser
+  validateResourceBelongsToUser,
+  withCustomerExportAuth
 } from './middleware';
 
 // Export specific JWT functions
