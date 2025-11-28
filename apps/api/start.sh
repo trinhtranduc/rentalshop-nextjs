@@ -54,7 +54,7 @@ DB_CONNECTED=false
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
   # Try to execute a simple query to test database connection
-  if npx prisma db execute --stdin --schema="${SCHEMA_PATH}" <<< "SELECT 1;" > /dev/null 2>&1; then
+  if echo "SELECT 1;" | npx prisma db execute --stdin --schema="${SCHEMA_PATH}" > /dev/null 2>&1; then
     echo "✅ Database connection successful"
     DB_CONNECTED=true
     break
@@ -173,14 +173,14 @@ if [ "$MIGRATION_SUCCESS" = true ]; then
     echo "🔍 Verifying critical database objects..."
     
     # Check MerchantRole table
-    if npx prisma db execute --stdin --schema="${SCHEMA_PATH}" <<< "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'MerchantRole');" > /dev/null 2>&1; then
+    if echo "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'MerchantRole');" | npx prisma db execute --stdin --schema="${SCHEMA_PATH}" > /dev/null 2>&1; then
       echo "✅ MerchantRole table verified"
     else
       echo "⚠️  Could not verify MerchantRole table (may not exist yet)"
     fi
     
     # Check customRoleId column
-    if npx prisma db execute --stdin --schema="${SCHEMA_PATH}" <<< "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'User' AND column_name = 'customRoleId');" > /dev/null 2>&1; then
+    if echo "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'User' AND column_name = 'customRoleId');" | npx prisma db execute --stdin --schema="${SCHEMA_PATH}" > /dev/null 2>&1; then
       echo "✅ customRoleId column verified"
     else
       echo "⚠️  Could not verify customRoleId column (may not exist yet)"
