@@ -243,6 +243,9 @@ export * from './email-verification';
 // Password reset functions
 export * from './password-reset';
 
+// Query builder helpers
+export * from './query-builder';
+
 // ============================================================================
 // MIGRATION GUIDE
 // ============================================================================

@@ -1,10 +1,121 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { 
+  customersQuerySchema, 
+  customerCreateSchema, 
+  customerUpdateSchema, 
+  assertPlanLimit, 
+  handleApiError, 
+  ResponseBuilder
+} from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import crypto from 'crypto';
+import { z } from 'zod';
+
+// Helper functions (will be available from @rentalshop/utils after rebuild)
+function parseQueryParams<T>(request: NextRequest, schema: any): { success: true; data: T } | { success: false; response: NextResponse } {
+  try {
+    const { searchParams } = new URL(request.url);
+    const parsed = schema.safeParse(Object.fromEntries(searchParams.entries()));
+    if (!parsed.success) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+          { status: 400 }
+        )
+      };
+    }
+    return { success: true, data: parsed.data as T };
+  } catch (error) {
+    const { response, statusCode } = handleApiError(error);
+    return {
+      success: false,
+      response: NextResponse.json(response, { status: statusCode })
+    };
+  }
+}
+
+async function parseRequestBody<T>(request: NextRequest, schema: any): Promise<{ success: true; data: T } | { success: false; response: NextResponse }> {
+  try {
+    const body = await request.json();
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+          { status: 400 }
+        )
+      };
+    }
+    return { success: true, data: parsed.data as T };
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          ResponseBuilder.error('INVALID_JSON', 'Invalid JSON in request body'),
+          { status: 400 }
+        )
+      };
+    }
+    const { response, statusCode } = handleApiError(error);
+    return {
+      success: false,
+      response: NextResponse.json(response, { status: statusCode })
+    };
+  }
+}
+
+function createETagResponse(data: any, request: NextRequest, status: number = API.STATUS.OK) {
+  const bodyString = JSON.stringify(data);
+  const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
+  const ifNoneMatch = request.headers.get('if-none-match');
+
+  if (ifNoneMatch && ifNoneMatch === etag) {
+    return new NextResponse(null, {
+      status: 304,
+      headers: { ETag: etag, 'Cache-Control': 'private, max-age=5' }
+    });
+  }
+
+  return new NextResponse(bodyString, {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      ETag: etag,
+      'Cache-Control': 'private, max-age=5'
+    }
+  });
+}
+
+function resolveMerchantId(user: any, userScope: any, requestedMerchantId?: number) {
+  if (user.role === USER_ROLE.ADMIN && requestedMerchantId) {
+    return { success: true as const, merchantId: requestedMerchantId };
+  }
+  if (userScope.merchantId) {
+    if (requestedMerchantId && requestedMerchantId !== userScope.merchantId) {
+      return {
+        success: false as const,
+        response: NextResponse.json(
+          ResponseBuilder.error('CROSS_MERCHANT_ACCESS_DENIED'),
+          { status: 403 }
+        )
+      };
+    }
+    return { success: true as const, merchantId: userScope.merchantId };
+  }
+  return {
+    success: false as const,
+    response: NextResponse.json(
+      ResponseBuilder.error('MERCHANT_ID_REQUIRED'),
+      { status: 400 }
+    )
+  };
+}
 
 /**
  * GET /api/customers
@@ -24,18 +135,10 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
       return rateLimitResult;
     }
 
-    const { searchParams } = new URL(request.url);
-    console.log('Search params:', Object.fromEntries(searchParams.entries()));
-    
-    const parsed = customersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
-    if (!parsed.success) {
-      console.log('Validation error:', parsed.error.flatten());
-      return NextResponse.json({ 
-        success: false, 
-        code: 'INVALID_QUERY',
-        message: 'Invalid query', 
-        error: parsed.error.flatten() 
-      }, { status: 400 });
+    // Parse and validate query parameters
+    const queryResult = parseQueryParams<z.infer<typeof customersQuerySchema>>(request, customersQuerySchema);
+    if (!queryResult.success) {
+      return queryResult.response;
     }
 
     const { 
@@ -49,38 +152,21 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
       city,
       state,
       country
-    } = parsed.data;
+    } = queryResult.data;
 
-    console.log('Parsed filters:', { 
-      page, limit, q, search, merchantId, outletId, isActive, 
-      city, state, country 
-    });
-
-    // Determine merchantId for filtering
-    let filterMerchantId = userScope.merchantId;
-    
-    // For ADMIN users, they can specify merchantId in query to view other merchants' customers
-    // For other roles, use their assigned merchantId
-    if (user.role === USER_ROLE.ADMIN && merchantId) {
-      filterMerchantId = merchantId;
-    } else if (user.role !== USER_ROLE.ADMIN && merchantId && merchantId !== userScope.merchantId) {
-      // Non-ADMIN users cannot view other merchants' customers
-      return NextResponse.json(
-        { 
-          success: false, 
-          code: 'CROSS_MERCHANT_ACCESS_DENIED',
-        message: 'Access denied: Cannot view customers from other merchants' 
-        },
-        { status: 403 }
-      );
+    // Resolve merchantId using helper
+    const merchantResult = resolveMerchantId(user, userScope, merchantId);
+    if (!merchantResult.success) {
+      return merchantResult.response;
     }
 
+    const filterMerchantId = merchantResult.merchantId;
     console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'for user role:', user.role);
 
-    // Build search filters for customer search
+    // Build search filters
     const searchFilters = {
       merchantId: filterMerchantId,
-      outletId: outletId, // Add outlet filtering support
+      outletId,
       isActive,
       city,
       state,
@@ -90,13 +176,11 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
       limit: limit || 20
     };
 
-    console.log('🔍 Using simplified db.customers.search with filters:', searchFilters);
-
     // Use simplified database API
     const result = await db.customers.search(searchFilters);
     console.log('✅ Search completed, found:', result.total || 0, 'customers');
 
-    // Create response body for ETag calculation
+    // Create response with ETag support
     const responseData = {
       success: true,
       data: {
@@ -109,32 +193,12 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
       }
     };
 
-    const bodyString = JSON.stringify(responseData);
-    const etag = crypto.createHash('sha1').update(bodyString).digest('hex');
-    const ifNoneMatch = request.headers.get('if-none-match');
-
-    if (ifNoneMatch && ifNoneMatch === etag) {
-      return new NextResponse(null, {
-        status: 304,
-        headers: { ETag: etag, 'Cache-Control': 'private, max-age=5' },
-      });
-    }
-
-    return new NextResponse(bodyString, {
-      status: API.STATUS.OK,
-      headers: {
-        'Content-Type': 'application/json',
-        ETag: etag,
-        'Cache-Control': 'private, max-age=5',
-      },
-    });
+    return createETagResponse(responseData, request);
 
   } catch (error) {
     console.error('Error fetching customers:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
-      { status: API.STATUS.INTERNAL_SERVER_ERROR }
-    );
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
@@ -155,53 +219,37 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
   console.log(`🔍 POST /api/customers - User: ${user.email} (${user.role})`);
   
   try {
-    const body = await request.json();
-    const parsed = customerCreateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ 
-        success: false, 
-        code: 'INVALID_PAYLOAD',
-        message: 'Invalid payload', 
-        error: parsed.error.flatten() 
-      }, { status: 400 });
+    // Parse and validate request body
+    const bodyResult = await parseRequestBody<z.infer<typeof customerCreateSchema>>(request, customerCreateSchema);
+    if (!bodyResult.success) {
+      return bodyResult.response;
     }
 
-    // Determine merchantId for customer creation
-    let merchantId = userScope.merchantId;
-    
-    // For ADMIN users, they need to specify merchantId in the request
-    // For other roles, use their assigned merchantId
-    if (user.role === USER_ROLE.ADMIN && parsed.data.merchantId) {
-      merchantId = parsed.data.merchantId;
-    } else if (!merchantId) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          code: 'MERCHANT_ID_REQUIRED',
-          message: user.role === USER_ROLE.ADMIN 
-            ? 'MerchantId is required for ADMIN users when creating customers' 
-            : 'User is not associated with any merchant'
-        },
-        { status: 400 }
-      );
+    const parsed = bodyResult.data;
+
+    // Resolve merchantId using helper
+    const merchantResult = resolveMerchantId(user, userScope, parsed.merchantId);
+    if (!merchantResult.success) {
+      return merchantResult.response;
     }
 
+    const merchantId = merchantResult.merchantId;
     console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
 
     // Check for duplicate phone or email within the same merchant
     // Only check if phone/email are provided and not empty
-    const hasPhone = parsed.data.phone && parsed.data.phone.trim();
-    const hasEmail = parsed.data.email && parsed.data.email.trim();
+    const hasPhone = parsed.phone && parsed.phone.trim();
+    const hasEmail = parsed.email && parsed.email.trim();
     
     if (hasPhone || hasEmail) {
       const duplicateConditions = [];
       
-      if (hasPhone) {
-        duplicateConditions.push({ phone: parsed.data.phone.trim() });
+      if (hasPhone && parsed.phone) {
+        duplicateConditions.push({ phone: parsed.phone.trim() });
       }
       
-      if (hasEmail) {
-        duplicateConditions.push({ email: parsed.data.email.trim() });
+      if (hasEmail && parsed.email) {
+        duplicateConditions.push({ email: parsed.email.trim() });
       }
 
       if (duplicateConditions.length > 0) {
@@ -211,8 +259,8 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         });
 
         if (duplicateCustomer) {
-          const duplicateField = duplicateCustomer.phone === parsed.data.phone?.trim() ? 'phone number' : 'email';
-          const duplicateValue = duplicateCustomer.phone === parsed.data.phone?.trim() ? parsed.data.phone.trim() : parsed.data.email.trim();
+          const duplicateField = duplicateCustomer.phone === parsed.phone?.trim() ? 'phone number' : 'email';
+          const duplicateValue = duplicateCustomer.phone === parsed.phone?.trim() ? parsed.phone?.trim() || '' : parsed.email?.trim() || '';
           
           console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
@@ -256,7 +304,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
 
     // Use merchant CUID for customer creation
     const customerData = {
-      ...parsed.data,
+      ...parsed,
       merchantId: merchant.id // Use CUID, not publicId
     };
 
@@ -266,12 +314,10 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     const customer = await db.customers.create(customerData);
     console.log('✅ Customer created successfully:', customer);
 
-    return NextResponse.json({
-      success: true,
-      data: customer,
-      code: 'CUSTOMER_CREATED_SUCCESS',
-        message: 'Customer created successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('CUSTOMER_CREATED_SUCCESS', customer),
+      { status: 201 }
+    );
 
   } catch (error: any) {
     console.error('Error in POST /api/customers:', error);
@@ -284,10 +330,8 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
       );
     }
     
-    return NextResponse.json(
-      ResponseBuilder.error('CREATE_CUSTOMER_FAILED'),
-      { status: 500 }
-    );
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
@@ -308,18 +352,15 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
   console.log(`🔍 PUT /api/customers - User: ${user.email} (${user.role})`);
   
   try {
-    const body = await request.json();
-    const parsed = customerUpdateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ 
-        success: false, 
-        code: 'INVALID_PAYLOAD',
-        message: 'Invalid payload', 
-        error: parsed.error.flatten() 
-      }, { status: 400 });
+    // Parse and validate request body
+    const bodyResult = await parseRequestBody<z.infer<typeof customerUpdateSchema>>(request, customerUpdateSchema);
+    if (!bodyResult.success) {
+      return bodyResult.response;
     }
 
-    // Extract id from query params since it's not in schema
+    const parsed = bodyResult.data;
+
+    // Extract id from query params
     const { searchParams } = new URL(request.url);
     const id = parseInt(searchParams.get('id') || '0');
 
@@ -349,18 +390,18 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
 
     // Check for duplicate phone or email if being updated
     // Only check if phone/email are provided, not empty, and different from existing
-    const hasPhone = parsed.data.phone && parsed.data.phone.trim();
-    const hasEmail = parsed.data.email && parsed.data.email.trim();
+    const hasPhone = parsed.phone && parsed.phone.trim();
+    const hasEmail = parsed.email && parsed.email.trim();
     
     if (hasPhone || hasEmail) {
       const duplicateConditions = [];
       
-      if (hasPhone && parsed.data.phone.trim() !== existingCustomer.phone) {
-        duplicateConditions.push({ phone: parsed.data.phone.trim() });
+      if (hasPhone && parsed.phone && parsed.phone.trim() !== existingCustomer.phone) {
+        duplicateConditions.push({ phone: parsed.phone.trim() });
       }
       
-      if (hasEmail && parsed.data.email.trim() !== existingCustomer.email) {
-        duplicateConditions.push({ email: parsed.data.email.trim() });
+      if (hasEmail && parsed.email && parsed.email.trim() !== existingCustomer.email) {
+        duplicateConditions.push({ email: parsed.email.trim() });
       }
 
       if (duplicateConditions.length > 0) {
@@ -371,8 +412,8 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
         });
 
         if (duplicateCustomer) {
-          const duplicateField = duplicateCustomer.phone === parsed.data.phone?.trim() ? 'phone number' : 'email';
-          const duplicateValue = duplicateCustomer.phone === parsed.data.phone?.trim() ? parsed.data.phone.trim() : parsed.data.email.trim();
+          const duplicateField = duplicateCustomer.phone === parsed.phone?.trim() ? 'phone number' : 'email';
+          const duplicateValue = duplicateCustomer.phone === parsed.phone?.trim() ? parsed.phone?.trim() || '' : parsed.email?.trim() || '';
           
           console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
@@ -387,18 +428,15 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
       }
     }
 
-    console.log('🔍 Updating customer with data:', { id, ...parsed.data });
+    console.log('🔍 Updating customer with data:', { id, ...parsed });
     
     // Use simplified database API
-    const updatedCustomer = await db.customers.update(id, parsed.data);
+    const updatedCustomer = await db.customers.update(id, parsed);
     console.log('✅ Customer updated successfully:', updatedCustomer);
 
-    return NextResponse.json({
-      success: true,
-      data: updatedCustomer,
-      code: 'CUSTOMER_UPDATED_SUCCESS',
-        message: 'Customer updated successfully'
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('CUSTOMER_UPDATED_SUCCESS', updatedCustomer)
+    );
 
   } catch (error: any) {
     console.error('Error in PUT /api/customers:', error);
@@ -411,7 +449,6 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
       );
     }
     
-    // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }

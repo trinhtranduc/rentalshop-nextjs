@@ -276,6 +276,43 @@ export class ResponseBuilder {
     };
   }
 
+  /**
+   * Build validation error response from Zod flattened error
+   * @param flattenedError - Flattened Zod error object from error.flatten()
+   * DRY: Reuses ResponseBuilder.error() for consistency
+   */
+  static validationError(flattenedError: {
+    fieldErrors?: Record<string, string[] | undefined> | { [key: string | number | symbol]: string[] | undefined };
+    formErrors?: string[];
+  }): ApiResponse {
+    const errorMessages: string[] = [];
+    
+    // Collect field errors
+    if (flattenedError.fieldErrors) {
+      Object.entries(flattenedError.fieldErrors).forEach(([field, errors]) => {
+        if (Array.isArray(errors)) {
+          errors.forEach((errorMsg: string) => {
+            errorMessages.push(`${field}: ${errorMsg}`);
+          });
+        }
+      });
+    }
+    
+    // Collect form errors
+    if (flattenedError.formErrors && Array.isArray(flattenedError.formErrors)) {
+      flattenedError.formErrors.forEach((errorMsg: string) => {
+        errorMessages.push(errorMsg);
+      });
+    }
+    
+    const errorString = errorMessages.length > 0 
+      ? errorMessages.join('; ') 
+      : 'Input validation failed';
+    
+    // Reuse ResponseBuilder.error() for consistency
+    return ResponseBuilder.error('VALIDATION_ERROR', errorString);
+  }
+
 }
 
 /**
@@ -292,36 +329,16 @@ export function getErrorCode(error: any): string {
 }
 
 /**
- * Helper: Create error response from caught error
+ * Helper: Build error response from caught error
  * Tự động detect error type và tạo appropriate response
+ * Returns ApiResponse object (not NextResponse)
+ * 
+ * DRY: Reuses ResponseBuilder.validationError() for Zod errors
  */
-export function createErrorResponse(error: any): ApiResponse {
-  // Zod validation error - convert to readable string
+export function buildErrorResponseFromError(error: any): ApiResponse {
+  // Zod validation error - reuse ResponseBuilder.validationError() to avoid duplication
   if (error?.name === 'ZodError') {
-    const validationErrors = error.flatten();
-    const errorMessages: string[] = [];
-    
-    if (validationErrors.fieldErrors) {
-      Object.entries(validationErrors.fieldErrors).forEach(([field, errors]) => {
-        if (Array.isArray(errors)) {
-          errors.forEach((errorMsg: string) => {
-            errorMessages.push(`${field}: ${errorMsg}`);
-          });
-        }
-      });
-    }
-    
-    if (validationErrors.formErrors && Array.isArray(validationErrors.formErrors)) {
-      validationErrors.formErrors.forEach((errorMsg: string) => {
-        errorMessages.push(errorMsg);
-      });
-    }
-    
-    const errorString = errorMessages.length > 0 
-      ? errorMessages.join('; ') 
-      : 'Input validation failed';
-    
-    return ResponseBuilder.error('VALIDATION_ERROR', errorString);
+    return ResponseBuilder.validationError(error.flatten());
   }
 
   // Custom error with code
