@@ -2,17 +2,26 @@ import { prisma } from '@rentalshop/database';
 import { comparePassword, hashPassword } from './password';
 import { generateToken } from './jwt';
 import { getSubscriptionError } from '@rentalshop/utils';
+import { ROLE_PERMISSIONS } from './core';
 import type { LoginCredentials, RegisterData, AuthResponse, AuthUser } from './types';
 
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   const user = await prisma.user.findUnique({
     where: { email: credentials.email },
     include: {
-      merchant: true,
-      outlet: true,
-      permissions: {
-        where: { enabled: true },
-        select: { permission: true },
+      merchant: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+        },
+      },
+      outlet: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+        },
       },
     },
   });
@@ -34,13 +43,16 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
   // This prevents users with expired/cancelled subscriptions from logging in
   const subscriptionError = await getSubscriptionError({
     role: user.role,
-    merchant: user.merchant
+    merchant: user.merchant,
   });
   
   if (subscriptionError) {
     console.log('🔍 LOGIN: Subscription check failed:', subscriptionError.message);
     throw subscriptionError; // This will be caught and return 402 status
   }
+
+  // Get permissions from ROLE_PERMISSIONS based on user role
+  const permissions = ROLE_PERMISSIONS[user.role] || [];
 
   const token = generateToken({
     userId: user.id, // Use id (number) for JWT token consistency
@@ -59,7 +71,7 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
       phone: user.phone || undefined,
       merchantId: user.merchantId ? Number(user.merchantId) : undefined,
       outletId: user.outletId ? Number(user.outletId) : undefined,
-      permissions: user.permissions?.map(p => p.permission) || [],
+      permissions: permissions,
       merchant: user.merchant ? {
         id: user.merchant.id, // Return merchant id to frontend (number)
         name: user.merchant.name,

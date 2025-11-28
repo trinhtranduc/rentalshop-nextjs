@@ -11,7 +11,8 @@ import { Card,
   PageTitle,
   PageContent,
   ConfirmationDialog,
-  useToast } from '@rentalshop/ui';
+  useToast,
+  LoadingIndicator } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { productBreadcrumbs } from '@rentalshop/utils';
 import { ProductDetail } from '@rentalshop/ui';
@@ -114,19 +115,6 @@ export default function ProductViewPage() {
     router.push('/products');
   };
 
-  if (loading) {
-    return (
-      <PageWrapper>
-        <PageHeader>
-          <PageTitle>{t('productDetails')}</PageTitle>
-        </PageHeader>
-        <PageContent>
-          <ProductsLoading />
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
   if (error || !product) {
     return (
       <PageWrapper>
@@ -162,6 +150,16 @@ export default function ProductViewPage() {
 
   return (
     <PageWrapper>
+      {/* Center Loading Indicator - Shows when waiting for API */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+          <LoadingIndicator 
+            variant="circular" 
+            size="lg"
+            message={tc('labels.loading') || 'Loading product...'}
+          />
+        </div>
+      )}
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-4" />
       <PageHeader>
         <div className="flex items-center justify-between">

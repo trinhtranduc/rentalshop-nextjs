@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { CardClean, 
   CardHeaderClean, 
   CardTitleClean, 
@@ -18,7 +18,8 @@ import { CardClean,
   IncomeChart,
   OrderChart,
   Badge,
-  StatusBadge
+  StatusBadge,
+  PageLoadingIndicator
 } from '@rentalshop/ui';
 import { 
   AdminPageHeader,
@@ -240,24 +241,20 @@ export default function AdminDashboard() {
     revenueGrowth: 0,
     customerBase: 0
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false - page renders immediately
   const searchParams = useSearchParams();
   const router = useRouter();
   const currentPathname = usePathname();
   
-  // Get timePeriod from URL or default to 'month'
-  const timePeriodFromUrl = searchParams.get('period') as 'today' | 'month' | 'year' | null;
-  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(
-    (timePeriodFromUrl && ['today', 'month', 'year'].includes(timePeriodFromUrl)) ? timePeriodFromUrl : 'month'
-  );
+  // Get period from URL - simple and direct
+  const period = (searchParams.get('period') || 'month') as 'today' | 'month' | 'year';
 
-  // Update URL when timePeriod changes
-  const updateTimePeriod = (period: 'today' | 'month' | 'year') => {
-    setTimePeriod(period);
+  // Update URL when period changes - URL is single source of truth
+  const updateTimePeriod = useCallback((newPeriod: 'today' | 'month' | 'year') => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('period', period);
+    params.set('period', newPeriod);
     router.push(`${currentPathname}?${params.toString()}`, { scroll: false });
-  };
+  }, [currentPathname, router, searchParams]);
 
   // Calculate subscription revenue data for chart based on subscription creation/success date
   const calculateSubscriptionRevenueData = (subscriptions: any[], timePeriod: string, startDate: Date, endDate: Date) => {
@@ -443,28 +440,8 @@ export default function AdminDashboard() {
     return [];
   };
 
-  // Sync URL param with state on mount and when URL changes
-  useEffect(() => {
-    const periodFromUrl = searchParams.get('period') as 'today' | 'month' | 'year' | null;
-    if (periodFromUrl && ['today', 'month', 'year'].includes(periodFromUrl) && periodFromUrl !== timePeriod) {
-      setTimePeriod(periodFromUrl);
-    }
-  }, [searchParams, timePeriod]);
-
-  useEffect(() => {
-    fetchSystemMetrics();
-  }, [timePeriod]);
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchSystemMetrics();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [timePeriod]);
-
-  const fetchSystemMetrics = async () => {
+  // Simple fetch function - can be called from useEffect or button
+  const fetchSystemMetrics = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -474,7 +451,7 @@ export default function AdminDashboard() {
       let endDate: Date;
       let groupBy: 'day' | 'month' | 'year';
 
-      switch (timePeriod) {
+      switch (period) {
         case 'today':
           // For today, we want to include the entire current day
           // Use UTC to avoid timezone issues
@@ -503,15 +480,9 @@ export default function AdminDashboard() {
         startDate: startDate.toISOString().split('T')[0],
         endDate: endDate.toISOString().split('T')[0],
         groupBy: groupBy,
-        period: timePeriod // Add period to filters for API
+        period: period // Add period to filters for API
       };
 
-      console.log(`📊 Fetching admin dashboard data for ${timePeriod} period:`, {
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        groupBy: filters.groupBy
-      });
-      
       // Fetch all analytics in parallel
       const [
         systemResponse,
@@ -531,29 +502,15 @@ export default function AdminDashboard() {
         analyticsApi.getGrowthMetrics(filters)
       ]);
 
-      console.log('📊 API Responses:', {
-        system: systemResponse.success,
-        activities: activitiesResponse.success,
-        revenue: revenueResponse.success,
-        orders: ordersResponse.success,
-        merchants: merchantsResponse.success,
-        subscriptions: subscriptionsResponse.success,
-        growthMetrics: growthMetricsResponse.success
-      });
-
       // System metrics
       if (systemResponse.success && systemResponse.data) {
         setMetrics(systemResponse.data);
         setMerchantTrends(systemResponse.data.merchantTrends || []);
-        console.log('✅ System metrics loaded');
-      } else {
-        console.error('❌ Failed to fetch system metrics:', systemResponse.message);
       }
 
       // Recent activities
       if (activitiesResponse.success && activitiesResponse.data) {
         setRecentActivities(activitiesResponse.data || []);
-        console.log('✅ Activities loaded:', activitiesResponse.data.length);
       }
 
       // Revenue data - Transform for chart compatibility
@@ -564,7 +521,6 @@ export default function AdminDashboard() {
           projected: item.futureIncome || 0
         }));
         setRevenueData(transformedRevenue);
-        console.log('✅ Revenue data loaded & transformed:', transformedRevenue.length);
       }
 
       // New Merchants data - Calculate from merchants array
@@ -614,17 +570,11 @@ export default function AdminDashboard() {
           }));
         
         setOrdersData(transformedMerchants);
-        console.log('✅ New merchants data calculated:', {
-          total: filteredMerchants.length,
-          periods: transformedMerchants.length,
-          data: transformedMerchants
-        });
       }
 
       // Growth metrics
       if (growthMetricsResponse.success && growthMetricsResponse.data) {
         setGrowthMetrics(growthMetricsResponse.data);
-        console.log('✅ Growth metrics loaded:', growthMetricsResponse.data);
       }
 
       // New merchants (sort by creation date)
@@ -641,12 +591,10 @@ export default function AdminDashboard() {
             plan: m.plan?.name || 'N/A'
           }));
         setNewMerchants(newMerchantsData);
-        console.log('✅ New merchants calculated:', newMerchantsData.length);
 
         // Calculate merchants registration data for chart based on time period
-        const merchantsRegistrationChartData = calculateMerchantsRegistrationData(merchantsArray, timePeriod, startDate, endDate);
+        const merchantsRegistrationChartData = calculateMerchantsRegistrationData(merchantsArray, period, startDate, endDate);
         setMerchantsRegistrationData(merchantsRegistrationChartData);
-        console.log('✅ Merchants registration chart data calculated:', merchantsRegistrationChartData);
       }
 
       // Subscription stats (calculate from subscriptions data)
@@ -672,13 +620,10 @@ export default function AdminDashboard() {
             .reduce((sum: number, s: any) => sum + (s.amount || 0), 0)
         };
         setSubscriptionStats(stats);
-        console.log('✅ Subscription stats calculated:', stats);
 
         // Calculate subscription revenue data for chart based on time period
-        const subscriptionRevenueChartData = calculateSubscriptionRevenueData(subscriptions, timePeriod, startDate, endDate);
+        const subscriptionRevenueChartData = calculateSubscriptionRevenueData(subscriptions, period, startDate, endDate);
         setSubscriptionRevenueData(subscriptionRevenueChartData);
-        console.log('✅ Subscription revenue chart data calculated:', subscriptionRevenueChartData);
-
       }
     } catch (error) {
       console.error('Error fetching system metrics:', error);
@@ -691,8 +636,8 @@ export default function AdminDashboard() {
         error.message.includes('expired') ||
         error.message.includes('trial')
       )) {
-        console.log('⚠️ Subscription error detected, showing error instead of redirecting');
         toastError('Subscription Issue', errorMessage);
+        setLoading(false);
         return;
       }
       
@@ -704,47 +649,29 @@ export default function AdminDashboard() {
         if (errorInfo.type === 'auth') {
           clearAuthData();
           toastError('Session Expired', 'Please log in again');
-          // Redirect to login after a short delay
           setTimeout(() => {
             window.location.href = '/login';
           }, 1500);
+          setLoading(false);
           return;
         }
       }
       
       toastError('Error', errorMessage);
-      // Fallback to mock data for now
     } finally {
       setLoading(false);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period]); // Only depend on period - toastError is stable
 
-
-  if (loading) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {[...Array(2)].map((_, i) => (
-                <div key={i} className="h-80 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-          </div>
-        </PageContent>
-      </PageWrapper>
-    );
-  }
+  // Fetch when period changes
+  useEffect(() => {
+    fetchSystemMetrics();
+  }, [fetchSystemMetrics]);
 
   // Enhanced metrics with icons and trends
   const getPeriodLabel = () => {
-    switch (timePeriod) {
+    switch (period) {
       case 'today': return 'today';
       case 'month': return 'this month';
       case 'year': return 'this year';
@@ -804,25 +731,28 @@ export default function AdminDashboard() {
   return (
     <PageWrapper>
       <PageContent>
+        {/* Page Loading Indicator - Floating, non-blocking */}
+        <PageLoadingIndicator loading={loading} />
+        
         {/* Time Period Selector */}
         <div className="mb-6 flex justify-between items-center">
           <div className="flex space-x-2">
             <Button
-              variant={timePeriod === 'today' ? 'default' : 'outline'}
+              variant={period === 'today' ? 'default' : 'outline'}
               onClick={() => updateTimePeriod('today')}
               className="px-4 py-2 text-sm"
             >
               Today
             </Button>
             <Button
-              variant={timePeriod === 'month' ? 'default' : 'outline'}
+              variant={period === 'month' ? 'default' : 'outline'}
               onClick={() => updateTimePeriod('month')}
               className="px-4 py-2 text-sm"
             >
               This Month
             </Button>
             <Button
-              variant={timePeriod === 'year' ? 'default' : 'outline'}
+              variant={period === 'year' ? 'default' : 'outline'}
               onClick={() => updateTimePeriod('year')}
               className="px-4 py-2 text-sm"
             >
@@ -832,6 +762,7 @@ export default function AdminDashboard() {
           <Button
             variant="default"
             onClick={fetchSystemMetrics}
+            disabled={loading}
             className="px-4 py-2 text-sm"
           >
             Refresh

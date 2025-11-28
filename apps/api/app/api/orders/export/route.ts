@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/orders/export
- * Export orders to CSV (Admin, Merchant, Outlet Admin only)
- * OUTLET_STAFF cannot export orders
+ * Export orders to CSV
+ * 
+ * Authorization: All roles with 'orders.export' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot export (does not have 'orders.export' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['orders.export'])(async (request, { user, userScope }) => {
   try {
     // User is already authenticated and authorized to export orders
     // Only ADMIN, MERCHANT, OUTLET_ADMIN can export

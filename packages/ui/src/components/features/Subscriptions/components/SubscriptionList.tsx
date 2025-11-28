@@ -14,7 +14,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuSeparator,
+  TableSkeleton
 } from '../../../ui';
 import { 
   Eye, 
@@ -23,7 +24,7 @@ import {
   MoreVertical,
   Ban
 } from 'lucide-react';
-import type { Subscription, Plan, Merchant, BillingPeriod } from '@rentalshop/types';
+import type { Subscription, Plan, Merchant, BillingInterval } from '@rentalshop/types';
 import { SubscriptionViewDialog } from './SubscriptionViewDialog';
 import { SubscriptionExtendDialog } from './SubscriptionExtendDialog';
 import { SubscriptionChangePlanDialog } from './SubscriptionChangePlanDialog';
@@ -40,14 +41,12 @@ interface SubscriptionListProps {
   onCancel?: (subscription: Subscription, reason: string) => void;
   onSuspend?: (subscription: Subscription, reason: string) => void;
   onReactivate?: (subscription: Subscription) => void;
-  onChangePlan?: (subscription: Subscription, newPlanId: number, period: BillingPeriod) => void;
+  onChangePlan?: (subscription: Subscription, newPlanId: number, interval: BillingInterval) => void;
   loading?: boolean;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    onPageChange: (page: number) => void;
-  };
+  total?: number;
+  limit?: number;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function SubscriptionList({
@@ -63,7 +62,10 @@ export function SubscriptionList({
   onReactivate,
   onChangePlan,
   loading = false,
-  pagination
+  total = 0,
+  limit = 20,
+  currentPage = 1,
+  onPageChange
 }: SubscriptionListProps) {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   
@@ -163,8 +165,8 @@ export function SubscriptionList({
     setSelectedSubscription(null);
   };
 
-  const handleChangePlanConfirm = (subscription: Subscription, newPlanId: number, period: BillingPeriod) => {
-    onChangePlan?.(subscription, newPlanId, period);
+  const handleChangePlanConfirm = (subscription: Subscription, newPlanId: number, interval: BillingInterval) => {
+    onChangePlan?.(subscription, newPlanId, interval);
     setShowChangePlanDialog(false);
     setShowViewDialog(false); // Close the view dialog
     setSelectedSubscription(null);
@@ -177,16 +179,10 @@ export function SubscriptionList({
   return (
     <>
       <Card className="shadow-sm border-border flex flex-col h-full">
-        <CardHeader className="flex-shrink-0">
-          <CardTitle>Subscriptions</CardTitle>
-        </CardHeader>
-        
+        <CardContent className="p-0 flex-1 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-700"></div>
-              <span>Loading subscriptions...</span>
-            </div>
+          <div className="p-6">
+            <TableSkeleton rows={8} columns={7} />
           </div>
         ) : filteredSubscriptions.length === 0 ? (
           <div className="text-center py-12">
@@ -199,8 +195,8 @@ export function SubscriptionList({
             </div>
           </div>
         ) : (
-          /* Table with scroll - same structure as ProductTable */
-          <div className="flex-1 overflow-auto">
+          /* Table with scroll - same structure as MerchantTable */
+          <div className="flex-1 overflow-auto h-full">
             <table className="w-full">
                 {/* Table Header - Sticky */}
                 <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
@@ -265,10 +261,14 @@ export function SubscriptionList({
                       {/* Period */}
                       <td className="px-6 py-4">
                         <div className="text-sm text-text-primary">
-                          {subscription.billingInterval === 'month' ? 'Monthly' : 
-                           subscription.billingInterval === 'quarter' ? 'Quarterly' : 
-                           subscription.billingInterval === 'year' ? 'Yearly' : 
-                           subscription.billingInterval === 'semiAnnual' ? 'Semi-Annual' : 'Custom'}
+                          {(() => {
+                            const interval = subscription.billingInterval;
+                            if (interval === 'monthly' || interval === 'month') return 'Monthly';
+                            if (interval === 'quarterly' || interval === 'quarter') return 'Quarterly';
+                            if (interval === 'annual' || interval === 'yearly' || interval === 'year') return 'Yearly';
+                            if (interval === 'semi_annual' || interval === 'semiAnnual' || interval === 'sixMonths') return 'Semi-Annual';
+                            return 'Custom';
+                          })()}
                         </div>
                       </td>
                       
@@ -347,21 +347,23 @@ export function SubscriptionList({
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+            </tbody>
+          </table>
+        </div>
+        )}
+        </CardContent>
+      </Card>
 
-      {/* Pagination Section - Same pattern as Merchants component */}
-      {pagination && filteredSubscriptions.length > 0 && pagination.total > pagination.limit && (
+      {/* Pagination Section - Client pattern */}
+      {onPageChange && total > 0 && total > limit && (
         <div className="flex-shrink-0 py-4">
           <Pagination
-            currentPage={pagination.page}
-            totalPages={Math.ceil(pagination.total / pagination.limit)}
-            total={pagination.total}
-            limit={pagination.limit}
-            onPageChange={pagination.onPageChange}
+            currentPage={currentPage}
+            totalPages={Math.ceil(total / limit)}
+            total={total}
+            limit={limit}
+            onPageChange={onPageChange}
+            itemName="subscriptions"
           />
         </div>
       )}

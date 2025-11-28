@@ -173,7 +173,15 @@ export default function MerchantOrdersPage() {
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(updates).forEach(([key, value]) => {
-      if (value && value !== '' && value !== 'all') {
+      // Special handling for page: always set it, even if it's 1
+      if (key === 'page') {
+        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
+        if (pageNum > 0) {
+          params.set(key, pageNum.toString());
+        } else {
+          params.delete(key);
+        }
+      } else if (value && value !== '' && value !== 'all') {
         params.set(key, value.toString());
       } else {
         params.delete(key);

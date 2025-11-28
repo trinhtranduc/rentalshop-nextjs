@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withReadOnlyAuth } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
@@ -21,6 +21,10 @@ const availabilityQuerySchema = z.object({
  * GET /api/products/[id]/availability
  * Check product availability and booking conflicts with precise time-based checking
  * 
+ * Authorization: All roles with 'products.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
  * Query parameters:
  * - startDate: ISO datetime string for rental start (e.g., "2024-01-15T09:30:00Z")
  * - endDate: ISO datetime string for rental end (e.g., "2024-01-20T17:00:00Z")
@@ -40,7 +44,7 @@ export async function GET(
   // Resolve params (handle both Promise and direct object)
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
-  return withReadOnlyAuth(async (request, { user, userScope }) => {
+  return withPermissions(['products.view'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
     try {
       console.log('🔍 GET /api/products/[id]/availability - Product ID:', id);
 

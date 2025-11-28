@@ -52,25 +52,29 @@ export async function findBySubscriptionId(subscriptionId: number, options: { li
  * Search payments with pagination
  */
 export async function searchPayments(filters: any) {
-  const { where, include, orderBy, take = 20, skip = 0 } = filters;
+  const { where, include, orderBy, limit = 20, page = 1 } = filters;
+  const skip = (page - 1) * limit;
   
   const [payments, total] = await Promise.all([
     prisma.payment.findMany({
       where,
       include,
       orderBy,
-      take,
+      take: limit,
       skip
     }),
     prisma.payment.count({ where })
   ]);
 
+  const totalPages = Math.ceil(total / limit);
+
   return {
     data: payments,
     total,
-    page: Math.floor(skip / take) + 1,
-    limit: take,
-    hasMore: skip + take < total
+    page,
+    limit,
+    totalPages,
+    hasMore: page < totalPages
   };
 }
 

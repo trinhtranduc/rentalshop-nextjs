@@ -23,7 +23,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
       startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
       endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20,
-      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0
+      page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1
     };
 
     // Apply merchant scoping for non-admin users
@@ -35,12 +35,13 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
 
     return NextResponse.json({
       success: true,
-      data: result.data,
+      data: result.subscriptions || result.data,
       pagination: {
         total: result.total,
-        hasMore: result.hasMore,
-        limit: filters.limit,
-        offset: filters.offset
+        page: result.page || filters.page || 1,
+        limit: result.limit || filters.limit || 20,
+        totalPages: result.totalPages || Math.ceil(result.total / (result.limit || filters.limit || 20)),
+        hasMore: result.hasMore
       }
     });
   } catch (error) {

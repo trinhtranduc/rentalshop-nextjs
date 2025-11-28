@@ -20,6 +20,7 @@ export { UpgradeTrialModal } from './components/UpgradeTrialModal';
 export { SubscriptionActivityTimeline } from './components/SubscriptionActivityTimeline';
 export { SubscriptionHistoryDialog } from './components/SubscriptionHistoryDialog';
 export { SubscriptionChangePlanDialog } from './components/SubscriptionChangePlanDialog';
+export { SubscriptionExtendDialog } from './components/SubscriptionExtendDialog';
 
 // Re-export types for convenience
 export type {

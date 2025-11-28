@@ -20,11 +20,44 @@ export async function GET(request: NextRequest) {
     try {
       // For MERCHANT, OUTLET_ADMIN, OUTLET_STAFF: get their merchant's subscription
       // For ADMIN role, they can specify merchantId in query params
+      // If ADMIN doesn't provide merchantId, return no subscription (ADMIN doesn't have own subscription)
       const { searchParams } = new URL(request.url);
       const merchantId = user.role === USER_ROLE.ADMIN 
-        ? (searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : userScope.merchantId)
+        ? (searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : null)
         : userScope.merchantId; // All outlet users have merchantId in scope
 
+      // ADMIN without merchantId: return success with NO_SUBSCRIPTION status
+      // Admin users don't have direct subscriptions, but they have full platform access
+      if (user.role === USER_ROLE.ADMIN && !merchantId) {
+        return NextResponse.json(ResponseBuilder.success('ADMIN_NO_MERCHANT_SUBSCRIPTION', {
+          status: 'NO_SUBSCRIPTION',
+          statusReason: 'Admin user does not have a direct subscription. Query with merchantId to check a specific merchant.',
+          hasAccess: true, // Admin always has access to the platform
+          daysRemaining: null,
+          isExpiringSoon: false,
+          merchantId: null,
+          merchantName: 'Admin Platform',
+          planName: 'Admin Access',
+          dbStatus: null,
+          subscriptionId: null,
+          currentPeriodStart: null,
+          currentPeriodEnd: null,
+          trialStart: null,
+          trialEnd: null,
+          billingAmount: 0,
+          billingCurrency: 'USD',
+          billingInterval: null,
+          billingIntervalCount: null,
+          cancelAtPeriodEnd: false,
+          canceledAt: null,
+          cancelReason: null,
+          limits: {},
+          usage: {},
+          features: []
+        }));
+      }
+
+      // Non-ADMIN users must have merchantId
       if (!merchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ID_REQUIRED'),

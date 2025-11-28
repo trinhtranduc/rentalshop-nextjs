@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAnyAuth, withMerchantAuth } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
@@ -7,6 +7,11 @@ import { API, USER_ROLE } from '@rentalshop/constants';
 /**
  * GET /api/users/[id]
  * Get user by ID
+ * 
+ * Authorization: All roles with 'users.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
   request: NextRequest,
@@ -16,7 +21,7 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAnyAuth(async (request, { user, userScope }) => {
+  return withPermissions(['users.view'])(async (request, { user, userScope }) => {
     try {
       console.log('🔍 GET /api/users/[id] - Looking for user with ID:', id);
 
@@ -47,7 +52,6 @@ export async function GET(
         success: true,
         data: foundUser,
         code: 'USER_RETRIEVED_SUCCESS',
-        code: 'USER_RETRIEVED_SUCCESS',
         message: 'User retrieved successfully'
       });
 
@@ -64,6 +68,11 @@ export async function GET(
 /**
  * PUT /api/users/[id]
  * Update user by ID
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function PUT(
   request: NextRequest,
@@ -73,7 +82,7 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withMerchantAuth(async (request, { user, userScope }) => {
+  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
 
       // Check if the ID is numeric (public ID)
@@ -106,19 +115,15 @@ export async function PUT(
       const updatedUser = await db.users.update(userId, body);
       console.log('✅ User updated successfully:', updatedUser);
 
-      // If user is being deactivated, delete all their sessions to force logout
+      // If user is being deactivated, invalidate all their sessions to force logout
       if (isBeingDeactivated) {
-        const { prisma } = await import('@rentalshop/database');
-        const deletedSessionsCount = await prisma.userSession.deleteMany({
-          where: { userId: userId }
-        });
-        console.log(`🗑️ Deactivated user ${userId}: Deleted ${deletedSessionsCount.count} session(s) to force logout`);
+        await db.sessions.invalidateAllUserSessions(userId);
+        console.log(`🗑️ Deactivated user ${userId}: Invalidated all sessions to force logout`);
       }
 
       return NextResponse.json({
         success: true,
         data: updatedUser,
-        code: 'USER_UPDATED_SUCCESS',
         code: 'USER_UPDATED_SUCCESS',
         message: 'User updated successfully'
       });
@@ -136,6 +141,11 @@ export async function PUT(
 /**
  * DELETE /api/users/[id]
  * Delete user by ID (soft delete)
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function DELETE(
   request: NextRequest,
@@ -145,7 +155,7 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withMerchantAuth(async (request, { user, userScope }) => {
+  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
 
       // Check if the ID is numeric (public ID)
@@ -169,14 +179,9 @@ export async function DELETE(
 
       // If user is deleting themselves, disable account instead of returning error
       if (userId === user.id) {
-        // Soft delete (disable) the user's own account
-        const { prisma } = await import('@rentalshop/database');
-        
-        // Delete all user sessions to force logout
-        const deletedSessionsCount = await prisma.userSession.deleteMany({
-          where: { userId: userId }
-        });
-        console.log(`🗑️ User ${userId} deleting own account: Deleted ${deletedSessionsCount.count} session(s)`);
+        // Invalidate all user sessions to force logout
+        await db.sessions.invalidateAllUserSessions(userId);
+        console.log(`🗑️ User ${userId} deleting own account: Invalidated all sessions`);
         
         // Disable the account (soft delete)
         const disabledUser = await db.users.update(userId, { 
@@ -210,6 +215,10 @@ export async function DELETE(
           );
         }
       }
+
+      // Invalidate all user sessions to force logout
+      await db.sessions.invalidateAllUserSessions(userId);
+      console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
       // Soft delete by setting isActive to false and deletedAt
       const deletedUser = await db.users.update(userId, { 

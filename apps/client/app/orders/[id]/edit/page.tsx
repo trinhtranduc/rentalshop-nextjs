@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CreateOrderForm, Breadcrumb, FormSkeleton, PageWrapper, useToast, Button } from '@rentalshop/ui';
+import { CreateOrderForm, Breadcrumb, FormSkeleton, PageWrapper, useToast, Button, LoadingIndicator } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { orderBreadcrumbs } from '@rentalshop/utils';
 import { 
@@ -309,22 +309,12 @@ export default function EditOrderPage() {
     // Form is ready, but we don't need to store the reset function for now
   };
 
-  if (loading) {
-    return (
-      <PageWrapper>
-        <div className="mb-6">
-            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
-            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-          </div>
-          <FormSkeleton />
-      </PageWrapper>
-    );
-  }
-
   // Show loading state while fetching form data
   if (!merchantId) {
     return (
       <PageWrapper>
+        {/* Page Loading Indicator - Floating, non-blocking */}
+        <PageLoadingIndicator loading={loading} />
         <div className="mb-6">
             <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
             <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />

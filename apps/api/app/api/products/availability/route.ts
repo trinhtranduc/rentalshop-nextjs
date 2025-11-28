@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withReadOnlyAuth } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
@@ -17,6 +17,11 @@ const productAvailabilitySchema = z.object({
  * Check product availability for a specific date
  * Returns product summary (stock, rented, available) and orders for that date
  * 
+ * Authorization: All roles with 'products.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * - No subscription required (read-only operation)
+ * 
  * Query parameters:
  * - productId: Product ID to check availability for
  * - date: Date to check availability (YYYY-MM-DD format)
@@ -28,7 +33,7 @@ const productAvailabilitySchema = z.object({
  * - Orders for the target date
  * - Availability status
  */
-export const GET = withReadOnlyAuth(
+export const GET = withPermissions(['products.view'], { requireActiveSubscription: false })(
   async (request, { user, userScope }) => {
     try {
       const { searchParams } = new URL(request.url);

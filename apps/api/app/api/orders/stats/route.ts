@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
@@ -7,10 +7,13 @@ import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/orders/stats - Get order statistics
- * REFACTORED: Now uses unified withAuthRoles pattern for all business roles
+ * 
+ * Authorization: All roles with 'orders.view' or 'analytics.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF (via orders.view)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * NOTE: Database functions getOrderStats and getOverdueRentals not implemented - using placeholders
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['orders.view', 'analytics.view'])(async (request, { user, userScope }) => {
   console.log(`📊 GET /api/orders/stats - User: ${user.email}, Role: ${user.role}`);
   
   try {

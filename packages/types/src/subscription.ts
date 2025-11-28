@@ -91,18 +91,26 @@ export interface SubscriptionFilters {
   status?: SubscriptionStatus; // ✅ Type safe with enum
   startDate?: Date | string;
   endDate?: Date | string;
+  search?: string;
   limit?: number;
-  offset?: number;
+  page?: number;
 }
 
 export interface SubscriptionsResponse {
-  data: Subscription[];
-  pagination: {
+  data?: Subscription[];
+  subscriptions?: Subscription[];
+  pagination?: {
     total: number;
-    hasMore: boolean;
+    page: number;
     limit: number;
-    offset: number;
+    totalPages: number;
+    hasMore: boolean;
   };
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+  hasMore?: boolean;
 }
 
 // Subscription actions

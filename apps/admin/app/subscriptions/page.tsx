@@ -35,7 +35,7 @@ import {
   X
 } from 'lucide-react';
 import { useSubscriptionsData } from '@rentalshop/hooks';
-import type { Subscription, Plan, Merchant, BillingPeriod } from '@rentalshop/types';
+import type { Subscription, Plan, Merchant, BillingInterval } from '@rentalshop/types';
 
 /**
  * ✅ MODERN SUBSCRIPTIONS PAGE (URL State Pattern)
@@ -136,7 +136,15 @@ export default function SubscriptionsPage() {
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(updates).forEach(([key, value]) => {
-      if (value && value !== '') {
+      // Special handling for page: always set it, even if it's 1
+      if (key === 'page') {
+        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
+        if (pageNum > 0) {
+          params.set(key, pageNum.toString());
+        } else {
+          params.delete(key);
+        }
+      } else if (value && value !== '') {
         params.set(key, value.toString());
       } else {
         params.delete(key);
@@ -197,12 +205,12 @@ export default function SubscriptionsPage() {
     });
   }, []);
 
-  const handleChangePlan = useCallback((subscription: Subscription, newPlanId: number, period: BillingPeriod) => {
+  const handleChangePlan = useCallback((subscription: Subscription, newPlanId: number, interval: BillingInterval) => {
     setConfirmationDialog({
       open: true,
       type: 'changePlan',
       subscription,
-      data: { newPlanId, period }
+      data: { newPlanId, interval }
     });
   }, []);
 
@@ -299,6 +307,16 @@ export default function SubscriptionsPage() {
 
   const subscriptions = data?.subscriptions || [];
   const totalSubscriptions = data?.total || 0;
+  const currentPageFromData = data?.currentPage || data?.page || page;
+  const limitFromData = data?.limit || limit;
+  
+  console.log('📊 Subscriptions Page - Pagination state:', {
+    totalSubscriptions,
+    currentPageFromData,
+    limitFromData,
+    totalPages: data?.totalPages || Math.ceil(totalSubscriptions / limitFromData),
+    shouldShowPagination: totalSubscriptions > limitFromData
+  });
 
   // Transform subscriptions for UI
   const uiSubscriptions: Subscription[] = useMemo(() => {
@@ -373,69 +391,65 @@ export default function SubscriptionsPage() {
         </div>
       </PageHeader>
 
-      {/* Fixed Stats Section */}
-      <div className="flex-shrink-0 space-y-4 mt-4">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Subscriptions</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalSubscriptions}</div>
-              <p className="text-xs text-muted-foreground">
-                All time subscriptions
-              </p>
+      {/* Compact Stats Section */}
+      <div className="flex-shrink-0 mt-3">
+        {/* Compact Stats Cards - Horizontal layout to save vertical space */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="border">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-600 mb-0.5">Total</p>
+                  <p className="text-lg font-bold">{totalSubscriptions}</p>
+                </div>
+                <CreditCard className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Active Subscriptions</CardTitle>
-              <Check className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {uiSubscriptions.filter(s => String(s.status).toLowerCase() === 'active').length}
+          <Card className="border">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-600 mb-0.5">Active</p>
+                  <p className="text-lg font-bold text-green-600">
+                    {uiSubscriptions.filter(s => String(s.status).toLowerCase() === 'active').length}
+                  </p>
+                </div>
+                <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Currently active
-              </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Trial Subscriptions</CardTitle>
-              <Clock className="h-4 w-4 text-blue-700" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-700">
-                {uiSubscriptions.filter(s => String(s.status).toLowerCase() === 'trial').length}
+          <Card className="border">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-600 mb-0.5">Trial</p>
+                  <p className="text-lg font-bold text-blue-700">
+                    {uiSubscriptions.filter(s => String(s.status).toLowerCase() === 'trial').length}
+                  </p>
+                </div>
+                <Clock className="h-4 w-4 text-blue-700 flex-shrink-0" />
               </div>
-              <p className="text-xs text-muted-foreground">
-                In trial period
-              </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Cancelled Subscriptions</CardTitle>
-              <X className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {uiSubscriptions.filter(s => String(s.status).toLowerCase() === 'cancelled').length}
+          <Card className="border">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-600 mb-0.5">Cancelled</p>
+                  <p className="text-lg font-bold text-red-600">
+                    {uiSubscriptions.filter(s => String(s.status).toLowerCase() === 'cancelled').length}
+                  </p>
+                </div>
+                <X className="h-4 w-4 text-red-600 flex-shrink-0" />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Cancelled or expired
-              </p>
             </CardContent>
           </Card>
         </div>
       </div>
 
       {/* Search and Filters - In Card */}
-      <Card className="shadow-sm border-border mt-4">
+      <Card className="shadow-sm border-border mt-3">
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-wrap items-center gap-3">
             {/* Search Merchant Name */}
@@ -479,7 +493,7 @@ export default function SubscriptionsPage() {
       </Card>
 
       {/* Scrollable Table Section */}
-      <div className="flex-1 min-h-0 overflow-auto mt-4">
+      <div className="flex-1 min-h-0 overflow-auto mt-3">
         <SubscriptionList
           subscriptions={uiSubscriptions}
           plans={plans}
@@ -490,12 +504,10 @@ export default function SubscriptionsPage() {
           onChangePlan={handleChangePlan}
           onExtend={handleExtend}
           loading={loading}
-          pagination={{
-            page,
-            limit,
-            total: totalSubscriptions,
-            onPageChange: handlePageChange
-          }}
+          total={totalSubscriptions}
+          limit={limitFromData}
+          currentPage={currentPageFromData}
+          onPageChange={handlePageChange}
         />
       </div>
 

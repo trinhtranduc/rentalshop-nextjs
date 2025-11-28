@@ -29,7 +29,8 @@ import {
   Label,
   Textarea,
   PageWrapper,
-  Breadcrumb
+  Breadcrumb,
+  PageLoadingIndicator
 } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
@@ -192,15 +193,7 @@ export default function MerchantSubscriptionPage() {
   };
 
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
-      </div>
-    );
-  }
-
-  if (!subscription) {
+  if (!subscription && !loading) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900">No Subscription Found</h2>
@@ -218,6 +211,8 @@ export default function MerchantSubscriptionPage() {
 
   return (
     <PageWrapper>
+      {/* Page Loading Indicator - Floating, non-blocking */}
+      <PageLoadingIndicator loading={loading} />
       <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">

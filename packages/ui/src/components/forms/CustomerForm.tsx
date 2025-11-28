@@ -124,9 +124,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       setErrors(prev => ({ ...prev, email: emailError }));
     } else {
       // Clear error when user starts typing for other fields
-      if (errors[field]) {
-        setErrors(prev => ({ ...prev, [field]: undefined }));
-      }
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
     }
   };
 

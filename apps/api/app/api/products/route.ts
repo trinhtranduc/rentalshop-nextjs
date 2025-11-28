@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withManagementAuth } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
@@ -9,9 +9,13 @@ import { z } from 'zod';
 /**
  * GET /api/products
  * Get products with filtering and pagination using simplified database API
- * REFACTORED: Now uses unified withAuth pattern
+ * REFACTORED: Now uses permission-based auth (reads from ROLE_PERMISSIONS)
+ * 
+ * Authorization: All roles with 'products.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withManagementAuth(async (request, { user, userScope }) => {
+export const GET = withPermissions(['products.view'])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/products - User: ${user.email} (${user.role})`);
   
   try {
@@ -196,10 +200,14 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
  * POST /api/products
  * Create a new product using simplified database API
  * SUPPORTS: Both JSON payload and multipart FormData with file uploads
- * REFACTORED: Now uses unified withAuth pattern
+ * REFACTORED: Now uses permission-based auth (reads from ROLE_PERMISSIONS)
+ * 
+ * Authorization: All roles with 'products.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  * Requires active subscription
  */
-export const POST = withManagementAuth(async (request, { user, userScope }) => {
+export const POST = withPermissions(['products.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/products - User: ${user.email} (${user.role})`);
   
   // Store parsed data for potential cleanup

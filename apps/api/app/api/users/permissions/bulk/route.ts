@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
@@ -19,9 +19,13 @@ const bulkUpdatePermissionsSchema = z.object({
 /**
  * POST /api/users/permissions/bulk
  * Update permissions for multiple users
- * Only OUTLET_ADMIN, MERCHANT, and ADMIN can bulk update permissions
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(
+export const POST = withPermissions(['users.manage'])(
   async (request, { user, userScope }) => {
     try {
       const body = await request.json();

@@ -8,32 +8,76 @@ import { prisma } from './client';
 
 export interface SyncSession {
   id: number;
+  type: 'sync' | 'import'; // Add type to distinguish sync vs import sessions
   merchantId: number;
   entities: string[];
   config: {
-    endpoint: string;
-    token: string;
+    endpoint?: string;
+    token?: string;
+    fileName?: string; // For import sessions
+    fileSize?: number; // For import sessions
+    options?: {
+      skipDuplicates?: boolean;
+      validateOnly?: boolean;
+    };
   };
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'PARTIALLY_COMPLETED';
   stats?: any;
   errorLog?: any[];
+  progress?: {
+    currentEntity?: string;
+    currentEntityIndex?: number;
+    entityProgress?: {
+      customers?: { processed: number; total: number; lastProcessedIndex: number; errors?: number };
+      products?: { processed: number; total: number; lastProcessedIndex: number; errors?: number };
+      orders?: { processed: number; total: number; lastProcessedIndex: number; errors?: number };
+    };
+    lastError?: {
+      entity: string;
+      index: number;
+      error: string;
+      timestamp: Date;
+    };
+  };
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface CreateSessionInput {
+  type?: 'sync' | 'import'; // Default to 'sync' for backward compatibility
   merchantId: number;
   entities: string[];
   config: {
-    endpoint: string;
-    token: string;
+    endpoint?: string;
+    token?: string;
+    fileName?: string;
+    fileSize?: number;
+    options?: {
+      skipDuplicates?: boolean;
+      validateOnly?: boolean;
+    };
   };
 }
 
 export interface UpdateStatusInput {
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'PARTIALLY_COMPLETED';
   stats?: any;
   errorLog?: any[];
+  progress?: {
+    currentEntity?: string;
+    currentEntityIndex?: number;
+    entityProgress?: {
+      customers?: { processed: number; total: number; lastProcessedIndex: number };
+      products?: { processed: number; total: number; lastProcessedIndex: number };
+      orders?: { processed: number; total: number; lastProcessedIndex: number };
+    };
+    lastError?: {
+      entity: string;
+      index: number;
+      error: string;
+      timestamp: Date;
+    };
+  };
 }
 
 export interface AddRecordInput {
@@ -61,6 +105,11 @@ const simplifiedSync = {
    * Track created records for rollback
    */
   createdRecords: new Map<number, CreatedRecord[]>(),
+  
+  /**
+   * Store sync sessions in memory (temporary)
+   */
+  sessions: new Map<number, SyncSession>(),
 
   /**
    * Add created record to tracking
@@ -172,13 +221,20 @@ const simplifiedSync = {
     // In production, this should create a record in the database
     const session: SyncSession = {
       id: Date.now(), // Temporary ID
+      type: input.type || 'sync', // Default to 'sync' for backward compatibility
       merchantId: input.merchantId,
       entities: input.entities,
       config: input.config,
       status: 'PENDING',
+      progress: {
+        entityProgress: {}
+      },
       createdAt: new Date(),
       updatedAt: new Date()
     };
+
+    // Store in memory
+    this.sessions.set(session.id, session);
 
     console.log('📝 Sync session created (temporary):', {
       id: session.id,
@@ -187,6 +243,13 @@ const simplifiedSync = {
     });
 
     return session;
+  },
+  
+  /**
+   * Get sync session by ID
+   */
+  async getSession(sessionId: number): Promise<SyncSession | null> {
+    return this.sessions.get(sessionId) || null;
   },
 
   /**
@@ -197,12 +260,41 @@ const simplifiedSync = {
     sessionId: number,
     input: UpdateStatusInput
   ): Promise<void> {
-    // Temporary implementation - just log
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      console.warn(`⚠️ Sync session ${sessionId} not found`);
+      return;
+    }
+
+    // Update session in memory
+    session.status = input.status;
+    session.updatedAt = new Date();
+    if (input.stats) {
+      session.stats = input.stats;
+    }
+    if (input.errorLog) {
+      session.errorLog = input.errorLog;
+    }
+    if (input.progress) {
+      session.progress = {
+        ...session.progress,
+        ...input.progress,
+        entityProgress: {
+          ...session.progress?.entityProgress,
+          ...input.progress.entityProgress
+        }
+      };
+    }
+
+    // Store updated session
+    this.sessions.set(sessionId, session);
+
     console.log('📊 Sync session status updated:', {
       sessionId,
       status: input.status,
       hasStats: !!input.stats,
-      hasErrorLog: !!input.errorLog
+      hasErrorLog: !!input.errorLog,
+      progress: input.progress
     });
 
     // In production, update the database record:
@@ -212,6 +304,7 @@ const simplifiedSync = {
     //     status: input.status,
     //     stats: input.stats ? JSON.stringify(input.stats) : undefined,
     //     errorLog: input.errorLog ? JSON.stringify(input.errorLog) : undefined,
+    //     progress: input.progress ? JSON.stringify(input.progress) : undefined,
     //     updatedAt: new Date()
     //   }
     // });

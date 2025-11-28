@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
+import { useOptimisticNavigation } from '@rentalshop/hooks';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -120,6 +121,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const pathname = usePathname();
+  const { navigatingTo, navigate, prefetch } = useOptimisticNavigation();
 
   const toggleExpanded = (href: string) => {
     setExpandedItems(prev => 
@@ -174,22 +176,28 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         ) : (
           <Link
             href={item.href}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(item.href);
+            }}
+            onMouseEnter={() => prefetch(item.href)}
             className={cn(
-              'flex items-center justify-between px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out',
-              active 
-                ? 'text-blue-700 font-medium' 
+              'flex items-center justify-between px-3 py-2.5 text-sm font-normal rounded-lg transition-all duration-150 ease-out relative',
+              active || navigatingTo === item.href
+                ? 'text-blue-700 font-medium bg-blue-50' 
                 : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary'
             )}
           >
             <div className="flex items-center gap-2">
               <Icon className={cn(
                 'w-4 h-4',
-                active ? 'text-blue-700' : 'text-text-secondary'
+                active || navigatingTo === item.href ? 'text-blue-700' : 'text-text-secondary'
               )} />
               {!isCollapsed && (
                 <span>{item.label}</span>
               )}
             </div>
+            {/* Loading indicator removed - instant navigation per user requirement */}
             {!isCollapsed && item.badge && (
               <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
                 {item.badge}
@@ -205,17 +213,27 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               const SubIcon = subItem.icon;
               const subActive = isActive(subItem.href);
               
+              const isSubItemNavigating = navigatingTo === subItem.href;
+              
               return (
                 <Link
                   key={subItem.href}
                   href={subItem.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(subItem.href);
+                  }}
+                  onMouseEnter={() => prefetch(subItem.href)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 text-sm font-normal rounded-lg transition-colors',
-                    subActive ? 'text-blue-700 font-medium' : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary'
+                    'flex items-center gap-2 px-4 py-2 text-sm font-normal rounded-lg transition-colors relative',
+                    subActive || isSubItemNavigating 
+                      ? 'text-blue-700 font-medium bg-blue-50' 
+                      : 'text-text-primary hover:text-blue-700 hover:bg-bg-secondary'
                   )}
                 >
                   <SubIcon className="w-4 h-4" />
                   <span>{subItem.label}</span>
+                  {/* Loading indicator removed - instant navigation per user requirement */}
                 </Link>
               );
             })}

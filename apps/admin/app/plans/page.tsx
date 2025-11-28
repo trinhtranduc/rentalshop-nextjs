@@ -24,6 +24,7 @@ import {
   SelectValue,
   ConfirmationDialog,
   Badge,
+  Pagination,
   useToast
 } from '@rentalshop/ui';
 import { PlanTable, PlanDialog } from '@rentalshop/ui';
@@ -101,7 +102,15 @@ export default function PlansPage() {
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(updates).forEach(([key, value]) => {
-      if (value && value !== '' && value !== 'all') {
+      // Special handling for page: always set it, even if it's 1
+      if (key === 'page') {
+        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
+        if (pageNum > 0) {
+          params.set(key, pageNum.toString());
+        } else {
+          params.delete(key);
+        }
+      } else if (value && value !== '' && value !== 'all') {
         params.set(key, value.toString());
       } else {
         params.delete(key);
@@ -328,10 +337,10 @@ export default function PlansPage() {
       </PageHeader>
 
       {/* Fixed Filters Section */}
-      <div className="flex-shrink-0 space-y-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex gap-4">
+      <div className="flex-shrink-0">
+        <Card className="mb-3">
+          <CardContent className="p-4">
+            <div className="flex gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
@@ -357,7 +366,7 @@ export default function PlansPage() {
       </div>
 
       {/* Scrollable Table Section */}
-      <div className="flex-1 min-h-0 overflow-auto mt-4">
+      <div className="flex-1 min-h-0 overflow-auto mt-2">
         <div className="flex flex-col h-full">
           <div className="flex-1 min-h-0">
         <PlanTable
@@ -373,57 +382,17 @@ export default function PlansPage() {
         />
           </div>
 
-          {/* Pagination at bottom */}
+          {/* Pagination at bottom - Standard Pattern */}
           {totalPlans > 0 && data && data.total > data.limit && (
             <div className="flex-shrink-0 py-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  Showing {((data.currentPage - 1) * data.limit) + 1} to {Math.min(data.currentPage * data.limit, data.total)} of {data.total} plans
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(data.currentPage - 1)}
-                    disabled={data.currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: data.totalPages }, (_, i) => i + 1)
-                      .filter(p => {
-                        // Show first, last, current, and pages around current
-                        return p === 1 || p === data.totalPages || 
-                               Math.abs(p - data.currentPage) <= 1;
-                      })
-                      .map((p, i, arr) => (
-                        <React.Fragment key={p}>
-                          {i > 0 && arr[i - 1] !== p - 1 && (
-                            <span className="px-2">...</span>
-                          )}
-                          <Button
-                            variant={data.currentPage === p ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(p)}
-                            className="w-10 h-9"
-                          >
-                            {p}
-                          </Button>
-                        </React.Fragment>
-                      ))}
-              </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(data.currentPage + 1)}
-                    disabled={data.currentPage === data.totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
+              <Pagination
+                currentPage={data.currentPage || data.page || 1}
+                totalPages={data.totalPages || Math.ceil(data.total / data.limit)}
+                total={data.total}
+                limit={data.limit}
+                onPageChange={handlePageChange}
+                itemName="plans"
+              />
             </div>
           )}
         </div>

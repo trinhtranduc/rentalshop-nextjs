@@ -8,73 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Business domain enums
-enum BusinessType {
-  GENERAL
-  VEHICLE
-  CLOTHING
-  EQUIPMENT
-}
-
-enum PricingType {
-  FIXED
-  HOURLY
-  DAILY
-}
-
-enum SubscriptionStatus {
-  TRIAL
-  ACTIVE
-  PAST_DUE
-  PAUSED
-  CANCELLED
-  EXPIRED
-}
-
-enum OrderStatus {
-  RESERVED
-  PICKUPED
-  RETURNED
-  COMPLETED
-  CANCELLED
-}
-
-enum OrderType {
-  RENT
-  SALE
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-  CANCELLED
-}
-
-enum PaymentMethod {
-  STRIPE
-  TRANSFER
-  MANUAL
-  CASH
-  CHECK
-  PAYPAL
-}
-
-enum PaymentType {
-  ORDER_PAYMENT
-  SUBSCRIPTION_PAYMENT
-  PLAN_CHANGE
-  PLAN_EXTENSION
-}
-
-enum UserRole {
-  ADMIN
-  MERCHANT
-  OUTLET_ADMIN
-  OUTLET_STAFF
-}
-
 model User {
   id                     Int                    @id @default(autoincrement())
   email                  String                 @unique
@@ -82,7 +15,7 @@ model User {
   firstName              String
   lastName               String
   phone                  String?
-  role                   UserRole               @default(OUTLET_STAFF) // ✅ Type safe with enum
+  role                   UserRole               @default(OUTLET_STAFF)
   isActive               Boolean                @default(true)
   emailVerified          Boolean                @default(false)
   emailVerifiedAt        DateTime?
@@ -92,11 +25,10 @@ model User {
   outletId               Int?
   deletedAt              DateTime?
   auditLogs              AuditLog[]
-  createdOrders          Order[]
-  subscriptionActivities SubscriptionActivity[]
   emailVerifications     EmailVerification[]
+  createdOrders          Order[]
   passwordResets         PasswordReset[]
-  permissions            UserPermission[]
+  subscriptionActivities SubscriptionActivity[]
   merchant               Merchant?              @relation(fields: [merchantId], references: [id])
   outlet                 Outlet?                @relation(fields: [outletId], references: [id])
   sessions               UserSession[]
@@ -145,7 +77,6 @@ model Merchant {
   website       String?
   description   String?
   planId        Int?
-  // subscriptionStatus removed - use subscription.status instead (single source of truth)
   totalRevenue  Float         @default(0)
   lastActiveAt  DateTime?
   isActive      Boolean       @default(true)
@@ -162,7 +93,6 @@ model Merchant {
   products      Product[]
   subscription  Subscription?
   users         User[]
-  // Index removed - subscriptionStatus field removed
 
   @@index([name])
   @@index([email])
@@ -218,7 +148,6 @@ model Product {
   totalStock     Int           @default(0)
   rentPrice      Float
   salePrice      Float?
-  costPrice      Float? // Giá vốn (purchase cost) - Optional for profit calculation
   deposit        Float         @default(0)
   images         Json?
   isActive       Boolean       @default(true)
@@ -226,10 +155,9 @@ model Product {
   updatedAt      DateTime      @updatedAt
   merchantId     Int
   categoryId     Int
-  // Optional product-level pricing configuration (default: FIXED if null)
-  pricingType    PricingType? // NULL = FIXED (default), HOURLY/DAILY require durationConfig
-  durationConfig String? // JSON: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
-  // Future: pricingTiers String? // JSON: [{ minDuration, maxDuration, price, description? }] - Optional pricing tiers for HOURLY/DAILY
+  costPrice      Float?
+  pricingType    PricingType?
+  durationConfig String?
   orderItems     OrderItem[]
   outletStock    OutletStock[]
   category       Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -262,9 +190,9 @@ model OutletStock {
 model Customer {
   id          Int       @id @default(autoincrement())
   firstName   String
-  lastName    String? // Optional - only firstName is required
+  lastName    String
   email       String?
-  phone       String? // Optional - no constraint required
+  phone       String
   address     String?
   city        String?
   state       String?
@@ -281,46 +209,46 @@ model Customer {
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   orders      Order[]
 
-  // Remove unique constraint on phone since it's optional
-  // @@unique([merchantId, phone]) - Removed: phone is optional
+  @@unique([merchantId, phone])
   @@index([merchantId, firstName, lastName])
 }
 
 model Order {
-  id                Int         @id @default(autoincrement())
-  orderNumber       String      @unique
-  orderType         OrderType // ✅ Type safe with enum
-  status            OrderStatus @default(RESERVED) // ✅ Type safe with enum
-  totalAmount       Float
-  depositAmount     Float       @default(0)
-  securityDeposit   Float       @default(0)
-  damageFee         Float       @default(0)
-  lateFee           Float       @default(0)
-  discountType      String?
-  discountValue     Float       @default(0)
-  discountAmount    Float       @default(0)
-  pickupPlanAt      DateTime?
-  returnPlanAt      DateTime?
-  pickedUpAt        DateTime?
-  returnedAt        DateTime?
-  rentalDuration    Int?
-  isReadyToDeliver  Boolean     @default(false)
-  collateralType    String?
-  collateralDetails String?
-  notes             String?
-  pickupNotes       String?
-  returnNotes       String?
-  damageNotes       String?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  outletId          Int
-  customerId        Int?
-  createdById       Int
-  createdBy         User        @relation(fields: [createdById], references: [id])
-  customer          Customer?   @relation(fields: [customerId], references: [id])
-  outlet            Outlet      @relation(fields: [outletId], references: [id])
-  orderItems        OrderItem[]
-  payments          Payment[]
+  id                 Int         @id @default(autoincrement())
+  orderNumber        String      @unique
+  orderType          OrderType
+  status             OrderStatus @default(RESERVED)
+  totalAmount        Float
+  depositAmount      Float       @default(0)
+  securityDeposit    Float       @default(0)
+  damageFee          Float       @default(0)
+  lateFee            Float       @default(0)
+  discountType       String?
+  discountValue      Float       @default(0)
+  discountAmount     Float       @default(0)
+  pickupPlanAt       DateTime?
+  returnPlanAt       DateTime?
+  pickedUpAt         DateTime?
+  returnedAt         DateTime?
+  rentalDuration     Int?
+  isReadyToDeliver   Boolean     @default(false)
+  collateralType     String?
+  collateralDetails  String?
+  notes              String?
+  pickupNotes        String?
+  returnNotes        String?
+  damageNotes        String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  outletId           Int
+  customerId         Int?
+  createdById        Int
+  rentalDurationUnit String?
+  createdBy          User        @relation(fields: [createdById], references: [id])
+  customer           Customer?   @relation(fields: [customerId], references: [id])
+  outlet             Outlet      @relation(fields: [outletId], references: [id])
+  orderItems         OrderItem[]
+  payments           Payment[]
 
   @@index([status, outletId])
   @@index([customerId, createdAt(sort: Desc)])
@@ -346,10 +274,9 @@ model OrderItem {
   productId      Int
   notes          String?
   rentalDays     Int?
-  // Snapshot fields - preserve product info even if product is deleted
   productName    String?
   productBarcode String?
-  productImages  Json? // Store as JSON array of URLs
+  productImages  Json?
   order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product        Product @relation(fields: [productId], references: [id])
 
@@ -360,9 +287,9 @@ model Payment {
   id             Int           @id @default(autoincrement())
   amount         Float
   currency       String        @default("USD")
-  method         PaymentMethod // ✅ Type safe with enum
-  type           PaymentType // ✅ Type safe with enum
-  status         PaymentStatus @default(PENDING) // ✅ Type safe with enum
+  method         PaymentMethod
+  type           PaymentType
+  status         PaymentStatus @default(PENDING)
   reference      String?
   transactionId  String?
   invoiceNumber  String?
@@ -397,7 +324,7 @@ model Plan {
   basePrice     Float
   currency      String         @default("USD")
   trialDays     Int            @default(14)
-  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0, \"orders\": 0}")
+  limits        String         @default("{\"outlets\": 0, \"users\": 0, \"products\": 0, \"customers\": 0}")
   features      String         @default("[]")
   isActive      Boolean        @default(true)
   isPopular     Boolean        @default(false)
@@ -417,7 +344,7 @@ model Subscription {
   id                 Int                    @id @default(autoincrement())
   merchantId         Int                    @unique
   planId             Int
-  status             SubscriptionStatus     @default(TRIAL) // ✅ Type safe with enum
+  status             String                 @default("trial")
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   trialStart         DateTime?
@@ -516,17 +443,68 @@ model PasswordReset {
   @@index([used])
 }
 
-model UserPermission {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  permission String   // e.g., 'orders.export', 'products.export', 'customers.export', 'users.manage', 'dashboard.view'
-  enabled   Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum BusinessType {
+  GENERAL
+  VEHICLE
+  CLOTHING
+  EQUIPMENT
+}
 
-  @@unique([userId, permission])
-  @@index([userId])
-  @@index([permission])
-  @@index([enabled])
+enum PricingType {
+  FIXED
+  HOURLY
+  DAILY
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum OrderStatus {
+  RESERVED
+  PICKUPED
+  RETURNED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderType {
+  RENT
+  SALE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  STRIPE
+  TRANSFER
+  MANUAL
+  CASH
+  CHECK
+  PAYPAL
+}
+
+enum PaymentType {
+  ORDER_PAYMENT
+  SUBSCRIPTION_PAYMENT
+  PLAN_CHANGE
+  PLAN_EXTENSION
+}
+
+enum UserRole {
+  ADMIN
+  MERCHANT
+  OUTLET_ADMIN
+  OUTLET_STAFF
 }

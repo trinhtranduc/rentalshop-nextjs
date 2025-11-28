@@ -67,7 +67,12 @@ export function usePlansData(options: UsePlansDataOptions): UsePlansDataReturn {
     fetchFn: async (filters: PlanFilters) => {
       console.log('📋 usePlansData: Fetching with filters:', filters);
       
-      const response = await plansApi.getPlans();
+      const response = await plansApi.getPlans({
+        page: filters.page,
+        limit: filters.limit,
+        search: filters.search,
+        isActive: filters.status === 'active' ? true : filters.status === 'inactive' ? false : undefined
+      });
 
       if (!response.success || !response.data) {
         throw new Error('Failed to fetch plans');
@@ -75,58 +80,30 @@ export function usePlansData(options: UsePlansDataOptions): UsePlansDataReturn {
 
       // Transform API response to consistent format
       const apiData = response.data as any;
-      const plansArray = Array.isArray(apiData) ? apiData : apiData.plans || [];
+      const plansArray = Array.isArray(apiData) ? apiData : (apiData.plans || []);
       
       console.log('📋 usePlansData - API Response:', {
         hasData: !!apiData,
         isArray: Array.isArray(apiData),
         plansCount: plansArray.length,
-        firstPlan: plansArray[0]
+        total: apiData.total,
+        page: apiData.page,
+        totalPages: apiData.totalPages
       });
       
-      // Apply client-side filtering if needed (until backend supports it)
-      let filteredPlans = plansArray;
-      
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredPlans = filteredPlans.filter((p: any) => 
-          p.name?.toLowerCase().includes(searchLower) ||
-          p.description?.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      if (filters.status && filters.status !== 'all') {
-        filteredPlans = filteredPlans.filter((p: any) => 
-          filters.status === 'active' ? p.isActive : !p.isActive
-        );
-      }
-      
-      // Apply sorting
-      if (filters.sortBy) {
-        filteredPlans.sort((a: any, b: any) => {
-          const aVal = a[filters.sortBy!];
-          const bVal = b[filters.sortBy!];
-          const order = filters.sortOrder === 'desc' ? -1 : 1;
-          return (aVal > bVal ? 1 : -1) * order;
-        });
-      }
-      
-      // Apply pagination
-      const page = filters.page || 1;
-      const limit = filters.limit || 10;
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedPlans = filteredPlans.slice(startIndex, endIndex);
-      const total = filteredPlans.length;
-      const totalPages = Math.ceil(total / limit);
+      // Extract pagination metadata from API response
+      const page = apiData.page || filters.page || 1;
+      const limit = apiData.limit || filters.limit || 10;
+      const total = apiData.total || plansArray.length;
+      const totalPages = apiData.totalPages || Math.ceil(total / limit);
       
       const transformed: PlansDataResponse = {
-        plans: paginatedPlans,
+        plans: plansArray,
         total,
         page,
         currentPage: page,
         limit,
-        hasMore: endIndex < total,
+        hasMore: apiData.hasMore !== undefined ? apiData.hasMore : page < totalPages,
         totalPages
       };
       

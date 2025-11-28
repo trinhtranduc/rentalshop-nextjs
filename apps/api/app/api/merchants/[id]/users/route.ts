@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/users
  * Get merchant users
+ * 
+ * Authorization: All roles with 'users.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+  return withPermissions(['users.view'])(async (request, { user, userScope }) => {
     try {
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {
@@ -55,6 +60,11 @@ export async function GET(
 /**
  * POST /api/merchants/[id]/users
  * Create new user
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function POST(
   request: NextRequest,
@@ -64,7 +74,7 @@ export async function POST(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(

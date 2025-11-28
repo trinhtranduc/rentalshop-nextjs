@@ -102,7 +102,7 @@ export async function getAllPlans(): Promise<Plan[]> {
 /**
  * Search plans with filters
  */
-export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: Plan[]; total: number; hasMore: boolean }> {
+export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: Plan[]; total: number; hasMore: boolean; page: number; limit: number; totalPages: number }> {
   try {
     const where: any = {};
 
@@ -126,11 +126,15 @@ export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: P
     const total = await prisma.plan.count({ where });
 
     // Get plans with pagination
+    const limit = filters.limit || 20;
+    const page = filters.page || 1;
+    const skip = (page - 1) * limit;
+    
     const plans = await prisma.plan.findMany({
       where,
       orderBy: { sortOrder: 'asc' },
-      take: filters.limit || 20,
-      skip: filters.offset || 0
+      take: limit,
+      skip
     });
 
     const transformedPlans = plans.map((plan: any) => ({
@@ -150,10 +154,15 @@ export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: P
       updatedAt: plan.updatedAt,
     }));
 
+    const totalPages = Math.ceil(total / limit);
+    
     return {
       plans: transformedPlans,
       total,
-      hasMore: (filters.offset || 0) + (filters.limit || 20) < total
+      hasMore: page < totalPages,
+      page,
+      limit,
+      totalPages
     };
   } catch (error) {
     console.error('Error searching plans:', error);

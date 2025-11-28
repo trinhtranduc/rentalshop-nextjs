@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { AdminSidebar } from '@rentalshop/ui';
+import { AdminSidebar, SidebarSkeleton, HeaderSkeleton } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
@@ -22,13 +22,23 @@ export default function AdminLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  // Show loading state while checking authentication
+  // Show skeleton layout while checking authentication (non-blocking)
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-action-primary mx-auto mb-4"></div>
-          <p className="text-text-secondary">Loading...</p>
+      <div className="flex h-screen bg-bg-primary">
+        {/* Sidebar Skeleton */}
+        <div className="w-64 bg-bg-card border-r border-border">
+          <SidebarSkeleton />
+        </div>
+        {/* Main Content Skeleton */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <HeaderSkeleton />
+          <main className="flex-1 overflow-y-auto bg-bg-primary p-4">
+            <div className="space-y-4">
+              <div className="h-8 bg-bg-tertiary rounded w-1/4 animate-pulse" />
+              <div className="h-64 bg-bg-tertiary rounded animate-pulse" />
+            </div>
+          </main>
         </div>
       </div>
     );

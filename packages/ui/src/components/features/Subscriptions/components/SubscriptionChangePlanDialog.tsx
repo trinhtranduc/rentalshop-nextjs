@@ -207,21 +207,21 @@ export function SubscriptionChangePlanDialog({
         <div className="flex-1 overflow-y-auto space-y-6 pr-1">
           {/* Current Plan Info - Simplified */}
           <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div>
+                <div>
               <p className="text-sm text-gray-600">Current Plan</p>
               <p className="font-semibold">{currentPlan?.name || 'N/A'}</p>
-            </div>
+                </div>
             <div className="text-right">
               <p className="text-sm text-gray-600">Current Amount</p>
               <p className="font-semibold">
-                {formatCurrency(
-                  subscription.amount || 0, 
-                  (subscription.currency || currentPlan?.currency || 'USD') as any
-                )}
-                /{subscription.interval || 'month'}
-              </p>
-            </div>
-          </div>
+                    {formatCurrency(
+                      subscription.amount || 0, 
+                      (subscription.currency || currentPlan?.currency || 'USD') as any
+                    )}
+                    /{subscription.interval || 'month'}
+                  </p>
+                </div>
+              </div>
 
           {/* Billing Period Selection */}
           <div className="space-y-2">
@@ -335,19 +335,19 @@ export function SubscriptionChangePlanDialog({
                         <p className="text-gray-600">Billing Period</p>
                         <p className="font-semibold">{cycleConfig?.label || selectedInterval}</p>
                       </div>
-                      <div>
+                    <div>
                         <p className="text-gray-600">Total Price</p>
                         <p className="font-bold text-lg">
                           {formatCurrency(newPricing.price, selectedPlan.currency as any)}
-                        </p>
-                      </div>
-                      <div>
+                      </p>
+                    </div>
+                    <div>
                         <p className="text-gray-600">Monthly Equivalent</p>
                         <p className="font-semibold">
                           {formatCurrency(newPricing.monthlyEquivalent, selectedPlan.currency as any)}/month
-                        </p>
-                      </div>
+                      </p>
                     </div>
+                  </div>
 
                     {/* Start Date Selection */}
                     <div className="space-y-2 border-t pt-4">
@@ -376,8 +376,8 @@ export function SubscriptionChangePlanDialog({
                         rows={2}
                         className="w-full"
                       />
-                    </div>
-
+                            </div>
+                            
                     {/* Send Email Notification */}
                     <div className="flex items-center space-x-2">
                       <input
@@ -390,11 +390,11 @@ export function SubscriptionChangePlanDialog({
                       <Label htmlFor="sendEmail" className="text-sm font-normal cursor-pointer">
                         Send email notification to merchant
                       </Label>
+                              </div>
+                          </>
+                        );
+                      })()}
                     </div>
-                  </>
-                );
-              })()}
-            </div>
           )}
         </div>
 

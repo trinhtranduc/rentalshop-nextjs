@@ -561,6 +561,17 @@ export function handleApiError(error: any): {
   // Handle different error types
   if (error instanceof ApiError) {
     apiError = error;
+  } else if (
+    error.name === 'PrismaClientInitializationError' ||
+    error.message?.includes("Can't reach database server") ||
+    error.message?.includes('database server is running')
+  ) {
+    // Database connection errors
+    apiError = new ApiError(
+      ErrorCode.SERVICE_UNAVAILABLE,
+      'Database connection failed. Please check your database server and try again.',
+      'Không thể kết nối đến cơ sở dữ liệu. Vui lòng kiểm tra lại kết nối.'
+    );
   } else if (error.code && error.code.startsWith('P')) {
     // Prisma errors
     apiError = handlePrismaError(error);
