@@ -210,6 +210,17 @@ if [ "$MIGRATION_SUCCESS" = true ]; then
     else
       echo "⚠️  Could not verify customRoleId column (may not exist yet)"
     fi
+    
+    # Verify Merchant.status column is removed (critical for Prisma compatibility)
+    echo "🔍 Verifying Merchant.status column removal..."
+    STATUS_CHECK=$(echo "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Merchant' AND column_name = 'status');" | npx prisma db execute --stdin --schema="${SCHEMA_PATH}" 2>&1)
+    if echo "$STATUS_CHECK" | grep -qi "true\|1\|t"; then
+      echo "⚠️  WARNING: Merchant.status column still exists in database!"
+      echo "⚠️  This will cause Prisma errors (P2032) when querying Merchant table"
+      echo "⚠️  Please ensure migration 20251128211303_force_remove_merchant_status is applied"
+    else
+      echo "✅ Merchant.status column verified as removed"
+    fi
   else
     echo "$VERIFICATION_OUTPUT" | head -30
     echo "⚠️  Migration verification failed (but migrations were applied)"
