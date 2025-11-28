@@ -161,7 +161,8 @@ export async function PATCH(
     let updatedUser: any;
     try {
       updatedUser = await db.users.update(targetUser.id, {
-      password: hashedPassword
+        password: hashedPassword,
+        passwordChangedAt: new Date() // Invalidate all existing tokens
     });
       console.log('✅ Password updated successfully in database');
     } catch (updateError: any) {

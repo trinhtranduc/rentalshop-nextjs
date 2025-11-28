@@ -8,8 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { 
   authenticateRequest,
   getUserScope,
-  hasPermission,
-  canAccessResource,
+  hasPermissionSync,
+  canAccessResourceSync,
   validateScope,
   Permission,
   Resource,
@@ -92,8 +92,9 @@ export function authorizeRequest(
 } {
   const userScope = getUserScope(user);
   
-  // Check permission if specified
-  if (options.permission && !hasPermission(user, options.permission)) {
+  // Check permission if specified (using sync version for backward compatibility)
+  // Note: For custom permissions support, use async versions in route handlers
+  if (options.permission && !hasPermissionSync(user, options.permission)) {
     return {
       authorized: false,
       error: createPermissionError(options.permission),
@@ -101,8 +102,8 @@ export function authorizeRequest(
     };
   }
   
-  // Check resource access if specified
-  if (options.resource && !canAccessResource(user, options.resource, options.action || 'view')) {
+  // Check resource access if specified (using sync version for backward compatibility)
+  if (options.resource && !canAccessResourceSync(user, options.resource, options.action || 'view')) {
     return {
       authorized: false,
       error: createPermissionError(`${options.resource}.${options.action || 'view'}`),
@@ -160,11 +161,8 @@ export function withAuthAndAuthz<T = any>(
 // ============================================================================
 // CONVENIENCE MIDDLEWARE FUNCTIONS
 // ============================================================================
-
-/**
- * Admin-only middleware
- */
-export const withAdminAuth = withAuthAndAuthz.bind(null, { permission: 'system.manage' });
+// Note: Deprecated convenience functions (withAdminAuth, etc.) are exported from unified-auth.ts
+// This file only exports utility functions, not auth wrappers
 
 /**
  * User management middleware
