@@ -1255,11 +1255,60 @@ async function main() {
       console.log(`    Variants: ${planVariantsForPlan.length} options (${planVariantsForPlan.map(v => `${v.name}: $${v.price}`).join(', ')})`);
     });
     
+    // Step 15: Reset sequences to prevent ID conflicts
+    console.log('\n🔄 Resetting database sequences...');
+    await resetSequences();
+    console.log('✅ Sequences reset successfully');
+    
   } catch (error) {
     console.error('❌ Fatal error during system regeneration:', error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
+  }
+}
+
+/**
+ * Reset all PostgreSQL sequences to match current max IDs
+ * This prevents "DUPLICATE_ENTRY" errors when creating new records
+ */
+async function resetSequences() {
+  const tables = [
+    'User', 'Merchant', 'Outlet', 'Category', 'Product', 'Customer', 
+    'Order', 'OrderItem', 'Payment', 'Plan', 'Subscription', 
+    'SubscriptionActivity', 'EmailVerification', 'PasswordReset', 
+    'UserSession', 'AuditLog', 'MerchantRole'
+  ];
+  
+  for (const table of tables) {
+    try {
+      // Get max ID
+      const maxResult = await prisma.$queryRawUnsafe(
+        `SELECT COALESCE(MAX(id), 0) as max_id FROM "${table}";`
+      );
+      const maxId = Number(maxResult[0]?.max_id || 0);
+      
+      if (maxId === 0) continue; // Skip empty tables
+      
+      // Get sequence name
+      const seqResult = await prisma.$queryRawUnsafe(
+        `SELECT pg_get_serial_sequence('"${table}"', 'id') as seq_name;`
+      );
+      const seqName = seqResult[0]?.seq_name;
+      
+      if (seqName) {
+        // Set sequence to maxId (next value will be maxId + 1)
+        await prisma.$executeRawUnsafe(
+          `SELECT setval('${seqName}', ${maxId}, true);`
+        );
+        console.log(`   ✅ Reset ${table} sequence: next ID = ${maxId + 1}`);
+      }
+    } catch (error) {
+      // Ignore errors for tables/sequences that don't exist
+      if (!error.message.includes('does not exist') && !error.message.includes('relation')) {
+        console.warn(`   ⚠️  Could not reset ${table} sequence: ${error.message}`);
+      }
+    }
   }
 }
 
