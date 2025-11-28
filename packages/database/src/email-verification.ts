@@ -53,6 +53,10 @@ export async function createEmailVerification(
     data: {
       verified: true, // Mark as used/invalid
       verifiedAt: new Date(),
+      // Explicitly exclude any invalid fields (like 'status' which doesn't exist in EmailVerification model)
+    } as {
+      verified: boolean;
+      verifiedAt: Date;
     },
   });
 

@@ -15,12 +15,7 @@
     "dev:admin": "cd apps/admin && yarn dev",
     "dev:api": "cd apps/api && yarn dev",
     "start": "cd apps/api && NODE_ENV=production node .next/standalone/apps/api/server.js",
-    "start:api": "cd apps/api && yarn start",
-    "start:admin": "cd apps/admin && yarn start",
-    "start:client": "cd apps/client && yarn start",
-    "fresh:start": "yarn clean:all && yarn install:all && yarn dev:all",
     "clean:all": "rm -rf node_modules && rm -rf packages/*/node_modules && rm -rf apps/*/node_modules && rm -rf packages/*/dist && rm -rf apps/*/dist && rm -rf .turbo",
-    "install:all": "yarn install",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean",
@@ -36,7 +31,10 @@
     "railway:generate": "npx prisma generate --schema=./prisma/schema.prisma",
     "railway:seed": "node scripts/regenerate-entire-system-2025.js",
     "railway:setup": "yarn railway:generate && yarn railway:migrate && yarn railway:seed",
-    "railway:reset": "yarn db:reset-railway"
+    "railway:reset": "yarn db:reset-railway",
+    "db:check-sync": "./scripts/check-db-sync.sh",
+    "db:check-sync:dev": "./scripts/check-db-sync.sh --service dev-apis",
+    "db:check-sync:prod": "./scripts/check-db-sync.sh --service apis"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
