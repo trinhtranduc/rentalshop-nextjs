@@ -151,10 +151,24 @@ done
 echo ""
 
 # ============================================================================
-# Step 5: Post-Migration Verification
+# Step 5: Regenerate Prisma Client After Migrations
 # ============================================================================
 if [ "$MIGRATION_SUCCESS" = true ]; then
-  echo "🔍 Step 5: Post-migration verification..."
+  echo "🔄 Step 5: Regenerating Prisma Client after migrations..."
+  if ! npx prisma generate --schema="${SCHEMA_PATH}" 2>&1; then
+    echo "❌ Failed to regenerate Prisma Client after migrations"
+    echo "⚠️  Using existing Prisma Client (may be out of sync)"
+  else
+    echo "✅ Prisma Client regenerated successfully"
+  fi
+  echo ""
+fi
+
+# ============================================================================
+# Step 6: Post-Migration Verification
+# ============================================================================
+if [ "$MIGRATION_SUCCESS" = true ]; then
+  echo "🔍 Step 6: Post-migration verification..."
   
   # Verify migration status
   VERIFICATION_OUTPUT=$(npx prisma migrate status --schema="${SCHEMA_PATH}" 2>&1)
@@ -191,7 +205,7 @@ if [ "$MIGRATION_SUCCESS" = true ]; then
     echo "⚠️  This may indicate a schema mismatch - manual review recommended"
   fi
 else
-  echo "⏭️  Step 5: Skipping post-migration verification (migrations did not succeed)"
+  echo "⏭️  Step 6: Skipping post-migration verification (migrations did not succeed)"
   echo "⚠️  WARNING: Migrations were not applied successfully"
   echo "⚠️  Server will start, but database schema may be out of sync"
   echo "⚠️  Manual migration may be required"
@@ -199,9 +213,9 @@ fi
 echo ""
 
 # ============================================================================
-# Step 6: Start Next.js Server
+# Step 7: Start Next.js Server
 # ============================================================================
-echo "🌐 Step 6: Starting Next.js server on port 3002..."
+echo "🌐 Step 7: Starting Next.js server on port 3002..."
 echo "📅 $(date '+%Y-%m-%d %H:%M:%S UTC')"
 echo ""
 
