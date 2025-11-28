@@ -104,6 +104,41 @@ echo ""
 # Step 4: Run Database Migrations (with comprehensive error handling)
 # ============================================================================
 echo "📦 Step 4: Running database migrations..."
+
+# Check for failed migrations and resolve them automatically
+echo "🔍 Checking for failed migrations..."
+FAILED_MIGRATIONS=$(npx prisma migrate status --schema="${SCHEMA_PATH}" 2>&1 | grep -i "failed" || true)
+
+if echo "$FAILED_MIGRATIONS" | grep -qi "failed"; then
+  echo "⚠️  Found failed migrations - attempting to resolve..."
+  
+  # Extract failed migration names
+  FAILED_MIGRATION_NAMES=$(echo "$FAILED_MIGRATIONS" | grep -oE "[0-9]+_[a-z_]+" || true)
+  
+  if [ -n "$FAILED_MIGRATION_NAMES" ]; then
+    for MIGRATION_NAME in $FAILED_MIGRATION_NAMES; do
+      echo "🔧 Resolving failed migration: $MIGRATION_NAME"
+      
+      # Check if Merchant.status column still exists
+      # If it doesn't exist, migration actually succeeded (mark as applied)
+      # If it exists, migration failed (mark as rolled-back so we can retry)
+      STATUS_COLUMN_EXISTS=$(echo "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Merchant' AND column_name = 'status');" | npx prisma db execute --stdin --schema="${SCHEMA_PATH}" 2>&1 | grep -qi "true\|1\|t" && echo "yes" || echo "no")
+      
+      if [ "$STATUS_COLUMN_EXISTS" = "no" ]; then
+        # Column doesn't exist - migration actually succeeded, mark as applied
+        echo "✅ Merchant.status column already removed - marking migration as applied"
+        npx prisma migrate resolve --applied "$MIGRATION_NAME" --schema="${SCHEMA_PATH}" 2>&1 || true
+      else
+        # Column still exists - migration failed, mark as rolled-back to allow retry
+        echo "⚠️  Merchant.status column still exists - marking migration as rolled-back to allow retry"
+        npx prisma migrate resolve --rolled-back "$MIGRATION_NAME" --schema="${SCHEMA_PATH}" 2>&1 || true
+      fi
+    done
+    echo "✅ Failed migrations resolved"
+  fi
+  echo ""
+fi
+
 RETRY_COUNT=0
 MIGRATION_SUCCESS=false
 MIGRATION_ERROR=""
@@ -125,6 +160,19 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     # Capture error for logging
     MIGRATION_ERROR="$MIGRATION_OUTPUT"
     echo "$MIGRATION_OUTPUT" | head -50
+    
+    # Check if error is due to failed migrations that need resolution
+    if echo "$MIGRATION_ERROR" | grep -qi "P3009\|failed migrations"; then
+      echo "⚠️  Migration blocked by failed migrations - attempting to resolve..."
+      # Try to resolve again
+      FAILED_MIGRATION_NAMES=$(echo "$MIGRATION_ERROR" | grep -oE "[0-9]+_[a-z_]+" || true)
+      if [ -n "$FAILED_MIGRATION_NAMES" ]; then
+        for MIGRATION_NAME in $FAILED_MIGRATION_NAMES; do
+          echo "🔧 Resolving: $MIGRATION_NAME"
+          npx prisma migrate resolve --rolled-back "$MIGRATION_NAME" --schema="${SCHEMA_PATH}" 2>&1 || true
+        done
+      fi
+    fi
     
     RETRY_COUNT=$((RETRY_COUNT + 1))
     if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
