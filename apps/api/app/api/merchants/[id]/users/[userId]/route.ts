@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/users/[userId]
  * Get user by ID
+ * 
+ * Authorization: All roles with 'users.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
   request: NextRequest,
@@ -17,7 +22,7 @@ export async function GET(
   const merchantPublicId = parseInt(resolvedParams.id);
   const userPublicId = parseInt(resolvedParams.userId);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+  return withPermissions(['users.view'])(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
@@ -48,6 +53,11 @@ export async function GET(
 /**
  * PUT /api/merchants/[id]/users/[userId]
  * Update user
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function PUT(
   request: NextRequest,
@@ -58,7 +68,7 @@ export async function PUT(
   const merchantPublicId = parseInt(resolvedParams.id);
   const userPublicId = parseInt(resolvedParams.userId);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
@@ -92,6 +102,11 @@ export async function PUT(
 /**
  * DELETE /api/merchants/[id]/users/[userId]
  * Delete user (soft delete)
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function DELETE(
   request: NextRequest,
@@ -102,7 +117,7 @@ export async function DELETE(
   const merchantPublicId = parseInt(resolvedParams.id);
   const userPublicId = parseInt(resolvedParams.userId);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(merchantPublicId) || isNaN(userPublicId)) {

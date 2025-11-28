@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
@@ -9,6 +9,10 @@ export const runtime = 'nodejs';
 /**
  * GET /api/orders/by-number/[orderNumber]
  * Get order by order number
+ * 
+ * Authorization: All roles with 'orders.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
   request: NextRequest,
@@ -18,7 +22,7 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   let { orderNumber } = resolvedParams;
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+  return withPermissions(['orders.view'])(async (request, { user, userScope }) => {
     try {
       console.log('🔍 GET /api/orders/by-number/[orderNumber] - Looking for order with number:', orderNumber);
 

@@ -7,7 +7,8 @@ import {
   PageContent,
   ProductsLoading,
   CustomerPageHeader,
-  AddCustomerForm
+  AddCustomerForm,
+  LoadingIndicator
 } from '@rentalshop/ui';
 
 import React, { useState } from 'react';
@@ -81,16 +82,6 @@ export default function AddCustomerPage() {
   };
 
   // Show loading state while auth is being checked
-  if (loading) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <ProductsLoading />
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
   // Show error if no merchant ID after loading
   if (!merchantId) {
     return (
@@ -115,6 +106,16 @@ export default function AddCustomerPage() {
 
   return (
     <PageWrapper>
+      {/* Center Loading Indicator - Shows when waiting for API */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+          <LoadingIndicator 
+            variant="circular" 
+            size="lg"
+            message={tc('labels.loading') || 'Loading form...'}
+          />
+        </div>
+      )}
       <PageHeader>
         <CustomerPageHeader
           title="Add New Customer"

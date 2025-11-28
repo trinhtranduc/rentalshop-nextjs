@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   CardClean, 
@@ -19,7 +19,8 @@ import {
   Button,
   AddCustomerDialog,
   ProductAddDialog,
-  useFormatCurrency } from '@rentalshop/ui';
+  useFormatCurrency,
+  PageLoadingIndicator } from '@rentalshop/ui';
 import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
@@ -281,8 +282,8 @@ export default function DashboardPage() {
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(
     (searchParams.get('period') as 'today' | 'month' | 'year') || 'today'
   );
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loadingCharts, setLoadingCharts] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(false); // Start with false - page renders immediately
+  const [loadingCharts, setLoadingCharts] = useState(false); // Start with false - page renders immediately
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   
   // API data states
@@ -320,6 +321,20 @@ export default function DashboardPage() {
   
   // Outlet comparison state (MERCHANT only)
   const [selectedOutlets, setSelectedOutlets] = useState<number[]>([]); // Empty = all outlets
+
+  // Memoize selectedOutlets to prevent unnecessary re-renders (must be before fetchDashboardData)
+  const selectedOutletsKey = useMemo(() => {
+    return selectedOutlets.length > 0 ? selectedOutlets.sort().join(',') : 'all';
+  }, [selectedOutlets]);
+
+  // Memoize selectedOutlets array to prevent reference changes (use JSON.stringify for deep comparison)
+  const memoizedSelectedOutlets = useMemo(() => {
+    return selectedOutlets.length > 0 ? [...selectedOutlets].sort() : [];
+  }, [selectedOutletsKey]); // Use selectedOutletsKey for stability
+
+  // Memoize user.id and merchantId to prevent unnecessary re-renders (user object reference may change)
+  const userId = useMemo(() => user?.id || null, [user?.id]);
+  const merchantId = useMemo(() => user?.merchant?.id || user?.merchantId || null, [user?.merchant?.id, user?.merchantId]);
 
   // Fetch categories and outlets for product dialog
   useEffect(() => {
@@ -384,40 +399,8 @@ export default function DashboardPage() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    // Guard: Only fetch data when user is confirmed loaded and token exists
-    if (!user) {
-      console.log('⏳ Dashboard: Waiting for user to be loaded before fetching data');
-      return;
-    }
-
-    // Verify token exists before making API calls
-    const checkTokenAndFetch = async () => {
-      const { getAuthToken } = await import('@rentalshop/utils');
-      const token = getAuthToken();
-      if (!token) {
-        console.warn('⚠️ Dashboard: No token found, skipping API calls. User may not be fully authenticated yet.');
-        return;
-      }
-
-      console.log('✅ Dashboard: User and token confirmed, fetching dashboard data');
-      fetchDashboardData();
-    };
-
-    checkTokenAndFetch();
-  }, [user, timePeriod, selectedOutlets]); // Add user dependency to wait for auth state
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing dashboard data...');
-      fetchDashboardData();
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [timePeriod]);
-
-  const fetchDashboardData = async () => {
+  // Memoize fetchDashboardData function to prevent unnecessary re-creations
+  const fetchDashboardData = useCallback(async () => {
     try {
       // Step 1: Guard - Check token before making API calls
       const { getAuthToken } = await import('@rentalshop/utils');
@@ -505,8 +488,8 @@ export default function DashboardPage() {
       console.log('  📊 Enhanced Dashboard:', `/api/analytics/enhanced-dashboard?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
       console.log('  📈 Today Metrics:', '/api/analytics/today-metrics');
       console.log('  📉 Growth Metrics:', `/api/analytics/growth-metrics?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
-      console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${selectedOutlets.length > 0 ? `&outletIds=${selectedOutlets.join(',')}` : ''}`);
-      console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${selectedOutlets.length > 0 ? `&outletIds=${selectedOutlets.join(',')}` : ''}`);
+      console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
+      console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
       console.log('  🏆 Top Products:', `/api/analytics/top-products?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
       console.log('  👥 Top Customers:', `/api/analytics/top-customers?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
       console.log('  📋 Dashboard Summary:', '/api/analytics/dashboard');
@@ -535,14 +518,14 @@ export default function DashboardPage() {
         }),
         analyticsApi.getIncomeAnalytics({
           ...defaultFilters,
-          outletIds: selectedOutlets.length > 0 ? selectedOutlets : undefined
+          outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
         }).then(response => {
           console.log('💰 Income Analytics API:', response);
           return response;
         }),
         analyticsApi.getOrderAnalytics({
           ...defaultFilters,
-          outletIds: selectedOutlets.length > 0 ? selectedOutlets : undefined
+          outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
         }).then(response => {
           console.log('📦 Order Analytics API:', response);
           return response;
@@ -718,7 +701,43 @@ export default function DashboardPage() {
       setLoadingCharts(false);
       setInitialLoading(false);
     }
-  };
+  }, [userId, timePeriod, selectedOutletsKey, memoizedSelectedOutlets]); // Use stable values
+
+  // Main useEffect to fetch dashboard data
+  useEffect(() => {
+    // Guard: Only fetch data when user is confirmed loaded and token exists
+    if (!userId || !merchantId) {
+      console.log('⏳ Dashboard: Waiting for user to be loaded before fetching data');
+      return;
+    }
+
+    // Verify token exists before making API calls
+    const checkTokenAndFetch = async () => {
+      const { getAuthToken } = await import('@rentalshop/utils');
+      const token = getAuthToken();
+      if (!token) {
+        console.warn('⚠️ Dashboard: No token found, skipping API calls. User may not be fully authenticated yet.');
+        return;
+      }
+
+      console.log('✅ Dashboard: User and token confirmed, fetching dashboard data');
+      fetchDashboardData();
+    };
+
+    checkTokenAndFetch();
+  }, [userId, merchantId, timePeriod, selectedOutletsKey, fetchDashboardData]); // Use stable values only
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!userId) return; // Don't set interval if no user
+    
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing dashboard data...');
+      fetchDashboardData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [fetchDashboardData, userId]); // Use memoized function and userId
 
   const getStats = () => {
     // Always return the actual stats from API - no hardcoded data
@@ -729,7 +748,7 @@ export default function DashboardPage() {
     // Check if data has outlet information (outlet comparison mode)
     const hasOutletData = incomeData.length > 0 && incomeData.some((item: any) => item.outletId !== undefined);
     
-    if (hasOutletData && selectedOutlets.length > 0) {
+    if (hasOutletData && memoizedSelectedOutlets.length > 0) {
       // Group by period and outlet for comparison mode
       const groupedByPeriod: { [key: string]: any } = {};
       const outletMap = new Map<number, string>();
@@ -1023,29 +1042,19 @@ export default function DashboardPage() {
     }
   };
 
-  // Show loading skeleton on initial load
-  if (initialLoading) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <PageWrapper>
-          <PageContent>
-            <DashboardLoading />
-          </PageContent>
-        </PageWrapper>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full overflow-y-auto">
       <PageWrapper>
-      
+        {/* Page Loading Indicator - Floating, non-blocking */}
+        <PageLoadingIndicator loading={initialLoading || loadingCharts} />
       <PageContent>
         {/* Subscription Status Banner - Show at top if subscription is expiring or expired */}
+        {/* Only show after dashboard has finished loading to avoid flash */}
         <div className="mb-6">
           <SubscriptionStatusBanner
             onUpgrade={() => router.push('/subscription')}
             onPayment={() => router.push('/subscription')}
+            dashboardLoaded={!initialLoading}
           />
         </div>
 

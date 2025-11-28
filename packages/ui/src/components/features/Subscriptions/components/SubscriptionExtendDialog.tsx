@@ -172,46 +172,46 @@ export function SubscriptionExtendDialog({
         <div className="flex-1 overflow-y-auto space-y-6 pr-1">
           {/* Current Plan Info - Simplified */}
           <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div>
+                <div>
               <p className="text-sm text-gray-600">Current Plan</p>
               <p className="font-semibold">{subscription.plan?.name || 'N/A'}</p>
-            </div>
+                </div>
             <div className="text-right">
               <p className="text-sm text-gray-600">Ends on</p>
               <p className="font-semibold">
-                {subscription.currentPeriodEnd 
-                  ? formatDate(subscription.currentPeriodEnd) 
-                  : 'N/A'}
-              </p>
-            </div>
-          </div>
+                    {subscription.currentPeriodEnd 
+                      ? formatDate(subscription.currentPeriodEnd) 
+                      : 'N/A'}
+                  </p>
+                </div>
+              </div>
 
           {/* Extension Type Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Extension Method</Label>
-            <div className="flex gap-4 mt-2">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="period"
-                  checked={extensionType === 'period'}
-                  onChange={(e) => setExtensionType(e.target.value as 'period' | 'date')}
-                  className="w-4 h-4"
-                />
+              <div className="flex gap-4 mt-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="period"
+                    checked={extensionType === 'period'}
+                    onChange={(e) => setExtensionType(e.target.value as 'period' | 'date')}
+                    className="w-4 h-4"
+                  />
                 <span className="text-sm">By Period</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="date"
-                  checked={extensionType === 'date'}
-                  onChange={(e) => setExtensionType(e.target.value as 'period' | 'date')}
-                  className="w-4 h-4"
-                />
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="date"
+                    checked={extensionType === 'date'}
+                    onChange={(e) => setExtensionType(e.target.value as 'period' | 'date')}
+                    className="w-4 h-4"
+                  />
                 <span className="text-sm">By Date</span>
-              </label>
+                </label>
+              </div>
             </div>
-          </div>
 
             {/* Period-based Extension */}
             {extensionType === 'period' && (
@@ -298,7 +298,7 @@ export function SubscriptionExtendDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="amount">Extension Amount *</Label>
+                  <Label htmlFor="amount">Extension Amount *</Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -317,19 +317,19 @@ export function SubscriptionExtendDialog({
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="method">Extension Method</Label>
-                <select
-                  id="method"
-                  value={method}
-                  onChange={(e) => setMethod(e.target.value)}
+              <Label htmlFor="method">Extension Method</Label>
+              <select
+                id="method"
+                value={method}
+                onChange={(e) => setMethod(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {EXTENSION_METHODS.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
+              >
+                {EXTENSION_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
               </div>
             </div>
 
@@ -343,44 +343,44 @@ export function SubscriptionExtendDialog({
                 rows={2}
                 className="w-full"
               />
-            </div>
+          </div>
 
           {/* Summary - Show when end date is set */}
           {newEndDate && (
             <div className="space-y-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
                   <p className="text-gray-600">Current End Date</p>
                   <p className="font-semibold">
-                    {subscription.currentPeriodEnd 
-                      ? formatDate(subscription.currentPeriodEnd) 
-                      : 'N/A'}
-                  </p>
-                </div>
-                <div>
+                        {subscription.currentPeriodEnd 
+                          ? formatDate(subscription.currentPeriodEnd) 
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
                   <p className="text-gray-600">New End Date</p>
                   <p className="font-semibold text-green-700">
                     {formatDate(new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59'))}
-                  </p>
-                </div>
-                <div>
+                      </p>
+                    </div>
+                    <div>
                   <p className="text-gray-600">Days Extended</p>
                   <p className="font-semibold">
-                    {subscription.currentPeriodEnd 
+                        {subscription.currentPeriodEnd 
                       ? Math.ceil((new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59').getTime() - new Date(subscription.currentPeriodEnd).getTime()) / (1000 * 60 * 60 * 24))
-                      : 'N/A'} days
-                  </p>
-                </div>
-                <div>
+                          : 'N/A'} days
+                      </p>
+                    </div>
+                    <div>
                   <p className="text-gray-600">Extension Amount</p>
                   <p className="font-semibold">
-                    {amount 
-                      ? formatCurrency(parseFloat(amount), (subscription.currency || subscription.plan?.currency || 'USD') as any)
-                      : 'N/A'}
-                  </p>
+                        {amount 
+                          ? formatCurrency(parseFloat(amount), (subscription.currency || subscription.plan?.currency || 'USD') as any)
+                          : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
           )}
         </div>
 

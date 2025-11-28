@@ -5,7 +5,7 @@
 // This demonstrates the new standardized authentication pattern
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withManagementAuth, hashPassword } from '@rentalshop/auth';
+import { withPermissions, hashPassword } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
@@ -27,10 +27,13 @@ export interface UserListOptions {
 /**
  * GET /api/users
  * Get users with filtering and pagination
- * REFACTORED: Uses unified withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']) pattern
- * Note: OUTLET_STAFF cannot access user management
+ * 
+ * Authorization: All roles with 'users.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withManagementAuth(async (request, { user, userScope }) => {
+export const GET = withPermissions(['users.view'])(async (request, { user, userScope }) => {
   try {
     console.log(`🔍 GET /api/users - User: ${user.email} (${user.role})`);
 
@@ -142,7 +145,16 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
  * REFACTORED: Uses unified withAuth pattern
  * Note: OUTLET_STAFF cannot create users
  */
-export const POST = withManagementAuth(async (request, { user, userScope }) => {
+/**
+ * POST /api/users
+ * Create a new user
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ */
+export const POST = withPermissions(['users.manage'])(async (request, { user, userScope }) => {
   try {
     console.log(`➕ POST /api/users - User: ${user.email} (${user.role})`);
 
@@ -240,9 +252,13 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 /**
  * PUT /api/users
  * Update an existing user
- * REFACTORED: Uses unified withAuth pattern
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const PUT = withManagementAuth(async (request, { user, userScope }) => {
+export const PUT = withPermissions(['users.manage'])(async (request, { user, userScope }) => {
   try {
     console.log(`✏️ PUT /api/users - User: ${user.email} (${user.role})`);
 
@@ -299,13 +315,10 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
     
     console.log(`✅ Updated user: ${updatedUser.email} (ID: ${updatedUser.id})`);
 
-    // If user is being deactivated, delete all their sessions to force logout
+    // If user is being deactivated, invalidate all their sessions to force logout
     if (isBeingDeactivated) {
-      const { prisma } = await import('@rentalshop/database');
-      const deletedSessionsCount = await prisma.userSession.deleteMany({
-        where: { userId: id }
-      });
-      console.log(`🗑️ Deactivated user ${id}: Deleted ${deletedSessionsCount.count} session(s) to force logout`);
+      await db.sessions.invalidateAllUserSessions(id);
+      console.log(`🗑️ Deactivated user ${id}: Invalidated all sessions to force logout`);
     }
 
     return NextResponse.json({
@@ -329,7 +342,16 @@ export const PUT = withManagementAuth(async (request, { user, userScope }) => {
  * Delete a user permanently (hard delete)
  * REFACTORED: Uses unified withAuth pattern
  */
-export const DELETE = withManagementAuth(async (request, { user, userScope }) => {
+/**
+ * DELETE /api/users
+ * Delete a user (soft delete)
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ */
+export const DELETE = withPermissions(['users.manage'])(async (request, { user, userScope }) => {
   try {
     console.log(`🗑️ DELETE /api/users - User: ${user.email} (${user.role})`);
 
@@ -398,17 +420,16 @@ export const DELETE = withManagementAuth(async (request, { user, userScope }) =>
       );
     }
 
-    // Delete all user sessions first (explicit delete for clarity)
-    const deletedSessionsCount = await prisma.userSession.deleteMany({
-      where: { userId: userId }
-    });
-    console.log(`🗑️ Deleted ${deletedSessionsCount.count} session(s) for user ${userId}`);
+    // Invalidate all user sessions first (using db pattern)
+    await db.sessions.invalidateAllUserSessions(userId);
+    console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
     // Hard delete (permanently remove from database)
     // Note: Related data with onDelete: Cascade will be automatically deleted:
     // - EmailVerification
     // - PasswordReset
     // - AuditLog (if any)
+    // Note: Using prisma directly for hard delete as db.users.delete is soft delete only
     await prisma.user.delete({
       where: { id: userId }
     });

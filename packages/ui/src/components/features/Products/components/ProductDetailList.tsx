@@ -129,11 +129,11 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
             
             {/* Product Details - Created and Updated on same line */}
             <div className="text-sm mb-4">
-              <span className="text-gray-500">{tc('labels.createdAt')}:</span>
-              <span className="ml-2 text-gray-900">{formatDate(product.createdAt)}</span>
+                <span className="text-gray-500">{tc('labels.createdAt')}:</span>
+                <span className="ml-2 text-gray-900">{formatDate(product.createdAt)}</span>
               <span className="mx-4 text-gray-400">|</span>
-              <span className="text-gray-500">{tc('labels.updatedAt')}:</span>
-              <span className="ml-2 text-gray-900">{formatDate(product.updatedAt)}</span>
+                <span className="text-gray-500">{tc('labels.updatedAt')}:</span>
+                <span className="ml-2 text-gray-900">{formatDate(product.updatedAt)}</span>
             </div>
           </div>
           

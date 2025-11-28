@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { customersQuerySchema, customerCreateSchema, customerUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
@@ -9,9 +9,12 @@ import crypto from 'crypto';
 /**
  * GET /api/customers
  * Get customers with filtering and pagination using simplified database API
- * REFACTORED: Now uses unified withAuth pattern
+ * 
+ * Authorization: All roles with 'customers.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['customers.view'])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/customers - User: ${user.email} (${user.role})`);
   
   try {
@@ -140,7 +143,15 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
  * Create a new customer using simplified database API
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+/**
+ * POST /api/customers
+ * Create a new customer
+ * 
+ * Authorization: All roles with 'customers.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ */
+export const POST = withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/customers - User: ${user.email} (${user.role})`);
   
   try {
@@ -285,7 +296,15 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROL
  * Update a customer using simplified database API  
  * REFACTORED: Now uses unified withAuth pattern
  */
-export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+/**
+ * PUT /api/customers
+ * Update a customer
+ * 
+ * Authorization: All roles with 'customers.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ */
+export const PUT = withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/customers - User: ${user.email} (${user.role})`);
   
   try {

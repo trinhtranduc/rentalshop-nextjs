@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/orders
  * Get merchant orders
+ * 
+ * Authorization: All roles with 'orders.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
   request: NextRequest,
@@ -16,7 +20,7 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+  return withPermissions(['orders.view'])(async (request, { user, userScope }) => {
     try {
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(
@@ -57,6 +61,10 @@ export async function GET(
 /**
  * POST /api/merchants/[id]/orders
  * Create new order
+ * 
+ * Authorization: All roles with 'orders.create' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function POST(
   request: NextRequest,
@@ -66,7 +74,7 @@ export async function POST(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+  return withPermissions(['orders.create'])(async (request, { user, userScope }) => {
     try {
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(

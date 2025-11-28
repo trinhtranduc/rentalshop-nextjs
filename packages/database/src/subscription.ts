@@ -257,8 +257,8 @@ export async function searchSubscriptions(filters: {
   startDate?: Date;
   endDate?: Date;
   limit?: number;
-  offset?: number;
-}): Promise<{ subscriptions: Subscription[]; total: number; hasMore: boolean }> {
+  page?: number;
+}): Promise<{ subscriptions: Subscription[]; total: number; hasMore: boolean; page: number; limit: number; totalPages: number }> {
   const where: any = {};
 
   // Apply search filter (merchant name)
@@ -294,6 +294,10 @@ export async function searchSubscriptions(filters: {
   const total = await prisma.subscription.count({ where });
 
   // Get subscriptions with pagination
+  const limit = filters.limit || 20;
+  const page = filters.page || 1;
+  const skip = (page - 1) * limit;
+  
   const subscriptions = await prisma.subscription.findMany({
     where,
     include: {
@@ -307,16 +311,20 @@ export async function searchSubscriptions(filters: {
       plan: true
     },
     orderBy: { createdAt: 'desc' },
-    take: filters.limit || 20,
-    skip: filters.offset || 0
+    take: limit,
+    skip
   });
 
-  const hasMore = (filters.offset || 0) + (filters.limit || 20) < total;
+  const totalPages = Math.ceil(total / limit);
+  const hasMore = page < totalPages;
 
   return {
     subscriptions: subscriptions.map((sub: any) => transformSubscriptionFromDb(sub)),
     total,
-    hasMore
+    hasMore,
+    page,
+    limit,
+    totalPages
   };
 }
 

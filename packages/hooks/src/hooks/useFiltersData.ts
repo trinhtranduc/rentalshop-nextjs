@@ -180,7 +180,7 @@ export function useOutletsWithFilters(options: UseOutletsDataOptions) {
     enabled,
     staleTime: debounceSearch ? 5000 : 30000,
     cacheTime: 300000,
-    refetchOnMount: true,
+    refetchOnMount: false, // ✅ Changed to false to prevent unnecessary refetches
     refetchOnWindowFocus: false
   });
 
@@ -224,7 +224,7 @@ export function useCategoriesWithFilters(options: UseCategoriesDataOptions) {
     enabled,
     staleTime: debounceSearch ? 5000 : 30000,
     cacheTime: 300000,
-    refetchOnMount: true,
+    refetchOnMount: false, // ✅ Changed to false to prevent unnecessary refetches
     refetchOnWindowFocus: false
   });
 

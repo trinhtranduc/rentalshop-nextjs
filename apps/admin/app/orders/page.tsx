@@ -61,50 +61,28 @@ export default function AdminOrdersPage() {
   // DATE FILTERS - Default to Last 30 Days (optimal performance)
   // ============================================================================
   
-  const getDefaultDateRange = () => {
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    const start = new Date();
-    start.setDate(start.getDate() - 30); // ⭐ Last 30 days default
-    start.setHours(0, 0, 0, 0);
-    return { start, end };
-  };
-  
-  // Parse dates from yyyy-mm-dd format
-  const parseDateParam = (dateStr: string | null, isEndDate: boolean = false): Date => {
-    if (!dateStr) {
-      return isEndDate ? getDefaultDateRange().end : getDefaultDateRange().start;
-    }
-    
-    const date = new Date(dateStr);
-    if (isEndDate) {
-      date.setHours(23, 59, 59, 999); // End of day
-    } else {
-      date.setHours(0, 0, 0, 0); // Start of day
-    }
-    return date;
-  };
-  
-  const startDate = parseDateParam(searchParams.get('startDate'), false);
-  const endDate = parseDateParam(searchParams.get('endDate'), true);
+  // Memoize date range to prevent infinite loops
+  // Get date params directly from URL - use strings, no Date objects
+  const startDateParam = searchParams.get('startDate');
+  const endDateParam = searchParams.get('endDate');
 
   // ============================================================================
   // DATA FETCHING - Clean & Simple
   // ============================================================================
   
-  // ✅ SIMPLE: Memoize filters - Admin can filter by merchant
+  // ✅ SIMPLE: Memoize filters - use strings directly, no Date objects
   const filters: OrderFilters = useMemo(() => ({
     search: search || undefined,
     status: (status as any) || undefined,
     orderType: (orderType as any) || undefined,
     merchantId: merchantId, // ⭐ Admin can filter by merchant
-    startDate, // ⭐ Always include date filters for better performance
-    endDate,   // ⭐ Always include date filters for better performance
+    startDate: startDateParam || undefined, // ⭐ String from URL params
+    endDate: endDateParam || undefined,     // ⭐ String from URL params
     page,
     limit,
     sortBy,
     sortOrder
-  }), [search, status, orderType, merchantId, startDate, endDate, page, limit, sortBy, sortOrder]);
+  }), [search, status, orderType, merchantId, startDateParam, endDateParam, page, limit, sortBy, sortOrder]);
 
   const { data, loading, error, refetch } = useOrdersData({ filters });
   
@@ -125,7 +103,15 @@ export default function AdminOrdersPage() {
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(updates).forEach(([key, value]) => {
-      if (value && value !== '' && value !== 'all') {
+      // Special handling for page: always set it, even if it's 1
+      if (key === 'page') {
+        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
+        if (pageNum > 0) {
+          params.set(key, pageNum.toString());
+        } else {
+          params.delete(key);
+        }
+      } else if (value && value !== '' && value !== 'all') {
         params.set(key, value.toString());
       } else {
         params.delete(key);
@@ -304,18 +290,6 @@ export default function AdminOrdersPage() {
   // RENDER
   // ============================================================================
 
-  if (loading && !data) {
-    return (
-      <PageWrapper spacing="none">
-        <PageHeader>
-          <PageTitle>All Orders</PageTitle>
-          <p className="text-sm text-gray-600">View and manage all orders from all merchants</p>
-        </PageHeader>
-        <OrdersLoading />
-      </PageWrapper>
-    );
-  }
-
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
@@ -342,6 +316,9 @@ export default function AdminOrdersPage() {
       </PageHeader>
 
       <div className="flex-1 min-h-0">
+        {loading && !data ? (
+          <OrdersLoading />
+        ) : (
         <Orders
           data={orderData}
           filters={filters}
@@ -359,6 +336,7 @@ export default function AdminOrdersPage() {
           showMerchant={true}
           userRole="ADMIN"
         />
+        )}
       </div>
     </PageWrapper>
   );

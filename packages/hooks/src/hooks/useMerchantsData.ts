@@ -1,5 +1,7 @@
 import { useDedupedApi } from '../utils/useDedupedApi';
-import { merchantsApi } from '@rentalshop/utils';
+import { authenticatedFetch, parseApiResponse } from '@rentalshop/utils';
+import { apiUrls } from '@rentalshop/utils';
+import type { MerchantsResponse } from '@rentalshop/utils';
 
 // ============================================================================
 // TYPES
@@ -68,72 +70,56 @@ export function useMerchantsData(options: UseMerchantsDataOptions): UseMerchants
     fetchFn: async (filters: MerchantFilters) => {
       console.log('🏢 useMerchantsData: Fetching with filters:', filters);
       
-      const response = await merchantsApi.getMerchants();
+      // Build query params for API
+      // API now uses page parameter (consistent with client APIs)
+      const limit = filters.limit || 10;
+      const page = filters.page || 1;
+      
+      const queryParams = new URLSearchParams();
+      queryParams.set('page', page.toString());
+      queryParams.set('limit', limit.toString());
+      if (filters.search) queryParams.set('q', filters.search);
+      if (filters.status && filters.status !== 'all') queryParams.set('status', filters.status);
+      if (filters.plan && filters.plan !== 'all') queryParams.set('plan', filters.plan);
+      if (filters.sortBy) queryParams.set('sortBy', filters.sortBy);
+      if (filters.sortOrder) queryParams.set('sortOrder', filters.sortOrder);
+      
+      const url = queryParams.toString() 
+        ? `${apiUrls.merchants.list}?${queryParams.toString()}`
+        : apiUrls.merchants.list;
+      
+      const response = await authenticatedFetch(url);
+      const result = await parseApiResponse<MerchantsResponse>(response);
 
-      if (!response.success || !response.data) {
+      if (!result.success || !result.data) {
         throw new Error('Failed to fetch merchants');
       }
 
-      // Transform API response to consistent format
-      const apiData = response.data as any;
-      const merchantsArray = apiData.merchants || [];
+      // Use pagination data directly from API response
+      const apiData = result.data;
       
       console.log('🏢 useMerchantsData - API Response:', {
         hasData: !!apiData,
-        hasMerchantsArray: !!merchantsArray,
-        merchantsCount: merchantsArray.length,
-        firstMerchant: merchantsArray[0]
+        merchantsCount: apiData.merchants?.length || 0,
+        total: apiData.total,
+        totalPages: apiData.totalPages,
+        currentPage: apiData.currentPage,
+        limit: apiData.limit
       });
       
-      // Apply client-side filtering if needed (until backend supports it)
-      let filteredMerchants = merchantsArray;
-      
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredMerchants = filteredMerchants.filter((m: any) => 
-          m.name?.toLowerCase().includes(searchLower) ||
-          m.email?.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      if (filters.status && filters.status !== 'all') {
-        filteredMerchants = filteredMerchants.filter((m: any) => 
-          filters.status === 'active' ? m.isActive : !m.isActive
-        );
-      }
-      
-      if (filters.plan && filters.plan !== 'all') {
-        filteredMerchants = filteredMerchants.filter((m: any) => 
-          String(m.planId) === filters.plan
-        );
-      }
-      
-      // Apply sorting
-      if (filters.sortBy) {
-        filteredMerchants.sort((a: any, b: any) => {
-          const aVal = a[filters.sortBy!];
-          const bVal = b[filters.sortBy!];
-          const order = filters.sortOrder === 'desc' ? -1 : 1;
-          return (aVal > bVal ? 1 : -1) * order;
-        });
-      }
-      
-      // Apply pagination
-      const page = filters.page || 1;
-      const limit = filters.limit || 10;
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedMerchants = filteredMerchants.slice(startIndex, endIndex);
-      const total = filteredMerchants.length;
-      const totalPages = Math.ceil(total / limit);
+      // Use API response pagination data, fallback to filters
+      const responsePage = apiData.page || apiData.currentPage || page;
+      const responseLimit = apiData.limit || limit;
+      const totalPages = apiData.totalPages || 1;
+      const total = apiData.total || 0;
       
       const transformed: MerchantsDataResponse = {
-        merchants: paginatedMerchants,
+        merchants: apiData.merchants || [],
         total,
-        page,
-        currentPage: page,
-        limit,
-        hasMore: endIndex < total,
+        page: responsePage,
+        currentPage: responsePage,
+        limit: responseLimit,
+        hasMore: (apiData as any).hasMore !== undefined ? (apiData as any).hasMore : responsePage < totalPages,
         totalPages
       };
       

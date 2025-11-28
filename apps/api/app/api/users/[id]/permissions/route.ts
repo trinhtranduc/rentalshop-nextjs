@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
@@ -18,9 +18,13 @@ const updatePermissionsSchema = z.object({
 /**
  * GET /api/users/[id]/permissions
  * Get user permissions
- * Only OUTLET_ADMIN, MERCHANT, and ADMIN can view permissions
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(
+export const GET = withPermissions(['users.manage'])(
   async (request, { user, userScope, params }) => {
     try {
       const resolvedParams = await Promise.resolve(params);
@@ -97,10 +101,16 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(
 /**
  * PUT /api/users/[id]/permissions
  * Update user permissions
- * Only OUTLET_ADMIN can manage permissions of OUTLET_STAFF in their outlet
+ * 
+ * Authorization: All roles with 'users.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Note: OUTLET_ADMIN can only manage permissions of OUTLET_STAFF in their outlet
  * MERCHANT and ADMIN can manage permissions of any user in their scope
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(
+export const PUT = withPermissions(['users.manage'])(
   async (request, { user, userScope, params }) => {
     try {
       const resolvedParams = await Promise.resolve(params);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS } from '@rentalshop/constants';
 import { customerUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
@@ -8,6 +8,10 @@ import {API} from '@rentalshop/constants';
 /**
  * GET /api/customers/[id]
  * Get customer by ID
+ * 
+ * Authorization: All roles with 'customers.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
   request: NextRequest,
@@ -17,7 +21,7 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withPermissions(['customers.view'])(async (request, { user, userScope }) => {
     try {
       console.log('🔍 GET /api/customers/[id] - Looking for customer with ID:', id);
 
@@ -74,6 +78,10 @@ export async function GET(
 /**
  * PUT /api/customers/[id]
  * Update customer by ID
+ * 
+ * Authorization: All roles with 'customers.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function PUT(
   request: NextRequest,
@@ -83,7 +91,7 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
     try {
 
       // Check if the ID is numeric (public ID)
@@ -143,6 +151,10 @@ export async function PUT(
 /**
  * DELETE /api/customers/[id]
  * Delete customer by ID (soft delete)
+ * 
+ * Authorization: All roles with 'customers.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function DELETE(
   request: NextRequest,
@@ -152,7 +164,7 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+  return withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
     try {
 
       // Check if the ID is numeric (public ID)

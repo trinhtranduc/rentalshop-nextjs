@@ -9,7 +9,8 @@ import {
   PageTitle,
   PageContent,
   Breadcrumb,
-  Button
+  Button,
+  LoadingIndicator
 } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ProductOrdersView } from '@rentalshop/ui';
@@ -72,19 +73,19 @@ export default function ProductOrdersPage() {
     router.push('/products');
   };
 
-  if (loading) {
-    return (
-      <PageWrapper>
-        <PageContent>
-          <ProductsLoading />
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
   if (error || !product) {
     return (
       <PageWrapper>
+        {/* Center Loading Indicator - Shows when waiting for API */}
+        {loading && (
+          <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+            <LoadingIndicator 
+              variant="circular" 
+              size="lg"
+              message={tc('labels.loading') || 'Loading product...'}
+            />
+          </div>
+        )}
         <PageContent>
           <div className="text-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

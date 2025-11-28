@@ -283,7 +283,7 @@ export async function DELETE(
       );
     }
 
-    // Delete category (soft delete)
+    // Delete category (hard delete - permanently remove from database)
     await db.categories.delete(categoryId);
 
     return NextResponse.json(

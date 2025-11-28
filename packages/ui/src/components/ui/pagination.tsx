@@ -1,6 +1,9 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from './button';
 import { useCommonTranslations } from '@rentalshop/hooks';
+import { cn } from '@rentalshop/ui';
 
 interface PaginationProps {
   currentPage: number;
@@ -20,6 +23,24 @@ export function Pagination({
   itemName = "items"
 }: PaginationProps) {
   const t = useCommonTranslations();
+  // Optimistic state for immediate visual feedback
+  const [optimisticPage, setOptimisticPage] = useState<number | null>(null);
+  
+  // Clear optimistic state when actual page changes
+  useEffect(() => {
+    if (currentPage === optimisticPage) {
+      setOptimisticPage(null);
+    }
+  }, [currentPage, optimisticPage]);
+  
+  // Handle page click with immediate feedback
+  const handlePageClick = (pageNum: number) => {
+    setOptimisticPage(pageNum); // 1. Immediate visual feedback
+    onPageChange(pageNum); // 2. Trigger navigation
+  };
+  
+  // Display page (use optimistic if available, otherwise actual)
+  const displayPage = optimisticPage || currentPage;
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
@@ -55,8 +76,8 @@ export function Pagination({
     return pages;
   };
 
-  const startItem = (currentPage - 1) * limit + 1;
-  const endItem = Math.min(currentPage * limit, total);
+  const startItem = (displayPage - 1) * limit + 1;
+  const endItem = Math.min(displayPage * limit, total);
 
   if (totalPages <= 1) {
     return null;
@@ -72,7 +93,7 @@ export function Pagination({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(currentPage - 1)}
+          onClick={() => handlePageClick(currentPage - 1)}
           disabled={currentPage === 1}
         >
           {t('buttons.previous')}
@@ -84,14 +105,25 @@ export function Pagination({
               {page === '...' ? (
                 <span className="px-3 py-2 text-gray-500">...</span>
               ) : (
-                <Button
-                  variant={currentPage === page ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onPageChange(page as number)}
-                  className="w-10 h-10 p-0"
-                >
-                  {page}
-                </Button>
+                <div className="relative">
+                  <Button
+                    variant={displayPage === page ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handlePageClick(page as number)}
+                    className={cn(
+                      "w-10 h-10 p-0 relative",
+                      optimisticPage === page && "ring-2 ring-blue-500 ring-offset-1"
+                    )}
+                  >
+                    {page}
+                  </Button>
+                  {/* Subtle loading indicator when navigating */}
+                  {optimisticPage === page && optimisticPage !== currentPage && (
+                    <div className="absolute -top-1 -right-1">
+                      <div className="animate-spin rounded-full h-2 w-2 border border-blue-600 border-t-transparent"></div>
+                    </div>
+                  )}
+                </div>
               )}
             </React.Fragment>
           ))}
@@ -100,7 +132,7 @@ export function Pagination({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(currentPage + 1)}
+          onClick={() => handlePageClick(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
           {t('buttons.next')}

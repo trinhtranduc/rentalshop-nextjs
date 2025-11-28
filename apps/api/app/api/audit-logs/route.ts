@@ -18,6 +18,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
     
     // Parse filter parameters
     const filter = {
+      search: searchParams.get('q') || searchParams.get('search') || undefined,
       action: searchParams.get('action') || undefined,
       entityType: searchParams.get('entityType') || undefined,
       entityId: searchParams.get('entityId') || undefined,

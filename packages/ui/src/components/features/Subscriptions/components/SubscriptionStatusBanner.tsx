@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '../../../ui/alert';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { Badge } from '../../../ui/badge';
-import {
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,7 +26,7 @@ import {
   MessageCircle,
   ChevronDown
 } from 'lucide-react';
-import { useSubscriptionStatusInfo, useSubscriptionTranslations } from '@rentalshop/hooks';
+import { useSubscriptionStatusInfo, useSubscriptionTranslations, useAuth } from '@rentalshop/hooks';
 import { useLocale } from 'next-intl';
 
 interface SubscriptionStatusBannerProps {
@@ -36,6 +36,7 @@ interface SubscriptionStatusBannerProps {
   onPayment?: () => void;
   onExport?: () => void;
   contactPhone?: string;
+  dashboardLoaded?: boolean; // Only show after dashboard has finished loading
 }
 
 export function SubscriptionStatusBanner({
@@ -44,10 +45,12 @@ export function SubscriptionStatusBanner({
   onUpgrade,
   onPayment,
   onExport,
-  contactPhone = '+840764774647'
+  contactPhone = '+840764774647',
+  dashboardLoaded = true // Default to true for backward compatibility
 }: SubscriptionStatusBannerProps) {
   const t = useSubscriptionTranslations();
   const locale = useLocale();
+  const { user } = useAuth();
   const {
     statusMessage,
     statusColor,
@@ -63,14 +66,19 @@ export function SubscriptionStatusBanner({
     isDenied,
     isExpiringSoon,
     daysUntilExpiry,
-    subscription
+    subscription,
+    loading
   } = useSubscriptionStatusInfo();
 
-  // Show banner if:
-  // 1. User is restricted (no access, trial, paused)
-  // 2. Subscription is expiring soon (<= 7 days) or expired
-  // 3. Subscription requires payment
-  const shouldShow = isRestricted || isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7) || requiresPayment;
+  // Only show banner when:
+  // 1. Dashboard has finished loading (to avoid flash)
+  // 2. User is loaded (to avoid flash during auth)
+  // 3. Not loading subscription data
+  // 4. Have subscription data
+  // 5. Subscription is expiring soon (<= 7 days)
+  const hasSubscriptionData = subscription !== null && subscription !== undefined;
+  const isExpiring = isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry >= 0);
+  const shouldShow = dashboardLoaded && user && !loading && hasSubscriptionData && isExpiring;
 
   if (!shouldShow) {
     return null;
@@ -106,7 +114,7 @@ export function SubscriptionStatusBanner({
 
   // Custom styling for expiring soon subscription (light orange/cream background)
   const isExpiringWarning = isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7);
-  
+
   return (
     <Alert 
       className={`${className} ${
@@ -128,9 +136,9 @@ export function SubscriptionStatusBanner({
             }`}>
               {isExpiringWarning ? t('banner.expiringSoon') : 'Subscription Status'}
               {!isExpiringWarning && (
-                <Badge variant={getStatusBadgeVariant()}>
-                  {accessLevel.toUpperCase()}
-                </Badge>
+              <Badge variant={getStatusBadgeVariant()}>
+                {accessLevel.toUpperCase()}
+              </Badge>
               )}
             </AlertTitle>
             <AlertDescription className={`mt-1 ${
@@ -195,7 +203,7 @@ export function SubscriptionStatusBanner({
                   <Phone className="w-4 h-4 mr-1" />
                   {t('banner.contact')}
                   <ChevronDown className="w-4 h-4 ml-1" />
-                </Button>
+              </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
@@ -335,7 +343,7 @@ export function SubscriptionStatusCard({
                         <Phone className="w-4 h-4 mr-1" />
                         {t('banner.contact')}
                         <ChevronDown className="w-4 h-4 ml-1" />
-                      </Button>
+                    </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem

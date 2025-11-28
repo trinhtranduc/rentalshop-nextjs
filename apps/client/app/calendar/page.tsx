@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendars, PageWrapper, Breadcrumb, Button } from '@rentalshop/ui';
+import { Calendars, PageWrapper, Breadcrumb, Button, PageLoadingIndicator } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
@@ -202,6 +202,8 @@ export default function CalendarPage() {
 
   return (
     <PageWrapper>
+      {/* Page Loading Indicator - Floating, non-blocking */}
+      <PageLoadingIndicator loading={loading} />
       <div className="space-y-8">
       {/* Calendar Component - Always Visible */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">

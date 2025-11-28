@@ -13,7 +13,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
     const status = searchParams.get('status');
     const method = searchParams.get('method');
     const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const page = parseInt(searchParams.get('page') || '1');
 
     // Build where clause
     const where: any = {};
@@ -37,8 +37,17 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
 
     // Fetch all payments using simplified database API
     const result = await db.payments.search({
-      ...where,
-      page: Math.floor(offset / limit) + 1,
+      where,
+      include: {
+        order: {
+          include: {
+            customer: { select: { firstName: true, lastName: true } },
+            outlet: { select: { name: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      page,
       limit
     });
     
@@ -94,7 +103,10 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
       success: true,
       data: transformedPayments,
       total,
-      hasMore: offset + limit < total
+      page: result.page || page,
+      limit: result.limit || limit,
+      totalPages: result.totalPages || Math.ceil(total / limit),
+      hasMore: result.hasMore !== undefined ? result.hasMore : page < Math.ceil(total / limit)
     });
 
   } catch (error) {
