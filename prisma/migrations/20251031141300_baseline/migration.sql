@@ -1,3 +1,0 @@
--- Baseline migration: Database schema already exists
--- This migration marks the current state of the database as baseline
--- No changes needed, schema is already in sync

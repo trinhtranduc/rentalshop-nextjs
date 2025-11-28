@@ -120,7 +120,41 @@ railway run --service dev-apis yarn db:migrate:status
 
 ## ✅ Làm Sao Biết Migration Thành Công?
 
-### Cách 1: Check Migration Status (Khuyến nghị)
+### Cách 1: Check Database Sync (Khuyến nghị) ⭐
+
+**So sánh migration status giữa Local và Railway:**
+
+```bash
+# Check sync với dev-apis (default)
+yarn db:check-sync
+
+# Hoặc chỉ định service
+yarn db:check-sync:dev   # Development
+yarn db:check-sync:prod  # Production
+
+# Hoặc dùng script trực tiếp
+./scripts/check-db-sync.sh dev-apis
+./scripts/check-db-sync.sh apis
+```
+
+**Output mẫu (Đồng bộ):**
+```
+✅ DATABASES ARE IN SYNC!
+   Both local and Railway have all migrations applied.
+```
+
+**Output mẫu (Không đồng bộ):**
+```
+❌ Railway database is OUT OF SYNC
+   Missing migrations on Railway:
+      - 20251121153338_create_outlet_stock
+      - 20251128000000_add_custom_merchant_roles
+
+💡 To fix, run:
+   railway run --service dev-apis yarn railway:migrate
+```
+
+### Cách 2: Check Migration Status (Manual)
 
 ```bash
 # Local
