@@ -32,7 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
   PageWrapper,
-  Breadcrumb
+  Breadcrumb,
+  PageLoadingIndicator
 } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { 
@@ -188,16 +189,10 @@ export default function PlansPage() {
     return <CreditCard className="h-6 w-6" />;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
-      </div>
-    );
-  }
-
   return (
     <PageWrapper>
+      {/* Page Loading Indicator - Floating, non-blocking */}
+      <PageLoadingIndicator loading={loading} />
       <div className="space-y-8">
       {/* Header */}
       <div className="text-center">

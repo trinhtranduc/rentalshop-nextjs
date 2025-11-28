@@ -404,7 +404,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       // Get default category for merchant (or create one)
       let categoryId: number;
       const defaultCategory = await db.categories.findFirst({
-        where: { merchantId, isDefault: true, isActive: true }
+        merchantId, isDefault: true, isActive: true
       });
       
       if (defaultCategory && 'id' in defaultCategory && typeof defaultCategory.id === 'number') {
@@ -442,6 +442,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
 
       // Create sync session
       const syncSession = await db.sync.createSession({
+        type: 'sync',
         merchantId,
         entities,
         config: { endpoint, token }
@@ -475,8 +476,25 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
             const oldCustomers = Array.isArray(customersResult.data) ? customersResult.data : [];
             stats.customers.total = oldCustomers.length;
 
-            for (const oldCustomer of oldCustomers) {
+            for (let i = 0; i < oldCustomers.length; i++) {
+              const oldCustomer = oldCustomers[i];
               try {
+                // Update progress
+                await db.sync.updateStatus(syncSession.id, {
+                  status: 'IN_PROGRESS',
+                  progress: {
+                    currentEntity: 'customers',
+                    currentEntityIndex: i,
+                    entityProgress: {
+                      customers: {
+                        processed: i,
+                        total: oldCustomers.length,
+                        lastProcessedIndex: i
+                      }
+                    }
+                  }
+                });
+
                 const customerData = transformCustomer(oldCustomer, merchantId);
                 const customer = await db.customers.create(customerData);
                 const oldCustomerId = oldCustomer.customer_id || oldCustomer.id || '';
@@ -508,7 +526,31 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                 stats.customers.created++;
               } catch (error: any) {
                 stats.customers.failed++;
-                errorLog.push({ entity: 'customer', error: error.message, data: oldCustomer });
+                const errorEntry = { entity: 'customer', index: i, error: error.message, data: oldCustomer };
+                errorLog.push(errorEntry);
+                
+                // Save error to progress for resume
+                await db.sync.updateStatus(syncSession.id, {
+                  status: 'PARTIALLY_COMPLETED',
+                  progress: {
+                    currentEntity: 'customers',
+                    currentEntityIndex: i,
+                    entityProgress: {
+                      customers: {
+                        processed: i,
+                        total: oldCustomers.length,
+                        lastProcessedIndex: i
+                      }
+                    },
+                    lastError: {
+                      entity: 'customer',
+                      index: i,
+                      error: error.message,
+                      timestamp: new Date()
+                    }
+                  },
+                  errorLog: [...errorLog]
+                });
               }
             }
           }
@@ -527,8 +569,25 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
             const oldProducts = Array.isArray(productsResult.data) ? productsResult.data : [];
             stats.products.total = oldProducts.length;
 
-            for (const oldProduct of oldProducts) {
+            for (let i = 0; i < oldProducts.length; i++) {
+              const oldProduct = oldProducts[i];
               try {
+                // Update progress
+                await db.sync.updateStatus(syncSession.id, {
+                  status: 'IN_PROGRESS',
+                  progress: {
+                    currentEntity: 'products',
+                    currentEntityIndex: i,
+                    entityProgress: {
+                      products: {
+                        processed: i,
+                        total: oldProducts.length,
+                        lastProcessedIndex: i
+                      }
+                    }
+                  }
+                });
+
                 // Process images - get original URLs for now (POST handler will upload later)
                 const imageResult = await downloadProductImagesForSync(oldProduct);
                 const imageUrls = imageResult.originalUrls; // Extract URLs for transformProduct
@@ -579,7 +638,31 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                 stats.products.created++;
               } catch (error: any) {
                 stats.products.failed++;
-                errorLog.push({ entity: 'product', error: error.message, data: oldProduct });
+                const errorEntry = { entity: 'product', index: i, error: error.message, data: oldProduct };
+                errorLog.push(errorEntry);
+                
+                // Save error to progress for resume
+                await db.sync.updateStatus(syncSession.id, {
+                  status: 'PARTIALLY_COMPLETED',
+                  progress: {
+                    currentEntity: 'products',
+                    currentEntityIndex: i,
+                    entityProgress: {
+                      products: {
+                        processed: i,
+                        total: oldProducts.length,
+                        lastProcessedIndex: i
+                      }
+                    },
+                    lastError: {
+                      entity: 'product',
+                      index: i,
+                      error: error.message,
+                      timestamp: new Date()
+                    }
+                  },
+                  errorLog: [...errorLog]
+                });
               }
             }
           }
@@ -593,8 +676,25 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
               const oldOrders = Array.isArray(ordersResult.data) ? ordersResult.data : [];
               stats.orders.total = oldOrders.length;
 
-              for (const oldOrder of oldOrders) {
+              for (let i = 0; i < oldOrders.length; i++) {
+                const oldOrder = oldOrders[i];
                 try {
+                  // Update progress
+                  await db.sync.updateStatus(syncSession.id, {
+                    status: 'IN_PROGRESS',
+                    progress: {
+                      currentEntity: 'orders',
+                      currentEntityIndex: i,
+                      entityProgress: {
+                        orders: {
+                          processed: i,
+                          total: oldOrders.length,
+                          lastProcessedIndex: i
+                        }
+                      }
+                    }
+                  });
+
                   // Map old product IDs to new product IDs
                   const orderItemsList = oldOrder.list_product || oldOrder.orderItems || [];
                   const transformedItems = orderItemsList.map((oldItem: any) => {
@@ -693,7 +793,31 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                   stats.orders.created++;
                 } catch (error: any) {
                   stats.orders.failed++;
-                  errorLog.push({ entity: 'order', error: error.message, data: oldOrder });
+                  const errorEntry = { entity: 'order', index: i, error: error.message, data: oldOrder };
+                  errorLog.push(errorEntry);
+                  
+                  // Save error to progress for resume
+                  await db.sync.updateStatus(syncSession.id, {
+                    status: 'PARTIALLY_COMPLETED',
+                    progress: {
+                      currentEntity: 'orders',
+                      currentEntityIndex: i,
+                      entityProgress: {
+                        orders: {
+                          processed: i,
+                          total: oldOrders.length,
+                          lastProcessedIndex: i
+                        }
+                      },
+                      lastError: {
+                        entity: 'order',
+                        index: i,
+                        error: error.message,
+                        timestamp: new Date()
+                      }
+                    },
+                    errorLog: [...errorLog]
+                  });
                 }
               }
             }
@@ -740,32 +864,27 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
           });
         });
         
-        // Rollback all created records
-        console.error('❌ Sync failed, rolling back created records...');
-        const rollbackResult = await db.sync.rollback(syncSession.id);
-        
+        // Update status to PARTIALLY_COMPLETED instead of FAILED
+        // This allows resume later
         await db.sync.updateStatus(syncSession.id, {
-          status: 'FAILED',
+          status: 'PARTIALLY_COMPLETED',
           stats,
           errorLog: [
             ...errorLog, 
-            { error: error.message || 'Unknown error' },
-            { 
-              rollback: {
-                deleted: rollbackResult.deleted,
-                errors: rollbackResult.errors
-              }
-            }
+            { error: error.message || 'Unknown error', timestamp: new Date() }
           ]
         });
 
+        // Don't auto-rollback - let user decide
+        console.error('❌ Sync failed partially. Session can be resumed or rolled back:', syncSession.id);
+
         return NextResponse.json(
-          ResponseBuilder.error('SYNC_FAILED', {
-            message: error.message || 'Sync failed',
-            rollback: {
-              deleted: rollbackResult.deleted,
-              errors: rollbackResult.errors
-            }
+          ResponseBuilder.error('SYNC_PARTIALLY_FAILED', {
+            message: error.message || 'Sync failed partially',
+            sessionId: syncSession.id,
+            stats,
+            canResume: true,
+            canRollback: true
           }),
           { status: 500 }
         );

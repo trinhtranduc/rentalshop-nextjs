@@ -83,12 +83,12 @@ export function Merchants({
   return (
     <div className="flex flex-col h-full">
       {/* Fixed Header Section */}
-      <div className="flex-shrink-0 space-y-4">
+      <div className="flex-shrink-0 space-y-2">
         <MerchantListHeader stats={data.stats} />
         
         {/* Compact Filters - All in one row */}
         <Card className="shadow-sm border-border">
-          <CardContent className="pt-4 pb-4">
+          <CardContent className="pt-3 pb-3">
             <div className="flex flex-wrap items-center gap-3">
               <MerchantFilters 
                 filters={filters}
@@ -102,7 +102,7 @@ export function Merchants({
       </div>
       
       {/* Scrollable Table Section */}
-      <div className="flex-1 min-h-0 mt-4">
+      <div className="flex-1 min-h-0 mt-2">
         <MerchantTable 
           merchants={data.merchants}
           onMerchantAction={memoizedOnMerchantAction}
@@ -113,18 +113,38 @@ export function Merchants({
       </div>
       
       {/* Fixed Pagination Section - Always at Bottom */}
-      {data.merchants.length > 0 && data.total > data.limit && (
+      {(() => {
+        const total = data.total || 0;
+        const limit = data.limit || 10;
+        const totalPages = data.totalPages || (total > 0 ? Math.ceil(total / limit) : 1);
+        const shouldShowPagination = data.merchants.length > 0 && totalPages > 1;
+        
+        console.log('🔍 Pagination check:', {
+          merchantsCount: data.merchants.length,
+          total,
+          limit,
+          totalPages,
+          shouldShowPagination,
+          condition: `merchants.length > 0 (${data.merchants.length > 0}) && totalPages > 1 (${totalPages > 1})`
+        });
+        
+        if (!shouldShowPagination) {
+          return null;
+        }
+        
+        return (
         <div className="flex-shrink-0 py-4">
           <Pagination 
             currentPage={data.currentPage || data.page || 1}
-            totalPages={data.totalPages || 1}
-            total={data.total || data.merchants.length}
-            limit={data.limit || 10}
+              totalPages={totalPages}
+              total={total}
+              limit={limit}
             onPageChange={memoizedOnPageChange}
             itemName="merchants"
           />
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

@@ -3692,8 +3692,8 @@ function useAuth() {
   const login = useCallback(async (email, password) => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
-      const { apiUrls } = await import("@rentalshop/utils");
-      const urls = apiUrls;
+      const { apiUrls: apiUrls2 } = await import("@rentalshop/utils");
+      const urls = apiUrls2;
       console.log("\u{1F50D} LOGIN: Using API URL:", urls.auth.login);
       console.log("\u{1F50D} LOGIN: API Base URL:", urls.base);
       console.log("\u{1F50D} LOGIN: NEXT_PUBLIC_API_URL:", typeof window !== "undefined" ? window.__NEXT_PUBLIC_API_URL__ || "NOT SET IN WINDOW" : "SERVER SIDE");
@@ -3780,8 +3780,8 @@ function useAuth() {
         setState((prev) => ({ ...prev, user: null, loading: false }));
         return;
       }
-      const { apiUrls, authenticatedFetch } = await import("@rentalshop/utils");
-      const response = await authenticatedFetch(apiUrls.settings.user);
+      const { apiUrls: apiUrls2, authenticatedFetch: authenticatedFetch2 } = await import("@rentalshop/utils");
+      const response = await authenticatedFetch2(apiUrls2.settings.user);
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -4210,7 +4210,7 @@ function isValidCurrencyCode(code) {
 }
 
 // src/utils/useDedupedApi.ts
-import { useState as useState4, useEffect as useEffect4, useRef, useCallback as useCallback6 } from "react";
+import { useState as useState4, useEffect as useEffect4, useRef, useCallback as useCallback6, useMemo } from "react";
 var requestCache = /* @__PURE__ */ new Map();
 var dataCache = /* @__PURE__ */ new Map();
 function useDedupedApi(options) {
@@ -4223,25 +4223,43 @@ function useDedupedApi(options) {
     cacheTime = 3e5,
     // 5 minutes
     refetchOnWindowFocus = false,
-    refetchOnMount = true
-    // Default to true for backwards compatibility
+    refetchOnMount = false
+    // Default to false to prevent infinite loops
   } = options;
   const [data, setData] = useState4(null);
   const [loading, setLoading] = useState4(true);
   const [error, setError] = useState4(null);
   const [isStale, setIsStale] = useState4(false);
-  const [refetchTrigger, setRefetchTrigger] = useState4(0);
+  const [refetchKey, setRefetchKey] = useState4(0);
   const fetchIdRef = useRef(0);
   const filtersRef = useRef("");
   const fetchFnRef = useRef(fetchFn);
+  const isMountedRef = useRef(true);
   fetchFnRef.current = fetchFn;
-  const cacheKey = JSON.stringify(filters);
   useEffect4(() => {
-    if (!enabled) {
-      setLoading(false);
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  const cacheKey = useMemo(() => {
+    const normalized = {};
+    Object.keys(filters).sort().forEach((key) => {
+      const value = filters[key];
+      if (value !== void 0 && value !== null && value !== "") {
+        normalized[key] = value;
+      }
+    });
+    return JSON.stringify(normalized);
+  }, [filters]);
+  useEffect4(() => {
+    if (!enabled || !isMountedRef.current) {
+      if (!enabled)
+        setLoading(false);
       return;
     }
-    if (cacheKey === filtersRef.current && data !== null) {
+    const isManualRefetch = refetchKey > 0;
+    if (cacheKey === filtersRef.current && !isManualRefetch) {
       console.log("\u{1F50D} useDedupedApi: Filters unchanged, skipping fetch");
       return;
     }
@@ -4256,29 +4274,35 @@ function useDedupedApi(options) {
       if (!isCacheStale) {
         if (refetchOnMount) {
           console.log(`\u2705 Fetch #${currentFetchId}: Cache HIT (fresh) - but refetchOnMount=true, showing cache and fetching new data`);
-          setData(cached.data);
-          setLoading(false);
-          setError(null);
-          setIsStale(false);
+          if (isMountedRef.current) {
+            setData(cached.data);
+            setLoading(false);
+            setError(null);
+            setIsStale(false);
+          }
         } else {
           console.log(`\u2705 Fetch #${currentFetchId}: Cache HIT (fresh) - refetchOnMount=false, using cache`);
-          setData(cached.data);
-          setLoading(false);
-          setError(null);
-          setIsStale(false);
+          if (isMountedRef.current) {
+            setData(cached.data);
+            setLoading(false);
+            setError(null);
+            setIsStale(false);
+          }
           return;
         }
       } else {
         console.log(`\u23F0 Fetch #${currentFetchId}: Cache HIT (stale) - showing stale data`);
-        setData(cached.data);
-        setIsStale(true);
+        if (isMountedRef.current) {
+          setData(cached.data);
+          setIsStale(true);
+        }
       }
     }
     const existingRequest = requestCache.get(cacheKey);
     if (existingRequest) {
       console.log(`\u{1F504} Fetch #${currentFetchId}: DEDUPLICATION - waiting for existing request`);
       existingRequest.then((result) => {
-        if (currentFetchId === fetchIdRef.current) {
+        if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
           setData(result);
           setLoading(false);
           setError(null);
@@ -4288,7 +4312,7 @@ function useDedupedApi(options) {
           console.log(`\u23ED\uFE0F Fetch #${currentFetchId}: Stale, ignoring`);
         }
       }).catch((err) => {
-        if (currentFetchId === fetchIdRef.current) {
+        if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
           const error2 = err instanceof Error ? err : new Error("Unknown error");
           setError(error2);
           setLoading(false);
@@ -4297,8 +4321,10 @@ function useDedupedApi(options) {
       });
       return;
     }
-    setLoading(true);
-    setError(null);
+    if (isMountedRef.current) {
+      setLoading(true);
+      setError(null);
+    }
     const requestPromise = fetchFnRef.current(filters);
     requestCache.set(cacheKey, requestPromise);
     requestPromise.then((result) => {
@@ -4319,23 +4345,35 @@ function useDedupedApi(options) {
           console.log(`\u{1F9F9} Cleaned up old cache entry: ${key}`);
         }
       }
-      setData(result);
-      setError(null);
-      setIsStale(false);
-      setLoading(false);
+      if (isMountedRef.current) {
+        setData(result);
+        setError(null);
+        setIsStale(false);
+        setLoading(false);
+      }
     }).catch((err) => {
       if (currentFetchId !== fetchIdRef.current) {
         console.log(`\u23ED\uFE0F Fetch #${currentFetchId}: Stale, ignoring error`);
         return;
       }
       const error2 = err instanceof Error ? err : new Error("Unknown error");
-      setError(error2);
-      setLoading(false);
+      if (isMountedRef.current) {
+        setError(error2);
+        setLoading(false);
+      }
       console.error(`\u274C Fetch #${currentFetchId}: ERROR:`, error2);
     }).finally(() => {
       requestCache.delete(cacheKey);
     });
-  }, [cacheKey, enabled, staleTime, cacheTime, refetchTrigger]);
+  }, [cacheKey, enabled, staleTime, cacheTime, refetchKey]);
+  useEffect4(() => {
+    if (refetchKey > 0 && !loading) {
+      const timer = setTimeout(() => {
+        setRefetchKey(0);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [refetchKey, loading]);
   useEffect4(() => {
     if (!refetchOnWindowFocus || !enabled)
       return;
@@ -4361,7 +4399,7 @@ function useDedupedApi(options) {
     dataCache.delete(cacheKey);
     filtersRef.current = "";
     fetchIdRef.current += 1;
-    setRefetchTrigger((prev) => prev + 1);
+    setRefetchKey((prev) => prev + 1);
   }, [enabled, cacheKey]);
   return {
     data,
@@ -4425,64 +4463,55 @@ function useCustomersData(options) {
 }
 
 // src/hooks/useMerchantsData.ts
-import { merchantsApi } from "@rentalshop/utils";
+import { authenticatedFetch, parseApiResponse } from "@rentalshop/utils";
+import { apiUrls } from "@rentalshop/utils";
 function useMerchantsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F3E2} useMerchantsData: Fetching with filters:", filters2);
-      const response = await merchantsApi.getMerchants();
-      if (!response.success || !response.data) {
+      const limit = filters2.limit || 10;
+      const page = filters2.page || 1;
+      const queryParams = new URLSearchParams();
+      queryParams.set("page", page.toString());
+      queryParams.set("limit", limit.toString());
+      if (filters2.search)
+        queryParams.set("q", filters2.search);
+      if (filters2.status && filters2.status !== "all")
+        queryParams.set("status", filters2.status);
+      if (filters2.plan && filters2.plan !== "all")
+        queryParams.set("plan", filters2.plan);
+      if (filters2.sortBy)
+        queryParams.set("sortBy", filters2.sortBy);
+      if (filters2.sortOrder)
+        queryParams.set("sortOrder", filters2.sortOrder);
+      const url = queryParams.toString() ? `${apiUrls.merchants.list}?${queryParams.toString()}` : apiUrls.merchants.list;
+      const response = await authenticatedFetch(url);
+      const result2 = await parseApiResponse(response);
+      if (!result2.success || !result2.data) {
         throw new Error("Failed to fetch merchants");
       }
-      const apiData = response.data;
-      const merchantsArray = apiData.merchants || [];
+      const apiData = result2.data;
       console.log("\u{1F3E2} useMerchantsData - API Response:", {
         hasData: !!apiData,
-        hasMerchantsArray: !!merchantsArray,
-        merchantsCount: merchantsArray.length,
-        firstMerchant: merchantsArray[0]
+        merchantsCount: apiData.merchants?.length || 0,
+        total: apiData.total,
+        totalPages: apiData.totalPages,
+        currentPage: apiData.currentPage,
+        limit: apiData.limit
       });
-      let filteredMerchants = merchantsArray;
-      if (filters2.search) {
-        const searchLower = filters2.search.toLowerCase();
-        filteredMerchants = filteredMerchants.filter(
-          (m2) => m2.name?.toLowerCase().includes(searchLower) || m2.email?.toLowerCase().includes(searchLower)
-        );
-      }
-      if (filters2.status && filters2.status !== "all") {
-        filteredMerchants = filteredMerchants.filter(
-          (m2) => filters2.status === "active" ? m2.isActive : !m2.isActive
-        );
-      }
-      if (filters2.plan && filters2.plan !== "all") {
-        filteredMerchants = filteredMerchants.filter(
-          (m2) => String(m2.planId) === filters2.plan
-        );
-      }
-      if (filters2.sortBy) {
-        filteredMerchants.sort((a2, b2) => {
-          const aVal = a2[filters2.sortBy];
-          const bVal = b2[filters2.sortBy];
-          const order = filters2.sortOrder === "desc" ? -1 : 1;
-          return (aVal > bVal ? 1 : -1) * order;
-        });
-      }
-      const page = filters2.page || 1;
-      const limit = filters2.limit || 10;
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedMerchants = filteredMerchants.slice(startIndex, endIndex);
-      const total = filteredMerchants.length;
-      const totalPages = Math.ceil(total / limit);
+      const responsePage = apiData.page || apiData.currentPage || page;
+      const responseLimit = apiData.limit || limit;
+      const totalPages = apiData.totalPages || 1;
+      const total = apiData.total || 0;
       const transformed = {
-        merchants: paginatedMerchants,
+        merchants: apiData.merchants || [],
         total,
-        page,
-        currentPage: page,
-        limit,
-        hasMore: endIndex < total,
+        page: responsePage,
+        currentPage: responsePage,
+        limit: responseLimit,
+        hasMore: apiData.hasMore !== void 0 ? apiData.hasMore : responsePage < totalPages,
         totalPages
       };
       console.log("\u2705 useMerchantsData: Success:", {
@@ -4693,7 +4722,12 @@ function usePlansData(options) {
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4CB} usePlansData: Fetching with filters:", filters2);
-      const response = await plansApi.getPlans();
+      const response = await plansApi.getPlans({
+        page: filters2.page,
+        limit: filters2.limit,
+        search: filters2.search,
+        isActive: filters2.status === "active" ? true : filters2.status === "inactive" ? false : void 0
+      });
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch plans");
       }
@@ -4703,42 +4737,21 @@ function usePlansData(options) {
         hasData: !!apiData,
         isArray: Array.isArray(apiData),
         plansCount: plansArray.length,
-        firstPlan: plansArray[0]
+        total: apiData.total,
+        page: apiData.page,
+        totalPages: apiData.totalPages
       });
-      let filteredPlans = plansArray;
-      if (filters2.search) {
-        const searchLower = filters2.search.toLowerCase();
-        filteredPlans = filteredPlans.filter(
-          (p2) => p2.name?.toLowerCase().includes(searchLower) || p2.description?.toLowerCase().includes(searchLower)
-        );
-      }
-      if (filters2.status && filters2.status !== "all") {
-        filteredPlans = filteredPlans.filter(
-          (p2) => filters2.status === "active" ? p2.isActive : !p2.isActive
-        );
-      }
-      if (filters2.sortBy) {
-        filteredPlans.sort((a2, b2) => {
-          const aVal = a2[filters2.sortBy];
-          const bVal = b2[filters2.sortBy];
-          const order = filters2.sortOrder === "desc" ? -1 : 1;
-          return (aVal > bVal ? 1 : -1) * order;
-        });
-      }
-      const page = filters2.page || 1;
-      const limit = filters2.limit || 10;
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedPlans = filteredPlans.slice(startIndex, endIndex);
-      const total = filteredPlans.length;
-      const totalPages = Math.ceil(total / limit);
+      const page = apiData.page || filters2.page || 1;
+      const limit = apiData.limit || filters2.limit || 10;
+      const total = apiData.total || plansArray.length;
+      const totalPages = apiData.totalPages || Math.ceil(total / limit);
       const transformed = {
-        plans: paginatedPlans,
+        plans: plansArray,
         total,
         page,
         currentPage: page,
         limit,
-        hasMore: endIndex < total,
+        hasMore: apiData.hasMore !== void 0 ? apiData.hasMore : page < totalPages,
         totalPages
       };
       console.log("\u2705 usePlansData: Success:", {
@@ -4885,40 +4898,68 @@ function useSubscriptionsData(options) {
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4B3} useSubscriptionsData: Fetching with filters:", filters2);
-      const response = await subscriptionsApi.search({
-        limit: filters2.limit || 20,
-        offset: filters2.offset || (filters2.page ? (filters2.page - 1) * (filters2.limit || 20) : 0)
-      });
-      if (!response.success || !response.data) {
+      const limit = filters2.limit || 20;
+      const page = filters2.page || 1;
+      const searchFilters = {
+        limit,
+        page,
+        search: filters2.search,
+        status: filters2.status,
+        merchantId: filters2.merchant ? parseInt(filters2.merchant) : void 0,
+        planId: filters2.plan ? parseInt(filters2.plan) : void 0
+      };
+      const response = await subscriptionsApi.search(searchFilters);
+      if (!response.success) {
         throw new Error("Failed to fetch subscriptions");
       }
-      const apiData = response.data;
+      const responseData = response;
       let subscriptionsArray = [];
       let total = 0;
-      console.log("\u{1F4B3} useSubscriptionsData - API Response:", {
-        hasData: !!apiData,
-        isArray: Array.isArray(apiData),
-        hasDataProperty: apiData && Array.isArray(apiData.data)
-      });
-      if (Array.isArray(apiData)) {
-        subscriptionsArray = apiData;
-        total = apiData.length;
-      } else if (apiData && Array.isArray(apiData.data)) {
-        subscriptionsArray = apiData.data;
-        total = apiData.pagination?.total || apiData.data.length;
+      let totalPages = 1;
+      if (Array.isArray(responseData.data)) {
+        subscriptionsArray = responseData.data;
+      } else if (responseData.data?.data && Array.isArray(responseData.data.data)) {
+        subscriptionsArray = responseData.data.data;
+      } else if (responseData.data?.subscriptions && Array.isArray(responseData.data.subscriptions)) {
+        subscriptionsArray = responseData.data.subscriptions;
       } else {
-        console.error("Invalid subscriptions data structure:", apiData);
+        subscriptionsArray = [];
       }
-      const page = filters2.page || 1;
-      const limit = filters2.limit || 20;
-      const totalPages = Math.ceil(total / limit);
+      let responsePage = page;
+      let responseLimit = limit;
+      if (responseData.pagination) {
+        total = responseData.pagination.total || subscriptionsArray.length;
+        responsePage = responseData.pagination.page || page;
+        responseLimit = responseData.pagination.limit || limit;
+        totalPages = responseData.pagination.totalPages || Math.ceil(total / responseLimit);
+      } else if (responseData.data?.pagination) {
+        total = responseData.data.pagination.total || subscriptionsArray.length;
+        responsePage = responseData.data.pagination.page || page;
+        responseLimit = responseData.data.pagination.limit || limit;
+        totalPages = responseData.data.pagination.totalPages || Math.ceil(total / responseLimit);
+      } else if (responseData.data?.total !== void 0) {
+        total = responseData.data.total || subscriptionsArray.length;
+        responsePage = responseData.data.page || page;
+        responseLimit = responseData.data.limit || limit;
+        totalPages = responseData.data.totalPages || Math.ceil(total / responseLimit);
+      } else {
+        total = subscriptionsArray.length;
+        totalPages = Math.ceil(total / limit);
+      }
+      console.log("\u{1F4B3} useSubscriptionsData - Parsed pagination:", {
+        total,
+        responsePage,
+        responseLimit,
+        totalPages,
+        subscriptionsCount: subscriptionsArray.length
+      });
       const transformed = {
         subscriptions: subscriptionsArray,
         total,
-        page,
-        currentPage: page,
-        limit,
-        hasMore: page < totalPages,
+        page: responsePage,
+        currentPage: responsePage,
+        limit: responseLimit,
+        hasMore: responsePage < totalPages,
         totalPages
       };
       console.log("\u2705 useSubscriptionsData: Success:", {
@@ -5334,41 +5375,33 @@ function useUsersData(options) {
 }
 
 // src/hooks/useOptimisticNavigation.ts
-import { useRouter as useRouter2 } from "next/navigation";
-import { useState as useState9, useCallback as useCallback12, useRef as useRef3, useEffect as useEffect6 } from "react";
-function useOptimisticNavigation(options = {}) {
-  const router = useRouter2();
+import { useState as useState9, useCallback as useCallback12, useEffect as useEffect6, useTransition as useTransition2 } from "react";
+import { usePathname as usePathname2, useRouter as useRouter2 } from "next/navigation";
+function useOptimisticNavigation() {
   const [navigatingTo, setNavigatingTo] = useState9(null);
-  const rafRef = useRef3(null);
-  const timeoutRef = useRef3(null);
+  const [isPending, startTransition] = useTransition2();
+  const pathname = usePathname2();
+  const router = useRouter2();
   useEffect6(() => {
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+    if (navigatingTo && pathname === navigatingTo) {
+      const timer = setTimeout(() => {
+        setNavigatingTo(null);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, navigatingTo]);
   const navigate = useCallback12((path) => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    options.onNavigateStart?.(path);
-    router.push(path);
-    timeoutRef.current = setTimeout(() => {
-      setNavigatingTo(null);
-      options.onNavigateEnd?.(path);
-    }, 100);
-  }, [router, options]);
+    setNavigatingTo(path);
+    router.push(path, { scroll: false });
+  }, [router]);
+  const prefetch = useCallback12((path) => {
+    router.prefetch(path);
+  }, [router]);
   return {
     navigate,
     navigatingTo,
-    isNavigating: navigatingTo !== null
+    isPending,
+    prefetch
   };
 }
 
@@ -5563,7 +5596,8 @@ function useOutletsWithFilters(options) {
     enabled,
     staleTime: debounceSearch ? 5e3 : 3e4,
     cacheTime: 3e5,
-    refetchOnMount: true,
+    refetchOnMount: false,
+    // ✅ Changed to false to prevent unnecessary refetches
     refetchOnWindowFocus: false
   });
   return {
@@ -5596,7 +5630,8 @@ function useCategoriesWithFilters(options) {
     enabled,
     staleTime: debounceSearch ? 5e3 : 3e4,
     cacheTime: 3e5,
-    refetchOnMount: true,
+    refetchOnMount: false,
+    // ✅ Changed to false to prevent unnecessary refetches
     refetchOnWindowFocus: false
   });
   return {

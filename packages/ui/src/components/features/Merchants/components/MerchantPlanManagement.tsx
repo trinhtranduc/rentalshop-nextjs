@@ -24,8 +24,13 @@ import {
   SelectTrigger,
   SelectValue
 } from '../../../ui';
-import { ManualRenewalModal } from '../../Subscriptions';
+import { 
+  SubscriptionChangePlanDialog,
+  SubscriptionExtendDialog 
+} from '../../Subscriptions';
 import { SubscriptionHistoryDialog } from '../../Subscriptions/components/SubscriptionHistoryDialog';
+import type { BillingInterval } from '@rentalshop/types';
+import { BILLING_CYCLES_ARRAY } from '@rentalshop/constants';
 import { 
   CreditCard, 
   Clock, 
@@ -37,67 +42,15 @@ import {
   History
 } from 'lucide-react';
 import { formatSubscriptionPeriod, formatDateTimeLong } from '@rentalshop/utils';
-// Billing configuration (following Stripe's modern practices)
-const BILLING_INTERVALS = [
-  {
-    id: 'month',
-    name: 'Monthly',
-    months: 1,
-    discountPercentage: 0,
-    description: 'No discount for monthly billing',
-    isActive: true
-  },
-  {
-    id: 'quarter',
-    name: 'Quarterly',
-    months: 3,
-    discountPercentage: 0,
-    description: 'No discount for quarterly billing',
-    isActive: true
-  },
-  {
-    id: 'semiAnnual',
-    name: '6 Months',
-    months: 6,
-    discountPercentage: 5,
-    description: '5% discount for 6-month billing',
-    isActive: true
-  },
-  {
-    id: 'year',
-    name: 'Yearly',
-    months: 12,
-    discountPercentage: 10,
-    description: '10% discount for yearly billing',
-    isActive: true
-  }
-];
-
-// Helper functions for billing
-const getActiveBillingIntervals = () => BILLING_INTERVALS.filter(interval => interval.isActive);
-const getDiscountPercentage = (intervalId: string) => {
-  const interval = BILLING_INTERVALS.find(i => i.id === intervalId);
-  return interval?.discountPercentage || 0;
-};
-const calculateDiscountedPrice = (basePrice: number, intervalId: string, duration: number = 1) => {
-  const interval = BILLING_INTERVALS.find(i => i.id === intervalId);
-  if (!interval) return basePrice * duration;
-  
-  const discount = interval.discountPercentage / 100;
-  const discountedPrice = basePrice * (1 - discount);
-  return discountedPrice * duration;
-};
-const formatBillingInterval = (intervalId: string) => {
-  const interval = BILLING_INTERVALS.find(i => i.id === intervalId);
-  if (!interval) return intervalId;
-  
-  const discount = interval.discountPercentage > 0 
-    ? ` (${interval.discountPercentage}% discount)`
-    : '';
-  
-  return `${interval.name}${discount}`;
-};
 import type { Plan, Subscription } from '@rentalshop/types';
+
+type BillingCycleConfig = {
+  value: BillingInterval;
+  label: string;
+  months: number;
+  discount: number;
+  description: string;
+};
 import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
 import type { SubscriptionStatus } from '@rentalshop/constants';
 
@@ -185,7 +138,7 @@ export function MerchantPlanManagement({
                       currentSubscription?.plan?.basePrice === 0;
   
   const [showChangeDialog, setShowChangeDialog] = useState(false);
-  const [showRenewalModal, setShowRenewalModal] = useState(false);
+  const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
@@ -194,29 +147,6 @@ export function MerchantPlanManagement({
   const [cancelType, setCancelType] = useState<'immediate' | 'end_of_period'>('end_of_period');
   const [suspendReason, setSuspendReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [renewalLoading, setRenewalLoading] = useState(false);
-  
-  // Change plan form state
-  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
-  const [changeReason, setChangeReason] = useState('');
-  const [notifyMerchant, setNotifyMerchant] = useState(true);
-  const [changeBillingInterval, setChangeBillingInterval] = useState<string>('month');
-
-  // Reset form when dialog opens
-  const handleOpenChangeDialog = () => {
-    setShowChangeDialog(true);
-    setSelectedPlanId('');
-    setChangeReason('');
-    setChangeBillingInterval('month');
-    setNotifyMerchant(true);
-  };
-
-  // Ensure billing interval is always set when dialog opens
-  useEffect(() => {
-    if (showChangeDialog && !changeBillingInterval) {
-      setChangeBillingInterval('month');
-    }
-  }, [showChangeDialog, changeBillingInterval]);
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -233,8 +163,78 @@ export function MerchantPlanManagement({
     });
   };
 
-  // Get billing intervals from configuration
-  const billingIntervals = getActiveBillingIntervals();
+  // Adapter function to convert SubscriptionChangePlanDialog callback to onPlanChange format
+  const handleChangePlanConfirm = (
+    subscription: Subscription,
+    newPlanId: number,
+    interval: BillingInterval,
+    startDate?: Date,
+    reason?: string,
+    sendEmail?: boolean
+  ) => {
+    const selectedPlan = plans.find(p => p.id === newPlanId);
+    if (!selectedPlan) return;
+
+    // Get billing cycle config from constants
+    const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === interval);
+    if (!cycleConfig) return;
+    
+    // Calculate total price with discount
+    const basePrice = selectedPlan.basePrice || 0;
+    const totalBasePrice = basePrice * cycleConfig.months;
+    const totalPrice = totalBasePrice * (1 - cycleConfig.discount / 100);
+
+    // Convert to MerchantPlanManagement.onPlanChange format
+    const planChangeData = {
+      planId: newPlanId,
+      planVariantId: undefined,
+      reason: reason || 'Plan changed by admin',
+      effectiveDate: startDate?.toISOString() || new Date().toISOString(),
+      notifyMerchant: sendEmail ?? true,
+      billingInterval: interval, // Use BillingInterval directly, no conversion
+      duration: cycleConfig.months,
+      discount: cycleConfig.discount,
+      totalPrice
+    };
+
+    onPlanChange(planChangeData);
+  };
+
+  // Adapter function to convert SubscriptionExtendDialog callback to onExtend format
+  const handleExtendConfirm = (
+    subscription: Subscription,
+    data: {
+      newEndDate: Date;
+      amount: number;
+      method: string;
+      description?: string;
+    }
+  ) => {
+    // Calculate duration from newEndDate
+    const currentEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
+    const extensionDays = Math.ceil((data.newEndDate.getTime() - currentEnd.getTime()) / (1000 * 60 * 60 * 24));
+    const months = Math.ceil(extensionDays / 30);
+    
+    // Map months to closest BillingInterval using BILLING_CYCLES_ARRAY
+    const cycleConfig = BILLING_CYCLES_ARRAY.find((c: any) => {
+      if (months <= 1) return c.months === 1;
+      if (months <= 3) return c.months === 3;
+      if (months <= 6) return c.months === 6;
+      return c.months === 12;
+    });
+    const billingInterval: BillingInterval = (cycleConfig?.value || 'monthly') as BillingInterval;
+
+    // Convert to MerchantPlanManagement.onExtend format
+    const extendData = {
+      subscription,
+      duration: months,
+      billingInterval, // Use BillingInterval directly
+      discount: 0,
+      totalPrice: data.amount
+    };
+
+    onExtend?.(extendData);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -250,34 +250,6 @@ export function MerchantPlanManagement({
   };
 
 
-  const handleRenewal = async (paymentData: any) => {
-    if (!currentSubscription || !onExtend) return;
-    
-    try {
-      setRenewalLoading(true);
-      
-      if (!currentSubscription) {
-        throw new Error('No subscription found');
-      }
-      
-      // Pass the renewal data to parent handler
-      await onExtend({
-        subscription: currentSubscription,
-        duration: 1,
-        billingInterval: 'month',
-        discount: 0,
-        totalPrice: currentSubscription.amount || 0,
-        paymentData: paymentData // Include payment info
-      } as any);
-      
-      setShowRenewalModal(false);
-    } catch (error) {
-      console.error('Failed to renew subscription:', error);
-      throw error; // Re-throw for modal to handle
-    } finally {
-      setRenewalLoading(false);
-    }
-  };
 
   const handleCancel = async () => {
     if (!currentSubscription || !cancelReason.trim()) return;
@@ -295,37 +267,6 @@ export function MerchantPlanManagement({
     }
   };
 
-  const handleChangePlan = async () => {
-    if (!selectedPlanId || !changeBillingInterval) return;
-
-    setIsSubmitting(true);
-    try {
-      const selectedPlan = plans.find(p => p.id.toString() === selectedPlanId);
-      const discount = getDiscountPercentage(changeBillingInterval);
-      
-      const planChangeData = {
-        planId: Number(selectedPlanId),
-        reason: changeReason.trim() || 'Plan changed by admin',
-        notifyMerchant,
-        billingInterval: changeBillingInterval,
-        duration: 1, // Always 1 period
-        discount: discount,
-        totalPrice: selectedPlan ? calculateDiscountedPrice(selectedPlan.basePrice, changeBillingInterval, 1) : 0
-      };
-      
-      await onPlanChange?.(planChangeData);
-      setShowChangeDialog(false);
-      // Reset form
-      setSelectedPlanId('');
-      setChangeReason('');
-      setNotifyMerchant(true);
-      setChangeBillingInterval('month');
-    } catch (error) {
-      console.error('Error changing plan:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
 
   const handleSuspend = async () => {
@@ -475,7 +416,7 @@ export function MerchantPlanManagement({
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={handleOpenChangeDialog}
+                      onClick={() => setShowChangeDialog(true)}
                       className="flex items-center gap-2 bg-blue-700 hover:bg-blue-700"
                     >
                       <ArrowRight className="h-4 w-4" />
@@ -483,12 +424,12 @@ export function MerchantPlanManagement({
                     </Button>
                   )}
                   
-                  {/* Paid Users: Show Change Plan */}
-                  {!isTrialPlan && (
+                  {/* Change Plan - Show only for paid subscriptions (not trial) */}
+                  {currentSubscription && isActiveStatus && !isTrialPlan && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleOpenChangeDialog}
+                      onClick={() => setShowChangeDialog(true)}
                       className="flex items-center gap-2"
                     >
                       <ArrowRight className="h-4 w-4" />
@@ -496,16 +437,16 @@ export function MerchantPlanManagement({
                     </Button>
                   )}
                 
-                {/* Renew/Extend - Only for PAID active subscriptions (NOT trial) */}
-                {currentSubscription && isActiveStatus && !isTrialPlan && (
+                {/* Extend Plan - For active subscriptions (including trial) */}
+                {currentSubscription && isActiveStatus && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowRenewalModal(true)}
+                    onClick={() => setShowExtendDialog(true)}
                     className="flex items-center gap-2"
                   >
                     <Plus className="h-4 w-4" />
-                    Renew/Extend
+                    Extend Plan
                   </Button>
                 )}
                 
@@ -559,7 +500,7 @@ export function MerchantPlanManagement({
               {/* Only show action buttons for ADMIN and MERCHANT roles */}
               {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
                 <div className="flex flex-wrap items-center justify-center gap-3">
-                  <Button onClick={handleOpenChangeDialog}>
+                  <Button onClick={() => setShowChangeDialog(true)}>
                     <CreditCard className="h-4 w-4 mr-2" />
                     Create Subscription
                   </Button>
@@ -568,7 +509,7 @@ export function MerchantPlanManagement({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleOpenChangeDialog}
+                    onClick={() => setShowChangeDialog(true)}
                     className="flex items-center gap-2"
                   >
                     <ArrowRight className="h-4 w-4" />
@@ -623,173 +564,28 @@ export function MerchantPlanManagement({
       )}
 
 
-      {/* Manual Renewal Modal - Only for PAID plans */}
-      {currentSubscription && !isTrialPlan && (
-        <ManualRenewalModal
-          isOpen={showRenewalModal}
-          onClose={() => setShowRenewalModal(false)}
-          subscription={{
-            id: currentSubscription.id,
-            merchantName: merchant.name,
-            planName: currentSubscription.plan?.name || 'Unknown Plan',
-            amount: currentSubscription.plan?.basePrice || currentSubscription.amount || 0,
-            currency: (currentSubscription as any).currency || currentSubscription.plan?.currency || 'USD',
-            currentPeriodEnd: currentSubscription.currentPeriodEnd 
-              ? new Date(currentSubscription.currentPeriodEnd)
-              : new Date()
-          }}
-          onRenew={handleRenewal}
-          loading={renewalLoading}
+      {/* Change Plan Dialog - Using shared component */}
+      {currentSubscription && (
+        <SubscriptionChangePlanDialog
+          subscription={currentSubscription}
+          plans={plans}
+          isOpen={showChangeDialog}
+          onClose={() => setShowChangeDialog(false)}
+          onConfirm={handleChangePlanConfirm}
+          loading={isSubmitting}
         />
       )}
 
-      {/* Change Plan Dialog - Simplified */}
-      <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowRight className="h-5 w-5 text-blue-500" />
-              Change Subscription Plan
-            </DialogTitle>
-            <DialogDescription>
-              Change the subscription plan for {merchant.name}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Plan Change Indicator */}
-            {currentSubscription?.plan && selectedPlanId && (
-              <div className="p-4 bg-gray-50 border rounded-lg">
-                <p className="text-sm text-gray-600 mb-2">Plan Change</p>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500">Current</p>
-                    <p className="font-semibold">{currentSubscription.plan.name}</p>
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-gray-400" />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500">New</p>
-                    <p className="font-semibold text-blue-600">
-                      {plans.find(p => p.id.toString() === selectedPlanId)?.name || 'Select plan'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Select New Plan */}
-            <div>
-              <Label htmlFor="planSelect">New Plan *</Label>
-              <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a plan..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {plans.map((plan) => (
-                    <SelectItem key={plan.id} value={plan.id.toString()}>
-                      {plan.name} - {formatPrice(plan.basePrice, plan.currency)}/month
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Billing Cycle */}
-            <div>
-              <Label htmlFor="changeBillingInterval">Billing Cycle *</Label>
-              <Select value={changeBillingInterval} onValueChange={setChangeBillingInterval}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {billingIntervals.map((interval: any) => (
-                    <SelectItem key={interval.id} value={interval.id}>
-                      {formatBillingInterval(interval.id)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500 mt-1">
-                Longer billing cycles offer better discounts
-              </p>
-            </div>
-
-            {/* Simplified Pricing Summary */}
-            {selectedPlanId && changeBillingInterval && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="font-medium text-blue-900 mb-2">New Plan Pricing</p>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span>Plan:</span>
-                    <span className="font-medium">
-                      {plans.find(p => p.id.toString() === selectedPlanId)?.name}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Billing Period:</span>
-                    <span className="font-medium">{formatBillingInterval(changeBillingInterval)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t text-base">
-                    <span className="font-semibold">Price:</span>
-                    <span className="font-bold text-blue-900">
-                      {(() => {
-                        const selectedPlan = plans.find(p => p.id.toString() === selectedPlanId);
-                        if (!selectedPlan) return '$0.00';
-                        const discount = getDiscountPercentage(changeBillingInterval);
-                        const discountedPrice = selectedPlan.basePrice * (1 - discount / 100);
-                        return formatPrice(discountedPrice, selectedPlan.currency);
-                      })()}
-                      /{changeBillingInterval}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Reason (Optional) */}
-            <div>
-              <Label htmlFor="changeReason">Reason for Change (Optional)</Label>
-              <Textarea
-                id="changeReason"
-                value={changeReason}
-                onChange={(e) => setChangeReason(e.target.value)}
-                placeholder="e.g., Customer requested upgrade, Business growth, etc."
-                rows={2}
-              />
-            </div>
-
-            {/* Notify Merchant */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="notifyMerchant"
-                checked={notifyMerchant}
-                onChange={(e) => setNotifyMerchant(e.target.checked)}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="notifyMerchant" className="text-sm">
-                Send email notification to merchant
-              </Label>
-            </div>
-          </div>
-
-          <DialogFooter className="border-t pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowChangeDialog(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleChangePlan}
-              disabled={!selectedPlanId || !changeBillingInterval || isSubmitting}
-            >
-              {isSubmitting ? 'Changing...' : 'Change Plan'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Extend Dialog - Using shared component */}
+      {currentSubscription && (
+        <SubscriptionExtendDialog
+          subscription={currentSubscription}
+          isOpen={showExtendDialog}
+          onClose={() => setShowExtendDialog(false)}
+          onConfirm={handleExtendConfirm}
+          loading={isSubmitting}
+        />
+      )}
 
 
       {/* Cancel Plan Dialog */}

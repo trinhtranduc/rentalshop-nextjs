@@ -70,47 +70,84 @@ export function useSubscriptionsData(options: UseSubscriptionsDataOptions): UseS
     fetchFn: async (filters: SubscriptionFilters) => {
       console.log('💳 useSubscriptionsData: Fetching with filters:', filters);
       
-      const response = await subscriptionsApi.search({
-        limit: filters.limit || 20,
-        offset: filters.offset || (filters.page ? (filters.page - 1) * (filters.limit || 20) : 0)
-      });
+      const limit = filters.limit || 20;
+      const page = filters.page || 1;
+      
+      const searchFilters: any = {
+        limit,
+        page,
+        search: filters.search,
+        status: filters.status,
+        merchantId: filters.merchant ? parseInt(filters.merchant) : undefined,
+        planId: filters.plan ? parseInt(filters.plan) : undefined
+      };
+      
+      const response = await subscriptionsApi.search(searchFilters);
 
-      if (!response.success || !response.data) {
+      if (!response.success) {
         throw new Error('Failed to fetch subscriptions');
       }
 
-      // Transform API response to consistent format
-      const apiData = response.data as any;
+      // API returns: { success: true, data: Subscription[], pagination: { total, page, limit, totalPages, hasMore } }
+      const responseData = response as any;
       let subscriptionsArray: any[] = [];
       let total = 0;
+      let totalPages = 1;
       
-      console.log('💳 useSubscriptionsData - API Response:', {
-        hasData: !!apiData,
-        isArray: Array.isArray(apiData),
-        hasDataProperty: apiData && Array.isArray(apiData.data)
-      });
-      
-      if (Array.isArray(apiData)) {
-        subscriptionsArray = apiData;
-        total = apiData.length;
-      } else if (apiData && Array.isArray(apiData.data)) {
-        subscriptionsArray = apiData.data;
-        total = apiData.pagination?.total || apiData.data.length;
+      // Extract subscriptions array from response.data
+      if (Array.isArray(responseData.data)) {
+        subscriptionsArray = responseData.data;
+      } else if (responseData.data?.data && Array.isArray(responseData.data.data)) {
+        subscriptionsArray = responseData.data.data;
+      } else if (responseData.data?.subscriptions && Array.isArray(responseData.data.subscriptions)) {
+        subscriptionsArray = responseData.data.subscriptions;
       } else {
-        console.error('Invalid subscriptions data structure:', apiData);
+        subscriptionsArray = [];
       }
       
-      const page = filters.page || 1;
-      const limit = filters.limit || 20;
-      const totalPages = Math.ceil(total / limit);
+      // Extract pagination metadata - API returns pagination at top level
+      let responsePage = page;
+      let responseLimit = limit;
+      
+      if (responseData.pagination) {
+        // Pagination is at top level: { success: true, data: [...], pagination: {...} }
+        total = responseData.pagination.total || subscriptionsArray.length;
+        responsePage = responseData.pagination.page || page;
+        responseLimit = responseData.pagination.limit || limit;
+        totalPages = responseData.pagination.totalPages || Math.ceil(total / responseLimit);
+      } else if (responseData.data?.pagination) {
+        // Pagination is nested in data: { success: true, data: { subscriptions: [...], pagination: {...} } }
+        total = responseData.data.pagination.total || subscriptionsArray.length;
+        responsePage = responseData.data.pagination.page || page;
+        responseLimit = responseData.data.pagination.limit || limit;
+        totalPages = responseData.data.pagination.totalPages || Math.ceil(total / responseLimit);
+      } else if (responseData.data?.total !== undefined) {
+        // Direct pagination fields in data
+        total = responseData.data.total || subscriptionsArray.length;
+        responsePage = responseData.data.page || page;
+        responseLimit = responseData.data.limit || limit;
+        totalPages = responseData.data.totalPages || Math.ceil(total / responseLimit);
+      } else {
+        // Fallback: use array length if no pagination metadata
+        total = subscriptionsArray.length;
+        totalPages = Math.ceil(total / limit);
+      }
+      
+      console.log('💳 useSubscriptionsData - Parsed pagination:', {
+        total,
+        responsePage,
+        responseLimit,
+        totalPages,
+        subscriptionsCount: subscriptionsArray.length
+      });
       
       const transformed: SubscriptionsDataResponse = {
         subscriptions: subscriptionsArray,
         total,
-        page,
-        currentPage: page,
-        limit,
-        hasMore: page < totalPages,
+        page: responsePage,
+        currentPage: responsePage,
+        limit: responseLimit,
+        hasMore: responsePage < totalPages,
         totalPages
       };
       

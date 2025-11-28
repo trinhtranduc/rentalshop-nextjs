@@ -165,23 +165,15 @@ export default function ProductEditPage() {
 
   // Show loading while authentication is in progress
   if (authLoading) {
-    return (
-      <PageWrapper>
-        <PageHeader>
+  return (
+    <PageWrapper>
+      {/* Page Loading Indicator - Floating, non-blocking */}
+      <PageLoadingIndicator loading={loading} />
+      <PageHeader>
           <div className="flex items-center space-x-2">
             <h1 className="text-2xl font-bold">Edit Product</h1>
           </div>
         </PageHeader>
-        <PageContent>
-          <ProductsLoading />
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
-  if (loading) {
-    return (
-      <PageWrapper>
         <PageContent>
           <ProductsLoading />
         </PageContent>
@@ -215,6 +207,8 @@ export default function ProductEditPage() {
 
   return (
     <PageWrapper>
+      {/* Page Loading Indicator - Floating, non-blocking */}
+      <PageLoadingIndicator loading={loading} />
       <PageHeader>
         <div className="flex items-center space-x-2">
           <Button variant="outline" onClick={handleBack} size="sm">

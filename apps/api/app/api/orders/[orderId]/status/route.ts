@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
@@ -31,6 +31,10 @@ const statusUpdateSchema = z.object({
  * PATCH /api/orders/[orderId]/status
  * Update order status with additional metadata
  * 
+ * Authorization: All roles with 'orders.update' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
  * This endpoint is specifically designed for status updates and includes:
  * - Status change validation
  * - Automatic timestamp updates for pickup/return
@@ -45,7 +49,7 @@ export async function PATCH(
   const resolvedParams = await Promise.resolve(params);
   const { orderId } = resolvedParams;
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request: NextRequest, { user, userScope }) => {
+  return withPermissions(['orders.update'])(async (request: NextRequest, { user, userScope }) => {
     try {
       
       if (!orderId) {

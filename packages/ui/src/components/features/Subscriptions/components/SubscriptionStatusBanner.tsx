@@ -8,6 +8,12 @@ import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { Badge } from '../../../ui/badge';
 import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../../ui/dropdown-menu';
+import { 
   AlertTriangle, 
   CreditCard, 
   Download, 
@@ -15,9 +21,13 @@ import {
   Shield, 
   XCircle,
   CheckCircle,
-  Info
+  Info,
+  Phone,
+  MessageCircle,
+  ChevronDown
 } from 'lucide-react';
-import { useSubscriptionStatusInfo } from '@rentalshop/hooks';
+import { useSubscriptionStatusInfo, useSubscriptionTranslations, useAuth } from '@rentalshop/hooks';
+import { useLocale } from 'next-intl';
 
 interface SubscriptionStatusBannerProps {
   className?: string;
@@ -25,6 +35,8 @@ interface SubscriptionStatusBannerProps {
   onUpgrade?: () => void;
   onPayment?: () => void;
   onExport?: () => void;
+  contactPhone?: string;
+  dashboardLoaded?: boolean; // Only show after dashboard has finished loading
 }
 
 export function SubscriptionStatusBanner({
@@ -32,8 +44,13 @@ export function SubscriptionStatusBanner({
   showActions = true,
   onUpgrade,
   onPayment,
-  onExport
+  onExport,
+  contactPhone = '+840764774647',
+  dashboardLoaded = true // Default to true for backward compatibility
 }: SubscriptionStatusBannerProps) {
+  const t = useSubscriptionTranslations();
+  const locale = useLocale();
+  const { user } = useAuth();
   const {
     statusMessage,
     statusColor,
@@ -46,11 +63,24 @@ export function SubscriptionStatusBanner({
     isRestricted,
     isReadOnly,
     isLimited,
-    isDenied
+    isDenied,
+    isExpiringSoon,
+    daysUntilExpiry,
+    subscription,
+    loading
   } = useSubscriptionStatusInfo();
 
-  // Don't show banner if user has full access
-  if (!isRestricted) {
+  // Only show banner when:
+  // 1. Dashboard has finished loading (to avoid flash)
+  // 2. User is loaded (to avoid flash during auth)
+  // 3. Not loading subscription data
+  // 4. Have subscription data
+  // 5. Subscription is expiring soon (<= 7 days)
+  const hasSubscriptionData = subscription !== null && subscription !== undefined;
+  const isExpiring = isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry >= 0);
+  const shouldShow = dashboardLoaded && user && !loading && hasSubscriptionData && isExpiring;
+
+  if (!shouldShow) {
     return null;
   }
 
@@ -82,26 +112,77 @@ export function SubscriptionStatusBanner({
     }
   };
 
+  // Custom styling for expiring soon subscription (light orange/cream background)
+  const isExpiringWarning = isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7);
+
   return (
-    <Alert className={`${className} ${getStatusVariant()}`}>
+    <Alert 
+      className={`${className} ${
+        isExpiringWarning 
+          ? 'bg-orange-50 border-orange-200 text-orange-800 [&>svg]:text-orange-600'
+          : getStatusVariant()
+      }`}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-3">
-          {getStatusIcon()}
+          {isExpiringWarning ? (
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
+          ) : (
+            getStatusIcon()
+          )}
           <div className="flex-1">
-            <AlertTitle className="flex items-center gap-2">
-              Subscription Status
+            <AlertTitle className={`flex items-center gap-2 ${
+              isExpiringWarning ? 'text-orange-800' : ''
+            }`}>
+              {isExpiringWarning ? t('banner.expiringSoon') : 'Subscription Status'}
+              {!isExpiringWarning && (
               <Badge variant={getStatusBadgeVariant()}>
                 {accessLevel.toUpperCase()}
               </Badge>
+              )}
             </AlertTitle>
-            <AlertDescription className="mt-1">
-              {statusMessage}
+            <AlertDescription className={`mt-1 ${
+              isExpiringWarning ? 'text-orange-700' : ''
+            }`}>
+              {isExpiringWarning && subscription?.currentPeriodEnd ? (
+                t('banner.expiresOn', {
+                  date: new Date(subscription.currentPeriodEnd).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })
+                })
+              ) : isExpiringSoon && daysUntilExpiry !== null && daysUntilExpiry <= 1 ? (
+                t('banner.expiresOn', {
+                  date: new Date(subscription?.currentPeriodEnd || Date.now()).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })
+                })
+              ) : (
+                statusMessage
+              )}
             </AlertDescription>
             
-            {gracePeriodEnds && (
+            {!isExpiringWarning && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
               <div className="mt-2 text-sm text-muted-foreground">
                 <Clock className="w-4 h-4 inline mr-1" />
-                Grace period ends: {gracePeriodEnds.toLocaleDateString()}
+                {daysUntilExpiry === 1 
+                  ? 'Còn lại 1 ngày'
+                  : `Còn lại ${daysUntilExpiry} ngày`
+                }
+              </div>
+            )}
+            
+            {gracePeriodEnds && (
+              <div className={`mt-2 text-sm ${
+                isExpiringWarning ? 'text-orange-700' : 'text-muted-foreground'
+              }`}>
+                <Clock className="w-4 h-4 inline mr-1" />
+                {t('banner.gracePeriodEnds', {
+                  date: gracePeriodEnds.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US')
+                })}
               </div>
             )}
           </div>
@@ -116,12 +197,45 @@ export function SubscriptionStatusBanner({
               </Button>
             )}
             
-            {requiresPayment && onPayment && (
-              <Button size="sm" variant="outline" onClick={onPayment}>
-                <CreditCard className="w-4 h-4 mr-1" />
-                Make Payment
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Phone className="w-4 h-4 mr-1" />
+                  {t('banner.contact')}
+                  <ChevronDown className="w-4 h-4 ml-1" />
               </Button>
-            )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    window.open(`tel:${contactPhone}`, '_blank');
+                  }}
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  {t('banner.contactPhone')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    // Zalo: zalo://chat?phone=0764774647 (remove +84 and spaces)
+                    const zaloPhone = contactPhone.replace(/[\s\+]/g, '').replace(/^84/, '');
+                    window.open(`https://zalo.me/${zaloPhone}`, '_blank');
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  {t('banner.contactZalo')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    // WhatsApp: https://wa.me/840764774647 (remove + and spaces)
+                    const whatsappPhone = contactPhone.replace(/[\s\+]/g, '');
+                    window.open(`https://wa.me/${whatsappPhone}`, '_blank');
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  {t('banner.contactWhatsApp')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             {canExportData && onExport && (
               <Button size="sm" variant="outline" onClick={onExport}>
@@ -142,6 +256,7 @@ interface SubscriptionStatusCardProps {
   onUpgrade?: () => void;
   onPayment?: () => void;
   onExport?: () => void;
+  contactPhone?: string;
 }
 
 export function SubscriptionStatusCard({
@@ -149,8 +264,10 @@ export function SubscriptionStatusCard({
   showActions = true,
   onUpgrade,
   onPayment,
-  onExport
+  onExport,
+  contactPhone = '+840764774647'
 }: SubscriptionStatusCardProps) {
+  const t = useSubscriptionTranslations();
   const {
     statusMessage,
     statusColor,
@@ -220,12 +337,45 @@ export function SubscriptionStatusCard({
                     </Button>
                   )}
                   
-                  {requiresPayment && onPayment && (
-                    <Button size="sm" variant="outline" onClick={onPayment}>
-                      <CreditCard className="w-4 h-4 mr-1" />
-                      Make Payment
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="outline">
+                        <Phone className="w-4 h-4 mr-1" />
+                        {t('banner.contact')}
+                        <ChevronDown className="w-4 h-4 ml-1" />
                     </Button>
-                  )}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          window.open(`tel:${contactPhone}`, '_blank');
+                        }}
+                      >
+                        <Phone className="w-4 h-4 mr-2" />
+                        {t('banner.contactPhone')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          // Zalo: zalo://chat?phone=0764774647 (remove +84 and spaces)
+                          const zaloPhone = contactPhone.replace(/[\s\+]/g, '').replace(/^84/, '');
+                          window.open(`https://zalo.me/${zaloPhone}`, '_blank');
+                        }}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        {t('banner.contactZalo')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          // WhatsApp: https://wa.me/840764774647 (remove + and spaces)
+                          const whatsappPhone = contactPhone.replace(/[\s\+]/g, '');
+                          window.open(`https://wa.me/${whatsappPhone}`, '_blank');
+                        }}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        {t('banner.contactWhatsApp')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   
                   {canExportData && onExport && (
                     <Button size="sm" variant="outline" onClick={onExport}>

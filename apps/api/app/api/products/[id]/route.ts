@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withManagementAuth } from '@rentalshop/auth';
-import { productUpdateSchema, handleApiError, ResponseBuilder, uploadToS3, generateAccessUrl, commitStagingFiles } from '@rentalshop/utils';
+import { withPermissions } from '@rentalshop/auth';
+import { productUpdateSchema, handleApiError, ResponseBuilder, uploadToS3, generateAccessUrl, commitStagingFiles, deleteFromS3, extractS3KeyFromUrl } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -50,6 +50,10 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
 /**
  * GET /api/products/[id]
  * Get product by ID
+ * 
+ * Authorization: All roles with 'products.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
   request: NextRequest,
@@ -59,7 +63,7 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withManagementAuth(async (request, { user, userScope }) => {
+  return withPermissions(['products.view'])(async (request, { user, userScope }) => {
     try {
       console.log('🔍 GET /api/products/[id] - Looking for product with ID:', id);
 
@@ -154,6 +158,10 @@ export async function GET(
 /**
  * PUT /api/products/[id]
  * Update product by ID
+ * 
+ * Authorization: All roles with 'products.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function PUT(
   request: NextRequest,
@@ -163,7 +171,7 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withManagementAuth(async (request, { user, userScope }) => {
+  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
     try {
 
       // Check if the ID is numeric (public ID)
@@ -532,6 +540,10 @@ export async function PUT(
 /**
  * DELETE /api/products/[id]
  * Delete product by ID (soft delete)
+ * 
+ * Authorization: All roles with 'products.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function DELETE(
   request: NextRequest,
@@ -541,7 +553,7 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const { id } = resolvedParams;
   
-  return withManagementAuth(async (request, { user, userScope }) => {
+  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
     try {
 
       // Check if the ID is numeric (public ID)
@@ -572,27 +584,50 @@ export async function DELETE(
         throw new Error('Product not found');
       }
 
+      // Parse images from existing product to delete them from S3
+      let imageUrls: string[] = [];
+      if (typeof existingProduct.images === 'string') {
+        try {
+          const parsed = JSON.parse(existingProduct.images);
+          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          imageUrls = existingProduct.images.split(',').filter(Boolean);
+        }
+      } else if (Array.isArray(existingProduct.images)) {
+        imageUrls = existingProduct.images.map(String).filter(Boolean);
+      }
+
+      // Delete all product images from S3 storage
+      if (imageUrls.length > 0) {
+        console.log(`🗑️ Deleting ${imageUrls.length} image(s) from S3 for product ${productId}`);
+        const deletePromises = imageUrls.map(async (imageUrl) => {
+          try {
+            const s3Key = extractS3KeyFromUrl(imageUrl);
+            if (s3Key) {
+              const deleted = await deleteFromS3(s3Key);
+              if (deleted) {
+                console.log(`✅ Deleted image from S3: ${s3Key}`);
+              } else {
+                console.warn(`⚠️ Failed to delete image from S3: ${s3Key}`);
+              }
+            } else {
+              console.warn(`⚠️ Could not extract S3 key from URL: ${imageUrl}`);
+            }
+          } catch (error) {
+            console.error(`❌ Error deleting image ${imageUrl}:`, error);
+          }
+        });
+        await Promise.all(deletePromises);
+      }
+
       // Soft delete by setting isActive to false
       const deletedProduct = await db.products.update(productId, { isActive: false });
       console.log('✅ Product soft deleted successfully:', deletedProduct);
 
-      // Parse images from database response to return array
-      let imageUrls: string[] = [];
-      if (typeof deletedProduct.images === 'string') {
-        try {
-          const parsed = JSON.parse(deletedProduct.images);
-          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
-        } catch {
-          imageUrls = deletedProduct.images.split(',').filter(Boolean);
-        }
-      } else if (Array.isArray(deletedProduct.images)) {
-        imageUrls = deletedProduct.images.map(String).filter(Boolean);
-      }
-
-      // Return product with parsed images
+      // Return product with parsed images (already parsed above)
       const responseProduct = {
         ...deletedProduct,
-        images: imageUrls
+        images: imageUrls // Use already parsed imageUrls from above
       };
 
       return NextResponse.json({

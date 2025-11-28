@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withManagementAuth } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder } from '@rentalshop/utils';
@@ -11,9 +11,12 @@ import { PerformanceMonitor } from '@rentalshop/utils';
 /**
  * GET /api/orders
  * Get orders with filtering, pagination
- * REFACTORED: Now uses unified withAuth pattern
+ * 
+ * Authorization: All roles with 'orders.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withManagementAuth(async (request, { user, userScope }) => {
+export const GET = withPermissions(['orders.view'])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/orders - User: ${user.email} (${user.role})`);
   console.log(`🔍 GET /api/orders - UserScope:`, userScope);
   
@@ -161,9 +164,12 @@ export const GET = withManagementAuth(async (request, { user, userScope }) => {
 /**
  * POST /api/orders
  * Create a new order using simplified database API
- * REFACTORED: Now uses unified withAuth pattern
+ * 
+ * Authorization: All roles with 'orders.create' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const POST = withManagementAuth(async (request, { user, userScope }) => {
+export const POST = withPermissions(['orders.create'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/orders - User: ${user.email} (${user.role})`);
   
   try {
@@ -487,10 +493,13 @@ export const POST = withManagementAuth(async (request, { user, userScope }) => {
 
 /**
  * PUT /api/orders?id={id}
- * Update an order using simplified database API  
- * REFACTORED: Now uses unified withAuth pattern
+ * Update an order using simplified database API
+ * 
+ * Authorization: All roles with 'orders.update' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const PUT = withManagementAuth(async (request, { user, userScope }) => {
+export const PUT = withPermissions(['orders.update'])(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/orders - User: ${user.email} (${user.role})`);
   
   try {

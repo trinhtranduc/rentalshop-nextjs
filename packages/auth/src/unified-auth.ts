@@ -5,9 +5,9 @@
 // Goal: Replace 14+ auth wrappers with 1 unified approach
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, getUserScope, hasAnyRole } from './core';
-import { db } from '@rentalshop/database';
-import { SUBSCRIPTION_STATUS, USER_ROLE, type UserRole } from '@rentalshop/constants';
+import { authenticateRequest, getUserScope, hasAnyRole, hasAnyPermission, type Permission } from './core';
+import { USER_ROLE, type UserRole } from '@rentalshop/constants';
+import { SubscriptionStatusChecker } from './subscription-checker';
 
 // ============================================================================
 // TYPES
@@ -43,197 +43,10 @@ export type AuthWrapper = (handler: AuthenticatedHandler) => (request: NextReque
 /**
  * Check if merchant has active subscription
  * ADMIN users bypass this check
+ * Uses SubscriptionStatusChecker for simplified logic
  */
 async function checkSubscriptionStatus(user: any): Promise<{ success: boolean; response?: NextResponse }> {
-  // ADMIN users bypass subscription checks
-  if (user.role === USER_ROLE.ADMIN) {
-    return { success: true };
-  }
-
-  // Get merchant ID from user
-  const merchantId = user.merchantId || user.merchant?.id;
-  
-  if (!merchantId) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { success: false, message: 'No merchant associated with user', code: 'NO_MERCHANT' },
-        { status: 403 }
-      )
-    };
-  }
-
-  // Get merchant with subscription info
-  const merchant = await db.merchants.findById(merchantId);
-  
-  if (!merchant) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { success: false, message: 'Merchant not found', code: 'MERCHANT_NOT_FOUND' },
-        { status: 404 }
-      )
-    };
-  }
-
-  // Get subscription object (source of truth)
-  const subscription = merchant.subscription;
-  
-  if (!subscription) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { 
-          success: false, 
-          message: 'No active subscription found. Please subscribe to continue.',
-          code: 'NO_SUBSCRIPTION',
-          details: {
-            merchantId: merchant.id,
-            merchantName: merchant.name
-          }
-        },
-        { status: 403 }
-      )
-    };
-  }
-
-  // Use subscription.status (NOT merchant.subscriptionStatus which can be outdated)
-  const subscriptionStatus = subscription.status;
-
-  // Block if subscription is PAUSED
-  if (subscriptionStatus === SUBSCRIPTION_STATUS.PAUSED) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { 
-          success: false, 
-          message: 'Your subscription is paused. Please contact support to reactivate.',
-          code: 'SUBSCRIPTION_PAUSED',
-          details: {
-            status: subscriptionStatus,
-            merchantId: merchant.id,
-            merchantName: merchant.name
-          }
-        },
-        { status: 403 }
-      )
-    };
-  }
-
-  // Block if subscription is CANCELLED
-  if (subscriptionStatus === SUBSCRIPTION_STATUS.CANCELLED) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { 
-          success: false, 
-          message: 'Your subscription has been cancelled. Please contact support to reactivate.',
-          code: 'SUBSCRIPTION_CANCELLED',
-          details: {
-            status: subscriptionStatus,
-            merchantId: merchant.id,
-            merchantName: merchant.name,
-            canceledAt: subscription.canceledAt
-          }
-        },
-        { status: 403 }
-      )
-    };
-  }
-
-  // Block if subscription is EXPIRED
-  if (subscriptionStatus === SUBSCRIPTION_STATUS.EXPIRED) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { 
-          success: false, 
-          message: 'Your subscription has expired. Please renew to continue using the service.',
-          code: 'SUBSCRIPTION_EXPIRED',
-          details: {
-            status: subscriptionStatus,
-            expiredAt: subscription.currentPeriodEnd,
-            merchantId: merchant.id,
-            merchantName: merchant.name
-          }
-        },
-        { status: 403 }
-      )
-    };
-  }
-
-  // Block if subscription is PAST_DUE
-  if (subscriptionStatus === SUBSCRIPTION_STATUS.PAST_DUE) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { 
-          success: false, 
-          message: 'Your subscription payment is past due. Please update your payment method.',
-          code: 'SUBSCRIPTION_PAST_DUE',
-          details: {
-            status: subscriptionStatus,
-            merchantId: merchant.id,
-            merchantName: merchant.name
-          }
-        },
-        { status: 403 }
-      )
-    };
-  }
-
-  // Check if period has ended for active subscriptions
-  if (subscriptionStatus === SUBSCRIPTION_STATUS.ACTIVE && subscription.currentPeriodEnd) {
-    const now = new Date();
-    const periodEnd = new Date(subscription.currentPeriodEnd);
-    
-    if (periodEnd < now) {
-      return {
-        success: false,
-        response: NextResponse.json(
-          { 
-            success: false, 
-            message: 'Your subscription period has ended. Please renew to continue.',
-            code: 'SUBSCRIPTION_PERIOD_ENDED',
-            details: {
-              expiredAt: subscription.currentPeriodEnd,
-              merchantId: merchant.id,
-              merchantName: merchant.name
-            }
-          },
-          { status: 403 }
-        )
-      };
-    }
-  }
-
-  // Check trial expiration
-  if (subscriptionStatus === SUBSCRIPTION_STATUS.TRIAL && subscription.trialEnd) {
-    const now = new Date();
-    const trialEnd = new Date(subscription.trialEnd);
-    
-    if (trialEnd < now) {
-      return {
-        success: false,
-        response: NextResponse.json(
-          { 
-            success: false, 
-            message: 'Your trial period has ended. Please upgrade to a paid plan to continue.',
-            code: 'TRIAL_EXPIRED',
-            details: {
-              trialEndedAt: subscription.trialEnd,
-              merchantId: merchant.id,
-              merchantName: merchant.name
-            }
-          },
-          { status: 403 }
-        )
-      };
-    }
-  }
-
-  // Subscription is active (TRIAL or ACTIVE with valid period)
-  return { success: true };
+  return SubscriptionStatusChecker.check(user);
 }
 
 // ============================================================================
@@ -349,21 +162,58 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
 
 /**
  * Admin-only routes (System-wide access)
+ * @deprecated Use `withPermissions(['system.manage'])` or specific permission instead.
+ * This function is kept for backward compatibility but will be removed in a future version.
+ * 
+ * Example:
+ * ```typescript
+ * // Instead of: withAdminAuth
+ * // Use: withPermissions(['system.manage'])
+ * export const GET = withPermissions(['system.manage'])(async (request, { user, userScope }) => {
+ * ```
  */
 export const withAdminAuth = withAuthRoles(['ADMIN']);
 
 /**
  * Admin and Merchant routes (Organization-level access)
+ * @deprecated Use `withPermissions(['merchant.view'])` or specific permission instead.
+ * This function is kept for backward compatibility but will be removed in a future version.
+ * 
+ * Example:
+ * ```typescript
+ * // Instead of: withMerchantAuth
+ * // Use: withPermissions(['merchant.view'])
+ * export const GET = withPermissions(['merchant.view'])(async (request, { user, userScope }) => {
+ * ```
  */
 export const withMerchantAuth = withAuthRoles(['ADMIN', 'MERCHANT']);
 
 /**
  * All management roles (Admin, Merchant, Outlet Admin - excluding Outlet Staff)
+ * @deprecated Use `withPermissions(['products.manage'])` or specific permission instead.
+ * This function is kept for backward compatibility but will be removed in a future version.
+ * 
+ * Example:
+ * ```typescript
+ * // Instead of: withManagementAuth
+ * // Use: withPermissions(['products.manage']) for product management
+ * // Or: withPermissions(['orders.manage']) for order management
+ * export const POST = withPermissions(['products.manage'])(async (request, { user, userScope }) => {
+ * ```
  */
 export const withManagementAuth = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
 
 /**
  * Outlet-level access (Outlet Admin + Outlet Staff)
+ * @deprecated Use `withPermissions(['outlet.view'])` or specific permission instead.
+ * This function is kept for backward compatibility but will be removed in a future version.
+ * 
+ * Example:
+ * ```typescript
+ * // Instead of: withOutletAuth
+ * // Use: withPermissions(['outlet.view'])
+ * export const GET = withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
+ * ```
  */
 export const withOutletAuth = withAuthRoles(['OUTLET_ADMIN', 'OUTLET_STAFF']);
 
@@ -381,6 +231,126 @@ export const withReadOnlyAuth = withAuthRoles(undefined, { requireActiveSubscrip
  * Admin + Read-only for non-admin users
  */
 export const withAdminOrReadOnlyAuth = withAuthRoles(['ADMIN'], { requireActiveSubscription: false });
+
+// ============================================================================
+// PERMISSION-BASED AUTH (RECOMMENDED - DRY APPROACH)
+// ============================================================================
+
+/**
+ * ✅ RECOMMENDED: Check permissions from ROLE_PERMISSIONS instead of hardcoding roles
+ * 
+ * This approach is DRY and maintainable:
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * - Automatically reads permissions from user's role in ROLE_PERMISSIONS
+ * - When you change permissions in ROLE_PERMISSIONS, all endpoints automatically update
+ * - No need to update multiple endpoints when permissions change
+ * 
+ * How it works:
+ * 1. User has a role (e.g., OUTLET_STAFF)
+ * 2. Function checks ROLE_PERMISSIONS[user.role] for required permission
+ * 3. If permission exists in role's permissions → access granted
+ * 4. If permission doesn't exist → access denied (403)
+ * 
+ * Example: OUTLET_STAFF permissions change
+ * - Before: ROLE_PERMISSIONS['OUTLET_STAFF'] = ['products.manage', 'products.view']
+ *   → withPermissions(['products.manage']) allows OUTLET_STAFF ✅
+ * - After: ROLE_PERMISSIONS['OUTLET_STAFF'] = ['products.view'] (removed products.manage)
+ *   → withPermissions(['products.manage']) denies OUTLET_STAFF ❌
+ *   → withPermissions(['products.view']) still allows OUTLET_STAFF ✅
+ * - No code changes needed in endpoints! Just update ROLE_PERMISSIONS.
+ * 
+ * Usage:
+ * ```typescript
+ * // Instead of: withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])
+ * // Use: withPermissions(['products.view'])
+ * // This automatically includes all roles that have 'products.view' in ROLE_PERMISSIONS
+ * export const GET = withPermissions(['products.view'])(async (request, { user, userScope }) => {
+ *   // All roles with 'products.view' permission can access
+ *   // Currently: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ *   // If you remove 'products.view' from OUTLET_STAFF in ROLE_PERMISSIONS,
+ *   // this endpoint will automatically deny OUTLET_STAFF without code changes
+ * });
+ * 
+ * // Multiple permissions (OR logic - user needs ANY of these)
+ * export const POST = withPermissions(['products.manage', 'products.create'])(async (request, { user, userScope }) => {
+ *   // User needs either 'products.manage' OR 'products.create'
+ *   // Checks ROLE_PERMISSIONS[user.role] for both permissions
+ * });
+ * ```
+ */
+export function withPermissions(
+  requiredPermissions: Permission[],
+  options?: { requireActiveSubscription?: boolean }
+): AuthWrapper {
+  const requireSubscription = options?.requireActiveSubscription !== false; // Default to true
+  
+  return function (handler: AuthenticatedHandler) {
+    return async function (request: NextRequest): Promise<NextResponse> {
+      const url = new URL(request.url);
+      const pathname = url.pathname;
+      console.log(`🔐 [AUTH] Permission check for ${request.method} ${pathname}`);
+      console.log(`🔐 [AUTH] Required permissions: ${requiredPermissions.join(', ')}`);
+      
+      try {
+        // Step 1: Authenticate request
+        const authResult = await authenticateRequest(request);
+        if (!authResult.success) {
+          console.log('❌ [AUTH] Authentication failed - returning 401');
+          return authResult.response;
+        }
+
+        const user = authResult.user;
+        console.log(`✅ [AUTH] User authenticated: ${user.email} (${user.role})`);
+
+        // Step 2: Check permissions (reads from ROLE_PERMISSIONS automatically)
+        if (!hasAnyPermission(user, requiredPermissions)) {
+          const { ROLE_PERMISSIONS } = await import('./core');
+          const userPermissions = ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS] || [];
+          console.log(`❌ [AUTH] Insufficient permissions: User ${user.role} does not have any of [${requiredPermissions.join(', ')}]`);
+          console.log(`❌ [AUTH] User's permissions: [${userPermissions.join(', ')}]`);
+          
+          return NextResponse.json(
+            { 
+              success: false,
+              code: 'INSUFFICIENT_PERMISSIONS',
+              message: 'Insufficient permissions',
+              required: requiredPermissions,
+              current: user.role,
+              userPermissions: userPermissions
+            }, 
+            { status: 403 }
+          );
+        }
+        console.log(`✅ [AUTH] Permission authorized: User has required permission(s)`);
+
+        // Step 3: Check subscription status if required
+        if (requireSubscription) {
+          console.log('🔍 Checking subscription status...');
+          const subscriptionCheck = await checkSubscriptionStatus(user);
+          if (!subscriptionCheck.success && subscriptionCheck.response) {
+            console.log('❌ Subscription check failed');
+            return subscriptionCheck.response;
+          }
+          console.log('✅ Subscription is active');
+        }
+
+        // Step 4: Get user scope for context
+        const userScope = getUserScope(user);
+
+        // Step 5: Call the handler with authenticated context
+        const context: AuthContext = { user, userScope };
+        return await handler(request, context);
+
+      } catch (error) {
+        console.error('🚨 Auth wrapper error:', error);
+        return NextResponse.json(
+          { error: 'Authentication error' },
+          { status: 500 }
+        );
+      }
+    };
+  };
+}
 
 // ============================================================================
 // MAIN EXPORT - Use this in API routes

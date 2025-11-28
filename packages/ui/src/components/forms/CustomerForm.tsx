@@ -5,6 +5,7 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { cn } from '../../lib/utils';
+import { validateEmail } from '@rentalshop/utils';
 import type { CustomerInput } from '@rentalshop/types';
 
 // Form-specific interface with string date for easier form handling
@@ -80,8 +81,13 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     // lastName is optional - no validation needed
     // phone is optional - no validation needed
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+    // Validate email format if provided (email is optional)
+    const emailError = validateEmail(formData.email, {
+      required: false,
+      invalidMessage: 'Invalid email format'
+    });
+    if (emailError) {
+      newErrors.email = emailError;
     }
 
     if (!formData.merchantId) {
@@ -109,10 +115,28 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   const handleInputChange = (field: keyof CustomerFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Clear error when user starts typing
+    // Validate email on change if field is email
+    if (field === 'email') {
+      const emailError = validateEmail(value, {
+        required: false,
+        invalidMessage: 'Invalid email format'
+      });
+      setErrors(prev => ({ ...prev, email: emailError }));
+    } else {
+      // Clear error when user starts typing for other fields
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
+    }
+  };
+
+  const handleEmailBlur = () => {
+    // Validate email when user leaves the field
+    const emailError = validateEmail(formData.email, {
+      required: false,
+      invalidMessage: 'Invalid email format'
+    });
+    setErrors(prev => ({ ...prev, email: emailError }));
   };
 
   return (
@@ -177,6 +201,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
+                onBlur={handleEmailBlur}
                 placeholder="Enter email address"
                 className={cn(
                   "w-full",

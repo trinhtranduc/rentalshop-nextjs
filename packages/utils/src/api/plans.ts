@@ -54,7 +54,7 @@ export const plansApi = {
     if (filters.isPopular !== undefined) params.append('isPopular', filters.isPopular.toString());
     if (filters.includeInactive) params.append('includeInactive', 'true');
     if (filters.limit) params.append('limit', filters.limit.toString());
-    if (filters.offset) params.append('offset', filters.offset.toString());
+    if (filters.page) params.append('page', filters.page.toString());
     if (filters.sortBy) params.append('sortBy', filters.sortBy);
     if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
     

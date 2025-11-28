@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast, ReceiptPreviewModal } from '@rentalshop/ui';
+import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast, ReceiptPreviewModal, LoadingIndicator } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { orderBreadcrumbs } from '@rentalshop/utils';
 
@@ -237,26 +237,6 @@ export default function OrderDetailPage() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto p-6">
-          {/* Back Button Skeleton */}
-          <div className="mb-6">
-            <div className="w-32 h-10 bg-gray-200 rounded-md animate-pulse"></div>
-          </div>
-          
-          {/* Order Detail Skeleton */}
-          <OrderDetail
-            order={{} as Order}
-            loading={true}
-            showActions={false}
-          />
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -319,6 +299,16 @@ export default function OrderDetailPage() {
 
   return (
     <PageWrapper>
+      {/* Center Loading Indicator - Shows when waiting for API */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+          <LoadingIndicator 
+            variant="circular" 
+            size="lg"
+            message={tc('labels.loading') || 'Loading order...'}
+          />
+        </div>
+      )}
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
 

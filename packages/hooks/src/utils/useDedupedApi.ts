@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 /**
  * ✅ MODERN API DEDUPLICATION HOOK - Clean & Simple
@@ -57,7 +57,7 @@ export function useDedupedApi<TFilters, TData>(
     staleTime = 30000, // 30 seconds
     cacheTime = 300000, // 5 minutes
     refetchOnWindowFocus = false,
-    refetchOnMount = true // Default to true for backwards compatibility
+    refetchOnMount = false // Default to false to prevent infinite loops
   } = options;
 
   // ============================================================================
@@ -68,7 +68,7 @@ export function useDedupedApi<TFilters, TData>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isStale, setIsStale] = useState(false);
-  const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const [refetchKey, setRefetchKey] = useState(0); // ✅ Official pattern: State trigger for manual refetch
   
   // ============================================================================
   // REFS - For tracking and avoiding stale updates
@@ -77,30 +77,56 @@ export function useDedupedApi<TFilters, TData>(
   const fetchIdRef = useRef(0);
   const filtersRef = useRef<string>('');
   const fetchFnRef = useRef(fetchFn); // ✅ Store stable reference to fetchFn
+  const isMountedRef = useRef(true); // ✅ Track mount state to prevent memory leaks
   
   // Update fetchFnRef when fetchFn changes
   fetchFnRef.current = fetchFn;
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-  // Generate cache key from filters
-  const cacheKey = JSON.stringify(filters);
+  // Generate stable cache key from filters (normalize undefined values)
+  // Filters now use strings instead of Date objects for better stability
+  const cacheKey = useMemo(() => {
+    // Create normalized filters object (remove undefined, sort keys for consistency)
+    const normalized: any = {};
+    Object.keys(filters as any)
+      .sort()
+      .forEach(key => {
+        const value = (filters as any)[key];
+        // Only include defined, non-null, non-empty values
+        if (value !== undefined && value !== null && value !== '') {
+          normalized[key] = value; // Already string (or primitive), no conversion needed
+        }
+      });
+    return JSON.stringify(normalized);
+  }, [filters]);
 
   // ============================================================================
   // MAIN FETCH LOGIC - Single source of truth
   // ============================================================================
   
   useEffect(() => {
-    // Skip if disabled
-    if (!enabled) {
-      setLoading(false);
+    // Skip if disabled or unmounted
+    if (!enabled || !isMountedRef.current) {
+      if (!enabled) setLoading(false);
       return;
     }
 
-    // Skip if filters haven't actually changed
-    if (cacheKey === filtersRef.current && data !== null) {
+    // Official pattern: Skip if filters haven't actually changed
+    // Only fetch if cacheKey changed OR manual refetch was triggered
+    const isManualRefetch = refetchKey > 0;
+    if (cacheKey === filtersRef.current && !isManualRefetch) {
       console.log('🔍 useDedupedApi: Filters unchanged, skipping fetch');
       return;
     }
     
+    // Update ref BEFORE starting fetch to prevent duplicate calls
     filtersRef.current = cacheKey;
 
     // Increment fetch ID for race condition protection
@@ -123,25 +149,31 @@ export function useDedupedApi<TFilters, TData>(
         if (refetchOnMount) {
           // refetchOnMount: true - Always fetch new data, but show cache first
           console.log(`✅ Fetch #${currentFetchId}: Cache HIT (fresh) - but refetchOnMount=true, showing cache and fetching new data`);
-          setData(cached.data);
-          setLoading(false);
-          setError(null);
-          setIsStale(false);
+          if (isMountedRef.current) {
+            setData(cached.data);
+            setLoading(false);
+            setError(null);
+            setIsStale(false);
+          }
           // Continue to fetch new data below
         } else {
           // refetchOnMount: false - Use cache and skip fetch
           console.log(`✅ Fetch #${currentFetchId}: Cache HIT (fresh) - refetchOnMount=false, using cache`);
-          setData(cached.data);
-          setLoading(false);
-          setError(null);
-          setIsStale(false);
+          if (isMountedRef.current) {
+            setData(cached.data);
+            setLoading(false);
+            setError(null);
+            setIsStale(false);
+          }
           return; // Skip fetch
         }
       } else {
         // Cache is stale - show it while fetching new data (stale-while-revalidate)
         console.log(`⏰ Fetch #${currentFetchId}: Cache HIT (stale) - showing stale data`);
-        setData(cached.data);
-        setIsStale(true);
+        if (isMountedRef.current) {
+          setData(cached.data);
+          setIsStale(true);
+        }
       }
     }
 
@@ -155,8 +187,8 @@ export function useDedupedApi<TFilters, TData>(
       
       existingRequest
         .then((result) => {
-          // Only update if this is still the latest fetch
-          if (currentFetchId === fetchIdRef.current) {
+          // Only update if this is still the latest fetch and mounted
+          if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
             setData(result);
             setLoading(false);
             setError(null);
@@ -167,8 +199,8 @@ export function useDedupedApi<TFilters, TData>(
           }
         })
         .catch((err) => {
-          // Only update error if this is still the latest fetch
-          if (currentFetchId === fetchIdRef.current) {
+          // Only update error if this is still the latest fetch and mounted
+          if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
             const error = err instanceof Error ? err : new Error('Unknown error');
             setError(error);
             setLoading(false);
@@ -183,8 +215,11 @@ export function useDedupedApi<TFilters, TData>(
     // STEP 3: Make new API request
     // ========================================================================
     
-    setLoading(true);
-    setError(null);
+    // Only update state if still mounted
+    if (isMountedRef.current) {
+      setLoading(true);
+      setError(null);
+    }
 
     const requestPromise = fetchFnRef.current(filters); // ✅ Use ref
     requestCache.set(cacheKey, requestPromise);
@@ -215,11 +250,13 @@ export function useDedupedApi<TFilters, TData>(
           }
         }
 
-        // Update state
-        setData(result);
-        setError(null);
-        setIsStale(false);
-        setLoading(false);
+        // Update state only if still mounted
+        if (isMountedRef.current) {
+          setData(result);
+          setError(null);
+          setIsStale(false);
+          setLoading(false);
+        }
       })
       .catch((err) => {
         // Race condition check
@@ -229,8 +266,11 @@ export function useDedupedApi<TFilters, TData>(
         }
 
         const error = err instanceof Error ? err : new Error('Unknown error');
-        setError(error);
-        setLoading(false);
+        // Update state only if still mounted
+        if (isMountedRef.current) {
+          setError(error);
+          setLoading(false);
+        }
         console.error(`❌ Fetch #${currentFetchId}: ERROR:`, error);
       })
       .finally(() => {
@@ -238,7 +278,23 @@ export function useDedupedApi<TFilters, TData>(
         requestCache.delete(cacheKey);
       });
 
-  }, [cacheKey, enabled, staleTime, cacheTime, refetchTrigger]); // ✅ Add refetchTrigger dependency
+  }, [cacheKey, enabled, staleTime, cacheTime, refetchKey]); // ✅ Official pattern: refetchKey triggers manual refetch
+
+  // ============================================================================
+  // RESET REFETCH KEY - Prevent infinite loops
+  // ============================================================================
+  
+  useEffect(() => {
+    // Reset refetchKey after it's been used (prevents infinite loops)
+    // Only reset if refetchKey > 0 and we're not currently fetching
+    if (refetchKey > 0 && !loading) {
+      // Use a small delay to ensure the fetch effect has completed
+      const timer = setTimeout(() => {
+        setRefetchKey(0);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [refetchKey, loading]);
 
   // ============================================================================
   // WINDOW FOCUS REFETCH (Optional)
@@ -275,11 +331,13 @@ export function useDedupedApi<TFilters, TData>(
     
     console.log('🔄 Manual refetch triggered');
     
-    // Clear cache and trigger refetch by updating state
+    // Official pattern: Clear cache and trigger refetch via state update
     dataCache.delete(cacheKey);
     filtersRef.current = '';
     fetchIdRef.current += 1;
-    setRefetchTrigger(prev => prev + 1); // ✅ Trigger useEffect via state change
+    
+    // ✅ Official pattern: State update triggers useEffect re-run
+    setRefetchKey(prev => prev + 1);
   }, [enabled, cacheKey]);
 
   return {

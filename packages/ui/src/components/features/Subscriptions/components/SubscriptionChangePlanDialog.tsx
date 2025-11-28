@@ -21,19 +21,30 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Badge
+  Badge,
+  Input,
+  Textarea
 } from '@rentalshop/ui';
 import { formatDate, formatCurrency } from '@rentalshop/ui';
-import { ArrowRight, Check, X, Clock, DollarSign, HelpCircle, Info } from 'lucide-react';
-import type { Subscription, Plan, BillingPeriod } from '@rentalshop/types';
-import { calculateProration } from '@rentalshop/utils';
+import { ArrowRight, Check, Clock } from 'lucide-react';
+import type { Subscription, Plan, BillingInterval } from '@rentalshop/types';
+
+import { BILLING_CYCLES_ARRAY } from '@rentalshop/constants';
+
+type BillingCycleConfig = {
+  value: BillingInterval;
+  label: string;
+  months: number;
+  discount: number;
+  description: string;
+};
 
 interface SubscriptionChangePlanDialogProps {
   subscription: Subscription | null;
   plans: Plan[];
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (subscription: Subscription, newPlanId: number, period: BillingPeriod) => void;
+  onConfirm: (subscription: Subscription, newPlanId: number, interval: BillingInterval, startDate?: Date, reason?: string, sendEmail?: boolean) => void;
   loading?: boolean;
 }
 
@@ -46,15 +57,32 @@ export function SubscriptionChangePlanDialog({
   loading = false
 }: SubscriptionChangePlanDialogProps) {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<BillingPeriod>(1);
+  const [selectedInterval, setSelectedInterval] = useState<BillingInterval>('monthly');
+  const [startDate, setStartDate] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
+  const [sendEmail, setSendEmail] = useState<boolean>(true);
+
+  // Initialize start date to today when dialog opens
+  React.useEffect(() => {
+    if (isOpen && !startDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      setStartDate(today.toISOString().slice(0, 16));
+    }
+  }, [isOpen, startDate]);
+
 
   const handleSubmit = () => {
     if (!subscription || !selectedPlanId) return;
-    onConfirm(subscription, selectedPlanId, selectedPeriod);
+    const effectiveStartDate = startDate ? new Date(startDate) : new Date();
+    onConfirm(subscription, selectedPlanId, selectedInterval, effectiveStartDate, reason || undefined, sendEmail);
   };
 
   const handleClose = () => {
     setSelectedPlanId(null);
+    setStartDate('');
+    setReason('');
+    setSendEmail(true);
     onClose();
   };
 
@@ -111,42 +139,54 @@ export function SubscriptionChangePlanDialog({
   };
 
   const features = getFeatureComparison(normalizedCurrentPlan, normalizedSelectedPlan);
-  const [showProrationInfo, setShowProrationInfo] = useState(false);
 
   // Calculate pricing dynamically from basePrice and discount percentages
   // This ensures we always use API data, not hard-coded values
-  const calculatePricingForPeriod = (plan: Plan, period: BillingPeriod) => {
+  const calculatePricingForInterval = (plan: Plan, interval: BillingInterval) => {
+    const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === interval);
+    if (!cycleConfig) return { price: 0, discount: 0, savings: 0, discountedPrice: 0, monthlyEquivalent: 0 };
+    
     const basePrice = plan.basePrice || 0;
-    const currency = plan.currency || 'USD';
-    
-    // Discount percentages: Monthly (0%), Quarterly (0%), 6 Months (5%), Yearly (10%)
-    let discount = 0;
-    let months = 1;
-    
-    if (period === 1) {
-      months = 1;
-      discount = 0;
-    } else if (period === 3) {
-      months = 3;
-      discount = 0;
-    } else if (period === 6) {
-      months = 6;
-      discount = 5;
-    } else if (period === 12) {
-      months = 12;
-      discount = 10;
-    }
-    
+    const months = cycleConfig.months;
+    const discount = cycleConfig.discount / 100; // Convert percentage to decimal
     const totalBasePrice = basePrice * months;
-    const discountAmount = (totalBasePrice * discount) / 100;
+    const discountAmount = totalBasePrice * discount;
     const finalPrice = totalBasePrice - discountAmount;
     
     return {
       price: finalPrice,
-      discount,
+      discount: cycleConfig.discount,
       savings: discountAmount,
       discountedPrice: finalPrice,
       monthlyEquivalent: finalPrice / months
+    };
+  };
+
+  // Calculate end date from start date and billing interval
+  const calculateEndDate = (startDateStr: string, interval: BillingInterval): Date | null => {
+    if (!startDateStr) return null;
+    const start = new Date(startDateStr);
+    const end = new Date(start);
+    const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === interval);
+    if (!cycleConfig) return null;
+    
+    end.setMonth(end.getMonth() + cycleConfig.months);
+    return end;
+  };
+
+  // Calculate duration in days and months
+  const calculateDuration = (startDateStr: string, interval: BillingInterval): { days: number; months: number } | null => {
+    const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === interval);
+    if (!cycleConfig) return null;
+    
+    const start = new Date(startDateStr);
+    const end = calculateEndDate(startDateStr, interval);
+    if (!end) return null;
+    
+    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return {
+      days,
+      months: cycleConfig.months
     };
   };
 
@@ -165,47 +205,15 @@ export function SubscriptionChangePlanDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-6 pr-1">
-          {/* Current Subscription Info */}
-          <Card className="bg-blue-50 border-blue-200">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Current Subscription Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          {/* Current Plan Info - Simplified */}
+          <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div>
-                  <Label className="text-xs text-gray-600">Current Plan</Label>
-                  <p className="font-medium mt-1">{currentPlan?.name || 'N/A'}</p>
+              <p className="text-sm text-gray-600">Current Plan</p>
+              <p className="font-semibold">{currentPlan?.name || 'N/A'}</p>
                 </div>
-                <div>
-                  <Label className="text-xs text-gray-600">Current Period Start</Label>
-                  <p className="font-medium mt-1">
-                    {subscription.currentPeriodStart 
-                      ? formatDate(subscription.currentPeriodStart) 
-                      : 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-600">Current Period End</Label>
-                  <p className="font-medium mt-1">
-                    {subscription.currentPeriodEnd 
-                      ? formatDate(subscription.currentPeriodEnd) 
-                      : 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-600">Next Billing Date</Label>
-                  <p className="font-medium mt-1">
-                    {subscription.currentPeriodEnd 
-                      ? formatDate(subscription.currentPeriodEnd) 
-                      : 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-600">Current Amount</Label>
-                  <p className="font-medium mt-1">
+            <div className="text-right">
+              <p className="text-sm text-gray-600">Current Amount</p>
+              <p className="font-semibold">
                     {formatCurrency(
                       subscription.amount || 0, 
                       (subscription.currency || currentPlan?.currency || 'USD') as any
@@ -213,48 +221,40 @@ export function SubscriptionChangePlanDialog({
                     /{subscription.interval || 'month'}
                   </p>
                 </div>
-                <div>
-                  <Label className="text-xs text-gray-600">Status</Label>
-                  <p className="font-medium mt-1">
-                    <Badge variant="outline">{subscription.status}</Badge>
-                  </p>
-                </div>
-                <div className="col-span-2">
-                  <Label className="text-xs text-gray-600">Days Remaining</Label>
-                  <p className="font-medium mt-1">
-                    {subscription.currentPeriodEnd 
-                      ? Math.max(0, Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-                      : 'N/A'} days
-                  </p>
-                </div>
               </div>
-            </CardContent>
-          </Card>
 
           {/* Billing Period Selection */}
-          <div className="space-y-4">
-            <Label className="text-lg font-semibold">Billing Period</Label>
-            <Select value={selectedPeriod.toString()} onValueChange={(value) => setSelectedPeriod(parseInt(value) as BillingPeriod)}>
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Billing Period</Label>
+            <Select value={selectedInterval} onValueChange={(value) => setSelectedInterval(value as BillingInterval)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select billing period" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">Monthly (0% discount)</SelectItem>
-                <SelectItem value="3">Quarterly (0% discount)</SelectItem>
-                <SelectItem value="6">6 Months (5% discount)</SelectItem>
-                <SelectItem value="12">Yearly (10% discount)</SelectItem>
+                {BILLING_CYCLES_ARRAY.map((cycle: BillingCycleConfig) => (
+                  <SelectItem key={cycle.value} value={cycle.value}>
+                    {cycle.label} {cycle.discount > 0 && `(${cycle.discount}% off)`}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           {/* Available Plans */}
-          <div className="space-y-4">
-            <Label className="text-lg font-semibold">Select New Plan</Label>
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Select New Plan</Label>
+            {plans.length === 0 && (
+              <Alert>
+                <AlertDescription className="text-yellow-600">
+                  ⚠️ No plans available. Please ensure plans are loaded from the database.
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {normalizedPlans.map((plan) => {
                 // Calculate pricing dynamically from basePrice (from API)
                 // This ensures we always use API data, not hard-coded values
-                const periodPricing = calculatePricingForPeriod(plan, selectedPeriod);
+                const periodPricing = calculatePricingForInterval(plan, selectedInterval);
                 
                 return (
                   <Card 
@@ -282,9 +282,14 @@ export function SubscriptionChangePlanDialog({
                             {formatCurrency(periodPricing.price, plan.currency as any)}
                           </div>
                           <div className="text-sm text-gray-600">
-                            {selectedPeriod === 1 ? 'per month' : 
-                             selectedPeriod === 3 ? 'per quarter' : 
-                             selectedPeriod === 6 ? 'every 6 months' : 'per year'}
+                            {(() => {
+                              const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
+                              if (!cycleConfig) return 'per month';
+                              if (cycleConfig.months === 1) return 'per month';
+                              if (cycleConfig.months === 3) return 'per quarter';
+                              if (cycleConfig.months === 6) return 'every 6 months';
+                              return 'per year';
+                            })()}
                           </div>
                           {periodPricing.discount > 0 && (
                             <div className="flex items-center justify-center gap-2 mt-1">
@@ -311,215 +316,85 @@ export function SubscriptionChangePlanDialog({
             </div>
           </div>
 
-          {/* Change Summary */}
-          {selectedPlan && currentPlan && (
-            <Card className="bg-green-50 border-green-200">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Plan Change Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Plan Comparison */}
-                  <div className="grid grid-cols-2 gap-4">
+
+
+          {/* Summary - Show when plan is selected */}
+          {selectedPlan && (
+            <div className="space-y-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              {(() => {
+                const newPricing = calculatePricingForInterval(selectedPlan, selectedInterval);
+                const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600">New Plan</p>
+                        <p className="font-semibold">{selectedPlan.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Billing Period</p>
+                        <p className="font-semibold">{cycleConfig?.label || selectedInterval}</p>
+                      </div>
                     <div>
-                      <Label className="text-xs text-gray-600">Current Plan</Label>
-                      <p className="font-semibold mt-1">{currentPlan.name}</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {formatCurrency(currentPlan.basePrice, currentPlan.currency as any)}/month
+                        <p className="text-gray-600">Total Price</p>
+                        <p className="font-bold text-lg">
+                          {formatCurrency(newPricing.price, selectedPlan.currency as any)}
                       </p>
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-600">New Plan</Label>
-                      <p className="font-semibold mt-1 text-green-700">{selectedPlan.name}</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {formatCurrency(selectedPlan.basePrice, selectedPlan.currency as any)}/month
+                        <p className="text-gray-600">Monthly Equivalent</p>
+                        <p className="font-semibold">
+                          {formatCurrency(newPricing.monthlyEquivalent, selectedPlan.currency as any)}/month
                       </p>
                     </div>
                   </div>
 
-                  {/* Pricing Details */}
-                  <div className="border-t pt-4">
+                    {/* Start Date Selection */}
+                    <div className="space-y-2 border-t pt-4">
+                      <Label htmlFor="startDate" className="text-sm font-semibold">
+                        Start Date & Time
+                      </Label>
+                      <Input
+                        id="startDate"
+                        type="datetime-local"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+
+                    {/* Reason for Change */}
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Billing Period:</span>
-                        <span className="font-medium">
-                          {selectedPeriod === 1 ? 'Monthly' : 
-                           selectedPeriod === 3 ? 'Quarterly' : 
-                           selectedPeriod === 6 ? '6 Months' : 'Yearly'}
-                        </span>
-                      </div>
-                      {(() => {
-                        const newPricing = calculatePricingForPeriod(selectedPlan, selectedPeriod);
-                        const newMonthlyPrice = newPricing.monthlyEquivalent;
-                        
-                        // Calculate proration for remaining days in current period
-                        const currentPeriodStart = subscription.currentPeriodStart 
-                          ? new Date(subscription.currentPeriodStart) 
-                          : new Date();
-                        const currentPeriodEnd = subscription.currentPeriodEnd 
-                          ? new Date(subscription.currentPeriodEnd) 
-                          : new Date();
-                        const currentMonthlyPrice = subscription.amount || currentPlan.basePrice || 0;
-                        
-                        const proration = calculateProration(
-                          {
-                            amount: currentMonthlyPrice,
-                            currentPeriodStart,
-                            currentPeriodEnd
-                          },
-                          newMonthlyPrice,
-                          new Date()
-                        );
-                        
-                        return (
-                          <>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">New Period Price:</span>
-                              <span className="font-medium">
-                                {formatCurrency(newPricing.price, selectedPlan.currency as any)}
-                              </span>
-                            </div>
-                            {newPricing.discount > 0 && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Discount:</span>
-                                <span className="font-medium text-green-600">
-                                  {newPricing.discount}% (Save {formatCurrency(newPricing.savings, selectedPlan.currency as any)})
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Monthly Equivalent:</span>
-                              <span className="font-medium">
-                                {formatCurrency(newPricing.monthlyEquivalent, selectedPlan.currency as any)}/month
-                              </span>
+                      <Label htmlFor="reason" className="text-sm font-semibold">
+                        Reason (Optional)
+                      </Label>
+                      <Textarea
+                        id="reason"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="Reason for change..."
+                        rows={2}
+                        className="w-full"
+                      />
                             </div>
                             
-                            {/* Proration Calculation */}
-                            {proration.daysRemaining > 0 && (
-                              <div className="border-t pt-3 mt-3">
-                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <p className="text-xs font-semibold text-yellow-800">Proration Calculation:</p>
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowProrationInfo(!showProrationInfo)}
-                                      className="text-yellow-700 hover:text-yellow-900 transition-colors"
-                                      title="How is proration calculated?"
-                                    >
-                                      <HelpCircle className="h-4 w-4" />
-                                    </button>
-                                  </div>
-                                  
-                                  {/* Proration Info Tooltip */}
-                                  {showProrationInfo && (
-                                    <div className="mb-2 p-2 bg-white border border-yellow-300 rounded text-xs text-gray-700">
-                                      <div className="flex items-start gap-2">
-                                        <Info className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                                        <div className="space-y-1">
-                                          <p className="font-semibold text-yellow-800">How Proration Works:</p>
-                                          <p>• <strong>Days Remaining:</strong> {proration.daysRemaining} days left in current billing period</p>
-                                          <p>• <strong>Price Difference:</strong> New plan ({formatCurrency(newMonthlyPrice, (selectedPlan.currency || 'USD') as any)}) - Current plan ({formatCurrency(currentMonthlyPrice, (currentPlan.currency || 'USD') as any)}) = {formatCurrency(Math.abs(newMonthlyPrice - currentMonthlyPrice), (selectedPlan.currency || 'USD') as any)}/month</p>
-                                          <p>• <strong>Daily Rate:</strong> {formatCurrency(Math.abs(newMonthlyPrice - currentMonthlyPrice), (selectedPlan.currency || 'USD') as any)} ÷ 30 days = {formatCurrency(Math.abs(newMonthlyPrice - currentMonthlyPrice) / 30, (selectedPlan.currency || 'USD') as any)}/day</p>
-                                          <p>• <strong>Prorated Amount:</strong> {formatCurrency(Math.abs(newMonthlyPrice - currentMonthlyPrice) / 30, (selectedPlan.currency || 'USD') as any)} × {proration.daysRemaining} days = {formatCurrency(proration.chargeAmount || proration.creditAmount, (selectedPlan.currency || 'USD') as any)}</p>
-                                          {proration.isUpgrade && (
-                                            <p className="text-orange-600 font-medium">• You will be charged this amount for the remaining {proration.daysRemaining} days</p>
-                                          )}
-                                          {proration.isDowngrade && (
-                                            <p className="text-green-600 font-medium">• You will receive this credit for the remaining {proration.daysRemaining} days</p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div className="space-y-1 text-xs">
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">Days Remaining in Current Period:</span>
-                                      <span className="font-medium">{proration.daysRemaining} days</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">Current Plan Monthly Price:</span>
-                                      <span className="font-medium">
-                                        {formatCurrency(currentMonthlyPrice, (currentPlan.currency || 'USD') as any)}/month
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">New Plan Monthly Price:</span>
-                                      <span className="font-medium">
-                                        {formatCurrency(newMonthlyPrice, (selectedPlan.currency || 'USD') as any)}/month
-                                      </span>
-                                    </div>
-                                    {proration.isUpgrade && proration.chargeAmount > 0 && (
-                                      <div className="flex justify-between pt-1 border-t">
-                                        <span className="text-gray-700 font-medium">Additional Charge (Prorated):</span>
-                                        <span className="font-bold text-orange-600">
-                                          +{formatCurrency(proration.chargeAmount, (selectedPlan.currency || 'USD') as any)}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {proration.isDowngrade && proration.creditAmount > 0 && (
-                                      <div className="flex justify-between pt-1 border-t">
-                                        <span className="text-gray-700 font-medium">Credit (Prorated):</span>
-                                        <span className="font-bold text-green-600">
-                                          -{formatCurrency(proration.creditAmount, (selectedPlan.currency || 'USD') as any)}
-                                        </span>
-                                      </div>
-                                    )}
-                                    <p className="text-xs text-gray-500 mt-2 italic">
-                                      {proration.reason}
-                                    </p>
-                                  </div>
-                                </div>
+                    {/* Send Email Notification */}
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="sendEmail"
+                        checked={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <Label htmlFor="sendEmail" className="text-sm font-normal cursor-pointer">
+                        Send email notification to merchant
+                      </Label>
                               </div>
-                            )}
                           </>
                         );
                       })()}
                     </div>
-                  </div>
-
-                  {/* Effective Date Info */}
-                  <Alert>
-                    <AlertDescription>
-                      <div className="space-y-1">
-                        <p className="font-medium text-sm">Important Information:</p>
-                        <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
-                          <li>The plan change will take effect immediately (today: {formatDate(new Date())})</li>
-                          <li>New billing cycle starts from today with the selected billing period</li>
-                          <li>Next billing date: {(() => {
-                            const newPricing = calculatePricingForPeriod(selectedPlan, selectedPeriod);
-                            const periodDays = selectedPeriod === 1 ? 30 : selectedPeriod === 3 ? 90 : selectedPeriod === 6 ? 180 : 365;
-                            const nextBilling = new Date();
-                            nextBilling.setDate(nextBilling.getDate() + periodDays);
-                            return formatDate(nextBilling);
-                          })()}</li>
-                          {(() => {
-                            const currentPeriodEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
-                            const proration = calculateProration(
-                              {
-                                amount: subscription.amount || currentPlan.basePrice || 0,
-                                currentPeriodStart: subscription.currentPeriodStart ? new Date(subscription.currentPeriodStart) : new Date(),
-                                currentPeriodEnd
-                              },
-                              calculatePricingForPeriod(selectedPlan, selectedPeriod).monthlyEquivalent,
-                              new Date()
-                            );
-                            if (proration.chargeAmount > 0) {
-                              return <li className="text-orange-600">You will be charged {formatCurrency(proration.chargeAmount, (selectedPlan.currency || 'USD') as any)} for the prorated upgrade</li>;
-                            } else if (proration.creditAmount > 0) {
-                              return <li className="text-green-600">You will receive a credit of {formatCurrency(proration.creditAmount, (selectedPlan.currency || 'USD') as any)} for the prorated downgrade</li>;
-                            }
-                            return null;
-                          })()}
-                        </ul>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              </CardContent>
-            </Card>
           )}
         </div>
 

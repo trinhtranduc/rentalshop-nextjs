@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withReadOnlyAuth } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -9,6 +9,11 @@ export const runtime = 'nodejs';
 /**
  * GET /api/orders/[orderId]
  * Get order by ID
+ * 
+ * Authorization: All roles with 'orders.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * - No subscription required (read-only operation)
  */
 export const GET = async (
   request: NextRequest,
@@ -18,7 +23,7 @@ export const GET = async (
   const resolvedParams = await Promise.resolve(params);
   const { orderId } = resolvedParams;
   
-  return withReadOnlyAuth(async (request, { user, userScope }) => {
+  return withPermissions(['orders.view'], { requireActiveSubscription: false })(async (request, { user, userScope }) => {
     try {
       console.log('🔍 GET /api/orders/[orderId] - Looking for order with ID:', orderId);
 
@@ -101,6 +106,10 @@ export const GET = async (
 /**
  * PUT /api/orders/[orderId]
  * Update order by ID
+ * 
+ * Authorization: All roles with 'orders.update' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const PUT = async (
   request: NextRequest,
@@ -110,7 +119,7 @@ export const PUT = async (
   const resolvedParams = await Promise.resolve(params);
   const { orderId } = resolvedParams;
   
-  return withReadOnlyAuth(async (request, { user, userScope }) => {
+  return withPermissions(['orders.update'])(async (request, { user, userScope }) => {
     try {
 
       // Check if the ID is numeric (public ID)

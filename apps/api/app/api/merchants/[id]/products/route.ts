@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/products
  * Get merchant products
+ * 
+ * Authorization: All roles with 'products.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
   request: NextRequest,
@@ -16,7 +20,7 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const merchantPublicId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withPermissions(['products.view'])(async (request, { user, userScope }) => {
     try {
       if (isNaN(merchantPublicId)) {
         return NextResponse.json(
@@ -62,12 +66,16 @@ export async function GET(
 /**
  * POST /api/merchants/[id]/products
  * Create new product
+ * 
+ * Authorization: All roles with 'products.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
     try {
       const merchantPublicId = parseInt(params.id);
       if (isNaN(merchantPublicId)) {

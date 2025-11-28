@@ -9,6 +9,7 @@ import { Card,
   PageTitle,
   Button,
   PaymentTable,
+  Pagination,
   useToast } from '@rentalshop/ui';
 import { 
   Search, 
@@ -75,7 +76,15 @@ export default function PaymentsPage() {
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(updates).forEach(([key, value]) => {
-      if (value && value !== '' && value !== 'all') {
+      // Special handling for page: always set it, even if it's 1
+      if (key === 'page') {
+        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
+        if (pageNum > 0) {
+          params.set(key, pageNum.toString());
+        } else {
+          params.delete(key);
+        }
+      } else if (value && value !== '' && value !== 'all') {
         params.set(key, value.toString());
       } else {
         params.delete(key);
@@ -209,86 +218,63 @@ export default function PaymentsPage() {
         </PageTitle>
       </PageHeader>
 
-      {/* Fixed Stats and Filters Section */}
-      <div className="flex-shrink-0 space-y-4">
-        {/* Financial Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6">
+      {/* Compact Stats and Filters Section */}
+      <div className="flex-shrink-0">
+        {/* Compact Financial Overview */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          <Card className="border">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-text-secondary mb-2">Total Revenue</p>
-                  <p className="text-2xl font-bold text-action-primary mb-1">${stats.totalRevenue.toLocaleString()}</p>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-text-secondary mb-0.5">Total Revenue</p>
+                  <p className="text-lg font-bold text-action-primary">${stats.totalRevenue.toLocaleString()}</p>
                 </div>
-                <div className="p-3 rounded-full bg-action-primary">
-                  <DollarSign className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-sm text-action-success mt-2">
-                <TrendingUp className="w-4 h-4" />
-                +12.5% from last month
+                <DollarSign className="h-4 w-4 text-action-primary flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
+          <Card className="border">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-text-secondary mb-2">Monthly Revenue</p>
-                  <p className="text-2xl font-bold text-action-success mb-1">${stats.monthlyRevenue.toLocaleString()}</p>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-text-secondary mb-0.5">Monthly</p>
+                  <p className="text-lg font-bold text-action-success">${stats.monthlyRevenue.toLocaleString()}</p>
                 </div>
-                <div className="p-3 rounded-full bg-action-success">
-                  <Calendar className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-sm text-action-success mt-2">
-                <TrendingUp className="w-4 h-4" />
-                +8.2% from last month
+                <Calendar className="h-4 w-4 text-action-success flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
+          <Card className="border">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-text-secondary mb-2">Pending Payments</p>
-                  <p className="text-2xl font-bold text-brand-secondary mb-1">${stats.pendingAmount.toLocaleString()}</p>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-text-secondary mb-0.5">Pending</p>
+                  <p className="text-lg font-bold text-brand-secondary">${stats.pendingAmount.toLocaleString()}</p>
                 </div>
-                <div className="p-3 rounded-full bg-brand-secondary">
-                  <Clock className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <div className="text-sm text-text-tertiary mt-2">
-                {payments.filter(p => p.status === 'pending').length} transactions
+                <Clock className="h-4 w-4 text-brand-secondary flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
+          <Card className="border">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-text-secondary mb-2">Failed Payments</p>
-                  <p className="text-2xl font-bold text-action-danger mb-1">${stats.failedAmount.toLocaleString()}</p>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-text-secondary mb-0.5">Failed</p>
+                  <p className="text-lg font-bold text-action-danger">${stats.failedAmount.toLocaleString()}</p>
                 </div>
-                <div className="p-3 rounded-full bg-action-danger">
-                  <XCircle className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-sm text-action-danger mt-2">
-                <TrendingDown className="w-4 h-4" />
-                {payments.filter(p => p.status === 'failed').length} failed
+                <XCircle className="h-4 w-4 text-action-danger flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Search and Filters */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row gap-4">
+        <Card className="mb-3">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               {/* Search */}
               <div className="flex-1">
                 <div className="relative">
@@ -339,7 +325,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Scrollable Table Section */}
-      <div className="flex-1 min-h-0 mt-4">
+      <div className="flex-1 min-h-0 mt-2">
         <div className="flex flex-col h-full">
           {/* Table - takes full width */}
           <div className="flex-1 min-h-0 overflow-auto">
@@ -352,56 +338,17 @@ export default function PaymentsPage() {
             />
           </div>
 
-          {/* Pagination at bottom - same width as table */}
+          {/* Pagination at bottom - Standard Pattern */}
           {data && data.total > 0 && data.total > data.limit && (
             <div className="flex-shrink-0 py-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  Showing {((data.currentPage - 1) * data.limit) + 1} to {Math.min(data.currentPage * data.limit, data.total)} of {data.total} payments
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(data.currentPage - 1)}
-                    disabled={data.currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: data.totalPages }, (_, i) => i + 1)
-                      .filter(p => {
-                        return p === 1 || p === data.totalPages || 
-                               Math.abs(p - data.currentPage) <= 1;
-                      })
-                      .map((p, i, arr) => (
-                        <React.Fragment key={p}>
-                          {i > 0 && arr[i - 1] !== p - 1 && (
-                            <span className="px-2">...</span>
-                          )}
-                          <Button
-                            variant={data.currentPage === p ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(p)}
-                            className="w-10 h-9"
-                          >
-                            {p}
-                          </Button>
-                        </React.Fragment>
-                      ))}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(data.currentPage + 1)}
-                    disabled={data.currentPage === data.totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
+              <Pagination
+                currentPage={data.currentPage || data.page || 1}
+                totalPages={data.totalPages || Math.ceil(data.total / data.limit)}
+                total={data.total}
+                limit={data.limit}
+                onPageChange={handlePageChange}
+                itemName="payments"
+              />
             </div>
           )}
         </div>

@@ -16,7 +16,8 @@ import {
   ConfirmationDialog,
   AddCategoryDialog,
   CategoryFormContent,
-  Button
+  Button,
+  LoadingIndicator
 } from '@rentalshop/ui';
 import { Plus } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -83,7 +84,15 @@ export default function CategoriesPage() {
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(updates).forEach(([key, value]) => {
-      if (value && value !== '' && value !== 'all') {
+      // Special handling for page: always set it, even if it's 1
+      if (key === 'page') {
+        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
+        if (pageNum > 0) {
+          params.set(key, pageNum.toString());
+        } else {
+          params.delete(key);
+        }
+      } else if (value && value !== '' && value !== 'all') {
         params.set(key, value.toString());
       } else {
         params.delete(key);
@@ -201,20 +210,8 @@ export default function CategoriesPage() {
   }, [data, page, limit]);
 
   // ============================================================================
-  // RENDER - Show skeleton when loading initial data
+  // RENDER - Page renders immediately, show loading indicator
   // ============================================================================
-
-  if (loading && !data) {
-    return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-        <PageHeader className="flex-shrink-0">
-          <PageTitle>{t('navigation.categories')}</PageTitle>
-          <p className="text-sm text-gray-600">{t('navigation.categories')}</p>
-        </PageHeader>
-        <CategoriesLoading />
-      </PageWrapper>
-    );
-  }
 
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
@@ -236,12 +233,22 @@ export default function CategoriesPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0 overflow-auto">
-        {error ? (
+      <div className="flex-1 min-h-0 overflow-auto relative">
+        {/* Center Loading Indicator - Shows when waiting for API */}
+        {loading && !data ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+            <LoadingIndicator 
+              variant="circular" 
+              size="lg"
+              message={tc('labels.loading') || 'Loading categories...'}
+            />
+          </div>
+        ) : error ? (
           <div className="text-center py-12">
             <p className="text-red-500">{error.message}</p>
           </div>
         ) : (
+          /* Categories Content - Only render when data is loaded */
           <Categories
             data={categoryData}
             filters={filters}

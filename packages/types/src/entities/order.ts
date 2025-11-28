@@ -268,10 +268,10 @@ export interface OrderSearchParams extends BaseSearchParams {
   outletId?: number;
   customerId?: number;
   productId?: number; // Filter orders by specific product
-  startDate?: Date | string;
-  endDate?: Date | string;
-  pickupDate?: Date | string;
-  returnDate?: Date | string;
+  startDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
+  endDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
+  pickupDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
+  returnDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
   minAmount?: number;
   maxAmount?: number;
   isReadyToDeliver?: boolean;
@@ -483,11 +483,11 @@ export interface OrderFilters {
   outletId?: number;
   customerId?: number;
   productId?: number;
-  startDate?: Date | string;
-  endDate?: Date | string;
+  startDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
+  endDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
   search?: string;
-  pickupDate?: Date | string;
-  returnDate?: Date | string;
+  pickupDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
+  returnDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
   minAmount?: number;
   maxAmount?: number;
   isReadyToDeliver?: boolean;

@@ -5,12 +5,12 @@ export * from './jwt';
 
 // Export consolidated authorization system (single source of truth)
 export * from './core';
-export * from './middleware';
 
 // Export platform access control (simple helpers)
 export * from './platform-access';
 
 // NEW: Unified auth wrapper (replaces all scattered auth middleware)
+// This exports all auth middleware functions (withAuthRoles, withPermissions, etc.)
 export * from './unified-auth';
 
 // Re-export specific functions for backward compatibility
@@ -35,27 +35,20 @@ export {
   ROLE_PERMISSIONS
 } from './core';
 
+// Export unified auth wrappers (all auth middleware functions)
+// These are exported via "export * from './unified-auth'" above
+// No need to re-export individually
+
+// Export middleware utility functions (not auth wrappers)
 export {
-  withAuth,
+  authorizeRequest,
   withAuthAndAuthz,
-  withAdminAuth,
-  withUserManagementAuth,
-  withProductManagementAuth,
-  withOrderManagementAuth,
-  withOrderCreateAuth,
-  withOrderViewAuth,
-  withOrderUpdateAuth,
-  withOrderDeleteAuth,
-  withOrderExportAuth,
-  withProductExportAuth,
-  withCustomerExportAuth,
-  withCustomerManagementAuth,
-  withBillingManagementAuth,
-  withViewAuth,
   withMerchantScope,
   withOutletScope,
+  getUserScopeFromRequest,
   buildSecureWhereClause,
-  validateResourceBelongsToUser
+  validateResourceBelongsToUser,
+  withCustomerExportAuth
 } from './middleware';
 
 // Export specific JWT functions

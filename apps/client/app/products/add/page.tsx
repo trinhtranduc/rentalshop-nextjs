@@ -8,7 +8,8 @@ import {
   PageTitle,
   PageContent,
   ProductsLoading,
-  Button
+  Button,
+  LoadingIndicator
 } from '@rentalshop/ui';
 import { useAuth, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { 
@@ -148,19 +149,6 @@ export default function ProductAddPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <PageWrapper>
-        <PageHeader>
-          <PageTitle>{t('createProduct')}</PageTitle>
-        </PageHeader>
-        <PageContent>
-          <ProductsLoading />
-        </PageContent>
-      </PageWrapper>
-    );
-  }
-
   if (error) {
     return (
       <PageWrapper>
@@ -236,6 +224,16 @@ export default function ProductAddPage() {
 
   return (
     <PageWrapper>
+      {/* Center Loading Indicator - Shows when waiting for API */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+          <LoadingIndicator 
+            variant="circular" 
+            size="lg"
+            message={tc('labels.loading') || 'Loading form...'}
+          />
+        </div>
+      )}
       <PageContent>
         <ProductSimpleForm
           categories={categories}

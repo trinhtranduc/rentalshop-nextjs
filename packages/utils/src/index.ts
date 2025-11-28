@@ -30,6 +30,9 @@ export * from './sync/imageSync';
 export * from './sync/oldServerSync';
 export * from './sync/transformers';
 
+// Import utilities
+export * from './import/validator';
+
 // Plan features utilities
 export * from './plan-features';
 

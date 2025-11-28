@@ -89,7 +89,7 @@ export interface PlanFilters {
   isActive?: boolean;
   isPopular?: boolean;
   limit?: number;
-  offset?: number;
+  page?: number;
   sortBy?: 'name' | 'price' | 'basePrice' | 'createdAt' | 'sortOrder';  // ✅ Updated: Support both price and basePrice
   sortOrder?: 'asc' | 'desc';
 }

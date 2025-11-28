@@ -6,6 +6,7 @@ import { useFormik } from "formik";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Logo } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
+import { isValidEmail } from "@rentalshop/utils";
 import { LanguageSwitcher } from "../layout/LanguageSwitcher";
 
 // Types for the login form
@@ -37,8 +38,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
   // Validation schema
   const validationSchema = Yup.object({
     email: Yup.string()
-      .email(t('login.invalidEmail'))
-      .required(t('login.invalidEmail')),
+      .required(t('emailRequired') || 'Email is required')
+      .test('email-format', t('login.invalidEmail') || 'Invalid email format', (value) => {
+        if (!value) return false;
+        return isValidEmail(value);
+      }),
     password: Yup.string()
       .min(6, t('login.invalidPassword'))
       .required(t('login.invalidPassword')),
@@ -51,6 +55,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
       password: "",
     },
     validationSchema: validationSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
     onSubmit: async (values: LoginFormData) => {
       try {
         if (onLogin) {

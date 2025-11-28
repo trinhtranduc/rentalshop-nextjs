@@ -8,7 +8,7 @@ import { Eye, Edit, Package } from 'lucide-react';
 import { getProductImageUrl } from '@rentalshop/utils/client';
 import { useTranslations } from 'next-intl';
 import { getRentalPriceLabel, formatRentalPrice } from '../utils';
-import { formatCurrency } from '../../../../lib';
+import { useFormatCurrency } from '@rentalshop/ui';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
 import type { PricingType } from '@rentalshop/constants';
@@ -74,6 +74,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const t = useTranslations('products');
+  const formatCurrency = useFormatCurrency();
   
   // Normalize images to check if we have any
   const normalizeImages = (images: string[] | string | null | undefined): string[] => {
@@ -254,14 +255,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">{t('fields.salePrice')}:</span>
                 <span className="font-semibold text-green-600">
-                  ${salePrice.toFixed(2)}
+                  {formatCurrency(salePrice)}
                 </span>
               </div>
             )}
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">{t('fields.deposit')}:</span>
               <span className="font-medium text-gray-700">
-                ${deposit.toFixed(2)}
+                {formatCurrency(deposit)}
               </span>
             </div>
           </div>

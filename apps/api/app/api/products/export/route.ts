@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withProductExportAuth } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 /**
  * GET /api/products/export
- * Export products to CSV (Admin, Merchant, Outlet Admin only)
- * OUTLET_STAFF cannot export products
+ * Export products to CSV
+ * 
+ * Authorization: All roles with 'products.export' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - OUTLET_STAFF cannot export (does not have 'products.export' permission)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withProductExportAuth(async (authorizedRequest) => {
+export const GET = withPermissions(['products.export'])(async (request, { user, userScope }) => {
   try {
-    // User is already authenticated and authorized to export products
-    // Only ADMIN, MERCHANT, OUTLET_ADMIN can export
-    // OUTLET_STAFF will automatically get 403 Forbidden
-    const { user, userScope, request } = authorizedRequest;
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '1000');

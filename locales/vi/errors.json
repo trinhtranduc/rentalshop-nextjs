@@ -32,6 +32,7 @@
   
   "EMAIL_EXISTS": "Địa chỉ email đã được đăng ký",
   "PHONE_EXISTS": "Số điện thoại đã được đăng ký",
+  "BUSINESS_NAME_EXISTS": "Trùng tên doanh nghiệp",
   "USER_NOT_FOUND": "Không tìm thấy người dùng",
   "MERCHANT_NOT_FOUND": "Không tìm thấy doanh nghiệp",
   "OUTLET_NOT_FOUND": "Không tìm thấy cửa hàng",

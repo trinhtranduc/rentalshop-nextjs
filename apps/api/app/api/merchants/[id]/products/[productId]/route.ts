@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
-import { withManagementAuth } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/products/[productId]
  * Get product detail for editing
+ * 
+ * Authorization: All roles with 'products.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function GET(
   request: NextRequest,
@@ -18,7 +22,7 @@ export async function GET(
   const merchantPublicId = parseInt(resolvedParams.id);
   const productPublicId = parseInt(resolvedParams.productId);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+  return withPermissions(['products.view'])(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(merchantPublicId) || isNaN(productPublicId)) {
@@ -89,6 +93,10 @@ export async function GET(
 /**
  * PUT /api/merchants/[id]/products/[productId]
  * Update product
+ * 
+ * Authorization: All roles with 'products.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function PUT(
   request: NextRequest,
@@ -99,7 +107,7 @@ export async function PUT(
   const merchantPublicId = parseInt(resolvedParams.id);
   const productPublicId = parseInt(resolvedParams.productId);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+  return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(merchantPublicId) || isNaN(productPublicId)) {
