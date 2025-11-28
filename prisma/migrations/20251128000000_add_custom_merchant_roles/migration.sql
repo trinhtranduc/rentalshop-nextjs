@@ -290,26 +290,21 @@ END $$;
 -- ============================================================================
 -- STEP 8: Add trigger for updatedAt (if not exists)
 -- ============================================================================
+-- Create function for updatedAt trigger if it doesn't exist
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."updatedAt" = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger if it doesn't exist
 DO $$ 
 BEGIN
     -- Verify MerchantRole table exists
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'MerchantRole') THEN
         RETURN;
-    END IF;
-    
-    -- Create function for updatedAt trigger if it doesn't exist
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_proc p
-        JOIN pg_namespace n ON p.pronamespace = n.oid
-        WHERE n.nspname = 'public' AND p.proname = 'update_updated_at_column'
-    ) THEN
-        CREATE OR REPLACE FUNCTION update_updated_at_column()
-        RETURNS TRIGGER AS $$
-        BEGIN
-            NEW."updatedAt" = CURRENT_TIMESTAMP;
-            RETURN NEW;
-        END;
-        $$ LANGUAGE plpgsql;
     END IF;
     
     -- Create trigger if it doesn't exist
