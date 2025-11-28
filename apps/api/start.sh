@@ -160,6 +160,17 @@ if [ "$MIGRATION_SUCCESS" = true ]; then
     echo "⚠️  Using existing Prisma Client (may be out of sync)"
   else
     echo "✅ Prisma Client regenerated successfully"
+    
+    # CRITICAL: Copy regenerated Prisma Client to Next.js bundle location
+    # Next.js uses .next/server/.prisma/client, but Prisma generates to node_modules/.prisma/client
+    echo "📦 Copying regenerated Prisma Client to Next.js bundle location..."
+    if [ -d "../../node_modules/.prisma/client" ]; then
+      mkdir -p .next/server/.prisma/client
+      cp -r ../../node_modules/.prisma/client/* .next/server/.prisma/client/ 2>/dev/null || true
+      echo "✅ Prisma Client copied to Next.js bundle location"
+    else
+      echo "⚠️  Prisma Client directory not found, skipping copy"
+    fi
   fi
   echo ""
 fi
