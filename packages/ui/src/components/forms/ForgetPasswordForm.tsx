@@ -34,8 +34,20 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
   // Validation schema
   const validationSchema = Yup.object({
     email: Yup.string()
-      .required(t('emailRequired') || 'Email is required')
-      .test('email-format', t('login.invalidEmail') || 'Invalid email format', (value) => {
+      .required(() => {
+        try {
+          return t('emailRequired') || t('validation.emailRequired') || 'Email is required';
+        } catch {
+          return 'Email is required';
+        }
+      })
+      .test('email-format', () => {
+        try {
+          return t('login.invalidEmail') || t('validation.email') || 'Invalid email format';
+        } catch {
+          return 'Invalid email format';
+        }
+      }, (value) => {
         if (!value) return false;
         return isValidEmail(value);
       }),

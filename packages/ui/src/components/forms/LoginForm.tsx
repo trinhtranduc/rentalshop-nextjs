@@ -38,14 +38,38 @@ const LoginForm: React.FC<LoginFormProps> = ({
   // Validation schema
   const validationSchema = Yup.object({
     email: Yup.string()
-      .required(t('emailRequired') || 'Email is required')
-      .test('email-format', t('login.invalidEmail') || 'Invalid email format', (value) => {
+      .required(() => {
+        try {
+          return t('emailRequired') || t('validation.emailRequired') || 'Email is required';
+        } catch {
+          return 'Email is required';
+        }
+      })
+      .test('email-format', () => {
+        try {
+          return t('login.invalidEmail') || t('validation.email') || 'Invalid email format';
+        } catch {
+          return 'Invalid email format';
+        }
+      }, (value) => {
         if (!value) return false;
         return isValidEmail(value);
       }),
     password: Yup.string()
-      .min(6, t('login.invalidPassword'))
-      .required(t('login.invalidPassword')),
+      .min(6, () => {
+        try {
+          return t('login.invalidPassword') || t('validation.password.minLength') || 'Password must be at least 6 characters';
+        } catch {
+          return 'Password must be at least 6 characters';
+        }
+      })
+      .required(() => {
+        try {
+          return t('login.invalidPassword') || t('validation.password.required') || 'Password is required';
+        } catch {
+          return 'Password is required';
+        }
+      }),
   });
 
   const validation = useFormik<LoginFormData>({
