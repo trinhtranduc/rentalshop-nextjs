@@ -162,7 +162,7 @@ const LandingPage = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleData) }}
       />
       
-    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-bg-card to-bg-tertiary">
+    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-bg-card to-bg-tertiary overflow-x-hidden">
       
         {/* Header */}
         <header className="bg-bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50" role="banner">
@@ -234,10 +234,10 @@ const LandingPage = () => {
           </div>
           
           {/* Background decoration */}
-          <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-            <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-brand-primary/30 to-action-primary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-            <div className="absolute top-40 right-10 w-72 h-72 bg-gradient-to-r from-action-primary/30 to-brand-secondary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-gradient-to-r from-action-warning/30 to-action-success/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+            <div className="absolute top-20 left-4 md:left-10 w-48 h-48 md:w-72 md:h-72 bg-gradient-to-r from-brand-primary/30 to-action-primary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+            <div className="absolute top-40 right-4 md:right-10 w-48 h-48 md:w-72 md:h-72 bg-gradient-to-r from-action-primary/30 to-brand-secondary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+            <div className="absolute -bottom-8 left-4 md:left-20 w-48 h-48 md:w-72 md:h-72 bg-gradient-to-r from-action-warning/30 to-action-success/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
           </div>
         </section>
 
@@ -1263,9 +1263,39 @@ const Footer = () => {
 };
 
 const FloatingButtons = () => {
+  // Số điện thoại: +840764774647
+  // Format cho WhatsApp: 840764774647 (bỏ dấu +)
+  // Format cho Zalo: 0764774647 (bỏ +84, thêm số 0 đầu)
+  const phoneNumber = '840764774647';
+  const zaloNumber = '0764774647';
+  const whatsappMessage = encodeURIComponent('Xin chào! Tôi muốn tìm hiểu về AnyRent.');
+  
   return (
     <div className="fixed bottom-6 right-6 z-50">
       <div className="flex flex-col space-y-3">
+        {/* Zalo Button */}
+        <a 
+          href={`https://zalo.me/${zaloNumber}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-[#0068FF] text-white p-3 rounded-full shadow-lg hover:bg-[#0052CC] transition-colors"
+          title="Liên hệ Zalo"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </a>
+        
+        {/* WhatsApp Button */}
+        <a 
+          href={`https://wa.me/${phoneNumber}?text=${whatsappMessage}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-[#25D366] text-white p-3 rounded-full shadow-lg hover:bg-[#20BA5A] transition-colors"
+          title="Liên hệ WhatsApp"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </a>
+        
+        {/* Download App Button */}
         <a 
           href="https://apps.apple.com/vn/app/rentalshop/id1500115668" 
           target="_blank"
@@ -1275,6 +1305,8 @@ const FloatingButtons = () => {
         >
           <Download className="w-6 h-6" />
         </a>
+        
+        {/* Login Button */}
         <Link 
           href="/login" 
           className="bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted p-3 rounded-full shadow-lg hover:from-brand-secondary hover:to-action-primary transition-all duration-200 transform hover:scale-110"

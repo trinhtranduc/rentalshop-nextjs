@@ -723,8 +723,8 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang={locale}>
-      <body className={`${inter.variable} font-sans`}>
+    <html lang={locale} className="overflow-x-hidden">
+      <body className={`${inter.variable} font-sans overflow-x-hidden`}>
         <NextIntlClientProvider locale={locale} messages={messages[locale]}>
           <ToastProvider>
             <ClientLayout>
