@@ -168,17 +168,17 @@ export async function POST(request: NextRequest) {
 
         console.log('✅ Step 2 Complete: Outlet created:', { id: outlet.id, name: outlet.name });
 
-               // 5. Create default category
-               console.log('📝 Step 3: Creating default category...');
-               
-               const category = await tx.category.create({
-                 data: {
-                   name: 'General',
-                   description: 'Default category for general products',
-                   merchantId: merchant.id,
-                   isDefault: true
-                 }
-               });
+        // 5. Create default category
+        console.log('📝 Step 3: Creating default category...');
+        
+        const category = await tx.category.create({
+          data: {
+            name: 'General',
+            description: 'Default category for general products',
+            merchantId: merchant.id,
+            isDefault: true
+          }
+        });
 
         console.log('✅ Step 3 Complete: Category created:', { id: category.id, name: category.name });
 
@@ -202,60 +202,76 @@ export async function POST(request: NextRequest) {
         });
 
         console.log('✅ Step 4 Complete: User created:', { id: user.id, email: user.email });
+
+        // 7. Get or create trial plan (inside transaction for atomicity)
+        console.log('📝 Step 5: Getting or creating trial plan...');
+        
+        let trialPlan = await tx.plan.findFirst({
+          where: { name: 'Trial' }
+        });
+        
+        if (!trialPlan) {
+          trialPlan = await tx.plan.create({
+            data: {
+              name: 'Trial',
+              description: 'Free trial plan for new merchants',
+              basePrice: 0,
+              currency: 'USD',
+              trialDays: 14,
+              limits: JSON.stringify({
+                outlets: 1,
+                users: 3,
+                products: 500,
+                customers: 2000
+              }),
+              features: JSON.stringify([
+                'Basic inventory management',
+                'Customer management',
+                'Order processing',
+                'Basic reporting',
+                'Mobile app access',
+                '14-day free trial'
+              ]),
+              isActive: true,
+              sortOrder: 0
+            }
+          });
+          console.log('✅ Step 5 Complete: Trial plan created');
+        } else {
+          console.log('✅ Step 5 Complete: Trial plan found');
+        }
+
+        // 8. Create trial subscription (inside transaction)
+        console.log('📝 Step 6: Creating trial subscription...');
+        
+        const subscriptionStartDate = new Date();
+        const trialEndDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
+        
+        const subscription = await tx.subscription.create({
+          data: {
+            merchantId: merchant.id,
+            planId: trialPlan.id,
+            status: SUBSCRIPTION_STATUS.TRIAL as any,
+            amount: 0,
+            currency: 'USD',
+            currentPeriodStart: subscriptionStartDate,
+            currentPeriodEnd: trialEndDate,
+            trialStart: subscriptionStartDate,
+            trialEnd: trialEndDate
+          }
+        });
+
+        console.log('✅ Step 6 Complete: Subscription created:', { id: subscription.id });
         console.log('🎉 Transaction complete - All entities created successfully!');
 
         // Return created entities from transaction
-        return { merchant, outlet, category, user };
+        return { merchant, outlet, category, user, subscription, trialPlan, trialEndDate };
       }); // End transaction
 
       console.log('✅ Transaction committed successfully!');
 
       // Extract results from transaction
-      const { merchant, outlet, category, user } = result;
-
-      // 7. Get or create trial plan (outside transaction - can reuse existing)
-      let trialPlan = await db.plans.findByName('Trial'); // Find Trial plan by name
-      if (!trialPlan) {
-        trialPlan = await db.plans.create({
-          name: 'Trial',
-          description: 'Free trial plan for new merchants',
-          basePrice: 0,
-          currency: 'USD',
-          trialDays: 14,
-          limits: JSON.stringify({
-            outlets: 1,
-            users: 3,
-            products: 500,
-            customers: 2000
-          }),
-          features: JSON.stringify([
-            'Basic inventory management',
-            'Customer management',
-            'Order processing',
-            'Basic reporting',
-            'Mobile app access',
-            '14-day free trial'
-          ]),
-          isActive: true,
-          sortOrder: 0
-        });
-      }
-
-      // 8. Create trial subscription
-      const subscriptionStartDate = new Date();
-      const trialEndDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
-      
-      await db.subscriptions.create({
-        merchantId: merchant.id,
-        planId: trialPlan.id,
-        status: SUBSCRIPTION_STATUS.TRIAL as any,
-        amount: 0,
-        currency: 'USD',
-        currentPeriodStart: subscriptionStartDate,
-        currentPeriodEnd: trialEndDate,
-        trialStart: subscriptionStartDate,
-        trialEnd: trialEndDate
-      });
+      const { merchant, outlet, category, user, subscription, trialPlan, trialEndDate } = result;
 
       console.log('✅ Registration complete for merchant:', merchant.name);
 
@@ -319,20 +335,41 @@ export async function POST(request: NextRequest) {
 
     } else {
       // ============================================================================
-      // BASIC USER REGISTRATION FLOW
+      // BASIC USER REGISTRATION FLOW (WITH TRANSACTION)
       // ============================================================================
       
-      const hashedPassword = await hashPassword(validatedData.password);
-      const user = await db.users.create({
-        email: validatedData.email,
-        password: hashedPassword,
-        firstName: firstName,
-        lastName: lastName,
-        phone: validatedData.phone,
-        role: validatedData.role || 'CLIENT'
-      });
+      console.log('🔄 Starting transaction for basic user registration...');
+      
+      const result = await db.prisma.$transaction(async (tx) => {
+        // Create user within transaction
+        console.log('📝 Creating basic user...');
+        
+        const hashedPassword = await hashPassword(validatedData.password);
+        const user = await tx.user.create({
+          data: {
+            email: validatedData.email,
+            password: hashedPassword,
+            firstName: firstName,
+            lastName: lastName,
+            phone: validatedData.phone,
+            role: validatedData.role || 'CLIENT',
+            emailVerified: false,
+            emailVerifiedAt: null
+          }
+        });
 
-      // Create email verification token and send verification email
+        console.log('✅ User created:', { id: user.id, email: user.email });
+        console.log('🎉 Transaction complete - User created successfully!');
+
+        return { user };
+      }); // End transaction
+
+      console.log('✅ Transaction committed successfully!');
+
+      // Extract user from transaction
+      const { user } = result;
+
+      // Create email verification token and send verification email (outside transaction - non-critical)
       try {
         const verification = await createEmailVerification(user.id, user.email);
         const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
@@ -351,6 +388,7 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error('❌ Error sending verification email:', error);
+        // Don't fail registration if email fails
       }
 
       // Don't generate JWT token yet - user must verify email first

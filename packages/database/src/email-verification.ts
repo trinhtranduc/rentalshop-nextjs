@@ -44,16 +44,22 @@ export async function createEmailVerification(
   expiresAt.setHours(expiresAt.getHours() + expiresInHours);
 
   // Invalidate any existing unverified tokens for this user
+  // Explicitly construct data object to prevent any extra fields (like 'status') from being passed
+  const updateData: {
+    verified: boolean;
+    verifiedAt: Date;
+  } = {
+    verified: true, // Mark as used/invalid
+    verifiedAt: new Date(),
+  };
+  
   await prisma.emailVerification.updateMany({
     where: {
       userId,
       verified: false,
       expiresAt: { gt: new Date() }, // Not expired yet
     },
-    data: {
-      verified: true, // Mark as used/invalid
-      verifiedAt: new Date(),
-    },
+    data: updateData,
   });
 
   // Create new verification token

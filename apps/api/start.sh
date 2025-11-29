@@ -104,6 +104,41 @@ echo ""
 # Step 4: Run Database Migrations (with comprehensive error handling)
 # ============================================================================
 echo "📦 Step 4: Running database migrations..."
+
+# Check for failed migrations and resolve them automatically
+echo "🔍 Checking for failed migrations..."
+FAILED_MIGRATIONS=$(npx prisma migrate status --schema="${SCHEMA_PATH}" 2>&1 | grep -i "failed" || true)
+
+if echo "$FAILED_MIGRATIONS" | grep -qi "failed"; then
+  echo "⚠️  Found failed migrations - attempting to resolve..."
+  
+  # Extract failed migration names
+  FAILED_MIGRATION_NAMES=$(echo "$FAILED_MIGRATIONS" | grep -oE "[0-9]+_[a-z_]+" || true)
+  
+  if [ -n "$FAILED_MIGRATION_NAMES" ]; then
+    for MIGRATION_NAME in $FAILED_MIGRATION_NAMES; do
+      echo "🔧 Resolving failed migration: $MIGRATION_NAME"
+      
+      # Check if Merchant.status column still exists
+      # If it doesn't exist, migration actually succeeded (mark as applied)
+      # If it exists, migration failed (mark as rolled-back so we can retry)
+      STATUS_COLUMN_EXISTS=$(echo "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Merchant' AND column_name = 'status');" | npx prisma db execute --stdin --schema="${SCHEMA_PATH}" 2>&1 | grep -qi "true\|1\|t" && echo "yes" || echo "no")
+      
+      if [ "$STATUS_COLUMN_EXISTS" = "no" ]; then
+        # Column doesn't exist - migration actually succeeded, mark as applied
+        echo "✅ Merchant.status column already removed - marking migration as applied"
+        npx prisma migrate resolve --applied "$MIGRATION_NAME" --schema="${SCHEMA_PATH}" 2>&1 || true
+      else
+        # Column still exists - migration failed, mark as rolled-back to allow retry
+        echo "⚠️  Merchant.status column still exists - marking migration as rolled-back to allow retry"
+        npx prisma migrate resolve --rolled-back "$MIGRATION_NAME" --schema="${SCHEMA_PATH}" 2>&1 || true
+      fi
+    done
+    echo "✅ Failed migrations resolved"
+  fi
+  echo ""
+fi
+
 RETRY_COUNT=0
 MIGRATION_SUCCESS=false
 MIGRATION_ERROR=""
@@ -125,6 +160,19 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     # Capture error for logging
     MIGRATION_ERROR="$MIGRATION_OUTPUT"
     echo "$MIGRATION_OUTPUT" | head -50
+    
+    # Check if error is due to failed migrations that need resolution
+    if echo "$MIGRATION_ERROR" | grep -qi "P3009\|failed migrations"; then
+      echo "⚠️  Migration blocked by failed migrations - attempting to resolve..."
+      # Try to resolve again
+      FAILED_MIGRATION_NAMES=$(echo "$MIGRATION_ERROR" | grep -oE "[0-9]+_[a-z_]+" || true)
+      if [ -n "$FAILED_MIGRATION_NAMES" ]; then
+        for MIGRATION_NAME in $FAILED_MIGRATION_NAMES; do
+          echo "🔧 Resolving: $MIGRATION_NAME"
+          npx prisma migrate resolve --rolled-back "$MIGRATION_NAME" --schema="${SCHEMA_PATH}" 2>&1 || true
+        done
+      fi
+    fi
     
     RETRY_COUNT=$((RETRY_COUNT + 1))
     if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
@@ -151,10 +199,35 @@ done
 echo ""
 
 # ============================================================================
-# Step 5: Post-Migration Verification
+# Step 5: Regenerate Prisma Client After Migrations
 # ============================================================================
 if [ "$MIGRATION_SUCCESS" = true ]; then
-  echo "🔍 Step 5: Post-migration verification..."
+  echo "🔄 Step 5: Regenerating Prisma Client after migrations..."
+  if ! npx prisma generate --schema="${SCHEMA_PATH}" 2>&1; then
+    echo "❌ Failed to regenerate Prisma Client after migrations"
+    echo "⚠️  Using existing Prisma Client (may be out of sync)"
+  else
+    echo "✅ Prisma Client regenerated successfully"
+    
+    # CRITICAL: Copy regenerated Prisma Client to Next.js bundle location
+    # Next.js uses .next/server/.prisma/client, but Prisma generates to node_modules/.prisma/client
+    echo "📦 Copying regenerated Prisma Client to Next.js bundle location..."
+    if [ -d "../../node_modules/.prisma/client" ]; then
+      mkdir -p .next/server/.prisma/client
+      cp -r ../../node_modules/.prisma/client/* .next/server/.prisma/client/ 2>/dev/null || true
+      echo "✅ Prisma Client copied to Next.js bundle location"
+    else
+      echo "⚠️  Prisma Client directory not found, skipping copy"
+    fi
+  fi
+  echo ""
+fi
+
+# ============================================================================
+# Step 6: Post-Migration Verification
+# ============================================================================
+if [ "$MIGRATION_SUCCESS" = true ]; then
+  echo "🔍 Step 6: Post-migration verification..."
   
   # Verify migration status
   VERIFICATION_OUTPUT=$(npx prisma migrate status --schema="${SCHEMA_PATH}" 2>&1)
@@ -185,13 +258,24 @@ if [ "$MIGRATION_SUCCESS" = true ]; then
     else
       echo "⚠️  Could not verify customRoleId column (may not exist yet)"
     fi
+    
+    # Verify Merchant.status column is removed (critical for Prisma compatibility)
+    echo "🔍 Verifying Merchant.status column removal..."
+    STATUS_CHECK=$(echo "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Merchant' AND column_name = 'status');" | npx prisma db execute --stdin --schema="${SCHEMA_PATH}" 2>&1)
+    if echo "$STATUS_CHECK" | grep -qi "true\|1\|t"; then
+      echo "⚠️  WARNING: Merchant.status column still exists in database!"
+      echo "⚠️  This will cause Prisma errors (P2032) when querying Merchant table"
+      echo "⚠️  Please ensure migration 20251128211303_force_remove_merchant_status is applied"
+    else
+      echo "✅ Merchant.status column verified as removed"
+    fi
   else
     echo "$VERIFICATION_OUTPUT" | head -30
     echo "⚠️  Migration verification failed (but migrations were applied)"
     echo "⚠️  This may indicate a schema mismatch - manual review recommended"
   fi
 else
-  echo "⏭️  Step 5: Skipping post-migration verification (migrations did not succeed)"
+  echo "⏭️  Step 6: Skipping post-migration verification (migrations did not succeed)"
   echo "⚠️  WARNING: Migrations were not applied successfully"
   echo "⚠️  Server will start, but database schema may be out of sync"
   echo "⚠️  Manual migration may be required"
@@ -199,9 +283,9 @@ fi
 echo ""
 
 # ============================================================================
-# Step 6: Start Next.js Server
+# Step 7: Start Next.js Server
 # ============================================================================
-echo "🌐 Step 6: Starting Next.js server on port 3002..."
+echo "🌐 Step 7: Starting Next.js server on port 3002..."
 echo "📅 $(date '+%Y-%m-%d %H:%M:%S UTC')"
 echo ""
 

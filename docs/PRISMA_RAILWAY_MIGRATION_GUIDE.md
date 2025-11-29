@@ -120,7 +120,41 @@ railway run --service dev-apis yarn db:migrate:status
 
 ## ✅ Làm Sao Biết Migration Thành Công?
 
-### Cách 1: Check Migration Status (Khuyến nghị)
+### Cách 1: Check Database Sync (Khuyến nghị) ⭐
+
+**So sánh migration status giữa Local và Railway:**
+
+```bash
+# Check sync với dev-apis (default)
+yarn db:check-sync
+
+# Hoặc chỉ định service
+yarn db:check-sync:dev   # Development
+yarn db:check-sync:prod  # Production
+
+# Hoặc dùng script trực tiếp
+./scripts/check-db-sync.sh dev-apis
+./scripts/check-db-sync.sh apis
+```
+
+**Output mẫu (Đồng bộ):**
+```
+✅ DATABASES ARE IN SYNC!
+   Both local and Railway have all migrations applied.
+```
+
+**Output mẫu (Không đồng bộ):**
+```
+❌ Railway database is OUT OF SYNC
+   Missing migrations on Railway:
+      - 20251121153338_create_outlet_stock
+      - 20251128000000_add_custom_merchant_roles
+
+💡 To fix, run:
+   railway run --service dev-apis yarn railway:migrate
+```
+
+### Cách 2: Check Migration Status (Manual)
 
 ```bash
 # Local
@@ -187,25 +221,145 @@ Nếu migration thêm table/column mới:
 
 ### Lỗi: P1001 - Can't Reach Database Server
 
+**Error:**
+```
+Error: P1001: Can't reach database server at `dev-tenant-database.railway.internal:5432`
+```
+
+**Nguyên nhân:**
+1. ❌ DATABASE_URL chưa được set đúng (hardcoded URL thay vì reference)
+2. ❌ Database service chưa sẵn sàng
+3. ❌ Service name không đúng
+
 **Fix nhanh:**
 
-```bash
-# 1. Check database service name
-railway service list
+#### Bước 1: Check DATABASE_URL
 
-# 2. Set DATABASE_URL đúng
+```bash
+# Check DATABASE_URL hiện tại
+railway variables --service dev-apis | grep DATABASE_URL
+
+# Check trong container
+railway run --service dev-apis echo \$DATABASE_URL
+```
+
+#### Bước 2: Set DATABASE_URL Đúng
+
+```bash
+# Option 1: Dùng reference (Khuyến nghị)
 railway variables --set DATABASE_URL='${{dev-tenant-database.DATABASE_URL}}' --service dev-apis
 
-# 3. Chạy migration lại
+# Option 2: Nếu service name khác, tìm đúng service name
+# Railway Dashboard → Services → Tìm PostgreSQL service
+# Copy service name và thay vào:
+railway variables --set DATABASE_URL='${{<service-name>.DATABASE_URL}}' --service dev-apis
+```
+
+#### Bước 3: Verify Database Service Đang Chạy
+
+```bash
+# Check database service logs
+railway logs --service dev-tenant-database --tail 20
+
+# Nếu thấy "listening on port 5432" → Database đang chạy
+# Nếu không thấy → Database chưa ready, đợi thêm
+```
+
+#### Bước 4: Redeploy Service (Nếu cần)
+
+```bash
+# Trigger redeploy để apply DATABASE_URL mới
+# Railway Dashboard → dev-apis → Deployments → Redeploy
+# Hoặc push code mới để trigger deploy
+```
+
+#### Bước 5: Chạy Migration Lại
+
+```bash
+# Sau khi DATABASE_URL đúng và database ready
 railway run --service dev-apis yarn railway:migrate
 ```
+
+**Lưu ý:**
+- ✅ DATABASE_URL phải dùng reference format: `${{ServiceName.DATABASE_URL}}`
+- ✅ Service name phải đúng (check trong Railway Dashboard)
+- ✅ Database service phải đang chạy (check logs)
+- ⚠️ Có thể cần đợi 1-2 phút sau khi set DATABASE_URL
 
 ### Lỗi: Migration Already Applied
 
 - ✅ Đây là normal - migration đã được apply
 - ✅ Không cần làm gì, server sẽ start bình thường
 
-### Lỗi: Migration Failed
+### Lỗi: Migration Failed - P3009 (Failed Migrations)
+
+**Error:**
+```
+Error: P3009
+migrate found failed migrations in the target database, new migrations will not be applied.
+The `20251121153338_create_outlet_stock` migration started at 2025-11-21 08:39:02.241877 UTC failed
+```
+
+**Nguyên nhân:**
+- Có migration đã failed trước đó trong database
+- Prisma không cho phép chạy migration mới khi có migration failed
+- Cần resolve failed migration trước
+
+**Fix:**
+
+#### Option 1: Dùng Script (Khuyến nghị)
+
+```bash
+# Resolve migration (nếu migration đã được apply thủ công)
+./scripts/resolve-failed-migration.sh 20251121153338_create_outlet_stock --applied
+
+# Hoặc rollback (nếu migration chưa được apply)
+./scripts/resolve-failed-migration.sh 20251121153338_create_outlet_stock --rolled-back
+
+# Sau đó chạy migration lại
+railway run --service dev-apis yarn railway:migrate
+```
+
+#### Option 2: Manual Resolve (Nếu script không hoạt động)
+
+**Nếu `railway run` không kết nối được database (P1001):**
+
+1. **Lấy Public DATABASE_URL từ Railway Dashboard:**
+   - Railway Dashboard → PostgreSQL service → Connect → Public Network
+   - Copy public URL
+
+2. **Set DATABASE_URL và resolve:**
+   ```bash
+   # Set public DATABASE_URL
+   export DATABASE_URL="postgresql://postgres:password@proxy.rlwy.net:port/railway"
+   
+   # Resolve migration
+   npx prisma migrate resolve --applied 20251121153338_create_outlet_stock --schema=./prisma/schema.prisma
+   
+   # Hoặc rollback
+   npx prisma migrate resolve --rolled-back 20251121153338_create_outlet_stock --schema=./prisma/schema.prisma
+   ```
+
+3. **Sau đó chạy migration lại:**
+   ```bash
+   railway run --service dev-apis yarn railway:migrate
+   ```
+
+#### Option 3: Check Migration Status Trước
+
+```bash
+# Check migration status để xem migration nào failed
+railway logs --service dev-apis --tail 100 | grep -i "failed\|P3009"
+
+# Sau đó resolve theo Option 1 hoặc 2
+```
+
+**Lưu ý:**
+- ✅ `--applied`: Dùng nếu migration đã được apply thủ công hoặc đã thành công
+- ✅ `--rolled-back`: Dùng nếu muốn rollback migration failed
+- ⚠️ Chỉ resolve khi bạn chắc chắn về trạng thái của migration
+
+### Lỗi: Migration Failed (General)
 
 **Check logs:**
 ```bash
@@ -226,19 +380,22 @@ start.sh: line 57: syntax error: unexpected redirection
 - Script đang dùng bash-specific syntax
 
 **Fix:**
-- ✅ Đã được fix trong code
-- ✅ Commit và push lại để deploy fix
+- ✅ **Đã được fix trong code** (dùng `echo ... |` thay vì `<<<`)
+- ✅ **Đã commit và push** (commit: c36e7a85)
 
-**Nếu vẫn gặp lỗi:**
+**Verify fix:**
 ```bash
-# Pull latest code
-git pull
+# Check start.sh line 57
+grep -n "echo.*prisma db execute" apps/api/start.sh
 
-# Commit và push lại
-git add apps/api/start.sh
-git commit -m "fix: replace <<< with echo pipe for sh compatibility"
-git push
+# Should show:
+# 57:  if echo "SELECT 1;" | npx prisma db execute --stdin --schema="${SCHEMA_PATH}" > /dev/null 2>&1; then
 ```
+
+**Nếu vẫn thấy lỗi trong logs:**
+- ⚠️ Có thể là logs cũ (trước khi deploy fix)
+- ✅ Đợi Railway deploy code mới (sau khi push)
+- ✅ Check logs mới nhất: `railway logs --service dev-apis --tail 20`
 
 ---
 
