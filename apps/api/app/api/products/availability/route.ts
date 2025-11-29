@@ -298,31 +298,31 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
           isAvailable: totalAvailable > 0
         },
       orders: allOrders.map((order: any) => {
-        // Filter order items for this specific product
-        const productItems = order.orderItems.filter((item: any) => item.productId === productId);
-        
-        return {
-          // Basic order info
-          id: order.id,
-          orderNumber: order.orderNumber,
-          orderType: order.orderType,
-          status: order.status,
-          totalAmount: order.totalAmount,
-          depositAmount: order.depositAmount,
-          securityDeposit: order.securityDeposit || 0,
-          damageFee: order.damageFee || 0,
-          lateFee: order.lateFee || 0,
-          discountType: order.discountType || null,
-          discountValue: order.discountValue || 0,
-          discountAmount: order.discountAmount || 0,
+          // Filter order items for this specific product
+          const productItems = order.orderItems.filter((item: any) => item.productId === productId);
           
-          // Flatten dates
-          pickupPlanAt: order.pickupPlanAt,
-          returnPlanAt: order.returnPlanAt,
-          pickedUpAt: order.pickedUpAt,
-          returnedAt: order.returnedAt,
-          createdAt: order.createdAt,
-          updatedAt: order.updatedAt,
+          return {
+            // Basic order info
+            id: order.id,
+            orderNumber: order.orderNumber,
+            orderType: order.orderType,
+            status: order.status,
+            totalAmount: order.totalAmount,
+            depositAmount: order.depositAmount,
+            securityDeposit: order.securityDeposit || 0,
+            damageFee: order.damageFee || 0,
+            lateFee: order.lateFee || 0,
+            discountType: order.discountType || null,
+            discountValue: order.discountValue || 0,
+            discountAmount: order.discountAmount || 0,
+            
+            // Flatten dates - normalize to UTC ISO strings using toISOString()
+            pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
+            returnPlanAt: order.returnPlanAt?.toISOString() || null,
+            pickedUpAt: order.pickedUpAt?.toISOString() || null,
+            returnedAt: order.returnedAt?.toISOString() || null,
+            createdAt: order.createdAt?.toISOString() || null,
+            updatedAt: order.updatedAt?.toISOString() || null,
           
           // Rental info
           rentalDuration: order.rentalDuration || null,

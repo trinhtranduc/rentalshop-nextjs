@@ -132,8 +132,8 @@ export async function GET(
             address: os.outlet.address || null // Include address if available
           }
         })),
-        createdAt: product.createdAt.toISOString(),
-        updatedAt: product.updatedAt.toISOString()
+        createdAt: product.createdAt?.toISOString() || null,
+        updatedAt: product.updatedAt?.toISOString() || null
       };
 
       console.log('✅ Transformed product data:', transformedProduct);

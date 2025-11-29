@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -214,7 +214,8 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
 
     // Group orders by day and calculate revenue
     const dailyDataMap = new Map<string, {
-      date: string;
+      date: string; // ISO string for date (YYYY-MM-DD) - frontend can format with locale
+      dateISO: string; // Full ISO string at midnight UTC for the day
       dateObj: Date;
       totalRevenue: number;
       newOrderCount: number;
@@ -226,7 +227,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
         revenue: number;
         revenueType: string;
         description: string;
-        revenueDate: string;
+        revenueDate: string; // ISO string with full timestamp
         customerName?: string;
         customerPhone?: string;
         outletName?: string;
@@ -250,14 +251,17 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
           continue;
         }
 
-        // Format date as YYYY-MM-DD for grouping
-        const dateKey = event.date.toISOString().split('T')[0];
-        const dateObj = new Date(dateKey);
+        // Format date as YYYY/MM/DD for grouping (use utility)
+        const dateKey = getUTCDateKey(event.date);
+        // Normalize date to midnight UTC ISO string (use utility)
+        const dateISO = normalizeDateToISO(event.date);
+        const dateObj = new Date(dateISO);
 
         // Get or create daily entry
         if (!dailyDataMap.has(dateKey)) {
           dailyDataMap.set(dateKey, {
-            date: dateKey,
+            date: dateKey, // YYYY/MM/DD format (standardized)
+            dateISO: dateISO, // Full ISO string for frontend formatting (from utility)
             dateObj,
             totalRevenue: 0,
             newOrderCount: 0,
@@ -296,7 +300,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
       if (order.createdAt) {
         const createdDate = new Date(order.createdAt);
         if (createdDate >= start && createdDate <= end) {
-          const dateKey = createdDate.toISOString().split('T')[0];
+          const dateKey = getUTCDateKey(createdDate); // Use utility for YYYY/MM/DD format
           const orderKey = `${order.orderNumber}-${dateKey}`;
           
           // Only count once per order per day
@@ -318,7 +322,12 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
     // Convert map to array and sort by date
     const dailyDataArray = Array.from(dailyDataMap.values())
       .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-      .map(({ dateObj, ...rest }) => rest);
+      .map(({ dateObj, ...rest }) => ({
+        ...rest,
+        // Ensure date and dateISO are both included for frontend flexibility
+        // date: YYYY/MM/DD format (standardized)
+        // dateISO: Full ISO string at midnight UTC (for locale formatting)
+      }));
 
     return NextResponse.json(
       ResponseBuilder.success('DAILY_INCOME_SUCCESS', {

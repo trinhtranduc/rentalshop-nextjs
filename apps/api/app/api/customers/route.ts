@@ -180,11 +180,19 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
     const result = await db.customers.search(searchFilters);
     console.log('✅ Search completed, found:', result.total || 0, 'customers');
 
+    // Normalize date fields in customer list to UTC ISO strings using toISOString()
+    const normalizedCustomers = (result.data || []).map(customer => ({
+      ...customer,
+      createdAt: customer.createdAt?.toISOString() || null,
+      updatedAt: customer.updatedAt?.toISOString() || null,
+      dateOfBirth: customer.dateOfBirth?.toISOString() || null,
+    }));
+
     // Create response with ETag support
     const responseData = {
       success: true,
       data: {
-        customers: result.data || [],
+        customers: normalizedCustomers,
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
@@ -314,8 +322,16 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     const customer = await db.customers.create(customerData);
     console.log('✅ Customer created successfully:', customer);
 
+    // Normalize date fields to UTC ISO strings using toISOString()
+    const normalizedCustomer = {
+      ...customer,
+      createdAt: customer.createdAt?.toISOString() || null,
+      updatedAt: customer.updatedAt?.toISOString() || null,
+      dateOfBirth: customer.dateOfBirth?.toISOString() || null,
+    };
+
     return NextResponse.json(
-      ResponseBuilder.success('CUSTOMER_CREATED_SUCCESS', customer),
+      ResponseBuilder.success('CUSTOMER_CREATED_SUCCESS', normalizedCustomer),
       { status: 201 }
     );
 
@@ -434,8 +450,16 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
     const updatedCustomer = await db.customers.update(id, parsed);
     console.log('✅ Customer updated successfully:', updatedCustomer);
 
+    // Normalize date fields to UTC ISO strings using toISOString()
+    const normalizedCustomer = {
+      ...updatedCustomer,
+      createdAt: updatedCustomer.createdAt?.toISOString() || null,
+      updatedAt: updatedCustomer.updatedAt?.toISOString() || null,
+      dateOfBirth: updatedCustomer.dateOfBirth?.toISOString() || null,
+    };
+
     return NextResponse.json(
-      ResponseBuilder.success('CUSTOMER_UPDATED_SUCCESS', updatedCustomer)
+      ResponseBuilder.success('CUSTOMER_UPDATED_SUCCESS', normalizedCustomer)
     );
 
   } catch (error: any) {

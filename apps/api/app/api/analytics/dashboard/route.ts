@@ -260,9 +260,9 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
         totalAmount: order.totalAmount,
         customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
         outletName: order.outlet?.name || 'Unknown',
-        createdAt: order.createdAt,
-        pickupPlanAt: order.pickupPlanAt,
-        returnPlanAt: order.returnPlanAt,
+        createdAt: order.createdAt?.toISOString() || null,
+        pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
+        returnPlanAt: order.returnPlanAt?.toISOString() || null,
         productNames: (order as any).orderItems?.map((item: any) => item.product?.name).filter(Boolean).join(', ') || 'N/A'
       }))
     };

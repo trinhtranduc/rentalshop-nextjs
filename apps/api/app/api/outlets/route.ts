@@ -70,10 +70,17 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
     const result = await db.outlets.search(searchFilters);
     console.log('✅ Search completed, found:', result.data?.length || 0, 'outlets');
 
+    // Normalize date fields in outlet list to UTC ISO strings using toISOString()
+    const normalizedOutlets = (result.data || []).map(outlet => ({
+      ...outlet,
+      createdAt: outlet.createdAt?.toISOString() || null,
+      updatedAt: outlet.updatedAt?.toISOString() || null,
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
-        outlets: result.data || [],
+        outlets: normalizedOutlets,
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
@@ -196,8 +203,15 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
     const outlet = await db.outlets.create(outletData);
     console.log('✅ Outlet created successfully:', outlet);
 
+    // Normalize date fields to UTC ISO strings using toISOString()
+    const normalizedOutlet = {
+      ...outlet,
+      createdAt: outlet.createdAt?.toISOString() || null,
+      updatedAt: outlet.updatedAt?.toISOString() || null,
+    };
+
     return NextResponse.json(
-      ResponseBuilder.success('OUTLET_CREATED_SUCCESS', outlet)
+      ResponseBuilder.success('OUTLET_CREATED_SUCCESS', normalizedOutlet)
     );
 
   } catch (error: any) {
@@ -307,8 +321,15 @@ export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
     const updatedOutlet = await db.outlets.update(id, updateData);
     console.log('✅ Outlet updated successfully:', updatedOutlet);
 
+    // Normalize date fields to UTC ISO strings using toISOString()
+    const normalizedOutlet = {
+      ...updatedOutlet,
+      createdAt: updatedOutlet.createdAt?.toISOString() || null,
+      updatedAt: updatedOutlet.updatedAt?.toISOString() || null,
+    };
+
     return NextResponse.json(
-      ResponseBuilder.success('OUTLET_UPDATED_SUCCESS', updatedOutlet)
+      ResponseBuilder.success('OUTLET_UPDATED_SUCCESS', normalizedOutlet)
     );
 
   } catch (error: any) {

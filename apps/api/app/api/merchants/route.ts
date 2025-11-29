@@ -85,8 +85,8 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
       productsCount: merchant._count?.products || 0,
       customersCount: merchant._count?.customers || 0,
       totalRevenue: merchant.totalRevenue || 0,
-      createdAt: merchant.createdAt,
-      lastActiveAt: merchant.lastActiveAt
+      createdAt: merchant.createdAt?.toISOString() || null,
+      lastActiveAt: merchant.lastActiveAt?.toISOString() || null
     }));
 
     // Calculate pagination info
@@ -197,8 +197,8 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         usersCount: 0,
         productsCount: 0,
         totalRevenue: merchant.totalRevenue,
-        createdAt: merchant.createdAt,
-        lastActiveAt: merchant.lastActiveAt,
+        createdAt: merchant.createdAt?.toISOString() || null,
+        lastActiveAt: merchant.lastActiveAt?.toISOString() || null,
         defaultOutlet: {
           id: defaultOutlet.id,
           name: defaultOutlet.name,
