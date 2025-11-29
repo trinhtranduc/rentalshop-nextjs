@@ -88,6 +88,7 @@ model Merchant {
   pricingConfig String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
   pricingType   PricingType   @default(FIXED)
   currency      String        @default("USD")
+  avatar        String?       // Avatar image URL
   categories    Category[]
   customers     Customer[]
   Plan          Plan?         @relation(fields: [planId], references: [id])
@@ -118,6 +119,7 @@ model Outlet {
   country     String?
   state       String?
   zipCode     String?
+  avatar        String?       // Avatar image URL
   orders      Order[]
   merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products    OutletStock[]
