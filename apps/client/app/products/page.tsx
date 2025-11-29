@@ -18,7 +18,8 @@ import {
   ProductEdit,
   ConfirmationDialog,
   Button,
-  LoadingIndicator
+  LoadingIndicator,
+  ExportDialog
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -69,6 +70,8 @@ export default function ProductsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [productToDelete, setProductToDelete] = useState<ProductWithDetails | null>(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Data for edit dialog
   const [categories, setCategories] = useState<Category[]>([]);
@@ -383,19 +386,16 @@ export default function ProductsPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {/* Export feature - temporarily hidden, will be enabled in the future */}
-            {/* {canExport && (
+            {canExport && (
               <Button
-                onClick={() => {
-                  toastSuccess(tc('labels.info'), tc('messages.comingSoon'));
-                }}
-                variant="default"
+                onClick={() => setShowExportDialog(true)}
+                variant="outline"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
                 {tc('buttons.export')}
               </Button>
-            )} */}
+            )}
             <Button 
               onClick={() => setShowAddDialog(true)}
               variant="default"
@@ -518,6 +518,37 @@ export default function ProductsPage() {
         onCancel={() => {
           setShowDeleteConfirm(false);
           setProductToDelete(null);
+        }}
+      />
+
+      {/* Export Dialog */}
+      <ExportDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        resourceName="Products"
+        isLoading={isExporting}
+        onExport={async (params) => {
+          try {
+            setIsExporting(true);
+            const blob = await productsApi.exportProducts(params);
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `products-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            toastSuccess(tc('labels.success'), 'Export completed successfully');
+            setShowExportDialog(false);
+          } catch (error) {
+            toastError(tc('labels.error'), (error as Error).message || 'Failed to export products');
+          } finally {
+            setIsExporting(false);
+          }
         }}
       />
     </PageWrapper>
