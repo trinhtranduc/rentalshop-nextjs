@@ -40,7 +40,7 @@ export function useUserRole(): UserRoleInfo {
     canManageOutlets: role === 'ADMIN' || role === 'MERCHANT',
     canManageSubscriptions: role === 'ADMIN' || role === 'MERCHANT',
     canViewBilling: role === 'ADMIN' || role === 'MERCHANT',
-    canExportData: role === 'ADMIN' || role === 'MERCHANT',
+    canExportData: role === 'ADMIN' || role === 'MERCHANT' || role === 'OUTLET_ADMIN',
   };
 }
 

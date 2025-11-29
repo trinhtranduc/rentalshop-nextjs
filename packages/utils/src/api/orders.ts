@@ -121,6 +121,37 @@ export const ordersApi = {
   },
 
   /**
+   * Export orders to Excel or CSV
+   */
+  async exportOrders(params: {
+    period?: '1month' | '3months' | '6months' | '1year' | 'custom';
+    startDate?: string;
+    endDate?: string;
+    format?: 'excel' | 'csv';
+    dateField?: 'createdAt' | 'pickupPlanAt' | 'returnPlanAt';
+    status?: string;
+    orderType?: string;
+  }): Promise<Blob> {
+    const queryParams = new URLSearchParams();
+    if (params.period) queryParams.append('period', params.period);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.format) queryParams.append('format', params.format);
+    if (params.dateField) queryParams.append('dateField', params.dateField);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.orderType) queryParams.append('orderType', params.orderType);
+
+    const url = `${apiUrls.orders.export}?${queryParams.toString()}`;
+    const response = await authenticatedFetch(url);
+    
+    if (!response.ok) {
+      throw new Error('Failed to export orders');
+    }
+    
+    return await response.blob();
+  },
+
+  /**
    * Delete an order
    */
   async deleteOrder(orderId: number): Promise<ApiResponse<void>> {

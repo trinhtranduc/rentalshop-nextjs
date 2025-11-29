@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/xlsx": "^0.0.36",
     "tsup": "^8.0.0",
     "turbo": "^1.10.0",
     "typescript": "^5.0.0"
@@ -48,6 +49,7 @@
     "@prisma/engines": "^6.16.2",
     "bcryptjs": "^3.0.2",
     "node-fetch": "^3.3.2",
-    "prisma": "6.16.2"
+    "prisma": "6.16.2",
+    "xlsx": "^0.18.5"
   }
 }

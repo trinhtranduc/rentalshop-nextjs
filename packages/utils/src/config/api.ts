@@ -67,6 +67,7 @@ export interface ApiUrls {
     updateStock: (id: number) => string;
     bulkUpdate: string;
     availability: (id: number) => string;
+    export: string;
   };
   orders: {
     list: string;
@@ -76,6 +77,7 @@ export interface ApiUrls {
     getByNumber: (orderNumber: string) => string;
     updateStatus: (id: number) => string;
     stats: string;
+    export: string;
   };
   customers: {
     list: string;
@@ -83,6 +85,7 @@ export interface ApiUrls {
     update: (id: number) => string;
     delete: (id: number) => string;
     stats: string;
+    export: string;
   };
   outlets: {
     list: string;
@@ -526,6 +529,7 @@ function createApiUrls(): ApiUrls {
       updateStock: (id: number) => `${base}/api/products/${id}/stock`,
       bulkUpdate: `${base}/api/products/bulk-update`,
       availability: (id: number) => `${base}/api/products/${id}/availability`,
+      export: `${base}/api/products/export`,
     },
     orders: {
       list: `${base}/api/orders`,
@@ -535,6 +539,7 @@ function createApiUrls(): ApiUrls {
       getByNumber: (orderNumber: string) => `${base}/api/orders/by-number/${encodeURIComponent(orderNumber)}`,
       updateStatus: (id: number) => `${base}/api/orders/${id}/status`,
       stats: `${base}/api/orders/stats`,
+      export: `${base}/api/orders/export`,
     },
     customers: {
       list: `${base}/api/customers`,
@@ -542,6 +547,7 @@ function createApiUrls(): ApiUrls {
       update: (id: number) => `${base}/api/customers/${id}`,
       delete: (id: number) => `${base}/api/customers/${id}`,
       stats: `${base}/api/customers/stats`,
+      export: `${base}/api/customers/export`,
     },
     outlets: {
       list: `${base}/api/outlets`,

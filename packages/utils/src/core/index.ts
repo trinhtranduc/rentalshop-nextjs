@@ -154,6 +154,10 @@ export * from './order-number-manager';
 
 // Date utilities
 export * from './date';
+export * from './date-range';
+
+// Excel utilities
+export * from './excel';
 
 // ID utilities - removed (using single id system)
 
