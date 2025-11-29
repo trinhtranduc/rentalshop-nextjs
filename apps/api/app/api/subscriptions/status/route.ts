@@ -181,10 +181,10 @@ export async function GET(request: NextRequest) {
         // SUBSCRIPTION DETAILS
         // ============================================================================
         subscriptionId: subscription.id,
-        currentPeriodStart: subscription.currentPeriodStart,
-        currentPeriodEnd: subscription.currentPeriodEnd,
-        trialStart: subscription.trialStart,
-        trialEnd: subscription.trialEnd,
+        currentPeriodStart: subscription.currentPeriodStart?.toISOString() || null,
+        currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() || null,
+        trialStart: subscription.trialStart?.toISOString() || null,
+        trialEnd: subscription.trialEnd?.toISOString() || null,
         
         // ============================================================================
         // PLAN INFO
@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
         // CANCELLATION INFO (if applicable)
         // ============================================================================
         cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-        canceledAt: subscription.canceledAt,
+        canceledAt: subscription.canceledAt?.toISOString() || null,
         cancelReason: subscription.cancelReason,
         
         // ============================================================================

@@ -137,10 +137,21 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
     console.log('📊 RESULT DEBUG: page=', result.page, ', total=', result.total, ', limit=', result.limit);
 
+    // Normalize date fields in order list to UTC ISO strings using toISOString()
+    const normalizedOrders = (result.data || []).map(order => ({
+      ...order,
+      createdAt: order.createdAt?.toISOString() || null,
+      updatedAt: order.updatedAt?.toISOString() || null,
+      pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
+      returnPlanAt: order.returnPlanAt?.toISOString() || null,
+      pickedUpAt: order.pickedUpAt?.toISOString() || null,
+      returnedAt: order.returnedAt?.toISOString() || null,
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
-        orders: result.data || [],
+        orders: normalizedOrders,
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
@@ -470,9 +481,20 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       totalPaid: order.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
     };
 
+    // Normalize date fields to UTC ISO strings using toISOString()
+    const normalizedOrder = {
+      ...flattenedOrder,
+      createdAt: flattenedOrder.createdAt?.toISOString() || null,
+      updatedAt: flattenedOrder.updatedAt?.toISOString() || null,
+      pickupPlanAt: flattenedOrder.pickupPlanAt?.toISOString() || null,
+      returnPlanAt: flattenedOrder.returnPlanAt?.toISOString() || null,
+      pickedUpAt: flattenedOrder.pickedUpAt?.toISOString() || null,
+      returnedAt: flattenedOrder.returnedAt?.toISOString() || null,
+    };
+
     return NextResponse.json({
       success: true,
-      data: flattenedOrder,
+      data: normalizedOrder,
       code: 'ORDER_CREATED_SUCCESS',
       message: 'Order created successfully'
     });

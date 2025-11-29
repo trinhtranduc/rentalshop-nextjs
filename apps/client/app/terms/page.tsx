@@ -49,15 +49,15 @@ export default function TermsPage() {
             </h2>
             <div className="space-y-2 text-text-secondary">
               <p>
-                {isVi
+              {isVi
                   ? 'AnyRent là ứng dụng hỗ trợ bạn quản lý cửa hàng cho thuê và bán hàng, bao gồm quản lý sản phẩm, khách hàng, đơn hàng và doanh thu.'
                   : 'AnyRent is a software application that helps you manage your rental and sales shop, including products, customers, orders, and revenue.'}
-              </p>
-              <p className="text-text-tertiary text-sm">
-                {isVi
+            </p>
+            <p className="text-text-tertiary text-sm">
+              {isVi
                   ? 'AnyRent không trực tiếp xử lý thanh toán, vận chuyển hay hợp đồng thuê giữa bạn và khách hàng của bạn; mọi giao dịch thực tế hoàn toàn do bạn và khách hàng của bạn thực hiện và chịu trách nhiệm.'
                   : 'AnyRent does not directly handle payments, shipping, or rental contracts between you and your customers; all real-world transactions are carried out and managed solely by you and your customers.'}
-              </p>
+            </p>
             </div>
           </section>
 

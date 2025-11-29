@@ -77,8 +77,8 @@ export default function OrderDetailPage() {
     router.push(`/orders/${numericOrderId}/edit`);
   };
 
-  const handleCancelOrder = async () => {
-    if (!order) return;
+  const handleCancelOrder = async (orderToCancel: Order) => {
+    if (!orderToCancel) return;
 
     if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
       return;
@@ -87,11 +87,11 @@ export default function OrderDetailPage() {
     try {
       setActionLoading(true);
 
-      const result = await ordersApi.cancelOrder(order.id);
+      const result = await ordersApi.cancelOrder(orderToCancel.id);
 
-      if (result.success) {
-        // Refresh the order data
-        router.refresh();
+      if (result.success && result.data) {
+        // Update order state directly from API response (better UX - no need to refetch)
+        setOrder(result.data);
         toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to cancel order');
@@ -112,9 +112,9 @@ export default function OrderDetailPage() {
 
       const result = await ordersApi.updateOrderStatus(order.id, newStatus);
 
-      if (result.success) {
-        // Refresh the order data
-        router.refresh();
+      if (result.success && result.data) {
+        // Update order state directly from API response (better UX - no need to refetch)
+        setOrder(result.data);
         toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to update order status');
@@ -138,9 +138,9 @@ export default function OrderDetailPage() {
 
       const result = await ordersApi.pickupOrder(parseInt(orderId));
 
-      if (result.success) {
-        // Refresh the order data
-        router.refresh();
+      if (result.success && result.data) {
+        // Update order state directly from API response (better UX - no need to refetch)
+        setOrder(result.data);
         toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to pickup order');
@@ -163,9 +163,9 @@ export default function OrderDetailPage() {
 
       const result = await ordersApi.returnOrder(parseInt(orderId));
 
-      if (result.success) {
-        // Refresh the order data
-        router.refresh();
+      if (result.success && result.data) {
+        // Update order state directly from API response (better UX - no need to refetch)
+        setOrder(result.data);
         toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to return order');
@@ -204,9 +204,9 @@ export default function OrderDetailPage() {
 
       const result = await ordersApi.updateOrderSettings(order.id, updateData);
 
-      if (result.success) {
-        // Refresh the order data
-        router.refresh();
+      if (result.success && result.data) {
+        // Update order state directly from API response (better UX - no need to refetch)
+        setOrder(result.data);
         toastSuccess('Settings Saved', 'Order settings saved successfully!');
       } else {
         throw new Error(result.error || 'Failed to save order settings');
@@ -220,23 +220,30 @@ export default function OrderDetailPage() {
   };
 
   // Wrapper functions to match OrderDetail component interface
-  const handlePickupWrapper = (orderId: string) => {
-    handlePickupOrder(orderId, {
-      order_status: 'PICKUPED',
-      bail_amount: 0,
-      material: '',
-      notes: ''
-    });
+  // OrderDetail expects: onPickup?: (orderId: number, data: any) => void
+  const handlePickupWrapper = async (orderId: number, data: any) => {
+    await handlePickupOrder(orderId.toString(), data);
   };
 
-  const handleReturnWrapper = (orderId: string) => {
-    handleReturnOrder(orderId, {
-      order_status: 'RETURNED',
-      notes: '',
-      damage_fee: 0
-    });
+  // OrderDetail expects: onReturn?: (orderId: number, data: any) => void
+  const handleReturnWrapper = async (orderId: number, data: any) => {
+    await handleReturnOrder(orderId.toString(), data);
   };
 
+  // Show loading state while fetching order data
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <LoadingIndicator 
+          variant="circular" 
+          size="lg"
+          message={tc('labels.loading') || 'Loading order...'}
+        />
+      </div>
+    );
+  }
+
+  // Show error state if there's an error
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -264,6 +271,7 @@ export default function OrderDetailPage() {
     );
   }
 
+  // Show "Order Not Found" only after loading is complete and order is still null
   if (!order) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -299,16 +307,6 @@ export default function OrderDetailPage() {
 
   return (
     <PageWrapper>
-      {/* Center Loading Indicator - Shows when waiting for API */}
-      {loading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
-          <LoadingIndicator 
-            variant="circular" 
-            size="lg"
-            message={tc('labels.loading') || 'Loading order...'}
-          />
-        </div>
-      )}
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
 

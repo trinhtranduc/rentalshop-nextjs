@@ -175,7 +175,7 @@ export async function PUT(
           merchantName: merchant.name,
           businessType: merchant.businessType,
           pricingConfig,
-          updatedAt: merchant.updatedAt
+          updatedAt: merchant.updatedAt?.toISOString() || null
         }
       });
 

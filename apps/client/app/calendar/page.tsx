@@ -180,7 +180,7 @@ export default function CalendarPage() {
           status: order.status,
           outletName: order.outletName,
           notes: order.notes || '',
-          isOverdue: order.status === 'PICKUPED' && order.returnPlanAt ? new Date(order.returnPlanAt) < new Date() : false,
+          isOverdue: order.status === ORDER_STATUS.PICKUPED && order.returnPlanAt ? new Date(order.returnPlanAt) < new Date() : false,
           duration: order.pickupPlanAt && order.returnPlanAt ? 
             Math.ceil((new Date(order.returnPlanAt).getTime() - new Date(order.pickupPlanAt).getTime()) / (1000 * 60 * 60 * 24)) : 0,
           // Keep original fields for CalendarGrid to match dates correctly
@@ -332,7 +332,7 @@ export default function CalendarPage() {
                                <div className="flex items-center gap-2">
                                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${
                                    order.status === 'RESERVED' ? 'bg-red-100 text-red-800' :
-                                   order.status === 'PICKUPED' ? 'bg-green-100 text-green-800' :
+                                   order.status === ORDER_STATUS.PICKUPED ? 'bg-green-100 text-green-800' :
                                    order.status === 'RETURNED' ? 'bg-blue-100 text-blue-800' :
                                    'bg-gray-100 text-gray-800'
                                  }`}>

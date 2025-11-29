@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withAuthRoles } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, normalizeDateToISO, getUTCDateKey } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -276,13 +276,24 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
           }
         });
 
+      // Normalize startOfPeriod to midnight UTC for consistent ISO formatting (use utility)
+      const dateKey = getUTCDateKey(startOfPeriod); // YYYY/MM/DD format
+      const dateISO = normalizeDateToISO(startOfPeriod); // Full ISO string at midnight UTC
+      const normalizedStartOfPeriod = new Date(dateISO);
+
       // Push data with outlet info if outlet comparison is enabled
       const dataPoint: any = {
+        // Keep periodLabel for backward compatibility (display format)
         month: groupByType === 'month' ? periodLabel : `${periodLabel}`,
-          year: year,
-          realIncome: realIncome,
-          futureIncome: futureIncome,
-          orderCount: orderCount
+        // Add ISO date fields for mobile locale formatting (using utilities)
+        date: groupByType === 'day' ? dateKey : undefined, // YYYY/MM/DD for day only
+        dateISO: dateISO, // Full ISO string at midnight UTC for locale formatting
+        year: year,
+        monthNumber: groupByType === 'month' ? normalizedStartOfPeriod.getUTCMonth() + 1 : undefined, // 1-12
+        dayNumber: groupByType === 'day' ? normalizedStartOfPeriod.getUTCDate() : undefined, // 1-31
+        realIncome: realIncome,
+        futureIncome: futureIncome,
+        orderCount: orderCount
       };
 
       // Add outlet info when outletIds parameter is provided

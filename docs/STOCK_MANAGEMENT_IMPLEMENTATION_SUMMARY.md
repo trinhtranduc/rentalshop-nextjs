@@ -173,7 +173,7 @@ LEFT JOIN "OrderItem" oi ON oi."productId" = os."productId"
 LEFT JOIN "Order" ord ON ord.id = oi."orderId" 
   AND ord."outletId" = os."outletId"
   AND ord."orderType" = 'RENT'
-  AND ord.status = 'PICKUPED'
+  AND ord.status = ORDER_STATUS.PICKUPED
 GROUP BY os.id, os."productId", os."outletId", os.renting
 HAVING os.renting != COALESCE(SUM(oi.quantity), 0);
 ```
