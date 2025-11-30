@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { prisma } from '@rentalshop/database';
 import { 
   handleApiError, 
   ResponseBuilder,
@@ -53,36 +53,85 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
 
     const { startDate, endDate } = dateRangeResult;
 
-    // Build search filters based on user scope
-    const filters: any = {
-      limit: 10000, // Large limit for export
-      offset: 0,
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    };
-
+    // Build where clause for Prisma query
+    const where: any = {};
+    
     // Apply scope restrictions
     if (userScope.merchantId) {
-      filters.merchantId = userScope.merchantId;
+      where.outlet = { merchantId: userScope.merchantId };
     }
     if (userScope.outletId) {
-      filters.outletId = userScope.outletId;
+      where.outletId = userScope.outletId;
+    }
+    
+    // Apply additional filters
+    if (status) where.status = status;
+    if (orderType) where.orderType = orderType;
+    
+    // Apply date range filter
+    if (dateField === 'createdAt') {
+      where.createdAt = {
+        gte: startDate,
+        lte: endDate
+      };
+    } else if (dateField === 'pickupPlanAt') {
+      where.pickupPlanAt = {
+        gte: startDate,
+        lte: endDate
+      };
+    } else if (dateField === 'returnPlanAt') {
+      where.returnPlanAt = {
+        gte: startDate,
+        lte: endDate
+      };
     }
 
-    // Apply additional filters
-    if (status) filters.status = status;
-    if (orderType) filters.orderType = orderType;
-
-    // Get orders
-    const result = await db.orders.search(filters);
-    let orders = result.data || [];
-
-    // Filter by date range based on dateField
-    orders = orders.filter((order: any) => {
-      const dateValue = order[dateField];
-      if (!dateValue) return false;
-      const orderDate = new Date(dateValue);
-      return orderDate >= startDate && orderDate <= endDate;
+    // Get orders with all required fields
+    const orders = await prisma.order.findMany({
+      where,
+      select: {
+        id: true,
+        orderNumber: true,
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        discountType: true,
+        discountValue: true,
+        discountAmount: true,
+        pickupPlanAt: true,
+        returnPlanAt: true,
+        pickedUpAt: true,
+        returnedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true,
+          }
+        },
+        outlet: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          }
+        },
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10000 // Large limit for export
     });
 
     // Prepare data for export
@@ -94,7 +143,15 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
       customerEmail: order.customer?.email || '',
       customerPhone: order.customer?.phone || '',
-      outletId: order.outlet?.id || order.outletId || '',
+      outletId: order.outlet?.id || '',
+      outletName: order.outlet?.name || '',
+      outletAddress: order.outlet?.address || '',
+      createdById: order.createdBy?.id || '',
+      createdByName: `${order.createdBy?.firstName || ''} ${order.createdBy?.lastName || ''}`.trim() || order.createdBy?.email || '',
+      createdByEmail: order.createdBy?.email || '',
+      discountType: order.discountType || '',
+      discountValue: formatNumberForExcel(order.discountValue || 0),
+      discountAmount: formatNumberForExcel(order.discountAmount || 0),
       totalAmount: formatNumberForExcel(order.totalAmount),
       depositAmount: formatNumberForExcel(order.depositAmount),
       pickupPlanDate: formatDateForExcel(order.pickupPlanAt),
@@ -116,6 +173,14 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
         { header: 'Customer Email', key: 'customerEmail', width: 25 },
         { header: 'Customer Phone', key: 'customerPhone', width: 15 },
         { header: 'Outlet ID', key: 'outletId', width: 10 },
+        { header: 'Outlet Name', key: 'outletName', width: 25 },
+        { header: 'Outlet Address', key: 'outletAddress', width: 30 },
+        { header: 'Created By ID', key: 'createdById', width: 12 },
+        { header: 'Created By Name', key: 'createdByName', width: 25 },
+        { header: 'Created By Email', key: 'createdByEmail', width: 25 },
+        { header: 'Discount Type', key: 'discountType', width: 15 },
+        { header: 'Discount Value', key: 'discountValue', width: 15 },
+        { header: 'Discount Amount', key: 'discountAmount', width: 15 },
         { header: 'Total Amount', key: 'totalAmount', width: 15 },
         { header: 'Deposit Amount', key: 'depositAmount', width: 15 },
         { header: 'Pickup Plan Date', key: 'pickupPlanDate', width: 20 },
@@ -129,7 +194,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       const buffer = createExcelWorkbook(exportData, columns, 'Orders');
       const filename = generateExcelFilename('orders', startDate, endDate);
 
-      return new NextResponse(buffer, {
+      return new NextResponse(buffer as any, {
         status: API.STATUS.OK,
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -149,6 +214,14 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       'Customer Email',
       'Customer Phone',
       'Outlet ID',
+      'Outlet Name',
+      'Outlet Address',
+      'Created By ID',
+      'Created By Name',
+      'Created By Email',
+      'Discount Type',
+      'Discount Value',
+      'Discount Amount',
       'Total Amount',
       'Deposit Amount',
       'Pickup Plan Date',
@@ -168,6 +241,14 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       `"${order.customerEmail}"`,
       `"${order.customerPhone}"`,
       order.outletId,
+      `"${order.outletName}"`,
+      `"${order.outletAddress}"`,
+      order.createdById,
+      `"${order.createdByName}"`,
+      `"${order.createdByEmail}"`,
+      `"${order.discountType}"`,
+      order.discountValue,
+      order.discountAmount,
       order.totalAmount,
       order.depositAmount,
       order.pickupPlanDate,
