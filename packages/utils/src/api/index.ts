@@ -10,6 +10,7 @@ export * from './products';
 export * from './customers';
 export * from './orders';
 export * from './outlets';
+export * from './bank-accounts';
 export * from './merchants';
 export * from './analytics';
 export * from './categories';

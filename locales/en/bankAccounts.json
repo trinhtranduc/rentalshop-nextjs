@@ -1,0 +1,62 @@
+{
+  "title": "Bank Account Management",
+  "subtitle": "Manage bank accounts for outlet",
+  "form": {
+    "title": "Bank Account Information",
+    "addTitle": "Add Bank Account",
+    "editTitle": "Edit Bank Account",
+    "accountHolderName": "Account Holder Name",
+    "accountHolderNamePlaceholder": "Enter account holder name",
+    "accountNumber": "Account Number",
+    "accountNumberPlaceholder": "Enter account number (8-16 digits)",
+    "bankName": "Bank Name",
+    "bankNamePlaceholder": "Select bank",
+    "bankCode": "Bank Code",
+    "bankCodePlaceholder": "Bank code (auto-filled)",
+    "branch": "Branch",
+    "branchPlaceholder": "Enter branch (optional)",
+    "isDefault": "Set as default account",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes (optional)",
+    "submit": "Save Bank Account",
+    "add": "Add Account",
+    "update": "Update",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "errors": {
+      "accountHolderNameRequired": "Account holder name is required",
+      "accountNumberRequired": "Account number is required",
+      "accountNumberInvalid": "Account number must be 8-16 digits",
+      "bankNameRequired": "Bank name is required"
+    }
+  },
+  "card": {
+    "default": "Default",
+    "accountNumber": "Account Number",
+    "bank": "Bank",
+    "branch": "Branch",
+    "notes": "Notes",
+    "copyQRCode": "Copy QR Code",
+    "scanQRHint": "Scan QR code for quick transfer",
+    "copied": "Copied",
+    "accountNumberCopied": "Account number copied to clipboard",
+    "qrCodeCopied": "QR code copied to clipboard"
+  },
+  "list": {
+    "emptyTitle": "No bank accounts",
+    "emptyDescription": "Add bank accounts to receive bank transfer payments",
+    "addButton": "Add Bank Account"
+  },
+  "messages": {
+    "addSuccess": "Bank account added successfully",
+    "addError": "Failed to add bank account",
+    "updateSuccess": "Bank account updated successfully",
+    "updateError": "Failed to update bank account",
+    "deleteSuccess": "Bank account deleted successfully",
+    "deleteError": "Failed to delete bank account",
+    "loadError": "Failed to load bank accounts",
+    "deleteConfirm": "Are you sure you want to delete the bank account \"{name}\"?",
+    "deleteConfirmTitle": "Delete Bank Account"
+  }
+}
+

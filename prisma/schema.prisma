@@ -16,17 +16,17 @@ model User {
   lastName               String
   phone                  String?
   role                   UserRole               @default(OUTLET_STAFF) // System role (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
-  customRoleId           Int?                   // Custom role for merchant (nullable - only for custom roles)
+  customRoleId           Int? // Custom role for merchant (nullable - only for custom roles)
   isActive               Boolean                @default(true)
   emailVerified          Boolean                @default(false)
   emailVerifiedAt        DateTime?
-  passwordChangedAt      DateTime?              // Track when password was last changed to invalidate old tokens
+  passwordChangedAt      DateTime? // Track when password was last changed to invalidate old tokens
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   merchantId             Int?
   outletId               Int?
   deletedAt              DateTime?
-  customRole              MerchantRole?          @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+  customRole             MerchantRole?          @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
   auditLogs              AuditLog[]
   emailVerifications     EmailVerification[]
   createdOrders          Order[]
@@ -63,41 +63,41 @@ model UserSession {
 }
 
 model Merchant {
-  id            Int           @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   name          String
-  email         String        @unique
+  email         String         @unique
   phone         String?
   /// Human friendly tenant key (used for subdomain like aodaipham1.anyrent.shop)
   /// Optional now to avoid breaking existing data, but should be filled for new merchants.
-  tenantKey     String?       @unique
+  tenantKey     String?        @unique
   address       String?
   city          String?
   state         String?
   zipCode       String?
   country       String?
-  businessType  BusinessType  @default(GENERAL)
+  businessType  BusinessType   @default(GENERAL)
   taxId         String?
   website       String?
   description   String?
   planId        Int?
-  totalRevenue  Float         @default(0)
+  totalRevenue  Float          @default(0)
   lastActiveAt  DateTime?
-  isActive      Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  pricingConfig String?       @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
-  pricingType   PricingType   @default(FIXED)
-  currency      String        @default("USD")
-  avatar        String?       // Avatar image URL
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  pricingConfig String?        @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
+  pricingType   PricingType    @default(FIXED)
+  currency      String         @default("USD")
+  avatar        String? // Avatar image URL
   categories    Category[]
   customers     Customer[]
-  Plan          Plan?         @relation(fields: [planId], references: [id])
+  Plan          Plan?          @relation(fields: [planId], references: [id])
   outlets       Outlet[]
   payments      Payment[]
   products      Product[]
   subscription  Subscription?
   users         User[]
-  roles        MerchantRole[]             // All roles (system role customizations + custom roles)
+  roles         MerchantRole[] // All roles (system role customizations + custom roles)
 
   @@index([name])
   @@index([email])
@@ -105,25 +105,26 @@ model Merchant {
 }
 
 model Outlet {
-  id          Int           @id @default(autoincrement())
-  name        String
-  address     String?
-  description String?
-  isActive    Boolean       @default(true)
-  isDefault   Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  merchantId  Int
-  phone       String?
-  city        String?
-  country     String?
-  state       String?
-  zipCode     String?
-  avatar        String?       // Avatar image URL
-  orders      Order[]
-  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  products    OutletStock[]
-  users       User[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  address      String?
+  description  String?
+  isActive     Boolean       @default(true)
+  isDefault    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  merchantId   Int
+  phone        String?
+  city         String?
+  country      String?
+  state        String?
+  zipCode      String?
+  avatar       String? // Avatar image URL
+  orders       Order[]
+  merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products     OutletStock[]
+  users        User[]
+  bankAccounts BankAccount[] // Bank accounts for this outlet
 
   @@index([merchantId])
   @@index([name])
@@ -529,19 +530,19 @@ enum UserRole {
 // ============================================================================
 
 model MerchantRole {
-  id            Int       @id @default(autoincrement())
-  merchantId    Int
-  roleName      String    // Role name (system role name or custom role name)
-  isSystemRole  Boolean   @default(false) // true = system role customization, false = custom role
-  systemRole    UserRole? // System role enum (only set when isSystemRole = true)
-  description   String?   // Optional description
-  permissions   String[]  // Array of permission strings (e.g., ['products.view', 'orders.create'])
-  isActive      Boolean   @default(true) // Allow enabling/disabling this role
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  users         User[]    // Users assigned to this role
+  id           Int       @id @default(autoincrement())
+  merchantId   Int
+  roleName     String // Role name (system role name or custom role name)
+  isSystemRole Boolean   @default(false) // true = system role customization, false = custom role
+  systemRole   UserRole? // System role enum (only set when isSystemRole = true)
+  description  String? // Optional description
+  permissions  String[] // Array of permission strings (e.g., ['products.view', 'orders.create'])
+  isActive     Boolean   @default(true) // Allow enabling/disabling this role
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  users    User[] // Users assigned to this role
 
   @@unique([merchantId, roleName]) // One role name per merchant (case-sensitive)
   @@index([merchantId])
@@ -549,4 +550,32 @@ model MerchantRole {
   @@index([merchantId, roleName])
   @@index([merchantId, isSystemRole])
   @@index([systemRole])
+}
+
+// ============================================================================
+// BANK ACCOUNT (For Vietnam Local Bank Transfer)
+// ============================================================================
+// Bank accounts for outlets to receive payments via bank transfer
+// Supports QR code generation for Vietnam bank transfer (VietQR format)
+// Each outlet can have multiple bank accounts
+
+model BankAccount {
+  id                Int      @id @default(autoincrement())
+  accountHolderName String // Tên chủ tài khoản
+  accountNumber     String // Số tài khoản
+  bankName          String // Tên ngân hàng (e.g., "Vietcombank", "Techcombank")
+  bankCode          String? // Mã ngân hàng (e.g., "VCB", "TCB") - optional but recommended
+  branch            String? // Chi nhánh - optional
+  isDefault         Boolean  @default(false) // Default account for payments
+  qrCode            String? // QR code data (VietQR format or simple format)
+  notes             String? // Ghi chú
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  outletId          Int // Belongs to outlet, not merchant
+  outlet            Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@index([outletId])
+  @@index([outletId, isDefault])
+  @@index([outletId, isActive])
 }

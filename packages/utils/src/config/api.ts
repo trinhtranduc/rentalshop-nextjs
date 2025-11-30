@@ -218,6 +218,13 @@ export interface ApiUrls {
       create: (merchantId: number) => string;
       update: (merchantId: number, outletId: number) => string;
       delete: (merchantId: number, outletId: number) => string;
+      bankAccounts: {
+        list: (merchantId: number, outletId: number) => string;
+        create: (merchantId: number, outletId: number) => string;
+        get: (merchantId: number, outletId: number, accountId: number) => string;
+        update: (merchantId: number, outletId: number, accountId: number) => string;
+        delete: (merchantId: number, outletId: number, accountId: number) => string;
+      };
     };
   };
   settings: {
@@ -680,6 +687,13 @@ function createApiUrls(): ApiUrls {
         create: (merchantId: number) => `${base}/api/merchants/${merchantId}/outlets`,
         update: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}`,
         delete: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}`,
+        bankAccounts: {
+          list: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts`,
+          create: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts`,
+          get: (merchantId: number, outletId: number, accountId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts/${accountId}`,
+          update: (merchantId: number, outletId: number, accountId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts/${accountId}`,
+          delete: (merchantId: number, outletId: number, accountId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts/${accountId}`,
+        },
       },
     },
   settings: {
