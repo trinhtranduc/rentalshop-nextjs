@@ -159,6 +159,9 @@ export * from './date-range';
 // Excel utilities
 export * from './excel';
 
+// Bank QR code utilities (Vietnam bank transfer)
+export * from './bank-qr';
+
 // ID utilities - removed (using single id system)
 
 // Audit utilities
