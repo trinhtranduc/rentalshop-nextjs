@@ -1886,22 +1886,22 @@
 "@rentalshop/hooks@file:packages/hooks":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-0bb4fad5-3ebd-46ac-a8c5-f323c1683fab-1764426170508/node_modules/@rentalshop/constants"
-    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-0bb4fad5-3ebd-46ac-a8c5-f323c1683fab-1764426170508/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-0bb4fad5-3ebd-46ac-a8c5-f323c1683fab-1764426170508/node_modules/@rentalshop/utils"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-5207dc22-3f24-4b22-8e97-18ae69f3981c-1764558646281/node_modules/@rentalshop/constants"
+    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-5207dc22-3f24-4b22-8e97-18ae69f3981c-1764558646281/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-5207dc22-3f24-4b22-8e97-18ae69f3981c-1764558646281/node_modules/@rentalshop/utils"
 
 "@rentalshop/middleware@file:packages/middleware":
   version "1.0.0"
   dependencies:
-    "@rentalshop/auth" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-37e21a74-2af9-4276-92f4-289f4eb0b8d3-1764426170516/node_modules/@rentalshop/auth"
-    "@rentalshop/database" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-37e21a74-2af9-4276-92f4-289f4eb0b8d3-1764426170516/node_modules/@rentalshop/database"
-    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-37e21a74-2af9-4276-92f4-289f4eb0b8d3-1764426170516/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-37e21a74-2af9-4276-92f4-289f4eb0b8d3-1764426170516/node_modules/@rentalshop/utils"
+    "@rentalshop/auth" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-55001eab-1bfb-462d-9e3a-6880d9651658-1764558646283/node_modules/@rentalshop/auth"
+    "@rentalshop/database" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-55001eab-1bfb-462d-9e3a-6880d9651658-1764558646283/node_modules/@rentalshop/database"
+    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-55001eab-1bfb-462d-9e3a-6880d9651658-1764558646283/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-55001eab-1bfb-462d-9e3a-6880d9651658-1764558646283/node_modules/@rentalshop/utils"
 
 "@rentalshop/types@file:packages/types":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-types-1.0.0-1d10fca1-10e0-465b-8206-a35c3668ed86-1764426170507/node_modules/@rentalshop/constants"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-types-1.0.0-717334e6-76bc-48ae-bd1f-fe2468d972c7-1764558646281/node_modules/@rentalshop/constants"
 
 "@rentalshop/ui@file:packages/ui":
   version "1.0.0"
@@ -1912,13 +1912,14 @@
     "@radix-ui/react-slot" "^1.1.2"
     "@radix-ui/react-tabs" "^1.1.2"
     "@radix-ui/react-toast" "^1.2.5"
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-a15c1561-b92c-4795-8660-757a36a72662-1764426170513/node_modules/@rentalshop/constants"
-    "@rentalshop/hooks" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-a15c1561-b92c-4795-8660-757a36a72662-1764426170513/node_modules/@rentalshop/hooks"
-    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-a15c1561-b92c-4795-8660-757a36a72662-1764426170513/node_modules/@rentalshop/types"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-ce1f4eb9-8a26-4572-b8b2-d80d44404f34-1764558646282/node_modules/@rentalshop/constants"
+    "@rentalshop/hooks" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-ce1f4eb9-8a26-4572-b8b2-d80d44404f34-1764558646282/node_modules/@rentalshop/hooks"
+    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-ce1f4eb9-8a26-4572-b8b2-d80d44404f34-1764558646282/node_modules/@rentalshop/types"
     browser-image-compression "^2.0.2"
     class-variance-authority "^0.7.1"
     clsx "^2.1.1"
     lucide-react "^0.344.0"
+    qrcode.react "^3.1.0"
     react "^18.0.0"
     react-dom "^18.0.0"
     recharts "^2.12.2"
@@ -1931,8 +1932,8 @@
     "@aws-sdk/client-s3" "^3.0.0"
     "@aws-sdk/client-ses" "^3.921.0"
     "@aws-sdk/s3-request-presigner" "^3.0.0"
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-25e0b2c7-e444-4acd-a96d-2cacab252521-1764426170505/node_modules/@rentalshop/constants"
-    "@rentalshop/env" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-25e0b2c7-e444-4acd-a96d-2cacab252521-1764426170505/node_modules/@rentalshop/env"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-4cfcc90f-3123-4e75-b768-960202a002a0-1764558646280/node_modules/@rentalshop/constants"
+    "@rentalshop/env" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-4cfcc90f-3123-4e75-b768-960202a002a0-1764558646280/node_modules/@rentalshop/env"
     browser-image-compression "^2.0.2"
     date-fns "^2.30.0"
     stripe "^14.0.0"
@@ -3240,6 +3241,13 @@
   version "15.7.15"
   resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.15.tgz#e6e5a86d602beaca71ce5163fadf5f95d70931c7"
   integrity sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==
+
+"@types/qrcode.react@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@types/qrcode.react/-/qrcode.react-3.0.0.tgz#af45507c1b37989a22e15f98ed112b5c2eda95d2"
+  integrity sha512-VPHYhnDfvt4LjlWajpYWRBVqmftEEza3GJVhe8sS5Wew0n4nTkg3+2MYunAiU6t04AZt0s/hkkMovefWeENjAQ==
+  dependencies:
+    qrcode.react "*"
 
 "@types/ramda@~0.30.0":
   version "0.30.2"
@@ -6740,6 +6748,16 @@ pure-rand@^6.1.0:
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/pure-rand/-/pure-rand-6.1.0.tgz#d173cf23258231976ccbdb05247c9787957604f2"
   integrity sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==
+
+qrcode.react@*, qrcode.react@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/qrcode.react/-/qrcode.react-4.2.0.tgz#1bce8363f348197d145c0da640929a24c83cbca3"
+  integrity sha512-QpgqWi8rD9DsS9EP3z7BT+5lY5SFhsqGjpgW5DY/i3mK4M9DTBNz3ErMi8BWYEfI3L0d8GIbGmcdFAS1uIRGjA==
+
+qrcode.react@^3.1.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/qrcode.react/-/qrcode.react-3.2.0.tgz#97daabd4ff641a3f3c678f87be106ebc55f9cd07"
+  integrity sha512-YietHHltOHA4+l5na1srdaMx4sVSOjV9tamHs+mwiLWAMr6QVACRUw1Neax5CptFILcNoITctJY0Ipyn5enQ8g==
 
 qs@^6.11.0:
   version "6.14.0"

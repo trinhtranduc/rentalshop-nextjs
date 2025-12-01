@@ -56,7 +56,8 @@
     "deleteError": "Failed to delete bank account",
     "loadError": "Failed to load bank accounts",
     "deleteConfirm": "Are you sure you want to delete the bank account \"{name}\"?",
-    "deleteConfirmTitle": "Delete Bank Account"
+    "deleteConfirmTitle": "Delete Bank Account",
+    "noOutlet": "You are not assigned to any outlet. Please contact your administrator."
   }
 }
 

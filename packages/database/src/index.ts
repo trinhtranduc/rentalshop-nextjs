@@ -229,7 +229,7 @@ export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscript
 export { AuditLogger, getAuditLogger, extractAuditContext } from './audit';
 export type { AuditContext } from './audit';
 export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number-generator';
-export { getDefaultOutlet } from './outlet';
+export { getDefaultOutlet, getDefaultBankAccount } from './outlet';
 export type { OrderNumberFormat } from './order-number-generator';
 export { searchOrders } from './order'; // Legacy order search function
 

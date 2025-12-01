@@ -3662,6 +3662,9 @@ function useSubscriptionTranslations() {
 function useErrorTranslations() {
   return n2("errors");
 }
+function useBankAccountTranslations() {
+  return n2("bankAccounts");
+}
 
 // src/hooks/useAuth.ts
 function useAuth() {
@@ -5653,6 +5656,7 @@ export {
   useAuth,
   useAuthErrorHandler,
   useAuthTranslations,
+  useBankAccountTranslations,
   useCalendarTranslations,
   useCanExportData,
   useCanManageCategories,

@@ -55,7 +55,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
 
     // Build where clause for Prisma query
     const where: any = {};
-    
+
     // Apply scope restrictions
     if (userScope.merchantId) {
       where.outlet = { merchantId: userScope.merchantId };
@@ -63,7 +63,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
     if (userScope.outletId) {
       where.outletId = userScope.outletId;
     }
-    
+
     // Apply additional filters
     if (status) where.status = status;
     if (orderType) where.orderType = orderType;

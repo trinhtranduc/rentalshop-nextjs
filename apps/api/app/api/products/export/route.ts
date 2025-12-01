@@ -165,19 +165,19 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
     ];
 
     const csvRows = exportData.map((product: any) => [
-      product.id,
-      `"${product.name}"`,
+          product.id,
+          `"${product.name}"`,
       product.barcode,
       `"${product.description}"`,
       product.stock,
       product.renting,
       product.available,
-      product.rentPrice,
-      product.deposit,
+          product.rentPrice,
+          product.deposit,
       product.outletId,
-      product.createdAt,
-      product.updatedAt
-    ]);
+          product.createdAt,
+          product.updatedAt
+        ]);
 
     const csvContent = [
       csvHeaders.join(','),

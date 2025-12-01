@@ -19,6 +19,48 @@ import type {
 // ============================================================================
 
 /**
+ * Get default bank account for outlet
+ */
+export async function getDefaultBankAccount(outletId: number): Promise<any | null> {
+  const bankAccount = await prisma.bankAccount.findFirst({
+    where: {
+      outletId,
+      isDefault: true,
+      isActive: true
+    },
+    select: {
+      id: true,
+      accountHolderName: true,
+      accountNumber: true,
+      bankName: true,
+      bankCode: true,
+      branch: true,
+      isDefault: true,
+      qrCode: true,
+      notes: true,
+      isActive: true,
+      outletId: true
+    }
+  });
+
+  if (!bankAccount) return null;
+
+  return {
+    id: bankAccount.id,
+    accountHolderName: bankAccount.accountHolderName,
+    accountNumber: bankAccount.accountNumber,
+    bankName: bankAccount.bankName,
+    bankCode: bankAccount.bankCode || undefined,
+    branch: bankAccount.branch || undefined,
+    isDefault: bankAccount.isDefault,
+    qrCode: bankAccount.qrCode || undefined,
+    notes: bankAccount.notes || undefined,
+    isActive: bankAccount.isActive,
+    outletId: bankAccount.outletId
+  };
+}
+
+/**
  * Get default outlet for merchant
  */
 export async function getDefaultOutlet(merchantId: number): Promise<any> {

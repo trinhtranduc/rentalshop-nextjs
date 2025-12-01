@@ -41,6 +41,7 @@ __export(src_exports, {
   useAuth: () => useAuth,
   useAuthErrorHandler: () => useAuthErrorHandler,
   useAuthTranslations: () => useAuthTranslations,
+  useBankAccountTranslations: () => useBankAccountTranslations,
   useCalendarTranslations: () => useCalendarTranslations,
   useCanExportData: () => useCanExportData,
   useCanManageCategories: () => useCanManageCategories,
@@ -3755,6 +3756,9 @@ function useSubscriptionTranslations() {
 function useErrorTranslations() {
   return n2("errors");
 }
+function useBankAccountTranslations() {
+  return n2("bankAccounts");
+}
 
 // src/hooks/useAuth.ts
 function useAuth() {
@@ -5739,6 +5743,7 @@ function useCategoriesWithFilters(options) {
   useAuth,
   useAuthErrorHandler,
   useAuthTranslations,
+  useBankAccountTranslations,
   useCalendarTranslations,
   useCanExportData,
   useCanManageCategories,

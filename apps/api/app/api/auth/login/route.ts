@@ -172,12 +172,17 @@ export async function POST(request: NextRequest) {
     if (user.outletId) {
       const outlet = await db.outlets.findById(user.outletId);
       if (outlet) {
-        // ✅ Follow OutletReference type: { id, name, address?, merchantId }
+        // Get default bank account for outlet
+        const { getDefaultBankAccount } = await import('@rentalshop/database');
+        const defaultBankAccount = await getDefaultBankAccount(user.outletId);
+        
+        // ✅ Follow OutletReference type: { id, name, address?, merchantId, defaultBankAccount? }
         outletData = {
           id: outlet.id,
           name: outlet.name,
           address: outlet.address || undefined,
-          merchantId: outlet.merchantId
+          merchantId: outlet.merchantId,
+          defaultBankAccount: defaultBankAccount || undefined
         };
       }
     }

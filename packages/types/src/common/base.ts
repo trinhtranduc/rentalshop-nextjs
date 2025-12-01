@@ -167,6 +167,24 @@ export interface MerchantReference {
 }
 
 /**
+ * Minimal bank account reference
+ * Used when only basic bank account info is needed
+ */
+export interface BankAccountReference {
+  id: number;
+  accountHolderName: string;
+  accountNumber: string;
+  bankName: string;
+  bankCode?: string;
+  branch?: string;
+  isDefault: boolean;
+  qrCode?: string;
+  notes?: string;
+  isActive: boolean;
+  outletId: number;
+}
+
+/**
  * Minimal outlet reference
  * Used when only basic outlet info is needed
  */
@@ -176,6 +194,7 @@ export interface OutletReference {
   address?: string;
   merchantId: number;
   merchant?: MerchantReference;
+  defaultBankAccount?: BankAccountReference; // Default bank account for payments
 }
 
 /**
