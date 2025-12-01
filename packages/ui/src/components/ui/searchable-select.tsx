@@ -49,6 +49,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 }) => {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
+  const [isEditing, setIsEditing] = React.useState(false); // Track if user is actively editing
   const [internalOptions, setInternalOptions] = React.useState<SearchableOption[]>(options || []);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   const onSearchRef = React.useRef(onSearch);
@@ -160,7 +161,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const selected = options?.find((o) => o.value === String(value)) || internalOptions.find((o) => o.value === String(value));
 
   // Keep selected label in input for better UX
-  const displayValue = selected?.label || query;
+  // If user is editing or query exists, show query instead of selected label
+  // This allows user to completely clear the input
+  const displayValue = (isEditing || query.trim() !== '') ? query : (selected?.label || '');
 
   // Close on outside click (works for both input and button modes)
   React.useEffect(() => {
@@ -187,6 +190,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     console.log('🎯 SearchableSelect: Parsed value:', numericValue);
     onChange?.(numericValue);
     setOpen(false);
+    setIsEditing(false); // Reset editing state when selection is made
     // Keep the selected option in the internal options so it remains visible
     if (onSearch) {
       setInternalOptions([option]);
@@ -203,23 +207,41 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       <input
         value={displayValue}
         disabled={disabled}
-        onFocus={() => {
-          if (!disabled) setOpen(true);
+        onFocus={(e) => {
+          if (!disabled) {
+            setOpen(true);
+            setIsEditing(true); // Mark as editing when focused
+            // When focusing, if there's a selected value, allow user to clear it
+            // Select all text so user can easily replace it
+            if (selected && !query && !isEditing) {
+              setTimeout(() => {
+                e.target.select();
+              }, 0);
+            }
+          }
         }}
         onChange={(e) => {
           if (disabled) return;
-          setQuery(e.target.value);
+          const newValue = e.target.value;
+          setIsEditing(true); // User is actively editing
+          setQuery(newValue);
           setOpen(true);
-          // Clear selected value when user starts typing
-          if (e.target.value && selected) {
-            onChange?.(undefined as any);
-          }
+          // Always clear selected value when user is typing/editing
+          // This allows user to completely clear the input
+          onChange?.(undefined as any);
         }}
         onBlur={() => {
           // Only close dropdown after a longer delay
           setTimeout(() => {
             setOpen(false);
-            // Don't clear query here - let it persist for search
+            // Reset editing state when blurred, but keep query if empty to allow clearing
+            if (query.trim() === '') {
+              setIsEditing(false);
+              // Keep query as empty string so user can clear selection
+            } else {
+              // If query has value but no selection, keep editing state
+              setIsEditing(value === undefined);
+            }
           }, 300);
         }}
         placeholder={placeholder}
@@ -247,21 +269,29 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         <ChevronDown className="h-5 w-5" />
       </Button>
       
-      {/* Clear button when there's a query */}
-      {query && (
+      {/* Clear button when there's a query or selected value */}
+      {(query || value !== undefined) && (
         <Button
           variant="ghost"
           size="icon"
           type="button"
           onClick={() => {
             setQuery('');
+            setIsEditing(true); // Set editing state when clearing
+            onChange?.(undefined as any);
             // Reset to original options when clearing search
             if (onSearch) {
               setInternalOptions([]); // Clear search results
             } else {
               setInternalOptions(options || []); // Restore original options
             }
-            setOpen(false);
+            // Don't close dropdown when clearing, allow user to search immediately
+            setOpen(true);
+            // Focus input after clearing
+            setTimeout(() => {
+              const input = rootRef.current?.querySelector('input');
+              input?.focus();
+            }, 0);
           }}
           className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
         >

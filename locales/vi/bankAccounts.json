@@ -32,6 +32,7 @@
   },
   "card": {
     "default": "Mặc định",
+    "accountHolderName": "Tên chủ tài khoản",
     "accountNumber": "Số tài khoản",
     "bank": "Ngân hàng",
     "branch": "Chi nhánh",
