@@ -572,6 +572,30 @@ export function handleApiError(error: any): {
       'Database connection failed. Please check your database server and try again.',
       'Không thể kết nối đến cơ sở dữ liệu. Vui lòng kiểm tra lại kết nối.'
     );
+  } else if (
+    error.message?.includes('timeout') ||
+    error.message?.includes('TIMEOUT') ||
+    error.code === 'ETIMEDOUT'
+  ) {
+    // Timeout errors
+    apiError = new ApiError(
+      ErrorCode.SERVICE_UNAVAILABLE,
+      'Request timeout. Please try again.',
+      'Yêu cầu quá thời gian chờ. Vui lòng thử lại.'
+    );
+  } else if (
+    error.status === 502 ||
+    error.code === 502 ||
+    error.message?.includes('502') ||
+    error.message?.includes('Bad Gateway') ||
+    error.message?.includes('Application failed to respond')
+  ) {
+    // Gateway/Bad Gateway errors (502)
+    apiError = new ApiError(
+      ErrorCode.SERVICE_UNAVAILABLE,
+      'Service temporarily unavailable. Please try again later.',
+      'Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.'
+    );
   } else if (error.code && error.code.startsWith('P')) {
     // Prisma errors
     apiError = handlePrismaError(error);
