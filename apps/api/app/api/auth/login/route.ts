@@ -197,7 +197,13 @@ export async function POST(request: NextRequest) {
       userAgent
     );
 
-    // Generate token with plan name and sessionId for platform access control
+    // Get passwordChangedAt from user record to include in token
+    // This ensures new tokens are valid after password reset
+    const passwordChangedAt = (user as any).passwordChangedAt
+      ? Math.floor((user as any).passwordChangedAt.getTime() / 1000) // Convert to Unix timestamp (seconds)
+      : null;
+
+    // Generate token with plan name, sessionId, and passwordChangedAt for platform access control
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -206,6 +212,7 @@ export async function POST(request: NextRequest) {
       outletId: user.outletId,
       planName, // ✅ Include plan name in JWT
       sessionId: session.sessionId, // ✅ Include session ID for single session enforcement
+      passwordChangedAt, // ✅ Include passwordChangedAt to prevent token invalidation after login
     } as any);
 
     const result = {
