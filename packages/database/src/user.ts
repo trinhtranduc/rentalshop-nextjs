@@ -453,6 +453,7 @@ export const simplifiedUsers = {
         isActive: true,
         emailVerified: true,
         emailVerifiedAt: true,
+        passwordChangedAt: true, // ✅ Include passwordChangedAt for token validation
         createdAt: true,
         updatedAt: true,
         merchantId: true,
