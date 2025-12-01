@@ -112,6 +112,34 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
       }
     }
 
+    // If user is OUTLET_ADMIN, only return OUTLET_ADMIN and OUTLET_STAFF users from their outlet
+    // Do not return ADMIN or MERCHANT users (even if they have the same outletId)
+    if (user.role === USER_ROLE.OUTLET_ADMIN) {
+      if (!q.role) {
+        // If no specific role filter is requested, restrict to outlet-level roles only
+        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
+        delete searchFilters.role; // Remove single role filter since we're using roles array
+        console.log('🔒 OUTLET_ADMIN user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
+      } else if (q.role === USER_ROLE.ADMIN || q.role === USER_ROLE.MERCHANT) {
+        // Outlet admin should not see ADMIN or MERCHANT users
+        console.log(`🚫 OUTLET_ADMIN user: Blocked request for ${q.role} users`);
+        return NextResponse.json({
+          success: true,
+          data: [],
+          pagination: {
+            page: 1,
+            limit: q.limit || 20,
+            total: 0,
+            hasMore: false,
+            totalPages: 0
+          }
+        });
+      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
+        // Allow these specific role requests from outlet admin
+        console.log(`✅ OUTLET_ADMIN user: Allowed request for ${q.role} users`);
+      }
+    }
+
     console.log('🔄 Using simplified db.users.search() with filters:', searchFilters);
     
     const result = await db.users.search(searchFilters);
