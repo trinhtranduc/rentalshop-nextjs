@@ -26,6 +26,14 @@ interface PaymentQRCodeDialogProps {
   bankAccount: BankAccountReference;
   amount: number;
   orderNumber: string;
+  orderType: string;
+  orderStatus: string;
+  tempSettings?: {
+    securityDeposit?: number;
+    collateralType?: string;
+    collateralDetails?: string;
+  };
+  depositAmount?: number;
 }
 
 export const PaymentQRCodeDialog: React.FC<PaymentQRCodeDialogProps> = ({
@@ -34,13 +42,48 @@ export const PaymentQRCodeDialog: React.FC<PaymentQRCodeDialogProps> = ({
   bankAccount,
   amount,
   orderNumber,
+  orderType,
+  orderStatus,
+  tempSettings,
+  depositAmount = 0,
 }) => {
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
   const { toastSuccess } = useToast();
   const formatCurrency = useFormatCurrency();
 
-  const transferDescription = t('payment.transferDescription', { orderNumber });
+  // Generate transfer description based on order type and status
+  const transferDescription = React.useMemo(() => {
+    // For RENT orders RESERVED: Check what we're collecting
+    if (orderType === 'RENT' && orderStatus === 'RESERVED') {
+      // Check if this is just deposit collection
+      // If amount matches deposit amount, it's deposit collection
+      if (depositAmount > 0 && Math.abs(amount - depositAmount) < 0.01) {
+        // "Thu cọc cho đơn ..."
+        return t('payment.transferDescriptionDeposit', { orderNumber });
+      }
+      
+      // Otherwise, it's remaining amount + security deposit
+      const hasCollateral = tempSettings?.collateralType && tempSettings.collateralType.trim() !== '';
+      
+      if (hasCollateral) {
+        // "Thu tiền còn lại và thế chân cho đơn ..."
+        return t('payment.transferDescriptionRemainingAndCollateral', { orderNumber });
+      } else {
+        // "Thu tiền còn lại cho đơn ..."
+        return t('payment.transferDescriptionRemaining', { orderNumber });
+      }
+    }
+    
+    // For RENT orders PICKUPED: Usually collecting fees (damage, late)
+    // Use default description
+    if (orderType === 'RENT' && orderStatus === 'PICKUPED') {
+      return t('payment.transferDescription', { orderNumber });
+    }
+    
+    // Default: "Thanh toán đơn hàng ..." (for SALE orders or other cases)
+    return t('payment.transferDescription', { orderNumber });
+  }, [orderType, orderStatus, orderNumber, tempSettings, amount, depositAmount, t]);
 
   // Generate VietQR EMV QR Code string
   // Only include amount in QR code if it's greater than 0

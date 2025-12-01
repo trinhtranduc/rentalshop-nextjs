@@ -121,6 +121,9 @@
     "amount": "Amount",
     "content": "Content",
     "transferDescription": "Payment for order {orderNumber}",
+    "transferDescriptionDeposit": "Deposit collection for order {orderNumber}",
+    "transferDescriptionRemaining": "Remaining amount collection for order {orderNumber}",
+    "transferDescriptionRemainingAndCollateral": "Remaining amount and collateral collection for order {orderNumber}",
     "showQRCode": "Show QR Code",
     "transfer": "Transfer",
     "other": "Other"

@@ -121,6 +121,9 @@
     "amount": "Số tiền",
     "content": "Nội dung",
     "transferDescription": "Thanh toán đơn hàng {orderNumber}",
+    "transferDescriptionDeposit": "Thu cọc cho đơn {orderNumber}",
+    "transferDescriptionRemaining": "Thu tiền còn lại cho đơn {orderNumber}",
+    "transferDescriptionRemainingAndCollateral": "Thu tiền còn lại và thế chân cho đơn {orderNumber}",
     "showQRCode": "Hiển thị QR Code",
     "transfer": "Chuyển khoản",
     "other": "Khác"

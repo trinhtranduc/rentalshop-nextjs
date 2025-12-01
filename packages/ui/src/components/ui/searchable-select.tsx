@@ -228,7 +228,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
           setOpen(true);
           // Always clear selected value when user is typing/editing
           // This allows user to completely clear the input
-          onChange?.(undefined as any);
+            onChange?.(undefined as any);
         }}
         onBlur={() => {
           // Only close dropdown after a longer delay

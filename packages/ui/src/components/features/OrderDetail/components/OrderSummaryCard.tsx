@@ -93,20 +93,30 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
   
   // Calculate amount to collect from customer for QR code
   // This should match the "Collection Amount" logic displayed in the UI
+  // Note: QR code will always be shown if there's a bank account, but amount is only included if > 0
   const amountToPay = React.useMemo(() => {
     // For SALE orders: always collect total amount (if not yet paid)
     if (order.orderType === 'SALE') {
-      return order.totalAmount;
+      return order.totalAmount || 0;
     }
     
-    // For RENT orders: only collect when status is RESERVED (before pickup)
-    // Collection amount = remaining amount + security deposit
+    // For RENT orders RESERVED: collect remaining amount + security deposit
     if (order.orderType === 'RENT' && order.status === 'RESERVED') {
       return calculateCollectionTotal(order, tempSettings);
     }
     
-    // For other RENT statuses (PICKUPED, RETURNED, etc.): no collection needed
-    // Return 0 so QR code won't be shown
+    // For RENT orders PICKUPED: may need to collect additional fees
+    // (damage fee, late fee, etc.) when returning
+    // Always show QR code, but only include amount if > 0
+    if (order.orderType === 'RENT' && order.status === 'PICKUPED') {
+      // Calculate additional fees that need to be collected
+      const damageFee = tempSettings.damageFee || 0;
+      const lateFee = (order as any).lateFee || 0;
+      return damageFee + lateFee;
+    }
+    
+    // For other RENT statuses (RETURNED, COMPLETED, etc.): no collection needed
+    // Return 0 (QR code won't include amount, but can still be shown if needed)
     return 0;
   }, [order.orderType, order.status, order.totalAmount, tempSettings, calculateCollectionTotal]);
 
@@ -186,8 +196,8 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
           </div>
         )}
 
-        {/* Show QR Code Button */}
-        {defaultBankAccount && amountToPay > 0 && (
+        {/* Show QR Code Button - Always show if bank account exists */}
+        {defaultBankAccount && (
           <div className="pt-3 border-t border-gray-200">
             <Button
               onClick={() => setShowQRCode(true)}
@@ -209,6 +219,10 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
           bankAccount={defaultBankAccount}
           amount={amountToPay}
           orderNumber={order.orderNumber}
+          orderType={order.orderType}
+          orderStatus={order.status}
+          tempSettings={tempSettings}
+          depositAmount={order.depositAmount}
         />
       )}
     </Card>
