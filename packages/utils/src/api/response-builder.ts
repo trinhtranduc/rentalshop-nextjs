@@ -114,6 +114,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   
   // System Errors
   'INTERNAL_SERVER_ERROR': 'Internal server error',
+  'SERVICE_UNAVAILABLE': 'Service temporarily unavailable. Please try again later.',
+  'GATEWAY_ERROR': 'Gateway error. The server is temporarily unavailable.',
+  'TIMEOUT_ERROR': 'Request timeout. Please try again.',
   'FETCH_MERCHANTS_FAILED': 'Failed to fetch merchants',
   'FETCH_OUTLETS_FAILED': 'Failed to fetch outlets',
   'FETCH_PRODUCTS_FAILED': 'Failed to fetch products',

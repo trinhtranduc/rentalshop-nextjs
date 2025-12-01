@@ -221,9 +221,9 @@ export async function middleware(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: 'PLATFORM_ACCESS_DENIED',
+            code: 'PLATFORM_ACCESS_DENIED',
             message: 'Basic plan only supports mobile app. Please upgrade to Premium or Enterprise to access the web dashboard.',
-            details: {
+            data: {
               currentPlan: planName,
               currentPlatform: platformInfo.platform,
               allowedPlatforms: ['mobile'],
@@ -293,13 +293,14 @@ export async function middleware(request: NextRequest) {
 
 /**
  * Create standardized unauthorized response with CORS headers
+ * Uses ResponseBuilder format: { success: false, code: "...", message: "..." }
  */
 function createUnauthorizedResponse(message: string, corsHeaders: Record<string, string>): NextResponse {
   return NextResponse.json(
     { 
       success: false, 
-      error: message,
-      code: 'UNAUTHORIZED'
+      code: 'UNAUTHORIZED',
+      message: message
     }, 
     { 
       status: API.STATUS.UNAUTHORIZED,
@@ -313,13 +314,14 @@ function createUnauthorizedResponse(message: string, corsHeaders: Record<string,
 
 /**
  * Create standardized forbidden response with CORS headers
+ * Uses ResponseBuilder format: { success: false, code: "...", message: "..." }
  */
 function createForbiddenResponse(message: string, corsHeaders: Record<string, string>): NextResponse {
   return NextResponse.json(
     { 
       success: false, 
-      error: message,
-      code: 'FORBIDDEN'
+      code: 'FORBIDDEN',
+      message: message
     }, 
     { 
       status: API.STATUS.FORBIDDEN,
