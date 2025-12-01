@@ -8,7 +8,8 @@ import {
   Settings as SettingsIcon, 
   Building2,
   Store,
-  Languages
+  Languages,
+  Wallet
 } from 'lucide-react';
 import type { CurrencyCode } from '@rentalshop/types';
 import { useAuth, useSettingsTranslations } from '@rentalshop/hooks';
@@ -24,6 +25,7 @@ import { OutletSection } from './components/OutletSection';
 import { SubscriptionSection } from './components/SubscriptionSection';
 import { AccountSection } from './components/AccountSection';
 import { LanguageSection } from './components/LanguageSection';
+import { BankAccountSection } from './components/BankAccountSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 
@@ -50,6 +52,13 @@ const createSettingsMenuItems = (t: any) => [
     label: t('menuItems.outlet.label'),
     icon: Store,
     description: t('menuItems.outlet.description'),
+    roles: ['OUTLET_ADMIN', 'OUTLET_STAFF']
+  },
+  {
+    id: 'bank-accounts',
+    label: t('menuItems.bankAccounts.label'),
+    icon: Wallet,
+    description: t('menuItems.bankAccounts.description'),
     roles: ['OUTLET_ADMIN', 'OUTLET_STAFF']
   },
   {
@@ -574,6 +583,12 @@ export const SettingsComponent: React.FC = () => {
             onSave={handleUpdateOutletInfo}
             onCancel={handleCancelOutlet}
             onInputChange={handleOutletInputChange}
+          />
+        );
+      case 'bank-accounts':
+        return (
+          <BankAccountSection
+            user={user}
           />
         );
       case 'subscription':

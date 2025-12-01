@@ -247,6 +247,10 @@
       "label": "Cửa hàng",
       "description": "Quản lý thông tin cửa hàng"
     },
+    "bankAccounts": {
+      "label": "Tài khoản ngân hàng",
+      "description": "Quản lý tài khoản ngân hàng để thanh toán"
+    },
     "subscription": {
       "label": "Gói dịch vụ",
       "description": "Quản lý gói đăng ký và thanh toán"

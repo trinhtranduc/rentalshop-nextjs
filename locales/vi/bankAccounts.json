@@ -56,7 +56,8 @@
     "deleteError": "Không thể xóa tài khoản ngân hàng",
     "loadError": "Không thể tải danh sách tài khoản ngân hàng",
     "deleteConfirm": "Bạn có chắc chắn muốn xóa tài khoản ngân hàng \"{name}\"?",
-    "deleteConfirmTitle": "Xóa tài khoản ngân hàng"
+    "deleteConfirmTitle": "Xóa tài khoản ngân hàng",
+    "noOutlet": "Bạn chưa được gán vào cửa hàng nào. Vui lòng liên hệ quản trị viên."
   }
 }
 
