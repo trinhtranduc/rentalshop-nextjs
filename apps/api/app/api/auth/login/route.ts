@@ -203,6 +203,15 @@ export async function POST(request: NextRequest) {
       ? Math.floor((user as any).passwordChangedAt.getTime() / 1000) // Convert to Unix timestamp (seconds)
       : null;
 
+    // Debug logging for passwordChangedAt values
+    console.log('🔍 LOGIN: passwordChangedAt values:', {
+      fromDatabase: (user as any).passwordChangedAt,
+      convertedToToken: passwordChangedAt,
+      type: typeof passwordChangedAt,
+      userId: user.id,
+      email: user.email
+    });
+
     // Generate token with plan name, sessionId, and passwordChangedAt for platform access control
     const token = generateToken({
       userId: user.id,

@@ -373,10 +373,27 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     
     // If password was changed after token was issued, invalidate token
     if (dbPasswordChangedAt !== null) {
-      // If token doesn't have passwordChangedAt or it's older than database value, invalidate
-      if (tokenPasswordChangedAt === null || 
-          tokenPasswordChangedAt === undefined ||
-          tokenPasswordChangedAt < dbPasswordChangedAt) {
+      // Add small tolerance (500ms) for timing differences to handle edge cases
+      // where token is created at the same time or slightly before database update
+      // This handles database commit timing and small clock skew
+      const tolerance = 0.5; // Allow 500ms difference for timing (0.5 seconds)
+      
+      // Token is valid if it has passwordChangedAt and it's >= (dbPasswordChangedAt - tolerance)
+      // This allows tokens created at the same time or slightly before (within 500ms) to be valid
+      const isValid = tokenPasswordChangedAt !== null && 
+                      tokenPasswordChangedAt !== undefined &&
+                      tokenPasswordChangedAt >= (dbPasswordChangedAt - tolerance);
+      
+      if (!isValid) {
+        // Log for debugging
+        console.log('🔍 TOKEN INVALIDATION:', {
+          tokenPasswordChangedAt,
+          dbPasswordChangedAt,
+          difference: tokenPasswordChangedAt ? dbPasswordChangedAt - tokenPasswordChangedAt : 'N/A',
+          tolerance,
+          isValid
+        });
+        
         return {
           success: false,
           response: NextResponse.json(
