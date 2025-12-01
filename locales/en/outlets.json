@@ -27,7 +27,8 @@
     "addOutlet": "Add Outlet",
     "backToOutlets": "Back to Outlets",
     "disableOutlet": "Disable Outlet",
-    "enableOutlet": "Enable Outlet"
+    "enableOutlet": "Enable Outlet",
+    "manageBankAccounts": "Manage Bank Accounts"
   },
   "stats": {
     "totalOutlets": "Total Outlets",

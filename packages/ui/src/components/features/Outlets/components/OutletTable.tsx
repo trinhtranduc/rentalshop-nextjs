@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
 import { Outlet } from '@rentalshop/types';
-import { Eye, Edit, XCircle, CheckCircle, MoreVertical, Building2 } from 'lucide-react';
+import { Eye, Edit, XCircle, CheckCircle, MoreVertical, Building2, CreditCard } from 'lucide-react';
 import { useOutletsTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface OutletTableProps {
@@ -215,6 +215,13 @@ export function OutletTable({
                       }}>
                         <Edit className="h-4 w-4 mr-2" />
                         {t('actions.editOutlet')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        onOutletAction('manageBanks', outlet.id);
+                        setOpenDropdownId(null);
+                      }}>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        {t('actions.manageBankAccounts')}
                       </DropdownMenuItem>
                       
                       {/* Only show enable/disable for non-default outlets */}

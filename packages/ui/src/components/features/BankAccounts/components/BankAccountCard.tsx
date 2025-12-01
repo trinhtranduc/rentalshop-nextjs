@@ -80,7 +80,7 @@ export const BankAccountCard: React.FC<BankAccountCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
             <div>
               <p className="text-sm text-gray-500">{t('card.accountNumber')}</p>
@@ -125,32 +125,30 @@ export const BankAccountCard: React.FC<BankAccountCardProps> = ({
             )}
           </div>
 
-          <div className="flex flex-col items-center justify-center space-y-3">
-            {bankAccount.qrCode && (
-              <>
-                <div className="p-4 bg-white rounded-lg border-2 border-gray-200">
-                  <QRCodeSVG
-                    value={bankAccount.qrCode}
-                    size={160}
-                    level="M"
-                    includeMargin={false}
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyQRCode}
-                  className="w-full"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  {t('card.copyQRCode')}
-                </Button>
-                <p className="text-xs text-gray-500 text-center">
-                  {t('card.scanQRHint')}
-                </p>
-              </>
-            )}
-          </div>
+          {bankAccount.qrCode && (
+            <div className="flex flex-col items-center justify-center space-y-3 pt-4 md:pt-0 md:border-l md:border-gray-200 md:pl-6">
+              <div className="p-4 bg-white rounded-lg border-2 border-gray-200 flex-shrink-0 w-fit mx-auto">
+                <QRCodeSVG
+                  value={bankAccount.qrCode}
+                  size={160}
+                  level="M"
+                  includeMargin={false}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyQRCode}
+                className="w-full max-w-xs"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                {t('card.copyQRCode')}
+              </Button>
+              <p className="text-xs text-gray-500 text-center max-w-xs px-4">
+                {t('card.scanQRHint')}
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

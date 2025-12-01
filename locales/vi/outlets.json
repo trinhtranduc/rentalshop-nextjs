@@ -27,7 +27,8 @@
     "addOutlet": "Thêm cửa hàng",
     "backToOutlets": "Quay lại danh sách",
     "disableOutlet": "Vô hiệu hóa cửa hàng",
-    "enableOutlet": "Kích hoạt cửa hàng"
+    "enableOutlet": "Kích hoạt cửa hàng",
+    "manageBankAccounts": "Quản lý tài khoản ngân hàng"
   },
   "stats": {
     "totalOutlets": "Tổng số cửa hàng",

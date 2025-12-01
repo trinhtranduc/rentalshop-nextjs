@@ -9,10 +9,15 @@ import {
   PageTitle,
   Outlets,
   Breadcrumb,
-  type BreadcrumbItem
+  type BreadcrumbItem,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
 } from '@rentalshop/ui';
 import { Store } from 'lucide-react';
 import type { Outlet, OutletFilters } from '@rentalshop/types';
+import { OutletBankAccountsSection } from './[outletId]/components/OutletBankAccountsSection';
 
 /**
  * ✅ MODERN MERCHANT OUTLETS PAGE (URL State Pattern)
@@ -46,6 +51,8 @@ export default function MerchantOutletsPage() {
   const [merchantName, setMerchantName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBankAccountsDialog, setShowBankAccountsDialog] = useState(false);
+  const [selectedOutletId, setSelectedOutletId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -117,7 +124,7 @@ export default function MerchantOutletsPage() {
     return {
       outlets: paginatedOutlets,
       total,
-      currentPage: page,
+      page: page,
       totalPages,
       limit,
       hasMore: endIndex < total
@@ -181,6 +188,10 @@ export default function MerchantOutletsPage() {
       case 'edit':
         router.push(`/merchants/${merchantId}/outlets/${outletId}/edit`);
         break;
+      case 'manageBanks':
+        setSelectedOutletId(outletId);
+        setShowBankAccountsDialog(true);
+        break;
       default:
         console.log('Outlet action:', action, outletId);
     }
@@ -226,14 +237,26 @@ export default function MerchantOutletsPage() {
         <Outlets
           data={outletData}
           filters={filters}
-          onFiltersChange={handleFiltersChange}
           onSearchChange={handleSearchChange}
-          onClearFilters={handleClearFilters}
           onOutletAction={handleOutletAction}
           onPageChange={handlePageChange}
-          merchantId={merchantId}
         />
       </div>
+
+      {/* Bank Accounts Management Dialog */}
+      {showBankAccountsDialog && selectedOutletId && (
+        <Dialog open={showBankAccountsDialog} onOpenChange={setShowBankAccountsDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Manage Bank Accounts</DialogTitle>
+            </DialogHeader>
+            <OutletBankAccountsSection
+              merchantId={parseInt(merchantId)}
+              outletId={selectedOutletId}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </PageWrapper>
   );
 }

@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
 import { Textarea } from '../../../ui/textarea';
 import { Switch } from '../../../ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
-import { getBankCode } from '@rentalshop/utils';
+import { SearchableSelect, type SearchableOption } from '../../../ui/searchable-select';
+import { getBankCode, VIETNAM_BANK_CODES } from '@rentalshop/utils';
 import { useBankAccountTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { BankAccountInput } from '@rentalshop/utils';
 
@@ -22,42 +22,28 @@ interface BankAccountFormProps {
   errorMessage?: string;
 }
 
-const VIETNAM_BANKS = [
-  'Vietcombank',
-  'Vietinbank',
-  'BIDV',
-  'Techcombank',
-  'ACB',
-  'VPBank',
-  'MBBank',
-  'TPBank',
-  'VietABank',
-  'SHB',
-  'HDBank',
-  'MSB',
-  'Sacombank',
-  'Eximbank',
-  'VIB',
-  'OCB',
-  'SeABank',
-  'PGBank',
-  'NamABank',
-  'BacABank',
-  'ABBank',
-  'VietBank',
-  'PVcomBank',
-  'GPBank',
-  'Agribank',
-  'LienVietPostBank',
-  'DongABank',
-  'KienLongBank',
-  'NCB',
-  'OceanBank',
-  'PublicBank',
-  'SCB',
-  'VietCapitalBank',
-  'VietnamBank',
-];
+// Convert bank names to SearchableOption format
+const getBankOptions = (): SearchableOption[] => {
+  return Object.keys(VIETNAM_BANK_CODES)
+    .sort()
+    .map((bankName, index) => ({
+      value: String(index), // Use index as value for SearchableSelect
+      label: bankName,
+      type: 'default' as const,
+    }));
+};
+
+// Map to store bank name by index
+const BANK_NAME_BY_INDEX = Object.keys(VIETNAM_BANK_CODES).sort().reduce((acc, bankName, index) => {
+  acc[index] = bankName;
+  return acc;
+}, {} as Record<number, string>);
+
+// Map to store index by bank name
+const INDEX_BY_BANK_NAME = Object.keys(VIETNAM_BANK_CODES).sort().reduce((acc, bankName, index) => {
+  acc[bankName] = index;
+  return acc;
+}, {} as Record<string, number>);
 
 export const BankAccountForm: React.FC<BankAccountFormProps> = ({
   initialData = {},
@@ -84,14 +70,48 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
 
   const [errors, setErrors] = useState<Partial<Record<keyof BankAccountInput, string>>>({});
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData((prev: BankAccountInput) => ({
-        ...prev,
-        ...initialData
-      }));
+  // Get bank options as SearchableOption[]
+  const bankOptions = useMemo(() => getBankOptions(), []);
+
+  // Get current bank index from bank name
+  const currentBankIndex = useMemo(() => {
+    if (formData.bankName) {
+      return INDEX_BY_BANK_NAME[formData.bankName] ?? undefined;
     }
-  }, [initialData]);
+    return undefined;
+  }, [formData.bankName]);
+
+  // Use useMemo to create stable reference for initialData comparison
+  const initialDataKey = useMemo(() => {
+    if (!initialData || !initialData.id) return 'new';
+    return `edit-${initialData.id}`;
+  }, [initialData?.id]);
+
+  // Only update form data when initialData actually changes (by ID)
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      setFormData({
+        accountHolderName: initialData.accountHolderName || '',
+        accountNumber: initialData.accountNumber || '',
+        bankName: initialData.bankName || '',
+        bankCode: initialData.bankCode || '',
+        branch: initialData.branch || '',
+        isDefault: initialData.isDefault || false,
+        notes: initialData.notes || '',
+      });
+    } else {
+      // Reset form when no initialData (add mode)
+      setFormData({
+        accountHolderName: '',
+        accountNumber: '',
+        bankName: '',
+        bankCode: '',
+        branch: '',
+        isDefault: false,
+        notes: '',
+      });
+    }
+  }, [initialDataKey]); // Only depend on the key, not the whole object
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof BankAccountInput, string>> = {};
@@ -123,12 +143,16 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
   };
 
   const handleInputChange = (field: keyof BankAccountInput, value: any) => {
-    setFormData((prev: BankAccountInput) => ({ ...prev, [field]: value }));
-    
     // Auto-fill bank code when bank name changes
     if (field === 'bankName' && value) {
       const bankCode = getBankCode(value);
-      setFormData((prev: BankAccountInput) => ({ ...prev, bankName: value, bankCode }));
+      setFormData((prev: BankAccountInput) => ({ 
+        ...prev, 
+        [field]: value,
+        bankCode 
+      }));
+    } else {
+      setFormData((prev: BankAccountInput) => ({ ...prev, [field]: value }));
     }
     
     // Clear error when user starts typing
@@ -188,21 +212,20 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
               <Label htmlFor="bankName">
                 {t('form.bankName')} <span className="text-red-500">*</span>
               </Label>
-              <Select
-                value={formData.bankName}
-                onValueChange={(value) => handleInputChange('bankName', value)}
-              >
-                <SelectTrigger className={errors.bankName ? 'border-red-500' : ''}>
-                  <SelectValue placeholder={t('form.bankNamePlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {VIETNAM_BANKS.map((bank) => (
-                    <SelectItem key={bank} value={bank}>
-                      {bank}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={currentBankIndex}
+                onChange={(index) => {
+                  const bankName = BANK_NAME_BY_INDEX[index];
+                  if (bankName) {
+                    handleInputChange('bankName', bankName);
+                  }
+                }}
+                options={bankOptions}
+                placeholder={t('form.bankNamePlaceholder')}
+                searchPlaceholder={t('form.bankNamePlaceholder') || 'Tìm kiếm ngân hàng...'}
+                emptyText={t('form.errors.bankNameRequired') || 'Không tìm thấy ngân hàng'}
+                className={errors.bankName ? 'border-red-500' : ''}
+              />
               {errors.bankName && (
                 <p className="text-sm text-red-500">{errors.bankName}</p>
               )}
