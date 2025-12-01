@@ -117,23 +117,50 @@ export const GET = async (
           const remainingAmount = (order.totalAmount || 0) - (order.depositAmount || 0);
           const securityDeposit = order.securityDeposit || 0;
           amountToPay = remainingAmount + securityDeposit;
+        } else if (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.PICKUPED) {
+          // RENT orders PICKUPED: may need to collect additional fees
+          // (damage fee, late fee, etc.) when returning
+          const damageFee = order.damageFee || 0;
+          const lateFee = order.lateFee || 0;
+          amountToPay = damageFee + lateFee;
         } else {
           // Other RENT statuses: no collection needed
           amountToPay = 0;
         }
 
-        // Check if amount is valid
-        if (amountToPay <= 0) {
-          return NextResponse.json(
-            ResponseBuilder.error('NO_AMOUNT_TO_COLLECT', 'No amount to collect for this order'),
-            { status: 400 }
-          );
+        // Generate transfer description based on order type and status
+        let transferDescription: string;
+        if (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.RESERVED) {
+          // Check if this is just deposit collection
+          // If amount matches deposit amount, it's deposit collection
+          const depositAmount = order.depositAmount || 0;
+          if (depositAmount > 0 && Math.abs(amountToPay - depositAmount) < 0.01) {
+            // "Thu cọc cho đơn ..."
+            transferDescription = `Thu coc cho don ${order.orderNumber}`;
+          } else {
+            // Otherwise, it's remaining amount + security deposit
+            // Check if order has collateral
+            const hasCollateral = order.collateralType && order.collateralType.trim() !== '';
+            if (hasCollateral) {
+              // "Thu tiền còn lại và thế chân cho đơn ..."
+              transferDescription = `Thu tien con lai va the chan cho don ${order.orderNumber}`;
+            } else {
+              // "Thu tiền còn lại cho đơn ..."
+              transferDescription = `Thu tien con lai cho don ${order.orderNumber}`;
+            }
+          }
+        } else if (order.orderType === ORDER_TYPE.RENT && order.status === ORDER_STATUS.PICKUPED) {
+          // For PICKUPED orders, usually collecting fees (damage, late)
+          // Use default description
+          transferDescription = `Thanh toan don hang ${order.orderNumber}`;
+        } else {
+          // Default: "Thanh toán đơn hàng ..." (for SALE orders or other cases)
+          transferDescription = `Thanh toan don hang ${order.orderNumber}`;
         }
 
-        // Generate transfer description
-        const transferDescription = `Thanh toan don hang ${order.orderNumber}`;
-
         // Generate VietQR string
+        // Note: Only include amount in QR code if > 0
+        // QR code will still be generated without amount (static QR code)
         let qrCodeString: string;
         try {
           qrCodeString = generateVietQRString(
@@ -143,7 +170,7 @@ export const GET = async (
               bankName: defaultBankAccount.bankName,
               bankCode: defaultBankAccount.bankCode,
             },
-            amountToPay > 0 ? amountToPay : undefined,
+            amountToPay > 0 ? amountToPay : undefined, // Only include amount if > 0
             transferDescription
           );
         } catch (error: any) {
