@@ -114,30 +114,6 @@ export const merchantsApi = {
   },
 
   /**
-   * Register new merchant (public endpoint)
-   */
-  async register(data: {
-    merchantName: string;
-    merchantEmail: string;
-    merchantPhone: string;
-    merchantDescription: string;
-    userEmail: string;
-    userPassword: string;
-    userFirstName: string;
-    userLastName: string;
-    userPhone: string;
-    outletName: string;
-    outletAddress: string;
-    outletDescription: string;
-  }): Promise<ApiResponse<{ merchant: Merchant; user: any }>> {
-    const response = await fetch(apiUrls.merchants.register, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return await parseApiResponse<{ merchant: Merchant; user: any }>(response);
-  },
-
-  /**
    * Update merchant
    */
   async updateMerchant(id: number, merchantData: Partial<Merchant>): Promise<ApiResponse<Merchant>> {

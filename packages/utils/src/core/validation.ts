@@ -25,12 +25,19 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
+  // Required fields: email, password, name (or firstName+lastName), businessName (for merchant)
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  // Support both name formats for flexibility
-  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  
+  // Name: Support both formats - either 'name' or both 'firstName' and 'lastName'
+  name: z.string().min(1, 'Name is required').optional(),
   firstName: z.string().min(1, 'First name is required').optional(),
   lastName: z.string().min(1, 'Last name is required').optional(),
+  
+  // For merchant registration - businessName is required if registering as merchant
+  businessName: z.string().optional(),
+  
+  // All other fields are optional
   phone: z.string().optional(),
   role: z.enum([
     USER_ROLE.ADMIN,
@@ -41,14 +48,12 @@ export const registerSchema = z.object({
     'CLIENT',
     'SHOP_OWNER'
   ] as [string, ...string[]]).optional(),
-  // For merchant registration
-  businessName: z.string().optional(),
   // Optional tenant key (domain-like identifier) for future multi-tenant routing
   tenantKey: z.string().min(1).max(50).regex(/^[a-z0-9\-]+$/i, 'Tenant key must be alphanumeric').optional(),
-  // Business configuration (required for merchants)
+  // Business configuration (optional - defaults will be used)
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
-  // Address fields for merchant registration
+  // Address fields for merchant registration (all optional)
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -63,13 +68,13 @@ export const registerSchema = z.object({
 }, {
   message: "Either 'name' or both 'firstName' and 'lastName' must be provided"
 }).refine((data) => {
-  // For MERCHANT role, businessType and pricingType are required
+  // For MERCHANT registration, businessName is required
   if (data.role === 'MERCHANT' || data.businessName) {
-    return data.businessType && data.pricingType;
+    return !!data.businessName && data.businessName.trim().length > 0;
   }
   return true;
 }, {
-  message: "Business type and pricing type are required for merchant registration"
+  message: "Business name is required for merchant registration"
 });
 
 // Product validation schemas (aligned with API routes and DB types)
