@@ -36,7 +36,7 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
     email: Yup.string()
       .required(() => {
         try {
-          return t('emailRequired') || t('validation.emailRequired') || 'Email is required';
+          return t('register.emailRequired') || t('emailRequired') || 'Email is required';
         } catch {
           return 'Email is required';
         }
