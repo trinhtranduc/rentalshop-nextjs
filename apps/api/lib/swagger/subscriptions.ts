@@ -414,6 +414,62 @@ export const subscriptionSwaggerConfig = {
                   planId: {
                     type: 'number',
                     description: 'New plan ID'
+                  },
+                  newPlanId: {
+                    type: 'number',
+                    description: 'New plan ID (alternative field name)'
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Plan changed successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    data: { $ref: '#/components/schemas/Subscription' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      patch: {
+        tags: ['Subscription Plans'],
+        summary: 'Change subscription plan (PATCH)',
+        description: 'Change the plan for an existing subscription using PATCH method',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'number' },
+            description: 'Subscription ID'
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['planId'],
+                properties: {
+                  planId: {
+                    type: 'number',
+                    description: 'New plan ID'
+                  },
+                  newPlanId: {
+                    type: 'number',
+                    description: 'New plan ID (alternative field name)'
                   }
                 }
               }

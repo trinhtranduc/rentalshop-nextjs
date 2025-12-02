@@ -111,7 +111,7 @@ export const subscriptionsApi = {
    */
   async changePlan(id: number, newPlanId: number): Promise<ApiResponse<Subscription>> {
     const response = await authenticatedFetch(`${apiUrls.subscriptions.update(id)}/change-plan`, {
-      method: 'PATCH',
+      method: 'POST',
       body: JSON.stringify({ newPlanId }),
     });
     return await parseApiResponse<Subscription>(response);
