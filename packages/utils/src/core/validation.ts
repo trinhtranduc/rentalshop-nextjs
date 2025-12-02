@@ -669,11 +669,15 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
  */
 export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsInfo> {
   try {
-    // Get merchant with subscription
+    // Get merchant with subscription - use fresh query to avoid stale data
     const merchant = await prisma.merchant.findUnique({
       where: { id: merchantId },
       include: {
-        subscription: true
+        subscription: {
+          include: {
+            plan: true // Include plan to get fresh data
+          }
+        }
       }
     });
 
@@ -684,16 +688,62 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     if (!merchant.subscription) {
       throw new ApiError(ErrorCode.NOT_FOUND, 'No subscription found for merchant');
     }
+    
+    console.log('🔍 getPlanLimitsInfo - Subscription data:', {
+      merchantId,
+      subscriptionId: merchant.subscription.id,
+      planId: merchant.subscription.planId,
+      planName: merchant.subscription.plan?.name || 'N/A'
+    });
 
-    // Get plan information from database
-    const plan = await prisma.plan.findUnique({
+    // Get plan information - use plan from subscription if available, otherwise fetch fresh
+    const plan = merchant.subscription.plan || await prisma.plan.findUnique({
       where: { id: merchant.subscription.planId }
     });
     if (!plan) {
-      throw new ApiError(ErrorCode.NOT_FOUND, 'Plan not found');
+      throw new ApiError(ErrorCode.NOT_FOUND, `Plan not found for planId: ${merchant.subscription.planId}`);
     }
-    const planLimits = JSON.parse(plan.limits);
-    const platform = plan.features.includes('Web dashboard access') ? 'mobile+web' : 'mobile';
+    
+    // Parse plan limits - handle both string and object formats
+    let planLimits: any;
+    if (typeof plan.limits === 'string') {
+      try {
+        planLimits = JSON.parse(plan.limits);
+      } catch (e) {
+        console.error('Error parsing plan.limits:', e, 'Raw value:', plan.limits);
+        planLimits = {};
+      }
+    } else {
+      planLimits = plan.limits || {};
+    }
+    
+    // Ensure all required fields exist with default values (for backward compatibility with old plans)
+    // Default to unlimited (-1) if field is missing to prevent blocking operations
+    planLimits = {
+      outlets: planLimits.outlets !== undefined ? planLimits.outlets : -1,
+      users: planLimits.users !== undefined ? planLimits.users : -1,
+      products: planLimits.products !== undefined ? planLimits.products : -1,
+      customers: planLimits.customers !== undefined ? planLimits.customers : -1,
+      orders: planLimits.orders !== undefined ? planLimits.orders : -1, // Default to unlimited if missing
+      ...planLimits // Override with actual values if they exist
+    };
+    
+    // Parse plan features - handle both string and array formats
+    let features: string[];
+    if (typeof plan.features === 'string') {
+      try {
+        features = JSON.parse(plan.features);
+      } catch (e) {
+        console.error('Error parsing plan.features:', e, 'Raw value:', plan.features);
+        features = [];
+      }
+    } else if (Array.isArray(plan.features)) {
+      features = plan.features;
+    } else {
+      features = [];
+    }
+    
+    const platform = features.includes('Web dashboard access') ? 'mobile+web' : 'mobile';
 
     // Get current counts
     const currentCounts = await getCurrentEntityCounts(merchantId);
@@ -706,9 +756,22 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
       customers: planLimits.customers === -1,
       orders: planLimits.orders === -1
     };
+    
+    console.log('🔍 Plan Limits Check:', {
+      merchantId,
+      subscriptionId: merchant.subscription.id,
+      planId: merchant.subscription.planId,
+      planName: plan.name,
+      planLimits,
+      limitsType: typeof plan.limits,
+      ordersLimit: planLimits.orders,
+      ordersUnlimited: isUnlimited.orders,
+      currentOrdersCount: currentCounts.orders,
+      canCreateOrder: isUnlimited.orders || (planLimits.orders !== undefined && currentCounts.orders < planLimits.orders),
+      planFeatures: features.slice(0, 3) // Show first 3 features for debugging
+    });
 
     // Check platform access from plan features
-    const features = JSON.parse(plan.features);
     const platformAccess = {
       mobile: true, // All plans have mobile access
       web: features.includes('Web dashboard access'),
@@ -743,6 +806,17 @@ export async function validatePlanLimits(
     const currentCount = planInfo.currentCounts[entityType];
     const limit = planInfo.planLimits[entityType];
     const isUnlimited = planInfo.isUnlimited[entityType];
+
+    // Handle undefined limit (backward compatibility - treat as unlimited)
+    if (limit === undefined || limit === null) {
+      console.warn(`⚠️ Plan limit for ${entityType} is undefined, treating as unlimited for backward compatibility`);
+      return {
+        isValid: true,
+        currentCount,
+        limit: -1,
+        entityType
+      };
+    }
 
     // If unlimited, always allow
     if (isUnlimited) {

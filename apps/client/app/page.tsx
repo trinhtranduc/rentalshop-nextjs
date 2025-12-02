@@ -579,7 +579,7 @@ const Stats = () => {
             <div className="text-text-inverted/70">Active Stores</div>
           </div>
           <div>
-            <div className="text-4xl font-bold mb-2">10,000+</div>
+            <div className="text-4xl font-bold mb-2">500,000+</div>
             <div className="text-text-inverted/70">Orders Processed</div>
           </div>
           <div>

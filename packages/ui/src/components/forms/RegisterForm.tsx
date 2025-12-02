@@ -8,10 +8,7 @@ import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin } from
 import { authApi, isValidEmail } from "@rentalshop/utils";
 import { 
   BUSINESS_TYPE_OPTIONS,
-  PRICING_TYPE_OPTIONS,
-  COUNTRIES,
-  getDefaultCountry,
-  formatCountryDisplay
+  PRICING_TYPE_OPTIONS
 } from "@rentalshop/constants";
 import { 
   Button, 
@@ -43,10 +40,6 @@ interface RegisterFormData {
   businessType: 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
   pricingType: 'FIXED' | 'HOURLY' | 'DAILY';
   address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
   acceptTermsAndPrivacy: boolean;
   // Role is always MERCHANT for public registration
   role: 'MERCHANT';
@@ -97,10 +90,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     lastName: Yup.string()
       .min(1, t('register.lastNameRequired'))
       .required(t('register.lastNameRequired')),
-    phone: Yup.string()
-      .matches(/^[0-9+\-\s()]+$/, t('register.phoneInvalid'))
-      .min(10, t('register.phoneMinLength'))
-      .required(t('register.phoneRequired')),
   });
 
   // Step 2 validation schema (Business Information)
@@ -108,26 +97,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     businessName: Yup.string()
       .min(2, t('register.businessNameMinLength'))
       .required(t('register.businessNameRequired')),
+    phone: Yup.string()
+      .matches(/^[0-9+\-\s()]+$/, t('register.phoneInvalid'))
+      .min(10, t('register.phoneMinLength'))
+      .required(t('register.phoneRequired')),
     // businessType and pricingType are hidden and defaulted, no validation required
     address: Yup.string()
       .min(5, t('register.addressMinLength'))
-      .required(t('register.addressRequired')),
-    // Ward/Commune is optional
-    city: Yup.string()
-      .min(2, t('register.cityMinLength'))
       .notRequired(),
-    state: Yup.string()
-      .min(2, t('register.stateMinLength'))
-      .required(t('register.stateRequired')),
-    // zipCode optional but validate format when provided
-    zipCode: Yup.string()
-      .test('zip-optional', t('register.zipCodeInvalid'), (val) => {
-        if (!val || val.trim().length === 0) return true;
-        return /^[0-9]{4,10}(-[0-9]{3,4})?$/.test(val);
-      }),
-    country: Yup.string()
-      .min(2, t('register.countryMinLength'))
-      .required(t('register.countryRequired')),
     acceptTermsAndPrivacy: Yup.boolean()
       .oneOf([true], t('register.agreeToTerms'))
       .required(t('register.agreeToTerms')),
@@ -145,10 +122,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       businessType: "GENERAL",
       pricingType: "FIXED",
       address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      country: getDefaultCountry().name,
       acceptTermsAndPrivacy: false,
       role: 'MERCHANT',
     },
@@ -165,7 +138,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           confirmPassword: values.confirmPassword,
           firstName: values.firstName,
           lastName: values.lastName,
-          phone: values.phone,
           role: values.role,
         });
         setCurrentStep(2);
@@ -200,11 +172,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           businessName: values.businessName,
           businessType: values.businessType || 'GENERAL',
           pricingType: values.pricingType || 'FIXED',
-          address: values.address,
-          city: values.city,
-          state: values.state,
-          zipCode: values.zipCode,
-          country: values.country,
+          address: values.address || '',
         };
         
         const result = await authApi.register(registrationData);
@@ -369,29 +337,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       <p className="text-red-500 text-sm">{formik.errors.login}</p>
                     )}
                   </div>
-
-                  {/* Phone Field */}
-                  <div className="space-y-2">
-                    <label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                      {t('register.phone')} <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        placeholder={t('register.enterPhoneNumber')}
-                        value={formik.values.phone}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        className={`pl-10 ${formik.errors.phone && formik.touched.phone ? 'border-red-500' : ''}`}
-                      />
-                    </div>
-                    {formik.errors.phone && formik.touched.phone && (
-                      <p className="text-red-500 text-sm">{formik.errors.phone}</p>
-                    )}
-                  </div>
                 </div>
 
                 {/* Account Security Section */}
@@ -499,14 +444,37 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       <p className="text-red-500 text-sm">{formik.errors.businessName}</p>
                     )}
                   </div>
+
+                  {/* Phone Field */}
+                  <div className="space-y-2">
+                    <label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                      {t('register.phone')} <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        placeholder={t('register.enterPhoneNumber')}
+                        value={formik.values.phone}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`pl-10 ${formik.errors.phone && formik.touched.phone ? 'border-red-500' : ''}`}
+                      />
+                    </div>
+                    {formik.errors.phone && formik.touched.phone && (
+                      <p className="text-red-500 text-sm">{formik.errors.phone}</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Address Information Section */}
                 <div className="space-y-4">
-                  {/* Address Field - Full address */}
+                  {/* Address Field - Full address (optional) */}
                   <div className="space-y-2">
                     <label htmlFor="address" className="text-sm font-medium text-gray-700">
-                      {t('register.address')} <span className="text-red-500">*</span>
+                      {t('register.address')}
                     </label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -524,100 +492,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     {formik.errors.address && formik.touched.address && (
                       <p className="text-red-500 text-sm">{formik.errors.address}</p>
                     )}
-                  </div>
-
-                  {/* Location Fields - Grouped together */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* City/Ward */}
-                    <div className="space-y-2">
-                      <label htmlFor="city" className="text-sm font-medium text-gray-700">
-                        {t('register.city')} <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        id="city"
-                        name="city"
-                        type="text"
-                        placeholder={t('register.city')}
-                        value={formik.values.city}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        className={formik.errors.city && formik.touched.city ? 'border-red-500' : ''}
-                      />
-                      {formik.errors.city && formik.touched.city && (
-                        <p className="text-red-500 text-sm">{formik.errors.city}</p>
-                      )}
-                    </div>
-                    
-                    {/* State/Province */}
-                    <div className="space-y-2">
-                      <label htmlFor="state" className="text-sm font-medium text-gray-700">
-                        {t('register.state')} <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        id="state"
-                        name="state"
-                        type="text"
-                        placeholder={t('register.state')}
-                        value={formik.values.state}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        className={formik.errors.state && formik.touched.state ? 'border-red-500' : ''}
-                      />
-                      {formik.errors.state && formik.touched.state && (
-                        <p className="text-red-500 text-sm">{formik.errors.state}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ZIP Code and Country Row */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* ZIP Code */}
-                    <div className="space-y-2">
-                      <label htmlFor="zipCode" className="text-sm font-medium text-gray-700">
-                        {t('register.zipCode')}
-                      </label>
-                      <Input
-                        id="zipCode"
-                        name="zipCode"
-                        type="text"
-                        placeholder={t('register.zipCode')}
-                        value={formik.values.zipCode}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        className={formik.errors.zipCode && formik.touched.zipCode ? 'border-red-500' : ''}
-                      />
-                      {formik.errors.zipCode && formik.touched.zipCode && (
-                        <p className="text-red-500 text-sm">{formik.errors.zipCode}</p>
-                      )}
-                    </div>
-                    
-                    {/* Country */}
-                    <div className="space-y-2">
-                      <label htmlFor="country" className="text-sm font-medium text-gray-700">
-                        {t('register.country')} <span className="text-red-500">*</span>
-                      </label>
-                      <Select
-                        value={formik.values.country}
-                        onValueChange={(value) => formik.setFieldValue('country', value)}
-                      >
-                        <SelectTrigger className={`w-full ${formik.errors.country && formik.touched.country ? 'border-red-500' : ''}`}>
-                          <SelectValue placeholder={t('register.selectCountry')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {COUNTRIES.map((country: any) => (
-                            <SelectItem key={country.code} value={country.name}>
-                              <div className="flex items-center gap-2">
-                                <span>{country.flag}</span>
-                                <span>{country.name}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {formik.errors.country && formik.touched.country && (
-                        <p className="text-red-500 text-sm">{formik.errors.country}</p>
-                      )}
-                    </div>
                   </div>
                 </div>
 
