@@ -140,7 +140,7 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
       setUpgradeLoading(true);
       
       const response = await fetch(`/api/subscriptions/${subscriptionId}/change-plan`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
