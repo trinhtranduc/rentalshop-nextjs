@@ -403,6 +403,46 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const order = await db.orders.create(orderData);
     console.log('✅ Order created successfully:', order);
 
+    // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
+    if (order.orderItems && order.orderItems.length > 0) {
+      try {
+        // Import the function from product module (same pattern as updateOrder in order.ts)
+        // Use dynamic import - order.ts uses './product' from same package
+        // From API route, we need to use absolute path from workspace root
+        const productModule = await import('@rentalshop/database/src/product');
+        const { updateOutletStockForOrder } = productModule;
+        
+        if (updateOutletStockForOrder) {
+          // For SALE orders with COMPLETED status: decrease stock permanently
+          // For RENT orders with RESERVED/PICKUPED status: update renting/available
+          const shouldUpdateStock = 
+            (order.orderType === ORDER_TYPE.SALE && order.status === ORDER_STATUS.COMPLETED) ||
+            (order.orderType === ORDER_TYPE.RENT && (order.status === ORDER_STATUS.RESERVED || order.status === ORDER_STATUS.PICKUPED));
+          
+          if (shouldUpdateStock) {
+            await updateOutletStockForOrder(
+              order.id,
+              null, // oldStatus (null for new orders)
+              order.status,
+              order.orderType as 'RENT' | 'SALE',
+              order.outletId,
+              order.orderItems.map(item => ({
+                productId: item.productId || 0,
+                quantity: item.quantity,
+              })).filter(item => item.productId > 0)
+            );
+            console.log('✅ Outlet stock updated successfully for new order');
+          }
+        } else {
+          console.warn('⚠️ updateOutletStockForOrder function not found in product module');
+        }
+      } catch (error) {
+        console.error('❌ Error updating outlet stock for new order:', error);
+        // Don't throw - order creation succeeded, stock update failed
+        // Log error for manual review
+      }
+    }
+
     // Flatten order response (consistent with order list response)
     const flattenedOrder = {
       id: order.id,

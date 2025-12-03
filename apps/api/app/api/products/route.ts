@@ -617,6 +617,21 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const product = await db.products.create(finalProductData);
     console.log('✅ Product created successfully:', product);
 
+    // Sync Product.totalStock = sum of all OutletStock.stock
+    // This ensures totalStock always equals the sum of all outlet stocks
+    if (outletStock && outletStock.length > 0) {
+      try {
+        const productModule = await import('@rentalshop/database/src/product');
+        const { syncProductTotalStock } = productModule;
+        if (syncProductTotalStock) {
+          await syncProductTotalStock(product.id);
+        }
+      } catch (error) {
+        console.error('❌ Error syncing Product.totalStock after creation:', error);
+        // Don't throw - product creation succeeded, sync failed
+      }
+    }
+
     // Parse images from database response to return array
     let imageUrls: string[] = [];
     if (typeof product.images === 'string') {

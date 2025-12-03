@@ -130,12 +130,12 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5" />
-            Orders for {product.name}
-          </DialogTitle>
+                <ShoppingCart className="w-5 h-5" />
+                Orders for {product.name}
+              </DialogTitle>
           <DialogDescription className="mt-1">
-            View all orders containing this product
-          </DialogDescription>
+                View all orders containing this product
+              </DialogDescription>
         </DialogHeader>
 
         <div className="px-6 py-4 overflow-y-auto">
@@ -272,9 +272,9 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <Button onClick={() => onOpenChange(false)} variant="outline">
-              Close
-            </Button>
+          <Button onClick={() => onOpenChange(false)} variant="outline">
+            Close
+          </Button>
           </div>
         </div>
       </DialogContent>

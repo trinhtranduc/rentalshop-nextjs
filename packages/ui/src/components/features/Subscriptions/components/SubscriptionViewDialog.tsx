@@ -114,7 +114,7 @@ export function SubscriptionViewDialog({
         </DialogHeader>
 
         <div className="px-6 py-4 overflow-y-auto">
-          <div className="space-y-4">
+        <div className="space-y-4">
           {/* Compact summary card (only essentials) */}
           <Card>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
@@ -150,60 +150,60 @@ export function SubscriptionViewDialog({
               </div>
             </CardContent>
           </Card>
-          </div>
+        </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            {canExtend && onExtend && (
-              <Button 
-                variant="outline" 
-                onClick={() => onExtend(subscription)}
-                className="flex items-center gap-2"
-              >
-                <Clock className="h-4 w-4" />
-                Extend Subscription
-              </Button>
-            )}
-            {canChangePlan && onChangePlan && (
-              <Button 
-                variant="outline" 
-                onClick={() => onChangePlan(subscription)}
-                className="flex items-center gap-2"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Change Plan
-              </Button>
-            )}
-            {isActiveStatus && onSuspend && (
-              <Button 
-                variant="outline" 
-                onClick={() => onSuspend(subscription, 'Paused from subscription view')}
+          {canExtend && onExtend && (
+            <Button 
+              variant="outline" 
+              onClick={() => onExtend(subscription)}
+              className="flex items-center gap-2"
+            >
+              <Clock className="h-4 w-4" />
+              Extend Subscription
+            </Button>
+          )}
+          {canChangePlan && onChangePlan && (
+            <Button 
+              variant="outline" 
+              onClick={() => onChangePlan(subscription)}
+              className="flex items-center gap-2"
+            >
+              <ArrowRight className="h-4 w-4" />
+              Change Plan
+            </Button>
+          )}
+          {isActiveStatus && onSuspend && (
+            <Button 
+              variant="outline" 
+              onClick={() => onSuspend(subscription, 'Paused from subscription view')}
                 className="flex items-center gap-2 text-action-warning hover:text-action-warning"
-              >
-                <Pause className="h-4 w-4" />
-                Pause Subscription
-              </Button>
-            )}
-            {subscription.status === 'PAUSED' && onReactivate && (
-              <Button 
-                variant="outline" 
-                onClick={() => onReactivate(subscription)}
+            >
+              <Pause className="h-4 w-4" />
+              Pause Subscription
+            </Button>
+          )}
+          {subscription.status === 'PAUSED' && onReactivate && (
+            <Button 
+              variant="outline" 
+              onClick={() => onReactivate(subscription)}
                 className="flex items-center gap-2 text-action-success hover:text-action-success"
-              >
-                <Play className="h-4 w-4" />
-                Resume Subscription
-              </Button>
-            )}
-            {canCancel && onCancel && (
-              <Button 
-                variant="destructive" 
-                onClick={() => onCancel(subscription)}
-                className="flex items-center gap-2"
-              >
-                <X className="h-4 w-4" />
-                Cancel Subscription
-              </Button>
-            )}
+            >
+              <Play className="h-4 w-4" />
+              Resume Subscription
+            </Button>
+          )}
+          {canCancel && onCancel && (
+            <Button 
+              variant="destructive" 
+              onClick={() => onCancel(subscription)}
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Cancel Subscription
+            </Button>
+          )}
           </div>
         </div>
       </DialogContent>

@@ -168,7 +168,7 @@ export function MerchantPlanDialog({
         </DialogHeader>
 
         <div className="px-6 py-4 overflow-y-auto">
-          <div className="space-y-6">
+        <div className="space-y-6">
           {/* Current Plan Info */}
           <Card>
             <CardContent className="pt-6">
@@ -494,23 +494,23 @@ export function MerchantPlanDialog({
               Notify merchant about this plan change
             </Label>
           </div>
-          </div>
+        </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={!selectedPlanId || isSubmitting}
-            >
-              {isSubmitting ? 'Changing Plan...' : 'Change Plan'}
-            </Button>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!selectedPlanId || isSubmitting}
+          >
+            {isSubmitting ? 'Changing Plan...' : 'Change Plan'}
+          </Button>
           </div>
         </div>
       </DialogContent>

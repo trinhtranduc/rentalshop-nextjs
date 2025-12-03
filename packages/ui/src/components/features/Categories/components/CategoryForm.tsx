@@ -48,12 +48,12 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
         </DialogHeader>
         
         <div className="px-6 py-4 overflow-y-auto">
-          <CategoryFormContent
-            category={category}
-            onSave={onSave}
-            onCancel={onCancel}
-            mode={mode}
-          />
+        <CategoryFormContent
+          category={category}
+          onSave={onSave}
+          onCancel={onCancel}
+          mode={mode}
+        />
         </div>
       </DialogContent>
     </Dialog>

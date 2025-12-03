@@ -11,6 +11,7 @@ import {
 } from '../../../ui';
 import { ProductAddForm } from './ProductAddForm';
 import type { Category, Outlet, ProductWithDetails } from '@rentalshop/types';
+import { useProductTranslations } from '@rentalshop/hooks';
 
 interface ProductAddDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
   onError
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const t = useProductTranslations();
   
   console.log('🟢 ProductAddDialog: Rendered with open =', open);
 
@@ -68,10 +70,10 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-lg font-semibold">
-            Add New Product
+            {t('dialogs.addProductTitle') || 'Add New Product'}
           </DialogTitle>
           <DialogDescription className="mt-1">
-            Create a new product for your rental shop inventory.
+            {t('dialogs.addProductDescription') || 'Create a new product for your rental shop inventory'}
           </DialogDescription>
         </DialogHeader>
         

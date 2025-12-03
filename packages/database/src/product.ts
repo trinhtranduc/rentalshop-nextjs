@@ -645,7 +645,45 @@ export async function updateProductStock(
     },
   });
 
+  // Sync Product.totalStock = sum of all OutletStock.stock
+  if (stockChange !== 0) {
+    await syncProductTotalStock(productId);
+  }
+
   return outletStock;
+}
+
+/**
+ * Sync Product.totalStock = sum of all OutletStock.stock for this product
+ * This ensures Product.totalStock always equals the sum of all outlet stocks
+ */
+export async function syncProductTotalStock(productId: number): Promise<void> {
+  // Find product by id
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true }
+  });
+  
+  if (!product) {
+    throw new Error(`Product with id ${productId} not found`);
+  }
+
+  // Get all outlet stock for this product
+  const allOutletStock = await prisma.outletStock.findMany({
+    where: { productId: product.id },
+    select: { stock: true }
+  });
+  
+  // Calculate total stock = sum of all outlet stocks
+  const totalStock = allOutletStock.reduce((sum, os) => sum + os.stock, 0);
+  
+  // Update Product.totalStock
+  await prisma.product.update({
+    where: { id: product.id },
+    data: { totalStock }
+  });
+  
+  console.log(`✅ Synced Product.totalStock: ${totalStock} (sum of ${allOutletStock.length} outlets) for product ${productId}`);
 }
 
 /**
@@ -691,6 +729,9 @@ export async function syncOutletStockAvailable(
   }
 
   // Recalculate available = stock - renting
+  // Note: Reserved orders are NOT counted in available calculation.
+  // Reserved items are still in stock physically, just reserved temporarily.
+  // For accurate date-based availability with reserved conflicts, use the availability API.
   const calculatedAvailable = Math.max(0, outletStock.stock - outletStock.renting);
 
   // Update if different
@@ -731,7 +772,8 @@ export async function updateOutletStockForOrder(
 
   // Process each order item
   for (const item of orderItems) {
-    if (!item.productId || !item.quantity || item.quantity <= 0) {
+    // Allow negative quantity (user requirement)
+    if (!item.productId || item.quantity === undefined || item.quantity === null) {
       console.warn(`⚠️ Skipping invalid order item:`, item);
       continue;
     }
@@ -796,19 +838,20 @@ export async function updateOutletStockForOrder(
     } else if (orderType === ORDER_TYPE.RENT) {
       // RENT orders: Use renting field (temporary), stock doesn't change
       if (newStatus === ORDER_STATUS.RESERVED) {
-        // Reserve: Decrease available (temporary reservation)
+        // Reserve: No change to stock/renting/available (items still in stock)
+        // Reserved is only checked in availability API with date conflicts
         // Only if not already reserved
         if (oldStatus !== ORDER_STATUS.RESERVED && oldStatus !== ORDER_STATUS.PICKUPED) {
-          availableChange = -item.quantity;
-          console.log(`🔒 RENT order ${orderId}: Reserving ${item.quantity} for product ${item.productId}`);
+          // No stock/renting/available change - reserved items are still physically in stock
+          console.log(`🔒 RENT order ${orderId}: Reserving ${item.quantity} for product ${item.productId} (items still in stock)`);
         }
       } else if (newStatus === ORDER_STATUS.PICKUPED) {
         // Pickup: Increase renting, decrease available (if not already picked up)
         if (oldStatus !== ORDER_STATUS.PICKUPED) {
           if (oldStatus === ORDER_STATUS.RESERVED) {
-            // From RESERVED: renting increases, available already decreased in RESERVED
+            // From RESERVED: renting increases, available decreases
             rentingChange = item.quantity;
-            // availableChange = 0 (already decreased in RESERVED)
+            availableChange = -item.quantity;
           } else {
             // From other status (e.g., directly to PICKUPED): both renting and available change
             rentingChange = item.quantity;
@@ -831,9 +874,9 @@ export async function updateOutletStockForOrder(
           availableChange = item.quantity;
           console.log(`↩️ RENT order ${orderId}: Cancelling pickup, rolling back ${item.quantity} for product ${item.productId}`);
         } else if (oldStatus === ORDER_STATUS.RESERVED) {
-          // Was only reserved: rollback available
-          availableChange = item.quantity;
-          console.log(`↩️ RENT order ${orderId}: Cancelling reservation, rolling back ${item.quantity} for product ${item.productId}`);
+          // Was only reserved: no rollback needed (items were still in stock)
+          // Reserved items don't affect available, so no change needed
+          console.log(`↩️ RENT order ${orderId}: Cancelling reservation for product ${item.productId} (items were still in stock)`);
         }
       }
     }
@@ -851,10 +894,14 @@ export async function updateOutletStockForOrder(
         updateData.renting = { increment: rentingChange };
       }
 
-      // Calculate final available value to ensure consistency: available = stock - renting
-      // This is more reliable than using increment, as it ensures the formula is always correct
+      // Calculate final available value: available = stock - renting
+      // Note: Reserved orders are NOT counted in available calculation here.
+      // Reserved items are still in stock physically, just reserved temporarily.
+      // For accurate date-based availability with reserved conflicts, use the availability API.
       const newStock = outletStock.stock + stockChange;
       const newRenting = outletStock.renting + rentingChange;
+      
+      // Calculate available: stock - renting (reserved items are still in stock)
       const finalAvailable = Math.max(0, newStock - newRenting);
       updateData.available = finalAvailable;
 
@@ -871,6 +918,12 @@ export async function updateOutletStockForOrder(
         newRenting,
         newAvailable: finalAvailable,
       });
+
+      // Sync Product.totalStock = sum of all OutletStock.stock for this product
+      // Only sync if stock changed (SALE orders - permanent stock reduction)
+      if (stockChange !== 0) {
+        await syncProductTotalStock(item.productId);
+      }
     }
   }
 }

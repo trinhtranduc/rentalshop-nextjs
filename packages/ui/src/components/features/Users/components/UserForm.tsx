@@ -363,12 +363,12 @@ export const UserForm: React.FC<UserFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Personal Information */}
-      <div>
+          {/* Personal Information */}
+          <div>
         <h3 className="text-sm font-medium text-text-primary mb-4">
-          {isEditMode ? t('fields.basicInformation') : t('fields.personalInformation')}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {isEditMode ? t('fields.basicInformation') : t('fields.personalInformation')}
+            </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {isEditMode ? (
               <>
                 <FormField
@@ -440,16 +440,16 @@ export const UserForm: React.FC<UserFormProps> = ({
               disabled={isSubmitting}
               currentUserRole={currentUser?.role}
             />
-        </div>
-      </div>
+          </div>
+          </div>
 
-      {/* Organization Assignment */}
-      {(showMerchantField || showOutletField) && (
+          {/* Organization Assignment */}
+          {(showMerchantField || showOutletField) && (
         <div className="border-t pt-4 mt-4">
           <h3 className="text-sm font-medium text-text-primary mb-4">
-            {t('organizationAssignment')}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {t('organizationAssignment')}
+              </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {showMerchantField && (
                 <MerchantSelect
                   value={(formData as any).merchantId}
@@ -477,17 +477,17 @@ export const UserForm: React.FC<UserFormProps> = ({
                   currentUser={currentUser}
                 />
               )}
-          </div>
-        </div>
-      )}
+            </div>
+            </div>
+          )}
 
-      {/* Password Section (Create mode only) */}
-      {!isEditMode && (
+          {/* Password Section (Create mode only) */}
+          {!isEditMode && (
         <div className="border-t pt-4 mt-4">
           <h3 className="text-sm font-medium text-text-primary mb-4">
-            {t('passwordSettings')}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {t('passwordSettings')}
+              </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 id="password"
                 label={t('fields.password')}
@@ -512,65 +512,65 @@ export const UserForm: React.FC<UserFormProps> = ({
                 placeholder={t('placeholders.confirmPassword')}
                 showPasswordToggle={true}
               />
-          </div>
-        </div>
-      )}
+            </div>
+            </div>
+          )}
 
-      {/* User Information (Edit mode only) */}
-      {isEditMode && user && (
+          {/* User Information (Edit mode only) */}
+          {isEditMode && user && (
         <div className="border-t pt-4 mt-4">
           <h3 className="text-sm font-medium text-text-primary mb-4">
-            {t('currentUserInformation')}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
+                {t('currentUserInformation')}
+              </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
               <span className="font-medium text-text-primary">{t('fields.role')}:</span>
               <span className="ml-2 px-2 py-1 bg-action-info/10 text-action-info rounded-full text-xs">
-                {t(`roles.${user.role}` as any)}
-              </span>
-            </div>
-            <div>
-              <span className="font-medium text-text-primary">{t('fields.status')}:</span>
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                user.isActive 
-                  ? 'bg-action-success/10 text-action-success' 
-                  : 'bg-action-danger/10 text-action-danger'
-              }`}>
-                {user.isActive ? t('fields.active') : t('fields.inactive')}
-              </span>
-            </div>
-            {user.merchant && (
-              <div>
-                <span className="font-medium text-text-primary">{t('fields.merchant')}:</span>
-                <span className="ml-2 text-muted-foreground">{user.merchant.name}</span>
-              </div>
-            )}
-            {user.outlet && (
-              <div>
-                <span className="font-medium text-text-primary">{t('fields.outlet')}:</span>
-                <span className="ml-2 text-muted-foreground">{user.outlet.name}</span>
-              </div>
-            )}
-            <div>
-              <span className="font-medium text-text-primary">{t('created')}:</span>
-              <span className="ml-2 text-muted-foreground">
-                {new Date(user.createdAt).toLocaleDateString()}
-              </span>
-            </div>
-            {user.lastLoginAt && (
-              <div>
-                <span className="font-medium text-text-primary">{t('fields.lastLogin')}:</span>
-                <span className="ml-2 text-muted-foreground">
-                  {new Date(user.lastLoginAt).toLocaleDateString()}
+                  {t(`roles.${user.role}` as any)}
                 </span>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+              <div>
+              <span className="font-medium text-text-primary">{t('fields.status')}:</span>
+                <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                  user.isActive 
+                  ? 'bg-action-success/10 text-action-success' 
+                  : 'bg-action-danger/10 text-action-danger'
+                }`}>
+                  {user.isActive ? t('fields.active') : t('fields.inactive')}
+                </span>
+              </div>
+              {user.merchant && (
+                <div>
+                <span className="font-medium text-text-primary">{t('fields.merchant')}:</span>
+                <span className="ml-2 text-muted-foreground">{user.merchant.name}</span>
+                </div>
+              )}
+              {user.outlet && (
+                <div>
+                <span className="font-medium text-text-primary">{t('fields.outlet')}:</span>
+                <span className="ml-2 text-muted-foreground">{user.outlet.name}</span>
+                </div>
+              )}
+              <div>
+              <span className="font-medium text-text-primary">{t('created')}:</span>
+              <span className="ml-2 text-muted-foreground">
+                  {new Date(user.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              {user.lastLoginAt && (
+                <div>
+                <span className="font-medium text-text-primary">{t('fields.lastLogin')}:</span>
+                <span className="ml-2 text-muted-foreground">
+                    {new Date(user.lastLoginAt).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+            </div>
+            </div>
+          )}
 
-      {/* Validation Status */}
-      {Object.keys(errors).length > 0 && (
+          {/* Validation Status */}
+          {Object.keys(errors).length > 0 && (
         <div className="bg-action-warning/10 border border-action-warning/20 rounded-md p-4">
           <div className="flex items-start">
             <div className="flex-shrink-0">
@@ -592,9 +592,9 @@ export const UserForm: React.FC<UserFormProps> = ({
             </div>
           </div>
         </div>
-      )}
+          )}
 
-      {/* Action Buttons */}
+          {/* Action Buttons */}
       <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
         <Button
           type="button"
@@ -615,7 +615,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             : (isEditMode ? t('actions.updateUser') : t('actions.createUser'))
           }
         </Button>
-      </div>
+          </div>
     </form>
   );
 };

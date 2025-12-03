@@ -194,6 +194,10 @@
   "productsPlural": "products",
   "storeNotFound": "Store Not Found",
   "storeNotFoundMessage": "The store you're looking for could not be found. Please check the URL or contact the store owner.",
-  "goToHomepage": "Go to Homepage"
+  "goToHomepage": "Go to Homepage",
+  "dialogs": {
+    "addProductTitle": "Add New Product",
+    "addProductDescription": "Create a new product for your rental shop inventory"
+  }
 }
 

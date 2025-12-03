@@ -346,10 +346,10 @@ export default function OutletsPage() {
       <PageWrapper>
         <PageContent>
           <div className="p-8 text-center text-muted-foreground">
-            <div className="mb-4">{t("messages.unauthorized")}</div>
+              <div className="mb-4">{t("messages.unauthorized")}</div>
             <div className="text-sm text-text-secondary">
-              {t("messages.sessionExpired")}
-            </div>
+                {t("messages.sessionExpired")}
+              </div>
           </div>
         </PageContent>
       </PageWrapper>
@@ -431,41 +431,41 @@ export default function OutletsPage() {
             <div className="px-6 py-4 overflow-y-auto">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                      {to("fields.name")}
+                    {to("fields.name")}
                     </label>
                     <p className="text-sm font-semibold">
-                      {selectedOutlet.name}
-                    </p>
-                  </div>
-                  <div>
+                    {selectedOutlet.name}
+                  </p>
+                </div>
+                <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                       {to("fields.phone")}
                     </label>
                     <p className="text-sm">
-                      {selectedOutlet.phone || to("fields.notAvailable")}
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
+                    {selectedOutlet.phone || to("fields.notAvailable")}
+                  </p>
+                </div>
+                <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                       {to("fields.address")}
                     </label>
                     <p className="text-sm">
-                      {selectedOutlet.address || to("fields.notAvailable")}
-                    </p>
-                  </div>
-                  {selectedOutlet.description && (
-                    <div className="md:col-span-2">
+                    {selectedOutlet.address || to("fields.notAvailable")}
+                  </p>
+                </div>
+                {selectedOutlet.description && (
+                  <div className="md:col-span-2">
                       <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                        {to("fields.description")}
+                      {to("fields.description")}
                       </label>
                       <p className="text-sm whitespace-pre-wrap">
-                        {selectedOutlet.description}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                      {selectedOutlet.description}
+                    </p>
+                  </div>
+                )}
+              </div>
               </div>
 
               {/* Action Buttons */}
@@ -498,160 +498,160 @@ export default function OutletsPage() {
           </DialogHeader>
           <form onSubmit={handleOutletUpdate} className="px-6 py-4">
             <div className="space-y-4">
-              <div>
+                <div>
                 <Label htmlFor="name" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                   {to("fields.name")} <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  placeholder={to("placeholders.enterOutletName")}
-                  required
-                />
-              </div>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder={to("placeholders.enterOutletName")}
+                required
+              />
+            </div>
 
-              {/* Address Information */}
+            {/* Address Information */}
               <div className="border-t pt-4 mt-4">
                 <h3 className="text-sm font-medium text-text-primary mb-4">
-                  {t("labels.addressInformation")}
-                </h3>
+                {t("labels.addressInformation")}
+              </h3>
 
                 <div className="space-y-4">
-                  <div>
+              <div>
                     <Label htmlFor="address" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                       {to("fields.address")}
                     </Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          address: e.target.value,
-                        }))
-                      }
-                      placeholder={to("placeholders.enterStreetAddress")}
-                    />
-                  </div>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      address: e.target.value,
+                    }))
+                  }
+                  placeholder={to("placeholders.enterStreetAddress")}
+                />
+              </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
                       <Label htmlFor="city" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                         {to("fields.city")}
                       </Label>
-                      <Input
-                        id="city"
-                        value={formData.city}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, city: e.target.value }))
-                        }
-                        placeholder={to("placeholders.enterCity")}
-                      />
-                    </div>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, city: e.target.value }))
+                    }
+                    placeholder={to("placeholders.enterCity")}
+                  />
+                </div>
 
-                    <div>
+                <div>
                       <Label htmlFor="state" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                         {to("fields.state")}
                       </Label>
-                      <Input
-                        id="state"
-                        value={formData.state}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            state: e.target.value,
-                          }))
-                        }
-                        placeholder={to("placeholders.enterState")}
-                      />
-                    </div>
+                  <Input
+                    id="state"
+                    value={formData.state}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        state: e.target.value,
+                      }))
+                    }
+                    placeholder={to("placeholders.enterState")}
+                  />
+                </div>
 
-                    <div>
+                <div>
                       <Label htmlFor="zipCode" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                         {to("fields.zipCode")}
                       </Label>
-                      <Input
-                        id="zipCode"
-                        value={formData.zipCode}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            zipCode: e.target.value,
-                          }))
-                        }
-                        placeholder={to("placeholders.enterZipCode")}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="country" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      {to("fields.country")}
-                    </Label>
-                    <Input
-                      id="country"
-                      value={formData.country}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          country: e.target.value,
-                        }))
-                      }
-                      placeholder={to("placeholders.enterCountry")}
-                    />
-                  </div>
+                  <Input
+                    id="zipCode"
+                    value={formData.zipCode}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        zipCode: e.target.value,
+                      }))
+                    }
+                    placeholder={to("placeholders.enterZipCode")}
+                  />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="phone" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  {to("fields.phone")}
-                </Label>
+                    <Label htmlFor="country" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                      {to("fields.country")}
+                    </Label>
                 <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                  }
-                  placeholder={to("placeholders.enterOutletPhone")}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  {to("fields.description")}
-                </Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
+                  id="country"
+                  value={formData.country}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      description: e.target.value,
+                      country: e.target.value,
                     }))
                   }
-                  placeholder={to("placeholders.enterOutletDescription")}
-                  rows={3}
+                  placeholder={to("placeholders.enterCountry")}
                 />
+                  </div>
               </div>
+            </div>
+
+            <div>
+                <Label htmlFor="phone" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                  {to("fields.phone")}
+                </Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
+                placeholder={to("placeholders.enterOutletPhone")}
+              />
+            </div>
+
+            <div>
+                <Label htmlFor="description" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                  {to("fields.description")}
+                </Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                placeholder={to("placeholders.enterOutletDescription")}
+                rows={3}
+              />
+            </div>
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowEditDialog(false);
-                    setSelectedOutlet(null);
-                  }}
-                >
-                  {t("buttons.cancel")}
-                </Button>
-                <Button type="submit">{to("actions.editOutlet")}</Button>
-              </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowEditDialog(false);
+                      setSelectedOutlet(null);
+                    }}
+                  >
+                    {t("buttons.cancel")}
+                  </Button>
+                  <Button type="submit">{to("actions.editOutlet")}</Button>
+                </div>
             </div>
           </form>
         </DialogContent>

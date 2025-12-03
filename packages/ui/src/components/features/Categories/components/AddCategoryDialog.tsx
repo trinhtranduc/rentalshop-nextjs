@@ -69,13 +69,13 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
         </DialogHeader>
         
         <div className="px-6 py-4 overflow-y-auto">
-          <CategoryFormContent
-            category={null}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            mode="create"
-            isSubmitting={isSubmitting}
-          />
+        <CategoryFormContent
+          category={null}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          mode="create"
+          isSubmitting={isSubmitting}
+        />
         </div>
       </DialogContent>
     </Dialog>

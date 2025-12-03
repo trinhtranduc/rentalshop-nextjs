@@ -27,7 +27,9 @@
     "browse": "Chọn tệp",
     "saving": "Đang lưu...",
     "creating": "Đang tạo...",
-    "tryAgain": "Thử lại"
+    "tryAgain": "Thử lại",
+    "viewMoreDetails": "Xem thêm chi tiết",
+    "hideDetails": "Ẩn chi tiết"
   },
   "labels": {
     "name": "Tên",

@@ -500,6 +500,26 @@ export async function PUT(
       const updatedProduct = await db.products.update(productId, finalUpdateData);
       console.log('✅ Product updated successfully with outletStock:', updatedProduct);
 
+      // Sync Product.totalStock = sum of all OutletStock.stock
+      // This ensures totalStock always equals the sum of all outlet stocks
+      if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
+        try {
+          const productModule = await import('@rentalshop/database/src/product');
+          const { syncProductTotalStock } = productModule;
+          if (syncProductTotalStock) {
+            await syncProductTotalStock(productId);
+            // Re-fetch product to get updated totalStock
+            const refreshedProduct = await db.products.findById(productId);
+            if (refreshedProduct) {
+              Object.assign(updatedProduct, { totalStock: refreshedProduct.totalStock });
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error syncing Product.totalStock after update:', error);
+          // Don't throw - product update succeeded, sync failed
+        }
+      }
+
       // Transform the response to match frontend expectations
       const transformedProduct = {
         id: updatedProduct.id, // Return id directly to frontend
