@@ -149,6 +149,21 @@
   },
   "messages": {
     "createOrder": "Create Order",
+    "rentalPeriodDaily": "Rental Period (Daily)",
+    "rentalPeriodWeekly": "Rental Period (Weekly)",
+    "orderType": "Order Type",
+    "outlet": "Outlet",
+    "customer": "Customer",
+    "searchCustomers": "Search customers by name or phone...",
+    "searchProducts": "Search products by name, barcode or description...",
+    "searchProductsAbove": "Search products above to add to order. You can search by name, barcode or description.",
+    "addNewCustomer": "Add New Customer",
+    "cannotChangeWhenEditing": "Cannot change when editing",
+    "orderNotes": "Order Notes",
+    "enterOrderNotes": "Enter order notes...",
+    "discount": "Discount",
+    "amount": "Amount",
+    "percentage": "Percentage",
     "createSuccess": "Order created successfully",
     "createFailed": "Failed to create order",
     "updateSuccess": "Order updated successfully",
@@ -204,6 +219,7 @@
     "useAddNewCustomerButton": "Use the \"Add New Customer\" button above to create one",
     "rentalPeriod": "Rental Period",
     "selectRentalPeriod": "Select rental period",
+    "discountAmount": "Discount amount...",
     "selectOutlet": "Select outlet",
     "createNewOrder": "Create New Order",
     "confirmOrder": "Confirm Order",
@@ -221,7 +237,8 @@
     "quantity": "Quantity",
     "unitPrice": "Unit Price",
     "addNotesForItem": "Add notes for this item...",
-    "addNotesAboutProduct": "Add notes about this product..."
+    "addNotesAboutProduct": "Add notes about this product...",
+    "editOrder": "Edit Order"
   },
   "productOrders": {
     "title": "Product Orders",
@@ -276,6 +293,25 @@
     "averageOrderValue": "Average Order Value",
     "overdueRentals": "Overdue Rentals",
     "revenueMetrics": "Revenue Metrics"
+  },
+  "summary": {
+    "rentalDuration": "Rental Duration",
+    "from": "From",
+    "to": "To",
+    "subtotal": "Subtotal",
+    "deposit": "Deposit",
+    "grandTotal": "Grand Total",
+    "orderRequirements": "Order Requirements",
+    "discount": "Discount",
+    "day": "day",
+    "days": "days"
+  },
+  "requirements": {
+    "selectAtLeastOneProduct": "Select at least one product",
+    "selected": "selected",
+    "customerInformationRequired": "Customer information required",
+    "rentalPeriodRequired": "Rental period required (pickup & return dates)",
+    "outletSelectionRequired": "Outlet selection required"
   },
   "receipt": {
     "previewTitle": "Preview Order Receipt",

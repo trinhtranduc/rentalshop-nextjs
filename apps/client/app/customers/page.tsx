@@ -10,11 +10,7 @@ import {
   useToast,
   CustomerDetailDialog,
   AddCustomerDialog,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  EditCustomerForm,
+  EditCustomerDialog,
   ConfirmationDialog,
   Button,
   LoadingIndicator,
@@ -385,25 +381,22 @@ export default function CustomersPage() {
       />
 
       {/* Edit Customer Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {t('editCustomer')}: {selectedCustomer?.firstName} {selectedCustomer?.lastName}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedCustomer && (
-            <EditCustomerForm
-              customer={selectedCustomer}
-              onSave={handleCustomerUpdate}
-              onCancel={() => {
-                setShowEditDialog(false);
-                setSelectedCustomer(null);
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedCustomer && (
+        <EditCustomerDialog
+          open={showEditDialog}
+          onOpenChange={(open) => {
+            setShowEditDialog(open);
+            if (!open) {
+              setSelectedCustomer(null);
+            }
+          }}
+          customer={selectedCustomer}
+          onCustomerUpdated={handleCustomerUpdate}
+          onError={(error) => {
+            toastError(tc('labels.error'), error);
+          }}
+        />
+      )}
 
       {/* Delete Customer Confirmation Dialog */}
       <ConfirmationDialog

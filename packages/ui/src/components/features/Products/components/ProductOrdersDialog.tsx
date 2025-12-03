@@ -127,30 +127,18 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5" />
-                Orders for {product.name}
-              </DialogTitle>
-              <DialogDescription>
-                View all orders containing this product
-              </DialogDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="h-8 w-8 p-0"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5" />
+            Orders for {product.name}
+          </DialogTitle>
+          <DialogDescription className="mt-1">
+            View all orders containing this product
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="px-6 py-4 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
@@ -281,12 +269,13 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
               ))}
             </div>
           )}
-        </div>
 
-        <div className="flex justify-end pt-4 border-t border-border">
-          <Button onClick={() => onOpenChange(false)} variant="outline">
-            Close
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+            <Button onClick={() => onOpenChange(false)} variant="outline">
+              Close
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

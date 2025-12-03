@@ -7,10 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter
-} from '../../../ui/dialog';
-import { Button } from '../../../ui/button';
-import { Card, CardContent } from '../../../ui/card';
+  DialogFooter,
+  Button
+} from '@rentalshop/ui';
 import { Trash2 } from 'lucide-react';
 import type { Customer, Merchant } from '@rentalshop/types';
 import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
@@ -114,110 +113,102 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div>
-              <DialogTitle className="text-xl font-semibold">
-                {t('customerDetails')}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-600 mt-1">
-                {t('viewCustomerInfo')}
-              </DialogDescription>
-            </div>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+          {/* Header */}
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="text-lg font-semibold">
+              {t('customerDetails')}
+            </DialogTitle>
+            <DialogDescription className="mt-1">
+              {t('viewCustomerInfo')}
+            </DialogDescription>
           </DialogHeader>
 
-          <Card>
-            <CardContent className="p-6">
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.fullName')}</label>
-                <p className="text-gray-900 font-medium">{`${customer.firstName} ${customer.lastName}`}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.email')}</label>
-                <p className="text-gray-900">{customer.email}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.phone')}</label>
-                <p className="text-gray-900">{customer.phone}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.dateOfBirth')}</label>
-                <p className="text-gray-900">
-                  {customer.dateOfBirth ? formatDate(customer.dateOfBirth) : t('fields.notProvided')}
-                </p>
-              </div>
-              {/* Hidden: Status field */}
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.status')}</label>
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(customer.isActive)}`}>
-                  {getStatusDisplayName(customer.isActive)}
+          {/* Content */}
+          <div className="px-6 py-4 overflow-y-auto">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.fullName')}</label>
+                  <p className="text-sm font-semibold">{`${customer.firstName} ${customer.lastName}`}</p>
                 </div>
-              </div> */}
-              {/* Hidden: Customer ID field */}
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.customerId')}</label>
-                <p className="text-gray-500 text-sm font-mono">{customer.id}</p>
-              </div> */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('stats.memberSince')}</label>
-                <p className="text-gray-900">{formatDate(customer.createdAt)}</p>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.phone')}</label>
+                  <p className="text-sm">{customer.phone}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.email')}</label>
+                  <p className="text-sm">{customer.email || <span className="text-muted-foreground italic">{t('fields.notProvided')}</span>}</p>
+                </div>
+                {customer.dateOfBirth && (
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.dateOfBirth')}</label>
+                    <p className="text-sm">{formatDate(customer.dateOfBirth)}</p>
+                  </div>
+                )}
+                {merchant && (
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.merchant')}</label>
+                    <p className="text-sm">
+                      {isLoadingMerchant ? (
+                        <span className="text-muted-foreground italic">{t('fields.loading')}</span>
+                      ) : merchant ? (
+                        merchant.name
+                      ) : (
+                        <span className="text-muted-foreground italic">
+                          {t('fields.notAvailable')} {customer.merchantId ? `(ID: ${customer.merchantId})` : '(No merchant ID)'}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('stats.memberSince')}</label>
+                  <p className="text-sm">{formatDate(customer.createdAt)}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.lastUpdated')}</label>
+                  <p className="text-sm">{formatDate(customer.updatedAt)}</p>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.lastUpdated')}</label>
-                <p className="text-gray-900">{formatDate(customer.updatedAt)}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.merchant')}</label>
-                <p className="text-gray-900">
-                  {isLoadingMerchant ? (
-                    <span className="text-gray-500">{t('fields.loading')}</span>
-                  ) : merchant ? (
-                    merchant.name
-                  ) : (
-                    <span className="text-gray-500">
-                      {t('fields.notAvailable')} {customer.merchantId ? `(ID: ${customer.merchantId})` : '(No merchant ID)'}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
 
-            {/* Address Information */}
-            <div className="border-t mt-6 pt-4">
-              <h3 className="text-sm font-medium text-gray-900 mb-4">{t('addressInformation')}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.streetAddress')}</label>
-                  <p className="text-gray-900">
-                    {customer.address || t('fields.noAddress')}
-                  </p>
+              {/* Address Information */}
+              {(customer.address || customer.city || customer.state || customer.zipCode) && (
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('addressInformation')}</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {customer.address && (
+                      <div className="col-span-2">
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.streetAddress')}</label>
+                        <p className="text-sm">{customer.address}</p>
+                      </div>
+                    )}
+                    {customer.city && (
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.city')}</label>
+                        <p className="text-sm">{customer.city}</p>
+                      </div>
+                    )}
+                    {customer.state && (
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.state')}</label>
+                        <p className="text-sm">{customer.state}</p>
+                      </div>
+                    )}
+                    {customer.zipCode && (
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.zipCode')}</label>
+                        <p className="text-sm">{customer.zipCode}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.city')}</label>
-                  <p className="text-gray-900">
-                    {customer.city || t('fields.notSpecified')}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.state')}</label>
-                  <p className="text-gray-900">
-                    {customer.state || t('fields.notSpecified')}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.zipCode')}</label>
-                  <p className="text-gray-900">
-                    {customer.zipCode || t('fields.notSpecified')}
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
-            </CardContent>
-          </Card>
+          </div>
 
-          <DialogFooter className="flex justify-between">
+          <DialogFooter className="px-6 py-4 border-t flex justify-between">
             <div>
               {onDelete && (
                 <Button

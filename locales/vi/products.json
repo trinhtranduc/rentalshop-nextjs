@@ -147,7 +147,13 @@
     "uploading": "Đang tải lên",
     "processing": "Đang xử lý...",
     "complete": "Hoàn thành!",
-    "removeImage": "Xóa ảnh"
+    "removeImage": "Xóa ảnh",
+    "autoSaving": "Đang tự động lưu...",
+    "autoSaved": "Đã tự động lưu",
+    "autoSaveFailed": "Tự động lưu thất bại",
+    "saving": "Đang lưu...",
+    "unknownOutlet": "Cửa hàng không xác định",
+    "imagesSelected": "ảnh đã chọn"
   },
   "filters": {
     "all": "Tất cả sản phẩm",

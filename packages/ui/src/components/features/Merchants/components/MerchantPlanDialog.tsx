@@ -156,24 +156,25 @@ export function MerchantPlanDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
             Change Merchant Plan
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="mt-1">
             Update the subscription plan for <strong>{merchant.name}</strong>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="px-6 py-4 overflow-y-auto">
+          <div className="space-y-6">
           {/* Current Plan Info */}
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-sm text-gray-500 dark:text-gray-400">
+                  <h4 className="font-medium text-sm text-muted-foreground">
                     Current Plan
                   </h4>
                   <div className="flex items-center gap-2 mt-1">
@@ -182,12 +183,12 @@ export function MerchantPlanDialog({
                         <span className="font-semibold text-lg">
                           {merchant.subscription.plan.name}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           {formatPrice(merchant.subscription.plan.basePrice, merchant.subscription.plan.currency)}
                         </span>
                       </>
                     ) : (
-                      <span className="text-gray-500">No plan assigned</span>
+                      <span className="text-muted-foreground">No plan assigned</span>
                     )}
                   </div>
                 </div>
@@ -218,7 +219,7 @@ export function MerchantPlanDialog({
                       <div className="flex items-center justify-between w-full">
                         <span className="font-medium">{plan.name}</span>
                         <div className="flex items-center gap-2 ml-4">
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             {formatPrice(plan.basePrice, plan.currency)}
                           </span>
                           {plan.isPopular && (
@@ -323,7 +324,7 @@ export function MerchantPlanDialog({
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Choose the billing frequency for this plan. Longer cycles offer better savings.
               </p>
             </div>
@@ -443,7 +444,7 @@ export function MerchantPlanDialog({
                 min={new Date().toISOString().slice(0, 16)}
               />
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               When should this plan change take effect?
             </p>
           </div>
@@ -453,16 +454,16 @@ export function MerchantPlanDialog({
             <div className="space-y-2">
               <Label htmlFor="endDate">End Date</Label>
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-400" />
+                <Calendar className="h-4 w-4 text-text-tertiary" />
                 <Input
                   id="endDate"
                   type="datetime-local"
                   value={endDate}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-bg-secondary"
                 />
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Automatically calculated based on {selectedBillingCycle === 'monthly' ? '1 month' : selectedBillingCycle === 'quarterly' ? '3 months' : '12 months'} duration
               </p>
             </div>
@@ -493,23 +494,25 @@ export function MerchantPlanDialog({
               Notify merchant about this plan change
             </Label>
           </div>
-        </div>
+          </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!selectedPlanId || isSubmitting}
-          >
-            {isSubmitting ? 'Changing Plan...' : 'Change Plan'}
-          </Button>
-        </DialogFooter>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={!selectedPlanId || isSubmitting}
+            >
+              {isSubmitting ? 'Changing Plan...' : 'Change Plan'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -148,7 +148,13 @@
     "uploading": "Uploading",
     "processing": "Processing...",
     "complete": "Complete!",
-    "removeImage": "Remove image"
+    "removeImage": "Remove image",
+    "autoSaving": "Auto-saving...",
+    "autoSaved": "Auto-saved",
+    "autoSaveFailed": "Auto-save failed",
+    "saving": "Saving...",
+    "unknownOutlet": "Unknown Outlet",
+    "imagesSelected": "images selected"
   },
   "filters": {
     "all": "All Products",

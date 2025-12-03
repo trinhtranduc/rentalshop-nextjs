@@ -236,33 +236,36 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{getDialogTitle()}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold">{getDialogTitle()}</DialogTitle>
+          <DialogDescription className="mt-1">
             {getDialogDescription()}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="px-6 py-4 overflow-y-auto">
         
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex flex-col items-center gap-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
-              <p className="text-text-secondary">Loading plan data...</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
+                <p className="text-text-secondary">Loading plan data...</p>
+              </div>
             </div>
-          </div>
-        ) : (
-        <PlanForm
-          initialData={plan}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          loading={loading}
-            mode={mode === 'view' ? 'edit' : mode} // PlanForm doesn't support 'view', use 'edit' instead
-          hideHeader={true}
-          title={getDialogTitle()}
-            submitText={mode === 'create' ? 'Create Plan' : mode === 'edit' || mode === 'view' ? 'Update Plan' : 'Save Changes'}
-        />
-        )}
+          ) : (
+            <PlanForm
+              initialData={plan}
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+              loading={loading}
+              mode={mode === 'view' ? 'edit' : mode} // PlanForm doesn't support 'view', use 'edit' instead
+              hideHeader={true}
+              title={getDialogTitle()}
+              submitText={mode === 'create' ? 'Create Plan' : mode === 'edit' || mode === 'view' ? 'Update Plan' : 'Save Changes'}
+            />
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -4,7 +4,7 @@
 // CustomerForm is exported from features/Customers to avoid conflicts
 export { ProductForm } from './ProductForm';
 export { OrderForm } from './OrderForm';
-export { CreateOrderForm } from './CreateOrderForm/CreateOrderForm';
+export { CreateOrderForm, TestEqualHeightColumns } from './CreateOrderForm';
 export { PlanForm } from './PlanForm';
 export { default as LoginForm } from './LoginForm';
 export { default as RegisterForm } from './RegisterForm';

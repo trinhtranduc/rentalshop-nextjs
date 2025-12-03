@@ -53,7 +53,8 @@ export default function ClientLayout({
   
   // Check if we're on full-width pages - hide sidebar for better space
   // Edit order route: /orders/[id]/edit
-  const isFullWidthPage = pathname === '/orders/create' || pathname?.includes('/edit');
+  // Note: /orders/create now shows sidebar
+  const isFullWidthPage = pathname?.includes('/edit');
   
   // Redirect to login if not authenticated (except on public pages)
   // But only redirect if we're not currently on a page that might be setting up auth

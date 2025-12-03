@@ -143,10 +143,10 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   const t = useOrderTranslations();
   const tp = useProductTranslations();
   return (
-    <Card>
-      <CardContent className="space-y-4 pt-6">
+    <Card className="flex flex-col h-full w-full">
+      <CardContent className="flex flex-col flex-1 p-6">
         {/* Search and Filter Bar */}
-        <div className="space-y-3">
+        <div className="space-y-3 flex-shrink-0 mb-4">
           <div className="relative">
             <SearchableSelect
               placeholder={t('messages.searchProducts')}
@@ -177,17 +177,17 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
           </div>
         </div>
 
-        {/* Selected Products Section */}
-        <div className="space-y-4">
-          <Card className="border border-gray-200">
-            <CardHeader className="pb-3">
+        {/* Selected Products Section - Takes remaining space */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <Card className="border border-gray-200 flex flex-col h-full">
+            <CardHeader className="pb-3 flex-shrink-0">
               <CardTitle className="text-base flex items-center gap-2">
                 <Package className="w-5 h-5" />
                 {tp('selectedProducts')} <span className="text-red-500">*</span>
                 <span className="text-sm font-normal text-gray-500">({orderItems.length})</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 min-h-0 overflow-y-auto">
               {orderItems.length === 0 ? (
                 /* Empty State Placeholder */
                 <div className="p-8 text-center">

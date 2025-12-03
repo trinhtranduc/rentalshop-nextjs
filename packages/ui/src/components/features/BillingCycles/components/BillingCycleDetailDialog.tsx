@@ -113,14 +113,14 @@ export const BillingCycleDetailDialog: React.FC<BillingCycleDetailDialogProps> =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-xl font-semibold">
+              <DialogTitle className="text-lg font-semibold">
                 Billing Cycle Details
               </DialogTitle>
-              <DialogDescription className="text-sm text-text-secondary mt-1">
+              <DialogDescription className="mt-1">
                 View and manage billing cycle information
               </DialogDescription>
             </div>
@@ -151,7 +151,8 @@ export const BillingCycleDetailDialog: React.FC<BillingCycleDetailDialogProps> =
           </div>
         </DialogHeader>
 
-        <div className="mt-6 space-y-6">
+        <div className="px-6 py-4 overflow-y-auto">
+          <div className="space-y-6">
           {/* Basic Information */}
           <Card>
             <CardContent className="p-6">
@@ -308,6 +309,7 @@ export const BillingCycleDetailDialog: React.FC<BillingCycleDetailDialogProps> =
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

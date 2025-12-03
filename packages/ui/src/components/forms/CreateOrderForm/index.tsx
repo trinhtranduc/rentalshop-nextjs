@@ -12,6 +12,7 @@ export { OrderInfoSection } from './components/OrderInfoSection';
 export { OrderSummarySection } from './components/OrderSummarySection';
 export { CustomerCreationDialog } from './components/CustomerCreationDialog';
 export { OrderPreviewDialog } from './components/OrderPreviewDialog';
+export { TestEqualHeightColumns } from './components/TestEqualHeightColumns';
 export { useCreateOrderForm } from './hooks/useCreateOrderForm';
 export { useOrderValidation } from './hooks/useOrderValidation';
 export { useProductSearch } from './hooks/useProductSearch';

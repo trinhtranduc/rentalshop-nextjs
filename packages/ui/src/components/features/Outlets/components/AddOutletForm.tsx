@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
-import { Button, Input, Label, Textarea, Card, CardContent } from '@rentalshop/ui';
+import { Button, Input, Label, Textarea } from '@rentalshop/ui';
 import type { OutletCreateInput } from '@rentalshop/types';
 import { useOutletsTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
@@ -68,12 +68,12 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          {/* Outlet Name - Required */}
-          <div>
-        <Label htmlFor="name">{t('fields.name')} *</Label>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Outlet Name - Required */}
+      <div>
+        <Label htmlFor="name" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+          {t('fields.name')} <span className="text-red-500">*</span>
+        </Label>
         <Input
           id="name"
           value={formData.name}
@@ -82,13 +82,15 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
           className={errors.name ? 'border-red-500' : ''}
         />
         {errors.name && (
-          <p className="text-sm text-red-600 mt-1">{errors.name}</p>
+          <p className="text-xs text-red-600 mt-1">{errors.name}</p>
         )}
       </div>
 
       {/* Address */}
       <div>
-        <Label htmlFor="address">{t('fields.address')}</Label>
+        <Label htmlFor="address" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+          {t('fields.address')}
+        </Label>
         <Input
           id="address"
           value={formData.address}
@@ -100,7 +102,9 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
       {/* City, State, ZIP Code - In one row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="city">{t('fields.city')}</Label>
+          <Label htmlFor="city" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+            {t('fields.city')}
+          </Label>
           <Input
             id="city"
             value={formData.city}
@@ -110,7 +114,9 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="state">{t('fields.state')}</Label>
+          <Label htmlFor="state" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+            {t('fields.state')}
+          </Label>
           <Input
             id="state"
             value={formData.state}
@@ -120,7 +126,9 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="zipCode">{t('fields.zipCode')}</Label>
+          <Label htmlFor="zipCode" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+            {t('fields.zipCode')}
+          </Label>
           <Input
             id="zipCode"
             value={formData.zipCode}
@@ -132,7 +140,9 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
 
       {/* Country */}
       <div>
-        <Label htmlFor="country">{t('fields.country')}</Label>
+        <Label htmlFor="country" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+          {t('fields.country')}
+        </Label>
         <Input
           id="country"
           value={formData.country}
@@ -143,7 +153,9 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
 
       {/* Phone */}
       <div>
-        <Label htmlFor="phone">{t('fields.phone')}</Label>
+        <Label htmlFor="phone" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+          {t('fields.phone')}
+        </Label>
         <Input
           id="phone"
           type="tel"
@@ -155,7 +167,9 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
 
       {/* Description */}
       <div>
-        <Label htmlFor="description">{t('fields.description')}</Label>
+        <Label htmlFor="description" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+          {t('fields.description')}
+        </Label>
         <Textarea
           id="description"
           value={formData.description}
@@ -165,28 +179,26 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
         />
       </div>
 
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-3 border-t pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isSubmitting}
-            >
-              <X className="w-4 h-4 mr-2" />
-              {tc('buttons.cancel')}
-            </Button>
-            
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {isSubmitting ? tc('buttons.saving') : tc('buttons.save')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Form Actions */}
+      <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleCancel}
+          disabled={isSubmitting}
+        >
+          <X className="w-4 h-4 mr-2" />
+          {tc('buttons.cancel')}
+        </Button>
+        
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {isSubmitting ? tc('buttons.saving') : tc('buttons.save')}
+        </Button>
+      </div>
     </form>
   );
 };

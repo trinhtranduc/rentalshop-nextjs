@@ -13,6 +13,7 @@ export const useCustomerSearch = () => {
 
   // Customer search function for SearchableSelect
   const searchCustomers = useCallback(async (query: string): Promise<CustomerSearchOption[]> => {
+    // Clear results immediately when query is empty
     if (!query.trim()) {
       setCustomerSearchResults([]);
       return [];
@@ -21,11 +22,18 @@ export const useCustomerSearch = () => {
     try {
       setIsLoadingCustomers(true);
       
-      const result = await customersApi.getCustomers({ 
-        search: query, 
-        limit: PAGINATION.SEARCH_LIMIT, 
+      // Clear previous results before new search to ensure UI updates
+      setCustomerSearchResults([]);
+      
+      // Use getCustomersWithFilters to search by name or phone
+      const result = await customersApi.getCustomersWithFilters(
+        { 
+          search: query.trim(), 
         isActive: true 
-      });
+        },
+        1, // page
+        PAGINATION.SEARCH_LIMIT // limit
+      );
       
       if (result.success && result.data?.customers && result.data.customers.length > 0) {
         // Store the full customer data for later use
@@ -40,6 +48,7 @@ export const useCustomerSearch = () => {
         
         return searchOptions;
       } else {
+        // No results found - ensure empty array is set
         setCustomerSearchResults([]);
         return [];
       }

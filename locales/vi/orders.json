@@ -196,7 +196,9 @@
     "errorFetchingOrder": "Đã xảy ra lỗi khi tải chi tiết đơn hàng",
     "orderIdNotFound": "Không tìm thấy ID đơn hàng",
     "unknownError": "Lỗi không xác định",
+    "orders": "Đơn hàng",
     "edit": "Chỉnh sửa",
+    "noBarcode": "Không có mã vạch",
     "noCategory": "Không có danh mục",
     "outOfStock": "Hết hàng",
     "lowStock": "Sắp hết hàng",
@@ -215,6 +217,8 @@
     "deposit": "Tiền cọc",
     "product": "Sản phẩm",
     "unknownProduct": "Sản phẩm không xác định",
+    "clearSelectedCustomer": "Xóa khách hàng đã chọn",
+    "rentalPeriod": "Thời gian thuê",
     "selectRentalPeriod": "Chọn thời gian thuê",
     "selectOutlet": "Chọn cửa hàng",
     "createNewOrder": "Tạo đơn hàng mới",
@@ -233,7 +237,8 @@
     "quantity": "Số lượng",
     "unitPrice": "Đơn giá",
     "addNotesForItem": "Thêm ghi chú cho sản phẩm này...",
-    "addNotesAboutProduct": "Thêm ghi chú về sản phẩm này..."
+    "addNotesAboutProduct": "Thêm ghi chú về sản phẩm này...",
+    "editOrder": "Sửa đơn hàng"
   },
   "productOrders": {
     "title": "Đơn hàng sản phẩm",
@@ -297,7 +302,9 @@
     "deposit": "Tiền cọc",
     "grandTotal": "Tổng cộng",
     "orderRequirements": "Yêu cầu đơn hàng",
-    "discount": "Giảm giá"
+    "discount": "Giảm giá",
+    "day": "ngày",
+    "days": "ngày"
   },
   "requirements": {
     "selectAtLeastOneProduct": "Chọn ít nhất một sản phẩm",

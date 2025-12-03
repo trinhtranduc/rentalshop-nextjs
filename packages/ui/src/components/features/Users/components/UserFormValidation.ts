@@ -1,6 +1,7 @@
 'use client'
 
 import type { UserCreateInput, UserUpdateInput, UserRole } from '@rentalshop/types';
+import type { TranslationFunction } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPE-SAFE FORM DATA INTERFACES (Matching UserForm.tsx)
@@ -84,15 +85,15 @@ export const validatePassword = (password: string): string | null => {
   return null;
 };
 
-export const validateConfirmPassword = (password: string, confirmPassword: string): string | null => {
+export const validateConfirmPassword = (password: string, confirmPassword: string, tv?: TranslationFunction): string | null => {
   if (password && password !== confirmPassword) {
-    return 'Passwords do not match';
+    return tv ? tv('password.match') : 'Passwords do not match';
   }
   return null;
 };
 
 // Validation for user creation
-export const validateUserCreateInput = (data: UserCreateFormData): Record<string, string> => {
+export const validateUserCreateInput = (data: UserCreateFormData, tv?: TranslationFunction): Record<string, string> => {
   const errors: Record<string, string> = {};
 
   console.log('🔍 UserFormValidation: Validating create input:', data);
@@ -158,7 +159,7 @@ export const validateUserCreateInput = (data: UserCreateFormData): Record<string
   if (passwordError) errors.password = passwordError;
 
   // Confirm password validation
-  const confirmPasswordError = validateConfirmPassword(data.password || '', data.confirmPassword || '');
+  const confirmPasswordError = validateConfirmPassword(data.password || '', data.confirmPassword || '', tv);
   if (confirmPasswordError) errors.confirmPassword = confirmPasswordError;
 
   console.log('🔍 UserFormValidation: Validation errors:', errors);
