@@ -6,14 +6,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter
+  DialogDescription
 } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { ConfirmationDialog } from '@rentalshop/ui';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { UserDisplayInfo } from './UserDisplayInfo';
-import { PermissionManager } from './PermissionManager';
 import { usersApi } from '@rentalshop/utils';
 import type { User } from '@rentalshop/types';
 import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
@@ -36,7 +34,6 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
 }) => {
   const t = useUsersTranslations();
   const tc = useCommonTranslations();
-  const { user: currentUser } = useAuth();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = useState(false);
   const [isActivateConfirmOpen, setIsActivateConfirmOpen] = useState(false);
@@ -128,49 +125,50 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div>
-              <DialogTitle className="text-xl font-semibold">
-                {t('userDetails')}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-600 mt-1">
-                {t('viewUserInfo')}
-              </DialogDescription>
-            </div>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="text-lg font-semibold">
+              {t('userDetails')}
+            </DialogTitle>
+            <DialogDescription className="mt-1">
+              {t('viewUserInfo')}
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-6 space-y-6">
-            <UserDisplayInfo
-              user={user}
-              showActions={true}
-              onChangePassword={() => setIsChangePasswordOpen(true)}
-              onActivate={() => setIsActivateConfirmOpen(true)}
-              onDeactivate={() => setIsDeactivateConfirmOpen(true)}
-              onDelete={() => setIsDeleteConfirmOpen(true)}
-              isLoading={isLoading}
-            />
-            
-            {/* Permission Management */}
-            <PermissionManager
-              userId={user.id}
-              userRole={user.role}
-              currentUserRole={currentUser?.role}
-              onPermissionsUpdated={() => {
-                // Refresh user data if needed
-                onUserUpdated?.(user);
-              }}
-            />
-          </div>
+          <div className="px-6 py-4 overflow-y-auto">
+            <div className="space-y-6">
+              <UserDisplayInfo
+                user={user}
+                showActions={true}
+                onChangePassword={() => setIsChangePasswordOpen(true)}
+                onActivate={() => setIsActivateConfirmOpen(true)}
+                onDeactivate={() => setIsDeactivateConfirmOpen(true)}
+                onDelete={() => setIsDeleteConfirmOpen(true)}
+                isLoading={isLoading}
+              />
+              
+              {/* Permission Management - Hidden */}
+              {/* <PermissionManager
+                userId={user.id}
+                userRole={user.role}
+                currentUserRole={currentUser?.role}
+                onPermissionsUpdated={() => {
+                  // Refresh user data if needed
+                  onUserUpdated?.(user);
+                }}
+              /> */}
+            </div>
 
-          <DialogFooter className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              {tc('buttons.close')}
-            </Button>
-          </DialogFooter>
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                {tc('buttons.close')}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

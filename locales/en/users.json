@@ -4,6 +4,7 @@
   "pageTitle": "User Management",
   "addUser": "Add User",
   "addNewUser": "Add New User",
+  "addNewUserDescription": "Create a new user account for your organization",
   "editUser": "Edit User",
   "userDetails": "User Details",
   "viewUserInfo": "View user information and details",

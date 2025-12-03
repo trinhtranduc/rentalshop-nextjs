@@ -78,6 +78,7 @@ export function useDedupedApi<TFilters, TData>(
   const filtersRef = useRef<string>('');
   const fetchFnRef = useRef(fetchFn); // ✅ Store stable reference to fetchFn
   const isMountedRef = useRef(true); // ✅ Track mount state to prevent memory leaks
+  const isFirstMountRef = useRef(true); // ✅ Track first mount to force initial fetch
   
   // Update fetchFnRef when fetchFn changes
   fetchFnRef.current = fetchFn;
@@ -85,6 +86,11 @@ export function useDedupedApi<TFilters, TData>(
   // Cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
+    // Reset filtersRef on mount to force fetch (handles navigation between pages)
+    if (isFirstMountRef.current) {
+      filtersRef.current = '';
+      isFirstMountRef.current = false;
+    }
     return () => {
       isMountedRef.current = false;
     };
@@ -119,11 +125,17 @@ export function useDedupedApi<TFilters, TData>(
     }
 
     // Official pattern: Skip if filters haven't actually changed
-    // Only fetch if cacheKey changed OR manual refetch was triggered
+    // Only fetch if cacheKey changed OR manual refetch was triggered OR refetchOnMount is true
     const isManualRefetch = refetchKey > 0;
-    if (cacheKey === filtersRef.current && !isManualRefetch) {
-      console.log('🔍 useDedupedApi: Filters unchanged, skipping fetch');
+    const shouldSkip = cacheKey === filtersRef.current && !isManualRefetch && !refetchOnMount;
+    if (shouldSkip) {
+      console.log('🔍 useDedupedApi: Filters unchanged and refetchOnMount=false, skipping fetch');
       return;
+    }
+    
+    // If refetchOnMount is true, always fetch (even if filters unchanged)
+    if (refetchOnMount && cacheKey === filtersRef.current && !isManualRefetch) {
+      console.log('🔄 useDedupedApi: refetchOnMount=true, forcing refetch even though filters unchanged');
     }
     
     // Update ref BEFORE starting fetch to prevent duplicate calls

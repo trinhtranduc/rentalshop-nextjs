@@ -436,19 +436,26 @@ export default function ProductsPage() {
       {/* Product Detail Dialog */}
       {selectedProduct && (
         <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{t('productDetails')}</DialogTitle>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+            <DialogHeader className="px-6 py-4 border-b">
+              <DialogTitle className="text-lg font-semibold">
+                {t('productDetails')}
+              </DialogTitle>
+              <DialogDescription className="mt-1">
+                {t('productDetails') || "View product information and details"}
+              </DialogDescription>
             </DialogHeader>
-            <ProductDetail
-              product={selectedProduct}
-              onEdit={() => {
-                setShowDetailDialog(false);
-                setShowEditDialog(true);
-              }}
-              showActions={true}
-              isMerchantAccount={true}
-            />
+            <div className="px-6 py-4 overflow-y-auto">
+              <ProductDetail
+                product={selectedProduct}
+                onEdit={() => {
+                  setShowDetailDialog(false);
+                  setShowEditDialog(true);
+                }}
+                showActions={true}
+                isMerchantAccount={true}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -468,39 +475,41 @@ export default function ProductsPage() {
 
       {/* Edit Product Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="text-lg font-semibold">
               {t('editProduct')}: {selectedProduct?.name}
             </DialogTitle>
-            <DialogDescription>
-              Update product information and settings.
+            <DialogDescription className="mt-1">
+              {t('editProduct') || "Update product information and settings"}
             </DialogDescription>
           </DialogHeader>
           {selectedProduct && (
-            <ProductEdit
-              product={selectedProduct}
-              categories={categories}
-              outlets={outlets}
-              merchantId={user?.merchantId || user?.merchant?.id || 0}
-              onSave={async (productData) => {
-                const updateData: any = {
-                  id: selectedProduct.id,
-                  ...productData,
-                  // Convert images array to string format for API
-                  images: Array.isArray(productData.images) 
-                    ? productData.images.join(',') 
-                    : productData.images || '',
-                  // Ensure outletStock is included for inventory update
-                  outletStock: productData.outletStock || []
-                };
-                await handleProductUpdate(updateData);
-              }}
-              onCancel={() => {
-                setShowEditDialog(false);
-                setSelectedProduct(null);
-              }}
-            />
+            <div className="px-6 py-4 overflow-y-auto">
+              <ProductEdit
+                product={selectedProduct}
+                categories={categories}
+                outlets={outlets}
+                merchantId={user?.merchantId || user?.merchant?.id || 0}
+                onSave={async (productData) => {
+                  const updateData: any = {
+                    id: selectedProduct.id,
+                    ...productData,
+                    // Convert images array to string format for API
+                    images: Array.isArray(productData.images) 
+                      ? productData.images.join(',') 
+                      : productData.images || '',
+                    // Ensure outletStock is included for inventory update
+                    outletStock: productData.outletStock || []
+                  };
+                  await handleProductUpdate(updateData);
+                }}
+                onCancel={() => {
+                  setShowEditDialog(false);
+                  setSelectedProduct(null);
+                }}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>

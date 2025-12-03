@@ -1,77 +1,53 @@
 'use client'
 
-import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle
-} from '../../../ui';
-import { AddCustomerForm } from './AddCustomerForm';
-import type { Customer, CustomerCreateInput } from '@rentalshop/types';
-import { useCustomerTranslations } from '@rentalshop/hooks';
+import React from 'react';
+import { CustomerFormDialog } from './CustomerFormDialog';
+import type { CustomerCreateInput } from '@rentalshop/types';
 
 interface AddCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCustomerCreated?: (customer: Customer) => void;
+  onCustomerCreated?: (customerData: CustomerCreateInput) => Promise<void>;
   onError?: (error: string) => void;
+  merchantId?: number;
+  initialSearchQuery?: string;
 }
 
+/**
+ * AddCustomerDialog - Wrapper for CustomerFormDialog in create mode
+ * Uses shared CustomerFormDialog component to follow DRY principle
+ */
 export const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({
   open,
   onOpenChange,
   onCustomerCreated,
-  onError
+  onError,
+  merchantId,
+  initialSearchQuery
 }) => {
-  const t = useCustomerTranslations();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSave = async (customerData: CustomerCreateInput) => {
+  const handleSave = async (customerData: CustomerCreateInput | any) => {
     try {
-      setIsSubmitting(true);
-      
-      // Call the parent callback to create the customer
-      // The parent will handle the API call and show toasts
       if (onCustomerCreated) {
-        await onCustomerCreated(customerData);
+        await onCustomerCreated(customerData as CustomerCreateInput);
       }
-      
-      // Close dialog on success
       onOpenChange(false);
-      
     } catch (error) {
       console.error('❌ AddCustomerDialog: Error occurred:', error);
       if (onError) {
         onError(error instanceof Error ? error.message : 'Failed to create customer');
       }
-    } finally {
-      setIsSubmitting(false);
+      throw error; // Re-throw to let CustomerFormDialog handle it
     }
   };
 
-  const handleCancel = () => {
-    if (isSubmitting) return; // Prevent cancellation while submitting
-    onOpenChange(false);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto p-0">
-        <DialogHeader className="px-6 py-4 border-b border-gray-200">
-          <DialogTitle className="text-xl font-semibold text-gray-900">
-            {t('createCustomer')}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="p-6">
-          <AddCustomerForm
-            onSave={handleSave}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <CustomerFormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      onSave={handleSave}
+      merchantId={merchantId}
+      initialSearchQuery={initialSearchQuery}
+      mode="create"
+    />
   );
 };

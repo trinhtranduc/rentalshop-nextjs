@@ -65,17 +65,17 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto p-0">
-        <DialogHeader className="px-6 py-4 border-b border-gray-200">
-          <DialogTitle className="text-xl font-semibold text-gray-900">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold">
             Add New Product
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="mt-1">
             Create a new product for your rental shop inventory.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="p-6">
+        <div className="px-6 py-4 overflow-y-auto">
           <ProductAddForm
             categories={categories}
             outlets={outlets}

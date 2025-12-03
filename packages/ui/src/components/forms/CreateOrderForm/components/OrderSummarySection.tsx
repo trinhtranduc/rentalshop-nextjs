@@ -12,10 +12,6 @@ import {
   useFormatCurrency
 } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { 
-  CheckCircle, 
-  XCircle 
-} from 'lucide-react';
 import type { 
   OrderFormData, 
   OrderItemFormData 
@@ -29,6 +25,7 @@ interface OrderSummarySectionProps {
   isFormValid: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onCancel?: () => void;
+  hideCardWrapper?: boolean;
 }
 
 export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
@@ -39,19 +36,14 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
   isFormValid,
   onSubmit,
   onCancel,
+  hideCardWrapper = false,
 }) => {
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
   const t = useOrderTranslations();
   
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          {t('detail.orderSummary')} & {t('detail.orderActions')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+  const content = (
+    <>
         {/* Order Summary */}
         <div className="space-y-3 p-4 border border-border rounded-lg bg-bg-primary">
           <h4 className="text-sm font-semibold text-text-primary">{t('detail.orderSummary')}</h4>
@@ -66,7 +58,7 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
                     const start = new Date(formData.pickupPlanAt);
                     const end = new Date(formData.returnPlanAt);
                     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-                    return `${days} ${days === 1 ? 'day' : 'days'}`;
+                    return `${days} ${days === 1 ? t('summary.day') : t('summary.days')}`;
                   })()}
                 </span>
               </div>
@@ -106,63 +98,6 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
           </div>
         </div>
 
-        {/* Validation Summary */}
-        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-          <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('summary.orderRequirements')}:</h4>
-          <div className="space-y-2 text-sm">
-            {/* Products Required */}
-            <div className="flex items-center gap-2">
-              {orderItems.length > 0 ? (
-                <CheckCircle className="w-4 h-4 text-green-600" />
-              ) : (
-                <XCircle className="w-4 h-4 text-red-500" />
-              )}
-              <span className={orderItems.length > 0 ? 'text-green-700' : 'text-red-600'}>
-                {orderItems.length > 0 ? '✓' : '✗'} {t('requirements.selectAtLeastOneProduct')}
-                {orderItems.length > 0 && ` (${orderItems.length} ${t('requirements.selected')})`}
-              </span>
-            </div>
-
-            {/* Customer Required */}
-            <div className="flex items-center gap-2">
-              {formData.customerId && formData.customerId > 0 ? (
-                <CheckCircle className="w-4 h-4 text-green-600" />
-              ) : (
-                <XCircle className="w-4 h-4 text-red-500" />
-              )}
-              <span className={formData.customerId && formData.customerId > 0 ? 'text-green-700' : 'text-red-600'}>
-                {formData.customerId && formData.customerId > 0 ? '✓' : '✗'} {t('requirements.customerInformationRequired')}
-              </span>
-            </div>
-
-            {/* Rental Period Required for RENT orders */}
-            {formData.orderType === 'RENT' && (
-              <div className="flex items-center gap-2">
-                {formData.pickupPlanAt && formData.returnPlanAt ? (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                ) : (
-                  <XCircle className="w-4 h-4 text-red-500" />
-                )}
-                <span className={formData.pickupPlanAt && formData.returnPlanAt ? 'text-green-700' : 'text-red-600'}>
-                  {formData.pickupPlanAt && formData.returnPlanAt ? '✓' : '✗'} {t('requirements.rentalPeriodRequired')}
-                </span>
-              </div>
-            )}
-
-            {/* Outlet Required */}
-            <div className="flex items-center gap-2">
-              {formData.outletId && formData.outletId > 0 ? (
-                <CheckCircle className="w-4 h-4 text-green-600" />
-              ) : (
-                <XCircle className="w-4 h-4 text-red-500" />
-              )}
-              <span className={formData.outletId && formData.outletId > 0 ? 'text-green-700' : 'text-red-600'}>
-                {formData.outletId && formData.outletId > 0 ? '✓' : '✗'} {t('requirements.outletSelectionRequired')}
-              </span>
-            </div>
-          </div>
-        </div>
-
         {/* Action Buttons */}
         <div className="space-y-4 pt-2">
           <div className="flex gap-3">
@@ -186,6 +121,29 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
             )}
           </div>
         </div>
+    </>
+  );
+
+  if (hideCardWrapper) {
+    return (
+      <div>
+        <h4 className="text-base font-semibold text-text-primary mb-4">
+          {t('detail.orderSummary')} & {t('detail.orderActions')}
+        </h4>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          {t('detail.orderSummary')} & {t('detail.orderActions')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {content}
       </CardContent>
     </Card>
   );

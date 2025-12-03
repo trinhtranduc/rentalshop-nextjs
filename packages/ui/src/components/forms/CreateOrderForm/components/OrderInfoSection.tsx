@@ -20,7 +20,11 @@ import {
   RentalPeriodSelector,
   Textarea,
   Skeleton,
-  Button
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { 
@@ -29,12 +33,17 @@ import {
   X, 
   Plus, 
   ChevronDown, 
-  Info 
+  Info,
+  MoreVertical,
+  Edit,
+  Eye
 } from 'lucide-react';
 import type { 
   OrderFormData, 
-  CustomerSearchResult 
+  CustomerSearchResult,
+  OrderItemFormData
 } from '../types';
+import { useFormatCurrency } from '@rentalshop/ui';
 
 // ============================================================================
 // NUMBER INPUT WITH THOUSAND SEPARATOR
@@ -130,7 +139,16 @@ interface OrderInfoSectionProps {
   onSearchQueryChange: (query: string) => void;
   onCustomerSearch: (query: string) => Promise<any[]>;
   onShowAddCustomerDialog: () => void;
+  onCustomerEdit?: (customer: CustomerSearchResult) => void;
+  onCustomerView?: (customer: CustomerSearchResult) => void;
   onUpdateRentalDates: (startDate: string, endDate: string) => void;
+  hideCardWrapper?: boolean;
+  // Order Summary props
+  orderItems?: OrderItemFormData[];
+  loading?: boolean;
+  isFormValid?: boolean;
+  onSubmit?: (e: React.FormEvent) => void;
+  onCancel?: () => void;
 }
 
 export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
@@ -148,19 +166,21 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   onSearchQueryChange,
   onCustomerSearch,
   onShowAddCustomerDialog,
-  onUpdateRentalDates
+  onCustomerEdit,
+  onUpdateRentalDates,
+  hideCardWrapper = false,
+  orderItems = [],
+  loading = false,
+  isFormValid = false,
+  onSubmit,
+  onCancel
 }) => {
   const t = useOrderTranslations();
+  const formatMoney = useFormatCurrency();
   const [showManualCustomerInput, setShowManualCustomerInput] = useState(false);
 
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          {t('detail.orderInformation')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+  const content = (
+    <>
         {/* 1. Order Type Toggle */}
         <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">
@@ -333,10 +353,15 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                     onCustomerClear();
                   }
                   
+                  // Update search query immediately
                   onSearchQueryChange(query);
                   
+                  // Search customers when query changes
                   if (query.trim()) {
                     onCustomerSearch(query);
+                  } else {
+                    // Clear results when query is empty
+                    onCustomerSearch('');
                   }
                 }}
                 className={`h-11 w-full rounded-lg border pl-4 pr-12 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0 ${
@@ -376,42 +401,88 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               {!selectedCustomer && (customerSearchResults.length > 0 || searchQuery.trim()) && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                   {/* Add New Customer Button - Always at Top */}
+                  {searchQuery.trim() && (
                   <Button
                     variant="ghost"
                     type="button"
                     onClick={onShowAddCustomerDialog}
                     className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 bg-blue-50/50 text-blue-700 font-medium h-auto justify-start rounded-none"
                   >
+                      <div className="flex flex-col w-full">
                     <div className="flex items-center gap-2">
                       <Plus className="w-4 h-4" />
                       <span>{t('messages.addNewCustomer')}</span>
                     </div>
-                    {searchQuery.trim() && (
-                      <div className="text-xs text-blue-700 mt-1">
+                        <div className="text-xs text-blue-600 mt-1 ml-6">
                         Create customer: "{searchQuery}"
+                        </div>
                       </div>
+                    </Button>
                     )}
-                  </Button>
 
                   {/* Customer Results */}
                   {customerSearchResults.length > 0 ? (
                     <>
                       {customerSearchResults.map((customer) => (
-                        <Button
-                          variant="ghost"
+                        <div
                           key={customer.id}
-                          type="button"
-                          onClick={() => {
-                            onCustomerSelect(customer);
-                            onSearchQueryChange(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 h-auto justify-start rounded-none"
+                          className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 group"
                         >
-                          <div className="font-medium text-gray-900">
-                            {customer.firstName} {customer.lastName}
-                          </div>
-                          <div className="text-sm text-gray-600">{customer.phone}</div>
-                        </Button>
+                          <Button
+                            variant="ghost"
+                            type="button"
+                            onClick={() => {
+                              onCustomerSelect(customer);
+                              onSearchQueryChange(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
+                            }}
+                            className="flex-1 text-left h-auto justify-start rounded-none p-0"
+                          >
+                            <div className="flex flex-col">
+                              <div className="font-medium text-gray-900 text-sm">
+                                {customer.firstName} {customer.lastName}
+                              </div>
+                              <div className="text-xs text-gray-600 mt-0.5">
+                                {customer.phone}
+                              </div>
+                            </div>
+                          </Button>
+                          
+                          {/* Actions Menu - 3 dots */}
+                          {onCustomerEdit && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreVertical className="h-4 w-4 text-gray-500" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="z-50">
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onCustomerView?.(customer);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Customer
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onCustomerEdit?.(customer);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Customer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       ))}
                     </>
                   ) : (
@@ -484,7 +555,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
         </div>
 
         {/* 7. Order Notes */}
-        <div className="space-y-2">
+        <div className="space-y-2 w-full">
           <label className="text-sm font-medium text-text-primary">{t('messages.orderNotes')}</label>
           <Textarea
             placeholder={t('messages.enterOrderNotes')}
@@ -495,6 +566,114 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             rows={3}
           />
         </div>
+
+        {/* 8. Order Summary */}
+        <div className="space-y-3 p-4 border border-border rounded-lg bg-bg-primary w-full">
+          <h4 className="text-sm font-semibold text-text-primary mb-3">{t('detail.orderSummary')}</h4>
+          
+          {/* Rental Duration - Show for RENT orders with dates */}
+          {formData.orderType === 'RENT' && formData.pickupPlanAt && formData.returnPlanAt && (
+            <div className="pb-2 mb-2 border-b border-border">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-text-secondary">{t('summary.rentalDuration')}:</span>
+                <span className="font-medium">
+                  {(() => {
+                    const start = new Date(formData.pickupPlanAt);
+                    const end = new Date(formData.returnPlanAt);
+                    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                    return `${days} ${days === 1 ? t('summary.day') : t('summary.days')}`;
+                  })()}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs text-text-tertiary">
+                <span>{t('summary.from')}: {new Date(formData.pickupPlanAt).toLocaleDateString('en-GB')}</span>
+                <span>{t('summary.to')}: {new Date(formData.returnPlanAt).toLocaleDateString('en-GB')}</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Subtotal */}
+          <div className="flex justify-between text-sm">
+            <span className="text-text-secondary">{t('summary.subtotal')}:</span>
+            <span className="font-medium">{formatMoney(formData.subtotal)}</span>
+          </div>
+
+          {/* Discount */}
+          {formData.discountAmount > 0 && (
+            <div className="flex justify-between text-sm text-action-success">
+              <span>{t('summary.discount')}:</span>
+              <span className="font-medium">-{formatMoney(formData.discountAmount)}</span>
+            </div>
+          )}
+
+          {/* Deposit */}
+          {formData.orderType === 'RENT' && formData.depositAmount > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-text-secondary">{t('summary.deposit')}:</span>
+              <span className="font-medium">{formatMoney(formData.depositAmount)}</span>
+            </div>
+          )}
+
+          {/* Grand Total */}
+          <div className="flex justify-between text-base font-bold text-action-primary pt-2 border-t border-border">
+            <span>{t('summary.grandTotal')}:</span>
+            <span>{formatMoney(formData.totalAmount)}</span>
+          </div>
+        </div>
+
+        {/* 9. Action Buttons */}
+        {onSubmit && (
+          <div className="space-y-2 w-full">
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                disabled={loading || !isFormValid}
+                onClick={onSubmit}
+                className="flex-1"
+              >
+                {loading ? t('messages.processing') : isEditMode ? t('messages.updateOrder') : t('messages.createOrder')}
+              </Button>
+              {onCancel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  className="flex-1"
+                >
+                  {isEditMode ? t('messages.cancel') : t('messages.resetSelection')}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+    </>
+  );
+
+
+
+  if (hideCardWrapper) {
+    // When hideCardWrapper is true, return content with flexbox layout
+    // Content already includes Order Summary fields merged directly
+    // Height is dynamic based on content - items-stretch will handle equal heights
+    return (
+      <div className="flex flex-col w-full overflow-visible">
+        {/* Order Information Content - Dynamic height based on content */}
+        <div className="space-y-4 w-full">
+          {content}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          {t('detail.orderInformation')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {content}
       </CardContent>
     </Card>
   );

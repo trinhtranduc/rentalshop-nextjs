@@ -84,17 +84,6 @@ export function OutletTable({
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>
               <th 
-                onClick={() => handleSort('id')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <div className="flex items-center gap-1">
-                  ID
-                  {sortBy === 'id' && (
-                    <span className="text-xs">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </div>
-              </th>
-              <th 
                 onClick={() => handleSort('name')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
@@ -135,13 +124,6 @@ export function OutletTable({
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
             {outlets.map((outlet) => (
               <tr key={outlet.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                {/* ID */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    #{outlet.id}
-                  </div>
-                </td>
-                
                 {/* Name */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm">

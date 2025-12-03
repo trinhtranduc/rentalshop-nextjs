@@ -5,7 +5,8 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogDescription
 } from '../../../ui';
 import { useCategoriesTranslations } from '@rentalshop/hooks';
 import { CategoryFormContent } from './CategoryFormContent';
@@ -33,19 +34,27 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   
   return (
     <Dialog open={true} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold">
             {mode === 'create' ? t('dialog.addNew') : t('dialog.edit')}
           </DialogTitle>
+          <DialogDescription className="mt-1">
+            {mode === 'create' 
+              ? (t('dialog.addNewDescription') || 'Create a new category for organizing products')
+              : (t('dialog.editDescription') || 'Update category information')
+            }
+          </DialogDescription>
         </DialogHeader>
         
-        <CategoryFormContent
-          category={category}
-          onSave={onSave}
-          onCancel={onCancel}
-          mode={mode}
-        />
+        <div className="px-6 py-4 overflow-y-auto">
+          <CategoryFormContent
+            category={category}
+            onSave={onSave}
+            onCancel={onCancel}
+            mode={mode}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -138,15 +138,17 @@ export function SubscriptionEditDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Subscription</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold">Edit Subscription</DialogTitle>
+          <DialogDescription className="mt-1">
             Update subscription details for {subscription.merchant?.name || 'Merchant'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="px-6 py-4 overflow-y-auto">
+
+          <div className="space-y-6">
           {/* Subscription Form */}
           <div className="w-full">
             <SubscriptionFormSimple
@@ -183,14 +185,14 @@ export function SubscriptionEditDialog({
                         className={cn(
                           "p-4 rounded-lg border-2 transition-all",
                           formData.period === period.duration
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 hover:border-gray-300"
+                            ? "border-action-primary bg-action-primary/10"
+                            : "border-border hover:border-border"
                         )}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-600" />
-                            <span className="font-semibold text-gray-900">{period.label}</span>
+                            <Calendar className="h-4 w-4 text-text-tertiary" />
+                            <span className="font-semibold text-text-primary">{period.label}</span>
                             {period.savingsPercentage > 0 && (
                               <Badge className="bg-green-100 text-green-800 border-green-200">
                                 {period.savingsPercentage}% OFF
@@ -206,13 +208,13 @@ export function SubscriptionEditDialog({
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <div className="text-gray-600">Monthly Price</div>
+                            <div className="text-muted-foreground">Monthly Price</div>
                             <div className="font-semibold">
                               {formatCurrency(period.monthlyPrice, formData.currency as CurrencyCode)}
                             </div>
                           </div>
                           <div>
-                            <div className="text-gray-600">Total Price</div>
+                            <div className="text-muted-foreground">Total Price</div>
                             <div className="font-semibold">
                               {formatCurrency(period.discountedPrice, formData.currency as CurrencyCode)}
                             </div>
@@ -224,13 +226,13 @@ export function SubscriptionEditDialog({
                             <div className="flex items-center justify-between text-sm">
                               <div className="flex items-center gap-2">
                                 <TrendingUp className="h-4 w-4 text-green-600" />
-                                <span className="text-gray-600">Total Savings</span>
+                                <span className="text-muted-foreground">Total Savings</span>
                               </div>
                               <div className="font-semibold text-green-600">
                                 {formatCurrency(period.totalSavings, formData.currency as CurrencyCode)}
                               </div>
                             </div>
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs text-muted-foreground mt-1">
                               vs {formatCurrency(period.originalPrice, formData.currency as CurrencyCode)} at regular price
                             </div>
                           </div>
@@ -254,11 +256,11 @@ export function SubscriptionEditDialog({
                   <CardContent>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Plan</span>
+                        <span className="text-muted-foreground">Plan</span>
                         <span className="font-semibold">{selectedPlan.name}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Billing Period</span>
+                        <span className="text-muted-foreground">Billing Period</span>
                         <span className="font-semibold">
                           {formData.period === 1 ? 'Monthly' : 
                            formData.period === 3 ? 'Quarterly' : 
@@ -268,19 +270,19 @@ export function SubscriptionEditDialog({
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Current Amount</span>
+                        <span className="text-muted-foreground">Current Amount</span>
                         <span className="font-semibold">
                           {formatCurrency(formData.amount || 0, formData.currency as CurrencyCode)}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Discount Applied</span>
-                        <span className="font-semibold text-green-600">
+                        <span className="text-muted-foreground">Discount Applied</span>
+                        <span className="font-semibold text-action-success">
                           {formData.discount || 0}%
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Platform</span>
+                        <span className="text-muted-foreground">Platform</span>
                         <span className="font-semibold">
                           {formData.platform === 'web-only' ? 'Web Only' :
                            formData.platform === 'mobile-only' ? 'Mobile Only' :
@@ -296,16 +298,18 @@ export function SubscriptionEditDialog({
               </div>
             </div>
           )}
-        </div>
+          </div>
 
-        <DialogFooter className="flex justify-end gap-2">
-          <Button variant="outline" onClick={handleCancel} disabled={loading}>
-            Cancel
-          </Button>
-          <Button onClick={() => handleSubmit(formData as SubscriptionUpdateInput)} disabled={loading}>
-            {loading ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </DialogFooter>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+            <Button variant="outline" onClick={handleCancel} disabled={loading}>
+              Cancel
+            </Button>
+            <Button onClick={() => handleSubmit(formData as SubscriptionUpdateInput)} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

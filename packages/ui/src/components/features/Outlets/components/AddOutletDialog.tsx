@@ -5,7 +5,8 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle
+  DialogTitle,
+  DialogDescription
 } from '../../../ui';
 import { AddOutletForm } from './AddOutletForm';
 import type { OutletCreateInput } from '@rentalshop/types';
@@ -59,14 +60,17 @@ export const AddOutletDialog: React.FC<AddOutletDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-        <DialogHeader className="px-6 py-4 border-b border-gray-200">
-          <DialogTitle className="text-xl font-semibold text-gray-900">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold">
             {t('dialogs.addOutletTitle')}
           </DialogTitle>
+          <DialogDescription className="mt-1">
+            {t('dialogs.addOutletDescription') || 'Create a new outlet for your business'}
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="p-6">
+        <div className="px-6 py-4 overflow-y-auto">
           <AddOutletForm
             onSave={handleSave}
             onCancel={handleCancel}

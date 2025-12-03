@@ -83,8 +83,23 @@
     "product": {
       "required": "Product is required"
     },
+    "category": {
+      "required": "Category is required"
+    },
     "outlet": {
-      "required": "Outlet is required"
+      "required": "Outlet is required",
+      "requiredForRole": "Outlet is required for this role"
+    },
+    "merchant": {
+      "required": "Merchant is required",
+      "requiredForRole": "Merchant is required for this role"
+    },
+    "role": {
+      "required": "Role is required"
+    },
+    "deposit": {
+      "nonNegative": "Deposit must be non-negative",
+      "cannotBeNegative": "Deposit is required and cannot be negative"
     },
     "merchantId": {
       "required": "Merchant ID is required"
@@ -96,22 +111,25 @@
       "required": "Plan variant ID is required"
     },
     "rentPrice": {
-      "nonNegative": "Rent price must be non-negative"
+      "required": "Rent price is required and must be greater than 0",
+      "nonNegative": "Rent price must be non-negative",
+      "greaterThanZero": "Rent price must be greater than 0"
     },
     "salePrice": {
-      "nonNegative": "Sale price must be non-negative"
+      "required": "Sale price is required and must be greater than 0",
+      "nonNegative": "Sale price must be non-negative",
+      "greaterThanZero": "Sale price must be greater than 0"
     },
     "costPrice": {
       "nonNegative": "Cost price must be non-negative"
-    },
-    "deposit": {
-      "nonNegative": "Deposit must be non-negative"
     },
     "stock": {
       "nonNegative": "Stock must be non-negative"
     },
     "totalStock": {
-      "nonNegative": "Total stock must be non-negative"
+      "required": "Total stock is required and must be greater than 0",
+      "nonNegative": "Total stock must be non-negative",
+      "greaterThanZero": "Total stock must be greater than 0"
     },
     "basePrice": {
       "nonNegative": "Base price must be non-negative"
@@ -132,7 +150,19 @@
       "range": "Discount must be between 0 and 100"
     },
     "durationConfig": {
-      "required": "Duration configuration is required and must be valid JSON for HOURLY and DAILY pricing types"
+      "required": "Duration configuration is required and must be valid JSON for HOURLY and DAILY pricing types",
+      "requiredForPricingType": "Duration configuration is required for HOURLY and DAILY pricing types",
+      "minDurationRequired": "Minimum duration is required and must be greater than 0",
+      "maxDurationRequired": "Maximum duration is required and must be greater than 0",
+      "minMustBeLessThanMax": "Minimum duration must be less than or equal to maximum duration",
+      "defaultDurationRequired": "Default duration is required and must be greater than 0",
+      "defaultMustBeAtLeastMin": "Default duration must be at least the minimum duration",
+      "defaultMustNotExceedMax": "Default duration must not exceed maximum duration"
+    },
+    "outletStock": {
+      "required": "Outlet stock is required. Please specify stock levels for at least one outlet.",
+      "noOutletsAvailable": "No outlets available. Please contact your administrator to set up outlets.",
+      "cannotBeNegative": "Outlet stock values cannot be negative"
     },
     "endDate": {
       "afterStart": "End date must be after start date"
