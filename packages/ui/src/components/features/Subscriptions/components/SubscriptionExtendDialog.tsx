@@ -171,21 +171,21 @@ export function SubscriptionExtendDialog({
 
         <div className="px-6 py-4 overflow-y-auto">
           <div className="space-y-6">
-            {/* Current Plan Info - Simplified */}
+          {/* Current Plan Info - Simplified */}
             <div className="flex items-center justify-between p-3 bg-action-primary/10 border border-action-primary/20 rounded-lg">
-              <div>
+                <div>
                 <p className="text-sm text-muted-foreground">Current Plan</p>
-                <p className="font-semibold">{subscription.plan?.name || 'N/A'}</p>
-              </div>
-              <div className="text-right">
+              <p className="font-semibold">{subscription.plan?.name || 'N/A'}</p>
+                </div>
+            <div className="text-right">
                 <p className="text-sm text-muted-foreground">Ends on</p>
-                <p className="font-semibold">
-                  {subscription.currentPeriodEnd 
-                    ? formatDate(subscription.currentPeriodEnd) 
-                    : 'N/A'}
-                </p>
+              <p className="font-semibold">
+                    {subscription.currentPeriodEnd 
+                      ? formatDate(subscription.currentPeriodEnd) 
+                      : 'N/A'}
+                  </p>
+                </div>
               </div>
-            </div>
 
           {/* Extension Type Selection */}
           <div className="space-y-2">
@@ -347,55 +347,55 @@ export function SubscriptionExtendDialog({
           </div>
 
           {/* Summary - Show when end date is set */}
-            {newEndDate && (
+          {newEndDate && (
               <div className="space-y-4 p-4 bg-bg-secondary border border-border rounded-lg">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
                     <p className="text-muted-foreground">Current End Date</p>
-                    <p className="font-semibold">
-                      {subscription.currentPeriodEnd 
-                        ? formatDate(subscription.currentPeriodEnd) 
-                        : 'N/A'}
-                    </p>
-                  </div>
-                  <div>
+                  <p className="font-semibold">
+                        {subscription.currentPeriodEnd 
+                          ? formatDate(subscription.currentPeriodEnd) 
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
                     <p className="text-muted-foreground">New End Date</p>
                     <p className="font-semibold text-action-success">
-                      {formatDate(new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59'))}
-                    </p>
-                  </div>
-                  <div>
+                    {formatDate(new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59'))}
+                      </p>
+                    </div>
+                    <div>
                     <p className="text-muted-foreground">Days Extended</p>
-                    <p className="font-semibold">
-                      {subscription.currentPeriodEnd 
-                        ? Math.ceil((new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59').getTime() - new Date(subscription.currentPeriodEnd).getTime()) / (1000 * 60 * 60 * 24))
-                        : 'N/A'} days
-                    </p>
-                  </div>
-                  <div>
+                  <p className="font-semibold">
+                        {subscription.currentPeriodEnd 
+                      ? Math.ceil((new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59').getTime() - new Date(subscription.currentPeriodEnd).getTime()) / (1000 * 60 * 60 * 24))
+                          : 'N/A'} days
+                      </p>
+                    </div>
+                    <div>
                     <p className="text-muted-foreground">Extension Amount</p>
-                    <p className="font-semibold">
-                      {amount 
-                        ? formatCurrency(parseFloat(amount), (subscription.currency || subscription.plan?.currency || 'USD') as any)
-                        : 'N/A'}
-                    </p>
+                  <p className="font-semibold">
+                        {amount 
+                          ? formatCurrency(parseFloat(amount), (subscription.currency || subscription.plan?.currency || 'USD') as any)
+                          : 'N/A'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+          )}
+        </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <Button variant="outline" onClick={handleClose} disabled={loading}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={loading || !newEndDate || !amount || (extensionType === 'period' && !extensionPeriod)}
-            >
-              {loading ? 'Extending...' : 'Extend Subscription'}
-            </Button>
+          <Button variant="outline" onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={loading || !newEndDate || !amount || (extensionType === 'period' && !extensionPeriod)}
+          >
+            {loading ? 'Extending...' : 'Extend Subscription'}
+          </Button>
           </div>
         </div>
       </DialogContent>

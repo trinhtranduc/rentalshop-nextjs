@@ -128,45 +128,45 @@ export const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="text-lg font-semibold">
-              {t('userDetails')}
-            </DialogTitle>
+                {t('userDetails')}
+              </DialogTitle>
             <DialogDescription className="mt-1">
-              {t('viewUserInfo')}
-            </DialogDescription>
+                {t('viewUserInfo')}
+              </DialogDescription>
           </DialogHeader>
 
           <div className="px-6 py-4 overflow-y-auto">
             <div className="space-y-6">
-              <UserDisplayInfo
-                user={user}
-                showActions={true}
-                onChangePassword={() => setIsChangePasswordOpen(true)}
-                onActivate={() => setIsActivateConfirmOpen(true)}
-                onDeactivate={() => setIsDeactivateConfirmOpen(true)}
-                onDelete={() => setIsDeleteConfirmOpen(true)}
-                isLoading={isLoading}
-              />
-              
+            <UserDisplayInfo
+              user={user}
+              showActions={true}
+              onChangePassword={() => setIsChangePasswordOpen(true)}
+              onActivate={() => setIsActivateConfirmOpen(true)}
+              onDeactivate={() => setIsDeactivateConfirmOpen(true)}
+              onDelete={() => setIsDeleteConfirmOpen(true)}
+              isLoading={isLoading}
+            />
+            
               {/* Permission Management - Hidden */}
               {/* <PermissionManager
-                userId={user.id}
-                userRole={user.role}
-                currentUserRole={currentUser?.role}
-                onPermissionsUpdated={() => {
-                  // Refresh user data if needed
-                  onUserUpdated?.(user);
-                }}
+              userId={user.id}
+              userRole={user.role}
+              currentUserRole={currentUser?.role}
+              onPermissionsUpdated={() => {
+                // Refresh user data if needed
+                onUserUpdated?.(user);
+              }}
               /> */}
-            </div>
+          </div>
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                {tc('buttons.close')}
-              </Button>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              {tc('buttons.close')}
+            </Button>
             </div>
           </div>
         </DialogContent>

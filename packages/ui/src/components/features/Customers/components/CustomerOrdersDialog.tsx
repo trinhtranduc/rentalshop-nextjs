@@ -161,11 +161,11 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0 gap-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-lg font-semibold">
-            Customer Orders
-          </DialogTitle>
+              Customer Orders
+            </DialogTitle>
           <DialogDescription className="mt-1">
-            View all orders for {customer.firstName} {customer.lastName}
-          </DialogDescription>
+              View all orders for {customer.firstName} {customer.lastName}
+            </DialogDescription>
         </DialogHeader>
 
         <div className="px-6 py-4 overflow-y-auto">

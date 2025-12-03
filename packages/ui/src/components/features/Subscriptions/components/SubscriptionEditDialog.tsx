@@ -148,7 +148,7 @@ export function SubscriptionEditDialog({
 
         <div className="px-6 py-4 overflow-y-auto">
 
-          <div className="space-y-6">
+        <div className="space-y-6">
           {/* Subscription Form */}
           <div className="w-full">
             <SubscriptionFormSimple
@@ -298,16 +298,16 @@ export function SubscriptionEditDialog({
               </div>
             </div>
           )}
-          </div>
+        </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <Button variant="outline" onClick={handleCancel} disabled={loading}>
-              Cancel
-            </Button>
-            <Button onClick={() => handleSubmit(formData as SubscriptionUpdateInput)} disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Button>
+          <Button variant="outline" onClick={handleCancel} disabled={loading}>
+            Cancel
+          </Button>
+          <Button onClick={() => handleSubmit(formData as SubscriptionUpdateInput)} disabled={loading}>
+            {loading ? 'Saving...' : 'Save Changes'}
+          </Button>
           </div>
         </div>
       </DialogContent>

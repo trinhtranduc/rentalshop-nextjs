@@ -446,15 +446,15 @@ export default function ProductsPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="px-6 py-4 overflow-y-auto">
-              <ProductDetail
-                product={selectedProduct}
-                onEdit={() => {
-                  setShowDetailDialog(false);
-                  setShowEditDialog(true);
-                }}
-                showActions={true}
-                isMerchantAccount={true}
-              />
+            <ProductDetail
+              product={selectedProduct}
+              onEdit={() => {
+                setShowDetailDialog(false);
+                setShowEditDialog(true);
+              }}
+              showActions={true}
+              isMerchantAccount={true}
+            />
             </div>
           </DialogContent>
         </Dialog>
@@ -486,29 +486,29 @@ export default function ProductsPage() {
           </DialogHeader>
           {selectedProduct && (
             <div className="px-6 py-4 overflow-y-auto">
-              <ProductEdit
-                product={selectedProduct}
-                categories={categories}
-                outlets={outlets}
-                merchantId={user?.merchantId || user?.merchant?.id || 0}
-                onSave={async (productData) => {
-                  const updateData: any = {
-                    id: selectedProduct.id,
-                    ...productData,
-                    // Convert images array to string format for API
-                    images: Array.isArray(productData.images) 
-                      ? productData.images.join(',') 
-                      : productData.images || '',
-                    // Ensure outletStock is included for inventory update
-                    outletStock: productData.outletStock || []
-                  };
-                  await handleProductUpdate(updateData);
-                }}
-                onCancel={() => {
-                  setShowEditDialog(false);
-                  setSelectedProduct(null);
-                }}
-              />
+            <ProductEdit
+              product={selectedProduct}
+              categories={categories}
+              outlets={outlets}
+              merchantId={user?.merchantId || user?.merchant?.id || 0}
+              onSave={async (productData) => {
+                const updateData: any = {
+                  id: selectedProduct.id,
+                  ...productData,
+                  // Convert images array to string format for API
+                  images: Array.isArray(productData.images) 
+                    ? productData.images.join(',') 
+                    : productData.images || '',
+                  // Ensure outletStock is included for inventory update
+                  outletStock: productData.outletStock || []
+                };
+                await handleProductUpdate(updateData);
+              }}
+              onCancel={() => {
+                setShowEditDialog(false);
+                setSelectedProduct(null);
+              }}
+            />
             </div>
           )}
         </DialogContent>

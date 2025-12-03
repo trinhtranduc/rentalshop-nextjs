@@ -246,25 +246,25 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
 
         <div className="px-6 py-4 overflow-y-auto">
         
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex flex-col items-center gap-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
-                <p className="text-text-secondary">Loading plan data...</p>
-              </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>
+              <p className="text-text-secondary">Loading plan data...</p>
             </div>
-          ) : (
-            <PlanForm
-              initialData={plan}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-              loading={loading}
-              mode={mode === 'view' ? 'edit' : mode} // PlanForm doesn't support 'view', use 'edit' instead
-              hideHeader={true}
-              title={getDialogTitle()}
-              submitText={mode === 'create' ? 'Create Plan' : mode === 'edit' || mode === 'view' ? 'Update Plan' : 'Save Changes'}
-            />
-          )}
+          </div>
+        ) : (
+        <PlanForm
+          initialData={plan}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          loading={loading}
+            mode={mode === 'view' ? 'edit' : mode} // PlanForm doesn't support 'view', use 'edit' instead
+          hideHeader={true}
+          title={getDialogTitle()}
+            submitText={mode === 'create' ? 'Create Plan' : mode === 'edit' || mode === 'view' ? 'Update Plan' : 'Save Changes'}
+        />
+        )}
         </div>
       </DialogContent>
     </Dialog>

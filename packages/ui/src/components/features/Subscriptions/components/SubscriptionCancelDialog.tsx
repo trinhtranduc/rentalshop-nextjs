@@ -85,7 +85,7 @@ export function SubscriptionCancelDialog({
         </DialogHeader>
 
         <div className="px-6 py-4 overflow-y-auto">
-          <div className="space-y-6">
+        <div className="space-y-6">
           {/* Subscription Summary */}
           <Card>
             <CardHeader>
@@ -199,20 +199,20 @@ export function SubscriptionCancelDialog({
               </div>
             </CardContent>
           </Card>
-          </div>
+        </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <Button variant="outline" onClick={handleClose} disabled={loading}>
-              Keep Subscription
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleSubmit}
-              disabled={loading || !reason || (reason === 'Other' && !customReason.trim())}
-            >
-              {loading ? 'Cancelling...' : 'Cancel Subscription'}
-            </Button>
+          <Button variant="outline" onClick={handleClose} disabled={loading}>
+            Keep Subscription
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={handleSubmit}
+            disabled={loading || !reason || (reason === 'Other' && !customReason.trim())}
+          >
+            {loading ? 'Cancelling...' : 'Cancel Subscription'}
+          </Button>
           </div>
         </div>
       </DialogContent>

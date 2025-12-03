@@ -61,29 +61,29 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="text-lg font-semibold">
-              {t('dialog.viewDetails')}
-            </DialogTitle>
+                {t('dialog.viewDetails')}
+              </DialogTitle>
             <DialogDescription className="mt-1">
-              {t('dialog.viewDescription')}
-            </DialogDescription>
+                {t('dialog.viewDescription')}
+              </DialogDescription>
           </DialogHeader>
           {category && (
             <div className="px-6 py-4 overflow-y-auto">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                <div>
                     <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('fields.name')}</Label>
                     <p className="text-sm font-semibold">{category.name}</p>
-                  </div>
-                  
-                  {category.description && (
-                    <div className="md:col-span-2">
+                </div>
+                
+                {category.description && (
+                  <div className="md:col-span-2">
                       <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('fields.description')}</Label>
                       <p className="text-sm whitespace-pre-wrap">{category.description}</p>
-                    </div>
-                  )}
-                  
-                  <div>
+                  </div>
+                )}
+                
+                <div>
                     <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{tc('labels.createdAt')}</Label>
                     <p className="text-sm">
                       {category.createdAt 
@@ -91,9 +91,9 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
                         : tc('labels.unknown')
                       }
                     </p>
-                  </div>
-                  
-                  <div>
+                </div>
+                
+                <div>
                     <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{tc('labels.updatedAt')}</Label>
                     <p className="text-sm">
                       {category.updatedAt && category.updatedAt !== category.createdAt
@@ -138,10 +138,10 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
             </DialogDescription>
           </DialogHeader>
           <div className="px-6 py-4 overflow-y-auto">
-            <div className="space-y-4">
+          <div className="space-y-4">
               <p className="text-sm text-text-secondary">
-                {t('dialog.deleteConfirmation')} <strong>"{category?.name}"</strong>?
-              </p>
+              {t('dialog.deleteConfirmation')} <strong>"{category?.name}"</strong>?
+            </p>
             </div>
             
             {/* Action Buttons */}

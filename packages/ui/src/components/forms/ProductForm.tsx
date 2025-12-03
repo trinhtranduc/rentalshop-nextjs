@@ -2,10 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent, 
   Button, 
   Input, 
   Select, 
@@ -787,17 +783,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
       <form id={formId} onSubmit={handleSubmit} className="space-y-6">
         {/* Product Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              {t('productDetails')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">{t('fields.name')} *</label>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.name')} *</label>
                 <Input
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
@@ -807,8 +796,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">{t('fields.sku')}</label>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.sku')}</label>
                 <Input
                   value={formData.sku}
                   onChange={(e) => handleInputChange('sku', e.target.value)}
@@ -818,8 +807,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">{t('fields.barcode')}</label>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.barcode')}</label>
                 <div className="flex gap-2">
                   <Input
                     value={formData.barcode}
@@ -839,8 +828,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">{t('fields.category')} *</label>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.category')} *</label>
                 <Select
                   value={formData.categoryId.toString()}
                   onValueChange={(value) => {
@@ -862,8 +851,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">{t('fields.description')}</label>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.description')}</label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
@@ -877,7 +866,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             {/* Code has been removed to prevent any pricing type selection UI from appearing */}
 
             {/* Rental Price - Always Fixed Price (FIXED pricing type) */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-4 border-t border-border">
               <div className="space-y-2">
                 <NumericInput
                   label={t('pricing.pricePerRental')}
@@ -897,16 +886,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             {/* Other Pricing & Inventory Section */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                {t('pricing.title')}
-              </h3>
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('pricing.title')}</h3>
               
               <div className="space-y-4">
                 {/* Deposit, Sale Price, and Cost Price */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
+              <div>
                 <NumericInput
                       label={t('fields.deposit')}
                       value={formData.deposit}
@@ -920,7 +906,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <NumericInput
                   label={t('fields.salePrice')}
                   value={formData.salePrice}
@@ -934,7 +920,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <NumericInput
                   label={t('fields.costPrice')}
                   value={formData.costPrice}
@@ -950,7 +936,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
                 {/* Stock */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div>
                 <NumericInput
                   label={t('fields.stock')}
                   value={formData.totalStock}
@@ -966,19 +952,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
             </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Outlet Stock Management - Only show if merchant has multiple outlets */}
         {outlets.length > 1 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Warehouse className="w-5 h-5" />
-                {t('inventory.outletStockDistribution')} *
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('inventory.outletStockDistribution')} *</h3>
             <div className="mb-4">
               <p className="text-sm text-muted-foreground">
                 {t('inventory.totalOutlets')}: {outlets.length} | {t('inventory.stockEntries')}: {formData.outletStock.length} | <span className="text-red-500">*</span> {t('inventory.stockRequired')}
@@ -1045,19 +1024,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 )}
               </>
             )}
-          </CardContent>
-        </Card>
+          </div>
         ) : null}
 
         {/* Enhanced Image Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5" />
-              {t('fields.images')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('fields.images')}</h3>
+          <div className="space-y-4">
             {/* Drag & Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
@@ -1249,8 +1222,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
 
 

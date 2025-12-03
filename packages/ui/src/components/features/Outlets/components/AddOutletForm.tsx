@@ -69,8 +69,8 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Outlet Name - Required */}
-      <div>
+          {/* Outlet Name - Required */}
+          <div>
         <Label htmlFor="name" className="text-xs font-medium text-muted-foreground mb-1.5 block">
           {t('fields.name')} <span className="text-red-500">*</span>
         </Label>
@@ -179,26 +179,26 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
         />
       </div>
 
-      {/* Form Actions */}
+          {/* Form Actions */}
       <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleCancel}
-          disabled={isSubmitting}
-        >
-          <X className="w-4 h-4 mr-2" />
-          {tc('buttons.cancel')}
-        </Button>
-        
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {isSubmitting ? tc('buttons.saving') : tc('buttons.save')}
-        </Button>
-      </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              <X className="w-4 h-4 mr-2" />
+              {tc('buttons.cancel')}
+            </Button>
+            
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {isSubmitting ? tc('buttons.saving') : tc('buttons.save')}
+            </Button>
+          </div>
     </form>
   );
 };

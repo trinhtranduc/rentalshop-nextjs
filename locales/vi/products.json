@@ -193,6 +193,10 @@
   "productsPlural": "sản phẩm",
   "storeNotFound": "Không tìm thấy cửa hàng",
   "storeNotFoundMessage": "Cửa hàng bạn đang tìm kiếm không tồn tại. Vui lòng kiểm tra lại URL hoặc liên hệ chủ cửa hàng.",
-  "goToHomepage": "Về trang chủ"
+  "goToHomepage": "Về trang chủ",
+  "dialogs": {
+    "addProductTitle": "Thêm sản phẩm mới",
+    "addProductDescription": "Tạo sản phẩm mới cho kho hàng cho thuê của bạn"
+  }
 }
 

@@ -2,10 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
   Button
 } from '@rentalshop/ui';
 import { useToast } from '@rentalshop/ui';
@@ -145,7 +141,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
       />
 
       {/* Action Buttons */}
-      <div className="flex justify-end space-x-2">
+      <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
         <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
           {tc('buttons.cancel')}
         </Button>

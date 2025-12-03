@@ -206,23 +206,23 @@ export function SubscriptionChangePlanDialog({
 
         <div className="px-6 py-4 overflow-y-auto">
           <div className="space-y-6">
-            {/* Current Plan Info - Simplified */}
+          {/* Current Plan Info - Simplified */}
             <div className="flex items-center justify-between p-3 bg-action-primary/10 border border-action-primary/20 rounded-lg">
-              <div>
+                <div>
                 <p className="text-sm text-muted-foreground">Current Plan</p>
-                <p className="font-semibold">{currentPlan?.name || 'N/A'}</p>
-              </div>
-              <div className="text-right">
+              <p className="font-semibold">{currentPlan?.name || 'N/A'}</p>
+                </div>
+            <div className="text-right">
                 <p className="text-sm text-muted-foreground">Current Amount</p>
-                <p className="font-semibold">
-                  {formatCurrency(
-                    subscription.amount || 0, 
-                    (subscription.currency || currentPlan?.currency || 'USD') as any
-                  )}
-                  /{subscription.interval || 'month'}
-                </p>
+              <p className="font-semibold">
+                    {formatCurrency(
+                      subscription.amount || 0, 
+                      (subscription.currency || currentPlan?.currency || 'USD') as any
+                    )}
+                    /{subscription.interval || 'month'}
+                  </p>
+                </div>
               </div>
-            </div>
 
           {/* Billing Period Selection */}
           <div className="space-y-2">
@@ -319,30 +319,30 @@ export function SubscriptionChangePlanDialog({
 
 
 
-            {/* Summary - Show when plan is selected */}
-            {selectedPlan && (
+          {/* Summary - Show when plan is selected */}
+          {selectedPlan && (
               <div className="space-y-4 p-4 bg-bg-secondary border border-border rounded-lg">
-                {(() => {
-                  const newPricing = calculatePricingForInterval(selectedPlan, selectedInterval);
-                  const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
-                  return (
-                    <>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
+              {(() => {
+                const newPricing = calculatePricingForInterval(selectedPlan, selectedInterval);
+                const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
                           <p className="text-muted-foreground">New Plan</p>
-                          <p className="font-semibold">{selectedPlan.name}</p>
-                        </div>
-                        <div>
+                        <p className="font-semibold">{selectedPlan.name}</p>
+                      </div>
+                      <div>
                           <p className="text-muted-foreground">Billing Period</p>
-                          <p className="font-semibold">{cycleConfig?.label || selectedInterval}</p>
-                        </div>
-                        <div>
+                        <p className="font-semibold">{cycleConfig?.label || selectedInterval}</p>
+                      </div>
+                    <div>
                           <p className="text-muted-foreground">Total Price</p>
                         <p className="font-bold text-lg">
                           {formatCurrency(newPricing.price, selectedPlan.currency as any)}
                       </p>
                     </div>
-                        <div>
+                    <div>
                           <p className="text-muted-foreground">Monthly Equivalent</p>
                         <p className="font-semibold">
                           {formatCurrency(newPricing.monthlyEquivalent, selectedPlan.currency as any)}/month
@@ -392,24 +392,24 @@ export function SubscriptionChangePlanDialog({
                         Send email notification to merchant
                       </Label>
                               </div>
-                      </>
-                    );
-                  })()}
-                </div>
-            )}
-          </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+          )}
+        </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <Button variant="outline" onClick={handleClose} disabled={loading}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={loading || !selectedPlanId}
-            >
-              {loading ? 'Changing Plan...' : 'Change Plan'}
-            </Button>
+          <Button variant="outline" onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={loading || !selectedPlanId}
+          >
+            {loading ? 'Changing Plan...' : 'Change Plan'}
+          </Button>
           </div>
         </div>
       </DialogContent>
