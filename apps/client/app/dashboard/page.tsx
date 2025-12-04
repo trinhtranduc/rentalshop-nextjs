@@ -33,6 +33,7 @@ import {
   Minus
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
 import { useLocale as useNextIntlLocale } from 'next-intl';
@@ -276,12 +277,14 @@ export default function DashboardPage() {
   const to = useOrderTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
+  // ✅ Use permissions hook to check if user can manage products
+  const { canManageProducts } = usePermissions();
   const locale = useNextIntlLocale() as 'en' | 'vi';
   
   // Get timePeriod from URL params or default to 'today'
-  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(
-    (searchParams.get('period') as 'today' | 'month' | 'year') || 'today'
-  );
+  // OUTLET_STAFF can only view 'today' period
+  const defaultPeriod = user?.role === 'OUTLET_STAFF' ? 'today' : ((searchParams.get('period') as 'today' | 'month' | 'year') || 'today');
+  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(defaultPeriod);
   const [initialLoading, setInitialLoading] = useState(false); // Start with false - page renders immediately
   const [loadingCharts, setLoadingCharts] = useState(false); // Start with false - page renders immediately
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -383,7 +386,17 @@ export default function DashboardPage() {
   }, [user]);
 
   // Function to update URL when time period changes
+  // OUTLET_STAFF can only view 'today' period - force to 'today' if they try to change
   const updateTimePeriod = (newPeriod: 'today' | 'month' | 'year') => {
+    // Force OUTLET_STAFF to stay on 'today' period
+    if (user?.role === 'OUTLET_STAFF') {
+      setTimePeriod('today');
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('period', 'today');
+      router.push(`/dashboard?${params.toString()}`, { scroll: false });
+      return;
+    }
+    
     setTimePeriod(newPeriod);
     // Update URL without causing page reload
     const params = new URLSearchParams(searchParams.toString());
@@ -392,12 +405,21 @@ export default function DashboardPage() {
   };
 
   // Sync URL params on mount
+  // OUTLET_STAFF can only view 'today' period
   useEffect(() => {
+    if (user?.role === 'OUTLET_STAFF') {
+      setTimePeriod('today');
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('period', 'today');
+      router.push(`/dashboard?${params.toString()}`, { scroll: false });
+      return;
+    }
+    
     const urlPeriod = searchParams.get('period');
     if (urlPeriod && ['today', 'month', 'year'].includes(urlPeriod)) {
       setTimePeriod(urlPeriod as 'today' | 'month' | 'year');
     }
-  }, [searchParams]);
+  }, [searchParams, user?.role, router]);
 
   // Memoize fetchDashboardData function to prevent unnecessary re-creations
   const fetchDashboardData = useCallback(async () => {
@@ -1076,25 +1098,35 @@ export default function DashboardPage() {
             </div>
             
             {/* Time Period Filter - Modern Pills */}
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
-              {[
-                { id: 'today', label: tc('time.today') },
-                { id: 'month', label: tc('time.thisMonth') },
-                { id: 'year', label: tc('time.year') }
-              ].map(period => (
-                <button
-                  key={period.id}
-                  onClick={() => updateTimePeriod(period.id as 'today' | 'month' | 'year')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    timePeriod === period.id
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  {period.label}
-                </button>
-              ))}
-            </div>
+            {/* OUTLET_STAFF can only view 'today' - hide month/year tabs */}
+            {user?.role !== 'OUTLET_STAFF' ? (
+              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
+                {[
+                  { id: 'today', label: tc('time.today') },
+                  { id: 'month', label: tc('time.thisMonth') },
+                  { id: 'year', label: tc('time.year') }
+                ].map(period => (
+                  <button
+                    key={period.id}
+                    onClick={() => updateTimePeriod(period.id as 'today' | 'month' | 'year')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                      timePeriod === period.id
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {period.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              // For OUTLET_STAFF, show only "Today" label (not clickable)
+              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
+                <div className="px-4 py-2 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm">
+                  {tc('time.today')}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1102,24 +1134,20 @@ export default function DashboardPage() {
         {timePeriod === 'today' && (
           <>
             {/* Today's Key Metrics - Simplified Grid */}
-            <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 ${
-              user?.role === 'OUTLET_STAFF' ? 'md:grid-cols-3' : ''
-            }`}>
-              {/* Revenue Card - Hidden for OUTLET_STAFF */}
-              {user?.role !== 'OUTLET_STAFF' && (
-                <StatCard
-                  title={t('stats.todayRevenue')}
-                  value={currentStats.todayRevenue}
-                  change=""
-                  description=""
-                  tooltip={t('tooltips.todayRevenue')}
-                  color="text-blue-700"
-                  trend="neutral"
-                  activeTooltip={activeTooltip}
-                  setActiveTooltip={setActiveTooltip}
-                  position="left"
-                />
-              )}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {/* Revenue Card - Show for all roles including OUTLET_STAFF */}
+              <StatCard
+                title={t('stats.todayRevenue')}
+                value={currentStats.todayRevenue}
+                change=""
+                description=""
+                tooltip={t('tooltips.todayRevenue')}
+                color="text-blue-700"
+                trend="neutral"
+                activeTooltip={activeTooltip}
+                setActiveTooltip={setActiveTooltip}
+                position="left"
+              />
               <StatCard
                 title={t('stats.todayRentals')}
                 value={currentStats.todayRentals}
@@ -1607,14 +1635,17 @@ export default function DashboardPage() {
               <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addCustomer')}</p>
             </Button>
             
-            <Button
-              variant="ghost"
-              className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
-              onClick={() => setShowAddProductDialog(true)}
-            >
-              <PackageCheck className="w-5 h-5 text-gray-700" />
-              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addProduct')}</p>
-            </Button>
+            {/* ✅ Only show Add Product button if user can manage products */}
+            {canManageProducts && (
+              <Button
+                variant="ghost"
+                className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
+                onClick={() => setShowAddProductDialog(true)}
+              >
+                <PackageCheck className="w-5 h-5 text-gray-700" />
+                <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addProduct')}</p>
+              </Button>
+            )}
             
             <Button
               variant="ghost"
