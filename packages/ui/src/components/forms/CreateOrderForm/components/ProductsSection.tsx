@@ -525,13 +525,13 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
                   <>
                     {product && pickupDate && returnDate ? (
                       <div className="mt-1">
-                        <ProductAvailabilityAsyncDisplay 
-                          product={product}
-                          pickupDate={pickupDate}
-                          returnDate={returnDate}
-                          requestedQuantity={item.quantity || 1}
-                          getProductAvailabilityStatus={getProductAvailabilityStatus}
-                        />
+                      <ProductAvailabilityAsyncDisplay 
+                        product={product}
+                        pickupDate={pickupDate}
+                        returnDate={returnDate}
+                        requestedQuantity={item.quantity || 1}
+                        getProductAvailabilityStatus={getProductAvailabilityStatus}
+                      />
                       </div>
                     ) : (
                       <div className="text-xs text-gray-500 mt-1">

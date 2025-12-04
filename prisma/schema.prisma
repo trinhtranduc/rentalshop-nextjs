@@ -197,9 +197,9 @@ model OutletStock {
 model Customer {
   id          Int       @id @default(autoincrement())
   firstName   String
-  lastName    String
+  lastName    String?   // Optional - allow nullable
   email       String?
-  phone       String
+  phone       String?   // Optional - allow nullable (unique constraint only applies when phone is not null)
   address     String?
   city        String?
   state       String?
@@ -216,6 +216,7 @@ model Customer {
   merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   orders      Order[]
 
+  // Unique constraint: only applies when phone is not null (PostgreSQL allows multiple NULLs in unique constraint)
   @@unique([merchantId, phone])
   @@index([merchantId, firstName, lastName])
 }
