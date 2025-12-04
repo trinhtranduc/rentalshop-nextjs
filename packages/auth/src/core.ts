@@ -213,9 +213,13 @@ export type Permission =
   
   // Billing & Plans
   | 'billing.manage'
-  | 'billing.view';
+  | 'billing.view'
+  
+  // Bank Account Management
+  | 'bankAccounts.manage'
+  | 'bankAccounts.view';
 
-export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' | 'orders' | 'customers' | 'analytics' | 'billing';
+export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' | 'orders' | 'customers' | 'analytics' | 'billing' | 'bankAccounts';
 
 export interface UserScope {
   merchantId?: number;
@@ -243,31 +247,35 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
     'analytics.view',
-    'billing.manage', 'billing.view'
+    'billing.manage', 'billing.view',
+    'bankAccounts.manage', 'bankAccounts.view'
   ],
   'MERCHANT': [
-    'merchant.view',
+    'merchant.manage', 'merchant.view', // ✅ Merchant can manage their own merchant information
     'outlet.manage', 'outlet.view',
     'users.manage', 'users.view',
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
     'analytics.view',
-    'billing.view'
+    'billing.view',
+    'bankAccounts.manage', 'bankAccounts.view' // ✅ Merchant can manage bank accounts
   ],
   'OUTLET_ADMIN': [
-    'outlet.view',
+    'outlet.manage', 'outlet.view', 
     'users.view',
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
-    'analytics.view'
+    'analytics.view',
+    'bankAccounts.view' // ✅ Outlet admin can view bank accounts
   ],
   'OUTLET_STAFF': [
     'outlet.view',
     'products.view', // ❌ NO products.export
     'orders.create', 'orders.view', 'orders.update', // ❌ NO orders.delete, orders.export
     'customers.view', 'customers.manage' // ❌ NO customers.export
+    // ❌ NO bankAccounts permissions - staff cannot see bank accounts
   ]
 };
 
