@@ -197,6 +197,14 @@
   "dialogs": {
     "addProductTitle": "Thêm sản phẩm mới",
     "addProductDescription": "Tạo sản phẩm mới cho kho hàng cho thuê của bạn"
+  },
+  "labels": {
+    "barcode": "Mã vạch",
+    "deposit": "Đặt cọc",
+    "available": "Có sẵn",
+    "totalStock": "Tổng kho",
+    "noBarcode": "Không có mã vạch",
+    "noCategory": "Chưa có danh mục"
   }
 }
 

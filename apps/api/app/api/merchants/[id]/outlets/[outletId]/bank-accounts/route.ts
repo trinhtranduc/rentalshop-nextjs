@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { USER_ROLE } from '@rentalshop/constants';
 import { 
@@ -29,7 +29,7 @@ const bankAccountSchema = z.object({
  * GET /api/merchants/[id]/outlets/[outletId]/bank-accounts
  * Get all bank accounts for an outlet
  * 
- * Authorization: ADMIN, MERCHANT (own merchant), OUTLET_ADMIN (own outlet), OUTLET_STAFF (own outlet)
+ * Authorization: Roles with 'outlet.view' permission can access
  */
 export async function GET(
   request: NextRequest,
@@ -39,49 +39,19 @@ export async function GET(
   const merchantId = parseInt(resolvedParams.id);
   const outletId = parseInt(resolvedParams.outletId);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+  return withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
     try {
-      if (isNaN(merchantId) || isNaN(outletId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_ID_FORMAT'),
-          { status: 400 }
-        );
+      // Validate merchant and outlet access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantId, user, userScope, outletId);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const { merchant, outlet } = validation;
 
-      // Check authorization
-      if (user.role === USER_ROLE.MERCHANT && userScope.merchantId !== merchantId) {
-        return NextResponse.json(
-          ResponseBuilder.error('FORBIDDEN'),
-          { status: 403 }
-        );
-      }
-
-      if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId !== outletId) {
-        return NextResponse.json(
-          ResponseBuilder.error('FORBIDDEN'),
-          { status: 403 }
-        );
-      }
-
-      // Verify outlet exists and belongs to merchant
-      const outlet = await prisma.outlet.findFirst({
-        where: {
-          id: outletId,
-          merchantId
-        }
-      });
-
-      if (!outlet) {
-        return NextResponse.json(
-          ResponseBuilder.error('OUTLET_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
-
-      // Get bank accounts
+      // Get bank accounts (use outlet.id which is the CUID)
       const bankAccounts = await prisma.bankAccount.findMany({
         where: {
-          outletId,
+          outletId: outlet.id,
           isActive: true
         },
         orderBy: [
@@ -106,7 +76,7 @@ export async function GET(
  * POST /api/merchants/[id]/outlets/[outletId]/bank-accounts
  * Create a new bank account for an outlet
  * 
- * Authorization: ADMIN, MERCHANT (own merchant), OUTLET_ADMIN (own outlet)
+ * Authorization: ADMIN, MERCHANT, and OUTLET_ADMIN can create bank accounts
  */
 export async function POST(
   request: NextRequest,
@@ -116,44 +86,22 @@ export async function POST(
   const merchantId = parseInt(resolvedParams.id);
   const outletId = parseInt(resolvedParams.outletId);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN])(async (request, { user, userScope }) => {
+  return withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
     try {
-      if (isNaN(merchantId) || isNaN(outletId)) {
+      // Block OUTLET_STAFF from creating bank accounts
+      if (user.role === USER_ROLE.OUTLET_STAFF) {
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_ID_FORMAT'),
-          { status: 400 }
-        );
-      }
-
-      // Check authorization
-      if (user.role === USER_ROLE.MERCHANT && userScope.merchantId !== merchantId) {
-        return NextResponse.json(
-          ResponseBuilder.error('FORBIDDEN'),
+          ResponseBuilder.error('FORBIDDEN', 'OUTLET_STAFF cannot create bank accounts'),
           { status: 403 }
         );
       }
 
-      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId !== outletId) {
-        return NextResponse.json(
-          ResponseBuilder.error('FORBIDDEN'),
-          { status: 403 }
-        );
+      // Validate merchant and outlet access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantId, user, userScope, outletId);
+      if (!validation.valid) {
+        return validation.error!;
       }
-
-      // Verify outlet exists and belongs to merchant
-      const outlet = await prisma.outlet.findFirst({
-        where: {
-          id: outletId,
-          merchantId
-        }
-      });
-
-      if (!outlet) {
-        return NextResponse.json(
-          ResponseBuilder.error('OUTLET_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
+      const { merchant, outlet } = validation;
 
       const body = await request.json();
       
@@ -169,16 +117,16 @@ export async function POST(
       const data = parsed.data;
 
       // Validate bank account info
-      const validation = validateBankAccountInfo({
+      const bankAccountValidation = validateBankAccountInfo({
         accountNumber: data.accountNumber,
         accountHolderName: data.accountHolderName,
         bankName: data.bankName,
         bankCode: data.bankCode || getBankCode(data.bankName)
       });
 
-      if (!validation.valid) {
+      if (!bankAccountValidation.valid) {
         return NextResponse.json(
-          ResponseBuilder.error('VALIDATION_ERROR', validation.errors.join(', ')),
+          ResponseBuilder.error('VALIDATION_ERROR', bankAccountValidation.errors.join(', ')),
           { status: 400 }
         );
       }
@@ -196,7 +144,7 @@ export async function POST(
       if (data.isDefault) {
         await prisma.bankAccount.updateMany({
           where: {
-            outletId,
+            outletId: outlet.id,
             isDefault: true
           },
           data: {
@@ -205,10 +153,10 @@ export async function POST(
         });
       }
 
-      // Create bank account
+      // Create bank account (use outlet.id which is the CUID)
       const bankAccount = await prisma.bankAccount.create({
         data: {
-          outletId,
+          outletId: outlet.id,
           accountHolderName: data.accountHolderName,
           accountNumber: data.accountNumber,
           bankName: data.bankName,

@@ -38,10 +38,11 @@ export async function GET(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // Validate that non-admin users have merchant association
+      if (user.role !== 'ADMIN' && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
+          { status: 403 }
         );
       }
       
@@ -52,6 +53,18 @@ export async function GET(
         console.log('❌ Customer not found in database for customerId:', customerId);
         return NextResponse.json(
           ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Verify customer belongs to user's merchant (security check)
+      if (user.role !== 'ADMIN' && customer.merchantId !== userMerchantId) {
+        console.log('❌ Customer does not belong to user\'s merchant:', {
+          customerMerchantId: customer.merchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal customer exists)
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -115,10 +128,11 @@ export async function PUT(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // Validate that non-admin users have merchant association
+      if (user.role !== 'ADMIN' && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
+          { status: 403 }
         );
       }
 
@@ -131,6 +145,18 @@ export async function PUT(
       if (!existingCustomer) {
         return NextResponse.json(
           ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Verify customer belongs to user's merchant (security check)
+      if (user.role !== 'ADMIN' && existingCustomer.merchantId !== userMerchantId) {
+        console.log('❌ Customer does not belong to user\'s merchant:', {
+          customerMerchantId: existingCustomer.merchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal customer exists)
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -196,10 +222,11 @@ export async function DELETE(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // Validate that non-admin users have merchant association
+      if (user.role !== 'ADMIN' && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
+          { status: 403 }
         );
       }
 
@@ -208,6 +235,18 @@ export async function DELETE(
       if (!existingCustomer) {
         return NextResponse.json(
           ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Verify customer belongs to user's merchant (security check)
+      if (user.role !== 'ADMIN' && existingCustomer.merchantId !== userMerchantId) {
+        console.log('❌ Customer does not belong to user\'s merchant:', {
+          customerMerchantId: existingCustomer.merchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal customer exists)
           { status: API.STATUS.NOT_FOUND }
         );
       }

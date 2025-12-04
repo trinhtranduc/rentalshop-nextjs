@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -24,15 +24,16 @@ export async function GET(
   
   return withPermissions(['users.view'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
+      if (isNaN(userPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
       const foundUser = await db.users.findById(userPublicId);
       if (!foundUser) {
@@ -70,15 +71,16 @@ export async function PUT(
   
   return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
+      if (isNaN(userPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
       const existing = await db.users.findById(userPublicId);
       if (!existing) {
@@ -119,15 +121,16 @@ export async function DELETE(
   
   return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
+      if (isNaN(userPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
       const existing = await db.users.findById(userPublicId);
       if (!existing) {

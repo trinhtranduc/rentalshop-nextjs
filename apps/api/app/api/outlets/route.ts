@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
@@ -7,9 +7,9 @@ import { API, USER_ROLE } from '@rentalshop/constants';
 /**
  * GET /api/outlets
  * Get outlets with filtering and pagination
- * REFACTORED: Now uses unified withAuth pattern
+ * Authorization: Roles with 'outlet.view' permission can access
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -103,9 +103,9 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
 /**
  * POST /api/outlets
  * Create a new outlet using simplified database API
- * REFACTORED: Now uses unified withAuth pattern
+ * Authorization: Roles with 'outlet.manage' permission can create outlets
  */
-export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+export const POST = withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -234,10 +234,10 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
 
 /**
  * PUT /api/outlets?id={id}
- * Update an outlet using simplified database API  
- * REFACTORED: Now uses unified withAuth pattern
+ * Update an outlet using simplified database API
+ * Authorization: Roles with 'outlet.manage' permission can update outlets
  */
-export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+export const PUT = withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -353,9 +353,9 @@ export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
 /**
  * DELETE /api/outlets?id={id}
  * Delete an outlet (soft delete)
- * REFACTORED: Now uses unified withAuth pattern
+ * Authorization: Roles with 'outlet.manage' permission can delete outlets
  */
-export const DELETE = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+export const DELETE = withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 DELETE /api/outlets - User: ${user.email} (${user.role})`);
   
   try {

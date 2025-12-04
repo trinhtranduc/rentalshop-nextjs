@@ -10,7 +10,7 @@ import { API, USER_ROLE } from '@rentalshop/constants';
 function validateImage(file: File): { isValid: boolean; error?: string } {
   const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 5MB
   
   const fileTypeLower = file.type.toLowerCase().trim();
   const fileNameLower = file.name.toLowerCase().trim();
@@ -77,13 +77,38 @@ export async function GET(
 
       const productId = parseInt(id);
       
+      // Validate that non-admin users have merchant association
+      const userMerchantId = userScope.merchantId;
+      if (user.role !== 'ADMIN' && !userMerchantId) {
+        return NextResponse.json(
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED', 'User must be associated with a merchant'),
+          { status: 403 }
+        );
+      }
+      
       // Get product using the simplified database API
-      // Note: ADMIN users can access all products, non-admin users are filtered by merchantId in database layer
       const product = await db.products.findById(productId);
 
       if (!product) {
         console.log('❌ Product not found in database for productId:', productId);
-        throw new Error('Product not found');
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Verify product belongs to user's merchant (security check)
+      // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
+      const productMerchantId = product.merchant?.id;
+      if (user.role !== 'ADMIN' && productMerchantId !== userMerchantId) {
+        console.log('❌ Product does not belong to user\'s merchant:', {
+          productMerchantId: productMerchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal product exists)
+          { status: API.STATUS.NOT_FOUND }
+        );
       }
 
       console.log('✅ Product found, transforming data...');

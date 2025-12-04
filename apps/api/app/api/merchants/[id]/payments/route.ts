@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -18,20 +18,12 @@ export async function GET(
   
   return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
     try {
-      if (isNaN(merchantPublicId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
-
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
+      const merchant = validation.merchant!;
 
       // TODO: Implement merchant payments functionality
       return NextResponse.json(

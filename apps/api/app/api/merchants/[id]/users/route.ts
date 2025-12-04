@@ -1,70 +1,94 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/users
- * Get merchant users
+ * Get merchant users with role-based access control
  * 
  * Authorization: All roles with 'users.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.view' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Security: Role-based filtering ensures users only see users within their scope:
+ * - ADMIN: Can see all users (no restrictions)
+ * - MERCHANT: Can only see users from their own merchant
+ * - OUTLET_ADMIN: Can only see users from their outlet
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantPublicId = typeof resolvedParams === 'object' && 'id' in resolvedParams 
+    ? parseInt(resolvedParams.id) 
+    : parseInt((await resolvedParams).id);
+  
   return withPermissions(['users.view'])(async (request, { user, userScope }) => {
     try {
-      const merchantPublicId = parseInt(params.id);
-      if (isNaN(merchantPublicId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
-
-      // Get users for this merchant
-      const users = await db.users.search({
+      // Build search filters with role-based access control
+      const searchFilters: any = {
         merchantId: merchantPublicId,
         isActive: true
+      };
+
+      // Role-based outlet filtering:
+      // - OUTLET_ADMIN: Can only see users from their assigned outlet
+      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+        searchFilters.outletId = userScope.outletId;
+      }
+      // ADMIN and MERCHANT: no outlet filtering (can see all users in merchant)
+
+      console.log(`🔍 Role-based filtering for merchant users (${user.role}):`, {
+        merchantPublicId,
+        'userScope.merchantId': userScope.merchantId,
+        'userScope.outletId': userScope.outletId,
+        'final merchantId filter': searchFilters.merchantId,
+        'final outletId filter': searchFilters.outletId
       });
+
+      // Get users for this merchant with role-based filtering
+      const users = await db.users.search(searchFilters);
 
       return NextResponse.json({
         success: true,
         data: users.data || [],
-        total: users.total || 0
+        total: users.total || 0,
+        code: 'MERCHANT_USERS_FOUND',
+        message: `Found ${users.total || 0} users for merchant`
       });
 
     } catch (error) {
       console.error('Error fetching merchant users:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
+      
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
   })(request);
 }
 
 /**
  * POST /api/merchants/[id]/users
- * Create new user
+ * Create new user with role-based access control
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - OUTLET_STAFF cannot access (does not have 'users.manage' permission)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Security: Validates merchant ownership and outlet restrictions before creating user
  */
 export async function POST(
   request: NextRequest,
@@ -76,23 +100,49 @@ export async function POST(
   
   return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
-      if (isNaN(merchantPublicId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
+      const body = await request.json();
+      const { firstName, lastName, email, phone, role, outletId } = body;
+
+      // For OUTLET_ADMIN, validate they can only create users for their outlet
+      if (user.role === USER_ROLE.OUTLET_ADMIN && outletId && outletId !== userScope.outletId) {
+        console.log('❌ Outlet admin trying to create user for different outlet:', {
+          requestedOutletId: outletId,
+          userOutletId: userScope.outletId
+        });
         return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
+          ResponseBuilder.error('OUTLET_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
 
-      const body = await request.json();
-      const { firstName, lastName, email, phone, role, outletId } = body;
+      // Verify outlet belongs to merchant if outletId is provided
+      if (outletId) {
+        const outlet = await db.outlets.findById(outletId);
+        if (!outlet) {
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_NOT_FOUND'),
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
+        
+        if (outlet.merchantId !== merchantPublicId) {
+          console.log('❌ Outlet does not belong to merchant:', {
+            outletMerchantId: outlet.merchantId,
+            requestedMerchantId: merchantPublicId
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_NOT_FOUND'),
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
+      }
 
       // Create new user
       const newUser = await db.users.create({
@@ -108,7 +158,9 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        data: newUser
+        data: newUser,
+        code: 'USER_CREATED_SUCCESS',
+        message: 'User created successfully'
       });
 
     } catch (error) {
