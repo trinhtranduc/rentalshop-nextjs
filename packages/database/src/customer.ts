@@ -146,22 +146,25 @@ export async function createCustomer(input: CustomerInput): Promise<any> {
   const nextPublicId = (lastCustomer?.id || 0) + 1;
 
   // Create customer
+  // lastName and phone are now optional (nullable) in schema
+  // Convert empty strings to null for optional fields
   const customer = await prisma.customer.create({
     data: {
       id: nextPublicId,
-      firstName: input.firstName,
-      lastName: input.lastName,
-      email: input.email && input.email.trim() !== '' ? input.email : null,
-      phone: input.phone,
-      address: input.address,
-      city: input.city,
-      state: input.state,
-      zipCode: input.zipCode,
-      country: input.country,
-      dateOfBirth: input.dateOfBirth,
-      idNumber: input.idNumber,
-      idType: input.idType,
-      notes: input.notes,
+      firstName: input.firstName || '',
+      lastName: input.lastName && input.lastName.trim() !== '' ? input.lastName.trim() : null,
+      phone: input.phone && input.phone.trim() !== '' ? input.phone.trim() : null,
+      // Optional fields: convert empty strings to null
+      email: input.email && input.email.trim() !== '' ? input.email.trim() : null,
+      address: input.address && input.address.trim() !== '' ? input.address.trim() : null,
+      city: input.city && input.city.trim() !== '' ? input.city.trim() : null,
+      state: input.state && input.state.trim() !== '' ? input.state.trim() : null,
+      zipCode: input.zipCode && input.zipCode.trim() !== '' ? input.zipCode.trim() : null,
+      country: input.country && input.country.trim() !== '' ? input.country.trim() : null,
+      idNumber: input.idNumber && input.idNumber.trim() !== '' ? input.idNumber.trim() : null,
+      notes: input.notes && input.notes.trim() !== '' ? input.notes.trim() : null,
+      dateOfBirth: input.dateOfBirth || null,
+      idType: input.idType || null,
       isActive: true, // Default to true
       merchantId: merchant.id, // Use CUID
     },
@@ -200,24 +203,57 @@ export async function updateCustomer(
   }
 
   // Update customer
+  // lastName and phone are now optional (nullable) in schema
+  // Convert empty strings to null for optional fields
+  const updateData: any = {};
+  
+  // Only include fields that are being updated
+  if (input.firstName !== undefined) updateData.firstName = input.firstName || '';
+  if (input.lastName !== undefined) {
+    updateData.lastName = input.lastName && input.lastName.trim() !== '' ? input.lastName.trim() : null;
+  }
+  if (input.phone !== undefined) {
+    updateData.phone = input.phone && input.phone.trim() !== '' ? input.phone.trim() : null;
+  }
+  
+  // Optional fields: convert empty strings to null
+  if (input.email !== undefined) {
+    updateData.email = input.email && input.email.trim() !== '' ? input.email.trim() : null;
+  }
+  if (input.address !== undefined) {
+    updateData.address = input.address && input.address.trim() !== '' ? input.address.trim() : null;
+  }
+  if (input.city !== undefined) {
+    updateData.city = input.city && input.city.trim() !== '' ? input.city.trim() : null;
+  }
+  if (input.state !== undefined) {
+    updateData.state = input.state && input.state.trim() !== '' ? input.state.trim() : null;
+  }
+  if (input.zipCode !== undefined) {
+    updateData.zipCode = input.zipCode && input.zipCode.trim() !== '' ? input.zipCode.trim() : null;
+  }
+  if (input.country !== undefined) {
+    updateData.country = input.country && input.country.trim() !== '' ? input.country.trim() : null;
+  }
+  if (input.idNumber !== undefined) {
+    updateData.idNumber = input.idNumber && input.idNumber.trim() !== '' ? input.idNumber.trim() : null;
+  }
+  if (input.notes !== undefined) {
+    updateData.notes = input.notes && input.notes.trim() !== '' ? input.notes.trim() : null;
+  }
+  if (input.dateOfBirth !== undefined) {
+    updateData.dateOfBirth = input.dateOfBirth || null;
+  }
+  if (input.idType !== undefined) {
+    updateData.idType = input.idType || null;
+  }
+  if (input.isActive !== undefined) {
+    updateData.isActive = input.isActive;
+  }
+  
   const updatedCustomer = await prisma.customer.update({
     where: { id },
-    data: {
-      firstName: input.firstName,
-      lastName: input.lastName,
-      email: input.email,
-      phone: input.phone,
-      address: input.address,
-      city: input.city,
-      state: input.state,
-      zipCode: input.zipCode,
-      country: input.country,
-      dateOfBirth: input.dateOfBirth,
-      idNumber: input.idNumber,
-      idType: input.idType,
-      notes: input.notes,
-      isActive: input.isActive,
-    },
+    data: updateData,
     include: {
       merchant: {
         select: {
@@ -498,10 +534,24 @@ export const simplifiedCustomers = {
    * Create new customer (simplified API)
    */
   create: async (data: any) => {
-    // Handle optional email field - convert empty string to null
+    // lastName and phone are now optional (nullable) in schema
+    // Convert empty strings to null for optional fields
     const customerData = {
       ...data,
-      email: data.email && data.email.trim() !== '' ? data.email : null
+      firstName: data.firstName || '',
+      lastName: data.lastName && data.lastName.trim() !== '' ? data.lastName.trim() : null,
+      phone: data.phone && data.phone.trim() !== '' ? data.phone.trim() : null,
+      // Optional fields: convert empty strings to null
+      email: data.email && data.email.trim() !== '' ? data.email.trim() : null,
+      address: data.address && data.address.trim() !== '' ? data.address.trim() : null,
+      city: data.city && data.city.trim() !== '' ? data.city.trim() : null,
+      state: data.state && data.state.trim() !== '' ? data.state.trim() : null,
+      zipCode: data.zipCode && data.zipCode.trim() !== '' ? data.zipCode.trim() : null,
+      country: data.country && data.country.trim() !== '' ? data.country.trim() : null,
+      idNumber: data.idNumber && data.idNumber.trim() !== '' ? data.idNumber.trim() : null,
+      notes: data.notes && data.notes.trim() !== '' ? data.notes.trim() : null,
+      dateOfBirth: data.dateOfBirth || null,
+      idType: data.idType || null,
     };
     
     // Remove merchant connection from data since it's handled by Prisma relations
@@ -519,9 +569,57 @@ export const simplifiedCustomers = {
    * Update customer (simplified API)
    */
   update: async (id: number, data: any) => {
+    // lastName and phone are now optional (nullable) in schema
+    // Convert empty strings to null for optional fields
+    const updateData: any = {};
+    
+    // Only include fields that are being updated
+    if (data.firstName !== undefined) updateData.firstName = data.firstName || '';
+    if (data.lastName !== undefined) {
+      updateData.lastName = data.lastName && data.lastName.trim() !== '' ? data.lastName.trim() : null;
+    }
+    if (data.phone !== undefined) {
+      updateData.phone = data.phone && data.phone.trim() !== '' ? data.phone.trim() : null;
+    }
+    
+    // Optional fields: convert empty strings to null
+    if (data.email !== undefined) {
+      updateData.email = data.email && data.email.trim() !== '' ? data.email.trim() : null;
+    }
+    if (data.address !== undefined) {
+      updateData.address = data.address && data.address.trim() !== '' ? data.address.trim() : null;
+    }
+    if (data.city !== undefined) {
+      updateData.city = data.city && data.city.trim() !== '' ? data.city.trim() : null;
+    }
+    if (data.state !== undefined) {
+      updateData.state = data.state && data.state.trim() !== '' ? data.state.trim() : null;
+    }
+    if (data.zipCode !== undefined) {
+      updateData.zipCode = data.zipCode && data.zipCode.trim() !== '' ? data.zipCode.trim() : null;
+    }
+    if (data.country !== undefined) {
+      updateData.country = data.country && data.country.trim() !== '' ? data.country.trim() : null;
+    }
+    if (data.idNumber !== undefined) {
+      updateData.idNumber = data.idNumber && data.idNumber.trim() !== '' ? data.idNumber.trim() : null;
+    }
+    if (data.notes !== undefined) {
+      updateData.notes = data.notes && data.notes.trim() !== '' ? data.notes.trim() : null;
+    }
+    if (data.dateOfBirth !== undefined) {
+      updateData.dateOfBirth = data.dateOfBirth || null;
+    }
+    if (data.idType !== undefined) {
+      updateData.idType = data.idType || null;
+    }
+    if (data.isActive !== undefined) {
+      updateData.isActive = data.isActive;
+    }
+    
     return await prisma.customer.update({
       where: { id },
-      data,
+      data: updateData,
       include: {
         merchant: { select: { id: true, name: true } }
       }

@@ -125,7 +125,7 @@ export const ProductAvailabilityAsyncDisplay: React.FC<ProductAvailabilityAsyncD
         </>
       ) : (
         <span className={`inline-flex items-center px-2 py-1 rounded-full font-semibold text-sm ${availability.color}`}>
-          {availability.text}
+      {availability.text}
           {statusIcon && <span className="ml-1">{statusIcon}</span>}
         </span>
       )}
