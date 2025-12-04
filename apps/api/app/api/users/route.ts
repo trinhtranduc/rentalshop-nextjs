@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hashPassword } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
 
@@ -244,17 +244,10 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     console.log('🔍 POST /api/users: merchantId:', merchantId, 'outletId:', outletId);
 
     // Check plan limits before creating user (only for non-ADMIN users)
+    // Note: Only check if creating non-ADMIN user and merchantId exists
     if (parsed.data.role !== USER_ROLE.ADMIN && merchantId) {
-      try {
-        await assertPlanLimit(merchantId, 'users');
-        console.log('✅ Plan limit check passed for users');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for users:', error.message);
-        return NextResponse.json(
-          ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for users'),
-          { status: 403 }
-        );
-      }
+      const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'users');
+      if (planLimitError) return planLimitError;
     }
 
     const newUser = await db.users.create(userData);

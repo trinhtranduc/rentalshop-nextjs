@@ -144,6 +144,57 @@ export const getInitials = (name: string): string => {
 };
 
 /**
+ * Remove empty strings, null, and undefined values from an object
+ * Useful for cleaning form data before sending to API
+ * 
+ * @param obj - Object to clean
+ * @returns New object with only non-empty values
+ * 
+ * @example
+ * ```typescript
+ * const cleaned = removeEmptyFields({
+ *   firstName: "John",
+ *   lastName: "",
+ *   email: "",
+ *   phone: "1234567890"
+ * });
+ * // Returns: { firstName: "John", phone: "1234567890" }
+ * ```
+ */
+export function removeEmptyFields<T extends Record<string, any>>(obj: T): Partial<T> {
+  const cleaned: Partial<T> = {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    // Keep the field if:
+    // - It's not undefined
+    // - It's not null
+    // - It's not an empty string (after trimming)
+    // - It's not an empty array
+    // - For numbers: keep 0 and negative numbers, but skip NaN
+    if (value !== undefined && value !== null) {
+      if (typeof value === 'string') {
+        if (value.trim() !== '') {
+          cleaned[key as keyof T] = value as T[keyof T];
+        }
+      } else if (Array.isArray(value)) {
+        if (value.length > 0) {
+          cleaned[key as keyof T] = value as T[keyof T];
+        }
+      } else if (typeof value === 'number') {
+        if (!isNaN(value)) {
+          cleaned[key as keyof T] = value as T[keyof T];
+        }
+      } else {
+        // For objects, booleans, dates, etc. - keep them
+        cleaned[key as keyof T] = value as T[keyof T];
+      }
+    }
+  }
+  
+  return cleaned;
+}
+
+/**
  * Remove Vietnamese diacritics (accents) from text
  * Converts Vietnamese characters to their non-accented equivalents
  * Example: "A Tiến" -> "A Tien", "Nguyễn" -> "Nguyen"

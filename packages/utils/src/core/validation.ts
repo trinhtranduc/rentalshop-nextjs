@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { ApiError, ErrorCode } from './errors';
 import { 
@@ -900,6 +901,46 @@ export async function assertPlanLimit(
     throw new ApiError(
       ErrorCode.INTERNAL_SERVER_ERROR,
       `Failed to validate plan limits for ${entityType}`
+    );
+  }
+}
+
+/**
+ * Check plan limits for a specific entity type (DRY helper)
+ * Returns NextResponse if limit exceeded, null if OK or ADMIN bypass
+ * 
+ * Usage in API routes:
+ * ```typescript
+ * const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'customers');
+ * if (planLimitError) return planLimitError;
+ * ```
+ * 
+ * @param user - Authenticated user (to check if ADMIN)
+ * @param merchantId - Merchant ID to check limits for
+ * @param entityType - Type of entity being created
+ * @returns NextResponse if limit exceeded, null if OK
+ */
+export async function checkPlanLimitIfNeeded(
+  user: { role: string },
+  merchantId: number,
+  entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders'
+): Promise<NextResponse | null> {
+  // ADMIN users bypass plan limit checks
+  if (user.role === USER_ROLE.ADMIN) {
+    console.log(`✅ ADMIN user: Bypassing plan limit check for ${entityType}`);
+    return null;
+  }
+
+  try {
+    await assertPlanLimit(merchantId, entityType);
+    console.log(`✅ Plan limit check passed for ${entityType}`);
+    return null;
+  } catch (error: any) {
+    console.log(`❌ Plan limit exceeded for ${entityType}:`, error.message);
+    const { ResponseBuilder } = await import('../api/response-builder');
+    return NextResponse.json(
+      ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || `Plan limit exceeded for ${entityType}`),
+      { status: 403 }
     );
   }
 }

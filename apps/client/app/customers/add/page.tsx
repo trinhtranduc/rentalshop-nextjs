@@ -36,11 +36,13 @@ export default function AddCustomerPage() {
       setIsSubmitting(true);
       
       // Convert UI form data to database format
-      const customerWithMerchant: CustomerInput = {
+      // Clean customer data: remove empty strings, only send fields with actual values
+      const cleanedData: any = {};
+      const rawData = {
         firstName: customerData.firstName,
         lastName: customerData.lastName,
-        email: customerData.email?.trim() || '', // Provide empty string for optional email
-        phone: customerData.phone!, // Required, use non-null assertion since validation ensures it exists
+        email: customerData.email?.trim(),
+        phone: customerData.phone,
         address: customerData.address,
         city: customerData.city,
         state: customerData.state,
@@ -49,6 +51,18 @@ export default function AddCustomerPage() {
         notes: 'Customer created via admin interface',
         merchantId
       };
+      
+      Object.entries(rawData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'string' && value.trim() !== '') {
+            cleanedData[key] = value;
+          } else if (typeof value !== 'string') {
+            cleanedData[key] = value;
+          }
+        }
+      });
+      
+      const customerWithMerchant = cleanedData;
       
       console.log('🔍 AddCustomerPage: Creating customer:', customerWithMerchant);
       

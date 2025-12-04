@@ -142,8 +142,8 @@ export {
 // Validation (plan limits validation now consolidated in validation.ts)
 export * from './validation';
 
-// Export assertPlanLimit specifically for API routes
-export { assertPlanLimit } from './validation';
+// Export assertPlanLimit and checkPlanLimitIfNeeded specifically for API routes
+export { assertPlanLimit, checkPlanLimitIfNeeded } from './validation';
 
 // Payment utilities
 export * from './currency';

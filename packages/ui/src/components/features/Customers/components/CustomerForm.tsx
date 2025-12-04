@@ -106,25 +106,39 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      const customerData = {
+      // Clean customer data: remove empty strings, only send fields with actual values
+      const cleanedData: any = {};
+      const rawData = {
         ...(mode === 'edit' && customer ? { id: customer.id } : {}),
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.trim() || undefined,
+        email: formData.email.trim(),
         phone: formData.phone.trim(),
-        companyName: formData.companyName.trim() || undefined,
-        address: formData.address.trim() || undefined,
-        city: formData.city.trim() || undefined,
-        state: formData.state.trim() || undefined,
-        zipCode: formData.zipCode.trim() || undefined,
-        country: formData.country.trim() || undefined,
+        companyName: formData.companyName.trim(),
+        address: formData.address.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        zipCode: formData.zipCode.trim(),
+        country: formData.country.trim(),
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined,
-        idNumber: formData.idNumber.trim() || undefined,
+        idNumber: formData.idNumber.trim(),
         idType: formData.idType,
-        notes: formData.notes.trim() || undefined,
+        notes: formData.notes.trim(),
         // merchantId will be automatically determined from JWT token
         // Only ADMIN users need to send merchantId in request
       };
+      
+      Object.entries(rawData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'string' && value.trim() !== '') {
+            cleanedData[key] = value;
+          } else if (typeof value !== 'string') {
+            cleanedData[key] = value;
+          }
+        }
+      });
+      
+      const customerData = cleanedData;
 
       await onSave(customerData);
     } catch (error) {
