@@ -218,7 +218,19 @@ export async function updateUser(
 // ============================================================================
 
 /**
+ * Helper: Build where clause excluding soft-deleted users
+ * Automatically filters out users with deletedAt != null
+ */
+function buildUserWhere(additionalWhere: any = {}) {
+  return {
+    ...additionalWhere,
+    deletedAt: null, // Only include non-deleted users
+  };
+}
+
+/**
  * Get users by merchant - follows dual ID system
+ * Automatically excludes soft-deleted users
  */
 export async function getUsersByMerchant(merchantId: number) {
   // Find merchant by id
@@ -232,7 +244,7 @@ export async function getUsersByMerchant(merchantId: number) {
   }
 
   return await prisma.user.findMany({
-    where: { merchantId: merchant.id },
+    where: buildUserWhere({ merchantId: merchant.id }),
     include: {
       merchant: {
         select: {
@@ -253,6 +265,7 @@ export async function getUsersByMerchant(merchantId: number) {
 
 /**
  * Get users by outlet - follows dual ID system
+ * Automatically excludes soft-deleted users
  */
 export async function getUsersByOutlet(outletId: number) {
   // Find outlet by id
@@ -266,7 +279,7 @@ export async function getUsersByOutlet(outletId: number) {
   }
 
   return await prisma.user.findMany({
-    where: { outletId: outlet.id },
+    where: buildUserWhere({ outletId: outlet.id }),
     include: {
       merchant: {
         select: {
@@ -630,6 +643,8 @@ export const simplifiedUsers = {
 
   /**
    * Delete user (soft delete) (simplified API)
+   * Soft delete preserves order history and related data.
+   * Deleted users are automatically excluded from all user listing queries.
    */
   delete: async (id: number) => {
     return await prisma.user.update({
@@ -637,6 +652,10 @@ export const simplifiedUsers = {
       data: { 
         isActive: false,
         deletedAt: new Date()
+      },
+      include: {
+        merchant: { select: { id: true, name: true } },
+        outlet: { select: { id: true, name: true } }
       }
     });
   },
@@ -656,6 +675,9 @@ export const simplifiedUsers = {
 
     // Build where clause
     const where: any = {};
+    
+    // Automatically exclude soft-deleted users (deletedAt = null)
+    where.deletedAt = null;
     
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
@@ -728,16 +750,21 @@ export const simplifiedUsers = {
   },
 
   count: async (options?: { where?: any }) => {
-    const where = options?.where || {};
+    const baseWhere = options?.where || {};
+    // Automatically exclude soft-deleted users
+    const where = buildUserWhere(baseWhere);
     return await prisma.user.count({ where });
   },
 
   /**
    * Get user statistics (simplified API)
+   * Automatically excludes soft-deleted users
    */
   getStats: async (whereClause?: any) => {
     // Handle both direct where clause and object with where property
-    const where = whereClause?.where || whereClause || {};
+    const baseWhere = whereClause?.where || whereClause || {};
+    // Automatically exclude soft-deleted users
+    const where = buildUserWhere(baseWhere);
     return await prisma.user.count({ where });
   }
 };

@@ -40,6 +40,11 @@ export async function GET(
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
+      // Check if user is deleted (soft delete)
+      if (foundUser.deletedAt) {
+        return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND', 'User has been deleted'), { status: API.STATUS.NOT_FOUND });
+      }
+
       return NextResponse.json({ success: true, data: foundUser });
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -85,6 +90,11 @@ export async function PUT(
       const existing = await db.users.findById(userPublicId);
       if (!existing) {
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      }
+
+      // Check if user is deleted (soft delete)
+      if (existing.deletedAt) {
+        return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND', 'User has been deleted'), { status: API.STATUS.NOT_FOUND });
       }
 
       const body = await request.json();
@@ -137,10 +147,30 @@ export async function DELETE(
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
-      // Soft delete by setting isActive to false
-      const deletedUser = await db.users.update(userPublicId, { isActive: false });
+      // Check if user is already deleted
+      if (existing.deletedAt) {
+        return NextResponse.json(
+          ResponseBuilder.error('ACCOUNT_ALREADY_DELETED', 'User account has already been deleted'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
 
-      return NextResponse.json({ success: true, data: deletedUser });
+      // Invalidate all user sessions first
+      await db.sessions.invalidateAllUserSessions(userPublicId);
+      console.log(`🗑️ Invalidated all sessions for user ${userPublicId}`);
+
+      // Soft delete (preserves order history and related data)
+      const deletedUser = await db.users.update(userPublicId, {
+        isActive: false,
+        deletedAt: new Date()
+      });
+
+      return NextResponse.json({
+        success: true,
+        code: 'USER_DELETED_SUCCESS',
+        message: 'User deleted successfully',
+        data: deletedUser
+      });
     } catch (error) {
       console.error('Error deleting user:', error);
       
