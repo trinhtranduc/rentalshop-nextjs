@@ -197,7 +197,14 @@ export async function middleware(request: NextRequest) {
       // Exception: /api/plans/public should remain accessible to all authenticated users
       if (!pathname.startsWith('/api/plans/public')) {
         console.log('🔍 MIDDLEWARE: Admin access required for:', pathname);
-        return createForbiddenResponse('Admin access required', corsHeaders);
+        const { ResponseBuilder } = await import('@rentalshop/utils');
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { 
+            status: API.STATUS.FORBIDDEN,
+            headers: corsHeaders
+          }
+        );
       }
     }
 

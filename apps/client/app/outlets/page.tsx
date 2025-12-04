@@ -202,6 +202,11 @@ export default function OutletsPage() {
           }
           break;
 
+        case "manageBanks":
+          // Navigate to bank accounts page for this outlet
+          router.push(`/outlets/${outletId}/bank-accounts`);
+          break;
+
         case "disable":
         case "enable":
           if (outlet) {

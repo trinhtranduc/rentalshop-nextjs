@@ -77,7 +77,7 @@ export const PlanActions: React.FC<PlanActionsProps> = ({
             <MoreHorizontal className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => onToggleStatus(plan)}>
             <Settings className="w-4 h-4 mr-2" />
             {plan.isActive ? 'Deactivate' : 'Activate'}
@@ -89,10 +89,13 @@ export const PlanActions: React.FC<PlanActionsProps> = ({
           </DropdownMenuItem>
           
           {onDuplicate && (
+            <>
+              <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onDuplicate(plan)}>
               <Copy className="w-4 h-4 mr-2" />
               Duplicate Plan
             </DropdownMenuItem>
+            </>
           )}
           
           <DropdownMenuSeparator />

@@ -87,7 +87,7 @@ const DropdownMenuContent = React.forwardRef<
         }
       }}
       className={cn(
-        "absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-white p-1 text-gray-900 shadow-md animate-in fade-in-0 zoom-in-95",
+        "absolute z-50 min-w-fit whitespace-nowrap overflow-hidden rounded-md border bg-white p-1 text-gray-900 shadow-md animate-in fade-in-0 zoom-in-95",
         align === "end" ? "right-0" : "left-0",
         className
       )}
@@ -109,12 +109,13 @@ const DropdownMenuItem = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center justify-start rounded-sm px-2 py-1.5 text-sm text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex cursor-pointer select-none items-center justify-start rounded-sm px-2 py-1.5 text-sm text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       inset && "pl-8",
       className
     )}
     onClick={(e) => {
       e.stopPropagation()
+      e.preventDefault()
       onSelect?.()
       onClick?.(e)
     }}

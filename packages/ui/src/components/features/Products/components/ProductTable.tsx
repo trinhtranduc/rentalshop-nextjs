@@ -301,6 +301,7 @@ export function ProductTable({
                         <Edit className="h-4 w-4 mr-2" />
                         {t('actions.edit')}
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => {
                         onProductAction('view-orders', product.id);
                         setOpenDropdownId(null);

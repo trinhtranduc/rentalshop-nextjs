@@ -243,6 +243,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
               searchPlaceholder="Type to search products..."
               emptyText="No products found. Try a different search term."
               showAddNew={false}
+              productRowStyle="default" // Options: 'default' (with blue border) | 'compact' | 'minimal'
             />
             {isLoadingProducts && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">

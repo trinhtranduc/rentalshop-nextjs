@@ -642,17 +642,26 @@ export const simplifiedUsers = {
   },
 
   /**
-   * Delete user (soft delete) (simplified API)
-   * Soft delete preserves order history and related data.
-   * Deleted users are automatically excluded from all user listing queries.
+   * Delete user (hard delete) (simplified API)
+   * Hard delete removes user from database permanently.
+   * Note: If user has created orders, the orders.createdById will remain but user will be deleted.
+   * This is acceptable as orders preserve the ID reference even if user no longer exists.
    */
   delete: async (id: number) => {
-    return await prisma.user.update({
+    // Check if user has created any orders
+    const orderCount = await prisma.order.count({
+      where: { createdById: id }
+    });
+
+    if (orderCount > 0) {
+      console.log(`⚠️ Warning: User ${id} has created ${orderCount} orders. User will be hard deleted but orders.createdById will remain.`);
+    }
+
+    // Hard delete the user
+    // Note: UserSession will be cascade deleted due to onDelete: Cascade in schema
+    // Orders.createdById will remain with the deleted user's ID (historical reference)
+    return await prisma.user.delete({
       where: { id },
-      data: { 
-        isActive: false,
-        deletedAt: new Date()
-      },
       include: {
         merchant: { select: { id: true, name: true } },
         outlet: { select: { id: true, name: true } }

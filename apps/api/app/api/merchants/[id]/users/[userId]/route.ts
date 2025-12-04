@@ -40,10 +40,7 @@ export async function GET(
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
-      // Check if user is deleted (soft delete)
-      if (foundUser.deletedAt) {
-        return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND', 'User has been deleted'), { status: API.STATUS.NOT_FOUND });
-      }
+      // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
 
       return NextResponse.json({ success: true, data: foundUser });
     } catch (error) {
@@ -92,10 +89,7 @@ export async function PUT(
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
-      // Check if user is deleted (soft delete)
-      if (existing.deletedAt) {
-        return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND', 'User has been deleted'), { status: API.STATUS.NOT_FOUND });
-      }
+      // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
 
       const body = await request.json();
       const updatedUser = await db.users.update(userPublicId, body);
@@ -147,23 +141,14 @@ export async function DELETE(
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
-      // Check if user is already deleted
-      if (existing.deletedAt) {
-        return NextResponse.json(
-          ResponseBuilder.error('ACCOUNT_ALREADY_DELETED', 'User account has already been deleted'),
-          { status: API.STATUS.BAD_REQUEST }
-        );
-      }
+      // Note: Hard delete doesn't need to check deletedAt since user will be permanently removed
 
       // Invalidate all user sessions first
       await db.sessions.invalidateAllUserSessions(userPublicId);
       console.log(`🗑️ Invalidated all sessions for user ${userPublicId}`);
 
-      // Soft delete (preserves order history and related data)
-      const deletedUser = await db.users.update(userPublicId, {
-        isActive: false,
-        deletedAt: new Date()
-      });
+      // Hard delete user (orders.createdById will remain with user's ID as historical reference)
+      const deletedUser = await db.users.delete(userPublicId);
 
       return NextResponse.json({
         success: true,
