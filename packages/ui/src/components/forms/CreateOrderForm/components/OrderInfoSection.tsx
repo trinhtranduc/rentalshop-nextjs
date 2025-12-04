@@ -24,7 +24,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { 
@@ -484,6 +485,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                                   <Eye className="h-4 w-4 mr-2" />
                                   View Customer
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={(e) => {
                                     e.stopPropagation();

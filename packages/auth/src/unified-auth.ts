@@ -113,14 +113,9 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
         if (allowedRoles && allowedRoles.length > 0) {
           if (!hasAnyRole(user, allowedRoles)) {
             console.log(`❌ [AUTH] Insufficient permissions: ${user.role} not in [${allowedRoles.join(', ')}]`);
+            const { ResponseBuilder } = await import('@rentalshop/utils');
             return NextResponse.json(
-              { 
-                success: false,
-                code: 'INSUFFICIENT_PERMISSIONS',
-                message: 'Insufficient permissions',
-                required: allowedRoles,
-                current: user.role
-              }, 
+              ResponseBuilder.error('INSUFFICIENT_PERMISSIONS', `Required roles: ${allowedRoles.join(', ')}`),
               { status: 403 }
             );
           }
@@ -310,15 +305,9 @@ export function withPermissions(
           console.log(`❌ [AUTH] Insufficient permissions: User ${user.role} does not have any of [${requiredPermissions.join(', ')}]`);
           console.log(`❌ [AUTH] User's permissions: [${userPermissions.join(', ')}]`);
           
+          const { ResponseBuilder } = await import('@rentalshop/utils');
           return NextResponse.json(
-            { 
-              success: false,
-              code: 'INSUFFICIENT_PERMISSIONS',
-              message: 'Insufficient permissions',
-              required: requiredPermissions,
-              current: user.role,
-              userPermissions: userPermissions
-            }, 
+            ResponseBuilder.error('INSUFFICIENT_PERMISSIONS', `Required permissions: ${requiredPermissions.join(', ')}`),
             { status: 403 }
           );
         }

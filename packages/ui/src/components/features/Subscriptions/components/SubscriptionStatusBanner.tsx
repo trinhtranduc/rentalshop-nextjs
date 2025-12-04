@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
 import { 
   AlertTriangle, 
@@ -214,6 +215,7 @@ export function SubscriptionStatusBanner({
                   <Phone className="w-4 h-4 mr-2" />
                   {t('banner.contactPhone')}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
                     // Zalo: zalo://chat?phone=0764774647 (remove +84 and spaces)

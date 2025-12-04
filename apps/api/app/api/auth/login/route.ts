@@ -65,16 +65,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is deleted (soft delete)
-    if (user.deletedAt) {
-      return NextResponse.json(
-        ResponseBuilder.error('ACCOUNT_DEACTIVATED'),
-        { 
-          status: 403,
-          headers: corsHeaders
-        }
-      );
-    }
+    // Note: Hard delete - deleted users won't exist in database, so no need to check deletedAt
+    // Removed deletedAt check since we're using hard delete
 
     // Check if user is active
     if (!user.isActive) {

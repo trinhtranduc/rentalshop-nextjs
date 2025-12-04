@@ -188,6 +188,7 @@ export function CustomerTable({
                         <Edit className="h-4 w-4 mr-2" />
                         {t('actions.editCustomer')}
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => {
                         onCustomerAction('viewOrders', customer.id);
                         setOpenDropdownId(null);

@@ -401,13 +401,7 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
       );
     }
 
-    // Check if user is already deleted
-    if (existingUser.deletedAt) {
-      return NextResponse.json(
-        ResponseBuilder.error('ACCOUNT_ALREADY_DELETED', 'User account has already been deleted'),
-        { status: 400 }
-      );
-    }
+    // Note: Hard delete doesn't need to check deletedAt since user will be permanently removed
 
     // Scope validation
     if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
@@ -438,14 +432,10 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
     await db.sessions.invalidateAllUserSessions(userId);
     console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
-    // Soft delete (preserves order history and related data)
-    // Note: Soft-deleted users are automatically excluded from all user listing queries
-    const deletedUser = await db.users.update(userId, {
-      isActive: false,
-      deletedAt: new Date()
-    });
+    // Hard delete user (orders.createdById will be set to null to preserve order history)
+    const deletedUser = await db.users.delete(userId);
     
-    console.log(`✅ User soft deleted: ${existingUser.email} (ID: ${userId})`);
+    console.log(`✅ User hard deleted: ${existingUser.email} (ID: ${userId})`);
 
     return NextResponse.json({
       success: true,

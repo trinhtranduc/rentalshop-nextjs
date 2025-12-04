@@ -644,13 +644,41 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
   orders: number;
 }> {
   try {
+    // Debug: Get detailed user count info
+    const allUsers = await prisma.user.findMany({
+      where: { merchantId },
+      select: { id: true, email: true, deletedAt: true, role: true }
+    });
+    const activeUsers = allUsers.filter(u => !u.deletedAt);
+    
+    console.log(`🔍 getCurrentEntityCounts - Merchant ${merchantId}:`, {
+      totalUsersInDB: allUsers.length,
+      activeUsers: activeUsers.length,
+      deletedUsers: allUsers.length - activeUsers.length,
+      userDetails: allUsers.map(u => ({
+        id: u.id,
+        email: u.email,
+        role: u.role,
+        deletedAt: u.deletedAt ? 'DELETED' : 'ACTIVE'
+      }))
+    });
+
     const [outlets, users, products, customers, orders] = await Promise.all([
       prisma.outlet.count({ where: { merchantId } }),
-      prisma.user.count({ where: { merchantId } }),
+      // Exclude soft-deleted users (deletedAt = null) from count
+      prisma.user.count({ where: { merchantId, deletedAt: null } }),
       prisma.product.count({ where: { merchantId } }),
       prisma.customer.count({ where: { merchantId } }),
       prisma.order.count({ where: { outlet: { merchantId } } })
     ]);
+
+    console.log(`📊 Entity counts for merchant ${merchantId}:`, {
+      outlets,
+      users, // This should match activeUsers.length
+      products,
+      customers,
+      orders
+    });
 
     return {
       outlets,
@@ -803,10 +831,19 @@ export async function validatePlanLimits(
   entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders'
 ): Promise<PlanLimitsValidationResult> {
   try {
+    console.log(`🔍 validatePlanLimits called: merchantId=${merchantId}, entityType=${entityType}`);
     const planInfo = await getPlanLimitsInfo(merchantId);
     const currentCount = planInfo.currentCounts[entityType];
     const limit = planInfo.planLimits[entityType];
     const isUnlimited = planInfo.isUnlimited[entityType];
+
+    console.log(`🔍 validatePlanLimits result:`, {
+      merchantId,
+      entityType,
+      currentCount,
+      limit,
+      isUnlimited
+    });
 
     // Handle undefined limit (backward compatibility - treat as unlimited)
     if (limit === undefined || limit === null) {
@@ -831,6 +868,13 @@ export async function validatePlanLimits(
 
     // Check if limit is exceeded
     if (currentCount >= limit) {
+      console.log(`❌ Plan limit exceeded:`, {
+        merchantId,
+        entityType,
+        currentCount,
+        limit,
+        comparison: `${currentCount} >= ${limit}`
+      });
       return {
         isValid: false,
         error: `${entityType} limit exceeded. Current: ${currentCount}, Limit: ${limit}`,
@@ -925,6 +969,12 @@ export async function checkPlanLimitIfNeeded(
   merchantId: number,
   entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders'
 ): Promise<NextResponse | null> {
+  console.log(`🔍 checkPlanLimitIfNeeded called:`, {
+    userRole: user.role,
+    merchantId,
+    entityType
+  });
+
   // ADMIN users bypass plan limit checks
   if (user.role === USER_ROLE.ADMIN) {
     console.log(`✅ ADMIN user: Bypassing plan limit check for ${entityType}`);
@@ -933,10 +983,10 @@ export async function checkPlanLimitIfNeeded(
 
   try {
     await assertPlanLimit(merchantId, entityType);
-    console.log(`✅ Plan limit check passed for ${entityType}`);
+    console.log(`✅ Plan limit check passed for ${entityType} (merchantId: ${merchantId})`);
     return null;
   } catch (error: any) {
-    console.log(`❌ Plan limit exceeded for ${entityType}:`, error.message);
+    console.log(`❌ Plan limit exceeded for ${entityType} (merchantId: ${merchantId}):`, error.message);
     const { ResponseBuilder } = await import('../api/response-builder');
     return NextResponse.json(
       ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || `Plan limit exceeded for ${entityType}`),

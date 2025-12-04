@@ -251,6 +251,8 @@ export const PlanTable: React.FC<PlanTableProps> = ({
                           </DropdownMenuItem>
                         )}
                         {onToggleStatus && (
+                          <>
+                            <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             onClick={() => {
                               onToggleStatus(plan);
@@ -260,6 +262,7 @@ export const PlanTable: React.FC<PlanTableProps> = ({
                             <Settings className="h-4 w-4 mr-2" />
                             {plan.isActive ? 'Deactivate' : 'Activate'}
                           </DropdownMenuItem>
+                          </>
                         )}
                         {onDelete && (
                           <>

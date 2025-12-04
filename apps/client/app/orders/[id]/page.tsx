@@ -207,13 +207,15 @@ export default function OrderDetailPage() {
       if (result.success && result.data) {
         // Update order state directly from API response (better UX - no need to refetch)
         setOrder(result.data);
-        toastSuccess('Settings Saved', 'Order settings saved successfully!');
+        // Single toast notification - success only
+        toastSuccess(t('detail.settingsSaved'), t('detail.settingsSavedMessage'));
       } else {
         throw new Error(result.error || 'Failed to save order settings');
       }
     } catch (err) {
       console.error('Error saving order settings:', err);
-      toastError('Save Failed', 'Failed to save order settings: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      // Single toast notification - error only
+      toastError(t('detail.saveFailed'), t('detail.saveFailedMessage') + ': ' + (err instanceof Error ? err.message : t('messages.unknownError')));
     } finally {
       setActionLoading(false);
     }

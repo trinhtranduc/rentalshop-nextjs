@@ -332,15 +332,17 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const handleSaveSettings = async () => {
     if (onSaveSettings) {
       setIsSavingSettings(true);
-      toastInfo('Saving...', 'Please wait while settings are being saved');
+      // Removed toastInfo - only show success/error, not loading state
       
       try {
         await onSaveSettings(tempSettings);
-        toastSuccess(t('detail.settingsSaved'), t('detail.settingsSavedMessage'));
+        // Success toast will be shown by parent component (page.tsx)
+        // Don't duplicate toast here
         setSettingsForm(tempSettings);
         setIsEditingSettings(false);
       } catch (error) {
-        toastError(t('detail.saveFailed'), t('detail.saveFailedMessage'));
+        // Error toast will be shown by parent component (page.tsx)
+        // Don't duplicate toast here
       } finally {
         setIsSavingSettings(false);
       }
