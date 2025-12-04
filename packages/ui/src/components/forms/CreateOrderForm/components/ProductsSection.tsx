@@ -18,7 +18,9 @@ import { useOrderTranslations, useProductTranslations } from '@rentalshop/hooks'
 import { 
   Search, 
   Package, 
-  Trash2 
+  Trash2,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { ProductAvailabilityAsyncDisplay } from '@rentalshop/ui';
 import type { 
@@ -108,6 +110,77 @@ const NumberInput: React.FC<NumberInputProps> = ({
 };
 
 // ============================================================================
+// QUANTITY INPUT WITH INCREMENT/DECREMENT BUTTONS
+// ============================================================================
+
+interface QuantityInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  className?: string;
+}
+
+const QuantityInput: React.FC<QuantityInputProps> = ({
+  value,
+  onChange,
+  min = 1,
+  max,
+  className = ''
+}) => {
+  const handleDecrease = () => {
+    const newValue = Math.max(min, value - 1);
+    onChange(newValue);
+  };
+
+  const handleIncrease = () => {
+    const newValue = max !== undefined ? Math.min(max, value + 1) : value + 1;
+    onChange(newValue);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    if (input === '' || /^\d+$/.test(input)) {
+      const numValue = parseInt(input) || min;
+      const bounded = max !== undefined ? Math.min(max, numValue) : numValue;
+      const final = Math.max(min, bounded);
+      onChange(final);
+    }
+  };
+
+  return (
+    <div className={`flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white ${className}`}>
+      <button
+        type="button"
+        onClick={handleDecrease}
+        disabled={value <= min}
+        className="flex-shrink-0 px-3 py-2 h-8 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors border-r border-gray-300 flex items-center justify-center"
+        aria-label="Decrease quantity"
+      >
+        <Minus className="w-4 h-4" />
+      </button>
+      <input
+        type="text"
+        value={value}
+        onChange={handleChange}
+        className="flex-1 min-w-0 text-center text-sm font-medium border-0 focus:ring-0 focus:outline-none bg-white px-2 h-8"
+        min={min}
+        max={max}
+      />
+      <button
+        type="button"
+        onClick={handleIncrease}
+        disabled={max !== undefined && value >= max}
+        className="flex-shrink-0 px-3 py-2 h-8 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors border-l border-gray-300 flex items-center justify-center"
+        aria-label="Increase quantity"
+      >
+        <Plus className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -124,6 +197,7 @@ interface ProductsSectionProps {
   returnDate?: string;
   getProductAvailabilityStatus: (product: ProductWithStock, startDate?: string, endDate?: string, requestedQuantity?: number) => Promise<ProductAvailabilityStatus>;
   currency?: 'USD' | 'VND';
+  outletId?: number; // Required to get correct stock from outletStock
 }
 
 export const ProductsSection: React.FC<ProductsSectionProps> = ({
@@ -139,6 +213,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   returnDate,
   getProductAvailabilityStatus,
   currency = 'USD',
+  outletId,
 }) => {
   const t = useOrderTranslations();
   const tp = useProductTranslations();
@@ -215,6 +290,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
                       pickupDate={pickupDate}
                       returnDate={returnDate}
                       getProductAvailabilityStatus={getProductAvailabilityStatus}
+                      outletId={outletId}
                     />
                   ))}
                 </div>
@@ -237,6 +313,7 @@ interface OrderItemCardProps {
   pickupDate?: string;
   returnDate?: string;
   getProductAvailabilityStatus: (product: ProductWithStock, startDate?: string, endDate?: string, requestedQuantity?: number) => Promise<ProductAvailabilityStatus>;
+  outletId?: number; // Required to get correct stock from outletStock
 }
 
 const OrderItemCard: React.FC<OrderItemCardProps> = ({
@@ -247,7 +324,8 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
   orderType,
   pickupDate,
   returnDate,
-  getProductAvailabilityStatus
+  getProductAvailabilityStatus,
+  outletId
 }) => {
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
@@ -352,13 +430,13 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
   const imageUrl = displayProduct.images?.[0];
 
   return (
-    <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+    <div className="p-4 bg-white rounded-lg border-2 border-blue-200 shadow-sm hover:shadow-md transition-all duration-200 hover:border-blue-300">
       {/* Product Header with Image */}
       <div className="flex items-start gap-4 mb-3">
         {/* Product Image */}
         <div className="flex-shrink-0">
           {imageUrl ? (
-            <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+            <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-blue-100 shadow-sm">
               <img 
                 src={imageUrl} 
                 alt={displayProduct.name || t('messages.product')}
@@ -366,16 +444,20 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
                 onError={(e) => {
                   // Fallback to package icon if image fails to load
                   e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (fallback) {
+                    fallback.classList.remove('hidden');
+                    fallback.classList.add('flex');
+                  }
                 }}
               />
-              <div className="hidden w-full h-16 bg-gray-100 flex items-center justify-center">
+              <div className="hidden w-full h-16 bg-gray-100 items-center justify-center">
                 <Package className="w-8 h-8 text-gray-400" />
               </div>
             </div>
           ) : (
-            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-              <Package className="w-8 h-8 text-gray-400" />
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center border-2 border-blue-100 shadow-sm">
+              <Package className="w-8 h-8 text-blue-400" />
             </div>
           )}
         </div>
@@ -384,31 +466,81 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="font-medium text-gray-900">
+              <div className="font-semibold text-gray-900 text-base mb-1">
                 {displayProduct.name || t('messages.unknownProduct')}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-0.5 rounded inline-block">
                 {displayProduct.barcode || t('messages.noBarcode')}
               </div>
-              {/* Availability Warning */}
-              {orderType === 'RENT' && (
-                <div className="mt-2">
-                  {product && (
-                    <ProductAvailabilityAsyncDisplay 
-                      product={product}
-                      pickupDate={pickupDate}
-                      returnDate={returnDate}
-                      requestedQuantity={item.quantity || 1}
-                      getProductAvailabilityStatus={getProductAvailabilityStatus}
-                    />
-                  )}
-                  {!pickupDate || !returnDate ? (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Select rental dates to check availability
+              {/* Availability Warning & Stock Info */}
+              <div className="mt-2">
+                {/* Stock Information - Show basic stock for SALE or RENT without dates */}
+                {(() => {
+                  // For RENT orders with dates, don't show basic stock (will show in ProductAvailabilityAsyncDisplay)
+                  if (orderType === 'RENT' && pickupDate && returnDate) {
+                    return null;
+                  }
+                  
+                  // Get stock from product's outletStock filtered by outletId
+                  // Only use outletStock if outletId matches, otherwise use default values (0)
+                  let stockInfo: { available: number; stock: number; renting: number } | null = null;
+                  
+                  // Try to get from product prop first (most up-to-date)
+                  const sourceProduct = product || displayProduct;
+                  
+                  if (sourceProduct?.outletStock && outletId) {
+                    // Find outletStock for the current outlet - must match exactly
+                    const outletStock = sourceProduct.outletStock.find((os: any) => os.outletId === outletId);
+                    if (outletStock) {
+                      stockInfo = {
+                        available: outletStock.available,
+                        stock: outletStock.stock,
+                        renting: outletStock.renting
+                      };
+                    }
+                  }
+                  
+                  // If no match found, use default values (0) - no fallback
+                  const available = stockInfo?.available ?? 0;
+                  const stock = stockInfo?.stock ?? 0;
+                  
+                  // Single line stock display: "Kho: X | Có sẵn: Y (Hết)" if Y = 0
+                  return (
+                    <div className="text-sm text-gray-600 flex items-center gap-2 flex-wrap">
+                      <span><span className="font-semibold">Kho:</span> {stock}</span>
+                      <span className="text-gray-400">|</span>
+                      <span>
+                        <span className="font-semibold">Có sẵn:</span>{' '}
+                        <span className={available > 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                          {available}
+                        </span>
+                        {available === 0 && <span className="text-red-600 font-semibold"> (Hết)</span>}
+                      </span>
                     </div>
-                  ) : null}
-                </div>
-              )}
+                  );
+                })()}
+                
+                {/* Availability check for RENT orders with dates */}
+                {orderType === 'RENT' && (
+                  <>
+                    {product && pickupDate && returnDate ? (
+                      <div className="mt-1">
+                        <ProductAvailabilityAsyncDisplay 
+                          product={product}
+                          pickupDate={pickupDate}
+                          returnDate={returnDate}
+                          requestedQuantity={item.quantity || 1}
+                          getProductAvailabilityStatus={getProductAvailabilityStatus}
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Chọn ngày thuê để kiểm tra khả dụng
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
             <Button
               type="button"
@@ -425,18 +557,17 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
       </div>
 
       {/* Editable Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className={`grid grid-cols-1 gap-3 mt-4 pt-4 border-t border-gray-200 ${orderType === 'RENT' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         {/* Quantity */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
             {t('messages.quantity')}
           </label>
-          <NumberInput
+          <QuantityInput
             value={item.quantity}
             onChange={(value) => onUpdate(item.productId, 'quantity', value)}
             min={1}
-            decimals={0}
-            className="h-8 text-sm"
+            className="h-8"
           />
         </div>
 
@@ -455,20 +586,22 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           />
         </div>
 
-        {/* Deposit */}
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            {t('messages.deposit')}
-          </label>
-          <NumberInput
-            value={item.deposit || 0}
-            onChange={(value) => onUpdate(item.productId, 'deposit', value)}
-            min={0}
-            step={0.01}
-            decimals={0}
-            className="h-8 text-sm"
-          />
-        </div>
+        {/* Deposit - Only show for RENT orders */}
+        {orderType === 'RENT' && (
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              {t('messages.deposit')}
+            </label>
+            <NumberInput
+              value={item.deposit || 0}
+              onChange={(value) => onUpdate(item.productId, 'deposit', value)}
+              min={0}
+              step={0.01}
+              decimals={0}
+              className="h-8 text-sm"
+            />
+          </div>
+        )}
       </div>
 
       {/* Notes */}
@@ -485,13 +618,16 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
       </div>
 
       {/* Summary */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+      <div className="flex items-center justify-between mt-4 pt-4 border-t-2 border-blue-100 bg-blue-50/50 -mx-4 -mb-4 px-4 pb-4 rounded-b-lg">
         <div className="text-sm text-gray-600">
           Total: {item.quantity} × {formatMoney(item.unitPrice)} = {formatMoney(item.quantity * item.unitPrice)}
         </div>
-        <div className="text-sm text-gray-600">
-          {t('messages.deposit')}: {formatMoney(item.deposit)}
-        </div>
+        {/* Only show deposit for RENT orders */}
+        {orderType === 'RENT' && (
+          <div className="text-sm text-gray-600">
+            {t('messages.deposit')}: {formatMoney(item.deposit || 0)}
+          </div>
+        )}
       </div>
     </div>
   );

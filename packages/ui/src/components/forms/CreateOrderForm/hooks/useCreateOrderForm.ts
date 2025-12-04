@@ -82,6 +82,11 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
           barcode: item.product?.barcode || '',
           rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
           deposit: item.deposit ?? 0,
+          // Store outletStock if available
+          outletStock: item.product?.outletStock || [],
+          stock: item.product?.stock,
+          available: item.product?.available,
+          renting: item.product?.renting,
         },
         quantity: item.quantity || 1,
         unitPrice: item.unitPrice || 0,
@@ -110,10 +115,20 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   // Calculate totals when order items change
   useEffect(() => {
     const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    const discountAmount = formData.discountType === 'percentage' 
-      ? (subtotal * formData.discountValue / 100)
-      : formData.discountValue;
-    const totalAmount = subtotal - discountAmount;
+    
+    // Calculate discount amount with validation
+    let discountAmount = 0;
+    if (formData.discountType === 'percentage') {
+      // For percentage: limit to max 100%
+      const discountPercent = Math.min(100, Math.max(0, formData.discountValue));
+      discountAmount = subtotal * discountPercent / 100;
+    } else {
+      // For amount: limit to max subtotal (cannot exceed subtotal)
+      discountAmount = Math.min(subtotal, Math.max(0, formData.discountValue));
+    }
+    
+    // Ensure totalAmount is never negative
+    const totalAmount = Math.max(0, subtotal - discountAmount);
     
     setFormData(prev => ({
       ...prev,
@@ -138,6 +153,28 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
       }));
     }
   }, [orderItems, formData.orderType]);
+
+  // Update unitPrice of all order items when orderType changes
+  useEffect(() => {
+    if (orderItems.length > 0) {
+      const updatedItems = orderItems.map(item => {
+        const rentPrice = item.product.rentPrice ?? 0;
+        const salePrice = item.product.salePrice ?? rentPrice; // Fallback to rentPrice if salePrice not available
+        
+        // Use salePrice for SALE orders, rentPrice for RENT orders
+        const newUnitPrice = formData.orderType === 'RENT' ? rentPrice : salePrice;
+        
+        return {
+          ...item,
+          unitPrice: newUnitPrice,
+          totalPrice: newUnitPrice * item.quantity,
+        };
+      });
+      
+      setOrderItems(updatedItems);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.orderType]); // Only trigger when orderType changes
 
   // Initialize form data when initialOrder changes (for edit mode)
   useEffect(() => {
@@ -165,25 +202,36 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
       // Update order items
       if (initialOrder.orderItems) {
-        const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map((item: any) => ({
-          id: item.id, // Keep database CUID for existing items
-          productId: item.product?.id || item.productId || 0, // Frontend uses id (number)
-          product: {
-            id: item.product?.id || item.productId || 0, // Frontend uses id (number)
-            name: item.product?.name || 'Unknown Product',
-            description: item.product?.description || '',
-            images: item.product?.images || null,
-            barcode: item.product?.barcode || '',
-            rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
+        const initialOrderItems: OrderItemFormData[] = initialOrder.orderItems.map((item: any) => {
+          const rentPrice = item.product?.rentPrice ?? item.unitPrice ?? 0;
+          const salePrice = item.product?.salePrice ?? rentPrice; // Fallback to rentPrice if salePrice not available
+          
+          return {
+            id: item.id, // Keep database CUID for existing items
+            productId: item.product?.id || item.productId || 0, // Frontend uses id (number)
+            product: {
+              id: item.product?.id || item.productId || 0, // Frontend uses id (number)
+              name: item.product?.name || 'Unknown Product',
+              description: item.product?.description || '',
+              images: item.product?.images || null,
+              barcode: item.product?.barcode || '',
+              rentPrice: rentPrice,
+              salePrice: salePrice, // Store salePrice for later use
+              deposit: item.deposit ?? 0,
+              // Store outletStock if available
+              outletStock: item.product?.outletStock || [],
+              stock: item.product?.stock,
+              available: item.product?.available,
+              renting: item.product?.renting,
+            },
+            quantity: item.quantity || 1,
+            unitPrice: item.unitPrice || 0,
+            totalPrice: item.totalPrice || 0,
+            rentalDays: item.rentalDays || 0,
             deposit: item.deposit ?? 0,
-          },
-          quantity: item.quantity || 1,
-          unitPrice: item.unitPrice || 0,
-          totalPrice: item.totalPrice || 0,
-          rentalDays: item.rentalDays || 0,
-          deposit: item.deposit ?? 0,
-          notes: item.notes || '',
-        }));
+            notes: item.notes || '',
+          };
+        });
         
         setOrderItems(initialOrderItems);
         
@@ -215,7 +263,11 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     } else {
       // Add new product
       const rentPrice = product.rentPrice ?? 0;
+      const salePrice = product.salePrice ?? rentPrice; // Fallback to rentPrice if salePrice not available
       const deposit = product.deposit ?? 0;
+      
+      // Use salePrice for SALE orders, rentPrice for RENT orders
+      const unitPrice = formData.orderType === 'RENT' ? rentPrice : salePrice;
       
       const newItem: OrderItemFormData = {
         productId: productIdNumber,
@@ -226,11 +278,17 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
           images: product.images || null,
           barcode: product.barcode || '',
           rentPrice: rentPrice,
+          salePrice: salePrice, // Store salePrice for later use
           deposit: deposit,
+          // Store outletStock to ensure stock info is always available
+          outletStock: product.outletStock || [],
+          stock: product.stock,
+          available: product.available,
+          renting: product.renting,
         },
         quantity: BUSINESS.DEFAULT_QUANTITY,
-        unitPrice: formData.orderType === 'RENT' ? rentPrice : rentPrice,
-        totalPrice: (formData.orderType === 'RENT' ? rentPrice : rentPrice) * BUSINESS.DEFAULT_QUANTITY,
+        unitPrice: unitPrice,
+        totalPrice: unitPrice * BUSINESS.DEFAULT_QUANTITY,
         deposit: deposit,
         notes: '',
       };
@@ -378,6 +436,11 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
           barcode: item.product?.barcode || '',
           rentPrice: item.unitPrice || 0,
           deposit: item.deposit ?? 0,
+          // Store outletStock if available
+          outletStock: item.product?.outletStock || [],
+          stock: item.product?.stock,
+          available: item.product?.available,
+          renting: item.product?.renting,
         },
         quantity: item.quantity || 1,
         unitPrice: item.unitPrice || 0,

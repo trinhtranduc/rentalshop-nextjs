@@ -245,19 +245,22 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
 
     // Check for duplicate phone or email within the same merchant
-    // Only check if phone/email are provided and not empty
-    const hasPhone = parsed.phone && parsed.phone.trim();
-    const hasEmail = parsed.email && parsed.email.trim();
+    // Only check if phone/email are provided, not empty, and have meaningful content
+    const phoneValue = parsed.phone?.trim();
+    const emailValue = parsed.email?.trim();
+    const hasPhone = phoneValue && phoneValue.length > 0;
+    const hasEmail = emailValue && emailValue.length > 0;
     
+    // Only perform duplicate check if at least one field (phone or email) is provided
     if (hasPhone || hasEmail) {
       const duplicateConditions = [];
       
-      if (hasPhone && parsed.phone) {
-        duplicateConditions.push({ phone: parsed.phone.trim() });
+      if (hasPhone) {
+        duplicateConditions.push({ phone: phoneValue });
       }
       
-      if (hasEmail && parsed.email) {
-        duplicateConditions.push({ email: parsed.email.trim() });
+      if (hasEmail) {
+        duplicateConditions.push({ email: emailValue });
       }
 
       if (duplicateConditions.length > 0) {
@@ -267,8 +270,10 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         });
 
         if (duplicateCustomer) {
-          const duplicateField = duplicateCustomer.phone === parsed.phone?.trim() ? 'phone number' : 'email';
-          const duplicateValue = duplicateCustomer.phone === parsed.phone?.trim() ? parsed.phone?.trim() || '' : parsed.email?.trim() || '';
+          // Determine which field caused the duplicate
+          const isPhoneDuplicate = hasPhone && duplicateCustomer.phone === phoneValue;
+          const duplicateField = isPhoneDuplicate ? 'phone number' : 'email';
+          const duplicateValue = isPhoneDuplicate ? phoneValue : emailValue;
           
           console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
@@ -282,6 +287,9 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
         }
       }
     }
+    
+    // If no phone or email provided, allow creation (name can be duplicate)
+    console.log('✅ No duplicate check needed - phone and email are both empty or not provided');
 
     // Check plan limits before creating customer (ADMIN bypass)
     if (user.role !== USER_ROLE.ADMIN) {
@@ -406,18 +414,21 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
 
     // Check for duplicate phone or email if being updated
     // Only check if phone/email are provided, not empty, and different from existing
-    const hasPhone = parsed.phone && parsed.phone.trim();
-    const hasEmail = parsed.email && parsed.email.trim();
+    const phoneValue = parsed.phone?.trim();
+    const emailValue = parsed.email?.trim();
+    const hasPhone = phoneValue && phoneValue.length > 0;
+    const hasEmail = emailValue && emailValue.length > 0;
     
+    // Only perform duplicate check if at least one field (phone or email) is provided and changed
     if (hasPhone || hasEmail) {
       const duplicateConditions = [];
       
-      if (hasPhone && parsed.phone && parsed.phone.trim() !== existingCustomer.phone) {
-        duplicateConditions.push({ phone: parsed.phone.trim() });
+      if (hasPhone && phoneValue !== existingCustomer.phone) {
+        duplicateConditions.push({ phone: phoneValue });
       }
       
-      if (hasEmail && parsed.email && parsed.email.trim() !== existingCustomer.email) {
-        duplicateConditions.push({ email: parsed.email.trim() });
+      if (hasEmail && emailValue !== existingCustomer.email) {
+        duplicateConditions.push({ email: emailValue });
       }
 
       if (duplicateConditions.length > 0) {
@@ -428,8 +439,10 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
         });
 
         if (duplicateCustomer) {
-          const duplicateField = duplicateCustomer.phone === parsed.phone?.trim() ? 'phone number' : 'email';
-          const duplicateValue = duplicateCustomer.phone === parsed.phone?.trim() ? parsed.phone?.trim() || '' : parsed.email?.trim() || '';
+          // Determine which field caused the duplicate
+          const isPhoneDuplicate = hasPhone && duplicateCustomer.phone === phoneValue;
+          const duplicateField = isPhoneDuplicate ? 'phone number' : 'email';
+          const duplicateValue = isPhoneDuplicate ? phoneValue : emailValue;
           
           console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
@@ -443,6 +456,9 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
         }
       }
     }
+    
+    // If no phone or email provided, allow update (name can be duplicate)
+    console.log('✅ No duplicate check needed - phone and email are both empty or not provided');
 
     console.log('🔍 Updating customer with data:', { id, ...parsed });
     
