@@ -530,8 +530,25 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             <div className="col-span-2">
               <NumberInput
                 value={formData.discountValue || 0}
-                onChange={(value) => onFormDataChange('discountValue', value)}
+                onChange={(value) => {
+                  // Validate discount value before updating
+                  const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+                  let validatedValue = value;
+                  
+                  if (formData.discountType === 'percentage') {
+                    // For percentage: max 100%
+                    validatedValue = Math.min(100, Math.max(0, value));
+                  } else {
+                    // For amount: max subtotal (cannot exceed subtotal)
+                    validatedValue = Math.min(subtotal, Math.max(0, value));
+                  }
+                  
+                  onFormDataChange('discountValue', validatedValue);
+                }}
                 min={0}
+                max={formData.discountType === 'percentage' 
+                  ? 100 
+                  : orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)}
                 decimals={0}
                 placeholder={t('messages.discountAmount')}
                 className="w-full"
@@ -540,7 +557,20 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
             <Select
               value={formData.discountType}
               onValueChange={(value: 'amount' | 'percentage') => {
+                // When changing discount type, validate the current discount value
+                const subtotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+                let validatedDiscountValue = formData.discountValue || 0;
+                
+                if (value === 'percentage') {
+                  // If switching to percentage, ensure value doesn't exceed 100%
+                  validatedDiscountValue = Math.min(100, validatedDiscountValue);
+                } else {
+                  // If switching to amount, ensure value doesn't exceed subtotal
+                  validatedDiscountValue = Math.min(subtotal, validatedDiscountValue);
+                }
+                
                 onFormDataChange('discountType', value);
+                onFormDataChange('discountValue', validatedDiscountValue);
               }}
             >
               <SelectTrigger variant="filled" className="w-full">

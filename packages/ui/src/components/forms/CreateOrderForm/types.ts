@@ -28,7 +28,19 @@ export interface OrderItemFormData {
     images?: string[] | null;
     barcode?: string;
     rentPrice?: number;
+    salePrice?: number; // Sale price for SALE orders
     deposit?: number;
+    // Stock information - stored when product is added to cart
+    outletStock?: Array<{
+      id: number;
+      outletId: number;
+      stock: number;
+      available: number;
+      renting: number;
+    }>;
+    stock?: number;     // Product-level stock (fallback)
+    available?: number; // Product-level available (fallback)
+    renting?: number;   // Product-level renting (fallback)
   };
   
   // Order item details
@@ -97,6 +109,11 @@ export interface ProductAvailabilityStatus {
   status: 'available' | 'unavailable' | 'out-of-stock' | 'low-stock' | 'unknown';
   text: string;
   color: string;
+  // Stock information for detailed display
+  totalStock?: number;
+  totalAvailableStock?: number;
+  totalRenting?: number;
+  effectivelyAvailable?: number;
 }
 
 export interface CustomerSearchOption {

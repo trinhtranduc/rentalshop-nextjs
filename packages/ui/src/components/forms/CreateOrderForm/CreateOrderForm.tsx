@@ -254,20 +254,25 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         
         console.log('🔍 Availability API response:', availabilityData);
 
+        // Extract stock information from API response
+        const totalStock = availabilityData.totalStock || 0;
+        const totalAvailableStock = availabilityData.totalAvailableStock || 0;
+        const totalRenting = availabilityData.totalRenting || 0;
+        const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
+          sum + outlet.effectivelyAvailable, 0) || totalAvailableStock;
+
         // Determine status based on API response
         if (!availabilityData.stockAvailable) {
           return {
             status: 'out-of-stock',
-            text: t('messages.outOfStockWithDetails', { need: requestedQuantity, have: availabilityData.totalAvailableStock }),
-            color: 'bg-red-100 text-red-600'
+            text: t('messages.outOfStockWithDetails', { need: requestedQuantity, have: totalAvailableStock }),
+            color: 'bg-red-100 text-red-600',
+            totalStock,
+            totalAvailableStock,
+            totalRenting,
+            effectivelyAvailable
           };
         }
-
-        // Simplified: Use canFulfillRequest as the single source of truth
-        // It already accounts for stock, conflicts, and requested quantity
-        const canFulfill = availabilityData.availabilityByOutlet?.some((outlet: any) => outlet.canFulfillRequest);
-        const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
-          sum + outlet.effectivelyAvailable, 0) || availabilityData.totalAvailableStock;
 
         // Use isAvailable from API (which is now = canFulfillRequest)
         // This is the authoritative source that accounts for everything
@@ -278,7 +283,11 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               text: conflictCount > 0 
                 ? t('messages.conflictsDetected', { count: conflictCount })
                 : t('messages.unavailableForDates'),
-              color: 'bg-orange-100 text-orange-600'
+              color: 'bg-orange-100 text-orange-600',
+              totalStock,
+              totalAvailableStock,
+              totalRenting,
+              effectivelyAvailable
             };
           }
 
@@ -289,7 +298,11 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           text: conflictCount > 0 
             ? t('messages.availableWithConflicts', { units: effectivelyAvailable, conflicts: conflictCount })
             : t('messages.availableWithUnits', { units: effectivelyAvailable }),
-            color: 'bg-green-100 text-green-600'
+            color: 'bg-green-100 text-green-600',
+            totalStock,
+            totalAvailableStock,
+            totalRenting,
+            effectivelyAvailable
           };
       } else {
         // API call failed, fallback to basic stock check
@@ -307,23 +320,37 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
 
         console.log('🔍 Fallback to basic stock check:', { available, stock, requestedQuantity });
 
+        const renting = stock - available; // Calculate renting from stock and available
+        
         if (available === 0) {
           return { 
             status: 'out-of-stock', 
             text: t('messages.outOfStock'), 
-            color: 'bg-red-100 text-red-600' 
+            color: 'bg-red-100 text-red-600',
+            totalStock: stock,
+            totalAvailableStock: available,
+            totalRenting: renting,
+            effectivelyAvailable: available
           };
         } else if (available < requestedQuantity) {
           return { 
             status: 'low-stock', 
             text: t('messages.lowStock', { available, requested: requestedQuantity }), 
-            color: 'bg-orange-100 text-orange-600' 
+            color: 'bg-orange-100 text-orange-600',
+            totalStock: stock,
+            totalAvailableStock: available,
+            totalRenting: renting,
+            effectivelyAvailable: available
           };
         } else {
           return { 
             status: 'available', 
             text: t('messages.availableWithUnits', { units: available }), 
-            color: 'bg-green-100 text-green-600' 
+            color: 'bg-green-100 text-green-600',
+            totalStock: stock,
+            totalAvailableStock: available,
+            totalRenting: renting,
+            effectivelyAvailable: available
           };
         }
       } catch (fallbackError) {
@@ -559,6 +586,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               returnDate={formData.returnPlanAt}
               getProductAvailabilityStatus={getProductAvailabilityStatus}
               currency={currency}
+              outletId={formData.outletId}
             />
           </div>
 
