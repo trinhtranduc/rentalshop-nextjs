@@ -64,13 +64,13 @@ export const useProductSearch = (currency: CurrencyCode = 'USD') => {
             value: String(product.id), // Use id from server response
             label: product.name,
         image: product.image || product.imageUrl || product.images?.[0], // Support multiple image fields
-            subtitle: product.barcode ? `Barcode: ${product.barcode}` : 'No Barcode',
+            subtitle: product.barcode ? `${product.barcode}` : '',
             details: [
               formatCurrency(product.rentPrice || 0, currency),
-              `Deposit: ${formatCurrency(product.deposit || 0, currency)}`,
-              `Available: ${available}`,
-              `Total Stock: ${totalStock}`,
-              product.category?.name || 'No Category'
+              `${formatCurrency(product.deposit || 0, currency)}`,
+              `${available}`,
+              `${totalStock}`,
+              product.category?.name || ''
             ].filter(Boolean), // Remove empty values
             type: 'product' as const
           };

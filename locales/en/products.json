@@ -198,6 +198,14 @@
   "dialogs": {
     "addProductTitle": "Add New Product",
     "addProductDescription": "Create a new product for your rental shop inventory"
+  },
+  "labels": {
+    "barcode": "Barcode",
+    "deposit": "Deposit",
+    "available": "Available",
+    "totalStock": "Total Stock",
+    "noBarcode": "No Barcode",
+    "noCategory": "No Category"
   }
 }
 

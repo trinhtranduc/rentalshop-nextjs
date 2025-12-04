@@ -864,6 +864,353 @@ export function validateScope(
 }
 
 // ============================================================================
+// MERCHANT/OUTLET AUTHORIZATION HELPERS
+// ============================================================================
+
+export interface MerchantOutletAuthOptions {
+  /** Block OUTLET_STAFF from performing this action */
+  blockOutletStaff?: boolean;
+  /** Custom message when OUTLET_STAFF is blocked */
+  blockOutletStaffMessage?: string;
+  /** Merchant ID to validate ownership */
+  merchantId?: number;
+  /** Outlet ID to validate ownership */
+  outletId?: number;
+}
+
+export interface MerchantOutletAuthResult {
+  /** Whether authorization passed */
+  authorized: boolean;
+  /** Error response if authorization failed */
+  error?: NextResponse;
+}
+
+/**
+ * Validate authorization for merchant/outlet resources
+ * 
+ * This function handles common authorization patterns:
+ * - Blocks OUTLET_STAFF if specified
+ * - Validates merchant association for non-admin users
+ * - Checks merchant ownership for MERCHANT role
+ * - Checks outlet ownership for OUTLET_ADMIN role
+ * 
+ * @param user - Authenticated user
+ * @param userScope - User's scope (merchantId, outletId)
+ * @param options - Authorization options
+ * @returns Authorization result with success/error
+ * 
+ * @example
+ * ```typescript
+ * const auth = validateMerchantOutletAccess(user, userScope, {
+ *   blockOutletStaff: true,
+ *   blockOutletStaffMessage: 'OUTLET_STAFF cannot update bank accounts',
+ *   merchantId: merchantPublicId,
+ *   outletId: outletPublicId
+ * });
+ * 
+ * if (!auth.authorized) {
+ *   return auth.error;
+ * }
+ * ```
+ */
+export function validateMerchantOutletAccess(
+  user: AuthUser,
+  userScope: UserScope,
+  options: MerchantOutletAuthOptions = {}
+): MerchantOutletAuthResult {
+  const {
+    blockOutletStaff = false,
+    blockOutletStaffMessage = 'OUTLET_STAFF cannot perform this action',
+    merchantId,
+    outletId
+  } = options;
+
+  // Block OUTLET_STAFF if specified
+  if (blockOutletStaff && user.role === USER_ROLE.OUTLET_STAFF) {
+    return {
+      authorized: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'FORBIDDEN',
+          message: blockOutletStaffMessage
+        },
+        { status: API.STATUS.FORBIDDEN }
+      )
+    };
+  }
+
+  // Validate that non-admin users have merchant association
+  if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
+    return {
+      authorized: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'MERCHANT_ASSOCIATION_REQUIRED',
+          message: 'User must be associated with a merchant'
+        },
+        { status: API.STATUS.FORBIDDEN }
+      )
+    };
+  }
+
+  // Use validateScope for role-based scope validation
+  // Build required scope based on user role and provided IDs
+  const requiredScope: { merchantId?: number; outletId?: number } = {};
+  
+  // MERCHANT role: only check merchant ownership (not outlet)
+  if (user.role === USER_ROLE.MERCHANT && merchantId !== undefined) {
+    requiredScope.merchantId = merchantId;
+  }
+  
+  // OUTLET_ADMIN/OUTLET_STAFF roles: check outlet ownership if outletId provided
+  // If only merchantId is provided (no outletId), check merchant ownership instead
+  if ((user.role === USER_ROLE.OUTLET_ADMIN || 
+       (user.role === USER_ROLE.OUTLET_STAFF && !blockOutletStaff))) {
+    if (outletId !== undefined) {
+      // When outletId is provided, check outlet ownership
+      requiredScope.outletId = outletId;
+    } else if (merchantId !== undefined) {
+      // When only merchantId is provided (merchant-only route), check merchant ownership
+      // OUTLET_ADMIN/OUTLET_STAFF must belong to the merchant they're accessing
+      requiredScope.merchantId = merchantId;
+    }
+  }
+  
+  // If we have scope requirements, validate using validateScope
+  if (requiredScope.merchantId !== undefined || requiredScope.outletId !== undefined) {
+    const scopeCheck = validateScope(userScope, requiredScope);
+    if (!scopeCheck.valid) {
+      return {
+        authorized: false,
+        error: scopeCheck.error
+      };
+    }
+  }
+
+  return { authorized: true };
+}
+
+// ============================================================================
+// MERCHANT VALIDATION HELPERS
+// ============================================================================
+
+export interface ValidateMerchantAccessResult {
+  /** Whether validation passed */
+  valid: boolean;
+  /** Merchant object if found */
+  merchant?: any;
+  /** Outlet object if found (for nested routes) */
+  outlet?: any;
+  /** Error response if validation failed */
+  error?: NextResponse;
+}
+
+/**
+ * Validate merchant access (and optionally outlet access) for routes
+ * 
+ * This unified helper function handles both patterns:
+ * - Merchant-only routes: /api/merchants/[id]/...
+ * - Nested outlet routes: /api/merchants/[id]/outlets/[outletId]/...
+ * 
+ * Validation steps:
+ * 1. Validate merchant ID format
+ * 2. Find merchant from database
+ * 3. Check merchant exists
+ * 4. Validate merchant association requirement
+ * 5. Validate merchant scope (merchant ownership)
+ * 6. (If outletPublicId provided) Validate outlet ID format
+ * 7. (If outletPublicId provided) Find outlet from database
+ * 8. (If outletPublicId provided) Check outlet exists
+ * 9. (If outletPublicId provided) Verify outlet belongs to merchant
+ * 10. (If outletPublicId provided) Validate outlet scope (for OUTLET_ADMIN/OUTLET_STAFF)
+ * 
+ * @param merchantPublicId - Merchant public ID from route params
+ * @param user - Authenticated user
+ * @param userScope - User's scope (merchantId, outletId)
+ * @param outletPublicId - Optional outlet public ID for nested routes
+ * @returns Validation result with merchant (and optionally outlet) objects or error
+ * 
+ * @example
+ * ```typescript
+ * // Merchant-only route
+ * const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+ * if (!validation.valid) {
+ *   return validation.error;
+ * }
+ * const merchant = validation.merchant;
+ * 
+ * // Nested outlet route
+ * const validation = await validateMerchantAccess(merchantPublicId, user, userScope, outletPublicId);
+ * if (!validation.valid) {
+ *   return validation.error;
+ * }
+ * const { merchant, outlet } = validation;
+ * ```
+ */
+export async function validateMerchantAccess(
+  merchantPublicId: number,
+  user: AuthUser,
+  userScope: UserScope,
+  outletPublicId?: number
+): Promise<ValidateMerchantAccessResult> {
+  // Validate merchant ID format
+  if (isNaN(merchantPublicId)) {
+    return {
+      valid: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'INVALID_MERCHANT_ID_FORMAT',
+          message: 'Invalid merchant ID format'
+        },
+        { status: 400 }
+      )
+    };
+  }
+
+  // Find merchant from database
+  const merchant = await db.merchants.findById(merchantPublicId);
+  if (!merchant) {
+    return {
+      valid: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'MERCHANT_NOT_FOUND',
+          message: 'Merchant not found'
+        },
+        { status: API.STATUS.NOT_FOUND }
+      )
+    };
+  }
+
+  // Validate merchant association requirement (non-admin users must have merchantId)
+  if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
+    return {
+      valid: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'MERCHANT_ASSOCIATION_REQUIRED',
+          message: 'User must be associated with a merchant'
+        },
+        { status: API.STATUS.FORBIDDEN }
+      )
+    };
+  }
+
+  // Validate scope: verify user can access this merchant
+  const scopeCheck = validateScope(userScope, { merchantId: merchantPublicId });
+  if (!scopeCheck.valid) {
+    // Return NOT_FOUND for security (don't reveal merchant exists if unauthorized)
+    return {
+      valid: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'MERCHANT_NOT_FOUND',
+          message: 'Merchant not found'
+        },
+        { status: API.STATUS.NOT_FOUND }
+      )
+    };
+  }
+
+  // If outletPublicId is provided, validate outlet access
+  if (outletPublicId !== undefined) {
+    // Validate outlet ID format
+    if (isNaN(outletPublicId)) {
+      return {
+        valid: false,
+        error: NextResponse.json(
+          { 
+            success: false,
+            code: 'INVALID_OUTLET_ID_FORMAT',
+            message: 'Invalid outlet ID format'
+          },
+          { status: 400 }
+        )
+      };
+    }
+
+    // Find outlet from database
+    const outlet = await db.outlets.findById(outletPublicId);
+    if (!outlet) {
+      return {
+        valid: false,
+        error: NextResponse.json(
+          { 
+            success: false,
+            code: 'OUTLET_NOT_FOUND',
+            message: 'Outlet not found'
+          },
+          { status: API.STATUS.NOT_FOUND }
+        )
+      };
+    }
+
+    // Verify outlet belongs to merchant
+    if (outlet.merchant?.id !== merchantPublicId) {
+      // Return NOT_FOUND for security (don't reveal outlet exists)
+      return {
+        valid: false,
+        error: NextResponse.json(
+          { 
+            success: false,
+            code: 'OUTLET_NOT_FOUND',
+            message: 'Outlet not found'
+          },
+          { status: API.STATUS.NOT_FOUND }
+        )
+      };
+    }
+
+    // Validate outlet scope: OUTLET_ADMIN/OUTLET_STAFF can only access their assigned outlet
+    const outletScopeCheck = validateScope(userScope, { outletId: outletPublicId });
+    if (!outletScopeCheck.valid && (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF)) {
+      // Return NOT_FOUND for security (don't reveal outlet exists)
+      return {
+        valid: false,
+        error: NextResponse.json(
+          { 
+            success: false,
+            code: 'OUTLET_NOT_FOUND',
+            message: 'Outlet not found'
+          },
+          { status: API.STATUS.NOT_FOUND }
+        )
+      };
+    }
+
+    return {
+      valid: true,
+      merchant,
+      outlet
+    };
+  }
+
+  return {
+    valid: true,
+    merchant
+  };
+}
+
+/**
+ * @deprecated Use validateMerchantAccess with outletPublicId parameter instead
+ * Validate merchant and outlet access for nested outlet routes
+ */
+export async function validateMerchantOutletRoute(
+  merchantPublicId: number,
+  outletPublicId: number,
+  user: AuthUser,
+  userScope: UserScope
+): Promise<ValidateMerchantAccessResult> {
+  return validateMerchantAccess(merchantPublicId, user, userScope, outletPublicId);
+}
+
+// ============================================================================
 // DATABASE SECURITY HELPERS
 // ============================================================================
 

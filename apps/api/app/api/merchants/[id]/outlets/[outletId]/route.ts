@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/outlets/[outletId]
  * Get outlet by ID
+ * Authorization: Roles with 'outlet.view' permission can access
  */
 export async function GET(
   request: NextRequest,
@@ -17,22 +18,14 @@ export async function GET(
   const merchantPublicId = parseInt(resolvedParams.id);
   const outletPublicId = parseInt(resolvedParams.outletId);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
-        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
+      // Validate merchant and outlet access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope, outletPublicId);
+      if (!validation.valid) {
+        return validation.error!;
       }
-
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
-      }
-
-      const outlet = await db.outlets.findById(outletPublicId);
-      if (!outlet) {
-        return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
-      }
+      const { merchant, outlet } = validation;
 
       return NextResponse.json({ success: true, data: outlet });
     } catch (error) {
@@ -48,6 +41,7 @@ export async function GET(
 /**
  * PUT /api/merchants/[id]/outlets/[outletId]
  * Update outlet
+ * Authorization: Roles with 'outlet.manage' permission can update outlets
  */
 export async function PUT(
   request: NextRequest,
@@ -58,22 +52,14 @@ export async function PUT(
   const merchantPublicId = parseInt(resolvedParams.id);
   const outletPublicId = parseInt(resolvedParams.outletId);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'])(async (request, { user, userScope }) => {
+  return withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
-        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
+      // Validate merchant and outlet access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope, outletPublicId);
+      if (!validation.valid) {
+        return validation.error!;
       }
-
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
-      }
-
-      const existing = await db.outlets.findById(outletPublicId);
-      if (!existing) {
-        return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
-      }
+      const { merchant, outlet: existing } = validation;
 
       const body = await request.json();
       const { name, address, phone, description, isActive } = body;
@@ -130,6 +116,7 @@ export async function PUT(
 /**
  * DELETE /api/merchants/[id]/outlets/[outletId]
  * Delete outlet (soft delete)
+ * Authorization: Roles with 'outlet.manage' permission can delete outlets
  */
 export async function DELETE(
   request: NextRequest,
@@ -140,22 +127,14 @@ export async function DELETE(
   const merchantPublicId = parseInt(resolvedParams.id);
   const outletPublicId = parseInt(resolvedParams.outletId);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(outletPublicId)) {
-        return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
+      // Validate merchant and outlet access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope, outletPublicId);
+      if (!validation.valid) {
+        return validation.error!;
       }
-
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
-      }
-
-      const existing = await db.outlets.findById(outletPublicId);
-      if (!existing) {
-        return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
-      }
+      const { merchant, outlet: existing } = validation;
 
       // Check if this is the default outlet - cannot be deleted
       if (existing.isDefault) {

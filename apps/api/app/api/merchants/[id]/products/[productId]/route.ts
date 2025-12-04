@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -24,15 +24,16 @@ export async function GET(
   
   return withPermissions(['products.view'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(productPublicId)) {
+      if (isNaN(productPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
       const product = await db.products.findById(productPublicId);
       if (!product) {
@@ -109,15 +110,16 @@ export async function PUT(
   
   return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(productPublicId)) {
+      if (isNaN(productPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
       const existing = await db.products.findById(productPublicId);
       if (!existing) {

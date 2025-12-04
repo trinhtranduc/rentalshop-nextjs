@@ -38,7 +38,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useToast, ToastContainer, CustomerDetailDialog } from '@rentalshop/ui';
 
 import { customersApi, productsApi, handleApiError, formatCurrency, type ProductAvailabilityRequest } from '@rentalshop/utils';
-import { useProductAvailability, useOrderTranslations } from '@rentalshop/hooks';
+import { useProductAvailability, useOrderTranslations, useProductTranslations } from '@rentalshop/hooks';
 import { VALIDATION, BUSINESS } from '@rentalshop/constants';
 
 // Import our custom hooks and components
@@ -80,8 +80,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     onFormReady,
   } = props;
 
-  // Translation hook
+  // Translation hooks
   const t = useOrderTranslations();
+  const tp = useProductTranslations();
 
   // Custom hooks for state management
   const {
@@ -197,13 +198,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         value: String(product.id),
         label: product.name,
         image: product.images?.[0],
-        subtitle: product.barcode ? `Barcode: ${product.barcode}` : t('messages.noBarcode'),
+        subtitle: product.barcode ? `${tp('labels.barcode')}: ${product.barcode}` : tp('labels.noBarcode'),
         details: [
           formatCurrency(product.rentPrice || 0, currency as any),
-          `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
-            `Available: ${available}`,
-            `Total Stock: ${stock}`,
-          product.category?.name || t('messages.noCategory')
+          `${tp('labels.deposit')}: ${formatCurrency(product.deposit || 0, currency as any)}`,
+          `${tp('labels.available')}: ${available}`,
+          `${tp('labels.totalStock')}: ${stock}`,
+          product.category?.name || tp('labels.noCategory')
         ].filter(Boolean),
         type: 'product' as const
         };
@@ -212,7 +213,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       console.error('Error searching products:', error);
       return [];
     }
-  }, [searchProducts, currency, formData.outletId, t]);
+  }, [searchProducts, currency, formData.outletId, t, tp]);
 
   // Create a custom getProductAvailabilityStatus function using new API
   const getProductAvailabilityStatus = useCallback(async (
@@ -257,7 +258,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         if (!availabilityData.stockAvailable) {
           return {
             status: 'out-of-stock',
-            text: `Out of Stock (need ${requestedQuantity}, have ${availabilityData.totalAvailableStock})`,
+            text: t('messages.outOfStockWithDetails', { need: requestedQuantity, have: availabilityData.totalAvailableStock }),
             color: 'bg-red-100 text-red-600'
           };
         }
@@ -275,8 +276,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
             return {
               status: 'unavailable',
               text: conflictCount > 0 
-                ? `Conflicts detected (${conflictCount} orders)`
-                : 'Unavailable for selected dates',
+                ? t('messages.conflictsDetected', { count: conflictCount })
+                : t('messages.unavailableForDates'),
               color: 'bg-orange-100 text-orange-600'
             };
           }
@@ -286,8 +287,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           return {
             status: 'available',
           text: conflictCount > 0 
-            ? `Available (${effectivelyAvailable} units) - ${conflictCount} conflict(s) but sufficient stock`
-            : `Available (${effectivelyAvailable} units)`,
+            ? t('messages.availableWithConflicts', { units: effectivelyAvailable, conflicts: conflictCount })
+            : t('messages.availableWithUnits', { units: effectivelyAvailable }),
             color: 'bg-green-100 text-green-600'
           };
       } else {
@@ -315,13 +316,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         } else if (available < requestedQuantity) {
           return { 
             status: 'low-stock', 
-            text: `Low Stock (${available}/${requestedQuantity})`, 
+            text: t('messages.lowStock', { available, requested: requestedQuantity }), 
             color: 'bg-orange-100 text-orange-600' 
           };
         } else {
           return { 
             status: 'available', 
-            text: `Available (${available})`, 
+            text: t('messages.availableWithUnits', { units: available }), 
             color: 'bg-green-100 text-green-600' 
           };
         }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
@@ -21,26 +21,15 @@ export async function GET(
     try {
       console.log('🔍 GET /api/merchants/[id] - Looking for merchant with ID:', id);
 
-      // Check if the ID is numeric (public ID)
-      if (!/^\d+$/.test(id)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
-      }
-
       const merchantId = parseInt(id);
       
-      // Get merchant using the simplified database API
-      const merchant = await db.merchants.findById(merchantId);
-
-      if (!merchant) {
-        console.log('❌ Merchant not found in database for merchantId:', merchantId);
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
+      // Validate merchant access (format, exists, association, scope)
+      // For MERCHANT role, this ensures they can only access their own merchant
+      const validation = await validateMerchantAccess(merchantId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
       console.log('✅ Merchant found:', merchant);
 
@@ -79,29 +68,19 @@ export async function PUT(
   
   return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
-
-      // Check if the ID is numeric (public ID)
-      if (!/^\d+$/.test(id)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
-      }
-
       const merchantId = parseInt(id);
+
+      // Validate merchant access (format, exists, association, scope)
+      // For MERCHANT role, this ensures they can only update their own merchant
+      const validation = await validateMerchantAccess(merchantId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
+      }
+      const existingMerchant = validation.merchant!;
 
       // Parse and validate request body
       const body = await request.json();
       console.log('🔍 PUT /api/merchants/[id] - Update request body:', body);
-
-      // Check if merchant exists
-      const existingMerchant = await db.merchants.findById(merchantId);
-      if (!existingMerchant) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
 
       // Check for duplicate phone or email if being updated
       if (body.phone || body.email) {
@@ -167,25 +146,15 @@ export async function DELETE(
   
   return withAuthRoles([USER_ROLE.ADMIN])(async (request, { user, userScope }) => {
     try {
-
-      // Check if the ID is numeric (public ID)
-      if (!/^\d+$/.test(id)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
-      }
-
       const merchantId = parseInt(id);
 
-      // Check if merchant exists
-      const existingMerchant = await db.merchants.findById(merchantId);
-      if (!existingMerchant) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
+      // Validate merchant access (format, exists, association, scope)
+      // Only ADMIN can delete merchants, but we still validate merchant exists
+      const validation = await validateMerchantAccess(merchantId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const existingMerchant = validation.merchant!;
 
       // Check if merchant has active subscription
       const activeSubscription = await db.subscriptions.findFirst({

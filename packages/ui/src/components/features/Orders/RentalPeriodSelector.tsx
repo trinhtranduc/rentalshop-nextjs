@@ -185,7 +185,7 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
           if (range?.from) setRentalStartAt(range.from);
           if (range?.to) setRentalEndAt(range.to);
         }}
-        placeholder="Select pickup and return dates"
+        placeholder={t('messages.selectPickupAndReturnDates')}
         minDate={new Date()}
         showPresets={true}
       />
@@ -210,7 +210,7 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
   );
 
   // Fixed pricing - calendar with fixed price
-  const renderFixedPricing = () => renderCalendarUI('Rental Period');
+  const renderFixedPricing = () => renderCalendarUI(t('messages.rentalPeriod'));
 
   // Hourly pricing - Single date picker + Pickup/Return hour selectors
   const renderHourlyPricing = () => {
@@ -230,7 +230,7 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
     return (
       <div className="space-y-3">
         <Label className="text-sm font-medium">
-          Rental Period (Hourly) <span className="text-red-500">*</span>
+          {t('messages.rentalPeriodHourly')} <span className="text-red-500">*</span>
         </Label>
         
         {/* Single Date Picker - Same day rental using DateRangePicker */}
@@ -252,7 +252,7 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
                 setRentalEndAt(newEnd);
               }
             }}
-            placeholder="Select rental date"
+            placeholder={t('messages.selectRentalDate')}
             minDate={new Date()}
             showPresets={false}
           />
@@ -260,7 +260,7 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
         
         {/* Pickup Hour Selector */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-600">Pickup Hour</Label>
+          <Label className="text-sm font-medium text-gray-600">{t('messages.pickupHour')}</Label>
           <div className="grid grid-cols-8 gap-1">
             {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
               <Button
@@ -283,7 +283,7 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
 
         {/* Return Hour Selector */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-600">Return Hour</Label>
+          <Label className="text-sm font-medium text-gray-600">{t('messages.returnHour')}</Label>
           <div className="grid grid-cols-8 gap-1">
             {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
               <Button

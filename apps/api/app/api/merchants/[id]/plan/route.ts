@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
@@ -18,20 +18,12 @@ export async function GET(
   
   return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
-      if (isNaN(merchantPublicId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
-
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
+      const merchant = validation.merchant!;
 
       // Get merchant's current plan and subscription
       const plan = merchant.Plan;
@@ -69,20 +61,12 @@ export async function PUT(
   
   return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
     try {
-      if (isNaN(merchantPublicId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
-
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
+      const merchant = validation.merchant!;
 
       const body = await request.json();
       const { planId, billingInterval, totalPrice, duration, discount } = body;

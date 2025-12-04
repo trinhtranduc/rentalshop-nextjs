@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/products
- * Get merchant products
+ * Get merchant products with role-based access control
  * 
  * Authorization: All roles with 'products.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Security: Role-based filtering ensures users only see products within their scope:
+ * - ADMIN: Can see all products (no restrictions)
+ * - MERCHANT: Can only see products from their own merchant
+ * - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their merchant
  */
 export async function GET(
   request: NextRequest,
@@ -22,26 +27,37 @@ export async function GET(
   
   return withPermissions(['products.view'])(async (request, { user, userScope }) => {
     try {
-      if (isNaN(merchantPublicId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
-
-      // Get products for this merchant
-      const products = await db.products.search({
+      // Build search filters with role-based access control
+      const searchFilters: any = {
         merchantId: merchantPublicId,
         isActive: true
+      };
+
+      // Role-based outlet filtering (if user is outlet-level, filter by outlet stock):
+      // - OUTLET_ADMIN/OUTLET_STAFF: Only show products available at their outlet
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (userScope.outletId) {
+          searchFilters.outletId = userScope.outletId;
+        }
+      }
+
+      console.log(`🔍 Role-based filtering for merchant products (${user.role}):`, {
+        merchantPublicId,
+        'userScope.merchantId': userScope.merchantId,
+        'userScope.outletId': userScope.outletId,
+        'final merchantId filter': searchFilters.merchantId,
+        'final outletId filter': searchFilters.outletId
       });
+
+      // Get products for this merchant with role-based filtering
+      const products = await db.products.search(searchFilters);
 
       // Return standardized response format matching general products API
       return NextResponse.json(ResponseBuilder.success('PRODUCTS_FOUND', {
@@ -55,43 +71,40 @@ export async function GET(
 
     } catch (error) {
       console.error('Error fetching merchant products:', error);
-      return NextResponse.json(
-        ResponseBuilder.error('INTERNAL_SERVER_ERROR'),
-        { status: API.STATUS.INTERNAL_SERVER_ERROR }
-      );
+      
+      // Use unified error handling system
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
   })(request);
 }
 
 /**
  * POST /api/merchants/[id]/products
- * Create new product
+ * Create new product with role-based access control
  * 
  * Authorization: All roles with 'products.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Security: Validates merchant ownership before creating product
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const merchantPublicId = parseInt(resolvedParams.id);
+  
   return withPermissions(['products.manage'])(async (request, { user, userScope }) => {
     try {
-      const merchantPublicId = parseInt(params.id);
-      if (isNaN(merchantPublicId)) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_MERCHANT_ID_FORMAT'),
-          { status: 400 }
-        );
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
-
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-          { status: API.STATUS.NOT_FOUND }
-        );
-      }
+      const merchant = validation.merchant!;
 
       const body = await request.json();
       const { name, description, barcode, categoryId, rentPrice, salePrice, deposit, totalStock, images } = body;
@@ -113,7 +126,9 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        data: newProduct
+        data: newProduct,
+        code: 'PRODUCT_CREATED_SUCCESS',
+        message: 'Product created successfully'
       });
 
     } catch (error) {
