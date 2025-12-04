@@ -338,7 +338,11 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               <input
                 type="text"
                 placeholder={t('messages.searchCustomers')}
-                value={selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName} - ${selectedCustomer.phone}` : searchQuery}
+                value={selectedCustomer ? (() => {
+                  const name = [selectedCustomer.firstName, selectedCustomer.lastName].filter(Boolean).join(' ').trim();
+                  const phone = selectedCustomer.phone && selectedCustomer.phone.trim() !== '' ? selectedCustomer.phone : null;
+                  return phone ? `${name} - ${phone}` : name;
+                })() : searchQuery}
                 onFocus={() => {
                   // Show search results when focused if there's a query
                   if (searchQuery.trim()) {
@@ -349,8 +353,13 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                   const query = e.target.value;
                   
                   // If user is typing and there's a selected customer, clear the selection
-                  if (selectedCustomer && query !== `${selectedCustomer.firstName} ${selectedCustomer.lastName} - ${selectedCustomer.phone}`) {
-                    onCustomerClear();
+                  if (selectedCustomer) {
+                    const name = [selectedCustomer.firstName, selectedCustomer.lastName].filter(Boolean).join(' ').trim();
+                    const phone = selectedCustomer.phone && selectedCustomer.phone.trim() !== '' ? selectedCustomer.phone : null;
+                    const displayValue = phone ? `${name} - ${phone}` : name;
+                    if (query !== displayValue) {
+                      onCustomerClear();
+                    }
                   }
                   
                   // Update search query immediately
@@ -433,17 +442,22 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                             type="button"
                             onClick={() => {
                               onCustomerSelect(customer);
-                              onSearchQueryChange(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
+                              const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim();
+                              const phone = customer.phone && customer.phone.trim() !== '' ? customer.phone : null;
+                              const displayValue = phone ? `${name} - ${phone}` : name;
+                              onSearchQueryChange(displayValue);
                             }}
                             className="flex-1 text-left h-auto justify-start rounded-none p-0"
                           >
                             <div className="flex flex-col">
                               <div className="font-medium text-gray-900 text-sm">
-                                {customer.firstName} {customer.lastName}
+                                {[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'Customer'}
                               </div>
-                              <div className="text-xs text-gray-600 mt-0.5">
-                                {customer.phone}
-                              </div>
+                              {customer.phone && customer.phone.trim() !== '' && (
+                                <div className="text-xs text-gray-600 mt-0.5">
+                                  {customer.phone}
+                                </div>
+                              )}
                             </div>
                           </Button>
                           

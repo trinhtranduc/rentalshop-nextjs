@@ -40,9 +40,9 @@ const CustomerInfo: React.FC<{ customer: OrderDetailData['customer']; customerNa
   >
     <div className="space-y-2">
       <div className="font-medium text-gray-900">
-        {customerName || (customer ? `${customer.firstName} ${customer.lastName}` : 'Guest Customer')}
+        {customerName || (customer ? [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() : 'Guest Customer')}
       </div>
-      {(customerPhone || customer?.phone) && (
+      {(customerPhone || (customer?.phone && customer.phone.trim() !== '')) && (
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <Phone className="w-4 h-4" />
           <span>{customerPhone || customer?.phone}</span>
