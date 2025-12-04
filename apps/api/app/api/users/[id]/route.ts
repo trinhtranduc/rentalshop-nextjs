@@ -108,6 +108,14 @@ export async function PUT(
         );
       }
 
+      // Check if user is deleted (soft delete)
+      if (existingUser.deletedAt) {
+        return NextResponse.json(
+          ResponseBuilder.error('USER_NOT_FOUND', 'User has been deleted'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
       // Check if user is being deactivated (isActive changed from true to false)
       const isBeingDeactivated = existingUser.isActive && body.isActive === false;
 
@@ -174,6 +182,14 @@ export async function DELETE(
         return NextResponse.json(
           ResponseBuilder.error('USER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Check if user is already deleted
+      if (existingUser.deletedAt) {
+        return NextResponse.json(
+          ResponseBuilder.error('ACCOUNT_ALREADY_DELETED', 'User account has already been deleted'),
+          { status: API.STATUS.BAD_REQUEST }
         );
       }
 

@@ -65,6 +65,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user is deleted (soft delete)
+    if (user.deletedAt) {
+      return NextResponse.json(
+        ResponseBuilder.error('ACCOUNT_DEACTIVATED'),
+        { 
+          status: 403,
+          headers: corsHeaders
+        }
+      );
+    }
+
     // Check if user is active
     if (!user.isActive) {
       return NextResponse.json(

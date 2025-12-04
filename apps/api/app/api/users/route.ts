@@ -360,12 +360,10 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
 
 /**
  * DELETE /api/users
- * Delete a user permanently (hard delete)
- * REFACTORED: Uses unified withAuth pattern
- */
-/**
- * DELETE /api/users
  * Delete a user (soft delete)
+ * 
+ * Soft delete preserves order history (Order.createdBy) and other related data.
+ * Deleted users are automatically excluded from all user listing queries.
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
@@ -403,6 +401,14 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
       );
     }
 
+    // Check if user is already deleted
+    if (existingUser.deletedAt) {
+      return NextResponse.json(
+        ResponseBuilder.error('ACCOUNT_ALREADY_DELETED', 'User account has already been deleted'),
+        { status: 400 }
+      );
+    }
+
     // Scope validation
     if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
       return NextResponse.json(
@@ -428,55 +434,31 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
       }
     }
 
-    // Check if user has created orders (Order.createdBy doesn't have cascade delete)
-    const { prisma } = await import('@rentalshop/database');
-    const orderCount = await prisma.order.count({
-      where: { createdById: userId }
-    });
-
-    if (orderCount > 0) {
-      return NextResponse.json(
-        ResponseBuilder.error('USER_HAS_ORDERS', `Cannot delete user because they have created ${orderCount} order(s). Please reassign or delete the orders first.`),
-        { status: 409 }
-      );
-    }
-
     // Invalidate all user sessions first (using db pattern)
     await db.sessions.invalidateAllUserSessions(userId);
     console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
-    // Hard delete (permanently remove from database)
-    // Note: Related data with onDelete: Cascade will be automatically deleted:
-    // - EmailVerification
-    // - PasswordReset
-    // - AuditLog (if any)
-    // Note: Using prisma directly for hard delete as db.users.delete is soft delete only
-    await prisma.user.delete({
-      where: { id: userId }
+    // Soft delete (preserves order history and related data)
+    // Note: Soft-deleted users are automatically excluded from all user listing queries
+    const deletedUser = await db.users.update(userId, {
+      isActive: false,
+      deletedAt: new Date()
     });
     
-    console.log(`✅ User permanently deleted: ${existingUser.email} (ID: ${userId})`);
+    console.log(`✅ User soft deleted: ${existingUser.email} (ID: ${userId})`);
 
     return NextResponse.json({
       success: true,
       code: 'USER_DELETED_SUCCESS',
-      message: 'User deleted successfully'
+      message: 'User deleted successfully',
+      data: deletedUser
     });
 
   } catch (error: any) {
     console.error('❌ DELETE /api/users error:', error);
     
-    // Handle foreign key constraint errors
-    if (error.code === 'P2003' || error.message?.includes('Foreign key constraint')) {
-      return NextResponse.json(
-        ResponseBuilder.error('USER_HAS_RELATED_DATA', 'Cannot delete user because they have related data (orders, etc.). Please remove related data first.'),
-        { status: 409 }
-      );
-    }
-    
-    return NextResponse.json(
-      ResponseBuilder.error('DELETE_USER_FAILED', error.message || 'Failed to delete user'),
-      { status: 500 }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
