@@ -17,6 +17,7 @@ import {
 } from '@rentalshop/ui';
 import { bankAccountsApi, generateBankQRCodeData } from '@rentalshop/utils';
 import { useAuth, useBankAccountTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { Plus } from 'lucide-react';
 import type { BankAccount, BankAccountInput } from '@rentalshop/utils';
 
@@ -38,6 +39,13 @@ export const BankAccountSection: React.FC<BankAccountSectionProps> = ({
   const { toastSuccess, toastError } = useToast();
   const t = useBankAccountTranslations();
   const tc = useCommonTranslations();
+  // ✅ Use permissions hook for UI control
+  const { canManageBankAccounts, canViewBankAccounts } = usePermissions();
+  
+  // ✅ If user cannot view bank accounts, don't render anything
+  if (!canViewBankAccounts) {
+    return null;
+  }
 
   const outletId = user?.outlet?.id || user?.outletId || 0;
   const merchantId = user?.merchant?.id || user?.merchantId || 0;
@@ -217,11 +225,11 @@ export const BankAccountSection: React.FC<BankAccountSectionProps> = ({
         <CardContent className="p-6 pt-4">
           <BankAccountList
             bankAccounts={bankAccounts}
-            onAdd={handleAdd}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onAdd={canManageBankAccounts ? handleAdd : undefined}
+            onEdit={canManageBankAccounts ? handleEdit : undefined}
+            onDelete={canManageBankAccounts ? handleDelete : undefined}
             loading={loading}
-            showAddButton={true}
+            showAddButton={canManageBankAccounts}
           />
         </CardContent>
       </Card>
