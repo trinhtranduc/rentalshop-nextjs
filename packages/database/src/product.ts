@@ -9,6 +9,7 @@
 import { prisma } from './client';
 import type { ProductSearchFilter } from '@rentalshop/types';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 
 // ============================================================================
 // PRODUCT LOOKUP FUNCTIONS (BY PUBLIC ID)
@@ -175,15 +176,30 @@ export async function searchProducts(filters: ProductSearchFilter) {
     }
   }
 
-  // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility (case-insensitive)
+  // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
+  // Support both with and without Vietnamese diacritics
   const searchQuery = q || search;
   if (searchQuery) {
     const searchTerm = searchQuery.trim();
-    where.OR = [
+    // Normalize Vietnamese text to support search without diacritics
+    const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+    
+    // Search with both original and normalized terms to support diacritics-insensitive search
+    const searchConditions: any[] = [
       { name: { contains: searchTerm, mode: 'insensitive' } },
       { description: { contains: searchTerm, mode: 'insensitive' } },
       { barcode: { equals: searchTerm } } // Barcode is usually exact match
     ];
+    
+    // Add normalized search if different from original
+    if (normalizedTerm !== searchTerm) {
+      searchConditions.push(
+        { name: { contains: normalizedTerm, mode: 'insensitive' } },
+        { description: { contains: normalizedTerm, mode: 'insensitive' } }
+      );
+    }
+    
+    where.OR = searchConditions;
   }
 
   // If outletId is specified, only show products that have stock at that outlet
@@ -1234,14 +1250,26 @@ export const simplifiedProducts = {
       }
     }
     
-    // Text search (case-insensitive)
+    // Text search (case-insensitive and diacritics-insensitive)
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
-      where.OR = [
+      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+      
+      const searchConditions: any[] = [
         { name: { contains: searchTerm, mode: 'insensitive' } },
         { description: { contains: searchTerm, mode: 'insensitive' } },
         { barcode: { contains: searchTerm, mode: 'insensitive' } }
       ];
+      
+      // Add normalized search if different from original
+      if (normalizedTerm !== searchTerm) {
+        searchConditions.push(
+          { name: { contains: normalizedTerm, mode: 'insensitive' } },
+          { description: { contains: normalizedTerm, mode: 'insensitive' } }
+        );
+      }
+      
+      where.OR = searchConditions;
     }
 
     // Price range
