@@ -34,7 +34,8 @@
     "railway:reset": "yarn db:reset-railway",
     "db:check-sync": "./scripts/check-db-sync.sh",
     "db:check-sync:dev": "./scripts/check-db-sync.sh --service dev-apis",
-    "db:check-sync:prod": "./scripts/check-db-sync.sh --service apis"
+    "db:check-sync:prod": "./scripts/check-db-sync.sh --service apis",
+    "audit:error-translations": "node scripts/audit-error-translations.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
