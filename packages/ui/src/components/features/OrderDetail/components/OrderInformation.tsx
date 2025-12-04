@@ -29,18 +29,20 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
               <span className="text-sm text-gray-600">{t('customer.name')}:</span>
               <span className="text-sm font-medium">
                 {order.customer?.firstName
-                  ? `${order.customer.firstName} ${order.customer.lastName || ''}`.trim()
+                  ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim()
                   : order.customerName || t('customer.noCustomer')}
               </span>
             </div>
 
             {/* Customer Phone */}
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">{t('customer.phone')}:</span>
-              <span className="text-sm font-medium">
-                {order.customer?.phone || order.customerPhone || 'N/A'}
-              </span>
-            </div>
+            {(order.customer?.phone && order.customer.phone.trim() !== '') || order.customerPhone ? (
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">{t('customer.phone')}:</span>
+                <span className="text-sm font-medium">
+                  {order.customer?.phone || order.customerPhone}
+                </span>
+              </div>
+            ) : null}
 
             {/* Seller */}
             <div className="flex justify-between">

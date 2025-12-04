@@ -113,7 +113,7 @@ export function CustomerTable({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white">
-                      {customer.firstName} {customer.lastName}
+                      {[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'}
                     </div>
                   </div>
                 </td>
@@ -121,8 +121,15 @@ export function CustomerTable({
                 {/* Contact */}
                 <td className="px-6 py-4">
                   <div className="text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">{customer.email}</div>
-                    <div className="text-gray-500 dark:text-gray-400 text-xs">{customer.phone}</div>
+                    {customer.email && customer.email.trim() !== '' && (
+                      <div className="font-medium text-gray-900 dark:text-white">{customer.email}</div>
+                    )}
+                    {customer.phone && customer.phone.trim() !== '' && (
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">{customer.phone}</div>
+                    )}
+                    {(!customer.email || customer.email.trim() === '') && (!customer.phone || customer.phone.trim() === '') && (
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">N/A</div>
+                    )}
                   </div>
                 </td>
                 
