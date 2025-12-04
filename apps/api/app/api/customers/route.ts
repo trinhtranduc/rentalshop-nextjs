@@ -246,10 +246,20 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
 
     // Check for duplicate phone or email within the same merchant
     // Only check if phone/email are provided, not empty, and have meaningful content
-    const phoneValue = parsed.phone?.trim();
-    const emailValue = parsed.email?.trim();
-    const hasPhone = phoneValue && phoneValue.length > 0;
-    const hasEmail = emailValue && emailValue.length > 0;
+    // Handle both empty string "" and null/undefined
+    const phoneValue = parsed.phone ? String(parsed.phone).trim() : '';
+    const emailValue = parsed.email ? String(parsed.email).trim() : '';
+    const hasPhone = phoneValue.length > 0;
+    const hasEmail = emailValue.length > 0;
+    
+    console.log('🔍 Duplicate check:', { 
+      phoneValue, 
+      emailValue, 
+      hasPhone, 
+      hasEmail,
+      phoneType: typeof parsed.phone,
+      emailType: typeof parsed.email
+    });
     
     // Only perform duplicate check if at least one field (phone or email) is provided
     if (hasPhone || hasEmail) {
@@ -277,11 +287,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           
           console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
-            {
-              success: false,
-              code: 'CUSTOMER_DUPLICATE',
-              message: `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
-            },
+            ResponseBuilder.error('CUSTOMER_DUPLICATE', `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`),
             { status: 409 }
           );
         }
@@ -414,10 +420,20 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
 
     // Check for duplicate phone or email if being updated
     // Only check if phone/email are provided, not empty, and different from existing
-    const phoneValue = parsed.phone?.trim();
-    const emailValue = parsed.email?.trim();
-    const hasPhone = phoneValue && phoneValue.length > 0;
-    const hasEmail = emailValue && emailValue.length > 0;
+    // Handle both empty string "" and null/undefined
+    const phoneValue = parsed.phone ? String(parsed.phone).trim() : '';
+    const emailValue = parsed.email ? String(parsed.email).trim() : '';
+    const hasPhone = phoneValue.length > 0;
+    const hasEmail = emailValue.length > 0;
+    
+    console.log('🔍 PUT Duplicate check:', { 
+      phoneValue, 
+      emailValue, 
+      hasPhone, 
+      hasEmail,
+      phoneType: typeof parsed.phone,
+      emailType: typeof parsed.email
+    });
     
     // Only perform duplicate check if at least one field (phone or email) is provided and changed
     if (hasPhone || hasEmail) {
@@ -446,11 +462,7 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
           
           console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
-            {
-              success: false,
-              code: 'CUSTOMER_DUPLICATE',
-              message: `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
-            },
+            ResponseBuilder.error('CUSTOMER_DUPLICATE', `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`),
             { status: 409 }
           );
         }

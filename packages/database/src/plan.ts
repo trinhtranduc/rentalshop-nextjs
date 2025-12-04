@@ -5,6 +5,7 @@
 import { prisma } from './client';
 import type { Plan, PlanCreateInput, PlanUpdateInput, PlanFilters } from '@rentalshop/types';
 import { calculatePlanPricing } from './subscription';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 
 /**
  * Helper function to generate pricing object for a plan
@@ -108,10 +109,23 @@ export async function searchPlans(filters: PlanFilters = {}): Promise<{ plans: P
 
     // Apply filters
     if (filters.search) {
-      where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } }
+      const searchTerm = filters.search.trim();
+      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+      
+      const searchConditions: any[] = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } }
       ];
+      
+      // Add normalized search if different from original
+      if (normalizedTerm !== searchTerm) {
+        searchConditions.push(
+          { name: { contains: normalizedTerm, mode: 'insensitive' } },
+          { description: { contains: normalizedTerm, mode: 'insensitive' } }
+        );
+      }
+      
+      where.OR = searchConditions;
     }
 
     if (filters.isActive !== undefined) {

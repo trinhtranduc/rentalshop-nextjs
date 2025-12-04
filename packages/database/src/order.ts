@@ -6,6 +6,7 @@ import type {
   OrderSearchResult,
   OrderSearchResponse
 } from '@rentalshop/types';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 
 export interface OrderWithRelations {
   id: number
@@ -571,14 +572,27 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
 
   const where: any = {};
 
-  // Text search
+  // Text search (diacritics-insensitive for customer names)
   if (q) {
-    where.OR = [
-      { orderNumber: { contains: q, mode: 'insensitive' } },
-      { customer: { firstName: { contains: q, mode: 'insensitive' } } },
-      { customer: { lastName: { contains: q, mode: 'insensitive' } } },
-      { customer: { phone: { contains: q, mode: 'insensitive' } } },
+    const searchTerm = q.trim();
+    const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+    
+    const searchConditions: any[] = [
+      { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
+      { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
+      { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
+      { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } },
     ];
+    
+    // Add normalized search for customer names if different from original
+    if (normalizedTerm !== searchTerm) {
+      searchConditions.push(
+        { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
+        { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } }
+      );
+    }
+    
+    where.OR = searchConditions;
   }
 
   // Filter by outlet
@@ -875,15 +889,27 @@ export const simplifiedOrders = {
       if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
     }
 
-    // Text search (case-insensitive)
+    // Text search (case-insensitive and diacritics-insensitive for customer names)
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
-      where.OR = [
+      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+      
+      const searchConditions: any[] = [
         { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
         { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
         { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
         { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } }
       ];
+      
+      // Add normalized search for customer names if different from original
+      if (normalizedTerm !== searchTerm) {
+        searchConditions.push(
+          { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
+          { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } }
+        );
+      }
+      
+      where.OR = searchConditions;
     }
 
     // ✅ Build dynamic orderBy clause
@@ -1218,12 +1244,25 @@ export const simplifiedOrders = {
       if (endDate) where.createdAt.lte = endDate;
     }
     if (search) {
-      where.OR = [
-        { orderNumber: { contains: search, mode: 'insensitive' } },
-        { customer: { firstName: { contains: search, mode: 'insensitive' } } },
-        { customer: { lastName: { contains: search, mode: 'insensitive' } } },
-        { customer: { phone: { contains: search, mode: 'insensitive' } } }
+      const searchTerm = search.trim();
+      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+      
+      const searchConditions: any[] = [
+        { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
+        { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
+        { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
+        { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } }
       ];
+      
+      // Add normalized search for customer names if different from original
+      if (normalizedTerm !== searchTerm) {
+        searchConditions.push(
+          { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
+          { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } }
+        );
+      }
+      
+      where.OR = searchConditions;
     }
 
     const [orders, total] = await Promise.all([
@@ -1412,15 +1451,27 @@ export const simplifiedOrders = {
       if (endDate) where.createdAt.lte = endDate;
     }
 
-    // Search functionality: search in order number, customer name, and customer phone
+    // Search functionality: search in order number, customer name, and customer phone (diacritics-insensitive)
     if (search) {
       const searchTerm = search.trim();
-      where.OR = [
+      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+      
+      const searchConditions: any[] = [
         { orderNumber: { contains: searchTerm, mode: 'insensitive' } },
         { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
         { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
         { customer: { phone: { contains: searchTerm, mode: 'insensitive' } } }
       ];
+      
+      // Add normalized search for customer names if different from original
+      if (normalizedTerm !== searchTerm) {
+        searchConditions.push(
+          { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
+          { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } }
+        );
+      }
+      
+      where.OR = searchConditions;
     }
 
     const [orders, total] = await Promise.all([

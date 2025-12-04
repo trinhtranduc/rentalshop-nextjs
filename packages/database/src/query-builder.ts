@@ -4,6 +4,7 @@
  */
 
 import { prisma } from './client';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 
 export interface QueryOptions {
   page?: number;
@@ -39,7 +40,7 @@ export function buildOrderBy(
 }
 
 /**
- * Build search where clause (case-insensitive contains)
+ * Build search where clause (case-insensitive and diacritics-insensitive contains)
  */
 export function buildSearchWhere(
   search?: string,
@@ -48,18 +49,35 @@ export function buildSearchWhere(
   if (!search || !search.trim()) return undefined;
 
   const searchTerm = search.trim();
+  const normalizedTerm = removeVietnameseDiacritics(searchTerm);
   
   if (searchFields.length === 1) {
-    return {
-      [searchFields[0]]: { contains: searchTerm, mode: 'insensitive' }
-    };
+    const conditions: any[] = [
+      { [searchFields[0]]: { contains: searchTerm, mode: 'insensitive' } }
+    ];
+    
+    // Add normalized search if different from original
+    if (normalizedTerm !== searchTerm) {
+      conditions.push({
+        [searchFields[0]]: { contains: normalizedTerm, mode: 'insensitive' }
+      });
+    }
+    
+    return conditions.length === 1 ? conditions[0] : { OR: conditions };
   }
 
-  return {
-    OR: searchFields.map(field => ({
-      [field]: { contains: searchTerm, mode: 'insensitive' }
-    }))
-  };
+  const conditions: any[] = searchFields.map(field => ({
+    [field]: { contains: searchTerm, mode: 'insensitive' }
+  }));
+  
+  // Add normalized search if different from original
+  if (normalizedTerm !== searchTerm) {
+    conditions.push(...searchFields.map(field => ({
+      [field]: { contains: normalizedTerm, mode: 'insensitive' }
+    })));
+  }
+
+  return { OR: conditions };
 }
 
 /**

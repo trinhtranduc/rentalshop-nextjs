@@ -7,6 +7,7 @@
 import { prisma } from './client';
 import { ORDER_STATUS } from '@rentalshop/constants';
 import type { SimpleFilters, SimpleResponse } from './index';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 
 // ============================================================================
 // TYPES
@@ -161,10 +162,22 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
   const where: any = {};
 
   if (search) {
-    where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } }
+    const searchTerm = search.trim();
+    const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+    
+    const searchConditions: any[] = [
+      { name: { contains: searchTerm, mode: 'insensitive' } },
+      { email: { contains: searchTerm, mode: 'insensitive' } }
     ];
+    
+    // Add normalized search if different from original
+    if (normalizedTerm !== searchTerm) {
+      searchConditions.push(
+        { name: { contains: normalizedTerm, mode: 'insensitive' } }
+      );
+    }
+    
+    where.OR = searchConditions;
   }
 
   if (businessType) {

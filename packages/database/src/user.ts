@@ -9,6 +9,7 @@
 import { prisma } from './client';
 import type { UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { hashPassword } from '@rentalshop/auth';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 
 // ============================================================================
 // USER LOOKUP FUNCTIONS
@@ -667,13 +668,28 @@ export const simplifiedUsers = {
       where.role = whereFilters.role;
     }
     
-    // Text search (case-insensitive)
+    // Text search (case-insensitive and diacritics-insensitive)
     if (whereFilters.search) {
-      where.OR = [
-        { firstName: { contains: whereFilters.search, mode: 'insensitive' } },
-        { lastName: { contains: whereFilters.search, mode: 'insensitive' } },
-        { email: { contains: whereFilters.search, mode: 'insensitive' } }
+      const searchTerm = whereFilters.search.trim();
+      // Normalize Vietnamese text to support search without diacritics
+      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+      
+      // Search with both original and normalized terms to support diacritics-insensitive search
+      const searchConditions: any[] = [
+        { firstName: { contains: searchTerm, mode: 'insensitive' } },
+        { lastName: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } }
       ];
+      
+      // Add normalized search if different from original
+      if (normalizedTerm !== searchTerm) {
+        searchConditions.push(
+          { firstName: { contains: normalizedTerm, mode: 'insensitive' } },
+          { lastName: { contains: normalizedTerm, mode: 'insensitive' } }
+        );
+      }
+      
+      where.OR = searchConditions;
     }
 
     // ✅ Build dynamic orderBy clause

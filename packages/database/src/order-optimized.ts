@@ -10,6 +10,7 @@ import type {
   OrderSearchResult,
   OrderSearchResponse
 } from '@rentalshop/types';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 
 /**
  * Performance monitoring utility
@@ -40,15 +41,27 @@ class PerformanceMonitor {
 function buildOptimizedWhereClause(filters: OrderSearchFilter): any {
   const where: any = {};
 
-  // Text search - optimized for indexed fields
+  // Text search - optimized for indexed fields (diacritics-insensitive for customer names)
   if (filters.q) {
     const searchTerm = filters.q.trim();
-    where.OR = [
+    const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+    
+    const searchConditions: any[] = [
       { orderNumber: { contains: searchTerm } }, // Uses index
       { customer: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
       { customer: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
       { customer: { phone: { contains: searchTerm } } },
     ];
+    
+    // Add normalized search for customer names if different from original
+    if (normalizedTerm !== searchTerm) {
+      searchConditions.push(
+        { customer: { firstName: { contains: normalizedTerm, mode: 'insensitive' } } },
+        { customer: { lastName: { contains: normalizedTerm, mode: 'insensitive' } } }
+      );
+    }
+    
+    where.OR = searchConditions;
   }
 
   // Use indexed fields for filtering

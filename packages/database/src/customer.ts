@@ -7,6 +7,7 @@
 // - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 import type { 
   CustomerInput, 
   CustomerUpdateInput, 
@@ -307,15 +308,29 @@ export async function searchCustomers(
     where.idType = idType;
   }
 
-  // Search query for name, email, phone, or idNumber (case-insensitive)
+  // Search query for name, email, phone, or idNumber (case-insensitive and diacritics-insensitive)
   if (q && q.trim()) {
     const searchQuery = q.trim();
-    where.OR = [
+    // Normalize Vietnamese text to support search without diacritics
+    const normalizedQuery = removeVietnameseDiacritics(searchQuery);
+    
+    // Search with both original and normalized terms to support diacritics-insensitive search
+    const searchConditions: any[] = [
       { firstName: { contains: searchQuery, mode: 'insensitive' } },
       { lastName: { contains: searchQuery, mode: 'insensitive' } },
       { email: { contains: searchQuery, mode: 'insensitive' } },
       { phone: { contains: searchQuery } } // Phone numbers are usually exact match
     ];
+    
+    // Add normalized search if different from original
+    if (normalizedQuery !== searchQuery) {
+      searchConditions.push(
+        { firstName: { contains: normalizedQuery, mode: 'insensitive' } },
+        { lastName: { contains: normalizedQuery, mode: 'insensitive' } }
+      );
+    }
+    
+    where.OR = searchConditions;
   }
 
   // Get total count
@@ -538,25 +553,97 @@ export const simplifiedCustomers = {
       where.isActive = true; // Default: only show active customers
     }
     
-    // Text search across multiple fields (case-insensitive)
+    // Text search across multiple fields (case-insensitive and diacritics-insensitive)
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
-      where.OR = [
+      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+      
+      const searchConditions: any[] = [
         { firstName: { contains: searchTerm, mode: 'insensitive' } },
         { lastName: { contains: searchTerm, mode: 'insensitive' } },
         { email: { contains: searchTerm, mode: 'insensitive' } },
         { phone: { contains: searchTerm, mode: 'insensitive' } }
       ];
+      
+      // Add normalized search for name fields if different from original
+      if (normalizedTerm !== searchTerm) {
+        searchConditions.push(
+          { firstName: { contains: normalizedTerm, mode: 'insensitive' } },
+          { lastName: { contains: normalizedTerm, mode: 'insensitive' } }
+        );
+      }
+      
+      where.OR = searchConditions;
     }
 
-    // Specific field filters (case-insensitive)
-    if (whereFilters.firstName) where.firstName = { contains: whereFilters.firstName, mode: 'insensitive' };
-    if (whereFilters.lastName) where.lastName = { contains: whereFilters.lastName, mode: 'insensitive' };
+    // Specific field filters (case-insensitive and diacritics-insensitive for text fields)
+    if (whereFilters.firstName) {
+      const normalized = removeVietnameseDiacritics(whereFilters.firstName);
+      if (normalized !== whereFilters.firstName) {
+        const existingOR = where.OR || [];
+        where.OR = [
+          ...existingOR,
+          { firstName: { contains: whereFilters.firstName, mode: 'insensitive' } },
+          { firstName: { contains: normalized, mode: 'insensitive' } }
+        ];
+      } else {
+        where.firstName = { contains: whereFilters.firstName, mode: 'insensitive' };
+      }
+    }
+    if (whereFilters.lastName) {
+      const normalized = removeVietnameseDiacritics(whereFilters.lastName);
+      if (normalized !== whereFilters.lastName) {
+        const existingOR = where.OR || [];
+        where.OR = [
+          ...existingOR,
+          { lastName: { contains: whereFilters.lastName, mode: 'insensitive' } },
+          { lastName: { contains: normalized, mode: 'insensitive' } }
+        ];
+      } else {
+        where.lastName = { contains: whereFilters.lastName, mode: 'insensitive' };
+      }
+    }
     if (whereFilters.email) where.email = { contains: whereFilters.email, mode: 'insensitive' };
     if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: 'insensitive' };
-    if (whereFilters.city) where.city = { contains: whereFilters.city, mode: 'insensitive' };
-    if (whereFilters.state) where.state = { contains: whereFilters.state, mode: 'insensitive' };
-    if (whereFilters.country) where.country = { contains: whereFilters.country, mode: 'insensitive' };
+    if (whereFilters.city) {
+      const normalized = removeVietnameseDiacritics(whereFilters.city);
+      if (normalized !== whereFilters.city) {
+        const existingOR = where.OR || [];
+        where.OR = [
+          ...existingOR,
+          { city: { contains: whereFilters.city, mode: 'insensitive' } },
+          { city: { contains: normalized, mode: 'insensitive' } }
+        ];
+      } else {
+        where.city = { contains: whereFilters.city, mode: 'insensitive' };
+      }
+    }
+    if (whereFilters.state) {
+      const normalized = removeVietnameseDiacritics(whereFilters.state);
+      if (normalized !== whereFilters.state) {
+        const existingOR = where.OR || [];
+        where.OR = [
+          ...existingOR,
+          { state: { contains: whereFilters.state, mode: 'insensitive' } },
+          { state: { contains: normalized, mode: 'insensitive' } }
+        ];
+      } else {
+        where.state = { contains: whereFilters.state, mode: 'insensitive' };
+      }
+    }
+    if (whereFilters.country) {
+      const normalized = removeVietnameseDiacritics(whereFilters.country);
+      if (normalized !== whereFilters.country) {
+        const existingOR = where.OR || [];
+        where.OR = [
+          ...existingOR,
+          { country: { contains: whereFilters.country, mode: 'insensitive' } },
+          { country: { contains: normalized, mode: 'insensitive' } }
+        ];
+      } else {
+        where.country = { contains: whereFilters.country, mode: 'insensitive' };
+      }
+    }
 
     // ✅ Build dynamic orderBy clause
     const orderBy: any = {};
