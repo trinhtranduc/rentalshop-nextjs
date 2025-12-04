@@ -746,8 +746,9 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
       planLimits = plan.limits || {};
     }
     
-    // Ensure all required fields exist with default values (for backward compatibility with old plans)
+    // Ensure all required fields exist with default values
     // Default to unlimited (-1) if field is missing to prevent blocking operations
+    // Only -1 means unlimited, 0 means limit of 0 (cannot create)
     planLimits = {
       outlets: planLimits.outlets !== undefined ? planLimits.outlets : -1,
       users: planLimits.users !== undefined ? planLimits.users : -1,
@@ -777,7 +778,7 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     // Get current counts
     const currentCounts = await getCurrentEntityCounts(merchantId);
 
-    // Check unlimited flags
+    // Check unlimited flags: Only -1 means unlimited
     const isUnlimited = {
       outlets: planLimits.outlets === -1,
       users: planLimits.users === -1,
