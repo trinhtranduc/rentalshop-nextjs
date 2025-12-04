@@ -522,6 +522,42 @@ export type PlansQuery = z.infer<typeof plansQuerySchema>;
 // Plan Variant validation schemas
 // ============================================================================
 
+// Plan Limit Addon validation schemas
+export const planLimitAddonCreateSchema = z.object({
+  merchantId: z.coerce.number().int().positive('Merchant ID must be a positive integer'),
+  outlets: z.coerce.number().int().min(0, 'Outlets must be 0 or greater').default(0),
+  users: z.coerce.number().int().min(0, 'Users must be 0 or greater').default(0),
+  products: z.coerce.number().int().min(0, 'Products must be 0 or greater').default(0),
+  customers: z.coerce.number().int().min(0, 'Customers must be 0 or greater').default(0),
+  orders: z.coerce.number().int().min(0, 'Orders must be 0 or greater').default(0),
+  notes: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const planLimitAddonUpdateSchema = z.object({
+  outlets: z.coerce.number().int().min(0, 'Outlets must be 0 or greater').optional(),
+  users: z.coerce.number().int().min(0, 'Users must be 0 or greater').optional(),
+  products: z.coerce.number().int().min(0, 'Products must be 0 or greater').optional(),
+  customers: z.coerce.number().int().min(0, 'Customers must be 0 or greater').optional(),
+  orders: z.coerce.number().int().min(0, 'Orders must be 0 or greater').optional(),
+  notes: z.string().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const planLimitAddonsQuerySchema = z.object({
+  merchantId: z.coerce.number().int().positive().optional(),
+  isActive: z.union([z.string(), z.boolean()]).transform((v) => {
+    if (typeof v === 'boolean') return v;
+    if (v === undefined) return undefined;
+    return v === 'true';
+  }).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+  sortBy: z.enum(['id', 'createdAt', 'updatedAt']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
 export const planVariantCreateSchema = z.object({
   planId: z.string().min(1, 'Plan ID is required'),
   name: z.string().min(1, 'Variant name is required'),
@@ -554,6 +590,11 @@ export const planVariantsQuerySchema = z.object({
 
 export type PlanVariantCreateInput = z.infer<typeof planVariantCreateSchema>;
 export type PlanVariantUpdateInput = z.infer<typeof planVariantUpdateSchema>;
+
+// Plan Limit Addon type exports
+export type PlanLimitAddonCreateInput = z.infer<typeof planLimitAddonCreateSchema>;
+export type PlanLimitAddonUpdateInput = z.infer<typeof planLimitAddonUpdateSchema>;
+export type PlanLimitAddonsQuery = z.infer<typeof planLimitAddonsQuerySchema>;
 export type PlanVariantsQuery = z.infer<typeof planVariantsQuerySchema>;
 
 // ============================================================================
@@ -610,7 +651,9 @@ export interface PlanLimitsValidationResult {
 }
 
 export interface PlanLimitsInfo {
-  planLimits: PlanLimits;
+  planLimits: PlanLimits; // Total limits (plan + addon)
+  basePlanLimits?: PlanLimits; // Original plan limits (for reference)
+  addonLimits?: PlanLimits; // Addon limits (for transparency)
   platform: 'mobile' | 'mobile+web';
   currentCounts: {
     outlets: number;
@@ -775,16 +818,31 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     
     const platform = features.includes('Web dashboard access') ? 'mobile+web' : 'mobile';
 
+    // Get addon limits and add them to plan limits
+    const { db } = await import('@rentalshop/database');
+    const addonLimits = await db.planLimitAddons.calculateTotal(merchantId);
+    
+    // Calculate total limits: plan limits + addon limits
+    // Note: If plan limit is -1 (unlimited), total is also -1 (unlimited)
+    // Otherwise, add addon limits to plan limits
+    const totalLimits = {
+      outlets: planLimits.outlets === -1 ? -1 : planLimits.outlets + addonLimits.outlets,
+      users: planLimits.users === -1 ? -1 : planLimits.users + addonLimits.users,
+      products: planLimits.products === -1 ? -1 : planLimits.products + addonLimits.products,
+      customers: planLimits.customers === -1 ? -1 : planLimits.customers + addonLimits.customers,
+      orders: planLimits.orders === -1 ? -1 : planLimits.orders + addonLimits.orders,
+    };
+
     // Get current counts
     const currentCounts = await getCurrentEntityCounts(merchantId);
 
     // Check unlimited flags: Only -1 means unlimited
     const isUnlimited = {
-      outlets: planLimits.outlets === -1,
-      users: planLimits.users === -1,
-      products: planLimits.products === -1,
-      customers: planLimits.customers === -1,
-      orders: planLimits.orders === -1
+      outlets: totalLimits.outlets === -1,
+      users: totalLimits.users === -1,
+      products: totalLimits.products === -1,
+      customers: totalLimits.customers === -1,
+      orders: totalLimits.orders === -1
     };
     
     console.log('🔍 Plan Limits Check:', {
@@ -793,11 +851,13 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
       planId: merchant.subscription.planId,
       planName: plan.name,
       planLimits,
+      addonLimits,
+      totalLimits,
       limitsType: typeof plan.limits,
-      ordersLimit: planLimits.orders,
+      ordersLimit: totalLimits.orders,
       ordersUnlimited: isUnlimited.orders,
       currentOrdersCount: currentCounts.orders,
-      canCreateOrder: isUnlimited.orders || (planLimits.orders !== undefined && currentCounts.orders < planLimits.orders),
+      canCreateOrder: isUnlimited.orders || (totalLimits.orders !== undefined && currentCounts.orders < totalLimits.orders),
       planFeatures: features.slice(0, 3) // Show first 3 features for debugging
     });
 
@@ -809,7 +869,9 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     };
 
     return {
-      planLimits,
+      planLimits: totalLimits, // Return total limits (plan + addon)
+      basePlanLimits: planLimits, // Keep original plan limits for reference
+      addonLimits, // Include addon limits for transparency
       platform: platform || 'mobile',
       currentCounts,
       isUnlimited,

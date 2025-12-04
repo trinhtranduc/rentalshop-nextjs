@@ -15,6 +15,7 @@ import { simplifiedPlans } from './plan';
 import { simplifiedSubscriptions } from './subscription';
 import { simplifiedSubscriptionActivities } from './subscription-activity';
 import { simplifiedMerchants } from './merchant';
+import { simplifiedPlanLimitAddons } from './plan-limit-addon';
 import { simplifiedOrderNumbers } from './order-number-generator';
 import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
@@ -149,6 +150,11 @@ const db = {
   // SUBSCRIPTION ACTIVITY OPERATIONS
   // ============================================================================
   subscriptionActivities: simplifiedSubscriptionActivities,
+
+  // ============================================================================
+  // PLAN LIMIT ADDON OPERATIONS
+  // ============================================================================
+  planLimitAddons: simplifiedPlanLimitAddons,
 
   // ============================================================================
   // SESSION OPERATIONS (Single Session Enforcement)

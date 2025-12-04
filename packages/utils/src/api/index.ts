@@ -23,6 +23,7 @@ export * from './payments';
 export * from './audit-logs';
 export * from './settings';
 export * from './subscriptions';
+export * from './plan-limit-addons';
 export * from './system';
 export * from './calendar';
 export * from './upload';

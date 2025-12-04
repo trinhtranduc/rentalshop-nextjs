@@ -1,12 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MerchantHeader } from './MerchantHeader';
 import { MerchantPlanManagement } from './MerchantPlanManagement';
 import { MerchantSubscriptionSection } from './MerchantSubscriptionSection';
-import { Button, Card, CardContent, CardHeader, CardTitle } from '../../../ui';
-import { Building2, Users, Package, ShoppingCart } from 'lucide-react';
+import { 
+  Button, 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from '../../../ui';
+import { Building2, Users, Package, ShoppingCart, PlusCircle, MoreVertical, ChevronDown } from 'lucide-react';
 import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
 import { SUBSCRIPTION_STATUS, normalizeSubscriptionStatus } from '@rentalshop/constants';
 import type { SubscriptionStatus } from '@rentalshop/constants';
@@ -53,6 +64,7 @@ export function MerchantDetail({
   onReactivate
 }: MerchantDetailProps) {
   const router = useRouter();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const navigateToPage = (page: string, id?: number) => {
     // Navigate within the admin app
@@ -62,6 +74,7 @@ export function MerchantDetail({
 
   const handleNavigateToAdmin = (page: string, id?: number) => {
     navigateToPage(page, id);
+    setDropdownOpen(false);
   };
 
   return (
@@ -80,7 +93,7 @@ export function MerchantDetail({
             <CardTitle>Basic Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Name</label>
                 <p className="text-sm text-gray-900 dark:text-white">{data.merchant.name}</p>
@@ -94,18 +107,101 @@ export function MerchantDetail({
                 <p className="text-sm text-gray-900 dark:text-white">{data.merchant.phone || 'Not provided'}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Address</label>
-                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.address || 'Not provided'}</p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Description</label>
-                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.description || 'No description'}</p>
-              </div>
-              <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
                 <p className={`text-sm ${data.merchant.isActive ? 'text-green-600' : 'text-red-600'}`}>
                   {data.merchant.isActive ? 'Active' : 'Inactive'}
                 </p>
+              </div>
+              {data.merchant.subscription && (
+                <>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Current Plan</label>
+                    <p className="text-sm text-gray-900 dark:text-white">
+                      {data.merchant.subscription.plan?.name || 'No plan'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Subscription Status</label>
+                    <p className={`text-sm ${
+                      normalizeSubscriptionStatus(data.merchant.subscription.status) === SUBSCRIPTION_STATUS.ACTIVE ? 'text-green-600' :
+                      normalizeSubscriptionStatus(data.merchant.subscription.status) === SUBSCRIPTION_STATUS.TRIAL ? 'text-blue-600' :
+                      normalizeSubscriptionStatus(data.merchant.subscription.status) === SUBSCRIPTION_STATUS.PAUSED ? 'text-orange-600' :
+                      'text-gray-600'
+                    }`}>
+                      {normalizeSubscriptionStatus(data.merchant.subscription.status) || 'Unknown'}
+                    </p>
+                  </div>
+                </>
+              )}
+              {data.merchant.address && (
+                <div className="md:col-span-2">
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Address</label>
+                  <p className="text-sm text-gray-900 dark:text-white">{data.merchant.address}</p>
+                </div>
+              )}
+              {data.merchant.description && (
+                <div className="md:col-span-2">
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Description</label>
+                  <p className="text-sm text-gray-900 dark:text-white">{data.merchant.description}</p>
+                </div>
+              )}
+              <div className="md:col-span-2 pt-2 border-t">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">Quick Actions</label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-between"
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                    >
+                      <span>Manage Merchant Resources</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="end" 
+                    className="w-56"
+                    open={dropdownOpen}
+                    onOpenChange={setDropdownOpen}
+                  >
+                    <DropdownMenuItem
+                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/outlets')}
+                      className="cursor-pointer"
+                    >
+                      <Building2 className="mr-2 h-4 w-4 text-blue-700" />
+                      <span>Manage Outlets</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/products')}
+                      className="cursor-pointer"
+                    >
+                      <Package className="mr-2 h-4 w-4 text-green-600" />
+                      <span>Manage Products</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/users')}
+                      className="cursor-pointer"
+                    >
+                      <Users className="mr-2 h-4 w-4 text-purple-600" />
+                      <span>Manage Users</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/orders')}
+                      className="cursor-pointer"
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4 text-orange-600" />
+                      <span>Manage Orders</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/plan-limit-addons')}
+                      className="cursor-pointer"
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4 text-indigo-600" />
+                      <span>Plan Limit Addons</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </CardContent>
@@ -113,8 +209,8 @@ export function MerchantDetail({
 
       </div>
 
-      {/* Plan Management - Original Component (Keep existing UI) */}
-      {onPlanChange && (
+      {/* Plan Management - Compact version, only show if needed */}
+      {onPlanChange && data.merchant.subscription && (
         <MerchantPlanManagement
           merchant={{
             id: data.merchant.id,
@@ -140,80 +236,6 @@ export function MerchantDetail({
         />
       )}
 
-      {/* Activity Timeline - Add below plan management */}
-      {data.merchant.subscription && (
-        <MerchantSubscriptionSection
-          merchantId={data.merchant.id}
-          subscription={data.merchant.subscription}
-        />
-      )}
-
-      {/* Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Manage Outlets</CardTitle>
-            <Building2 className="w-5 h-5 text-blue-700" />
-          </CardHeader>
-          <CardContent>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/outlets')}
-            >
-              Go to Outlets
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Manage Products</CardTitle>
-            <Package className="w-5 h-5 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/products')}
-            >
-              Go to Products
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Manage Users</CardTitle>
-            <Users className="w-5 h-5 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/users')}
-            >
-              Go to Users
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Manage Orders</CardTitle>
-            <ShoppingCart className="w-5 h-5 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/orders')}
-            >
-              Go to Orders
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
      </div>
   );
 }

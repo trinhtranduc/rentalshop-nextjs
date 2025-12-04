@@ -98,6 +98,7 @@ model Merchant {
   products      Product[]
   subscription  Subscription?
   users         User[]
+  planLimitAddons PlanLimitAddon[]
 
   @@index([name])
   @@index([email])
@@ -393,6 +394,26 @@ model SubscriptionActivity {
 
   @@index([subscriptionId])
   @@index([type])
+  @@index([createdAt])
+}
+
+model PlanLimitAddon {
+  id            Int       @id @default(autoincrement())
+  merchantId    Int
+  outlets       Int       @default(0)
+  users         Int       @default(0)
+  products      Int       @default(0)
+  customers     Int       @default(0)
+  orders        Int       @default(0)
+  notes         String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([isActive])
+  @@index([merchantId, isActive])
   @@index([createdAt])
 }
 

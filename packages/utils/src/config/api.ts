@@ -225,6 +225,22 @@ export interface ApiUrls {
         delete: (merchantId: number, outletId: number, accountId: number) => string;
       };
     };
+    planLimitAddons: {
+      list: (merchantId: number) => string;
+      get: (merchantId: number, addonId: number) => string;
+      create: (merchantId: number) => string;
+      update: (merchantId: number, addonId: number) => string;
+      delete: (merchantId: number, addonId: number) => string;
+    };
+  };
+  planLimitAddons: {
+    list: string;
+    get: (id: number) => string;
+    create: string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+    getByMerchant: (merchantId: number) => string;
+    createByMerchant: (merchantId: number) => string;
   };
   settings: {
     merchant: string;
@@ -693,6 +709,22 @@ function createApiUrls(): ApiUrls {
           delete: (merchantId: number, outletId: number, accountId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts/${accountId}`,
         },
       },
+      planLimitAddons: {
+        list: (merchantId: number) => `${base}/api/merchants/${merchantId}/plan-limit-addons`,
+        get: (merchantId: number, addonId: number) => `${base}/api/plan-limit-addons/${addonId}`,
+        create: (merchantId: number) => `${base}/api/merchants/${merchantId}/plan-limit-addons`,
+        update: (merchantId: number, addonId: number) => `${base}/api/plan-limit-addons/${addonId}`,
+        delete: (merchantId: number, addonId: number) => `${base}/api/plan-limit-addons/${addonId}`,
+      },
+    },
+    planLimitAddons: {
+      list: `${base}/api/plan-limit-addons`,
+      get: (id: number) => `${base}/api/plan-limit-addons/${id}`,
+      create: `${base}/api/plan-limit-addons`,
+      update: (id: number) => `${base}/api/plan-limit-addons/${id}`,
+      delete: (id: number) => `${base}/api/plan-limit-addons/${id}`,
+      getByMerchant: (merchantId: number) => `${base}/api/merchants/${merchantId}/plan-limit-addons`,
+      createByMerchant: (merchantId: number) => `${base}/api/merchants/${merchantId}/plan-limit-addons`,
     },
   settings: {
     merchant: `${base}/api/settings/merchant`,
