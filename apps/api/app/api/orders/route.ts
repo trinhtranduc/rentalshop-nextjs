@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder } from '@rentalshop/utils';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
@@ -212,20 +212,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     }
 
     // Check plan limits before creating order (ADMIN bypass)
-    if (user.role !== USER_ROLE.ADMIN) {
-      try {
-        await assertPlanLimit(outlet.merchantId, 'orders');
-        console.log('✅ Plan limit check passed for orders');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for orders:', error.message);
-        return NextResponse.json(
-          ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for orders'),
-          { status: 403 }
-        );
-      }
-    } else {
-      console.log('✅ ADMIN user: Bypassing plan limit check for orders');
-    }
+    const planLimitError = await checkPlanLimitIfNeeded(user, outlet.merchantId, 'orders');
+    if (planLimitError) return planLimitError;
 
     // Generate order number: 6-digit random number (e.g., 123456, 789012)
     // Use atomic transaction to ensure uniqueness

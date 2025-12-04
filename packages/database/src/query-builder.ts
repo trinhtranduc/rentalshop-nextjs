@@ -61,13 +61,13 @@ export function buildSearchWhere(
       conditions.push({
         [searchFields[0]]: { contains: normalizedTerm, mode: 'insensitive' }
       });
-    }
-    
+  }
+
     return conditions.length === 1 ? conditions[0] : { OR: conditions };
   }
 
   const conditions: any[] = searchFields.map(field => ({
-    [field]: { contains: searchTerm, mode: 'insensitive' }
+      [field]: { contains: searchTerm, mode: 'insensitive' }
   }));
   
   // Add normalized search if different from original

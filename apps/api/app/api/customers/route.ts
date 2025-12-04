@@ -5,7 +5,7 @@ import {
   customersQuerySchema, 
   customerCreateSchema, 
   customerUpdateSchema, 
-  assertPlanLimit, 
+  checkPlanLimitIfNeeded, 
   handleApiError, 
   ResponseBuilder
 } from '@rentalshop/utils';
@@ -298,24 +298,8 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     console.log('✅ No duplicate check needed - phone and email are both empty or not provided');
 
     // Check plan limits before creating customer (ADMIN bypass)
-    if (user.role !== USER_ROLE.ADMIN) {
-      try {
-        await assertPlanLimit(merchantId, 'customers');
-        console.log('✅ Plan limit check passed for customers');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for customers:', error.message);
-        return NextResponse.json(
-          { 
-            success: false, 
-            code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for customers',
-            error: 'PLAN_LIMIT_EXCEEDED'
-          },
-          { status: 403 }
-        );
-      }
-    } else {
-      console.log('✅ ADMIN user: Bypassing plan limit check for customers');
-    }
+    const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'customers');
+    if (planLimitError) return planLimitError;
 
     // Find merchant by publicId to get CUID
     const merchant = await db.merchants.findById(merchantId);

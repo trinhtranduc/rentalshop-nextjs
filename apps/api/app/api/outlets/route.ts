@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -164,24 +164,8 @@ export const POST = withPermissions(['outlet.manage'])(async (request, { user, u
     }
 
     // Check plan limits before creating outlet (ADMIN bypass)
-    if (user.role !== USER_ROLE.ADMIN) {
-      try {
-        await assertPlanLimit(merchantId, 'outlets');
-        console.log('✅ Plan limit check passed for outlets');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for outlets:', error.message);
-        return NextResponse.json(
-          { 
-            success: false, 
-            code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for outlets',
-            error: 'PLAN_LIMIT_EXCEEDED'
-          },
-          { status: 403 }
-        );
-      }
-    } else {
-      console.log('✅ ADMIN user: Bypassing plan limit check for outlets');
-    }
+    const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'outlets');
+    if (planLimitError) return planLimitError;
 
     // Create outlet with proper relations
     const outletData = {

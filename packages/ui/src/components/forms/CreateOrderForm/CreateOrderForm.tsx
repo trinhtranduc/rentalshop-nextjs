@@ -321,7 +321,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         console.log('🔍 Fallback to basic stock check:', { available, stock, requestedQuantity });
 
         const renting = stock - available; // Calculate renting from stock and available
-        
+
         if (available === 0) {
           return { 
             status: 'out-of-stock', 
@@ -423,11 +423,23 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       console.log('🔍 handleAddNewCustomer: No API duplicates found, creating customer...');
       
-      const result = await customersApi.createCustomer({
+      // Clean customer data: remove empty strings, only send fields with actual values
+      const cleanedCustomerData: any = {};
+      Object.entries({
         ...customerData,
         merchantId: currentMerchantId,
         isActive: true
+      }).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'string' && value.trim() !== '') {
+            cleanedCustomerData[key] = value;
+          } else if (typeof value !== 'string') {
+            cleanedCustomerData[key] = value;
+          }
+        }
       });
+      
+      const result = await customersApi.createCustomer(cleanedCustomerData);
       
       console.log('🔍 handleAddNewCustomer: API response:', result);
       console.log('🔍 handleAddNewCustomer: result.success:', result.success);

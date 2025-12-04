@@ -140,13 +140,28 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
       setIsSubmitting(true);
       setErrorMessage(null);
       
+      // Clean customer data: remove empty strings, only send fields with actual values
+      const cleanData = (data: any) => {
+        const cleaned: any = {};
+        Object.entries(data).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            if (typeof value === 'string' && value.trim() !== '') {
+              cleaned[key] = value;
+            } else if (typeof value !== 'string') {
+              cleaned[key] = value;
+            }
+          }
+        });
+        return cleaned;
+      };
+      
       const submitData = mode === 'edit' 
-        ? { ...formData } as CustomerUpdateInput
-        : {
+        ? cleanData({ ...formData } as CustomerUpdateInput)
+        : cleanData({
             ...formData,
             firstName: formData.firstName || '',
             merchantId: merchantId || 0,
-          } as CustomerCreateInput;
+          } as CustomerCreateInput);
       
       await onSave(submitData);
       onOpenChange(false);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, assertPlanLimit, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
@@ -404,20 +404,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     console.log('🔍 Using merchantId:', merchantId, 'for user role:', user.role);
 
     // Check plan limits before creating product (ADMIN bypass)
-    if (user.role !== USER_ROLE.ADMIN) {
-      try {
-        await assertPlanLimit(merchantId, 'products');
-        console.log('✅ Plan limit check passed for products');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for products:', error.message);
-        return NextResponse.json(
-          ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for products'),
-          { status: 403 }
-        );
-      }
-    } else {
-      console.log('✅ ADMIN user: Bypassing plan limit check for products');
-    }
+    const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'products');
+    if (planLimitError) return planLimitError;
 
     // Find merchant by publicId to get CUID
     const merchant = await db.merchants.findById(merchantId);

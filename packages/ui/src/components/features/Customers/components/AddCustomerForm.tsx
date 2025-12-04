@@ -105,7 +105,19 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({
       setInternalIsSubmitting(true);
       setErrorMessage(null);
 
-      await onSave(formData);
+      // Clean customer data: remove empty strings, only send fields with actual values
+      const cleanedData: any = {};
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'string' && value.trim() !== '') {
+            cleanedData[key] = value;
+          } else if (typeof value !== 'string') {
+            cleanedData[key] = value;
+          }
+        }
+      });
+
+      await onSave(cleanedData);
     } catch (error) {
       let errorMsg = "An unexpected error occurred";
 
