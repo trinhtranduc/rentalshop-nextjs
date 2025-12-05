@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, normalizeDateToISO, getUTCDateKey } from '@rentalshop/utils';
@@ -8,9 +8,13 @@ import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/income - Get income analytics
- * REFACTORED: Now uses unified withAuthRoles pattern
+ * 
+ * Authorization: Roles with 'analytics.view.revenue' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view revenue analytics
+ * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
   console.log(`💰 GET /api/analytics/income - User: ${user.email}`);
   
   try {
@@ -143,10 +147,12 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
       let realIncome = 0;
 
       // 0. SALE orders: Count totalAmount on createdAt date
+      // ✅ Exclude CANCELLED orders from revenue calculation
       const saleOrders = await db.orders.search({
         where: {
           ...outletFilter,
           orderType: ORDER_TYPE.SALE as any,
+          status: { not: ORDER_STATUS.CANCELLED }, // Exclude cancelled orders
           createdAt: {
             gte: startOfPeriod,
             lte: endOfPeriod

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
@@ -7,9 +7,16 @@ import { API, USER_ROLE } from '@rentalshop/constants';
 /**
  * PUT /api/settings/outlet
  * Update current user's outlet information
- * Only accessible by users with outlet access (OUTLET_ADMIN, OUTLET_STAFF) or admin
+ * 
+ * Authorization: Roles with 'outlet.manage' or 'outlet.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN (via outlet.manage)
+ * - OUTLET_STAFF has 'outlet.view' only, but endpoint allows them to update
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
+ * Note: OUTLET_STAFF currently has 'outlet.view' but this endpoint allows updates.
+ * Consider adding 'outlet.manage' to OUTLET_STAFF if they should update outlet info.
  */
-export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withPermissions(['outlet.manage', 'outlet.view'])(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 DEBUG: Settings outlet PUT API called');
     

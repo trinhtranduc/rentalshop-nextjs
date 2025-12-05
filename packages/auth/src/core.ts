@@ -208,8 +208,15 @@ export type Permission =
   | 'customers.view'
   | 'customers.export'
   
-  // Analytics
-  | 'analytics.view'
+  // Analytics (Granular Permissions)
+  | 'analytics.view'                    // Base permission (backward compatibility)
+  | 'analytics.view.dashboard'          // Dashboard & overview metrics (today, today-metrics)
+  | 'analytics.view.revenue'            // Revenue/income analytics
+  | 'analytics.view.orders'             // Order analytics
+  | 'analytics.view.customers'          // Customer analytics (top customers)
+  | 'analytics.view.products'          // Product analytics (top products)
+  | 'analytics.view.system'             // System-wide analytics (admin only)
+  | 'analytics.export'                  // Export analytics data
   
   // Billing & Plans
   | 'billing.manage'
@@ -246,7 +253,14 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
-    'analytics.view',
+    'analytics.view',                    // Full access (backward compatibility)
+    'analytics.view.dashboard',
+    'analytics.view.revenue',
+    'analytics.view.orders',
+    'analytics.view.customers',
+    'analytics.view.products',
+    'analytics.view.system',
+    'analytics.export',
     'billing.manage', 'billing.view',
     'bankAccounts.manage', 'bankAccounts.view'
   ],
@@ -257,7 +271,14 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
-    'analytics.view',
+    'analytics.view',                    // Full access - can see all outlets
+    'analytics.view.dashboard',
+    'analytics.view.revenue',
+    'analytics.view.orders',
+    'analytics.view.customers',
+    'analytics.view.products',
+    'analytics.export',
+    // ❌ NO analytics.view.system (admin only)
     'billing.view',
     'bankAccounts.manage', 'bankAccounts.view' // ✅ Merchant can manage bank accounts
   ],
@@ -267,14 +288,24 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
-    'analytics.view',
+    'analytics.view',                    // Full access - can see their outlet
+    'analytics.view.dashboard',
+    'analytics.view.revenue',
+    'analytics.view.orders',
+    'analytics.view.customers',
+    'analytics.view.products',
+    'analytics.export',
+    // ❌ NO analytics.view.system (admin only)
     'bankAccounts.manage', 'bankAccounts.view' // ✅ Outlet admin can manage bank accounts
   ],
   'OUTLET_STAFF': [
     'outlet.view',
     'products.view', // ❌ NO products.export
     'orders.create', 'orders.view', 'orders.update', // ❌ NO orders.delete, orders.export
-    'customers.view', 'customers.manage' // ❌ NO customers.export
+    'customers.view', 'customers.manage', // ❌ NO customers.export
+    'analytics.view.dashboard',          // ✅ Only daily/today-metrics (dashboard only)
+    // ❌ NO analytics.view.revenue, orders, customers, products
+    // ❌ NO analytics.export
     // ❌ NO bankAccounts permissions - staff cannot see bank accounts
   ]
 };
@@ -728,10 +759,38 @@ export function hasPermissionSync(user: AuthUser, permission: Permission): boole
 
 /**
  * Check if user has any of the specified permissions (async - supports custom permissions)
+ * 
+ * Backward compatibility: If user has 'analytics.view', they automatically have all granular analytics permissions
  */
 export async function hasAnyPermission(user: AuthUser, permissions: Permission[]): Promise<boolean> {
   const userPermissions = await getUserPermissions(user);
-  return permissions.some(permission => userPermissions.includes(permission));
+  
+  // Check direct permission match
+  const hasDirectPermission = permissions.some(permission => userPermissions.includes(permission));
+  if (hasDirectPermission) {
+    return true;
+  }
+  
+  // Backward compatibility: analytics.view grants all granular analytics permissions
+  const hasAnalyticsView = userPermissions.includes('analytics.view');
+  if (hasAnalyticsView) {
+    const analyticsPermissions = [
+      'analytics.view.dashboard',
+      'analytics.view.revenue',
+      'analytics.view.orders',
+      'analytics.view.customers',
+      'analytics.view.products',
+      'analytics.export'
+    ];
+    const hasAnyAnalyticsPermission = permissions.some(permission => 
+      analyticsPermissions.includes(permission)
+    );
+    if (hasAnyAnalyticsPermission) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 /**

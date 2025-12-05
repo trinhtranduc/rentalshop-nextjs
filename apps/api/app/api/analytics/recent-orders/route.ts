@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import {API, ORDER_STATUS} from '@rentalshop/constants';
 
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+/**
+ * GET /api/analytics/recent-orders - Get recent orders analytics
+ * 
+ * Authorization: Roles with 'analytics.view.orders' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view order analytics
+ * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ */
+export const GET = withPermissions(['analytics.view.orders'])(async (request, { user, userScope }) => {
   try {
     // User is already authenticated and authorized to view analytics
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -9,6 +9,10 @@ import { API } from '@rentalshop/constants';
  * GET /api/subscriptions/status
  * Get subscription status for the authenticated merchant
  * 
+ * Authorization: All roles with 'analytics.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * 
  * **Why OUTLET_ADMIN and OUTLET_STAFF need access:**
  * - They need to know plan limits (products, users, outlets)
  * - They need to see subscription status for their outlet
@@ -16,7 +20,7 @@ import { API } from '@rentalshop/constants';
  * - Read-only access, cannot modify subscription
  */
 export async function GET(request: NextRequest) {
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+  return withPermissions(['analytics.view'])(async (request, { user, userScope }) => {
     try {
       // For MERCHANT, OUTLET_ADMIN, OUTLET_STAFF: get their merchant's subscription
       // For ADMIN role, they can specify merchantId in query params
