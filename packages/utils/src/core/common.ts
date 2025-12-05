@@ -814,6 +814,8 @@ export const storeAuthData = (token: string, user: User): void => {
       updatedAt: user.updatedAt,
       merchantId: user.merchantId ? Number(user.merchantId) : undefined,
       outletId: user.outletId ? Number(user.outletId) : undefined,
+      // ✅ Store permissions array (required for permission checks)
+      permissions: (user as any).permissions || [],
       // ✅ Store merchant and outlet objects (optional)
       merchant: user.merchant || undefined,
       outlet: user.outlet || undefined,
