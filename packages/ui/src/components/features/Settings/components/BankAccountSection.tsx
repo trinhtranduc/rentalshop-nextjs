@@ -40,15 +40,31 @@ export const BankAccountSection: React.FC<BankAccountSectionProps> = ({
   const t = useBankAccountTranslations();
   const tc = useCommonTranslations();
   // ✅ Use permissions hook for UI control
-  const { canManageBankAccounts, canViewBankAccounts } = usePermissions();
+  const { canManageBankAccounts, canViewBankAccounts, hasPermission, permissions } = usePermissions();
+  
+  // Debug logging for permissions
+  console.log('🔍 BankAccountSection - User:', user);
+  console.log('🔍 BankAccountSection - User role:', user?.role);
+  console.log('🔍 BankAccountSection - Permissions:', permissions);
+  console.log('🔍 BankAccountSection - Has bankAccounts.view:', hasPermission('bankAccounts.view'));
+  console.log('🔍 BankAccountSection - Has bankAccounts.manage:', hasPermission('bankAccounts.manage'));
+  console.log('🔍 BankAccountSection - canViewBankAccounts:', canViewBankAccounts);
+  console.log('🔍 BankAccountSection - canManageBankAccounts:', canManageBankAccounts);
   
   // ✅ If user cannot view bank accounts, don't render anything
   if (!canViewBankAccounts) {
+    console.warn('⚠️ BankAccountSection - User cannot view bank accounts, returning null');
     return null;
   }
 
   const outletId = user?.outlet?.id || user?.outletId || 0;
   const merchantId = user?.merchant?.id || user?.merchantId || 0;
+
+  // Debug logging for IDs
+  console.log('🔍 BankAccountSection - outletId:', outletId);
+  console.log('🔍 BankAccountSection - merchantId:', merchantId);
+  console.log('🔍 BankAccountSection - user.outlet:', user?.outlet);
+  console.log('🔍 BankAccountSection - user.merchant:', user?.merchant);
 
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,14 +76,19 @@ export const BankAccountSection: React.FC<BankAccountSectionProps> = ({
 
   // Fetch bank accounts
   const fetchBankAccounts = async () => {
+    console.log('🔍 BankAccountSection - fetchBankAccounts called with:', { merchantId, outletId });
+    
     if (!merchantId || !outletId) {
+      console.warn('⚠️ BankAccountSection - Missing merchantId or outletId, cannot fetch bank accounts');
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      console.log('📡 BankAccountSection - Fetching bank accounts from API...');
       const response = await bankAccountsApi.getBankAccounts(merchantId, outletId);
+      console.log('📡 BankAccountSection - API response:', response);
       
       if (response.success && response.data) {
         // Generate QR codes for accounts that don't have them
