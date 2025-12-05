@@ -16,7 +16,7 @@ interface AddUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUserCreated?: (user: UserCreateInput) => void;
-  onError?: (error: string) => void;
+  onError?: (error: any) => void; // Changed to any to accept error objects with code
   currentUser?: User | null;
 }
 
@@ -45,8 +45,10 @@ export const AddUserDialog: React.FC<AddUserDialogProps> = ({
       
     } catch (error) {
       console.error('❌ AddUserDialog: Error occurred:', error);
+      // ✅ Pass error object (not string) so onError can extract code for translation
+      // onUserCreated already shows toast, so onError is only for additional handling if needed
       if (onError) {
-        onError(error instanceof Error ? error.message : 'Failed to create user');
+        onError(error); // Pass full error object to preserve code field
       }
     } finally {
       setIsSubmitting(false);
