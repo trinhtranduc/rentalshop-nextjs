@@ -836,8 +836,16 @@ export const storeAuthData = (token: string, user: User): void => {
   
   console.log('✅ Auth data stored in consolidated format');
   console.log('✅ Login time marked for grace period');
+  
+  // Dispatch custom event for same-tab sync (storage event only works across tabs)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('auth-storage-change'));
+  }
 };
 
+/**
+ * Clear authentication data - CONSOLIDATED APPROACH
+ */
 /**
  * Clear authentication data - CONSOLIDATED APPROACH
  */
@@ -858,6 +866,11 @@ export const clearAuthData = (): void => {
   localStorage.removeItem('userData');
   
   console.log('✅ All auth data cleared');
+  
+  // Dispatch custom event for same-tab sync
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('auth-storage-change'));
+  }
 };
 
 /**

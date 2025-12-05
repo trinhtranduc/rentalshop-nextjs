@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { subscriptionsApi } from '@rentalshop/utils';
 import { Card,
   CardHeader,
@@ -54,6 +55,7 @@ interface SubscriptionDetailPageProps {
 }
 
 export default function SubscriptionDetailPage({ params }: SubscriptionDetailPageProps) {
+  const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,7 +142,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       if (result.success) {
         toastSuccess('Subscription Deleted', 'Subscription has been deleted successfully');
         // Redirect to subscriptions list
-        window.location.href = '/admin/subscriptions';
+        router.push('/admin/subscriptions');
       } else {
         toastError('Deletion Failed', result.message || 'Failed to delete subscription');
       }
@@ -253,7 +255,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         <h2 className="text-2xl font-bold text-gray-900">Subscription Not Found</h2>
         <p className="text-gray-600 mt-2">The subscription you're looking for doesn't exist.</p>
         <Button 
-          onClick={() => window.location.href = '/admin/subscriptions'}
+          onClick={() => router.push('/admin/subscriptions')}
           className="mt-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -289,7 +291,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
-            onClick={() => window.location.href = `/admin/subscriptions/${subscription.id}/edit`}
+            onClick={() => router.push(`/admin/subscriptions/${subscription.id}/edit`)}
           >
             <Edit className="h-4 w-4 mr-2" />
             Edit

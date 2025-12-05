@@ -19,7 +19,8 @@ export default function LoginPage() {
       // Use setTimeout to ensure state is fully synced
       setTimeout(() => {
         console.log('🚀 Executing redirect to /dashboard');
-        window.location.href = '/dashboard';
+        // Use client-side navigation to preserve network logs
+        router.push('/dashboard');
       }, 100);
     }
   }, [user]);
@@ -50,8 +51,8 @@ export default function LoginPage() {
         }
         
         console.log('✅ Token verified, redirecting to dashboard');
-        // Use window.location.href for full page reload to ensure clean state
-        window.location.href = '/dashboard';
+        // Use client-side navigation to preserve network logs for debugging
+        router.push('/dashboard');
         return;
       } else {
         console.log('❌ Login failed');
