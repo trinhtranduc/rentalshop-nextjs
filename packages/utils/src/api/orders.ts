@@ -162,11 +162,23 @@ export const ordersApi = {
   },
 
   /**
-   * Get orders by customer
+   * Get orders by customer with pagination support
+   * Uses dedicated endpoint: /api/customers/[id]/orders
    */
-  async getOrdersByCustomer(customerId: number): Promise<ApiResponse<Order[]>> {
-    const response = await authenticatedFetch(`${apiUrls.orders.list}?customerId=${customerId}`);
-    return await parseApiResponse<Order[]>(response);
+  async getOrdersByCustomer(
+    customerId: number,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<ApiResponse<OrdersResponse>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    // Use dedicated endpoint for customer orders (better for role-based filtering)
+    const base = apiUrls.base || '';
+    const response = await authenticatedFetch(`${base}/api/customers/${customerId}/orders?${params.toString()}`);
+    return await parseApiResponse<OrdersResponse>(response);
   },
 
   /**
@@ -178,11 +190,21 @@ export const ordersApi = {
   },
 
   /**
-   * Get orders by product ID
+   * Get orders by product ID with pagination support
    */
-  async getOrdersByProduct(productId: number): Promise<ApiResponse<Order[]>> {
-    const response = await authenticatedFetch(`${apiUrls.orders.list}?productId=${productId}`);
-    return await parseApiResponse<Order[]>(response);
+  async getOrdersByProduct(
+    productId: number,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<ApiResponse<OrdersResponse>> {
+    const params = new URLSearchParams({
+      productId: productId.toString(),
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.orders.list}?${params.toString()}`);
+    return await parseApiResponse<OrdersResponse>(response);
   },
 
   /**

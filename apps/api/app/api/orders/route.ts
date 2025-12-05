@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
@@ -111,6 +111,32 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
 
     // Add product filtering if specified
     if (productId) {
+      // Optional: Validate product exists and belongs to user's scope (for better UX)
+      try {
+        const product = await db.products.findById(productId);
+        if (!product) {
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_FOUND'),
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
+        
+        // Verify product belongs to user's merchant (if not admin)
+        if (user.role !== USER_ROLE.ADMIN && product.merchantId !== userScope.merchantId) {
+          console.log('❌ Product does not belong to user\'s merchant:', {
+            productMerchantId: product.merchantId,
+            userMerchantId: userScope.merchantId
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_FOUND'), // Security: don't reveal product exists
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
+      } catch (productError) {
+        // If product validation fails, log but continue (product might be deleted)
+        console.warn('⚠️ Product validation failed (continuing with filter):', productError);
+      }
+      
       searchFilters.productId = productId;
     }
 
@@ -165,10 +191,10 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
 
   } catch (error) {
     console.error('Error in GET /api/orders:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('FETCH_ORDERS_FAILED'),
-      { status: 500 }
-    );
+    
+    // Use unified error handling system for consistency
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 

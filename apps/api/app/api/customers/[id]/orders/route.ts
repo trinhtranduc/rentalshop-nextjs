@@ -67,9 +67,20 @@ export async function GET(
         );
       }
 
+      // Parse pagination parameters from query string
+      const { searchParams } = new URL(request.url);
+      const page = parseInt(searchParams.get('page') || '1');
+      const limit = parseInt(searchParams.get('limit') || '20');
+      const sortBy = searchParams.get('sortBy') || 'createdAt';
+      const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+
       // Build search filters with role-based access control
       const searchFilters: any = {
-        customerId: customerId
+        customerId: customerId,
+        page,
+        limit,
+        sortBy,
+        sortOrder
       };
 
       // Role-based merchant filtering:
@@ -98,6 +109,8 @@ export async function GET(
 
       console.log(`🔍 Role-based filtering for customer orders (${user.role}):`, {
         customerId,
+        page,
+        limit,
         'userScope.merchantId': userScope.merchantId,
         'userScope.outletId': userScope.outletId,
         'final merchantId filter': searchFilters.merchantId,
@@ -107,13 +120,30 @@ export async function GET(
       // Get orders for this customer with role-based filtering
       const orders = await db.orders.search(searchFilters);
 
-      return NextResponse.json({
-        success: true,
-        data: orders.data || [],
-        total: orders.total || 0,
-        code: 'CUSTOMER_ORDERS_FOUND',
-        message: `Found ${orders.total || 0} orders for customer`
-      });
+      // Normalize date fields in order list to UTC ISO strings using toISOString()
+      const normalizedOrders = (orders.data || []).map(order => ({
+        ...order,
+        createdAt: order.createdAt?.toISOString() || null,
+        updatedAt: order.updatedAt?.toISOString() || null,
+        pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
+        returnPlanAt: order.returnPlanAt?.toISOString() || null,
+        pickedUpAt: order.pickedUpAt?.toISOString() || null,
+        returnedAt: order.returnedAt?.toISOString() || null,
+      }));
+
+      // Use ResponseBuilder.success() for consistent response format
+      // Match response structure with /api/orders endpoint
+      return NextResponse.json(
+        ResponseBuilder.success('CUSTOMER_ORDERS_FOUND', {
+          orders: normalizedOrders,
+          total: orders.total || 0,
+          page: orders.page || page,
+          limit: orders.limit || limit,
+          offset: ((orders.page || page) - 1) * (orders.limit || limit),
+          hasMore: (orders.page || page) * (orders.limit || limit) < (orders.total || 0),
+          totalPages: Math.ceil((orders.total || 0) / (orders.limit || limit))
+        })
+      );
 
     } catch (error) {
       console.error('Error fetching customer orders:', error);
