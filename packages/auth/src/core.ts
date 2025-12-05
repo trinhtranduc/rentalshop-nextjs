@@ -394,7 +394,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       
       if (!isValid) {
         // Log for debugging
-        console.log('🔍 TOKEN INVALIDATION:', {
+        console.log('🔍 TOKEN INVALIDATION (Password):', {
           tokenPasswordChangedAt,
           dbPasswordChangedAt,
           difference: tokenPasswordChangedAt ? dbPasswordChangedAt - tokenPasswordChangedAt : 'N/A',
@@ -409,6 +409,55 @@ export async function authenticateRequest(request: NextRequest): Promise<{
               success: false, 
               code: 'TOKEN_INVALIDATED', 
               message: 'Your session has expired due to password change. Please login again.' 
+            },
+            { status: 401 }
+          )
+        };
+      }
+    }
+
+    // ============================================================================
+    // PERMISSIONS CHANGE CHECK (Invalidate old tokens when permissions change)
+    // ============================================================================
+    // Check if permissions were changed after token was issued
+    // Get permissionsChangedAt from database
+    const dbPermissionsChangedAt = (userRecord as any).permissionsChangedAt 
+      ? Math.floor((userRecord as any).permissionsChangedAt.getTime() / 1000) // Convert to Unix timestamp
+      : null;
+    
+    // Get permissionsChangedAt from token payload (from verifyTokenSimple)
+    const tokenPermissionsChangedAt = (user as any).permissionsChangedAt;
+    
+    // If permissions were changed after token was issued, invalidate token
+    if (dbPermissionsChangedAt !== null) {
+      // Add small tolerance (500ms) for timing differences to handle edge cases
+      // where token is created at the same time or slightly before database update
+      // This handles database commit timing and small clock skew
+      const tolerance = 0.5; // Allow 500ms difference for timing (0.5 seconds)
+      
+      // Token is valid if it has permissionsChangedAt and it's >= (dbPermissionsChangedAt - tolerance)
+      // This allows tokens created at the same time or slightly before (within 500ms) to be valid
+      const isValid = tokenPermissionsChangedAt !== null && 
+                      tokenPermissionsChangedAt !== undefined &&
+                      tokenPermissionsChangedAt >= (dbPermissionsChangedAt - tolerance);
+      
+      if (!isValid) {
+        // Log for debugging
+        console.log('🔍 TOKEN INVALIDATION (Permissions):', {
+          tokenPermissionsChangedAt,
+          dbPermissionsChangedAt,
+          difference: tokenPermissionsChangedAt ? dbPermissionsChangedAt - tokenPermissionsChangedAt : 'N/A',
+          tolerance,
+          isValid
+        });
+        
+        return {
+          success: false,
+          response: NextResponse.json(
+            { 
+              success: false, 
+              code: 'TOKEN_INVALIDATED', 
+              message: 'Your session has expired due to permissions change. Please login again.' 
             },
             { status: 401 }
           )
@@ -537,9 +586,34 @@ export function getUserScope(user: AuthUser): UserScope {
  * @returns Array of permissions for the user's role
  */
 export async function getUserPermissions(user: AuthUser): Promise<Permission[]> {
+  console.log('🔍 getUserPermissions called with:', {
+    role: user.role,
+    merchantId: user.merchantId,
+    outletId: user.outletId,
+    roleType: typeof user.role
+  });
+
+  // Normalize role to ensure it matches ROLE_PERMISSIONS keys
+  const normalizedRole = (user.role?.toUpperCase() || '') as Role;
+  
+  // Validate role exists in ROLE_PERMISSIONS
+  if (!ROLE_PERMISSIONS[normalizedRole]) {
+    console.error('❌ Invalid role:', {
+      originalRole: user.role,
+      normalizedRole,
+      availableRoles: Object.keys(ROLE_PERMISSIONS)
+    });
+    return [];
+  }
+
   // ADMIN users always use default permissions (no merchant-specific customization)
-  if (user.role === 'ADMIN') {
-    return ROLE_PERMISSIONS[user.role as Role] || [];
+  if (normalizedRole === 'ADMIN') {
+    const permissions = ROLE_PERMISSIONS[normalizedRole] || [];
+    console.log('🔍 ADMIN permissions:', {
+      count: permissions.length,
+      permissions: permissions
+    });
+    return permissions;
   }
 
   // For merchant/outlet users, check for custom roles or custom permissions
@@ -575,7 +649,7 @@ export async function getUserPermissions(user: AuthUser): Promise<Permission[]> 
         where: {
           merchantId: user.merchantId,
           isSystemRole: true,
-          systemRole: user.role as any,
+          systemRole: normalizedRole as any,
           isActive: true
         },
         select: {
@@ -586,17 +660,37 @@ export async function getUserPermissions(user: AuthUser): Promise<Permission[]> 
 
       // If custom permissions exist and are active, use them
       if (systemRoleCustomization && systemRoleCustomization.isActive && systemRoleCustomization.permissions.length > 0) {
-        console.log(`🔍 Using custom permissions for merchant ${user.merchantId}, system role ${user.role}`);
+        console.log(`🔍 Using custom permissions for merchant ${user.merchantId}, system role ${normalizedRole}`);
         return systemRoleCustomization.permissions as Permission[];
       }
     } catch (error) {
       // If database error, fallback to default (backward compatible)
+      console.error('⚠️ Error fetching custom permissions/roles:', error);
       console.warn('⚠️ Error fetching custom permissions/roles, using default:', error);
     }
   }
 
   // Fallback to default permissions for system role
-  return ROLE_PERMISSIONS[user.role as Role] || [];
+  const defaultPermissions = ROLE_PERMISSIONS[normalizedRole];
+  console.log('🔍 ROLE_PERMISSIONS lookup:', {
+    role: user.role,
+    normalizedRole,
+    found: defaultPermissions !== undefined,
+    permissionsCount: defaultPermissions?.length || 0,
+    permissions: defaultPermissions || []
+  });
+  
+  if (!defaultPermissions) {
+    console.error('❌ ROLE_PERMISSIONS lookup failed!', {
+      userRole: user.role,
+      normalizedRole,
+      availableKeys: Object.keys(ROLE_PERMISSIONS),
+      roleType: typeof user.role
+    });
+    return [];
+  }
+  
+  return defaultPermissions;
 }
 
 /**

@@ -201,6 +201,14 @@ export const PUT = withPermissions(['users.manage'])(
 
       await Promise.all(permissionUpdates);
 
+      // Update permissionsChangedAt to invalidate old tokens (similar to passwordChangedAt)
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          permissionsChangedAt: new Date(), // Invalidate all existing tokens
+        },
+      });
+
       // Get updated permissions
       const updatedPermissions = await prisma.userPermission.findMany({
         where: { userId: userId },

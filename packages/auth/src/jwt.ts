@@ -13,6 +13,7 @@ export interface JWTPayload {
   planName?: string;            // Plan name for platform access control (e.g., 'Basic', 'Premium', 'Enterprise')
   sessionId?: string;           // Session ID for single session enforcement
   passwordChangedAt?: number | null;  // Timestamp when password was last changed (to invalidate old tokens)
+  permissionsChangedAt?: number | null;  // Timestamp when permissions were last changed (to invalidate old tokens)
 }
 
 export const generateToken = (payload: JWTPayload): string => {
@@ -45,6 +46,7 @@ export const verifyTokenSimple = async (token: string) => {
       planName: payload.planName,
       sessionId: payload.sessionId,
       passwordChangedAt: payload.passwordChangedAt ?? null, // Include passwordChangedAt for validation
+      permissionsChangedAt: payload.permissionsChangedAt ?? null, // Include permissionsChangedAt for validation
     };
   } catch (error) {
     console.error('❌ JWT: Token verification failed:', error);
