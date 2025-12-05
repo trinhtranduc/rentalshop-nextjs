@@ -1,7 +1,7 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import type { BusinessType, PricingType, MerchantPricingConfig } from '@rentalshop/types';
 
 // ============================================================================
@@ -22,7 +22,21 @@ export async function GET(
   const resolvedParams = await Promise.resolve(params);
   const merchantId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (req, { user, userScope }) => {
+  /**
+   * GET /api/merchants/[id]/pricing
+   * Get merchant pricing configuration
+   * 
+   * Authorization: All roles with 'analytics.view' permission can access
+   * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+   * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+   * 
+   * **Why OUTLET_ADMIN and OUTLET_STAFF need access:**
+   * - They create orders and need to know merchant pricing rules
+   * - They need to calculate rental prices (HOURLY, DAILY, WEEKLY)
+   * - They work for the merchant, so should have READ access
+   * - Read-only access, cannot modify pricing (PUT is restricted)
+   */
+  return withPermissions(['analytics.view'])(async (req, { user, userScope }) => {
     try {
       console.log(`🔍 GET /api/merchants/${merchantId}/pricing - User: ${user.email} (${user.role})`);
       
@@ -86,7 +100,15 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const merchantId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (req, { user, userScope }) => {
+  /**
+   * PUT /api/merchants/[id]/pricing
+   * Update merchant pricing configuration
+   * 
+   * Authorization: Only roles with 'merchant.manage' permission can access
+   * - Automatically includes: ADMIN, MERCHANT
+   * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+   */
+  return withPermissions(['merchant.manage'])(async (req, { user, userScope }) => {
     try {
       const body = await request.json();
       

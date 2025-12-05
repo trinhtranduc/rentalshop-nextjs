@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/growth-metrics - Get growth metrics
- * Requires: Any authenticated user (scoped by role)
- * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+ * 
+ * Authorization: Roles with 'analytics.view.revenue' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view revenue analytics
+ * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
   try {
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);
@@ -116,10 +119,11 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
     });
 
     // Calculate growth metrics
+    // ✅ Exclude CANCELLED orders from revenue calculation
     const currentMonthCount = currentMonthOrders.total || 0;
     const lastMonthCount = lastMonthOrders.total || 0;
-    const currentMonthRevenue = currentMonthOrders.data?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
-    const lastMonthRevenue = lastMonthOrders.data?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
+    const currentMonthRevenue = currentMonthOrders.data?.filter(order => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
+    const lastMonthRevenue = lastMonthOrders.data?.filter(order => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
 
     const orderGrowth = lastMonthCount > 0 ? ((currentMonthCount - lastMonthCount) / lastMonthCount * 100) : 0;
     const revenueGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100) : 0;

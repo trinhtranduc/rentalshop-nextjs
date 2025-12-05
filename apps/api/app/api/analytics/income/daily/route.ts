@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey } from '@rentalshop/utils';
@@ -13,8 +13,13 @@ import { API } from '@rentalshop/constants';
  * - Total revenue for that day
  * - List of orders with their individual revenue contributions
  * - Number of new orders created that day
+ * 
+ * Authorization: Roles with 'analytics.view.revenue' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view revenue analytics
+ * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
   console.log(`💰 GET /api/analytics/income/daily - User: ${user.email}`);
   
   try {

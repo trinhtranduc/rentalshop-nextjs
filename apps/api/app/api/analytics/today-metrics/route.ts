@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
@@ -7,10 +7,13 @@ import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/today-metrics - Get today's operational metrics
- * Requires: Any authenticated user (scoped by role)
- * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+ * 
+ * Authorization: Roles with 'analytics.view.dashboard' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Full analytics access
+ * - OUTLET_STAFF: Dashboard only (daily/today metrics)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
   try {
     const today = new Date();
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -78,10 +81,11 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
     });
 
     // Calculate metrics
+    // ✅ Exclude CANCELLED orders from revenue calculation
     const totalOrders = todayOrders.total || 0;
     const activeRentals = todayOrders.data?.filter(order => order.status === ORDER_STATUS.PICKUPED).length || 0;
     const completedOrders = todayOrders.data?.filter(order => order.status === ORDER_STATUS.COMPLETED).length || 0;
-    const totalRevenue = todayOrders.data?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
+    const totalRevenue = todayOrders.data?.filter(order => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
 
     // Get stock metrics
     const stockMetrics = await db.outletStock.aggregate({

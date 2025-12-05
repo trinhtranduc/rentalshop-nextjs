@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/top-products - Get top-performing products
- * Requires: Any authenticated user (scoped by role)
- * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+ * 
+ * Authorization: Roles with 'analytics.view.products' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view product analytics
+ * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.products'])(async (request, { user, userScope }) => {
   try {
     // Get query parameters for date filtering
     const { searchParams } = new URL(request.url);

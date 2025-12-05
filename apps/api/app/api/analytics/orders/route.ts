@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { handleApiError, normalizeDateToISO, getUTCDateKey } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/orders - Get order analytics
- * Requires: Any authenticated user (scoped by role)
- * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+ * 
+ * Authorization: Roles with 'analytics.view.orders' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view order analytics
+ * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.orders'])(async (request, { user, userScope }) => {
   try {
     // Get query parameters
     const { searchParams } = new URL(request.url);

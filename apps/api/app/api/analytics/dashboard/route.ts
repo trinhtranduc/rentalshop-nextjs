@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
@@ -8,9 +8,13 @@ import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/dashboard - Get dashboard analytics
- * REFACTORED: Now uses unified withAuthRoles pattern
+ * 
+ * Authorization: Roles with 'analytics.view.dashboard' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Full analytics access
+ * - OUTLET_STAFF: Dashboard only (daily/today metrics)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
   console.log(`📊 GET /api/analytics/dashboard - User: ${user.email}`);
   
   try {
@@ -130,8 +134,12 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
       db.orders.getStats(orderWhereClause),
       
       // Total revenue based on order status and type
+      // ✅ Exclude CANCELLED orders from revenue calculation
       db.orders.search({
-        where: orderWhereClause,
+        where: {
+          ...orderWhereClause,
+          status: { not: ORDER_STATUS.CANCELLED } // Exclude cancelled orders
+        },
         select: {
           id: true,
           orderType: true,
