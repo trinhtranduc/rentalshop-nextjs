@@ -5,6 +5,7 @@ import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Plus, Copy, Edit, Trash2, CreditCard, Building2 } from 'lucide-react';
 import { useBankAccountTranslations } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { useToast } from '../../../ui/toast';
 import type { BankAccount } from '@rentalshop/utils';
 
@@ -27,6 +28,13 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
 }) => {
   const t = useBankAccountTranslations();
   const { toastSuccess } = useToast();
+  // ✅ Use permissions hook for UI control
+  const { canManageBankAccounts, canViewBankAccounts } = usePermissions();
+  
+  // ✅ If user cannot view bank accounts, don't render anything
+  if (!canViewBankAccounts) {
+    return null;
+  }
 
   const handleCopyAccountNumber = (accountNumber: string) => {
     navigator.clipboard.writeText(accountNumber);
@@ -56,7 +64,8 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
           <p className="text-sm text-gray-500 mb-6">
             {t('list.emptyDescription')}
           </p>
-          {showAddButton && onAdd && (
+          {/* ✅ Add button - Only show if user can manage bank accounts */}
+          {showAddButton && onAdd && canManageBankAccounts && (
             <Button onClick={onAdd}>
               <Plus className="w-4 h-4 mr-2" />
               {t('list.addButton')}
@@ -69,7 +78,8 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
 
   return (
     <div className="space-y-4">
-      {showAddButton && onAdd && (
+      {/* ✅ Add button - Only show if user can manage bank accounts */}
+      {showAddButton && onAdd && canManageBankAccounts && (
         <div className="flex justify-end">
           <Button onClick={onAdd}>
             <Plus className="w-4 h-4 mr-2" />
@@ -138,11 +148,6 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                     <div className="flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-900">{account.bankName}</span>
-                      {account.bankCode && (
-                        <Badge variant="outline" className="text-xs">
-                          {account.bankCode}
-                        </Badge>
-                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -162,28 +167,31 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {onEdit && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onEdit(account)}
-                          className="h-8 w-8"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onDelete(account)}
-                          className="h-8 w-8 text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
+                    {/* ✅ Actions - Only show if user can manage bank accounts */}
+                    {canManageBankAccounts && (
+                      <div className="flex items-center justify-end gap-2">
+                        {onEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onEdit(account)}
+                            className="h-8 w-8"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {onDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onDelete(account)}
+                            className="h-8 w-8 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

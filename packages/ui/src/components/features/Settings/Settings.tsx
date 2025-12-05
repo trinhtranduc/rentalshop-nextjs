@@ -59,7 +59,7 @@ const createSettingsMenuItems = (t: any) => [
     label: t('menuItems.bankAccounts.label'),
     icon: Wallet,
     description: t('menuItems.bankAccounts.description'),
-    roles: ['OUTLET_ADMIN', 'OUTLET_STAFF']
+    roles: ['OUTLET_ADMIN'] // ✅ Only OUTLET_ADMIN can see bank accounts (staff cannot)
   },
   {
     id: 'subscription',

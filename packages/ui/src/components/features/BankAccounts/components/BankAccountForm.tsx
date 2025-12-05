@@ -231,7 +231,8 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
               )}
             </div>
 
-            <div className="space-y-2">
+            {/* Bank Code field - hidden from UI but still used internally */}
+            <div className="hidden">
               <Label htmlFor="bankCode">{t('form.bankCode')}</Label>
               <Input
                 id="bankCode"
