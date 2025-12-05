@@ -269,7 +269,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
 // MAIN COMPONENT
 // ============================================================================
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toastError, toastSuccess } = useToast();
   const formatMoney = useFormatCurrency();
   const t = useDashboardTranslations();
@@ -343,6 +343,12 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Wait for auth to finish loading first
+        if (authLoading) {
+          console.log('⏳ Categories/Outlets: Auth still loading, waiting...');
+          return;
+        }
+        
         // Wait for user to be loaded
         if (!user) return;
         
@@ -383,7 +389,7 @@ export default function DashboardPage() {
     };
     
     fetchData();
-  }, [user]);
+  }, [user, authLoading]);
 
   // Function to update URL when time period changes
   // OUTLET_STAFF can only view 'today' period - force to 'today' if they try to change
@@ -434,9 +440,15 @@ export default function DashboardPage() {
         return;
       }
 
-      // Step 2: Guard - Verify user is loaded
+      // Step 2: Guard - Wait for auth to finish loading before checking user
+      if (authLoading) {
+        console.log('⏳ fetchDashboardData: Auth still loading, waiting...');
+        return; // Don't set loadingCharts to false, keep it as is
+      }
+
+      // Step 3: Guard - Verify user is loaded after auth loading completes
       if (!user) {
-        console.warn('⚠️ fetchDashboardData: User not loaded, skipping API calls');
+        console.warn('⚠️ fetchDashboardData: User not loaded after auth loading completed, skipping API calls');
         setLoadingCharts(false);
         return;
       }
@@ -727,6 +739,12 @@ export default function DashboardPage() {
 
   // Main useEffect to fetch dashboard data
   useEffect(() => {
+    // Guard: Wait for auth to finish loading first
+    if (authLoading) {
+      console.log('⏳ Dashboard: Auth still loading, waiting...');
+      return;
+    }
+
     // Guard: Only fetch data when user is confirmed loaded and token exists
     if (!userId || !merchantId) {
       console.log('⏳ Dashboard: Waiting for user to be loaded before fetching data');
@@ -747,7 +765,7 @@ export default function DashboardPage() {
     };
 
     checkTokenAndFetch();
-  }, [userId, merchantId, timePeriod, selectedOutletsKey, fetchDashboardData]); // Use stable values only
+  }, [userId, merchantId, timePeriod, selectedOutletsKey, fetchDashboardData, authLoading]); // Include authLoading
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -1068,7 +1086,7 @@ export default function DashboardPage() {
     <div className="h-full overflow-y-auto">
       <PageWrapper>
         {/* Page Loading Indicator - Floating, non-blocking */}
-        <PageLoadingIndicator loading={initialLoading || loadingCharts} />
+        <PageLoadingIndicator loading={authLoading || initialLoading || loadingCharts} />
       <PageContent>
         {/* Subscription Status Banner - Show at top if subscription is expiring or expired */}
         {/* Only show after dashboard has finished loading to avoid flash */}
@@ -1100,25 +1118,25 @@ export default function DashboardPage() {
             {/* Time Period Filter - Modern Pills */}
             {/* OUTLET_STAFF can only view 'today' - hide month/year tabs */}
             {user?.role !== 'OUTLET_STAFF' ? (
-              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
-                {[
-                  { id: 'today', label: tc('time.today') },
-                  { id: 'month', label: tc('time.thisMonth') },
-                  { id: 'year', label: tc('time.year') }
-                ].map(period => (
-                  <button
-                    key={period.id}
-                    onClick={() => updateTimePeriod(period.id as 'today' | 'month' | 'year')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                      timePeriod === period.id
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    {period.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
+              {[
+                { id: 'today', label: tc('time.today') },
+                { id: 'month', label: tc('time.thisMonth') },
+                { id: 'year', label: tc('time.year') }
+              ].map(period => (
+                <button
+                  key={period.id}
+                  onClick={() => updateTimePeriod(period.id as 'today' | 'month' | 'year')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    timePeriod === period.id
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {period.label}
+                </button>
+              ))}
+            </div>
             ) : (
               // For OUTLET_STAFF, show only "Today" label (not clickable)
               <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
@@ -1136,18 +1154,18 @@ export default function DashboardPage() {
             {/* Today's Key Metrics - Simplified Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {/* Revenue Card - Show for all roles including OUTLET_STAFF */}
-              <StatCard
-                title={t('stats.todayRevenue')}
-                value={currentStats.todayRevenue}
-                change=""
-                description=""
-                tooltip={t('tooltips.todayRevenue')}
-                color="text-blue-700"
-                trend="neutral"
-                activeTooltip={activeTooltip}
-                setActiveTooltip={setActiveTooltip}
-                position="left"
-              />
+                <StatCard
+                  title={t('stats.todayRevenue')}
+                  value={currentStats.todayRevenue}
+                  change=""
+                  description=""
+                  tooltip={t('tooltips.todayRevenue')}
+                  color="text-blue-700"
+                  trend="neutral"
+                  activeTooltip={activeTooltip}
+                  setActiveTooltip={setActiveTooltip}
+                  position="left"
+                />
               <StatCard
                 title={t('stats.todayRentals')}
                 value={currentStats.todayRentals}

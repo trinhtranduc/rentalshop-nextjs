@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { ClientSidebar, LoadingIndicator, CurrencyProvider, LanguageSwitcher } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
@@ -23,105 +23,105 @@ export default function ClientLayout({
   cartItemsCount = 0,
   onSearch
 }: ClientLayoutProps) {
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, refreshUser } = useAuth();
   const t = useCommonTranslations();
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { navigateTo, prefetchRoute } = useNavigation();
   const pathname = usePathname();
 
-  // Get merchant currency from user object (already loaded from login)
-  const merchantCurrency: CurrencyCode = (user?.merchant?.currency as CurrencyCode) || 'USD';
-
-  // Show loading state while checking authentication
-      if (loading) {
-        return (
-          <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
-            <LoadingIndicator 
-              variant="circular" 
-              size="lg"
-              message={`${t('labels.loading')}...`}
-            />
-          </div>
-        );
-      }
-
-  // ✅ OFFICIAL WAY: Use centralized route configuration
-  // Check route types using centralized route utilities
+  // ============================================================================
+  // ROUTE CONFIGURATION
+  // ============================================================================
   const isAuthPage = isAuthRoute(pathname);
   const isPublicPage = isPublicRoute(pathname);
-  
-  // Check if we're on full-width pages - hide sidebar for better space
-  // Edit order route: /orders/[id]/edit
-  // Note: /orders/create now shows sidebar
   const isFullWidthPage = pathname?.includes('/edit');
+  const showSidebar = !isPublicPage && !isFullWidthPage;
   
-  // Redirect to login if not authenticated (except on public pages)
-  // But only redirect if we're not currently on a page that might be setting up auth
-  if (!user && !isPublicPage && !loading) {
+  // ============================================================================
+  // AUTH STATE
+  // ============================================================================
+  const hasToken = typeof window !== 'undefined' && (
+    localStorage.getItem('authData') || localStorage.getItem('authToken')
+  );
+  const merchantCurrency: CurrencyCode = (user?.merchant?.currency as CurrencyCode) || 'USD';
+  
+  // ============================================================================
+  // REDIRECT LOGIC - All hooks must be called before early returns
+  // ============================================================================
+  
+  // Redirect logged-in users away from auth pages
+  useEffect(() => {
+    if (user && isAuthPage && !isPublicInfoRoute(pathname)) {
+      router.push('/dashboard');
+    }
+  }, [user, isAuthPage, pathname, router]);
+  
+  // Handle token sync for auth pages (user has token but state not synced yet)
+  useEffect(() => {
+    if (hasToken && isAuthPage && !user) {
+      const timer = setTimeout(() => {
+        if (user) {
+          router.push('/dashboard');
+        } else {
+          // Token exists but user not synced - likely invalid token
+          const { clearAuthData } = require('@rentalshop/utils');
+          clearAuthData();
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasToken, isAuthPage, user, router]);
+  
+  // ============================================================================
+  // EARLY RETURNS - Auth guards and loading states
+  // ============================================================================
+  
+  // Show loading while auth is initializing
+  if (loading) {
+    return <LoadingScreen message={`${t('labels.loading')}...`} />;
+  }
+  
+  // Redirect logged-in users from auth pages
+  if (user && isAuthPage && !isPublicInfoRoute(pathname)) {
+    return <LoadingScreen message="Redirecting..." />;
+  }
+  
+  // Wait for user state sync if token exists
+  if (hasToken && !user) {
+    return <LoadingScreen message={`${t('labels.loading')}...`} />;
+  }
+  
+  // Redirect unauthenticated users to login (security-critical: use hard reload)
+  if (!user && !isPublicPage && !isAuthPage && !hasToken) {
     if (typeof window !== 'undefined') {
-      // Check if there's a token in localStorage (check both old and new format)
-      const authData = localStorage.getItem('authData');
-      const oldToken = localStorage.getItem('authToken');
-      const hasToken = authData || oldToken;
-      
-      // If there's a token, wait for auth state to sync (give it more time)
-      if (hasToken) {
-        // Don't redirect immediately - wait for auth state to sync
-        // This handles the case where user just logged in and token is stored
-        // but React state hasn't updated yet
-        console.log('⏳ ClientLayout: Token found but user state not loaded, waiting...');
-        return (
-          <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
-            <LoadingIndicator 
-              variant="circular" 
-              size="lg"
-              message={`${t('labels.loading')}...`}
-            />
-          </div>
-        );
-      }
-      
-      // No token and not loading - redirect to login
-      console.log('🚨 ClientLayout: No user, no token, redirecting to login');
       window.location.href = '/login';
     }
     return null;
   }
-
-  // If user is logged in but on auth page (not public info pages), redirect to dashboard
-  // Public info pages like /email-verification can still be accessed by logged-in users
-  if (user && isAuthRoute(pathname) && !isPublicInfoRoute(pathname)) {
-    if (typeof window !== 'undefined') {
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
-    }
+  
+  // ============================================================================
+  // HELPER COMPONENTS
+  // ============================================================================
+  
+  function LoadingScreen({ message }: { message: string }) {
     return (
       <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
-        <LoadingIndicator 
-          variant="circular" 
-          size="lg"
-          message="Redirecting..."
-        />
+        <LoadingIndicator variant="circular" size="lg" message={message} />
       </div>
     );
   }
 
-  const handleLogout = () => {
-    logout();
-  };
-
+  // ============================================================================
+  // EVENT HANDLERS
+  // ============================================================================
+  
+  const handleLogout = () => logout();
+  
   const handleSearch = (query: string) => {
-    if (onSearch) {
-      onSearch(query);
-    } else {
-      // Default search behavior
-      console.log('Search query:', query);
-    }
+    onSearch?.(query) || console.log('Search query:', query);
   };
-
-  // Hide sidebar on public pages (landing page, auth pages) and full-width pages
-  const showSidebar = !isPublicPage && !isFullWidthPage;
 
   return (
     <CurrencyProvider merchantCurrency={merchantCurrency}>

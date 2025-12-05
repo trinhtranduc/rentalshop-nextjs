@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { subscriptionsApi, plansApi } from '@rentalshop/utils';
 import { useCanExportData } from '@rentalshop/hooks';
 import { useAuth } from '@rentalshop/hooks';
@@ -50,6 +51,7 @@ import {
 import type { Subscription, Plan, Payment } from '@rentalshop/types';
 
 export default function MerchantSubscriptionPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const { toastError, toastSuccess } = useToast();
   const canExport = useCanExportData();
@@ -199,7 +201,7 @@ export default function MerchantSubscriptionPage() {
         <h2 className="text-2xl font-bold text-gray-900">No Subscription Found</h2>
         <p className="text-gray-600 mt-2">You don't have an active subscription.</p>
         <Button 
-          onClick={() => window.location.href = '/plans'}
+          onClick={() => router.push('/plans')}
           className="mt-4"
         >
           <CreditCard className="h-4 w-4 mr-2" />
@@ -472,7 +474,7 @@ export default function MerchantSubscriptionPage() {
             <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>
               Cancel
             </Button>
-            <Button onClick={() => window.location.href = '/plans'}>
+            <Button onClick={() => router.push('/plans')}>
               View Plans
             </Button>
           </DialogFooter>

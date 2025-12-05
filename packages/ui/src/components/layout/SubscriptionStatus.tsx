@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Badge,
   StatusBadge,
@@ -25,6 +26,7 @@ interface SubscriptionStatusProps {
 }
 
 export function SubscriptionStatus({ showDetails = false, className = '', currentUserRole }: SubscriptionStatusProps) {
+  const router = useRouter();
   const {
     hasSubscription,
     subscription,
@@ -56,7 +58,7 @@ export function SubscriptionStatus({ showDetails = false, className = '', curren
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/plans'}
+            onClick={() => router.push('/plans')}
           >
             <CreditCard className="h-4 w-4 mr-2" />
             Get Started
@@ -144,7 +146,7 @@ export function SubscriptionStatus({ showDetails = false, className = '', curren
               {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && shouldShowAction && (
                 <Button
                   size="sm"
-                  onClick={() => window.location.href = '/plans'}
+                  onClick={() => router.push('/plans')}
                 >
                   <TrendingUp className="h-4 w-4 mr-2" />
                   {status === 'EXPIRED' || status === 'CANCELED' ? 'Renew' : 'Upgrade'}
@@ -167,7 +169,7 @@ export function SubscriptionStatus({ showDetails = false, className = '', curren
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.location.href = '/plans'}
+          onClick={() => router.push('/plans')}
         >
           <TrendingUp className="h-4 w-4 mr-2" />
           {status === 'EXPIRED' || status === 'CANCELED' ? 'Renew' : 'Upgrade'}

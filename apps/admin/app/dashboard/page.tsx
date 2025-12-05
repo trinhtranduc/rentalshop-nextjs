@@ -872,7 +872,7 @@ export default function AdminDashboard() {
                 {newMerchants.length > 0 ? (
                   <div className="space-y-3">
                     {newMerchants.map((merchant, index) => (
-                      <div key={merchant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => window.location.href = `/merchants/${merchant.id}`}>
+                      <div key={merchant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => router.push(`/merchants/${merchant.id}`)}>
                         <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 text-white font-bold text-sm">
                             {index + 1}
