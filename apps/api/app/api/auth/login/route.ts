@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { comparePassword, generateToken } from '@rentalshop/auth';
+import { comparePassword, generateToken, getUserPermissions, ROLE_PERMISSIONS } from '@rentalshop/auth';
 import { loginSchema, ResponseBuilder } from '@rentalshop/utils';
 import { handleApiError, ErrorCode } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
@@ -206,7 +206,13 @@ export async function POST(request: NextRequest) {
       ? Math.floor((user as any).passwordChangedAt.getTime() / 1000) // Convert to Unix timestamp (seconds)
       : null;
 
-    // Debug logging for passwordChangedAt values
+    // Get permissionsChangedAt from user record to include in token
+    // This ensures new tokens are valid after permissions change
+    const permissionsChangedAt = (user as any).permissionsChangedAt
+      ? Math.floor((user as any).permissionsChangedAt.getTime() / 1000) // Convert to Unix timestamp (seconds)
+      : null;
+
+    // Debug logging for passwordChangedAt and permissionsChangedAt values
     console.log('🔍 LOGIN: passwordChangedAt values:', {
       fromDatabase: (user as any).passwordChangedAt,
       convertedToToken: passwordChangedAt,
@@ -214,8 +220,45 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email
     });
+    console.log('🔍 LOGIN: permissionsChangedAt values:', {
+      fromDatabase: (user as any).permissionsChangedAt,
+      convertedToToken: permissionsChangedAt,
+      type: typeof permissionsChangedAt,
+      userId: user.id,
+      email: user.email
+    });
 
-    // Generate token with plan name, sessionId, and passwordChangedAt for platform access control
+    // ✅ Get user permissions (supports custom merchant permissions)
+    const authUserForPermissions = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      merchantId: user.merchantId,
+      outletId: user.outletId,
+    };
+
+    console.log('🔍 Calling getUserPermissions with:', {
+      role: authUserForPermissions.role,
+      merchantId: authUserForPermissions.merchantId,
+      outletId: authUserForPermissions.outletId
+    });
+
+    const permissions = await getUserPermissions(authUserForPermissions as any);
+
+    console.log('🔍 getUserPermissions returned:', {
+      permissionsCount: permissions.length,
+      permissions: permissions
+    });
+
+    if (permissions.length === 0) {
+      console.error('❌ WARNING: getUserPermissions returned empty array!', {
+        userRole: user.role,
+        merchantId: user.merchantId,
+        availableRoles: Object.keys(ROLE_PERMISSIONS)
+      });
+    }
+
+    // Generate token with plan name, sessionId, passwordChangedAt, and permissionsChangedAt for platform access control
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -225,6 +268,7 @@ export async function POST(request: NextRequest) {
       planName, // ✅ Include plan name in JWT
       sessionId: session.sessionId, // ✅ Include session ID for single session enforcement
       passwordChangedAt, // ✅ Include passwordChangedAt to prevent token invalidation after login
+      permissionsChangedAt, // ✅ Include permissionsChangedAt to prevent token invalidation after permissions change
     } as any);
 
     const result = {
@@ -244,12 +288,13 @@ export async function POST(request: NextRequest) {
           outletId: user.outletId,
           emailVerified: (user as any).emailVerified || false,
           emailVerifiedAt: (user as any).emailVerifiedAt || undefined,
+          // ✅ Permissions array for frontend UI control
+          permissions: permissions, // Array of permission strings
           // ✅ Optional: merchant object (null for ADMIN users without merchant)
-          merchant: merchantData,  // MerchantReference | null
+          // Note: subscription is included in merchant object, not duplicated at user level
+          merchant: merchantData,  // MerchantReference | null (includes subscription)
           // ✅ Optional: outlet object (null for ADMIN/MERCHANT users without outlet)
           outlet: outletData,      // OutletReference | null
-          // ✅ Optional: subscription object (null for ADMIN users or merchants without subscription)
-          subscription: subscriptionData, // Subscription | null
         },
         token,
       },

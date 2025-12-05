@@ -59,11 +59,17 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
     ? Math.floor((user as any).passwordChangedAt.getTime() / 1000) // Convert to Unix timestamp
     : null;
 
+  // Include permissionsChangedAt in token to invalidate old tokens when permissions change
+  const permissionsChangedAt = (user as any).permissionsChangedAt 
+    ? Math.floor((user as any).permissionsChangedAt.getTime() / 1000) // Convert to Unix timestamp
+    : null;
+
   const token = generateToken({
     userId: user.id, // Use id (number) for JWT token consistency
     email: user.email,
     role: user.role,
     passwordChangedAt: passwordChangedAt,
+    permissionsChangedAt: permissionsChangedAt,
   });
 
   return {
@@ -120,11 +126,17 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
     ? Math.floor((user as any).passwordChangedAt.getTime() / 1000) // Convert to Unix timestamp
     : null;
 
+  // Include permissionsChangedAt in token to invalidate old tokens when permissions change
+  const permissionsChangedAt = (user as any).permissionsChangedAt 
+    ? Math.floor((user as any).permissionsChangedAt.getTime() / 1000) // Convert to Unix timestamp
+    : null;
+
   const token = generateToken({
     userId: user.id, // Use id (number) for JWT token consistency
     email: user.email,
     role: user.role,
     passwordChangedAt: passwordChangedAt,
+    permissionsChangedAt: permissionsChangedAt,
   });
 
   return {
