@@ -8,6 +8,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Edit, Trash2, CreditCard, Building2 } from 'lucide-react';
 import { useToast } from '../../../ui/toast';
 import { useBankAccountTranslations } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import type { BankAccount } from '@rentalshop/utils';
 
 interface BankAccountCardProps {
@@ -25,6 +26,8 @@ export const BankAccountCard: React.FC<BankAccountCardProps> = ({
 }) => {
   const { toastSuccess } = useToast();
   const t = useBankAccountTranslations();
+  // ✅ Use permissions hook for UI control
+  const { canManageBankAccounts } = usePermissions();
 
   const handleCopyAccountNumber = () => {
     navigator.clipboard.writeText(bankAccount.accountNumber);
@@ -53,7 +56,8 @@ export const BankAccountCard: React.FC<BankAccountCardProps> = ({
               </Badge>
             )}
           </div>
-          {showActions && (
+          {/* ✅ Actions - Only show if user can manage bank accounts */}
+          {showActions && canManageBankAccounts && (
             <div className="flex gap-2">
               {onEdit && (
                 <Button
@@ -102,11 +106,6 @@ export const BankAccountCard: React.FC<BankAccountCardProps> = ({
               <div className="flex items-center gap-2 mt-1">
                 <Building2 className="w-4 h-4 text-gray-400" />
                 <p className="text-base">{bankAccount.bankName}</p>
-                {bankAccount.bankCode && (
-                  <Badge variant="outline" className="ml-2">
-                    {bankAccount.bankCode}
-                  </Badge>
-                )}
               </div>
             </div>
 
