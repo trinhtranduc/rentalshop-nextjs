@@ -1,1005 +1,116 @@
-# Error Translation Audit Report
-
-Generated on: 2025-12-04T08:10:49.313Z
-
-## Summary
-
-- **Total Error & Success Codes Found**: 292
-  - Includes error codes from ErrorCode enum, ResponseBuilder, API routes, and Prisma handlers
-  - Includes success codes from ResponseBuilder and API routes
-
-### Translation Coverage by Locale
-
-- **EN**: 232/292 (79.5%) ✅
-- **VI**: 232/292 (79.5%) ✅
-- **JA**: 0/292 (0.0%) ❌ (File does not exist)
-- **KO**: 0/292 (0.0%) ❌ (File does not exist)
-- **ZH**: 0/292 (0.0%) ❌ (File does not exist)
-
-## Fully Translated Codes
-
-Total: 0
-
-## Partially Translated Codes
-
-Total: 232
-
-- **UNAUTHORIZED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FORBIDDEN**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_TOKEN**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **TOKEN_EXPIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_CREDENTIALS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **VALIDATION_ERROR**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_INPUT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MISSING_REQUIRED_FIELD**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **DATABASE_ERROR**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **DUPLICATE_ENTRY**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FOREIGN_KEY_CONSTRAINT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PLAN_LIMIT_EXCEEDED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INSUFFICIENT_PERMISSIONS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **BUSINESS_RULE_VIOLATION**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ACCOUNT_DEACTIVATED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SUBSCRIPTION_EXPIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SUBSCRIPTION_CANCELLED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SUBSCRIPTION_PAUSED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **TRIAL_EXPIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ORDER_ALREADY_EXISTS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_OUT_OF_STOCK**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_ORDER_STATUS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PAYMENT_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_PAYMENT_METHOD**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **EMAIL_EXISTS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PHONE_EXISTS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **BUSINESS_NAME_EXISTS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLET_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ORDER_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CUSTOMER_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CATEGORY_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PLAN_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SUBSCRIPTION_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PAYMENT_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **AUDIT_LOG_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **BILLING_CYCLE_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PLAN_VARIANT_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INTERNAL_SERVER_ERROR**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SERVICE_UNAVAILABLE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NETWORK_ERROR**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FILE_TOO_LARGE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_FILE_TYPE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UPLOAD_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **EMAIL_NOT_VERIFIED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CURRENT_PASSWORD_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CURRENT_PASSWORD_INCORRECT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PASSWORD_MIN_LENGTH**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PASSWORD_MISMATCH**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CROSS_MERCHANT_ACCESS_DENIED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_NOT_ASSIGNED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_ASSOCIATION_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NO_MERCHANT_ACCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NO_OUTLET_ACCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_ACCESS_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **DELETE_USER_OUT_OF_SCOPE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UPDATE_USER_OUT_OF_SCOPE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **DELETE_OWN_ACCOUNT_ONLY**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_QUERY**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_PAYLOAD**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_USER_DATA**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_UPDATE_DATA**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **BUSINESS_NAME_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CATEGORY_NAME_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLET_NAME_ADDRESS_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CUSTOMER_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ORDER_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLET_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PLAN_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_AMOUNT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_CUSTOMER_ID_FORMAT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_PRODUCT_ID_FORMAT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_ORDER_ID_FORMAT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_MERCHANT_ID_FORMAT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_USER_ID_FORMAT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_PLAN_ID_FORMAT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_AUDIT_LOG_ID_FORMAT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_DATE_FORMAT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_BUSINESS_TYPE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_PRICING_TYPE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_PLATFORM**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_END_DATE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_INTERVAL_CONFIG**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_BILLING_CONFIG**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ADMIN_OUTLET_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_CATEGORY_ID**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_SUBSCRIPTION_ID**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NO_OUTLETS_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NO_SUBSCRIPTION_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NO_DATA_AVAILABLE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CUSTOMER_DUPLICATE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLET_NAME_EXISTS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CATEGORY_NAME_EXISTS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_NO_STOCK_ENTRY**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ACCOUNT_ALREADY_DELETED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ORDER_PAYMENT_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SUBSCRIPTION_END_DATE_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **DEVICE_INFO_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **API_KEY_NAME_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **VALID_USER_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PASSWORD_RESET_TOKEN_INVALID**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PASSWORD_RESET_TOKEN_EXPIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PASSWORD_RESET_TOKEN_USED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FETCH_MERCHANTS_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FETCH_OUTLETS_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FETCH_PRODUCTS_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FETCH_ORDERS_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CREATE_CUSTOMER_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UPDATE_USER_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **DELETE_USER_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FEATURE_NOT_IMPLEMENTED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UNKNOWN_ERROR**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FETCH_SYSTEM_ANALYTICS_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_REQUEST**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PASSWORD_RESET_LINK_SENT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ACCESS_TOKEN_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **LOGOUT_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **EMAIL_ALREADY_EXISTS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_ACCOUNT_CREATED_PENDING_VERIFICATION**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_ACCOUNT_CREATED_PENDING_VERIFICATION**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **RATE_LIMIT_EXCEEDED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **EMAIL_ALREADY_VERIFIED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **EMAIL_SEND_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **VERIFICATION_EMAIL_SENT**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PASSWORD_RESET_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **EMAIL_VERIFICATION_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **TOKEN_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **EMAIL_VERIFIED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FETCH_BILLING_CYCLES_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FETCH_CATEGORIES_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CANNOT_DELETE_DEFAULT_CATEGORY**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UPDATE_CATEGORY_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **DELETE_CATEGORY_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CATEGORY_RETRIEVED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CATEGORY_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CATEGORY_DELETED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CATEGORY_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CUSTOMER_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CUSTOMER_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CANNOT_DELETE_DEFAULT_OUTLET**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLETS_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FETCH_PRICING_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UPDATE_PRICING_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCTS_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UPDATE_ORDER_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CREATE_OUTLET_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UPDATE_OUTLET_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLET_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLET_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLET_DELETED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PLAN_HAS_ACTIVE_SUBSCRIPTIONS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_QUERY_PARAMETERS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLET_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_USER_ROLE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_OUTLET_ID**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_ACCESS_DENIED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_OUTLET_NOT_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_RENTAL_DATES**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **AVAILABILITY_CHECKED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MISSING_PRODUCT_DATA**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_JSON_DATA**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **IMAGE_VALIDATION_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **IMAGE_UPLOAD_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_NAME_EXISTS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_DATE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_AVAILABILITY_FOUND**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_TENANT_KEY**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_INACTIVE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CATEGORIES_FETCHED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCTS_FETCHED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **FETCH_BILLING_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **BILLING_CONFIG_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CURRENCY_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_CURRENCY**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CURRENCY_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_INFO_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **OUTLET_INFO_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SUBSCRIPTION_RENEWED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SUBSCRIPTION_STATUS_RETRIEVED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MISSING_ENDPOINT_OR_TOKEN**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NO_DEFAULT_OUTLET**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **INVALID_ACTION**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SYNC_DATA_FETCHED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PREVIEW_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **SYNC_COMPLETED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **AWS_S3_TEST_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MISSING_STAGING_KEYS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CLEANUP_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NO_IMAGE_FILE**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UPLOAD_IMAGE_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PASSWORD_CHANGED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CANNOT_DELETE_LAST_ADMIN**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **DELETE_ACCOUNT_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **NO_VALID_FIELDS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PHONE_ALREADY_EXISTS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **UPDATE_PROFILE_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PROFILE_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **RETRIEVE_USERS_FAILED**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CANNOT_DELETE_SELF**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **LOGIN_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ORDER_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PLAN_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ORDER_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_UPDATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_DELETED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CUSTOMER_DELETED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_DELETED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_DELETED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_DEACTIVATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_RETRIEVED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **CUSTOMER_RETRIEVED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **PRODUCT_RETRIEVED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **ORDER_RETRIEVED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_RETRIEVED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **DASHBOARD_DATA_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **GROWTH_METRICS_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **TODAY_METRICS_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_REGISTERED_TRIAL_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **MERCHANT_ACCOUNT_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-- **USER_ACCOUNT_CREATED_SUCCESS**
-  - ✅ Translated in: en, vi
-  - ❌ Missing in: ja, ko, zh
-
-## Missing Translations by Locale
-
-### EN (en)
-
-Total missing: 60
-
-```
-ACCESS_DENIED, ADMIN_NO_MERCHANT_SUBSCRIPTION, BANK_ACCOUNTS_FOUND, BANK_ACCOUNT_CREATED_SUCCESS, BANK_ACCOUNT_DELETED_SUCCESS, BANK_ACCOUNT_FOUND, BANK_ACCOUNT_NOT_FOUND, BANK_ACCOUNT_UPDATED_SUCCESS, CANNOT_DETECT_ENTITY, DAILY_INCOME_SUCCESS, EXPORT_SUCCESS, GATEWAY_ERROR, IMPORT_STARTED, INVALID_DATE_RANGE, INVALID_ENTITY_TYPE, INVALID_FEATURES_FORMAT, INVALID_ID_FORMAT, INVALID_JSON, INVALID_LIMITS_FORMAT, INVALID_MERCHANT_ID, INVALID_OUTLET_STOCK, INVALID_SESSION_ID, INVALID_USER_ID, MISSING_ENTITIES, MISSING_ENTITY_TYPE, MISSING_FILE, MISSING_MERCHANT_ID, MISSING_PARAMETERS, MISSING_SESSION_ID, MULTIPLE_ENTITIES_FOUND, MULTIPLE_ENTITIES_IN_FILE, NO_DEFAULT_BANK_ACCOUNT, NO_ENTITIES_TO_IMPORT, NO_FIELDS_TO_UPDATE, OUTLET_NOT_IN_MERCHANT, OUTLET_STOCK_REQUIRED, PASSWORD_HASH_FAILED, PASSWORD_UPDATE_FAILED, PERMISSIONS_BULK_UPDATED_SUCCESS, PERMISSIONS_RETRIEVED_SUCCESS, PERMISSIONS_UPDATED_SUCCESS, PLANS_RETRIEVED_SUCCESS, PLAN_CHANGED_SUCCESS, PLAN_NAME_EXISTS, QR_CODE_GENERATED, QR_CODE_GENERATION_FAILED, ROLLBACK_SUCCESS, SESSION_CANNOT_BE_RESUMED, SESSION_CANNOT_BE_ROLLED_BACK, SESSION_FOUND, SESSION_NOT_FOUND, SOME_USERS_NOT_FOUND, SYNC_PARTIALLY_FAILED, SYNC_RESUMED_SUCCESS, SYNC_RESUME_FAILED, TIMEOUT_ERROR, USER_HAS_ORDERS, USER_HAS_RELATED_DATA, VALIDATION_COMPLETE, VALIDATION_FAILED
-```
-
-### VI (vi)
-
-Total missing: 60
-
-```
-ACCESS_DENIED, ADMIN_NO_MERCHANT_SUBSCRIPTION, BANK_ACCOUNTS_FOUND, BANK_ACCOUNT_CREATED_SUCCESS, BANK_ACCOUNT_DELETED_SUCCESS, BANK_ACCOUNT_FOUND, BANK_ACCOUNT_NOT_FOUND, BANK_ACCOUNT_UPDATED_SUCCESS, CANNOT_DETECT_ENTITY, DAILY_INCOME_SUCCESS, EXPORT_SUCCESS, GATEWAY_ERROR, IMPORT_STARTED, INVALID_DATE_RANGE, INVALID_ENTITY_TYPE, INVALID_FEATURES_FORMAT, INVALID_ID_FORMAT, INVALID_JSON, INVALID_LIMITS_FORMAT, INVALID_MERCHANT_ID, INVALID_OUTLET_STOCK, INVALID_SESSION_ID, INVALID_USER_ID, MISSING_ENTITIES, MISSING_ENTITY_TYPE, MISSING_FILE, MISSING_MERCHANT_ID, MISSING_PARAMETERS, MISSING_SESSION_ID, MULTIPLE_ENTITIES_FOUND, MULTIPLE_ENTITIES_IN_FILE, NO_DEFAULT_BANK_ACCOUNT, NO_ENTITIES_TO_IMPORT, NO_FIELDS_TO_UPDATE, OUTLET_NOT_IN_MERCHANT, OUTLET_STOCK_REQUIRED, PASSWORD_HASH_FAILED, PASSWORD_UPDATE_FAILED, PERMISSIONS_BULK_UPDATED_SUCCESS, PERMISSIONS_RETRIEVED_SUCCESS, PERMISSIONS_UPDATED_SUCCESS, PLANS_RETRIEVED_SUCCESS, PLAN_CHANGED_SUCCESS, PLAN_NAME_EXISTS, QR_CODE_GENERATED, QR_CODE_GENERATION_FAILED, ROLLBACK_SUCCESS, SESSION_CANNOT_BE_RESUMED, SESSION_CANNOT_BE_ROLLED_BACK, SESSION_FOUND, SESSION_NOT_FOUND, SOME_USERS_NOT_FOUND, SYNC_PARTIALLY_FAILED, SYNC_RESUMED_SUCCESS, SYNC_RESUME_FAILED, TIMEOUT_ERROR, USER_HAS_ORDERS, USER_HAS_RELATED_DATA, VALIDATION_COMPLETE, VALIDATION_FAILED
-```
-
-### JA (ja)
-
-Total missing: 292
-
-```
-ACCESS_DENIED, ACCESS_TOKEN_REQUIRED, ACCOUNT_ALREADY_DELETED, ACCOUNT_DEACTIVATED, ADMIN_NO_MERCHANT_SUBSCRIPTION, ADMIN_OUTLET_ID_REQUIRED, API_KEY_NAME_REQUIRED, AUDIT_LOG_NOT_FOUND, AVAILABILITY_CHECKED, AWS_S3_TEST_FAILED, BANK_ACCOUNTS_FOUND, BANK_ACCOUNT_CREATED_SUCCESS, BANK_ACCOUNT_DELETED_SUCCESS, BANK_ACCOUNT_FOUND, BANK_ACCOUNT_NOT_FOUND, BANK_ACCOUNT_UPDATED_SUCCESS, BILLING_CONFIG_UPDATED_SUCCESS, BILLING_CYCLE_NOT_FOUND, BUSINESS_NAME_EXISTS, BUSINESS_NAME_REQUIRED, BUSINESS_RULE_VIOLATION, CANNOT_DELETE_DEFAULT_CATEGORY, CANNOT_DELETE_DEFAULT_OUTLET, CANNOT_DELETE_LAST_ADMIN, CANNOT_DELETE_SELF, CANNOT_DETECT_ENTITY, CATEGORIES_FETCHED, CATEGORY_CREATED_SUCCESS, CATEGORY_DELETED_SUCCESS, CATEGORY_NAME_EXISTS, CATEGORY_NAME_REQUIRED, CATEGORY_NOT_FOUND, CATEGORY_RETRIEVED_SUCCESS, CATEGORY_UPDATED_SUCCESS, CLEANUP_FAILED, CREATE_CUSTOMER_FAILED, CREATE_OUTLET_FAILED, CROSS_MERCHANT_ACCESS_DENIED, CURRENCY_REQUIRED, CURRENCY_UPDATED_SUCCESS, CURRENT_PASSWORD_INCORRECT, CURRENT_PASSWORD_REQUIRED, CUSTOMER_CREATED_SUCCESS, CUSTOMER_DELETED_SUCCESS, CUSTOMER_DUPLICATE, CUSTOMER_ID_REQUIRED, CUSTOMER_NOT_FOUND, CUSTOMER_RETRIEVED_SUCCESS, CUSTOMER_UPDATED_SUCCESS, DAILY_INCOME_SUCCESS, DASHBOARD_DATA_SUCCESS, DATABASE_ERROR, DELETE_ACCOUNT_FAILED, DELETE_CATEGORY_FAILED, DELETE_OWN_ACCOUNT_ONLY, DELETE_USER_FAILED, DELETE_USER_OUT_OF_SCOPE, DEVICE_INFO_REQUIRED, DUPLICATE_ENTRY, EMAIL_ALREADY_EXISTS, EMAIL_ALREADY_VERIFIED, EMAIL_EXISTS, EMAIL_NOT_VERIFIED, EMAIL_SEND_FAILED, EMAIL_VERIFICATION_FAILED, EMAIL_VERIFIED_SUCCESS, EXPORT_SUCCESS, FEATURE_NOT_IMPLEMENTED, FETCH_BILLING_CYCLES_FAILED, FETCH_BILLING_FAILED, FETCH_CATEGORIES_FAILED, FETCH_MERCHANTS_FAILED, FETCH_ORDERS_FAILED, FETCH_OUTLETS_FAILED, FETCH_PRICING_FAILED, FETCH_PRODUCTS_FAILED, FETCH_SYSTEM_ANALYTICS_FAILED, FILE_TOO_LARGE, FORBIDDEN, FOREIGN_KEY_CONSTRAINT, GATEWAY_ERROR, GROWTH_METRICS_SUCCESS, IMAGE_UPLOAD_FAILED, IMAGE_VALIDATION_FAILED, IMPORT_STARTED, INSUFFICIENT_PERMISSIONS, INTERNAL_SERVER_ERROR, INVALID_ACTION, INVALID_AMOUNT, INVALID_AUDIT_LOG_ID_FORMAT, INVALID_BILLING_CONFIG, INVALID_BUSINESS_TYPE, INVALID_CATEGORY_ID, INVALID_CREDENTIALS, INVALID_CURRENCY, INVALID_CUSTOMER_ID_FORMAT, INVALID_DATE, INVALID_DATE_FORMAT, INVALID_DATE_RANGE, INVALID_END_DATE, INVALID_ENTITY_TYPE, INVALID_FEATURES_FORMAT, INVALID_FILE_TYPE, INVALID_ID_FORMAT, INVALID_INPUT, INVALID_INTERVAL_CONFIG, INVALID_JSON, INVALID_JSON_DATA, INVALID_LIMITS_FORMAT, INVALID_MERCHANT_ID, INVALID_MERCHANT_ID_FORMAT, INVALID_ORDER_ID_FORMAT, INVALID_ORDER_STATUS, INVALID_OUTLET_ID, INVALID_OUTLET_STOCK, INVALID_PAYLOAD, INVALID_PAYMENT_METHOD, INVALID_PLAN_ID_FORMAT, INVALID_PLATFORM, INVALID_PRICING_TYPE, INVALID_PRODUCT_ID_FORMAT, INVALID_QUERY, INVALID_QUERY_PARAMETERS, INVALID_RENTAL_DATES, INVALID_REQUEST, INVALID_SESSION_ID, INVALID_SUBSCRIPTION_ID, INVALID_TENANT_KEY, INVALID_TOKEN, INVALID_UPDATE_DATA, INVALID_USER_DATA, INVALID_USER_ID, INVALID_USER_ID_FORMAT, INVALID_USER_ROLE, LOGIN_SUCCESS, LOGOUT_SUCCESS, MERCHANT_ACCESS_REQUIRED, MERCHANT_ACCOUNT_CREATED_PENDING_VERIFICATION, MERCHANT_ACCOUNT_CREATED_SUCCESS, MERCHANT_ASSOCIATION_REQUIRED, MERCHANT_CREATED_SUCCESS, MERCHANT_DELETED_SUCCESS, MERCHANT_ID_REQUIRED, MERCHANT_INACTIVE, MERCHANT_INFO_UPDATED_SUCCESS, MERCHANT_NOT_FOUND, MERCHANT_REGISTERED_TRIAL_SUCCESS, MERCHANT_RETRIEVED_SUCCESS, MERCHANT_UPDATED_SUCCESS, MISSING_ENDPOINT_OR_TOKEN, MISSING_ENTITIES, MISSING_ENTITY_TYPE, MISSING_FILE, MISSING_MERCHANT_ID, MISSING_PARAMETERS, MISSING_PRODUCT_DATA, MISSING_REQUIRED_FIELD, MISSING_SESSION_ID, MISSING_STAGING_KEYS, MULTIPLE_ENTITIES_FOUND, MULTIPLE_ENTITIES_IN_FILE, NETWORK_ERROR, NOT_FOUND, NO_DATA_AVAILABLE, NO_DEFAULT_BANK_ACCOUNT, NO_DEFAULT_OUTLET, NO_ENTITIES_TO_IMPORT, NO_FIELDS_TO_UPDATE, NO_IMAGE_FILE, NO_MERCHANT_ACCESS, NO_OUTLETS_FOUND, NO_OUTLET_ACCESS, NO_SUBSCRIPTION_FOUND, NO_VALID_FIELDS, ORDER_ALREADY_EXISTS, ORDER_CREATED_SUCCESS, ORDER_ID_REQUIRED, ORDER_NOT_FOUND, ORDER_PAYMENT_REQUIRED, ORDER_RETRIEVED_SUCCESS, ORDER_UPDATED_SUCCESS, OUTLETS_FOUND, OUTLET_CREATED_SUCCESS, OUTLET_DELETED_SUCCESS, OUTLET_ID_REQUIRED, OUTLET_INFO_UPDATED_SUCCESS, OUTLET_NAME_ADDRESS_REQUIRED, OUTLET_NAME_EXISTS, OUTLET_NOT_FOUND, OUTLET_NOT_IN_MERCHANT, OUTLET_REQUIRED, OUTLET_STOCK_REQUIRED, OUTLET_UPDATED_SUCCESS, PASSWORD_CHANGED_SUCCESS, PASSWORD_HASH_FAILED, PASSWORD_MIN_LENGTH, PASSWORD_MISMATCH, PASSWORD_RESET_LINK_SENT, PASSWORD_RESET_SUCCESS, PASSWORD_RESET_TOKEN_EXPIRED, PASSWORD_RESET_TOKEN_INVALID, PASSWORD_RESET_TOKEN_USED, PASSWORD_UPDATE_FAILED, PAYMENT_FAILED, PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED, PAYMENT_NOT_FOUND, PERMISSIONS_BULK_UPDATED_SUCCESS, PERMISSIONS_RETRIEVED_SUCCESS, PERMISSIONS_UPDATED_SUCCESS, PHONE_ALREADY_EXISTS, PHONE_EXISTS, PLANS_RETRIEVED_SUCCESS, PLAN_CHANGED_SUCCESS, PLAN_CREATED_SUCCESS, PLAN_HAS_ACTIVE_SUBSCRIPTIONS, PLAN_ID_REQUIRED, PLAN_LIMIT_EXCEEDED, PLAN_NAME_EXISTS, PLAN_NOT_FOUND, PLAN_VARIANT_NOT_FOUND, PREVIEW_SUCCESS, PRODUCTS_FETCHED, PRODUCTS_FOUND, PRODUCT_ACCESS_DENIED, PRODUCT_AVAILABILITY_FOUND, PRODUCT_CREATED_SUCCESS, PRODUCT_DELETED_SUCCESS, PRODUCT_ID_REQUIRED, PRODUCT_NAME_EXISTS, PRODUCT_NOT_FOUND, PRODUCT_NO_STOCK_ENTRY, PRODUCT_OUTLET_NOT_FOUND, PRODUCT_OUT_OF_STOCK, PRODUCT_RETRIEVED_SUCCESS, PRODUCT_UPDATED_SUCCESS, PROFILE_UPDATED_SUCCESS, QR_CODE_GENERATED, QR_CODE_GENERATION_FAILED, RATE_LIMIT_EXCEEDED, RETRIEVE_USERS_FAILED, ROLLBACK_SUCCESS, SERVICE_UNAVAILABLE, SESSION_CANNOT_BE_RESUMED, SESSION_CANNOT_BE_ROLLED_BACK, SESSION_FOUND, SESSION_NOT_FOUND, SOME_USERS_NOT_FOUND, SUBSCRIPTION_CANCELLED, SUBSCRIPTION_END_DATE_REQUIRED, SUBSCRIPTION_EXPIRED, SUBSCRIPTION_NOT_FOUND, SUBSCRIPTION_PAUSED, SUBSCRIPTION_RENEWED_SUCCESS, SUBSCRIPTION_STATUS_RETRIEVED, SYNC_COMPLETED, SYNC_DATA_FETCHED, SYNC_PARTIALLY_FAILED, SYNC_RESUMED_SUCCESS, SYNC_RESUME_FAILED, TIMEOUT_ERROR, TODAY_METRICS_SUCCESS, TOKEN_EXPIRED, TOKEN_REQUIRED, TRIAL_EXPIRED, UNAUTHORIZED, UNKNOWN_ERROR, UPDATE_CATEGORY_FAILED, UPDATE_ORDER_FAILED, UPDATE_OUTLET_FAILED, UPDATE_PRICING_FAILED, UPDATE_PROFILE_FAILED, UPDATE_USER_FAILED, UPDATE_USER_OUT_OF_SCOPE, UPLOAD_FAILED, UPLOAD_IMAGE_FAILED, USER_ACCOUNT_CREATED_PENDING_VERIFICATION, USER_ACCOUNT_CREATED_SUCCESS, USER_CREATED_SUCCESS, USER_DEACTIVATED_SUCCESS, USER_DELETED_SUCCESS, USER_HAS_ORDERS, USER_HAS_RELATED_DATA, USER_ID_REQUIRED, USER_NOT_ASSIGNED, USER_NOT_FOUND, USER_RETRIEVED_SUCCESS, USER_UPDATED_SUCCESS, VALIDATION_COMPLETE, VALIDATION_ERROR, VALIDATION_FAILED, VALID_USER_ID_REQUIRED, VERIFICATION_EMAIL_SENT
-```
-
-### KO (ko)
-
-Total missing: 292
-
-```
-ACCESS_DENIED, ACCESS_TOKEN_REQUIRED, ACCOUNT_ALREADY_DELETED, ACCOUNT_DEACTIVATED, ADMIN_NO_MERCHANT_SUBSCRIPTION, ADMIN_OUTLET_ID_REQUIRED, API_KEY_NAME_REQUIRED, AUDIT_LOG_NOT_FOUND, AVAILABILITY_CHECKED, AWS_S3_TEST_FAILED, BANK_ACCOUNTS_FOUND, BANK_ACCOUNT_CREATED_SUCCESS, BANK_ACCOUNT_DELETED_SUCCESS, BANK_ACCOUNT_FOUND, BANK_ACCOUNT_NOT_FOUND, BANK_ACCOUNT_UPDATED_SUCCESS, BILLING_CONFIG_UPDATED_SUCCESS, BILLING_CYCLE_NOT_FOUND, BUSINESS_NAME_EXISTS, BUSINESS_NAME_REQUIRED, BUSINESS_RULE_VIOLATION, CANNOT_DELETE_DEFAULT_CATEGORY, CANNOT_DELETE_DEFAULT_OUTLET, CANNOT_DELETE_LAST_ADMIN, CANNOT_DELETE_SELF, CANNOT_DETECT_ENTITY, CATEGORIES_FETCHED, CATEGORY_CREATED_SUCCESS, CATEGORY_DELETED_SUCCESS, CATEGORY_NAME_EXISTS, CATEGORY_NAME_REQUIRED, CATEGORY_NOT_FOUND, CATEGORY_RETRIEVED_SUCCESS, CATEGORY_UPDATED_SUCCESS, CLEANUP_FAILED, CREATE_CUSTOMER_FAILED, CREATE_OUTLET_FAILED, CROSS_MERCHANT_ACCESS_DENIED, CURRENCY_REQUIRED, CURRENCY_UPDATED_SUCCESS, CURRENT_PASSWORD_INCORRECT, CURRENT_PASSWORD_REQUIRED, CUSTOMER_CREATED_SUCCESS, CUSTOMER_DELETED_SUCCESS, CUSTOMER_DUPLICATE, CUSTOMER_ID_REQUIRED, CUSTOMER_NOT_FOUND, CUSTOMER_RETRIEVED_SUCCESS, CUSTOMER_UPDATED_SUCCESS, DAILY_INCOME_SUCCESS, DASHBOARD_DATA_SUCCESS, DATABASE_ERROR, DELETE_ACCOUNT_FAILED, DELETE_CATEGORY_FAILED, DELETE_OWN_ACCOUNT_ONLY, DELETE_USER_FAILED, DELETE_USER_OUT_OF_SCOPE, DEVICE_INFO_REQUIRED, DUPLICATE_ENTRY, EMAIL_ALREADY_EXISTS, EMAIL_ALREADY_VERIFIED, EMAIL_EXISTS, EMAIL_NOT_VERIFIED, EMAIL_SEND_FAILED, EMAIL_VERIFICATION_FAILED, EMAIL_VERIFIED_SUCCESS, EXPORT_SUCCESS, FEATURE_NOT_IMPLEMENTED, FETCH_BILLING_CYCLES_FAILED, FETCH_BILLING_FAILED, FETCH_CATEGORIES_FAILED, FETCH_MERCHANTS_FAILED, FETCH_ORDERS_FAILED, FETCH_OUTLETS_FAILED, FETCH_PRICING_FAILED, FETCH_PRODUCTS_FAILED, FETCH_SYSTEM_ANALYTICS_FAILED, FILE_TOO_LARGE, FORBIDDEN, FOREIGN_KEY_CONSTRAINT, GATEWAY_ERROR, GROWTH_METRICS_SUCCESS, IMAGE_UPLOAD_FAILED, IMAGE_VALIDATION_FAILED, IMPORT_STARTED, INSUFFICIENT_PERMISSIONS, INTERNAL_SERVER_ERROR, INVALID_ACTION, INVALID_AMOUNT, INVALID_AUDIT_LOG_ID_FORMAT, INVALID_BILLING_CONFIG, INVALID_BUSINESS_TYPE, INVALID_CATEGORY_ID, INVALID_CREDENTIALS, INVALID_CURRENCY, INVALID_CUSTOMER_ID_FORMAT, INVALID_DATE, INVALID_DATE_FORMAT, INVALID_DATE_RANGE, INVALID_END_DATE, INVALID_ENTITY_TYPE, INVALID_FEATURES_FORMAT, INVALID_FILE_TYPE, INVALID_ID_FORMAT, INVALID_INPUT, INVALID_INTERVAL_CONFIG, INVALID_JSON, INVALID_JSON_DATA, INVALID_LIMITS_FORMAT, INVALID_MERCHANT_ID, INVALID_MERCHANT_ID_FORMAT, INVALID_ORDER_ID_FORMAT, INVALID_ORDER_STATUS, INVALID_OUTLET_ID, INVALID_OUTLET_STOCK, INVALID_PAYLOAD, INVALID_PAYMENT_METHOD, INVALID_PLAN_ID_FORMAT, INVALID_PLATFORM, INVALID_PRICING_TYPE, INVALID_PRODUCT_ID_FORMAT, INVALID_QUERY, INVALID_QUERY_PARAMETERS, INVALID_RENTAL_DATES, INVALID_REQUEST, INVALID_SESSION_ID, INVALID_SUBSCRIPTION_ID, INVALID_TENANT_KEY, INVALID_TOKEN, INVALID_UPDATE_DATA, INVALID_USER_DATA, INVALID_USER_ID, INVALID_USER_ID_FORMAT, INVALID_USER_ROLE, LOGIN_SUCCESS, LOGOUT_SUCCESS, MERCHANT_ACCESS_REQUIRED, MERCHANT_ACCOUNT_CREATED_PENDING_VERIFICATION, MERCHANT_ACCOUNT_CREATED_SUCCESS, MERCHANT_ASSOCIATION_REQUIRED, MERCHANT_CREATED_SUCCESS, MERCHANT_DELETED_SUCCESS, MERCHANT_ID_REQUIRED, MERCHANT_INACTIVE, MERCHANT_INFO_UPDATED_SUCCESS, MERCHANT_NOT_FOUND, MERCHANT_REGISTERED_TRIAL_SUCCESS, MERCHANT_RETRIEVED_SUCCESS, MERCHANT_UPDATED_SUCCESS, MISSING_ENDPOINT_OR_TOKEN, MISSING_ENTITIES, MISSING_ENTITY_TYPE, MISSING_FILE, MISSING_MERCHANT_ID, MISSING_PARAMETERS, MISSING_PRODUCT_DATA, MISSING_REQUIRED_FIELD, MISSING_SESSION_ID, MISSING_STAGING_KEYS, MULTIPLE_ENTITIES_FOUND, MULTIPLE_ENTITIES_IN_FILE, NETWORK_ERROR, NOT_FOUND, NO_DATA_AVAILABLE, NO_DEFAULT_BANK_ACCOUNT, NO_DEFAULT_OUTLET, NO_ENTITIES_TO_IMPORT, NO_FIELDS_TO_UPDATE, NO_IMAGE_FILE, NO_MERCHANT_ACCESS, NO_OUTLETS_FOUND, NO_OUTLET_ACCESS, NO_SUBSCRIPTION_FOUND, NO_VALID_FIELDS, ORDER_ALREADY_EXISTS, ORDER_CREATED_SUCCESS, ORDER_ID_REQUIRED, ORDER_NOT_FOUND, ORDER_PAYMENT_REQUIRED, ORDER_RETRIEVED_SUCCESS, ORDER_UPDATED_SUCCESS, OUTLETS_FOUND, OUTLET_CREATED_SUCCESS, OUTLET_DELETED_SUCCESS, OUTLET_ID_REQUIRED, OUTLET_INFO_UPDATED_SUCCESS, OUTLET_NAME_ADDRESS_REQUIRED, OUTLET_NAME_EXISTS, OUTLET_NOT_FOUND, OUTLET_NOT_IN_MERCHANT, OUTLET_REQUIRED, OUTLET_STOCK_REQUIRED, OUTLET_UPDATED_SUCCESS, PASSWORD_CHANGED_SUCCESS, PASSWORD_HASH_FAILED, PASSWORD_MIN_LENGTH, PASSWORD_MISMATCH, PASSWORD_RESET_LINK_SENT, PASSWORD_RESET_SUCCESS, PASSWORD_RESET_TOKEN_EXPIRED, PASSWORD_RESET_TOKEN_INVALID, PASSWORD_RESET_TOKEN_USED, PASSWORD_UPDATE_FAILED, PAYMENT_FAILED, PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED, PAYMENT_NOT_FOUND, PERMISSIONS_BULK_UPDATED_SUCCESS, PERMISSIONS_RETRIEVED_SUCCESS, PERMISSIONS_UPDATED_SUCCESS, PHONE_ALREADY_EXISTS, PHONE_EXISTS, PLANS_RETRIEVED_SUCCESS, PLAN_CHANGED_SUCCESS, PLAN_CREATED_SUCCESS, PLAN_HAS_ACTIVE_SUBSCRIPTIONS, PLAN_ID_REQUIRED, PLAN_LIMIT_EXCEEDED, PLAN_NAME_EXISTS, PLAN_NOT_FOUND, PLAN_VARIANT_NOT_FOUND, PREVIEW_SUCCESS, PRODUCTS_FETCHED, PRODUCTS_FOUND, PRODUCT_ACCESS_DENIED, PRODUCT_AVAILABILITY_FOUND, PRODUCT_CREATED_SUCCESS, PRODUCT_DELETED_SUCCESS, PRODUCT_ID_REQUIRED, PRODUCT_NAME_EXISTS, PRODUCT_NOT_FOUND, PRODUCT_NO_STOCK_ENTRY, PRODUCT_OUTLET_NOT_FOUND, PRODUCT_OUT_OF_STOCK, PRODUCT_RETRIEVED_SUCCESS, PRODUCT_UPDATED_SUCCESS, PROFILE_UPDATED_SUCCESS, QR_CODE_GENERATED, QR_CODE_GENERATION_FAILED, RATE_LIMIT_EXCEEDED, RETRIEVE_USERS_FAILED, ROLLBACK_SUCCESS, SERVICE_UNAVAILABLE, SESSION_CANNOT_BE_RESUMED, SESSION_CANNOT_BE_ROLLED_BACK, SESSION_FOUND, SESSION_NOT_FOUND, SOME_USERS_NOT_FOUND, SUBSCRIPTION_CANCELLED, SUBSCRIPTION_END_DATE_REQUIRED, SUBSCRIPTION_EXPIRED, SUBSCRIPTION_NOT_FOUND, SUBSCRIPTION_PAUSED, SUBSCRIPTION_RENEWED_SUCCESS, SUBSCRIPTION_STATUS_RETRIEVED, SYNC_COMPLETED, SYNC_DATA_FETCHED, SYNC_PARTIALLY_FAILED, SYNC_RESUMED_SUCCESS, SYNC_RESUME_FAILED, TIMEOUT_ERROR, TODAY_METRICS_SUCCESS, TOKEN_EXPIRED, TOKEN_REQUIRED, TRIAL_EXPIRED, UNAUTHORIZED, UNKNOWN_ERROR, UPDATE_CATEGORY_FAILED, UPDATE_ORDER_FAILED, UPDATE_OUTLET_FAILED, UPDATE_PRICING_FAILED, UPDATE_PROFILE_FAILED, UPDATE_USER_FAILED, UPDATE_USER_OUT_OF_SCOPE, UPLOAD_FAILED, UPLOAD_IMAGE_FAILED, USER_ACCOUNT_CREATED_PENDING_VERIFICATION, USER_ACCOUNT_CREATED_SUCCESS, USER_CREATED_SUCCESS, USER_DEACTIVATED_SUCCESS, USER_DELETED_SUCCESS, USER_HAS_ORDERS, USER_HAS_RELATED_DATA, USER_ID_REQUIRED, USER_NOT_ASSIGNED, USER_NOT_FOUND, USER_RETRIEVED_SUCCESS, USER_UPDATED_SUCCESS, VALIDATION_COMPLETE, VALIDATION_ERROR, VALIDATION_FAILED, VALID_USER_ID_REQUIRED, VERIFICATION_EMAIL_SENT
-```
-
-### ZH (zh)
-
-Total missing: 292
-
-```
-ACCESS_DENIED, ACCESS_TOKEN_REQUIRED, ACCOUNT_ALREADY_DELETED, ACCOUNT_DEACTIVATED, ADMIN_NO_MERCHANT_SUBSCRIPTION, ADMIN_OUTLET_ID_REQUIRED, API_KEY_NAME_REQUIRED, AUDIT_LOG_NOT_FOUND, AVAILABILITY_CHECKED, AWS_S3_TEST_FAILED, BANK_ACCOUNTS_FOUND, BANK_ACCOUNT_CREATED_SUCCESS, BANK_ACCOUNT_DELETED_SUCCESS, BANK_ACCOUNT_FOUND, BANK_ACCOUNT_NOT_FOUND, BANK_ACCOUNT_UPDATED_SUCCESS, BILLING_CONFIG_UPDATED_SUCCESS, BILLING_CYCLE_NOT_FOUND, BUSINESS_NAME_EXISTS, BUSINESS_NAME_REQUIRED, BUSINESS_RULE_VIOLATION, CANNOT_DELETE_DEFAULT_CATEGORY, CANNOT_DELETE_DEFAULT_OUTLET, CANNOT_DELETE_LAST_ADMIN, CANNOT_DELETE_SELF, CANNOT_DETECT_ENTITY, CATEGORIES_FETCHED, CATEGORY_CREATED_SUCCESS, CATEGORY_DELETED_SUCCESS, CATEGORY_NAME_EXISTS, CATEGORY_NAME_REQUIRED, CATEGORY_NOT_FOUND, CATEGORY_RETRIEVED_SUCCESS, CATEGORY_UPDATED_SUCCESS, CLEANUP_FAILED, CREATE_CUSTOMER_FAILED, CREATE_OUTLET_FAILED, CROSS_MERCHANT_ACCESS_DENIED, CURRENCY_REQUIRED, CURRENCY_UPDATED_SUCCESS, CURRENT_PASSWORD_INCORRECT, CURRENT_PASSWORD_REQUIRED, CUSTOMER_CREATED_SUCCESS, CUSTOMER_DELETED_SUCCESS, CUSTOMER_DUPLICATE, CUSTOMER_ID_REQUIRED, CUSTOMER_NOT_FOUND, CUSTOMER_RETRIEVED_SUCCESS, CUSTOMER_UPDATED_SUCCESS, DAILY_INCOME_SUCCESS, DASHBOARD_DATA_SUCCESS, DATABASE_ERROR, DELETE_ACCOUNT_FAILED, DELETE_CATEGORY_FAILED, DELETE_OWN_ACCOUNT_ONLY, DELETE_USER_FAILED, DELETE_USER_OUT_OF_SCOPE, DEVICE_INFO_REQUIRED, DUPLICATE_ENTRY, EMAIL_ALREADY_EXISTS, EMAIL_ALREADY_VERIFIED, EMAIL_EXISTS, EMAIL_NOT_VERIFIED, EMAIL_SEND_FAILED, EMAIL_VERIFICATION_FAILED, EMAIL_VERIFIED_SUCCESS, EXPORT_SUCCESS, FEATURE_NOT_IMPLEMENTED, FETCH_BILLING_CYCLES_FAILED, FETCH_BILLING_FAILED, FETCH_CATEGORIES_FAILED, FETCH_MERCHANTS_FAILED, FETCH_ORDERS_FAILED, FETCH_OUTLETS_FAILED, FETCH_PRICING_FAILED, FETCH_PRODUCTS_FAILED, FETCH_SYSTEM_ANALYTICS_FAILED, FILE_TOO_LARGE, FORBIDDEN, FOREIGN_KEY_CONSTRAINT, GATEWAY_ERROR, GROWTH_METRICS_SUCCESS, IMAGE_UPLOAD_FAILED, IMAGE_VALIDATION_FAILED, IMPORT_STARTED, INSUFFICIENT_PERMISSIONS, INTERNAL_SERVER_ERROR, INVALID_ACTION, INVALID_AMOUNT, INVALID_AUDIT_LOG_ID_FORMAT, INVALID_BILLING_CONFIG, INVALID_BUSINESS_TYPE, INVALID_CATEGORY_ID, INVALID_CREDENTIALS, INVALID_CURRENCY, INVALID_CUSTOMER_ID_FORMAT, INVALID_DATE, INVALID_DATE_FORMAT, INVALID_DATE_RANGE, INVALID_END_DATE, INVALID_ENTITY_TYPE, INVALID_FEATURES_FORMAT, INVALID_FILE_TYPE, INVALID_ID_FORMAT, INVALID_INPUT, INVALID_INTERVAL_CONFIG, INVALID_JSON, INVALID_JSON_DATA, INVALID_LIMITS_FORMAT, INVALID_MERCHANT_ID, INVALID_MERCHANT_ID_FORMAT, INVALID_ORDER_ID_FORMAT, INVALID_ORDER_STATUS, INVALID_OUTLET_ID, INVALID_OUTLET_STOCK, INVALID_PAYLOAD, INVALID_PAYMENT_METHOD, INVALID_PLAN_ID_FORMAT, INVALID_PLATFORM, INVALID_PRICING_TYPE, INVALID_PRODUCT_ID_FORMAT, INVALID_QUERY, INVALID_QUERY_PARAMETERS, INVALID_RENTAL_DATES, INVALID_REQUEST, INVALID_SESSION_ID, INVALID_SUBSCRIPTION_ID, INVALID_TENANT_KEY, INVALID_TOKEN, INVALID_UPDATE_DATA, INVALID_USER_DATA, INVALID_USER_ID, INVALID_USER_ID_FORMAT, INVALID_USER_ROLE, LOGIN_SUCCESS, LOGOUT_SUCCESS, MERCHANT_ACCESS_REQUIRED, MERCHANT_ACCOUNT_CREATED_PENDING_VERIFICATION, MERCHANT_ACCOUNT_CREATED_SUCCESS, MERCHANT_ASSOCIATION_REQUIRED, MERCHANT_CREATED_SUCCESS, MERCHANT_DELETED_SUCCESS, MERCHANT_ID_REQUIRED, MERCHANT_INACTIVE, MERCHANT_INFO_UPDATED_SUCCESS, MERCHANT_NOT_FOUND, MERCHANT_REGISTERED_TRIAL_SUCCESS, MERCHANT_RETRIEVED_SUCCESS, MERCHANT_UPDATED_SUCCESS, MISSING_ENDPOINT_OR_TOKEN, MISSING_ENTITIES, MISSING_ENTITY_TYPE, MISSING_FILE, MISSING_MERCHANT_ID, MISSING_PARAMETERS, MISSING_PRODUCT_DATA, MISSING_REQUIRED_FIELD, MISSING_SESSION_ID, MISSING_STAGING_KEYS, MULTIPLE_ENTITIES_FOUND, MULTIPLE_ENTITIES_IN_FILE, NETWORK_ERROR, NOT_FOUND, NO_DATA_AVAILABLE, NO_DEFAULT_BANK_ACCOUNT, NO_DEFAULT_OUTLET, NO_ENTITIES_TO_IMPORT, NO_FIELDS_TO_UPDATE, NO_IMAGE_FILE, NO_MERCHANT_ACCESS, NO_OUTLETS_FOUND, NO_OUTLET_ACCESS, NO_SUBSCRIPTION_FOUND, NO_VALID_FIELDS, ORDER_ALREADY_EXISTS, ORDER_CREATED_SUCCESS, ORDER_ID_REQUIRED, ORDER_NOT_FOUND, ORDER_PAYMENT_REQUIRED, ORDER_RETRIEVED_SUCCESS, ORDER_UPDATED_SUCCESS, OUTLETS_FOUND, OUTLET_CREATED_SUCCESS, OUTLET_DELETED_SUCCESS, OUTLET_ID_REQUIRED, OUTLET_INFO_UPDATED_SUCCESS, OUTLET_NAME_ADDRESS_REQUIRED, OUTLET_NAME_EXISTS, OUTLET_NOT_FOUND, OUTLET_NOT_IN_MERCHANT, OUTLET_REQUIRED, OUTLET_STOCK_REQUIRED, OUTLET_UPDATED_SUCCESS, PASSWORD_CHANGED_SUCCESS, PASSWORD_HASH_FAILED, PASSWORD_MIN_LENGTH, PASSWORD_MISMATCH, PASSWORD_RESET_LINK_SENT, PASSWORD_RESET_SUCCESS, PASSWORD_RESET_TOKEN_EXPIRED, PASSWORD_RESET_TOKEN_INVALID, PASSWORD_RESET_TOKEN_USED, PASSWORD_UPDATE_FAILED, PAYMENT_FAILED, PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED, PAYMENT_NOT_FOUND, PERMISSIONS_BULK_UPDATED_SUCCESS, PERMISSIONS_RETRIEVED_SUCCESS, PERMISSIONS_UPDATED_SUCCESS, PHONE_ALREADY_EXISTS, PHONE_EXISTS, PLANS_RETRIEVED_SUCCESS, PLAN_CHANGED_SUCCESS, PLAN_CREATED_SUCCESS, PLAN_HAS_ACTIVE_SUBSCRIPTIONS, PLAN_ID_REQUIRED, PLAN_LIMIT_EXCEEDED, PLAN_NAME_EXISTS, PLAN_NOT_FOUND, PLAN_VARIANT_NOT_FOUND, PREVIEW_SUCCESS, PRODUCTS_FETCHED, PRODUCTS_FOUND, PRODUCT_ACCESS_DENIED, PRODUCT_AVAILABILITY_FOUND, PRODUCT_CREATED_SUCCESS, PRODUCT_DELETED_SUCCESS, PRODUCT_ID_REQUIRED, PRODUCT_NAME_EXISTS, PRODUCT_NOT_FOUND, PRODUCT_NO_STOCK_ENTRY, PRODUCT_OUTLET_NOT_FOUND, PRODUCT_OUT_OF_STOCK, PRODUCT_RETRIEVED_SUCCESS, PRODUCT_UPDATED_SUCCESS, PROFILE_UPDATED_SUCCESS, QR_CODE_GENERATED, QR_CODE_GENERATION_FAILED, RATE_LIMIT_EXCEEDED, RETRIEVE_USERS_FAILED, ROLLBACK_SUCCESS, SERVICE_UNAVAILABLE, SESSION_CANNOT_BE_RESUMED, SESSION_CANNOT_BE_ROLLED_BACK, SESSION_FOUND, SESSION_NOT_FOUND, SOME_USERS_NOT_FOUND, SUBSCRIPTION_CANCELLED, SUBSCRIPTION_END_DATE_REQUIRED, SUBSCRIPTION_EXPIRED, SUBSCRIPTION_NOT_FOUND, SUBSCRIPTION_PAUSED, SUBSCRIPTION_RENEWED_SUCCESS, SUBSCRIPTION_STATUS_RETRIEVED, SYNC_COMPLETED, SYNC_DATA_FETCHED, SYNC_PARTIALLY_FAILED, SYNC_RESUMED_SUCCESS, SYNC_RESUME_FAILED, TIMEOUT_ERROR, TODAY_METRICS_SUCCESS, TOKEN_EXPIRED, TOKEN_REQUIRED, TRIAL_EXPIRED, UNAUTHORIZED, UNKNOWN_ERROR, UPDATE_CATEGORY_FAILED, UPDATE_ORDER_FAILED, UPDATE_OUTLET_FAILED, UPDATE_PRICING_FAILED, UPDATE_PROFILE_FAILED, UPDATE_USER_FAILED, UPDATE_USER_OUT_OF_SCOPE, UPLOAD_FAILED, UPLOAD_IMAGE_FAILED, USER_ACCOUNT_CREATED_PENDING_VERIFICATION, USER_ACCOUNT_CREATED_SUCCESS, USER_CREATED_SUCCESS, USER_DEACTIVATED_SUCCESS, USER_DELETED_SUCCESS, USER_HAS_ORDERS, USER_HAS_RELATED_DATA, USER_ID_REQUIRED, USER_NOT_ASSIGNED, USER_NOT_FOUND, USER_RETRIEVED_SUCCESS, USER_UPDATED_SUCCESS, VALIDATION_COMPLETE, VALIDATION_ERROR, VALIDATION_FAILED, VALID_USER_ID_REQUIRED, VERIFICATION_EMAIL_SENT
-```
-
-## Code Sources Breakdown
-
-This report includes codes from:
-- ErrorCode enum (packages/utils/src/core/errors.ts)
-- ResponseBuilder ERROR_MESSAGES (packages/utils/src/api/response-builder.ts)
-- ResponseBuilder SUCCESS_MESSAGES (packages/utils/src/api/response-builder.ts)
-- API routes (apps/api/app/api/**/*.ts)
-- Prisma error handlers (handlePrismaError function)
-
+# Error Code Translation Audit Report
+
+**Generated at:** 12/5/2025, 8:36:30 PM
+
+## 📊 Statistics
+
+- **Total error codes in codebase:** 250
+- **Total error codes in en/errors.json:** 318
+- **Total error codes in vi/errors.json:** 318
+- **English coverage:** 100.0%
+- **Vietnamese coverage:** 100.0%
+
+## ⚠️  Unused Codes
+
+**Total:** 68 error codes
+
+These codes exist in translation files but are not used in the codebase.
+
+### Authentication & Authorization
+
+- `TOKEN_VALID`
+
+### Validation Errors
+
+- `PAYLOAD_VALIDATION_SUCCESS`
+
+### Not Found Errors
+
+- `DEFAULT_OUTLET_NOT_FOUND`
+- `NO_ORPHANED_ORDER_ITEMS`
+
+### Conflict Errors
+
+- `PRODUCT_NAME_EXISTS`
+- `MERCHANT_DUPLICATE`
+- `EMAIL_ALREADY_EXISTS`
+- `PHONE_ALREADY_EXISTS`
+
+### Business Rules
+
+- `CUSTOMER_HAS_ACTIVE_ORDERS`
+- `MERCHANT_HAS_ACTIVE_SUBSCRIPTION`
+
+### System Errors
+
+- `DEVICE_REGISTRATION_FAILED`
+- `CHANGE_PASSWORD_FAILED`
+- `SYNC_CHECK_FAILED`
+- `FETCH_PLAN_FAILED`
+- `UPDATE_PLAN_FAILED`
+- `SYNC_FAILED`
+- `CHECK_AUDIT_LOG_FAILED`
+- `CHECK_DATA_CONSISTENCY_FAILED`
+- `CHECK_ORPHANED_RECORDS_FAILED`
+- `CHECK_ORDER_CUSTOMER_INTEGRITY_FAILED`
+- `CHECK_ORDER_PRODUCT_INTEGRITY_FAILED`
+- `CHECK_PAYMENT_ORDER_INTEGRITY_FAILED`
+- `CHECK_PRODUCT_STOCK_FAILED`
+- `CHECK_USER_OUTLET_INTEGRITY_FAILED`
+- `AWS_S3_TEST_FAILED`
+
+### Success Messages
+
+- `MOBILE_LOGIN_SUCCESS`
+- `EMAIL_VERIFIED_SUCCESS`
+- `SUBSCRIPTION_CREATED_SUCCESS`
+- `MANUAL_PAYMENT_CREATED_SUCCESS`
+- `PLAN_UPDATED_SUCCESS`
+- `BILLING_CONFIG_UPDATED_SUCCESS`
+- `PRICING_CONFIG_UPDATED_SUCCESS`
+- `PLAN_DELETED_SUCCESS`
+- `ACCOUNT_DELETED_SUCCESS`
+- `PLAN_RETRIEVED_SUCCESS`
+- `AUDIT_LOG_RETRIEVED_SUCCESS`
+- `TOP_PRODUCTS_SUCCESS`
+- `ORDER_ANALYTICS_SUCCESS`
+- `SUBSCRIPTION_PAUSED_SUCCESS`
+- `DEVICE_REGISTERED_SUCCESS`
+- `SYNC_CHECK_SUCCESS`
+- `PREVIEW_SUCCESS`
+- `SUBSCRIPTION_RENEWED_SUCCESS`
+
+### Other
+
+- `VERIFICATION_EMAIL_SENT`
+- `OUTLETS_FOUND`
+- `PRODUCTS_FOUND`
+- `PRODUCT_AVAILABILITY_FOUND`
+- `AVAILABILITY_CHECKED`
+- `SUBSCRIPTION_STATUS_RETRIEVED`
+- `CATEGORIES_FETCHED`
+- `PRODUCTS_FETCHED`
+- `SYNC_DATA_FETCHED`
+- `SYNC_COMPLETED`
+- `MERCHANT_ACCOUNT_CREATED_PENDING_VERIFICATION`
+- `USER_ACCOUNT_CREATED_PENDING_VERIFICATION`
+- `DATA_INTEGRITY_CHECK_PASSED`
+- `RECENT_OPERATIONS_WITHOUT_LOGS`
+- `ALL_ORDERS_VALID_AMOUNTS`
+- `ALL_ORDER_ITEMS_VALID_PRODUCTS`
+- `ALL_ORDERS_VALID_CUSTOMERS`
+- `ALL_PAYMENTS_VALID_ORDERS`
+- `ALL_PRODUCTS_VALID_STOCK`
+- `ALL_PRODUCTS_VALID_LEVELS`
+- `ALL_USERS_VALID_OUTLETS`
+- `AUDIT_LOG_WORKING`
+- `TEST_API_WORKING`
+- `TEST_POST_WORKING`
+- `API_KEYS_WORKING`
+
+## ✅ Recommendations
+
+🎉 **Perfect!** All error codes are fully translated!
+
+- All codes from codebase are in English translations
+- All English codes have Vietnamese translations
