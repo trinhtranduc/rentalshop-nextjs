@@ -14,6 +14,7 @@ import {
   Edit,
   MoreVertical
 } from 'lucide-react';
+import { DropdownMenuSeparator } from '../../../ui/dropdown-menu';
 import type { Merchant } from '@rentalshop/types';
 
 interface MerchantTableProps {
@@ -209,6 +210,7 @@ export function MerchantTable({
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Merchant
                         </DropdownMenuItem>
+                        {/* Note: Add more actions here with separators as needed */}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>

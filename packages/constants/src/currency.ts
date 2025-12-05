@@ -159,7 +159,7 @@ export const CURRENCY_OPTIONS = SUPPORTED_CURRENCIES.map(code => ({
 export const DEFAULT_CURRENCY_SETTINGS = {
   currentCurrency: DEFAULT_CURRENCY,
   baseCurrency: DEFAULT_CURRENCY,
-  showSymbol: true,
+  showSymbol: false,
   showCode: false,
 };
 

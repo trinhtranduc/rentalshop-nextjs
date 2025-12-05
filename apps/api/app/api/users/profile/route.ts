@@ -1,7 +1,7 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
-import { db } from '@rentalshop/database';
+import { db, getDefaultBankAccount } from '@rentalshop/database';
 import {API, USER_ROLE} from '@rentalshop/constants';
 
 /**
@@ -70,10 +70,9 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         description: userProfile.merchant.description,
         isActive: userProfile.merchant.isActive,
         planId: userProfile.merchant.planId,
-        subscriptionStatus: userProfile.merchant.subscription?.status,
         totalRevenue: userProfile.merchant.totalRevenue,
-        createdAt: userProfile.merchant.createdAt,
-        lastActiveAt: userProfile.merchant.lastActiveAt,
+        createdAt: userProfile.merchant.createdAt?.toISOString() || null,
+        lastActiveAt: userProfile.merchant.lastActiveAt?.toISOString() || null,
       } : undefined,
       // Complete outlet object with all outlet info  
       outlet: userProfile.outlet ? {
@@ -84,11 +83,13 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         description: userProfile.outlet.description,
         isActive: userProfile.outlet.isActive,
         isDefault: userProfile.outlet.isDefault,
-        createdAt: userProfile.outlet.createdAt,
+        createdAt: userProfile.outlet.createdAt?.toISOString() || null,
         merchant: userProfile.outlet.merchant ? {
           id: userProfile.outlet.merchant.id,
           name: userProfile.outlet.merchant.name,
         } : undefined,
+        // Get default bank account for outlet
+        defaultBankAccount: userProfile.outlet.id ? await getDefaultBankAccount(userProfile.outlet.id) : undefined,
       } : undefined,
     };
 

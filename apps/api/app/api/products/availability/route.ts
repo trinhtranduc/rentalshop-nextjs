@@ -316,13 +316,13 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
           discountValue: order.discountValue || 0,
           discountAmount: order.discountAmount || 0,
           
-          // Flatten dates
-          pickupPlanAt: order.pickupPlanAt,
-          returnPlanAt: order.returnPlanAt,
-          pickedUpAt: order.pickedUpAt,
-          returnedAt: order.returnedAt,
-          createdAt: order.createdAt,
-          updatedAt: order.updatedAt,
+            // Flatten dates - normalize to UTC ISO strings using toISOString()
+            pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
+            returnPlanAt: order.returnPlanAt?.toISOString() || null,
+            pickedUpAt: order.pickedUpAt?.toISOString() || null,
+            returnedAt: order.returnedAt?.toISOString() || null,
+            createdAt: order.createdAt?.toISOString() || null,
+            updatedAt: order.updatedAt?.toISOString() || null,
           
           // Rental info
           rentalDuration: order.rentalDuration || null,

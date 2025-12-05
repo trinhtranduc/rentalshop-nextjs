@@ -9,6 +9,7 @@
 import { prisma } from './client';
 import type { UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { hashPassword } from '@rentalshop/auth';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 
 // ============================================================================
 // USER LOOKUP FUNCTIONS
@@ -217,7 +218,19 @@ export async function updateUser(
 // ============================================================================
 
 /**
+ * Helper: Build where clause excluding soft-deleted users
+ * Automatically filters out users with deletedAt != null
+ */
+function buildUserWhere(additionalWhere: any = {}) {
+  return {
+    ...additionalWhere,
+    deletedAt: null, // Only include non-deleted users
+  };
+}
+
+/**
  * Get users by merchant - follows dual ID system
+ * Automatically excludes soft-deleted users
  */
 export async function getUsersByMerchant(merchantId: number) {
   // Find merchant by id
@@ -231,7 +244,7 @@ export async function getUsersByMerchant(merchantId: number) {
   }
 
   return await prisma.user.findMany({
-    where: { merchantId: merchant.id },
+    where: buildUserWhere({ merchantId: merchant.id }),
     include: {
       merchant: {
         select: {
@@ -252,6 +265,7 @@ export async function getUsersByMerchant(merchantId: number) {
 
 /**
  * Get users by outlet - follows dual ID system
+ * Automatically excludes soft-deleted users
  */
 export async function getUsersByOutlet(outletId: number) {
   // Find outlet by id
@@ -265,7 +279,7 @@ export async function getUsersByOutlet(outletId: number) {
   }
 
   return await prisma.user.findMany({
-    where: { outletId: outlet.id },
+    where: buildUserWhere({ outletId: outlet.id }),
     include: {
       merchant: {
         select: {
@@ -453,6 +467,7 @@ export const simplifiedUsers = {
         isActive: true,
         emailVerified: true,
         emailVerifiedAt: true,
+        passwordChangedAt: true, // ✅ Include passwordChangedAt for token validation
         createdAt: true,
         updatedAt: true,
         merchantId: true,
@@ -627,14 +642,29 @@ export const simplifiedUsers = {
   },
 
   /**
-   * Delete user (soft delete) (simplified API)
+   * Delete user (hard delete) (simplified API)
+   * Hard delete removes user from database permanently.
+   * Note: If user has created orders, the orders.createdById will remain but user will be deleted.
+   * This is acceptable as orders preserve the ID reference even if user no longer exists.
    */
   delete: async (id: number) => {
-    return await prisma.user.update({
+    // Check if user has created any orders
+    const orderCount = await prisma.order.count({
+      where: { createdById: id }
+    });
+
+    if (orderCount > 0) {
+      console.log(`⚠️ Warning: User ${id} has created ${orderCount} orders. User will be hard deleted but orders.createdById will remain.`);
+    }
+
+    // Hard delete the user
+    // Note: UserSession will be cascade deleted due to onDelete: Cascade in schema
+    // Orders.createdById will remain with the deleted user's ID (historical reference)
+    return await prisma.user.delete({
       where: { id },
-      data: { 
-        isActive: false,
-        deletedAt: new Date()
+      include: {
+        merchant: { select: { id: true, name: true } },
+        outlet: { select: { id: true, name: true } }
       }
     });
   },
@@ -655,6 +685,9 @@ export const simplifiedUsers = {
     // Build where clause
     const where: any = {};
     
+    // Automatically exclude soft-deleted users (deletedAt = null)
+    where.deletedAt = null;
+    
     if (whereFilters.merchantId) where.merchantId = whereFilters.merchantId;
     if (whereFilters.outletId) where.outletId = whereFilters.outletId;
     if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
@@ -666,13 +699,28 @@ export const simplifiedUsers = {
       where.role = whereFilters.role;
     }
     
-    // Text search (case-insensitive)
+    // Text search (case-insensitive and diacritics-insensitive)
     if (whereFilters.search) {
-      where.OR = [
-        { firstName: { contains: whereFilters.search, mode: 'insensitive' } },
-        { lastName: { contains: whereFilters.search, mode: 'insensitive' } },
-        { email: { contains: whereFilters.search, mode: 'insensitive' } }
+      const searchTerm = whereFilters.search.trim();
+      // Normalize Vietnamese text to support search without diacritics
+      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+      
+      // Search with both original and normalized terms to support diacritics-insensitive search
+      const searchConditions: any[] = [
+        { firstName: { contains: searchTerm, mode: 'insensitive' } },
+        { lastName: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } }
       ];
+      
+      // Add normalized search if different from original
+      if (normalizedTerm !== searchTerm) {
+        searchConditions.push(
+          { firstName: { contains: normalizedTerm, mode: 'insensitive' } },
+          { lastName: { contains: normalizedTerm, mode: 'insensitive' } }
+        );
+      }
+      
+      where.OR = searchConditions;
     }
 
     // ✅ Build dynamic orderBy clause
@@ -711,16 +759,21 @@ export const simplifiedUsers = {
   },
 
   count: async (options?: { where?: any }) => {
-    const where = options?.where || {};
+    const baseWhere = options?.where || {};
+    // Automatically exclude soft-deleted users
+    const where = buildUserWhere(baseWhere);
     return await prisma.user.count({ where });
   },
 
   /**
    * Get user statistics (simplified API)
+   * Automatically excludes soft-deleted users
    */
   getStats: async (whereClause?: any) => {
     // Handle both direct where clause and object with where property
-    const where = whereClause?.where || whereClause || {};
+    const baseWhere = whereClause?.where || whereClause || {};
+    // Automatically exclude soft-deleted users
+    const where = buildUserWhere(baseWhere);
     return await prisma.user.count({ where });
   }
 };

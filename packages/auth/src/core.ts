@@ -208,14 +208,25 @@ export type Permission =
   | 'customers.view'
   | 'customers.export'
   
-  // Analytics
-  | 'analytics.view'
+  // Analytics (Granular Permissions)
+  | 'analytics.view'                    // Base permission (backward compatibility)
+  | 'analytics.view.dashboard'          // Dashboard & overview metrics (today, today-metrics)
+  | 'analytics.view.revenue'            // Revenue/income analytics
+  | 'analytics.view.orders'             // Order analytics
+  | 'analytics.view.customers'          // Customer analytics (top customers)
+  | 'analytics.view.products'          // Product analytics (top products)
+  | 'analytics.view.system'             // System-wide analytics (admin only)
+  | 'analytics.export'                  // Export analytics data
   
   // Billing & Plans
   | 'billing.manage'
-  | 'billing.view';
+  | 'billing.view'
+  
+  // Bank Account Management
+  | 'bankAccounts.manage'
+  | 'bankAccounts.view';
 
-export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' | 'orders' | 'customers' | 'analytics' | 'billing';
+export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' | 'orders' | 'customers' | 'analytics' | 'billing' | 'bankAccounts';
 
 export interface UserScope {
   merchantId?: number;
@@ -242,32 +253,60 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
-    'analytics.view',
-    'billing.manage', 'billing.view'
+    'analytics.view',                    // Full access (backward compatibility)
+    'analytics.view.dashboard',
+    'analytics.view.revenue',
+    'analytics.view.orders',
+    'analytics.view.customers',
+    'analytics.view.products',
+    'analytics.view.system',
+    'analytics.export',
+    'billing.manage', 'billing.view',
+    'bankAccounts.manage', 'bankAccounts.view'
   ],
   'MERCHANT': [
-    'merchant.view',
+    'merchant.manage', 'merchant.view', // ✅ Merchant can manage their own merchant information
     'outlet.manage', 'outlet.view',
     'users.manage', 'users.view',
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
-    'analytics.view',
-    'billing.view'
+    'analytics.view',                    // Full access - can see all outlets
+    'analytics.view.dashboard',
+    'analytics.view.revenue',
+    'analytics.view.orders',
+    'analytics.view.customers',
+    'analytics.view.products',
+    'analytics.export',
+    // ❌ NO analytics.view.system (admin only)
+    'billing.view',
+    'bankAccounts.manage', 'bankAccounts.view' // ✅ Merchant can manage bank accounts
   ],
   'OUTLET_ADMIN': [
-    'outlet.view',
+    'outlet.manage', 'outlet.view', 
     'users.view',
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
-    'analytics.view'
+    'analytics.view',                    // Full access - can see their outlet
+    'analytics.view.dashboard',
+    'analytics.view.revenue',
+    'analytics.view.orders',
+    'analytics.view.customers',
+    'analytics.view.products',
+    'analytics.export',
+    // ❌ NO analytics.view.system (admin only)
+    'bankAccounts.manage', 'bankAccounts.view' // ✅ Outlet admin can manage bank accounts
   ],
   'OUTLET_STAFF': [
     'outlet.view',
     'products.view', // ❌ NO products.export
     'orders.create', 'orders.view', 'orders.update', // ❌ NO orders.delete, orders.export
-    'customers.view', 'customers.manage' // ❌ NO customers.export
+    'customers.view', 'customers.manage', // ❌ NO customers.export
+    'analytics.view.dashboard',          // ✅ Only daily/today-metrics (dashboard only)
+    // ❌ NO analytics.view.revenue, orders, customers, products
+    // ❌ NO analytics.export
+    // ❌ NO bankAccounts permissions - staff cannot see bank accounts
   ]
 };
 
@@ -373,10 +412,27 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     
     // If password was changed after token was issued, invalidate token
     if (dbPasswordChangedAt !== null) {
-      // If token doesn't have passwordChangedAt or it's older than database value, invalidate
-      if (tokenPasswordChangedAt === null || 
-          tokenPasswordChangedAt === undefined ||
-          tokenPasswordChangedAt < dbPasswordChangedAt) {
+      // Add small tolerance (500ms) for timing differences to handle edge cases
+      // where token is created at the same time or slightly before database update
+      // This handles database commit timing and small clock skew
+      const tolerance = 0.5; // Allow 500ms difference for timing (0.5 seconds)
+      
+      // Token is valid if it has passwordChangedAt and it's >= (dbPasswordChangedAt - tolerance)
+      // This allows tokens created at the same time or slightly before (within 500ms) to be valid
+      const isValid = tokenPasswordChangedAt !== null && 
+                      tokenPasswordChangedAt !== undefined &&
+                      tokenPasswordChangedAt >= (dbPasswordChangedAt - tolerance);
+      
+      if (!isValid) {
+        // Log for debugging
+        console.log('🔍 TOKEN INVALIDATION (Password):', {
+          tokenPasswordChangedAt,
+          dbPasswordChangedAt,
+          difference: tokenPasswordChangedAt ? dbPasswordChangedAt - tokenPasswordChangedAt : 'N/A',
+          tolerance,
+          isValid
+        });
+        
         return {
           success: false,
           response: NextResponse.json(
@@ -384,6 +440,55 @@ export async function authenticateRequest(request: NextRequest): Promise<{
               success: false, 
               code: 'TOKEN_INVALIDATED', 
               message: 'Your session has expired due to password change. Please login again.' 
+            },
+            { status: 401 }
+          )
+        };
+      }
+    }
+
+    // ============================================================================
+    // PERMISSIONS CHANGE CHECK (Invalidate old tokens when permissions change)
+    // ============================================================================
+    // Check if permissions were changed after token was issued
+    // Get permissionsChangedAt from database
+    const dbPermissionsChangedAt = (userRecord as any).permissionsChangedAt 
+      ? Math.floor((userRecord as any).permissionsChangedAt.getTime() / 1000) // Convert to Unix timestamp
+      : null;
+    
+    // Get permissionsChangedAt from token payload (from verifyTokenSimple)
+    const tokenPermissionsChangedAt = (user as any).permissionsChangedAt;
+    
+    // If permissions were changed after token was issued, invalidate token
+    if (dbPermissionsChangedAt !== null) {
+      // Add small tolerance (500ms) for timing differences to handle edge cases
+      // where token is created at the same time or slightly before database update
+      // This handles database commit timing and small clock skew
+      const tolerance = 0.5; // Allow 500ms difference for timing (0.5 seconds)
+      
+      // Token is valid if it has permissionsChangedAt and it's >= (dbPermissionsChangedAt - tolerance)
+      // This allows tokens created at the same time or slightly before (within 500ms) to be valid
+      const isValid = tokenPermissionsChangedAt !== null && 
+                      tokenPermissionsChangedAt !== undefined &&
+                      tokenPermissionsChangedAt >= (dbPermissionsChangedAt - tolerance);
+      
+      if (!isValid) {
+        // Log for debugging
+        console.log('🔍 TOKEN INVALIDATION (Permissions):', {
+          tokenPermissionsChangedAt,
+          dbPermissionsChangedAt,
+          difference: tokenPermissionsChangedAt ? dbPermissionsChangedAt - tokenPermissionsChangedAt : 'N/A',
+          tolerance,
+          isValid
+        });
+        
+        return {
+          success: false,
+          response: NextResponse.json(
+            { 
+              success: false, 
+              code: 'TOKEN_INVALIDATED', 
+              message: 'Your session has expired due to permissions change. Please login again.' 
             },
             { status: 401 }
           )
@@ -512,9 +617,34 @@ export function getUserScope(user: AuthUser): UserScope {
  * @returns Array of permissions for the user's role
  */
 export async function getUserPermissions(user: AuthUser): Promise<Permission[]> {
+  console.log('🔍 getUserPermissions called with:', {
+    role: user.role,
+    merchantId: user.merchantId,
+    outletId: user.outletId,
+    roleType: typeof user.role
+  });
+
+  // Normalize role to ensure it matches ROLE_PERMISSIONS keys
+  const normalizedRole = (user.role?.toUpperCase() || '') as Role;
+  
+  // Validate role exists in ROLE_PERMISSIONS
+  if (!ROLE_PERMISSIONS[normalizedRole]) {
+    console.error('❌ Invalid role:', {
+      originalRole: user.role,
+      normalizedRole,
+      availableRoles: Object.keys(ROLE_PERMISSIONS)
+    });
+    return [];
+  }
+
   // ADMIN users always use default permissions (no merchant-specific customization)
-  if (user.role === 'ADMIN') {
-    return ROLE_PERMISSIONS[user.role as Role] || [];
+  if (normalizedRole === 'ADMIN') {
+    const permissions = ROLE_PERMISSIONS[normalizedRole] || [];
+    console.log('🔍 ADMIN permissions:', {
+      count: permissions.length,
+      permissions: permissions
+    });
+    return permissions;
   }
 
   // For merchant/outlet users, check for custom roles or custom permissions
@@ -550,7 +680,7 @@ export async function getUserPermissions(user: AuthUser): Promise<Permission[]> 
         where: {
           merchantId: user.merchantId,
           isSystemRole: true,
-          systemRole: user.role as any,
+          systemRole: normalizedRole as any,
           isActive: true
         },
         select: {
@@ -561,17 +691,37 @@ export async function getUserPermissions(user: AuthUser): Promise<Permission[]> 
 
       // If custom permissions exist and are active, use them
       if (systemRoleCustomization && systemRoleCustomization.isActive && systemRoleCustomization.permissions.length > 0) {
-        console.log(`🔍 Using custom permissions for merchant ${user.merchantId}, system role ${user.role}`);
+        console.log(`🔍 Using custom permissions for merchant ${user.merchantId}, system role ${normalizedRole}`);
         return systemRoleCustomization.permissions as Permission[];
       }
     } catch (error) {
       // If database error, fallback to default (backward compatible)
+      console.error('⚠️ Error fetching custom permissions/roles:', error);
       console.warn('⚠️ Error fetching custom permissions/roles, using default:', error);
     }
   }
 
   // Fallback to default permissions for system role
-  return ROLE_PERMISSIONS[user.role as Role] || [];
+  const defaultPermissions = ROLE_PERMISSIONS[normalizedRole];
+  console.log('🔍 ROLE_PERMISSIONS lookup:', {
+    role: user.role,
+    normalizedRole,
+    found: defaultPermissions !== undefined,
+    permissionsCount: defaultPermissions?.length || 0,
+    permissions: defaultPermissions || []
+  });
+  
+  if (!defaultPermissions) {
+    console.error('❌ ROLE_PERMISSIONS lookup failed!', {
+      userRole: user.role,
+      normalizedRole,
+      availableKeys: Object.keys(ROLE_PERMISSIONS),
+      roleType: typeof user.role
+    });
+    return [];
+  }
+  
+  return defaultPermissions;
 }
 
 /**
@@ -609,10 +759,38 @@ export function hasPermissionSync(user: AuthUser, permission: Permission): boole
 
 /**
  * Check if user has any of the specified permissions (async - supports custom permissions)
+ * 
+ * Backward compatibility: If user has 'analytics.view', they automatically have all granular analytics permissions
  */
 export async function hasAnyPermission(user: AuthUser, permissions: Permission[]): Promise<boolean> {
   const userPermissions = await getUserPermissions(user);
-  return permissions.some(permission => userPermissions.includes(permission));
+  
+  // Check direct permission match
+  const hasDirectPermission = permissions.some(permission => userPermissions.includes(permission));
+  if (hasDirectPermission) {
+    return true;
+  }
+  
+  // Backward compatibility: analytics.view grants all granular analytics permissions
+  const hasAnalyticsView = userPermissions.includes('analytics.view');
+  if (hasAnalyticsView) {
+    const analyticsPermissions = [
+      'analytics.view.dashboard',
+      'analytics.view.revenue',
+      'analytics.view.orders',
+      'analytics.view.customers',
+      'analytics.view.products',
+      'analytics.export'
+    ];
+    const hasAnyAnalyticsPermission = permissions.some(permission => 
+      analyticsPermissions.includes(permission)
+    );
+    if (hasAnyAnalyticsPermission) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 /**
@@ -844,6 +1022,353 @@ export function validateScope(
   }
   
   return { valid: true };
+}
+
+// ============================================================================
+// MERCHANT/OUTLET AUTHORIZATION HELPERS
+// ============================================================================
+
+export interface MerchantOutletAuthOptions {
+  /** Block OUTLET_STAFF from performing this action */
+  blockOutletStaff?: boolean;
+  /** Custom message when OUTLET_STAFF is blocked */
+  blockOutletStaffMessage?: string;
+  /** Merchant ID to validate ownership */
+  merchantId?: number;
+  /** Outlet ID to validate ownership */
+  outletId?: number;
+}
+
+export interface MerchantOutletAuthResult {
+  /** Whether authorization passed */
+  authorized: boolean;
+  /** Error response if authorization failed */
+  error?: NextResponse;
+}
+
+/**
+ * Validate authorization for merchant/outlet resources
+ * 
+ * This function handles common authorization patterns:
+ * - Blocks OUTLET_STAFF if specified
+ * - Validates merchant association for non-admin users
+ * - Checks merchant ownership for MERCHANT role
+ * - Checks outlet ownership for OUTLET_ADMIN role
+ * 
+ * @param user - Authenticated user
+ * @param userScope - User's scope (merchantId, outletId)
+ * @param options - Authorization options
+ * @returns Authorization result with success/error
+ * 
+ * @example
+ * ```typescript
+ * const auth = validateMerchantOutletAccess(user, userScope, {
+ *   blockOutletStaff: true,
+ *   blockOutletStaffMessage: 'OUTLET_STAFF cannot update bank accounts',
+ *   merchantId: merchantPublicId,
+ *   outletId: outletPublicId
+ * });
+ * 
+ * if (!auth.authorized) {
+ *   return auth.error;
+ * }
+ * ```
+ */
+export function validateMerchantOutletAccess(
+  user: AuthUser,
+  userScope: UserScope,
+  options: MerchantOutletAuthOptions = {}
+): MerchantOutletAuthResult {
+  const {
+    blockOutletStaff = false,
+    blockOutletStaffMessage = 'OUTLET_STAFF cannot perform this action',
+    merchantId,
+    outletId
+  } = options;
+
+  // Block OUTLET_STAFF if specified
+  if (blockOutletStaff && user.role === USER_ROLE.OUTLET_STAFF) {
+    return {
+      authorized: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'FORBIDDEN',
+          message: blockOutletStaffMessage
+        },
+        { status: API.STATUS.FORBIDDEN }
+      )
+    };
+  }
+
+  // Validate that non-admin users have merchant association
+  if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
+    return {
+      authorized: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'MERCHANT_ASSOCIATION_REQUIRED',
+          message: 'User must be associated with a merchant'
+        },
+        { status: API.STATUS.FORBIDDEN }
+      )
+    };
+  }
+
+  // Use validateScope for role-based scope validation
+  // Build required scope based on user role and provided IDs
+  const requiredScope: { merchantId?: number; outletId?: number } = {};
+  
+  // MERCHANT role: only check merchant ownership (not outlet)
+  if (user.role === USER_ROLE.MERCHANT && merchantId !== undefined) {
+    requiredScope.merchantId = merchantId;
+  }
+  
+  // OUTLET_ADMIN/OUTLET_STAFF roles: check outlet ownership if outletId provided
+  // If only merchantId is provided (no outletId), check merchant ownership instead
+  if ((user.role === USER_ROLE.OUTLET_ADMIN || 
+       (user.role === USER_ROLE.OUTLET_STAFF && !blockOutletStaff))) {
+    if (outletId !== undefined) {
+      // When outletId is provided, check outlet ownership
+      requiredScope.outletId = outletId;
+    } else if (merchantId !== undefined) {
+      // When only merchantId is provided (merchant-only route), check merchant ownership
+      // OUTLET_ADMIN/OUTLET_STAFF must belong to the merchant they're accessing
+      requiredScope.merchantId = merchantId;
+    }
+  }
+  
+  // If we have scope requirements, validate using validateScope
+  if (requiredScope.merchantId !== undefined || requiredScope.outletId !== undefined) {
+    const scopeCheck = validateScope(userScope, requiredScope);
+    if (!scopeCheck.valid) {
+      return {
+        authorized: false,
+        error: scopeCheck.error
+      };
+    }
+  }
+
+  return { authorized: true };
+}
+
+// ============================================================================
+// MERCHANT VALIDATION HELPERS
+// ============================================================================
+
+export interface ValidateMerchantAccessResult {
+  /** Whether validation passed */
+  valid: boolean;
+  /** Merchant object if found */
+  merchant?: any;
+  /** Outlet object if found (for nested routes) */
+  outlet?: any;
+  /** Error response if validation failed */
+  error?: NextResponse;
+}
+
+/**
+ * Validate merchant access (and optionally outlet access) for routes
+ * 
+ * This unified helper function handles both patterns:
+ * - Merchant-only routes: /api/merchants/[id]/...
+ * - Nested outlet routes: /api/merchants/[id]/outlets/[outletId]/...
+ * 
+ * Validation steps:
+ * 1. Validate merchant ID format
+ * 2. Find merchant from database
+ * 3. Check merchant exists
+ * 4. Validate merchant association requirement
+ * 5. Validate merchant scope (merchant ownership)
+ * 6. (If outletPublicId provided) Validate outlet ID format
+ * 7. (If outletPublicId provided) Find outlet from database
+ * 8. (If outletPublicId provided) Check outlet exists
+ * 9. (If outletPublicId provided) Verify outlet belongs to merchant
+ * 10. (If outletPublicId provided) Validate outlet scope (for OUTLET_ADMIN/OUTLET_STAFF)
+ * 
+ * @param merchantPublicId - Merchant public ID from route params
+ * @param user - Authenticated user
+ * @param userScope - User's scope (merchantId, outletId)
+ * @param outletPublicId - Optional outlet public ID for nested routes
+ * @returns Validation result with merchant (and optionally outlet) objects or error
+ * 
+ * @example
+ * ```typescript
+ * // Merchant-only route
+ * const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+ * if (!validation.valid) {
+ *   return validation.error;
+ * }
+ * const merchant = validation.merchant;
+ * 
+ * // Nested outlet route
+ * const validation = await validateMerchantAccess(merchantPublicId, user, userScope, outletPublicId);
+ * if (!validation.valid) {
+ *   return validation.error;
+ * }
+ * const { merchant, outlet } = validation;
+ * ```
+ */
+export async function validateMerchantAccess(
+  merchantPublicId: number,
+  user: AuthUser,
+  userScope: UserScope,
+  outletPublicId?: number
+): Promise<ValidateMerchantAccessResult> {
+  // Validate merchant ID format
+  if (isNaN(merchantPublicId)) {
+    return {
+      valid: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'INVALID_MERCHANT_ID_FORMAT',
+          message: 'Invalid merchant ID format'
+        },
+        { status: 400 }
+      )
+    };
+  }
+
+  // Find merchant from database
+  const merchant = await db.merchants.findById(merchantPublicId);
+  if (!merchant) {
+    return {
+      valid: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'MERCHANT_NOT_FOUND',
+          message: 'Merchant not found'
+        },
+        { status: API.STATUS.NOT_FOUND }
+      )
+    };
+  }
+
+  // Validate merchant association requirement (non-admin users must have merchantId)
+  if (user.role !== USER_ROLE.ADMIN && !userScope.merchantId) {
+    return {
+      valid: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'MERCHANT_ASSOCIATION_REQUIRED',
+          message: 'User must be associated with a merchant'
+        },
+        { status: API.STATUS.FORBIDDEN }
+      )
+    };
+  }
+
+  // Validate scope: verify user can access this merchant
+  const scopeCheck = validateScope(userScope, { merchantId: merchantPublicId });
+  if (!scopeCheck.valid) {
+    // Return NOT_FOUND for security (don't reveal merchant exists if unauthorized)
+    return {
+      valid: false,
+      error: NextResponse.json(
+        { 
+          success: false,
+          code: 'MERCHANT_NOT_FOUND',
+          message: 'Merchant not found'
+        },
+        { status: API.STATUS.NOT_FOUND }
+      )
+    };
+  }
+
+  // If outletPublicId is provided, validate outlet access
+  if (outletPublicId !== undefined) {
+    // Validate outlet ID format
+    if (isNaN(outletPublicId)) {
+      return {
+        valid: false,
+        error: NextResponse.json(
+          { 
+            success: false,
+            code: 'INVALID_OUTLET_ID_FORMAT',
+            message: 'Invalid outlet ID format'
+          },
+          { status: 400 }
+        )
+      };
+    }
+
+    // Find outlet from database
+    const outlet = await db.outlets.findById(outletPublicId);
+    if (!outlet) {
+      return {
+        valid: false,
+        error: NextResponse.json(
+          { 
+            success: false,
+            code: 'OUTLET_NOT_FOUND',
+            message: 'Outlet not found'
+          },
+          { status: API.STATUS.NOT_FOUND }
+        )
+      };
+    }
+
+    // Verify outlet belongs to merchant
+    if (outlet.merchant?.id !== merchantPublicId) {
+      // Return NOT_FOUND for security (don't reveal outlet exists)
+      return {
+        valid: false,
+        error: NextResponse.json(
+          { 
+            success: false,
+            code: 'OUTLET_NOT_FOUND',
+            message: 'Outlet not found'
+          },
+          { status: API.STATUS.NOT_FOUND }
+        )
+      };
+    }
+
+    // Validate outlet scope: OUTLET_ADMIN/OUTLET_STAFF can only access their assigned outlet
+    const outletScopeCheck = validateScope(userScope, { outletId: outletPublicId });
+    if (!outletScopeCheck.valid && (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF)) {
+      // Return NOT_FOUND for security (don't reveal outlet exists)
+      return {
+        valid: false,
+        error: NextResponse.json(
+          { 
+            success: false,
+            code: 'OUTLET_NOT_FOUND',
+            message: 'Outlet not found'
+          },
+          { status: API.STATUS.NOT_FOUND }
+        )
+      };
+    }
+
+    return {
+      valid: true,
+      merchant,
+      outlet
+    };
+  }
+
+  return {
+    valid: true,
+    merchant
+  };
+}
+
+/**
+ * @deprecated Use validateMerchantAccess with outletPublicId parameter instead
+ * Validate merchant and outlet access for nested outlet routes
+ */
+export async function validateMerchantOutletRoute(
+  merchantPublicId: number,
+  outletPublicId: number,
+  user: AuthUser,
+  userScope: UserScope
+): Promise<ValidateMerchantAccessResult> {
+  return validateMerchantAccess(merchantPublicId, user, userScope, outletPublicId);
 }
 
 // ============================================================================

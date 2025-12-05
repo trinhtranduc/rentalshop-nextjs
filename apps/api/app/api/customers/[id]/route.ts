@@ -38,10 +38,11 @@ export async function GET(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // Validate that non-admin users have merchant association
+      if (user.role !== 'ADMIN' && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
+          { status: 403 }
         );
       }
       
@@ -56,11 +57,31 @@ export async function GET(
         );
       }
 
+      // Verify customer belongs to user's merchant (security check)
+      if (user.role !== 'ADMIN' && customer.merchantId !== userMerchantId) {
+        console.log('❌ Customer does not belong to user\'s merchant:', {
+          customerMerchantId: customer.merchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal customer exists)
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
       console.log('✅ Customer found:', customer);
+
+      // Normalize date fields to UTC ISO strings using toISOString()
+      const normalizedCustomer = {
+        ...customer,
+        createdAt: customer.createdAt?.toISOString() || null,
+        updatedAt: customer.updatedAt?.toISOString() || null,
+        dateOfBirth: customer.dateOfBirth?.toISOString() || null,
+      };
 
       return NextResponse.json({
         success: true,
-        data: customer,
+        data: normalizedCustomer,
         code: 'CUSTOMER_RETRIEVED_SUCCESS',
         message: 'Customer retrieved successfully'
       });
@@ -107,10 +128,11 @@ export async function PUT(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // Validate that non-admin users have merchant association
+      if (user.role !== 'ADMIN' && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
+          { status: 403 }
         );
       }
 
@@ -127,13 +149,33 @@ export async function PUT(
         );
       }
 
+      // Verify customer belongs to user's merchant (security check)
+      if (user.role !== 'ADMIN' && existingCustomer.merchantId !== userMerchantId) {
+        console.log('❌ Customer does not belong to user\'s merchant:', {
+          customerMerchantId: existingCustomer.merchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal customer exists)
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
       // Update the customer using the simplified database API
       const updatedCustomer = await db.customers.update(customerId, body);
       console.log('✅ Customer updated successfully:', updatedCustomer);
 
+      // Normalize date fields to UTC ISO strings using toISOString()
+      const normalizedCustomer = {
+        ...updatedCustomer,
+        createdAt: updatedCustomer.createdAt?.toISOString() || null,
+        updatedAt: updatedCustomer.updatedAt?.toISOString() || null,
+        dateOfBirth: updatedCustomer.dateOfBirth?.toISOString() || null,
+      };
+
       return NextResponse.json({
         success: true,
-        data: updatedCustomer,
+        data: normalizedCustomer,
         code: 'CUSTOMER_UPDATED_SUCCESS',
         message: 'Customer updated successfully'
       });
@@ -180,10 +222,11 @@ export async function DELETE(
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      // Validate that non-admin users have merchant association
+      if (user.role !== 'ADMIN' && !userMerchantId) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
-          { status: 400 }
+          { status: 403 }
         );
       }
 
@@ -192,6 +235,18 @@ export async function DELETE(
       if (!existingCustomer) {
         return NextResponse.json(
           ResponseBuilder.error('CUSTOMER_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Verify customer belongs to user's merchant (security check)
+      if (user.role !== 'ADMIN' && existingCustomer.merchantId !== userMerchantId) {
+        console.log('❌ Customer does not belong to user\'s merchant:', {
+          customerMerchantId: existingCustomer.merchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal customer exists)
           { status: API.STATUS.NOT_FOUND }
         );
       }
@@ -218,9 +273,17 @@ export async function DELETE(
       const deletedCustomer = await db.customers.update(customerId, { isActive: false });
       console.log('✅ Customer soft deleted successfully:', deletedCustomer);
 
+      // Normalize date fields to UTC ISO strings using toISOString()
+      const normalizedCustomer = {
+        ...deletedCustomer,
+        createdAt: deletedCustomer.createdAt?.toISOString() || null,
+        updatedAt: deletedCustomer.updatedAt?.toISOString() || null,
+        dateOfBirth: deletedCustomer.dateOfBirth?.toISOString() || null,
+      };
+
       return NextResponse.json({
         success: true,
-        data: deletedCustomer,
+        data: normalizedCustomer,
         code: 'CUSTOMER_DELETED_SUCCESS',
         message: 'Customer deleted successfully'
       });

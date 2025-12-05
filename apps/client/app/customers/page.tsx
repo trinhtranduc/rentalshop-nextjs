@@ -10,14 +10,11 @@ import {
   useToast,
   CustomerDetailDialog,
   AddCustomerDialog,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  EditCustomerForm,
+  EditCustomerDialog,
   ConfirmationDialog,
   Button,
-  LoadingIndicator
+  LoadingIndicator,
+  ExportDialog
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -54,6 +51,8 @@ export default function CustomersPage() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -296,19 +295,16 @@ export default function CustomersPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {/* Export feature - temporarily hidden, will be enabled in the future */}
-            {/* {canExport && (
+            {canExport && (
               <Button
-                onClick={() => {
-                  toastSuccess(tc('labels.info'), tc('messages.comingSoon'));
-                }}
-                variant="default"
+                onClick={() => setShowExportDialog(true)}
+                variant="outline"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
                 {tc('buttons.export')}
               </Button>
-            )} */}
+            )}
             <Button 
               onClick={() => setShowAddDialog(true)}
               variant="default"
@@ -385,25 +381,22 @@ export default function CustomersPage() {
       />
 
       {/* Edit Customer Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {t('editCustomer')}: {selectedCustomer?.firstName} {selectedCustomer?.lastName}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedCustomer && (
-            <EditCustomerForm
-              customer={selectedCustomer}
-              onSave={handleCustomerUpdate}
-              onCancel={() => {
-                setShowEditDialog(false);
-                setSelectedCustomer(null);
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedCustomer && (
+        <EditCustomerDialog
+          open={showEditDialog}
+          onOpenChange={(open) => {
+            setShowEditDialog(open);
+            if (!open) {
+              setSelectedCustomer(null);
+            }
+          }}
+          customer={selectedCustomer}
+          onCustomerUpdated={handleCustomerUpdate}
+          onError={(error) => {
+            toastError(tc('labels.error'), error);
+          }}
+        />
+      )}
 
       {/* Delete Customer Confirmation Dialog */}
       <ConfirmationDialog
@@ -418,6 +411,37 @@ export default function CustomersPage() {
         onCancel={() => {
           setShowDeleteConfirm(false);
           setCustomerToDelete(null);
+        }}
+      />
+
+      {/* Export Dialog */}
+      <ExportDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        resourceName="Customers"
+        isLoading={isExporting}
+        onExport={async (params) => {
+          try {
+            setIsExporting(true);
+            const blob = await customersApi.exportCustomers(params);
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `customers-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            toastSuccess(tc('labels.success'), 'Export completed successfully');
+            setShowExportDialog(false);
+          } catch (error) {
+            toastError(tc('labels.error'), (error as Error).message || 'Failed to export customers');
+          } finally {
+            setIsExporting(false);
+          }
         }}
       />
     </PageWrapper>

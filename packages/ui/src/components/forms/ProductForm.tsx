@@ -2,10 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent, 
   Button, 
   Input, 
   Select, 
@@ -25,7 +21,7 @@ import {
 } from '../ui';
 import { formatCurrency } from '../../lib';
 import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
-import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useProductTranslations, useCommonTranslations, useValidationTranslations } from '@rentalshop/hooks';
 import { 
   Package, 
   DollarSign, 
@@ -116,8 +112,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   onSubmit,
   onCancel,
   loading = false,
-  title = 'Product Information',
-  submitText = 'Save Product',
+  title,
+  submitText,
   mode = 'create',
   merchantId = '',
   hideHeader = false,
@@ -127,6 +123,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const t = useProductTranslations();
   const tc = useCommonTranslations();
+  const tv = useValidationTranslations();
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -316,65 +313,65 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     const newErrors: Partial<Record<keyof ProductFormData, string>> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Product name is required';
+      newErrors.name = tv('fields.productName.required');
     }
 
     if (!formData.categoryId) {
-      newErrors.categoryId = 'Category is required';
+      newErrors.categoryId = tv('fields.category.required');
     }
 
     if (formData.rentPrice <= 0) {
-      newErrors.rentPrice = 'Rent price is required and must be greater than 0';
+      newErrors.rentPrice = tv('fields.rentPrice.required');
     }
 
     if (formData.salePrice <= 0) {
-      newErrors.salePrice = 'Sale price is required and must be greater than 0';
+      newErrors.salePrice = tv('fields.salePrice.required');
     }
 
     if (formData.deposit < 0) {
-      newErrors.deposit = 'Deposit is required and cannot be negative';
+      newErrors.deposit = tv('fields.deposit.cannotBeNegative');
     }
 
     if (formData.totalStock <= 0) {
-      newErrors.totalStock = 'Total stock is required and must be greater than 0';
+      newErrors.totalStock = tv('fields.totalStock.required');
     }
 
     // Validate duration config if pricingType is HOURLY or DAILY
     if (formData.pricingType === PRICING_TYPE.HOURLY || formData.pricingType === PRICING_TYPE.DAILY) {
       if (!formData.durationConfig) {
-        newErrors.durationConfig = 'Duration configuration is required for HOURLY and DAILY pricing types';
+        newErrors.durationConfig = tv('fields.durationConfig.requiredForPricingType');
       } else {
         const { minDuration, maxDuration, defaultDuration } = formData.durationConfig;
         if (!minDuration || minDuration <= 0) {
-          newErrors.durationConfig = 'Minimum duration is required and must be greater than 0';
+          newErrors.durationConfig = tv('fields.durationConfig.minDurationRequired');
         }
         if (!maxDuration || maxDuration <= 0) {
-          newErrors.durationConfig = 'Maximum duration is required and must be greater than 0';
+          newErrors.durationConfig = tv('fields.durationConfig.maxDurationRequired');
         }
         if (minDuration && maxDuration && minDuration > maxDuration) {
-          newErrors.durationConfig = 'Minimum duration must be less than or equal to maximum duration';
+          newErrors.durationConfig = tv('fields.durationConfig.minMustBeLessThanMax');
         }
         if (!defaultDuration || defaultDuration <= 0) {
-          newErrors.durationConfig = 'Default duration is required and must be greater than 0';
+          newErrors.durationConfig = tv('fields.durationConfig.defaultDurationRequired');
         }
         if (defaultDuration && minDuration && defaultDuration < minDuration) {
-          newErrors.durationConfig = 'Default duration must be at least the minimum duration';
+          newErrors.durationConfig = tv('fields.durationConfig.defaultMustBeAtLeastMin');
         }
         if (defaultDuration && maxDuration && defaultDuration > maxDuration) {
-          newErrors.durationConfig = 'Default duration must not exceed maximum duration';
+          newErrors.durationConfig = tv('fields.durationConfig.defaultMustNotExceedMax');
         }
       }
     }
 
     // Check if outlets are available
     if (outlets.length === 0) {
-      newErrors.outletStock = 'No outlets available. Please contact your administrator to set up outlets.';
+      newErrors.outletStock = tv('fields.outletStock.noOutletsAvailable');
       return false;
     }
 
     // Validate outlet stock - ensure outlet stock is provided
     if (formData.outletStock.length === 0) {
-      newErrors.outletStock = 'Outlet stock is required. Please specify stock levels for at least one outlet.';
+      newErrors.outletStock = tv('fields.outletStock.required');
       return false;
     }
 
@@ -382,7 +379,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     if (formData.outletStock.length > 0) {
       const invalidOutletStock = formData.outletStock.find(item => item.stock < 0);
       if (invalidOutletStock) {
-        newErrors.outletStock = 'Outlet stock values cannot be negative';
+        newErrors.outletStock = tv('fields.outletStock.cannotBeNegative');
       }
     }
 
@@ -405,32 +402,32 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       const newErrors: Partial<Record<keyof ProductFormData, string>> = {};
 
       if (!formData.name.trim()) {
-        newErrors.name = 'Product name is required';
+        newErrors.name = tv('fields.productName.required');
       }
 
       if (!formData.categoryId) {
-        newErrors.categoryId = 'Category is required';
+        newErrors.categoryId = tv('fields.category.required');
       }
 
       if (formData.rentPrice <= 0) {
-        newErrors.rentPrice = 'Rent price is required and must be greater than 0';
+        newErrors.rentPrice = tv('fields.rentPrice.required');
       }
 
       if (formData.salePrice <= 0) {
-        newErrors.salePrice = 'Sale price is required and must be greater than 0';
+        newErrors.salePrice = tv('fields.salePrice.required');
       }
 
       if (formData.deposit < 0) {
-        newErrors.deposit = 'Deposit is required and cannot be negative';
+        newErrors.deposit = tv('fields.deposit.cannotBeNegative');
       }
 
       if (formData.totalStock <= 0) {
-        newErrors.totalStock = 'Total stock is required and must be greater than 0';
+        newErrors.totalStock = tv('fields.totalStock.required');
       }
 
       // Validate outlet stock - ensure outlet stock is provided
       if (formData.outletStock.length === 0) {
-        newErrors.outletStock = 'Outlet stock is required. Please specify stock levels for at least one outlet.';
+        newErrors.outletStock = tv('fields.outletStock.required');
         setValidationErrors(newErrors);
         return;
       }
@@ -439,7 +436,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       if (formData.outletStock.length > 0) {
         const invalidOutletStock = formData.outletStock.find(item => item.stock < 0);
         if (invalidOutletStock) {
-          newErrors.outletStock = 'Outlet stock values cannot be negative';
+          newErrors.outletStock = tv('fields.outletStock.cannotBeNegative');
         }
       }
 
@@ -623,7 +620,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         // Upload with progress tracking, compression, and optimization
         const uploadResult = await uploadImage(file, token, {
           folder: 'staging',
-          maxFileSize: 5 * 1024 * 1024, // 5MB
+          maxFileSize: 1 * 1024 * 1024, // 5MB
           allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
           maxWidth: 1200, // Client-side resize before upload
           maxHeight: 900,
@@ -729,8 +726,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   }, [formData.images.length, selectedFiles.length, useMultipartUpload]);
 
   const getProductStatus = () => {
-    if (formData.totalStock === 0) return { status: 'Out of Stock', variant: 'destructive' as const };
-    return { status: 'In Stock', variant: 'default' as const };
+    if (formData.totalStock === 0) return { status: t('status.outOfStock'), variant: 'destructive' as const };
+    return { status: t('status.inStock'), variant: 'default' as const };
   };
 
   const { status, variant } = getProductStatus();
@@ -758,19 +755,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 {autoSaveStatus === 'saving' && (
                   <div className="flex items-center gap-2 text-sm text-text-secondary">
                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-text-secondary" />
-                    Auto-saving...
+                    {t('messages.autoSaving')}
                   </div>
                 )}
                 {autoSaveStatus === 'saved' && (
                   <div className="flex items-center gap-2 text-sm text-green-600">
                     <CheckCircle className="w-4 h-4" />
-                    Auto-saved
+                    {t('messages.autoSaved')}
                   </div>
                 )}
                 {autoSaveStatus === 'error' && (
                   <div className="flex items-center gap-2 text-sm text-red-600">
                     <XCircle className="w-4 h-4" />
-                    Auto-save failed
+                    {t('messages.autoSaveFailed')}
                   </div>
                 )}
               </div>
@@ -786,17 +783,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
       <form id={formId} onSubmit={handleSubmit} className="space-y-6">
         {/* Product Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              {t('productDetails')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">{t('fields.name')} *</label>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.name')} *</label>
                 <Input
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
@@ -806,8 +796,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">{t('fields.sku')}</label>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.sku')}</label>
                 <Input
                   value={formData.sku}
                   onChange={(e) => handleInputChange('sku', e.target.value)}
@@ -817,8 +807,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">{t('fields.barcode')}</label>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.barcode')}</label>
                 <div className="flex gap-2">
                   <Input
                     value={formData.barcode}
@@ -838,8 +828,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">{t('fields.category')} *</label>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.category')} *</label>
                 <Select
                   value={formData.categoryId.toString()}
                   onValueChange={(value) => {
@@ -861,8 +851,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">{t('fields.description')}</label>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.description')}</label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
@@ -876,7 +866,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             {/* Code has been removed to prevent any pricing type selection UI from appearing */}
 
             {/* Rental Price - Always Fixed Price (FIXED pricing type) */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-4 border-t border-border">
               <div className="space-y-2">
                 <NumericInput
                   label={t('pricing.pricePerRental')}
@@ -896,16 +886,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             {/* Other Pricing & Inventory Section */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                {t('pricing.title')}
-              </h3>
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('pricing.title')}</h3>
               
               <div className="space-y-4">
                 {/* Deposit, Sale Price, and Cost Price */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
+              <div>
                 <NumericInput
                       label={t('fields.deposit')}
                       value={formData.deposit}
@@ -919,7 +906,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <NumericInput
                   label={t('fields.salePrice')}
                   value={formData.salePrice}
@@ -933,7 +920,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <NumericInput
                   label={t('fields.costPrice')}
                   value={formData.costPrice}
@@ -949,7 +936,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
                 {/* Stock */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div>
                 <NumericInput
                   label={t('fields.stock')}
                   value={formData.totalStock}
@@ -965,19 +952,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
             </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Outlet Stock Management - Only show if merchant has multiple outlets */}
         {outlets.length > 1 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Warehouse className="w-5 h-5" />
-                {t('inventory.outletStockDistribution')} *
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('inventory.outletStockDistribution')} *</h3>
             <div className="mb-4">
               <p className="text-sm text-muted-foreground">
                 {t('inventory.totalOutlets')}: {outlets.length} | {t('inventory.stockEntries')}: {formData.outletStock.length} | <span className="text-red-500">*</span> {t('inventory.stockRequired')}
@@ -1012,7 +992,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         <TableRow key={outletStock.outletId}>
                           <TableCell className="font-medium">
                             <div>
-                              <div className="font-medium">{outlet?.name || 'Unknown Outlet'}</div>
+                              <div className="font-medium">{outlet?.name || t('messages.unknownOutlet')}</div>
                               {outlet?.address && (
                                 <div className="text-sm text-text-secondary mt-1">
                                   {outlet.address}
@@ -1044,19 +1024,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 )}
               </>
             )}
-          </CardContent>
-        </Card>
+          </div>
         ) : null}
 
         {/* Enhanced Image Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5" />
-              {t('fields.images')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('fields.images')}</h3>
+          <div className="space-y-4">
             {/* Drag & Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
@@ -1248,8 +1222,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
 
 
@@ -1266,7 +1240,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Saving...
+                  {t('messages.saving')}
                 </>
               ) : (
                 <>

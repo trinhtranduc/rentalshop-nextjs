@@ -43,6 +43,55 @@ export interface Plan {
 
 export type BillingCycle = 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
 
+// ============================================================================
+// PLAN LIMIT ADDON TYPES
+// ============================================================================
+
+/**
+ * Plan Limit Addon - Additional limits that can be added to a merchant's plan
+ * These addons are added on top of the base plan limits
+ */
+export interface PlanLimitAddon {
+  id: number;                    // Auto-incrementing integer ID
+  merchantId: number;            // Merchant this addon belongs to
+  outlets: number;               // Additional outlets limit (default: 0)
+  users: number;                 // Additional users limit (default: 0)
+  products: number;              // Additional products limit (default: 0)
+  customers: number;             // Additional customers limit (default: 0)
+  orders: number;                // Additional orders limit (default: 0)
+  notes?: string;                // Optional notes about this addon
+  isActive: boolean;             // Whether this addon is active
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Input for creating a new Plan Limit Addon
+ */
+export interface PlanLimitAddonCreateInput {
+  merchantId: number;
+  outlets?: number;
+  users?: number;
+  products?: number;
+  customers?: number;
+  orders?: number;
+  notes?: string;
+  isActive?: boolean;
+}
+
+/**
+ * Input for updating an existing Plan Limit Addon
+ */
+export interface PlanLimitAddonUpdateInput {
+  outlets?: number;
+  users?: number;
+  products?: number;
+  customers?: number;
+  orders?: number;
+  notes?: string;
+  isActive?: boolean;
+}
+
 export interface BillingCycleOption {
   value: BillingCycle;
   label: string;

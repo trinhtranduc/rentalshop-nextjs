@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
  * PUT /api/settings/merchant
  * Update current user's merchant business information
- * Only accessible by users with merchant role or admin
+ * 
+ * Authorization: Only roles with 'merchant.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const PUT = withAuthRoles(['ADMIN', 'MERCHANT'])(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 MERCHANT API: PUT /api/settings/merchant called');
     console.log('🔍 MERCHANT API: Request method:', request.method);

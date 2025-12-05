@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, normalizeDateToISO, getUTCDateKey } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/orders - Get order analytics
- * Requires: Any authenticated user (scoped by role)
- * Permissions: All roles (ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF)
+ * 
+ * Authorization: Roles with 'analytics.view.orders' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view order analytics
+ * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.orders'])(async (request, { user, userScope }) => {
   try {
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -123,20 +126,34 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
       let key: string;
       
       if (groupBy === 'day') {
-        key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        // Use utility to get YYYY/MM/DD format
+        key = getUTCDateKey(date);
       } else {
-        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+        // YYYY/MM format for monthly grouping
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        key = `${year}/${month}`;
       }
       
       groupedOrders[key] = (groupedOrders[key] || 0) + 1;
     });
 
       // Convert to array format with outlet info
-      return Object.entries(groupedOrders).map(([period, count]) => ({
-      period,
-        count,
-        ...(outlet ? { outletId: outlet.publicId, outletName: outlet.name } : {})
-    })).sort((a, b) => a.period.localeCompare(b.period));
+      return Object.entries(groupedOrders).map(([period, count]) => {
+        // Parse period string to create ISO date (use utility)
+        // period is now YYYY/MM/DD or YYYY/MM format
+        const periodDate = groupBy === 'day' 
+          ? period.replace(/\//g, '-') // Convert YYYY/MM/DD to YYYY-MM-DD for Date parsing
+          : period.replace(/\//g, '-') + '-01'; // Convert YYYY/MM to YYYY-MM-01
+        const dateISO = normalizeDateToISO(periodDate);
+        
+        return {
+          period, // Keep YYYY/MM/DD or YYYY/MM format for backward compatibility
+          dateISO, // Full ISO string for mobile locale formatting (from utility)
+          count,
+          ...(outlet ? { outletId: outlet.publicId, outletName: outlet.name } : {})
+        };
+      }).sort((a, b) => a.period.localeCompare(b.period));
     };
 
     // Process orders for each outlet separately if outletIds provided, otherwise process aggregated

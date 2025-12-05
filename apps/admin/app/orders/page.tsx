@@ -9,6 +9,7 @@ import {
   Orders,
   useToast,
   Button,
+  ExportDialog,
   type QuickFilterOption
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
@@ -43,6 +44,8 @@ export default function AdminOrdersPage() {
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | undefined>(
     searchParams.get('quickFilter') || 'month' // ⭐ Default to Last 30 Days
   );
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -301,10 +304,8 @@ export default function AdminOrdersPage() {
           <div className="flex gap-3">
             {canExport && (
               <Button
-                onClick={() => {
-                  toastSuccess('Export', 'Export feature coming soon');
-                }}
-                variant="default"
+                onClick={() => setShowExportDialog(true)}
+                variant="outline"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
@@ -338,6 +339,42 @@ export default function AdminOrdersPage() {
         />
         )}
       </div>
+
+      {/* Export Dialog */}
+      <ExportDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        resourceName="Orders"
+        isLoading={isExporting}
+        onExport={async (params) => {
+          try {
+            setIsExporting(true);
+            const blob = await ordersApi.exportOrders({
+              ...params,
+              status: status || undefined,
+              orderType: orderType || undefined,
+              dateField: 'createdAt' // Default to createdAt, can be customized
+            });
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `orders-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            toastSuccess('Success', 'Export completed successfully');
+            setShowExportDialog(false);
+          } catch (error) {
+            toastError('Error', (error as Error).message || 'Failed to export orders');
+          } finally {
+            setIsExporting(false);
+          }
+        }}
+      />
     </PageWrapper>
   );
 }

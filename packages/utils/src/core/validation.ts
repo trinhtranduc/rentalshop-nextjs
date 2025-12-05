@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
 import { ApiError, ErrorCode } from './errors';
 import { 
@@ -25,12 +26,19 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
+  // Required fields: email, password, name (or firstName+lastName), businessName (for merchant)
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  // Support both name formats for flexibility
-  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  
+  // Name: Support both formats - either 'name' or both 'firstName' and 'lastName'
+  name: z.string().min(1, 'Name is required').optional(),
   firstName: z.string().min(1, 'First name is required').optional(),
   lastName: z.string().min(1, 'Last name is required').optional(),
+  
+  // For merchant registration - businessName is required if registering as merchant
+  businessName: z.string().optional(),
+  
+  // All other fields are optional
   phone: z.string().optional(),
   role: z.enum([
     USER_ROLE.ADMIN,
@@ -41,14 +49,12 @@ export const registerSchema = z.object({
     'CLIENT',
     'SHOP_OWNER'
   ] as [string, ...string[]]).optional(),
-  // For merchant registration
-  businessName: z.string().optional(),
   // Optional tenant key (domain-like identifier) for future multi-tenant routing
   tenantKey: z.string().min(1).max(50).regex(/^[a-z0-9\-]+$/i, 'Tenant key must be alphanumeric').optional(),
-  // Business configuration (required for merchants)
+  // Business configuration (optional - defaults will be used)
   businessType: z.enum(['CLOTHING', 'VEHICLE', 'EQUIPMENT', 'GENERAL']).optional(),
   pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).optional(),
-  // Address fields for merchant registration
+  // Address fields for merchant registration (all optional)
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -63,13 +69,13 @@ export const registerSchema = z.object({
 }, {
   message: "Either 'name' or both 'firstName' and 'lastName' must be provided"
 }).refine((data) => {
-  // For MERCHANT role, businessType and pricingType are required
+  // For MERCHANT registration, businessName is required
   if (data.role === 'MERCHANT' || data.businessName) {
-    return data.businessType && data.pricingType;
+    return !!data.businessName && data.businessName.trim().length > 0;
   }
   return true;
 }, {
-  message: "Business type and pricing type are required for merchant registration"
+  message: "Business name is required for merchant registration"
 });
 
 // Product validation schemas (aligned with API routes and DB types)
@@ -516,6 +522,42 @@ export type PlansQuery = z.infer<typeof plansQuerySchema>;
 // Plan Variant validation schemas
 // ============================================================================
 
+// Plan Limit Addon validation schemas
+export const planLimitAddonCreateSchema = z.object({
+  merchantId: z.coerce.number().int().positive('Merchant ID must be a positive integer'),
+  outlets: z.coerce.number().int().min(0, 'Outlets must be 0 or greater').default(0),
+  users: z.coerce.number().int().min(0, 'Users must be 0 or greater').default(0),
+  products: z.coerce.number().int().min(0, 'Products must be 0 or greater').default(0),
+  customers: z.coerce.number().int().min(0, 'Customers must be 0 or greater').default(0),
+  orders: z.coerce.number().int().min(0, 'Orders must be 0 or greater').default(0),
+  notes: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const planLimitAddonUpdateSchema = z.object({
+  outlets: z.coerce.number().int().min(0, 'Outlets must be 0 or greater').optional(),
+  users: z.coerce.number().int().min(0, 'Users must be 0 or greater').optional(),
+  products: z.coerce.number().int().min(0, 'Products must be 0 or greater').optional(),
+  customers: z.coerce.number().int().min(0, 'Customers must be 0 or greater').optional(),
+  orders: z.coerce.number().int().min(0, 'Orders must be 0 or greater').optional(),
+  notes: z.string().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const planLimitAddonsQuerySchema = z.object({
+  merchantId: z.coerce.number().int().positive().optional(),
+  isActive: z.union([z.string(), z.boolean()]).transform((v) => {
+    if (typeof v === 'boolean') return v;
+    if (v === undefined) return undefined;
+    return v === 'true';
+  }).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+  sortBy: z.enum(['id', 'createdAt', 'updatedAt']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
 export const planVariantCreateSchema = z.object({
   planId: z.string().min(1, 'Plan ID is required'),
   name: z.string().min(1, 'Variant name is required'),
@@ -548,6 +590,11 @@ export const planVariantsQuerySchema = z.object({
 
 export type PlanVariantCreateInput = z.infer<typeof planVariantCreateSchema>;
 export type PlanVariantUpdateInput = z.infer<typeof planVariantUpdateSchema>;
+
+// Plan Limit Addon type exports
+export type PlanLimitAddonCreateInput = z.infer<typeof planLimitAddonCreateSchema>;
+export type PlanLimitAddonUpdateInput = z.infer<typeof planLimitAddonUpdateSchema>;
+export type PlanLimitAddonsQuery = z.infer<typeof planLimitAddonsQuerySchema>;
 export type PlanVariantsQuery = z.infer<typeof planVariantsQuerySchema>;
 
 // ============================================================================
@@ -604,7 +651,9 @@ export interface PlanLimitsValidationResult {
 }
 
 export interface PlanLimitsInfo {
-  planLimits: PlanLimits;
+  planLimits: PlanLimits; // Total limits (plan + addon)
+  basePlanLimits?: PlanLimits; // Original plan limits (for reference)
+  addonLimits?: PlanLimits; // Addon limits (for transparency)
   platform: 'mobile' | 'mobile+web';
   currentCounts: {
     outlets: number;
@@ -638,13 +687,41 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
   orders: number;
 }> {
   try {
+    // Debug: Get detailed user count info
+    const allUsers = await prisma.user.findMany({
+      where: { merchantId },
+      select: { id: true, email: true, deletedAt: true, role: true }
+    });
+    const activeUsers = allUsers.filter(u => !u.deletedAt);
+    
+    console.log(`🔍 getCurrentEntityCounts - Merchant ${merchantId}:`, {
+      totalUsersInDB: allUsers.length,
+      activeUsers: activeUsers.length,
+      deletedUsers: allUsers.length - activeUsers.length,
+      userDetails: allUsers.map(u => ({
+        id: u.id,
+        email: u.email,
+        role: u.role,
+        deletedAt: u.deletedAt ? 'DELETED' : 'ACTIVE'
+      }))
+    });
+
     const [outlets, users, products, customers, orders] = await Promise.all([
       prisma.outlet.count({ where: { merchantId } }),
-      prisma.user.count({ where: { merchantId } }),
+      // Exclude soft-deleted users (deletedAt = null) from count
+      prisma.user.count({ where: { merchantId, deletedAt: null } }),
       prisma.product.count({ where: { merchantId } }),
       prisma.customer.count({ where: { merchantId } }),
       prisma.order.count({ where: { outlet: { merchantId } } })
     ]);
+
+    console.log(`📊 Entity counts for merchant ${merchantId}:`, {
+      outlets,
+      users, // This should match activeUsers.length
+      products,
+      customers,
+      orders
+    });
 
     return {
       outlets,
@@ -664,11 +741,15 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
  */
 export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsInfo> {
   try {
-    // Get merchant with subscription
+    // Get merchant with subscription - use fresh query to avoid stale data
     const merchant = await prisma.merchant.findUnique({
       where: { id: merchantId },
       include: {
-        subscription: true
+        subscription: {
+          include: {
+            plan: true // Include plan to get fresh data
+          }
+        }
       }
     });
 
@@ -679,31 +760,108 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     if (!merchant.subscription) {
       throw new ApiError(ErrorCode.NOT_FOUND, 'No subscription found for merchant');
     }
+    
+    console.log('🔍 getPlanLimitsInfo - Subscription data:', {
+      merchantId,
+      subscriptionId: merchant.subscription.id,
+      planId: merchant.subscription.planId,
+      planName: merchant.subscription.plan?.name || 'N/A'
+    });
 
-    // Get plan information from database
-    const plan = await prisma.plan.findUnique({
+    // Get plan information - use plan from subscription if available, otherwise fetch fresh
+    const plan = merchant.subscription.plan || await prisma.plan.findUnique({
       where: { id: merchant.subscription.planId }
     });
     if (!plan) {
-      throw new ApiError(ErrorCode.NOT_FOUND, 'Plan not found');
+      throw new ApiError(ErrorCode.NOT_FOUND, `Plan not found for planId: ${merchant.subscription.planId}`);
     }
-    const planLimits = JSON.parse(plan.limits);
-    const platform = plan.features.includes('Web dashboard access') ? 'mobile+web' : 'mobile';
+    
+    // Parse plan limits - handle both string and object formats
+    let planLimits: any;
+    if (typeof plan.limits === 'string') {
+      try {
+        planLimits = JSON.parse(plan.limits);
+      } catch (e) {
+        console.error('Error parsing plan.limits:', e, 'Raw value:', plan.limits);
+        planLimits = {};
+      }
+    } else {
+      planLimits = plan.limits || {};
+    }
+    
+    // Ensure all required fields exist with default values
+    // Default to unlimited (-1) if field is missing to prevent blocking operations
+    // Only -1 means unlimited, 0 means limit of 0 (cannot create)
+    planLimits = {
+      outlets: planLimits.outlets !== undefined ? planLimits.outlets : -1,
+      users: planLimits.users !== undefined ? planLimits.users : -1,
+      products: planLimits.products !== undefined ? planLimits.products : -1,
+      customers: planLimits.customers !== undefined ? planLimits.customers : -1,
+      orders: planLimits.orders !== undefined ? planLimits.orders : -1, // Default to unlimited if missing
+      ...planLimits // Override with actual values if they exist
+    };
+    
+    // Parse plan features - handle both string and array formats
+    let features: string[];
+    if (typeof plan.features === 'string') {
+      try {
+        features = JSON.parse(plan.features);
+      } catch (e) {
+        console.error('Error parsing plan.features:', e, 'Raw value:', plan.features);
+        features = [];
+      }
+    } else if (Array.isArray(plan.features)) {
+      features = plan.features;
+    } else {
+      features = [];
+    }
+    
+    const platform = features.includes('Web dashboard access') ? 'mobile+web' : 'mobile';
+
+    // Get addon limits and add them to plan limits
+    const { db } = await import('@rentalshop/database');
+    const addonLimits = await db.planLimitAddons.calculateTotal(merchantId);
+    
+    // Calculate total limits: plan limits + addon limits
+    // Note: If plan limit is -1 (unlimited), total is also -1 (unlimited)
+    // Otherwise, add addon limits to plan limits
+    const totalLimits = {
+      outlets: planLimits.outlets === -1 ? -1 : planLimits.outlets + addonLimits.outlets,
+      users: planLimits.users === -1 ? -1 : planLimits.users + addonLimits.users,
+      products: planLimits.products === -1 ? -1 : planLimits.products + addonLimits.products,
+      customers: planLimits.customers === -1 ? -1 : planLimits.customers + addonLimits.customers,
+      orders: planLimits.orders === -1 ? -1 : planLimits.orders + addonLimits.orders,
+    };
 
     // Get current counts
     const currentCounts = await getCurrentEntityCounts(merchantId);
 
-    // Check unlimited flags
+    // Check unlimited flags: Only -1 means unlimited
     const isUnlimited = {
-      outlets: planLimits.outlets === -1,
-      users: planLimits.users === -1,
-      products: planLimits.products === -1,
-      customers: planLimits.customers === -1,
-      orders: planLimits.orders === -1
+      outlets: totalLimits.outlets === -1,
+      users: totalLimits.users === -1,
+      products: totalLimits.products === -1,
+      customers: totalLimits.customers === -1,
+      orders: totalLimits.orders === -1
     };
+    
+    console.log('🔍 Plan Limits Check:', {
+      merchantId,
+      subscriptionId: merchant.subscription.id,
+      planId: merchant.subscription.planId,
+      planName: plan.name,
+      planLimits,
+      addonLimits,
+      totalLimits,
+      limitsType: typeof plan.limits,
+      ordersLimit: totalLimits.orders,
+      ordersUnlimited: isUnlimited.orders,
+      currentOrdersCount: currentCounts.orders,
+      canCreateOrder: isUnlimited.orders || (totalLimits.orders !== undefined && currentCounts.orders < totalLimits.orders),
+      planFeatures: features.slice(0, 3) // Show first 3 features for debugging
+    });
 
     // Check platform access from plan features
-    const features = JSON.parse(plan.features);
     const platformAccess = {
       mobile: true, // All plans have mobile access
       web: features.includes('Web dashboard access'),
@@ -711,7 +869,9 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     };
 
     return {
-      planLimits,
+      planLimits: totalLimits, // Return total limits (plan + addon)
+      basePlanLimits: planLimits, // Keep original plan limits for reference
+      addonLimits, // Include addon limits for transparency
       platform: platform || 'mobile',
       currentCounts,
       isUnlimited,
@@ -734,10 +894,30 @@ export async function validatePlanLimits(
   entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders'
 ): Promise<PlanLimitsValidationResult> {
   try {
+    console.log(`🔍 validatePlanLimits called: merchantId=${merchantId}, entityType=${entityType}`);
     const planInfo = await getPlanLimitsInfo(merchantId);
     const currentCount = planInfo.currentCounts[entityType];
     const limit = planInfo.planLimits[entityType];
     const isUnlimited = planInfo.isUnlimited[entityType];
+
+    console.log(`🔍 validatePlanLimits result:`, {
+      merchantId,
+      entityType,
+      currentCount,
+      limit,
+      isUnlimited
+    });
+
+    // Handle undefined limit (backward compatibility - treat as unlimited)
+    if (limit === undefined || limit === null) {
+      console.warn(`⚠️ Plan limit for ${entityType} is undefined, treating as unlimited for backward compatibility`);
+      return {
+        isValid: true,
+        currentCount,
+        limit: -1,
+        entityType
+      };
+    }
 
     // If unlimited, always allow
     if (isUnlimited) {
@@ -751,6 +931,13 @@ export async function validatePlanLimits(
 
     // Check if limit is exceeded
     if (currentCount >= limit) {
+      console.log(`❌ Plan limit exceeded:`, {
+        merchantId,
+        entityType,
+        currentCount,
+        limit,
+        comparison: `${currentCount} >= ${limit}`
+      });
       return {
         isValid: false,
         error: `${entityType} limit exceeded. Current: ${currentCount}, Limit: ${limit}`,
@@ -821,6 +1008,52 @@ export async function assertPlanLimit(
     throw new ApiError(
       ErrorCode.INTERNAL_SERVER_ERROR,
       `Failed to validate plan limits for ${entityType}`
+    );
+  }
+}
+
+/**
+ * Check plan limits for a specific entity type (DRY helper)
+ * Returns NextResponse if limit exceeded, null if OK or ADMIN bypass
+ * 
+ * Usage in API routes:
+ * ```typescript
+ * const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'customers');
+ * if (planLimitError) return planLimitError;
+ * ```
+ * 
+ * @param user - Authenticated user (to check if ADMIN)
+ * @param merchantId - Merchant ID to check limits for
+ * @param entityType - Type of entity being created
+ * @returns NextResponse if limit exceeded, null if OK
+ */
+export async function checkPlanLimitIfNeeded(
+  user: { role: string },
+  merchantId: number,
+  entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders'
+): Promise<NextResponse | null> {
+  console.log(`🔍 checkPlanLimitIfNeeded called:`, {
+    userRole: user.role,
+    merchantId,
+    entityType
+  });
+
+  // ADMIN users bypass plan limit checks
+  if (user.role === USER_ROLE.ADMIN) {
+    console.log(`✅ ADMIN user: Bypassing plan limit check for ${entityType}`);
+    return null;
+  }
+
+  try {
+    await assertPlanLimit(merchantId, entityType);
+    console.log(`✅ Plan limit check passed for ${entityType} (merchantId: ${merchantId})`);
+    return null;
+  } catch (error: any) {
+    console.log(`❌ Plan limit exceeded for ${entityType} (merchantId: ${merchantId}):`, error.message);
+    const { ResponseBuilder } = await import('../api/response-builder');
+    return NextResponse.json(
+      ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || `Plan limit exceeded for ${entityType}`),
+      { status: 403 }
     );
   }
 }

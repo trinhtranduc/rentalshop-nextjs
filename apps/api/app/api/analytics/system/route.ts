@@ -1,14 +1,17 @@
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withAuthRoles } from '@rentalshop/auth';
-import { API } from '@rentalshop/constants';
+import { withPermissions } from '@rentalshop/auth';
+import { API, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
  * GET /api/analytics/system - Get system analytics (Admin only)
- * REFACTORED: Now uses unified withAuth pattern
+ * 
+ * Authorization: Only roles with 'system.manage' permission can access
+ * - Automatically includes: ADMIN only
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['system.manage'])(async (request, { user, userScope }) => {
   console.log(`🔧 GET /api/analytics/system - Admin: ${user.email}`);
   
   try {
@@ -105,8 +108,10 @@ export const GET = withAuthRoles(['ADMIN'])(async (request, { user, userScope })
       }),
       
       // Revenue in date range
+      // ✅ Exclude CANCELLED orders from revenue calculation
       db.orders.aggregate({
         where: {
+          status: { not: ORDER_STATUS.CANCELLED }, // Exclude cancelled orders
           createdAt: {
             gte: dateStart,
             lte: dateEnd

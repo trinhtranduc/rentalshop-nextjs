@@ -157,27 +157,28 @@ export function SubscriptionExtendDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-blue-700" />
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-action-primary" />
             Extend Subscription
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="mt-1">
             Extend subscription for {subscription.merchant?.name || 'Unknown Merchant'}. 
             This will update the end date and create a payment record.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-6 pr-1">
+        <div className="px-6 py-4 overflow-y-auto">
+          <div className="space-y-6">
           {/* Current Plan Info - Simplified */}
-          <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-action-primary/10 border border-action-primary/20 rounded-lg">
                 <div>
-              <p className="text-sm text-gray-600">Current Plan</p>
+                <p className="text-sm text-muted-foreground">Current Plan</p>
               <p className="font-semibold">{subscription.plan?.name || 'N/A'}</p>
                 </div>
             <div className="text-right">
-              <p className="text-sm text-gray-600">Ends on</p>
+                <p className="text-sm text-muted-foreground">Ends on</p>
               <p className="font-semibold">
                     {subscription.currentPeriodEnd 
                       ? formatDate(subscription.currentPeriodEnd) 
@@ -215,7 +216,7 @@ export function SubscriptionExtendDialog({
 
             {/* Period-based Extension */}
             {extensionType === 'period' && (
-              <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="space-y-4 p-4 bg-action-primary/10 border border-action-primary/20 rounded-lg">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="extensionPeriod">Extension Period *</Label>
@@ -223,7 +224,7 @@ export function SubscriptionExtendDialog({
                       id="extensionPeriod"
                       value={extensionPeriod}
                       onChange={(e) => setExtensionPeriod(parseInt(e.target.value) as 1 | 3 | 6 | 12)}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-action-primary focus:border-transparent"
                     >
                       <option value={1}>1 Month</option>
                       <option value={3}>3 Months</option>
@@ -240,7 +241,7 @@ export function SubscriptionExtendDialog({
                       onChange={(e) => setStartDate(e.target.value)}
                       className="w-full"
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       {startDate 
                         ? `Starts: ${formatDate(new Date(startDate))}`
                         : `Default: ${subscription.currentPeriodEnd ? formatDate(new Date(subscription.currentPeriodEnd)) : 'N/A'}`}
@@ -347,10 +348,10 @@ export function SubscriptionExtendDialog({
 
           {/* Summary - Show when end date is set */}
           {newEndDate && (
-            <div className="space-y-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="space-y-4 p-4 bg-bg-secondary border border-border rounded-lg">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                  <p className="text-gray-600">Current End Date</p>
+                    <p className="text-muted-foreground">Current End Date</p>
                   <p className="font-semibold">
                         {subscription.currentPeriodEnd 
                           ? formatDate(subscription.currentPeriodEnd) 
@@ -358,13 +359,13 @@ export function SubscriptionExtendDialog({
                       </p>
                     </div>
                     <div>
-                  <p className="text-gray-600">New End Date</p>
-                  <p className="font-semibold text-green-700">
+                    <p className="text-muted-foreground">New End Date</p>
+                    <p className="font-semibold text-action-success">
                     {formatDate(new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59'))}
                       </p>
                     </div>
                     <div>
-                  <p className="text-gray-600">Days Extended</p>
+                    <p className="text-muted-foreground">Days Extended</p>
                   <p className="font-semibold">
                         {subscription.currentPeriodEnd 
                       ? Math.ceil((new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59').getTime() - new Date(subscription.currentPeriodEnd).getTime()) / (1000 * 60 * 60 * 24))
@@ -372,7 +373,7 @@ export function SubscriptionExtendDialog({
                       </p>
                     </div>
                     <div>
-                  <p className="text-gray-600">Extension Amount</p>
+                    <p className="text-muted-foreground">Extension Amount</p>
                   <p className="font-semibold">
                         {amount 
                           ? formatCurrency(parseFloat(amount), (subscription.currency || subscription.plan?.currency || 'USD') as any)
@@ -384,7 +385,8 @@ export function SubscriptionExtendDialog({
           )}
         </div>
 
-        <DialogFooter className="flex-shrink-0 mt-4 border-t pt-4">
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
           <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
@@ -394,7 +396,8 @@ export function SubscriptionExtendDialog({
           >
             {loading ? 'Extending...' : 'Extend Subscription'}
           </Button>
-        </DialogFooter>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

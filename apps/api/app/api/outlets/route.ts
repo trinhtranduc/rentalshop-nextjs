@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * GET /api/outlets
  * Get outlets with filtering and pagination
- * REFACTORED: Now uses unified withAuth pattern
+ * Authorization: Roles with 'outlet.view' permission can access
  */
-export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
   console.log(`🔍 GET /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -70,10 +70,17 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
     const result = await db.outlets.search(searchFilters);
     console.log('✅ Search completed, found:', result.data?.length || 0, 'outlets');
 
+    // Normalize date fields in outlet list to UTC ISO strings using toISOString()
+    const normalizedOutlets = (result.data || []).map(outlet => ({
+      ...outlet,
+      createdAt: outlet.createdAt?.toISOString() || null,
+      updatedAt: outlet.updatedAt?.toISOString() || null,
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
-        outlets: result.data || [],
+        outlets: normalizedOutlets,
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
@@ -96,9 +103,9 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE
 /**
  * POST /api/outlets
  * Create a new outlet using simplified database API
- * REFACTORED: Now uses unified withAuth pattern
+ * Authorization: Roles with 'outlet.manage' permission can create outlets
  */
-export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+export const POST = withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -157,24 +164,8 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
     }
 
     // Check plan limits before creating outlet (ADMIN bypass)
-    if (user.role !== USER_ROLE.ADMIN) {
-      try {
-        await assertPlanLimit(merchantId, 'outlets');
-        console.log('✅ Plan limit check passed for outlets');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for outlets:', error.message);
-        return NextResponse.json(
-          { 
-            success: false, 
-            code: 'PLAN_LIMIT_EXCEEDED', message: error.message || 'Plan limit exceeded for outlets',
-            error: 'PLAN_LIMIT_EXCEEDED'
-          },
-          { status: 403 }
-        );
-      }
-    } else {
-      console.log('✅ ADMIN user: Bypassing plan limit check for outlets');
-    }
+    const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'outlets');
+    if (planLimitError) return planLimitError;
 
     // Create outlet with proper relations
     const outletData = {
@@ -196,8 +187,15 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
     const outlet = await db.outlets.create(outletData);
     console.log('✅ Outlet created successfully:', outlet);
 
+    // Normalize date fields to UTC ISO strings using toISOString()
+    const normalizedOutlet = {
+      ...outlet,
+      createdAt: outlet.createdAt?.toISOString() || null,
+      updatedAt: outlet.updatedAt?.toISOString() || null,
+    };
+
     return NextResponse.json(
-      ResponseBuilder.success('OUTLET_CREATED_SUCCESS', outlet)
+      ResponseBuilder.success('OUTLET_CREATED_SUCCESS', normalizedOutlet)
     );
 
   } catch (error: any) {
@@ -220,10 +218,10 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
 
 /**
  * PUT /api/outlets?id={id}
- * Update an outlet using simplified database API  
- * REFACTORED: Now uses unified withAuth pattern
+ * Update an outlet using simplified database API
+ * Authorization: Roles with 'outlet.manage' permission can update outlets
  */
-export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+export const PUT = withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
@@ -307,8 +305,15 @@ export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
     const updatedOutlet = await db.outlets.update(id, updateData);
     console.log('✅ Outlet updated successfully:', updatedOutlet);
 
+    // Normalize date fields to UTC ISO strings using toISOString()
+    const normalizedOutlet = {
+      ...updatedOutlet,
+      createdAt: updatedOutlet.createdAt?.toISOString() || null,
+      updatedAt: updatedOutlet.updatedAt?.toISOString() || null,
+    };
+
     return NextResponse.json(
-      ResponseBuilder.success('OUTLET_UPDATED_SUCCESS', updatedOutlet)
+      ResponseBuilder.success('OUTLET_UPDATED_SUCCESS', normalizedOutlet)
     );
 
   } catch (error: any) {
@@ -332,9 +337,9 @@ export const PUT = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
 /**
  * DELETE /api/outlets?id={id}
  * Delete an outlet (soft delete)
- * REFACTORED: Now uses unified withAuth pattern
+ * Authorization: Roles with 'outlet.manage' permission can delete outlets
  */
-export const DELETE = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request, { user, userScope }) => {
+export const DELETE = withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 DELETE /api/outlets - User: ${user.email} (${user.role})`);
   
   try {

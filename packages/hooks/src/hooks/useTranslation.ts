@@ -113,6 +113,13 @@ export function useErrorTranslations() {
 }
 
 /**
+ * Hook for bank account management translations
+ */
+export function useBankAccountTranslations() {
+  return useTranslations('bankAccounts');
+}
+
+/**
  * Convenience type for translation function
  * Can be used to type the return value of useTranslations
  */

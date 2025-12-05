@@ -108,6 +108,8 @@ export async function PUT(
         );
       }
 
+      // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
+
       // Check if user is being deactivated (isActive changed from true to false)
       const isBeingDeactivated = existingUser.isActive && body.isActive === false;
 
@@ -177,25 +179,24 @@ export async function DELETE(
         );
       }
 
-      // If user is deleting themselves, disable account instead of returning error
+      // Note: Hard delete doesn't need to check deletedAt since user will be permanently removed
+
+      // If user is deleting themselves, hard delete account
       if (userId === user.id) {
         // Invalidate all user sessions to force logout
         await db.sessions.invalidateAllUserSessions(userId);
         console.log(`🗑️ User ${userId} deleting own account: Invalidated all sessions`);
         
-        // Disable the account (soft delete)
-        const disabledUser = await db.users.update(userId, { 
-          isActive: false,
-          deletedAt: new Date()
-        });
+        // Hard delete the account (orders.createdById will be set to null to preserve order history)
+        const deletedUser = await db.users.delete(userId);
         
-        console.log('✅ User account disabled successfully:', disabledUser);
+        console.log('✅ User account deleted successfully:', deletedUser);
         
         return NextResponse.json({
           success: true,
-          data: disabledUser,
-          code: 'ACCOUNT_DISABLED_SUCCESS',
-          message: 'Your account has been disabled successfully'
+          data: deletedUser,
+          code: 'ACCOUNT_DELETED_SUCCESS',
+          message: 'Your account has been deleted successfully'
         });
       }
 
@@ -220,12 +221,9 @@ export async function DELETE(
       await db.sessions.invalidateAllUserSessions(userId);
       console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
-      // Soft delete by setting isActive to false and deletedAt
-      const deletedUser = await db.users.update(userId, { 
-        isActive: false,
-        deletedAt: new Date()
-      });
-      console.log('✅ User soft deleted successfully:', deletedUser);
+      // Hard delete user (orders.createdById will be set to null to preserve order history)
+      const deletedUser = await db.users.delete(userId);
+      console.log('✅ User hard deleted successfully:', deletedUser);
 
       return NextResponse.json({
         success: true,

@@ -103,12 +103,25 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     
     if (validateForm()) {
       // Convert form data to database format
-      const customerInput: CustomerInput = {
+      // Clean customer data: remove empty strings, only send fields with actual values
+      const cleanedData: any = {};
+      const rawData = {
         ...formData,
         phone: formData.phone.trim(), // Ensure phone is trimmed string
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined
       };
-      onSubmit(customerInput);
+      
+      Object.entries(rawData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'string' && value.trim() !== '') {
+            cleanedData[key] = value;
+          } else if (typeof value !== 'string') {
+            cleanedData[key] = value;
+          }
+        }
+      });
+      
+      onSubmit(cleanedData);
     }
   };
 

@@ -33,6 +33,19 @@ export interface AuthUser {
     id: number;
     name: string;
     address?: string;
+    defaultBankAccount?: {
+      id: number;
+      accountHolderName: string;
+      accountNumber: string;
+      bankName: string;
+      bankCode?: string;
+      branch?: string;
+      isDefault: boolean;
+      qrCode?: string;
+      notes?: string;
+      isActive: boolean;
+      outletId: number;
+    };
   };
 }
 

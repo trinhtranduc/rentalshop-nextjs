@@ -1,9 +1,13 @@
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
-import { DollarSign } from 'lucide-react';
-import { useOrderTranslations } from '@rentalshop/hooks';
+import React, { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, Button } from '../../../ui';
+import { DollarSign, QrCode } from 'lucide-react';
+import { useOrderTranslations, useAuth } from '@rentalshop/hooks';
 import { useFormatCurrency } from '@rentalshop/ui';
+import { bankAccountsApi } from '@rentalshop/utils';
 import type { OrderWithDetails } from '@rentalshop/types';
+// @ts-ignore - TypeScript may not recognize the export yet
+import type { BankAccountReference } from '@rentalshop/types';
+import { PaymentQRCodeDialog } from './PaymentQRCodeDialog';
 
 interface SettingsForm {
   damageFee: number;
@@ -26,6 +30,95 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
 }) => {
   const t = useOrderTranslations();
   const formatMoney = useFormatCurrency();
+  const { user } = useAuth();
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [defaultBankAccount, setDefaultBankAccount] = useState<BankAccountReference | null>(null);
+  const [loadingBankAccount, setLoadingBankAccount] = useState(false);
+
+  // Get default bank account from order.outlet or user.outlet or fetch from API
+  useEffect(() => {
+    const fetchDefaultBankAccount = async () => {
+      // First try to get from order.outlet
+      const outletWithBank = order.outlet as any;
+      if (outletWithBank?.defaultBankAccount) {
+        setDefaultBankAccount(outletWithBank.defaultBankAccount);
+        return;
+      }
+
+      // Then try to get from user.outlet
+      const userOutletWithBank = user?.outlet as any;
+      if (userOutletWithBank?.defaultBankAccount) {
+        setDefaultBankAccount(userOutletWithBank.defaultBankAccount);
+        return;
+      }
+
+      // Finally, fetch from API if we have outletId and merchantId
+      if (order.outletId && order.merchant?.id) {
+        try {
+          setLoadingBankAccount(true);
+          const response = await bankAccountsApi.getBankAccounts(
+            order.merchant.id,
+            order.outletId
+          );
+          
+          if (response.success && response.data) {
+            // Find default bank account
+            const defaultAccount = response.data.find(acc => acc.isDefault && acc.isActive);
+            if (defaultAccount) {
+              setDefaultBankAccount({
+                id: defaultAccount.id,
+                accountHolderName: defaultAccount.accountHolderName,
+                accountNumber: defaultAccount.accountNumber,
+                bankName: defaultAccount.bankName,
+                bankCode: defaultAccount.bankCode,
+                branch: defaultAccount.branch,
+                isDefault: defaultAccount.isDefault,
+                qrCode: defaultAccount.qrCode,
+                notes: defaultAccount.notes,
+                isActive: defaultAccount.isActive,
+                outletId: defaultAccount.outletId,
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching default bank account:', error);
+        } finally {
+          setLoadingBankAccount(false);
+        }
+      }
+    };
+
+    fetchDefaultBankAccount();
+  }, [(order.outlet as any)?.defaultBankAccount, order.outletId, order.merchant?.id, (user?.outlet as any)?.defaultBankAccount]);
+  
+  // Calculate amount to collect from customer for QR code
+  // This should match the "Collection Amount" logic displayed in the UI
+  // Note: QR code will always be shown if there's a bank account, but amount is only included if > 0
+  const amountToPay = React.useMemo(() => {
+    // For SALE orders: always collect total amount (if not yet paid)
+    if (order.orderType === 'SALE') {
+      return order.totalAmount || 0;
+    }
+    
+    // For RENT orders RESERVED: collect remaining amount + security deposit
+    if (order.orderType === 'RENT' && order.status === 'RESERVED') {
+      return calculateCollectionTotal(order, tempSettings);
+    }
+    
+    // For RENT orders PICKUPED: may need to collect additional fees
+    // (damage fee, late fee, etc.) when returning
+    // Always show QR code, but only include amount if > 0
+    if (order.orderType === 'RENT' && order.status === 'PICKUPED') {
+      // Calculate additional fees that need to be collected
+      const damageFee = tempSettings.damageFee || 0;
+      const lateFee = (order as any).lateFee || 0;
+      return damageFee + lateFee;
+    }
+    
+    // For other RENT statuses (RETURNED, COMPLETED, etc.): no collection needed
+    // Return 0 (QR code won't include amount, but can still be shown if needed)
+    return 0;
+  }, [order.orderType, order.status, order.totalAmount, tempSettings, calculateCollectionTotal]);
 
   return (
     <Card>
@@ -102,7 +195,36 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
             </span>
           </div>
         )}
+
+        {/* Show QR Code Button - Always show if bank account exists */}
+        {defaultBankAccount && (
+          <div className="pt-3 border-t border-gray-200">
+            <Button
+              onClick={() => setShowQRCode(true)}
+              className="w-full"
+              variant="outline"
+            >
+              <QrCode className="w-4 h-4 mr-2" />
+              {t('payment.showQRCode')}
+            </Button>
+          </div>
+        )}
       </CardContent>
+
+      {/* Payment QR Code Dialog */}
+      {defaultBankAccount && (
+        <PaymentQRCodeDialog
+          isOpen={showQRCode}
+          onClose={() => setShowQRCode(false)}
+          bankAccount={defaultBankAccount}
+          amount={amountToPay}
+          orderNumber={order.orderNumber}
+          orderType={order.orderType}
+          orderStatus={order.status}
+          tempSettings={tempSettings}
+          depositAmount={order.depositAmount}
+        />
+      )}
     </Card>
   );
 };

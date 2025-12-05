@@ -147,7 +147,13 @@
     "uploading": "Đang tải lên",
     "processing": "Đang xử lý...",
     "complete": "Hoàn thành!",
-    "removeImage": "Xóa ảnh"
+    "removeImage": "Xóa ảnh",
+    "autoSaving": "Đang tự động lưu...",
+    "autoSaved": "Đã tự động lưu",
+    "autoSaveFailed": "Tự động lưu thất bại",
+    "saving": "Đang lưu...",
+    "unknownOutlet": "Cửa hàng không xác định",
+    "imagesSelected": "ảnh đã chọn"
   },
   "filters": {
     "all": "Tất cả sản phẩm",
@@ -187,6 +193,18 @@
   "productsPlural": "sản phẩm",
   "storeNotFound": "Không tìm thấy cửa hàng",
   "storeNotFoundMessage": "Cửa hàng bạn đang tìm kiếm không tồn tại. Vui lòng kiểm tra lại URL hoặc liên hệ chủ cửa hàng.",
-  "goToHomepage": "Về trang chủ"
+  "goToHomepage": "Về trang chủ",
+  "dialogs": {
+    "addProductTitle": "Thêm sản phẩm mới",
+    "addProductDescription": "Tạo sản phẩm mới cho kho hàng cho thuê của bạn"
+  },
+  "labels": {
+    "barcode": "Mã vạch",
+    "deposit": "Đặt cọc",
+    "available": "Có sẵn",
+    "totalStock": "Tổng kho",
+    "noBarcode": "Không có mã vạch",
+    "noCategory": "Chưa có danh mục"
+  }
 }
 

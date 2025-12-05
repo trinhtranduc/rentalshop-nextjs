@@ -30,6 +30,7 @@ export interface SearchableSelectProps {
   addNewText?: string; // Text for "Add New" option
   onAddNew?: () => void; // Callback when "Add New" is clicked
   disabled?: boolean; // Add disabled prop
+  productRowStyle?: 'default' | 'compact' | 'minimal'; // UI style for product rows
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -46,9 +47,11 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   addNewText = 'Add New',
   onAddNew,
   disabled = false,
+  productRowStyle = 'default', // Default to current rich layout
 }) => {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
+  const [isEditing, setIsEditing] = React.useState(false); // Track if user is actively editing
   const [internalOptions, setInternalOptions] = React.useState<SearchableOption[]>(options || []);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   const onSearchRef = React.useRef(onSearch);
@@ -160,7 +163,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const selected = options?.find((o) => o.value === String(value)) || internalOptions.find((o) => o.value === String(value));
 
   // Keep selected label in input for better UX
-  const displayValue = selected?.label || query;
+  // If user is editing or query exists, show query instead of selected label
+  // This allows user to completely clear the input
+  const displayValue = (isEditing || query.trim() !== '') ? query : (selected?.label || '');
 
   // Close on outside click (works for both input and button modes)
   React.useEffect(() => {
@@ -187,6 +192,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     console.log('🎯 SearchableSelect: Parsed value:', numericValue);
     onChange?.(numericValue);
     setOpen(false);
+    setIsEditing(false); // Reset editing state when selection is made
     // Keep the selected option in the internal options so it remains visible
     if (onSearch) {
       setInternalOptions([option]);
@@ -203,23 +209,41 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       <input
         value={displayValue}
         disabled={disabled}
-        onFocus={() => {
-          if (!disabled) setOpen(true);
+        onFocus={(e) => {
+          if (!disabled) {
+            setOpen(true);
+            setIsEditing(true); // Mark as editing when focused
+            // When focusing, if there's a selected value, allow user to clear it
+            // Select all text so user can easily replace it
+            if (selected && !query && !isEditing) {
+              setTimeout(() => {
+                e.target.select();
+              }, 0);
+            }
+          }
         }}
         onChange={(e) => {
           if (disabled) return;
-          setQuery(e.target.value);
+          const newValue = e.target.value;
+          setIsEditing(true); // User is actively editing
+          setQuery(newValue);
           setOpen(true);
-          // Clear selected value when user starts typing
-          if (e.target.value && selected) {
+          // Always clear selected value when user is typing/editing
+          // This allows user to completely clear the input
             onChange?.(undefined as any);
-          }
         }}
         onBlur={() => {
           // Only close dropdown after a longer delay
           setTimeout(() => {
             setOpen(false);
-            // Don't clear query here - let it persist for search
+            // Reset editing state when blurred, but keep query if empty to allow clearing
+            if (query.trim() === '') {
+              setIsEditing(false);
+              // Keep query as empty string so user can clear selection
+            } else {
+              // If query has value but no selection, keep editing state
+              setIsEditing(value === undefined);
+            }
           }, 300);
         }}
         placeholder={placeholder}
@@ -247,21 +271,29 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         <ChevronDown className="h-5 w-5" />
       </Button>
       
-      {/* Clear button when there's a query */}
-      {query && (
+      {/* Clear button when there's a query or selected value */}
+      {(query || value !== undefined) && (
         <Button
           variant="ghost"
           size="icon"
           type="button"
           onClick={() => {
             setQuery('');
+            setIsEditing(true); // Set editing state when clearing
+            onChange?.(undefined as any);
             // Reset to original options when clearing search
             if (onSearch) {
               setInternalOptions([]); // Clear search results
             } else {
               setInternalOptions(options || []); // Restore original options
             }
-            setOpen(false);
+            // Don't close dropdown when clearing, allow user to search immediately
+            setOpen(true);
+            // Focus input after clearing
+            setTimeout(() => {
+              const input = rootRef.current?.querySelector('input');
+              input?.focus();
+            }, 0);
           }}
           className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-150 h-6 w-6 p-0"
         >
@@ -271,7 +303,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
       {open && (
         <div className="absolute z-[9999] mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg ring-1 ring-black ring-opacity-5">
-          <div className="max-h-64 overflow-auto py-2">
+          <div className="max-h-[500px] overflow-auto py-2">
             {filtered.length === 0 ? (
               <div className="px-4 py-6 text-center text-sm text-gray-500">
                 <div className="w-8 h-8 mx-auto mb-2 text-gray-300">
@@ -311,24 +343,138 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 
                 {/* Options with custom rendering based on type */}
                 {filtered.map((opt) => {
+                  // Render product rows differently based on productRowStyle
+                  if (opt.type === 'product' && productRowStyle === 'compact') {
+                    // Compact product layout - single line with essential info
+                    return (
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        key={opt.value}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelect(opt);
+                        }}
+                        className={cn(
+                          'flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 transition-all duration-150 h-auto justify-start rounded-none',
+                          value !== undefined && value !== null && String(value) === opt.value && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                        )}
+                      >
+                        {/* Compact icon */}
+                        <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                          {opt.image ? (
+                            <img 
+                              src={opt.image} 
+                              alt={opt.label}
+                              className="w-full h-full object-cover rounded"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                          )}
+                        </div>
+                        
+                        {/* Compact content - single line */}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 truncate">{opt.label}</div>
+                          {opt.details && opt.details.length > 0 && (
+                            <div className="text-xs text-gray-500 truncate">
+                              {opt.details.slice(0, 2).join(' • ')}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Selection indicator */}
+                        {value !== undefined && value !== null && String(value) === opt.value && (
+                          <div className="flex-shrink-0 w-4 h-4 text-blue-700">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                      </Button>
+                    );
+                  }
+                  
+                  if (opt.type === 'product' && productRowStyle === 'minimal') {
+                    // Minimal product layout - just name and price
                   return (
                   <Button
                     variant="ghost"
                     type="button"
                     key={opt.value}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelect(opt);
+                        }}
+                        className={cn(
+                          'flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 transition-all duration-150 h-auto rounded-none',
+                          value !== undefined && value !== null && String(value) === opt.value && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {/* Minimal icon */}
+                          <div className="flex-shrink-0 w-6 h-6 text-gray-400">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                          </div>
+                          
+                          {/* Minimal content - name only */}
+                          <div className="font-medium text-gray-900 truncate">{opt.label}</div>
+                        </div>
+                        
+                        {/* Price on the right */}
+                        {opt.details && opt.details.length > 0 && (
+                          <div className="flex-shrink-0 text-xs text-gray-600 ml-2">
+                            {opt.details[0]}
+                          </div>
+                        )}
+                        
+                        {/* Selection indicator */}
+                        {value !== undefined && value !== null && String(value) === opt.value && (
+                          <div className="flex-shrink-0 w-4 h-4 text-blue-700 ml-2">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                      </Button>
+                    );
+                  }
+                  
+                  // Default rich layout without border (clean design)
+                  return (
+                  <div
+                    key={opt.value}
+                    className={cn(
+                      'mx-1 my-1 rounded-lg transition-all duration-200',
+                      opt.type === 'product' 
+                        ? 'bg-white hover:bg-blue-100 hover:shadow-md' 
+                        : 'hover:bg-gray-50',
+                      value !== undefined && value !== null && String(value) === opt.value && 'bg-blue-50'
+                    )}
+                  >
+                    <Button
+                      variant="ghost"
+                      type="button"
                     onMouseDown={(e) => {
                       e.preventDefault(); // Prevent input blur
                       console.log('🖱️ Selecting option:', opt.label);
                       handleSelect(opt);
                     }}
                     className={cn(
-                      'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 ease-in-out h-auto justify-start rounded-none',
-                      value !== undefined && value !== null && String(value) === opt.value && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                        'flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-transparent transition-all duration-150 ease-in-out h-auto justify-start rounded-lg',
+                        value !== undefined && value !== null && String(value) === opt.value && 'bg-transparent text-blue-700'
                     )}
                   >
                     {/* Icon or Image based on type */}
                     {opt.type === 'product' && opt.image ? (
-                      // Product with image
+                        // Product with image - no border
                       <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-gray-200">
                         <img 
                           src={opt.image} 
@@ -340,16 +486,16 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             e.currentTarget.nextElementSibling?.classList.remove('hidden');
                           }}
                         />
-                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="hidden w-full h-full bg-gradient-to-br from-blue-50 to-indigo-50 items-center justify-center">
+                            <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                           </svg>
                         </div>
                       </div>
                     ) : opt.type === 'product' ? (
-                      // Product without image - use package icon
-                      <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        // Product without image - use package icon with blue gradient, no border
+                        <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center border border-gray-200">
+                          <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                         </svg>
                       </div>
@@ -404,6 +550,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                       </div>
                     )}
                   </Button>
+                  </div>
                 );
               })}
               </>

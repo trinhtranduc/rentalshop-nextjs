@@ -126,7 +126,13 @@ export async function GET(
       }
 
       // Verify product belongs to user's merchant scope
-      if (user.role !== USER_ROLE.ADMIN && product.merchantId !== userMerchantId) {
+      // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
+      const productMerchantId = product.merchant?.id;
+      if (user.role !== USER_ROLE.ADMIN && productMerchantId !== userMerchantId) {
+        console.log('❌ Product does not belong to user\'s merchant:', {
+          productMerchantId: productMerchantId,
+          userMerchantId: userMerchantId
+        });
         return NextResponse.json(
           ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
           { status: 403 }

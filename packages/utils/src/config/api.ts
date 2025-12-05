@@ -67,6 +67,7 @@ export interface ApiUrls {
     updateStock: (id: number) => string;
     bulkUpdate: string;
     availability: (id: number) => string;
+    export: string;
   };
   orders: {
     list: string;
@@ -76,6 +77,7 @@ export interface ApiUrls {
     getByNumber: (orderNumber: string) => string;
     updateStatus: (id: number) => string;
     stats: string;
+    export: string;
   };
   customers: {
     list: string;
@@ -83,6 +85,7 @@ export interface ApiUrls {
     update: (id: number) => string;
     delete: (id: number) => string;
     stats: string;
+    export: string;
   };
   outlets: {
     list: string;
@@ -176,7 +179,6 @@ export interface ApiUrls {
   merchants: {
     list: string;
     create: string;
-    register: string;
     get: (id: number) => string;
     update: (id: number) => string;
     delete: (id: number) => string;
@@ -215,7 +217,30 @@ export interface ApiUrls {
       create: (merchantId: number) => string;
       update: (merchantId: number, outletId: number) => string;
       delete: (merchantId: number, outletId: number) => string;
+      bankAccounts: {
+        list: (merchantId: number, outletId: number) => string;
+        create: (merchantId: number, outletId: number) => string;
+        get: (merchantId: number, outletId: number, accountId: number) => string;
+        update: (merchantId: number, outletId: number, accountId: number) => string;
+        delete: (merchantId: number, outletId: number, accountId: number) => string;
+      };
     };
+    planLimitAddons: {
+      list: (merchantId: number) => string;
+      get: (merchantId: number, addonId: number) => string;
+      create: (merchantId: number) => string;
+      update: (merchantId: number, addonId: number) => string;
+      delete: (merchantId: number, addonId: number) => string;
+    };
+  };
+  planLimitAddons: {
+    list: string;
+    get: (id: number) => string;
+    create: string;
+    update: (id: number) => string;
+    delete: (id: number) => string;
+    getByMerchant: (merchantId: number) => string;
+    createByMerchant: (merchantId: number) => string;
   };
   settings: {
     merchant: string;
@@ -526,6 +551,7 @@ function createApiUrls(): ApiUrls {
       updateStock: (id: number) => `${base}/api/products/${id}/stock`,
       bulkUpdate: `${base}/api/products/bulk-update`,
       availability: (id: number) => `${base}/api/products/${id}/availability`,
+      export: `${base}/api/products/export`,
     },
     orders: {
       list: `${base}/api/orders`,
@@ -535,6 +561,7 @@ function createApiUrls(): ApiUrls {
       getByNumber: (orderNumber: string) => `${base}/api/orders/by-number/${encodeURIComponent(orderNumber)}`,
       updateStatus: (id: number) => `${base}/api/orders/${id}/status`,
       stats: `${base}/api/orders/stats`,
+      export: `${base}/api/orders/export`,
     },
     customers: {
       list: `${base}/api/customers`,
@@ -542,6 +569,7 @@ function createApiUrls(): ApiUrls {
       update: (id: number) => `${base}/api/customers/${id}`,
       delete: (id: number) => `${base}/api/customers/${id}`,
       stats: `${base}/api/customers/stats`,
+      export: `${base}/api/customers/export`,
     },
     outlets: {
       list: `${base}/api/outlets`,
@@ -635,7 +663,6 @@ function createApiUrls(): ApiUrls {
     merchants: {
       list: `${base}/api/merchants`,
       create: `${base}/api/merchants`,
-      register: `${base}/api/merchants/register`,
       get: (id: number) => `${base}/api/merchants/${id}`,
       update: (id: number) => `${base}/api/merchants/${id}`,
       delete: (id: number) => `${base}/api/merchants/${id}`,
@@ -674,7 +701,30 @@ function createApiUrls(): ApiUrls {
         create: (merchantId: number) => `${base}/api/merchants/${merchantId}/outlets`,
         update: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}`,
         delete: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}`,
+        bankAccounts: {
+          list: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts`,
+          create: (merchantId: number, outletId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts`,
+          get: (merchantId: number, outletId: number, accountId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts/${accountId}`,
+          update: (merchantId: number, outletId: number, accountId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts/${accountId}`,
+          delete: (merchantId: number, outletId: number, accountId: number) => `${base}/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts/${accountId}`,
+        },
       },
+      planLimitAddons: {
+        list: (merchantId: number) => `${base}/api/merchants/${merchantId}/plan-limit-addons`,
+        get: (merchantId: number, addonId: number) => `${base}/api/plan-limit-addons/${addonId}`,
+        create: (merchantId: number) => `${base}/api/merchants/${merchantId}/plan-limit-addons`,
+        update: (merchantId: number, addonId: number) => `${base}/api/plan-limit-addons/${addonId}`,
+        delete: (merchantId: number, addonId: number) => `${base}/api/plan-limit-addons/${addonId}`,
+      },
+    },
+    planLimitAddons: {
+      list: `${base}/api/plan-limit-addons`,
+      get: (id: number) => `${base}/api/plan-limit-addons/${id}`,
+      create: `${base}/api/plan-limit-addons`,
+      update: (id: number) => `${base}/api/plan-limit-addons/${id}`,
+      delete: (id: number) => `${base}/api/plan-limit-addons/${id}`,
+      getByMerchant: (merchantId: number) => `${base}/api/merchants/${merchantId}/plan-limit-addons`,
+      createByMerchant: (merchantId: number) => `${base}/api/merchants/${merchantId}/plan-limit-addons`,
     },
   settings: {
     merchant: `${base}/api/settings/merchant`,

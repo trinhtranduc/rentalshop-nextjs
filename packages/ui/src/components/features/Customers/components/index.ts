@@ -8,6 +8,8 @@ export { CustomerPageHeader } from './CustomerPageHeader';
 // Customer forms
 export { AddCustomerForm } from './AddCustomerForm';
 export { AddCustomerDialog } from './AddCustomerDialog';
+export { EditCustomerDialog } from './EditCustomerDialog';
+export { CustomerFormDialog } from './CustomerFormDialog';
 export { EditCustomerForm, type EditCustomerFormRef } from './EditCustomerForm';
 export { CustomerForm } from './CustomerForm';
 

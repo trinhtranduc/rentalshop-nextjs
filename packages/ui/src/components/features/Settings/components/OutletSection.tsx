@@ -9,7 +9,7 @@ import {
   Input,
   Label
 } from '@rentalshop/ui';
-import { useSettingsTranslations } from '@rentalshop/hooks';
+import { useSettingsTranslations, usePermissions } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -46,25 +46,37 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
   onInputChange
 }) => {
   const t = useSettingsTranslations();
+  // ✅ Use permissions hook to check if user can manage outlets
+  const { canManageOutlets, hasPermission, permissions } = usePermissions();
+  
+  // Debug logging for permissions
+  console.log('🔍 OutletSection - User:', user);
+  console.log('🔍 OutletSection - User role:', user?.role);
+  console.log('🔍 OutletSection - Permissions:', permissions);
+  console.log('🔍 OutletSection - Has outlet.manage:', hasPermission('outlet.manage'));
+  console.log('🔍 OutletSection - canManageOutlets:', canManageOutlets);
   
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between py-4 pb-3">
           <h3 className="text-base font-semibold text-gray-900">{t('outlet.outletInformation')}</h3>
-          {!isEditing ? (
-            <Button onClick={onEdit} size="sm">
-              {t('outlet.edit')}
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button onClick={onSave} variant="default" size="sm" disabled={isUpdating}>
-                {isUpdating ? t('outlet.saving') : t('outlet.save')}
+          {/* ✅ Only show edit button if user can manage outlets */}
+          {canManageOutlets && (
+            !isEditing ? (
+              <Button onClick={onEdit} size="sm">
+                {t('outlet.edit')}
               </Button>
-              <Button onClick={onCancel} variant="outline" size="sm" disabled={isUpdating}>
-                {t('outlet.cancel')}
-              </Button>
-            </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button onClick={onSave} variant="default" size="sm" disabled={isUpdating}>
+                  {isUpdating ? t('outlet.saving') : t('outlet.save')}
+                </Button>
+                <Button onClick={onCancel} variant="outline" size="sm" disabled={isUpdating}>
+                  {t('outlet.cancel')}
+                </Button>
+              </div>
+            )
           )}
         </CardHeader>
         <CardContent className="p-6 pt-4">
@@ -78,7 +90,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                 <Label htmlFor="outletName" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('outlet.name')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageOutlets ? (
                   <Input
                     id="outletName"
                     name="name"
@@ -98,7 +110,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                 <Label htmlFor="outletPhone" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('outlet.phone')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageOutlets ? (
                   <Input
                     id="outletPhone"
                     name="phone"
@@ -118,7 +130,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                 <Label htmlFor="outletAddress" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('outlet.address')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageOutlets ? (
                   <Input
                     id="outletAddress"
                     name="address"
@@ -138,7 +150,7 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                 <Label htmlFor="outletDescription" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('outlet.description')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageOutlets ? (
                   <Input
                     id="outletDescription"
                     name="description"

@@ -148,7 +148,13 @@
     "uploading": "Uploading",
     "processing": "Processing...",
     "complete": "Complete!",
-    "removeImage": "Remove image"
+    "removeImage": "Remove image",
+    "autoSaving": "Auto-saving...",
+    "autoSaved": "Auto-saved",
+    "autoSaveFailed": "Auto-save failed",
+    "saving": "Saving...",
+    "unknownOutlet": "Unknown Outlet",
+    "imagesSelected": "images selected"
   },
   "filters": {
     "all": "All Products",
@@ -188,6 +194,18 @@
   "productsPlural": "products",
   "storeNotFound": "Store Not Found",
   "storeNotFoundMessage": "The store you're looking for could not be found. Please check the URL or contact the store owner.",
-  "goToHomepage": "Go to Homepage"
+  "goToHomepage": "Go to Homepage",
+  "dialogs": {
+    "addProductTitle": "Add New Product",
+    "addProductDescription": "Create a new product for your rental shop inventory"
+  },
+  "labels": {
+    "barcode": "Barcode",
+    "deposit": "Deposit",
+    "available": "Available",
+    "totalStock": "Total Stock",
+    "noBarcode": "No Barcode",
+    "noCategory": "No Category"
+  }
 }
 

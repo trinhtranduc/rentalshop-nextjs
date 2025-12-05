@@ -35,7 +35,17 @@ export {
   canExportCustomers,
   assertAnyRole,
   hasAnyRole,
-  ROLE_PERMISSIONS
+  ROLE_PERMISSIONS,
+  validateMerchantOutletAccess,
+  validateScope,
+  validateMerchantAccess,
+  validateMerchantOutletRoute
+} from './core';
+
+export type {
+  MerchantOutletAuthOptions,
+  MerchantOutletAuthResult,
+  ValidateMerchantAccessResult
 } from './core';
 
 // Export unified auth wrappers (all auth middleware functions)

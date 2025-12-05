@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { subscriptionsApi } from '@rentalshop/utils';
 import { 
   SubscriptionForm,
@@ -18,6 +19,7 @@ import {
 import type { SubscriptionCreateInput, Plan, Merchant } from '@rentalshop/types';
 
 export default function CreateSubscriptionPage() {
+  const router = useRouter();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function CreateSubscriptionPage() {
 
       if (result.success && result.data) {
         // Redirect to subscription detail page
-        window.location.href = `/admin/subscriptions/${result.data.id}`;
+        router.push(`/admin/subscriptions/${result.data.id}`);
       } else {
         alert(`Error creating subscription: ${result.message}`);
       }
@@ -72,7 +74,7 @@ export default function CreateSubscriptionPage() {
   };
 
   const handleCancel = () => {
-    window.location.href = '/admin/subscriptions';
+    router.push('/admin/subscriptions');
   };
 
   if (loading) {

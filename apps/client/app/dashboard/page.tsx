@@ -33,6 +33,7 @@ import {
   Minus
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import { useFormattedFullDate, useFormattedMonthOnly, useFormattedDaily } from '@rentalshop/utils/client';
 import { useLocale as useNextIntlLocale } from 'next-intl';
@@ -268,7 +269,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
 // MAIN COMPONENT
 // ============================================================================
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toastError, toastSuccess } = useToast();
   const formatMoney = useFormatCurrency();
   const t = useDashboardTranslations();
@@ -276,12 +277,14 @@ export default function DashboardPage() {
   const to = useOrderTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
+  // ✅ Use permissions hook to check if user can manage products
+  const { canManageProducts } = usePermissions();
   const locale = useNextIntlLocale() as 'en' | 'vi';
   
   // Get timePeriod from URL params or default to 'today'
-  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(
-    (searchParams.get('period') as 'today' | 'month' | 'year') || 'today'
-  );
+  // OUTLET_STAFF can only view 'today' period
+  const defaultPeriod = user?.role === 'OUTLET_STAFF' ? 'today' : ((searchParams.get('period') as 'today' | 'month' | 'year') || 'today');
+  const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(defaultPeriod);
   const [initialLoading, setInitialLoading] = useState(false); // Start with false - page renders immediately
   const [loadingCharts, setLoadingCharts] = useState(false); // Start with false - page renders immediately
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -340,6 +343,12 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Wait for auth to finish loading first
+        if (authLoading) {
+          console.log('⏳ Categories/Outlets: Auth still loading, waiting...');
+          return;
+        }
+        
         // Wait for user to be loaded
         if (!user) return;
         
@@ -380,10 +389,20 @@ export default function DashboardPage() {
     };
     
     fetchData();
-  }, [user]);
+  }, [user, authLoading]);
 
   // Function to update URL when time period changes
+  // OUTLET_STAFF can only view 'today' period - force to 'today' if they try to change
   const updateTimePeriod = (newPeriod: 'today' | 'month' | 'year') => {
+    // Force OUTLET_STAFF to stay on 'today' period
+    if (user?.role === 'OUTLET_STAFF') {
+      setTimePeriod('today');
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('period', 'today');
+      router.push(`/dashboard?${params.toString()}`, { scroll: false });
+      return;
+    }
+    
     setTimePeriod(newPeriod);
     // Update URL without causing page reload
     const params = new URLSearchParams(searchParams.toString());
@@ -392,12 +411,21 @@ export default function DashboardPage() {
   };
 
   // Sync URL params on mount
+  // OUTLET_STAFF can only view 'today' period
   useEffect(() => {
+    if (user?.role === 'OUTLET_STAFF') {
+      setTimePeriod('today');
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('period', 'today');
+      router.push(`/dashboard?${params.toString()}`, { scroll: false });
+      return;
+    }
+    
     const urlPeriod = searchParams.get('period');
     if (urlPeriod && ['today', 'month', 'year'].includes(urlPeriod)) {
       setTimePeriod(urlPeriod as 'today' | 'month' | 'year');
     }
-  }, [searchParams]);
+  }, [searchParams, user?.role, router]);
 
   // Memoize fetchDashboardData function to prevent unnecessary re-creations
   const fetchDashboardData = useCallback(async () => {
@@ -412,9 +440,15 @@ export default function DashboardPage() {
         return;
       }
 
-      // Step 2: Guard - Verify user is loaded
+      // Step 2: Guard - Wait for auth to finish loading before checking user
+      if (authLoading) {
+        console.log('⏳ fetchDashboardData: Auth still loading, waiting...');
+        return; // Don't set loadingCharts to false, keep it as is
+      }
+
+      // Step 3: Guard - Verify user is loaded after auth loading completes
       if (!user) {
-        console.warn('⚠️ fetchDashboardData: User not loaded, skipping API calls');
+        console.warn('⚠️ fetchDashboardData: User not loaded after auth loading completed, skipping API calls');
         setLoadingCharts(false);
         return;
       }
@@ -705,6 +739,12 @@ export default function DashboardPage() {
 
   // Main useEffect to fetch dashboard data
   useEffect(() => {
+    // Guard: Wait for auth to finish loading first
+    if (authLoading) {
+      console.log('⏳ Dashboard: Auth still loading, waiting...');
+      return;
+    }
+
     // Guard: Only fetch data when user is confirmed loaded and token exists
     if (!userId || !merchantId) {
       console.log('⏳ Dashboard: Waiting for user to be loaded before fetching data');
@@ -725,7 +765,7 @@ export default function DashboardPage() {
     };
 
     checkTokenAndFetch();
-  }, [userId, merchantId, timePeriod, selectedOutletsKey, fetchDashboardData]); // Use stable values only
+  }, [userId, merchantId, timePeriod, selectedOutletsKey, fetchDashboardData, authLoading]); // Include authLoading
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -1046,7 +1086,7 @@ export default function DashboardPage() {
     <div className="h-full overflow-y-auto">
       <PageWrapper>
         {/* Page Loading Indicator - Floating, non-blocking */}
-        <PageLoadingIndicator loading={initialLoading || loadingCharts} />
+        <PageLoadingIndicator loading={authLoading || initialLoading || loadingCharts} />
       <PageContent>
         {/* Subscription Status Banner - Show at top if subscription is expiring or expired */}
         {/* Only show after dashboard has finished loading to avoid flash */}
@@ -1076,6 +1116,8 @@ export default function DashboardPage() {
             </div>
             
             {/* Time Period Filter - Modern Pills */}
+            {/* OUTLET_STAFF can only view 'today' - hide month/year tabs */}
+            {user?.role !== 'OUTLET_STAFF' ? (
             <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
               {[
                 { id: 'today', label: tc('time.today') },
@@ -1095,6 +1137,14 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
+            ) : (
+              // For OUTLET_STAFF, show only "Today" label (not clickable)
+              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
+                <div className="px-4 py-2 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm">
+                  {tc('time.today')}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1102,11 +1152,8 @@ export default function DashboardPage() {
         {timePeriod === 'today' && (
           <>
             {/* Today's Key Metrics - Simplified Grid */}
-            <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 ${
-              user?.role === 'OUTLET_STAFF' ? 'md:grid-cols-3' : ''
-            }`}>
-              {/* Revenue Card - Hidden for OUTLET_STAFF */}
-              {user?.role !== 'OUTLET_STAFF' && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {/* Revenue Card - Show for all roles including OUTLET_STAFF */}
                 <StatCard
                   title={t('stats.todayRevenue')}
                   value={currentStats.todayRevenue}
@@ -1119,7 +1166,6 @@ export default function DashboardPage() {
                   setActiveTooltip={setActiveTooltip}
                   position="left"
                 />
-              )}
               <StatCard
                 title={t('stats.todayRentals')}
                 value={currentStats.todayRentals}
@@ -1607,14 +1653,17 @@ export default function DashboardPage() {
               <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addCustomer')}</p>
             </Button>
             
-            <Button
-              variant="ghost"
-              className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
-              onClick={() => setShowAddProductDialog(true)}
-            >
-              <PackageCheck className="w-5 h-5 text-gray-700" />
-              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addProduct')}</p>
-            </Button>
+            {/* ✅ Only show Add Product button if user can manage products */}
+            {canManageProducts && (
+              <Button
+                variant="ghost"
+                className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
+                onClick={() => setShowAddProductDialog(true)}
+              >
+                <PackageCheck className="w-5 h-5 text-gray-700" />
+                <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.addProduct')}</p>
+              </Button>
+            )}
             
             <Button
               variant="ghost"

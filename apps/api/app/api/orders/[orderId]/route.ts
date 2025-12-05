@@ -81,9 +81,20 @@ export const GET = async (
         })) || order.orderItems
       };
 
+      // Normalize date fields to UTC ISO strings using toISOString()
+      const normalizedOrder = {
+        ...flattenedOrder,
+        createdAt: flattenedOrder.createdAt?.toISOString() || null,
+        updatedAt: flattenedOrder.updatedAt?.toISOString() || null,
+        pickupPlanAt: flattenedOrder.pickupPlanAt?.toISOString() || null,
+        returnPlanAt: flattenedOrder.returnPlanAt?.toISOString() || null,
+        pickedUpAt: flattenedOrder.pickedUpAt?.toISOString() || null,
+        returnedAt: flattenedOrder.returnedAt?.toISOString() || null,
+      };
+
       return NextResponse.json({
         success: true,
-        data: flattenedOrder,
+        data: normalizedOrder,
         code: 'ORDER_RETRIEVED_SUCCESS',
         message: 'Order retrieved successfully'
       });
@@ -251,9 +262,20 @@ export const PUT = async (
         totalPaid: fullOrder.payments?.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0) || 0
       };
 
+      // Normalize date fields to UTC ISO strings using toISOString()
+      const normalizedOrder = {
+        ...flattenedOrder,
+        createdAt: flattenedOrder.createdAt?.toISOString() || null,
+        updatedAt: flattenedOrder.updatedAt?.toISOString() || null,
+        pickupPlanAt: flattenedOrder.pickupPlanAt?.toISOString() || null,
+        returnPlanAt: flattenedOrder.returnPlanAt?.toISOString() || null,
+        pickedUpAt: flattenedOrder.pickedUpAt?.toISOString() || null,
+        returnedAt: flattenedOrder.returnedAt?.toISOString() || null,
+      };
+
       return NextResponse.json({
         success: true,
-        data: flattenedOrder,
+        data: normalizedOrder,
         code: 'ORDER_UPDATED_SUCCESS',
         message: 'Order updated successfully'
       });

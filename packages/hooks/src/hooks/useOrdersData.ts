@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import { useDedupedApi } from '../utils/useDedupedApi';
 import { ordersApi } from '@rentalshop/utils';
 import type { OrderFilters, OrderWithDetails } from '@rentalshop/types';
@@ -55,13 +57,24 @@ export interface UseOrdersDataReturn {
  */
 export function useOrdersData(options: UseOrdersDataOptions): UseOrdersDataReturn {
   const { filters, enabled = true } = options;
+  const pathname = usePathname();
+  
+  // Include pathname in filters to ensure refetch when navigating between pages
+  // This ensures that when user navigates to /orders from another page, data is refetched
+  // The pathname change will cause cacheKey to change, forcing a refetch
+  const filtersWithPath = useMemo(() => ({
+    ...filters,
+    _pathname: pathname // Internal key to force refetch on navigation
+  }), [filters, pathname]);
   
   const result = useDedupedApi({
-    filters,
-    fetchFn: async (filters: OrderFilters) => {
-      console.log('📦 useOrdersData: Fetching with filters:', filters);
+    filters: filtersWithPath,
+    fetchFn: async (filtersWithPath: OrderFilters & { _pathname?: string }) => {
+      // Remove internal _pathname before making API call
+      const { _pathname, ...apiFilters } = filtersWithPath;
+      console.log('📦 useOrdersData: Fetching with filters:', apiFilters);
       
-      const response = await ordersApi.searchOrders(filters);
+      const response = await ordersApi.searchOrders(apiFilters);
 
       if (!response.success || !response.data) {
         throw new Error('Failed to fetch orders');
@@ -88,9 +101,10 @@ export function useOrdersData(options: UseOrdersDataOptions): UseOrdersDataRetur
       return transformed;
     },
     enabled,
-    staleTime: 30000, // 30 seconds cache
+    staleTime: 0, // ✅ Set to 0 to always refetch on navigation (no stale cache)
     cacheTime: 300000, // 5 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: true // ✅ Force refetch when component mounts (navigating to page)
   });
 
   return result;

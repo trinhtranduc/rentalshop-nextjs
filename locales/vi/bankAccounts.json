@@ -1,0 +1,64 @@
+{
+  "title": "Quản lý tài khoản ngân hàng",
+  "subtitle": "Quản lý tài khoản ngân hàng cho outlet",
+  "form": {
+    "title": "Thông tin tài khoản ngân hàng",
+    "addTitle": "Thêm tài khoản ngân hàng",
+    "editTitle": "Chỉnh sửa tài khoản ngân hàng",
+    "accountHolderName": "Tên chủ tài khoản",
+    "accountHolderNamePlaceholder": "Nhập tên chủ tài khoản",
+    "accountNumber": "Số tài khoản",
+    "accountNumberPlaceholder": "Nhập số tài khoản (8-16 chữ số)",
+    "bankName": "Tên ngân hàng",
+    "bankNamePlaceholder": "Chọn ngân hàng",
+    "bankCode": "Mã ngân hàng",
+    "bankCodePlaceholder": "Mã ngân hàng (tự động điền)",
+    "branch": "Chi nhánh",
+    "branchPlaceholder": "Nhập chi nhánh (tùy chọn)",
+    "isDefault": "Đặt làm tài khoản mặc định",
+    "notes": "Ghi chú",
+    "notesPlaceholder": "Ghi chú (tùy chọn)",
+    "submit": "Lưu tài khoản ngân hàng",
+    "add": "Thêm tài khoản",
+    "update": "Cập nhật",
+    "cancel": "Hủy",
+    "saving": "Đang lưu...",
+    "errors": {
+      "accountHolderNameRequired": "Tên chủ tài khoản là bắt buộc",
+      "accountNumberRequired": "Số tài khoản là bắt buộc",
+      "accountNumberInvalid": "Số tài khoản phải có 8-16 chữ số",
+      "bankNameRequired": "Tên ngân hàng là bắt buộc"
+    }
+  },
+  "card": {
+    "default": "Mặc định",
+    "accountHolderName": "Tên chủ tài khoản",
+    "accountNumber": "Số tài khoản",
+    "bank": "Ngân hàng",
+    "branch": "Chi nhánh",
+    "notes": "Ghi chú",
+    "copyQRCode": "Sao chép mã QR",
+    "scanQRHint": "Quét mã QR để chuyển khoản nhanh",
+    "copied": "Đã sao chép",
+    "accountNumberCopied": "Số tài khoản đã được sao chép vào clipboard",
+    "qrCodeCopied": "Mã QR đã được sao chép vào clipboard"
+  },
+  "list": {
+    "emptyTitle": "Chưa có tài khoản ngân hàng",
+    "emptyDescription": "Thêm tài khoản ngân hàng để nhận thanh toán chuyển khoản",
+    "addButton": "Thêm tài khoản ngân hàng"
+  },
+  "messages": {
+    "addSuccess": "Đã thêm tài khoản ngân hàng",
+    "addError": "Không thể thêm tài khoản ngân hàng",
+    "updateSuccess": "Đã cập nhật tài khoản ngân hàng",
+    "updateError": "Không thể cập nhật tài khoản ngân hàng",
+    "deleteSuccess": "Đã xóa tài khoản ngân hàng",
+    "deleteError": "Không thể xóa tài khoản ngân hàng",
+    "loadError": "Không thể tải danh sách tài khoản ngân hàng",
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa tài khoản ngân hàng \"{name}\"?",
+    "deleteConfirmTitle": "Xóa tài khoản ngân hàng",
+    "noOutlet": "Bạn chưa được gán vào cửa hàng nào. Vui lòng liên hệ quản trị viên."
+  }
+}
+

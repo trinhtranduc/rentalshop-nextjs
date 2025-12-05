@@ -10,7 +10,7 @@ import { API, USER_ROLE } from '@rentalshop/constants';
 function validateImage(file: File): { isValid: boolean; error?: string } {
   const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 5MB
   
   const fileTypeLower = file.type.toLowerCase().trim();
   const fileNameLower = file.name.toLowerCase().trim();
@@ -77,13 +77,38 @@ export async function GET(
 
       const productId = parseInt(id);
       
+      // Validate that non-admin users have merchant association
+      const userMerchantId = userScope.merchantId;
+      if (user.role !== 'ADMIN' && !userMerchantId) {
+        return NextResponse.json(
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED', 'User must be associated with a merchant'),
+          { status: 403 }
+        );
+      }
+      
       // Get product using the simplified database API
-      // Note: ADMIN users can access all products, non-admin users are filtered by merchantId in database layer
       const product = await db.products.findById(productId);
 
       if (!product) {
         console.log('❌ Product not found in database for productId:', productId);
-        throw new Error('Product not found');
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Verify product belongs to user's merchant (security check)
+      // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
+      const productMerchantId = product.merchant?.id;
+      if (user.role !== 'ADMIN' && productMerchantId !== userMerchantId) {
+        console.log('❌ Product does not belong to user\'s merchant:', {
+          productMerchantId: productMerchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_NOT_FOUND'), // Return NOT_FOUND for security (don't reveal product exists)
+          { status: API.STATUS.NOT_FOUND }
+        );
       }
 
       console.log('✅ Product found, transforming data...');
@@ -132,8 +157,8 @@ export async function GET(
             address: os.outlet.address || null // Include address if available
           }
         })),
-        createdAt: product.createdAt.toISOString(),
-        updatedAt: product.updatedAt.toISOString()
+        createdAt: product.createdAt?.toISOString() || null,
+        updatedAt: product.updatedAt?.toISOString() || null
       };
 
       console.log('✅ Transformed product data:', transformedProduct);
@@ -499,6 +524,26 @@ export async function PUT(
       // Update the product using the simplified database API with nested write
       const updatedProduct = await db.products.update(productId, finalUpdateData);
       console.log('✅ Product updated successfully with outletStock:', updatedProduct);
+
+      // Sync Product.totalStock = sum of all OutletStock.stock
+      // This ensures totalStock always equals the sum of all outlet stocks
+      if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
+        try {
+          const productModule = await import('@rentalshop/database/src/product');
+          const { syncProductTotalStock } = productModule;
+          if (syncProductTotalStock) {
+            await syncProductTotalStock(productId);
+            // Re-fetch product to get updated totalStock
+            const refreshedProduct = await db.products.findById(productId);
+            if (refreshedProduct) {
+              Object.assign(updatedProduct, { totalStock: refreshedProduct.totalStock });
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error syncing Product.totalStock after update:', error);
+          // Don't throw - product update succeeded, sync failed
+        }
+      }
 
       // Transform the response to match frontend expectations
       const transformedProduct = {

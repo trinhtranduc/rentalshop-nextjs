@@ -3662,6 +3662,9 @@ function useSubscriptionTranslations() {
 function useErrorTranslations() {
   return n2("errors");
 }
+function useBankAccountTranslations() {
+  return n2("bankAccounts");
+}
 
 // src/hooks/useAuth.ts
 function useAuth() {
@@ -4235,9 +4238,14 @@ function useDedupedApi(options) {
   const filtersRef = useRef("");
   const fetchFnRef = useRef(fetchFn);
   const isMountedRef = useRef(true);
+  const isFirstMountRef = useRef(true);
   fetchFnRef.current = fetchFn;
   useEffect4(() => {
     isMountedRef.current = true;
+    if (isFirstMountRef.current) {
+      filtersRef.current = "";
+      isFirstMountRef.current = false;
+    }
     return () => {
       isMountedRef.current = false;
     };
@@ -4259,9 +4267,13 @@ function useDedupedApi(options) {
       return;
     }
     const isManualRefetch = refetchKey > 0;
-    if (cacheKey === filtersRef.current && !isManualRefetch) {
-      console.log("\u{1F50D} useDedupedApi: Filters unchanged, skipping fetch");
+    const shouldSkip = cacheKey === filtersRef.current && !isManualRefetch && !refetchOnMount;
+    if (shouldSkip) {
+      console.log("\u{1F50D} useDedupedApi: Filters unchanged and refetchOnMount=false, skipping fetch");
       return;
+    }
+    if (refetchOnMount && cacheKey === filtersRef.current && !isManualRefetch) {
+      console.log("\u{1F504} useDedupedApi: refetchOnMount=true, forcing refetch even though filters unchanged");
     }
     filtersRef.current = cacheKey;
     fetchIdRef.current += 1;
@@ -4532,14 +4544,23 @@ function useMerchantsData(options) {
 }
 
 // src/hooks/useOrdersData.ts
+import { useMemo as useMemo2 } from "react";
+import { usePathname } from "next/navigation";
 import { ordersApi } from "@rentalshop/utils";
 function useOrdersData(options) {
   const { filters, enabled = true } = options;
+  const pathname = usePathname();
+  const filtersWithPath = useMemo2(() => ({
+    ...filters,
+    _pathname: pathname
+    // Internal key to force refetch on navigation
+  }), [filters, pathname]);
   const result = useDedupedApi({
-    filters,
-    fetchFn: async (filters2) => {
-      console.log("\u{1F4E6} useOrdersData: Fetching with filters:", filters2);
-      const response = await ordersApi.searchOrders(filters2);
+    filters: filtersWithPath,
+    fetchFn: async (filtersWithPath2) => {
+      const { _pathname, ...apiFilters } = filtersWithPath2;
+      console.log("\u{1F4E6} useOrdersData: Fetching with filters:", apiFilters);
+      const response = await ordersApi.searchOrders(apiFilters);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch orders");
       }
@@ -4562,11 +4583,13 @@ function useOrdersData(options) {
       return transformed;
     },
     enabled,
-    staleTime: 3e4,
-    // 30 seconds cache
+    staleTime: 0,
+    // ✅ Set to 0 to always refetch on navigation (no stale cache)
     cacheTime: 3e5,
     // 5 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
+    // ✅ Force refetch when component mounts (navigating to page)
   });
   return result;
 }
@@ -5243,12 +5266,12 @@ var useToastHandler = () => {
 };
 
 // src/hooks/useLocale.ts
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname as usePathname2 } from "next/navigation";
 import { useTransition } from "react";
 function useLocale() {
   const locale = Z();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname2();
   const [isPending, startTransition] = useTransition();
   const setLocale = (newLocale) => {
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
@@ -5280,7 +5303,7 @@ function useUserRole() {
     canManageOutlets: role === "ADMIN" || role === "MERCHANT",
     canManageSubscriptions: role === "ADMIN" || role === "MERCHANT",
     canViewBilling: role === "ADMIN" || role === "MERCHANT",
-    canExportData: role === "ADMIN" || role === "MERCHANT"
+    canExportData: role === "ADMIN" || role === "MERCHANT" || role === "OUTLET_ADMIN"
   };
 }
 function useCanManageProducts() {
@@ -5376,11 +5399,11 @@ function useUsersData(options) {
 
 // src/hooks/useOptimisticNavigation.ts
 import { useState as useState9, useCallback as useCallback12, useEffect as useEffect6, useTransition as useTransition2 } from "react";
-import { usePathname as usePathname2, useRouter as useRouter2 } from "next/navigation";
+import { usePathname as usePathname3, useRouter as useRouter2 } from "next/navigation";
 function useOptimisticNavigation() {
   const [navigatingTo, setNavigatingTo] = useState9(null);
   const [isPending, startTransition] = useTransition2();
-  const pathname = usePathname2();
+  const pathname = usePathname3();
   const router = useRouter2();
   useEffect6(() => {
     if (navigatingTo && pathname === navigatingTo) {
@@ -5653,6 +5676,7 @@ export {
   useAuth,
   useAuthErrorHandler,
   useAuthTranslations,
+  useBankAccountTranslations,
   useCalendarTranslations,
   useCanExportData,
   useCanManageCategories,

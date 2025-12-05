@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, assertPlanLimit, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
@@ -111,6 +111,32 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
 
     // Add product filtering if specified
     if (productId) {
+      // Optional: Validate product exists and belongs to user's scope (for better UX)
+      try {
+        const product = await db.products.findById(productId);
+        if (!product) {
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_FOUND'),
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
+        
+        // Verify product belongs to user's merchant (if not admin)
+        if (user.role !== USER_ROLE.ADMIN && product.merchantId !== userScope.merchantId) {
+          console.log('❌ Product does not belong to user\'s merchant:', {
+            productMerchantId: product.merchantId,
+            userMerchantId: userScope.merchantId
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_FOUND'), // Security: don't reveal product exists
+            { status: API.STATUS.NOT_FOUND }
+          );
+        }
+      } catch (productError) {
+        // If product validation fails, log but continue (product might be deleted)
+        console.warn('⚠️ Product validation failed (continuing with filter):', productError);
+      }
+      
       searchFilters.productId = productId;
     }
 
@@ -137,10 +163,21 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
     console.log('📊 RESULT DEBUG: page=', result.page, ', total=', result.total, ', limit=', result.limit);
 
+    // Normalize date fields in order list to UTC ISO strings using toISOString()
+    const normalizedOrders = (result.data || []).map(order => ({
+      ...order,
+      createdAt: order.createdAt?.toISOString() || null,
+      updatedAt: order.updatedAt?.toISOString() || null,
+      pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
+      returnPlanAt: order.returnPlanAt?.toISOString() || null,
+      pickedUpAt: order.pickedUpAt?.toISOString() || null,
+      returnedAt: order.returnedAt?.toISOString() || null,
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
-        orders: result.data || [],
+        orders: normalizedOrders,
         total: result.total || 0,
         page: result.page || 1,
         limit: result.limit || 20,
@@ -154,10 +191,10 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
 
   } catch (error) {
     console.error('Error in GET /api/orders:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('FETCH_ORDERS_FAILED'),
-      { status: 500 }
-    );
+    
+    // Use unified error handling system for consistency
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
@@ -201,20 +238,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     }
 
     // Check plan limits before creating order (ADMIN bypass)
-    if (user.role !== USER_ROLE.ADMIN) {
-      try {
-        await assertPlanLimit(outlet.merchantId, 'orders');
-        console.log('✅ Plan limit check passed for orders');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for orders:', error.message);
-        return NextResponse.json(
-          ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for orders'),
-          { status: 403 }
-        );
-      }
-    } else {
-      console.log('✅ ADMIN user: Bypassing plan limit check for orders');
-    }
+    const planLimitError = await checkPlanLimitIfNeeded(user, outlet.merchantId, 'orders');
+    if (planLimitError) return planLimitError;
 
     // Generate order number: 6-digit random number (e.g., 123456, 789012)
     // Use atomic transaction to ensure uniqueness
@@ -392,6 +417,46 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const order = await db.orders.create(orderData);
     console.log('✅ Order created successfully:', order);
 
+    // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
+    if (order.orderItems && order.orderItems.length > 0) {
+      try {
+        // Import the function from product module (same pattern as updateOrder in order.ts)
+        // Use dynamic import - order.ts uses './product' from same package
+        // From API route, we need to use absolute path from workspace root
+        const productModule = await import('@rentalshop/database/src/product');
+        const { updateOutletStockForOrder } = productModule;
+        
+        if (updateOutletStockForOrder) {
+          // For SALE orders with COMPLETED status: decrease stock permanently
+          // For RENT orders with RESERVED/PICKUPED status: update renting/available
+          const shouldUpdateStock = 
+            (order.orderType === ORDER_TYPE.SALE && order.status === ORDER_STATUS.COMPLETED) ||
+            (order.orderType === ORDER_TYPE.RENT && (order.status === ORDER_STATUS.RESERVED || order.status === ORDER_STATUS.PICKUPED));
+          
+          if (shouldUpdateStock) {
+            await updateOutletStockForOrder(
+              order.id,
+              null, // oldStatus (null for new orders)
+              order.status,
+              order.orderType as 'RENT' | 'SALE',
+              order.outletId,
+              order.orderItems.map(item => ({
+                productId: item.productId || 0,
+                quantity: item.quantity,
+              })).filter(item => item.productId > 0)
+            );
+            console.log('✅ Outlet stock updated successfully for new order');
+          }
+        } else {
+          console.warn('⚠️ updateOutletStockForOrder function not found in product module');
+        }
+      } catch (error) {
+        console.error('❌ Error updating outlet stock for new order:', error);
+        // Don't throw - order creation succeeded, stock update failed
+        // Log error for manual review
+      }
+    }
+
     // Flatten order response (consistent with order list response)
     const flattenedOrder = {
       id: order.id,
@@ -470,9 +535,20 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       totalPaid: order.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
     };
 
+    // Normalize date fields to UTC ISO strings using toISOString()
+    const normalizedOrder = {
+      ...flattenedOrder,
+      createdAt: flattenedOrder.createdAt?.toISOString() || null,
+      updatedAt: flattenedOrder.updatedAt?.toISOString() || null,
+      pickupPlanAt: flattenedOrder.pickupPlanAt?.toISOString() || null,
+      returnPlanAt: flattenedOrder.returnPlanAt?.toISOString() || null,
+      pickedUpAt: flattenedOrder.pickedUpAt?.toISOString() || null,
+      returnedAt: flattenedOrder.returnedAt?.toISOString() || null,
+    };
+
     return NextResponse.json({
       success: true,
-      data: flattenedOrder,
+      data: normalizedOrder,
       code: 'ORDER_CREATED_SUCCESS',
       message: 'Order created successfully'
     });

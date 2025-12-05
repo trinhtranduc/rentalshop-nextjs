@@ -430,16 +430,16 @@ export function getLocalDate(date: Date | string | null | undefined): Date | nul
 
 /**
  * Get UTC date key from UTC datetime string
- * Converts UTC datetime to UTC date (YYYY-MM-DD)
+ * Converts UTC datetime to UTC date (YYYY/MM/DD)
  * This preserves the original UTC date without timezone conversion
  * 
  * @param date - UTC datetime string or Date object from database
- * @returns UTC date in YYYY-MM-DD format
+ * @returns UTC date in YYYY/MM/DD format
  * 
  * @example
  * // Database stores UTC: "2025-10-27T17:00:00Z"
- * // This function returns: "2025-10-27" (no timezone conversion)
- * getUTCDateKey("2025-10-27T17:00:00Z") // "2025-10-27"
+ * // This function returns: "2025/10/27" (no timezone conversion)
+ * getUTCDateKey("2025-10-27T17:00:00Z") // "2025/10/27"
  */
 export function getUTCDateKey(date: Date | string | null | undefined): string {
   if (!date) return '';
@@ -454,8 +454,43 @@ export function getUTCDateKey(date: Date | string | null | undefined): string {
     const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
     const day = String(dateObj.getUTCDate()).padStart(2, '0');
     
-    return `${year}-${month}-${day}`;
+    return `${year}/${month}/${day}`;
   } catch {
     return '';
   }
-} 
+}
+
+// ============================================================================
+// API DATE NORMALIZATION UTILITIES (for consistent API responses)
+// ============================================================================
+
+/**
+ * Normalize a date to midnight UTC and return as ISO string
+ * Useful for API responses where you want consistent date format for mobile locale formatting
+ * 
+ * @param date - Date object or date string
+ * @returns ISO string at midnight UTC (e.g., "2025-11-29T00:00:00.000Z")
+ * 
+ * @example
+ * normalizeDateToISO(new Date("2025-11-29T09:37:02.976Z")) // "2025-11-29T00:00:00.000Z"
+ * normalizeDateToISO("2025/11/29") // "2025-11-29T00:00:00.000Z"
+ */
+export function normalizeDateToISO(date: Date | string | null | undefined): string {
+  if (!date) return '';
+  
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return '';
+    
+    // Extract UTC date components and normalize to midnight UTC
+    const year = dateObj.getUTCFullYear();
+    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getUTCDate()).padStart(2, '0');
+    // Use YYYY-MM-DD format for ISO string (standard format)
+    const dateKeyISO = `${year}-${month}-${day}`;
+    
+    return new Date(dateKeyISO + 'T00:00:00.000Z').toISOString();
+  } catch {
+    return '';
+  }
+}

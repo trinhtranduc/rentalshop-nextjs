@@ -83,8 +83,23 @@
     "product": {
       "required": "Sản phẩm là bắt buộc"
     },
+    "category": {
+      "required": "Danh mục là bắt buộc"
+    },
     "outlet": {
-      "required": "Cửa hàng là bắt buộc"
+      "required": "Cửa hàng là bắt buộc",
+      "requiredForRole": "Cửa hàng là bắt buộc cho vai trò này"
+    },
+    "merchant": {
+      "required": "Doanh nghiệp là bắt buộc",
+      "requiredForRole": "Doanh nghiệp là bắt buộc cho vai trò này"
+    },
+    "role": {
+      "required": "Vai trò là bắt buộc"
+    },
+    "deposit": {
+      "nonNegative": "Đặt cọc phải không âm",
+      "cannotBeNegative": "Đặt cọc không thể là số âm"
     },
     "merchantId": {
       "required": "ID doanh nghiệp là bắt buộc"
@@ -96,22 +111,25 @@
       "required": "ID biến thể gói là bắt buộc"
     },
     "rentPrice": {
-      "nonNegative": "Giá thuê phải không âm"
+      "required": "Giá thuê là bắt buộc và phải lớn hơn 0",
+      "nonNegative": "Giá thuê phải không âm",
+      "greaterThanZero": "Giá thuê phải lớn hơn 0"
     },
     "salePrice": {
-      "nonNegative": "Giá bán phải không âm"
+      "required": "Giá bán là bắt buộc và phải lớn hơn 0",
+      "nonNegative": "Giá bán phải không âm",
+      "greaterThanZero": "Giá bán phải lớn hơn 0"
     },
     "costPrice": {
       "nonNegative": "Giá vốn phải không âm"
-    },
-    "deposit": {
-      "nonNegative": "Đặt cọc phải không âm"
     },
     "stock": {
       "nonNegative": "Tồn kho phải không âm"
     },
     "totalStock": {
-      "nonNegative": "Tổng tồn kho phải không âm"
+      "required": "Tồn kho là bắt buộc và phải lớn hơn 0",
+      "nonNegative": "Tổng tồn kho phải không âm",
+      "greaterThanZero": "Tồn kho phải lớn hơn 0"
     },
     "basePrice": {
       "nonNegative": "Giá cơ bản phải không âm"
@@ -132,7 +150,19 @@
       "range": "Giảm giá phải nằm trong khoảng 0 đến 100"
     },
     "durationConfig": {
-      "required": "Cấu hình thời gian là bắt buộc và phải là JSON hợp lệ cho loại định giá HOURLY và DAILY"
+      "required": "Cấu hình thời gian là bắt buộc và phải là JSON hợp lệ cho loại định giá HOURLY và DAILY",
+      "requiredForPricingType": "Cấu hình thời gian là bắt buộc cho loại định giá HOURLY và DAILY",
+      "minDurationRequired": "Thời gian tối thiểu là bắt buộc và phải lớn hơn 0",
+      "maxDurationRequired": "Thời gian tối đa là bắt buộc và phải lớn hơn 0",
+      "minMustBeLessThanMax": "Thời gian tối thiểu phải nhỏ hơn hoặc bằng thời gian tối đa",
+      "defaultDurationRequired": "Thời gian mặc định là bắt buộc và phải lớn hơn 0",
+      "defaultMustBeAtLeastMin": "Thời gian mặc định phải ít nhất bằng thời gian tối thiểu",
+      "defaultMustNotExceedMax": "Thời gian mặc định không được vượt quá thời gian tối đa"
+    },
+    "outletStock": {
+      "required": "Tồn kho cửa hàng là bắt buộc. Vui lòng chỉ định mức tồn kho cho ít nhất một cửa hàng.",
+      "noOutletsAvailable": "Không có cửa hàng nào. Vui lòng liên hệ quản trị viên để thiết lập cửa hàng.",
+      "cannotBeNegative": "Giá trị tồn kho cửa hàng không thể là số âm"
     },
     "endDate": {
       "afterStart": "Ngày kết thúc phải sau ngày bắt đầu"

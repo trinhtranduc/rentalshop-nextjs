@@ -44,7 +44,7 @@ export const DEFAULT_CURRENCY_SETTINGS: CurrencySettings = {
   currentCurrency: 'USD', // Default to USD
   baseCurrency: 'USD',
   availableCurrencies: DEFAULT_CURRENCIES,
-  showSymbol: true,
+  showSymbol: false,
   showCode: false,
 };
 

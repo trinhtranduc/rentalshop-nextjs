@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Card, CardContent, Button } from '@rentalshop/ui';
+import { Button } from '@rentalshop/ui';
 import type { User } from '@rentalshop/types';
 import { useUsersTranslations } from '@rentalshop/hooks';
 
@@ -65,84 +65,80 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
   };
 
   return (
-    <Card>
-      <CardContent className="p-6 space-y-6">
+    <div className="space-y-4">
         {/* Personal Information */}
         <div>
-          <h3 className="text-sm font-medium text-gray-900 mb-4">{t('userInformation')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.name')}</label>
-              <p className="text-gray-900 font-medium">
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.name')}</label>
+            <p className="text-sm font-semibold">
                 {`${user.firstName || ''} ${user.lastName || ''}`.trim() || t('messages.na')}
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.email')}</label>
-              <p className="text-gray-900">{user.email}</p>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.email')}</label>
+            <p className="text-sm">{user.email}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.phone')}</label>
-              <p className="text-gray-900">{user.phone || t('messages.na')}</p>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.phone')}</label>
+            <p className="text-sm">{user.phone || t('messages.na')}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.role')}</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.role')}</label>
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeStyle(user.role)}`}>
                 {getRoleDisplayName(user.role)}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.status')}</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.status')}</label>
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(user.isActive)}`}>
                 {getStatusDisplayName(user.isActive)}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.id')}</label>
-              <p className="text-gray-500 text-sm font-mono">{user.id}</p>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.id')}</label>
+            <p className="text-sm text-muted-foreground font-mono">{user.id}</p>
             </div>
           </div>
         </div>
 
         {/* Outlet Information */}
         {user.outlet && (
-          <div className="border-t pt-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-4">{t('outletInformation')}</h3>
-            <div className="border rounded-lg p-4 bg-gray-50">
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('outletInformation')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.outletName')}</label>
-                  <p className="text-gray-900 text-base">{user.outlet.name}</p>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.outletName')}</label>
+              <p className="text-sm font-semibold">{user.outlet.name}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.outletId')}</label>
-                  <p className="text-gray-500 text-sm font-mono">{user.outlet.id}</p>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.outletId')}</label>
+              <p className="text-sm text-muted-foreground font-mono">{user.outlet.id}</p>
                 </div>
                 {user.outlet.merchant && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.merchantName')}</label>
-                      <p className="text-gray-900 text-base">{user.outlet.merchant.name}</p>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.merchantName')}</label>
+                  <p className="text-sm font-semibold">{user.outlet.merchant.name}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.merchantId')}</label>
-                      <p className="text-gray-500 text-sm font-mono">{user.outlet.merchant.id}</p>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.merchantId')}</label>
+                  <p className="text-sm text-muted-foreground font-mono">{user.outlet.merchant.id}</p>
                     </div>
                   </>
                 )}
-              </div>
             </div>
           </div>
         )}
 
         {/* Account Actions - Only show if actions are enabled */}
         {showActions && (
-          <div className="border-t pt-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-4">{t('accountActions')}</h3>
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('accountActions')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {onChangePassword && (
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">{t('passwordManagement')}</h4>
+                <h4 className="font-medium text-text-primary">{t('passwordManagement')}</h4>
                   <Button
                     variant="outline"
                     onClick={onChangePassword}
@@ -151,20 +147,20 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
                   >
                     🔑 {t('actions.changePassword')}
                   </Button>
-                  <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                     {t('messages.allowChangePassword')}
                   </p>
                 </div>
               )}
               
               <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">{t('accountStatus')}</h4>
+              <h4 className="font-medium text-text-primary">{t('accountStatus')}</h4>
                 {user.isActive ? (
                   onDeactivate && (
                     <Button
                       variant="outline"
                       onClick={onDeactivate}
-                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-orange-600 border-orange-200 hover:bg-orange-50 h-auto"
+                    className="w-full flex items-center justify-start px-3 py-2 text-sm text-action-warning border-action-warning/20 hover:bg-action-warning/10 h-auto"
                       disabled={isLoading || user.role === 'ADMIN'}
                     >
                       {isLoading ? `⏳ ${t('actions.deactivating')}` : `❌ ${t('actions.deactivateAccount')}`}
@@ -175,21 +171,21 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
                     <Button
                       variant="outline"
                       onClick={onActivate}
-                      className="w-full flex items-center justify-start px-3 py-2 text-sm text-green-600 border-green-200 hover:bg-green-50 h-auto"
+                    className="w-full flex items-center justify-start px-3 py-2 text-sm text-action-success border-action-success/20 hover:bg-action-success/10 h-auto"
                       disabled={isLoading}
                     >
                       {isLoading ? `⏳ ${t('actions.activating')}` : `✅ ${t('actions.activateAccount')}`}
                     </Button>
                   )
                 )}
-                <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                   {user.isActive 
                     ? t('messages.deactivateToPrevent')
                     : t('messages.activateToRestore')
                   }
                 </p>
                 {user.role === 'ADMIN' && (
-                  <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                <div className="flex items-center gap-2 text-xs text-action-warning bg-action-warning/10 p-2 rounded">
                     ⚠️ {t('messages.cannotDeactivateAdminShort')}
                   </div>
                 )}
@@ -197,20 +193,20 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
               
               {onDelete && (
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">{t('dangerZone')}</h4>
+                <h4 className="font-medium text-text-primary">{t('dangerZone')}</h4>
                   <Button
                     variant="outline"
                     onClick={onDelete}
-                    className="w-full flex items-center justify-start px-3 py-2 text-sm text-red-600 border-red-200 hover:bg-red-50 h-auto"
+                  className="w-full flex items-center justify-start px-3 py-2 text-sm text-action-danger border-action-danger/20 hover:bg-action-danger/10 h-auto"
                     disabled={isLoading || user.role === 'ADMIN'}
                   >
                     {isLoading ? `⏳ ${t('actions.deleting')}` : `🗑️ ${t('actions.deleteAccount')}`}
                   </Button>
-                  <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                     {t('messages.permanentlyDeleteShort')}
                   </p>
                   {user.role === 'ADMIN' && (
-                    <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                  <div className="flex items-center gap-2 text-xs text-action-warning bg-action-warning/10 p-2 rounded">
                       ⚠️ {t('messages.cannotDeleteAdmin')}
                     </div>
                   )}
@@ -219,7 +215,6 @@ export const UserDisplayInfo: React.FC<UserDisplayInfoProps> = ({
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 };

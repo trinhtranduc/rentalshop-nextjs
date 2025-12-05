@@ -13,10 +13,53 @@ import type {
   OutletSearchFilter,
   OutletSearchResponse 
 } from '@rentalshop/types';
+import { removeVietnameseDiacritics } from '@rentalshop/utils';
 
 // ============================================================================
 // OUTLET SEARCH FUNCTIONS
 // ============================================================================
+
+/**
+ * Get default bank account for outlet
+ */
+export async function getDefaultBankAccount(outletId: number): Promise<any | null> {
+  const bankAccount = await prisma.bankAccount.findFirst({
+    where: {
+      outletId,
+      isDefault: true,
+      isActive: true
+    },
+    select: {
+      id: true,
+      accountHolderName: true,
+      accountNumber: true,
+      bankName: true,
+      bankCode: true,
+      branch: true,
+      isDefault: true,
+      qrCode: true,
+      notes: true,
+      isActive: true,
+      outletId: true
+    }
+  });
+
+  if (!bankAccount) return null;
+
+  return {
+    id: bankAccount.id,
+    accountHolderName: bankAccount.accountHolderName,
+    accountNumber: bankAccount.accountNumber,
+    bankName: bankAccount.bankName,
+    bankCode: bankAccount.bankCode || undefined,
+    branch: bankAccount.branch || undefined,
+    isDefault: bankAccount.isDefault,
+    qrCode: bankAccount.qrCode || undefined,
+    notes: bankAccount.notes || undefined,
+    isActive: bankAccount.isActive,
+    outletId: bankAccount.outletId
+  };
+}
 
 /**
  * Get default outlet for merchant
@@ -102,11 +145,27 @@ export async function searchOutlets(filters: OutletSearchFilter): Promise<Outlet
   }
 
   if (search) {
-    where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { address: { contains: search, mode: 'insensitive' } },
-      { description: { contains: search, mode: 'insensitive' } }
+    const searchTerm = search.trim();
+    // Normalize Vietnamese text to support search without diacritics
+    const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+    
+    // Search with both original and normalized terms to support diacritics-insensitive search
+    const searchConditions: any[] = [
+      { name: { contains: searchTerm, mode: 'insensitive' } },
+      { address: { contains: searchTerm, mode: 'insensitive' } },
+      { description: { contains: searchTerm, mode: 'insensitive' } }
     ];
+    
+    // Add normalized search if different from original
+    if (normalizedTerm !== searchTerm) {
+      searchConditions.push(
+        { name: { contains: normalizedTerm, mode: 'insensitive' } },
+        { address: { contains: normalizedTerm, mode: 'insensitive' } },
+        { description: { contains: normalizedTerm, mode: 'insensitive' } }
+      );
+    }
+    
+    where.OR = searchConditions;
   }
 
   // Get total count
@@ -538,16 +597,26 @@ export const simplifiedOutlets = {
     if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
     if (whereFilters.status) where.status = whereFilters.status;
     
-    // Text search across multiple fields - ONLY search by name
+    // Text search across multiple fields - ONLY search by name (diacritics-insensitive)
     const searchTerm = whereFilters.search?.trim();
     console.log('🔍 DB outlet.search - searchTerm:', searchTerm, 'length:', searchTerm?.length);
     
     if (searchTerm && searchTerm.length > 0) {
-      where.name = { 
-        contains: searchTerm, 
-        mode: 'insensitive' 
-      };
-      console.log('✅ DB outlet.search - Added name filter:', where.name);
+      // Normalize Vietnamese text to support search without diacritics
+      const normalizedTerm = removeVietnameseDiacritics(searchTerm);
+      
+      // Search with both original and normalized terms
+      const nameConditions: any[] = [
+        { name: { contains: searchTerm, mode: 'insensitive' } }
+      ];
+      
+      // Add normalized search if different from original
+      if (normalizedTerm !== searchTerm) {
+        nameConditions.push({ name: { contains: normalizedTerm, mode: 'insensitive' } });
+      }
+      
+      where.OR = nameConditions;
+      console.log('✅ DB outlet.search - Added name filter (with diacritics support):', where.OR);
     } else {
       console.log('⚠️ DB outlet.search - No search term, will return all outlets for this merchant');
     }
@@ -555,8 +624,30 @@ export const simplifiedOutlets = {
     console.log('🔍 DB outlet.search - Final where clause:', JSON.stringify(where, null, 2));
 
     // Specific field filters (not used in current implementation)
-    if (whereFilters.name) where.name = { contains: whereFilters.name, mode: 'insensitive' };
-    if (whereFilters.address) where.address = { contains: whereFilters.address, mode: 'insensitive' };
+    if (whereFilters.name) {
+      const normalizedName = removeVietnameseDiacritics(whereFilters.name);
+      const nameConditions: any[] = [
+        { name: { contains: whereFilters.name, mode: 'insensitive' } }
+      ];
+      if (normalizedName !== whereFilters.name) {
+        nameConditions.push({ name: { contains: normalizedName, mode: 'insensitive' } });
+      }
+      where.OR = nameConditions;
+    }
+    // Field filters with diacritics-insensitive support for text fields
+    if (whereFilters.address) {
+      const normalized = removeVietnameseDiacritics(whereFilters.address);
+      if (normalized !== whereFilters.address) {
+        const existingOR = where.OR || [];
+        where.OR = [
+          ...existingOR,
+          { address: { contains: whereFilters.address, mode: 'insensitive' } },
+          { address: { contains: normalized, mode: 'insensitive' } }
+        ];
+      } else {
+        where.address = { contains: whereFilters.address, mode: 'insensitive' };
+      }
+    }
     if (whereFilters.phone) where.phone = { contains: whereFilters.phone, mode: 'insensitive' };
 
     // Build orderBy based on sortBy and sortOrder

@@ -1,45 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent,
-  Button,
-  Badge,
-  Input,
-  Label,
-  Textarea,
-  Skeleton,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  ConfirmationDialog
-} from '@rentalshop/ui';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
-import { 
-  Info, 
-  Package, 
-  DollarSign, 
-  Settings, 
-  Edit3, 
-  Save, 
-  X,
-  Calendar,
-  User,
-  MapPin,
-  Phone,
-  Mail,
-  RotateCcw,
-  Printer,
-  Edit,
-  Calculator
-} from 'lucide-react';
-import { useFormatCurrency, useToast } from '@rentalshop/ui';
-import { getOrderStatusClassName, ORDER_TYPE_COLORS, ORDER_TYPES, ORDER_STATUSES } from '@rentalshop/constants';
+import { Badge, Skeleton, ConfirmationDialog, Card, CardHeader, CardContent } from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui';
+import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { CollectionReturnModal } from './components/CollectionReturnModal';
@@ -49,7 +13,6 @@ import { OrderSummaryCard } from './components/OrderSummaryCard';
 import { OrderSettingsCard } from './components/OrderSettingsCard';
 import { OrderActionsSection } from './components/OrderActionsSection';
 import { calculateCollectionTotal } from './utils';
-import { ordersApi } from '@rentalshop/utils';
 
 // Define OrderDetailProps interface locally
 interface OrderDetailProps {
@@ -57,8 +20,8 @@ interface OrderDetailProps {
   onEdit?: (order: OrderWithDetails) => void;
   onCancel?: (order: OrderWithDetails) => void;
   onStatusChange?: (orderId: number, status: string) => void;
-  onPickup?: (orderId: number, data: any) => void;
-  onReturn?: (orderId: number, data: any) => void;
+  onPickup?: (orderId: number, data: any) => Promise<void> | void; // Can be async
+  onReturn?: (orderId: number, data: any) => Promise<void> | void; // Can be async
   onSaveSettings?: (settings: SettingsForm) => Promise<void>;
   onPrint?: () => void; // Print handler - opens receipt preview modal
   loading?: boolean;
@@ -232,7 +195,6 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   order,
   onEdit,
   onCancel,
-  onStatusChange,
   onPickup,
   onReturn,
   onSaveSettings,
@@ -240,9 +202,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   loading = false,
   showActions = true
 }) => {
-  // Use formatCurrency hook - automatically uses merchant's currency
-  const formatMoney = useFormatCurrency();
-  const { toastSuccess, toastError, toastInfo, removeToast } = useToast();
+  const { toastSuccess, toastError, toastInfo } = useToast();
   const t = useOrderTranslations();
   
   // Predefined collateral types
@@ -344,78 +304,24 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   // FIELD ENABLEMENT LOGIC
   // ============================================================================
   
-  // Damage fee enablement logic
-  const isDamageFeeEnabled = () => {
-    if (isSaleOrder) return false; // SALE orders don't have damage fees
+  // Helper to check if field is enabled for RENT orders
+  const isRentFieldEnabled = (field: 'damageFee' | 'securityDeposit' | 'collateral') => {
+    if (isSaleOrder) return false;
+    if (!isRentOrder) return false;
     
-    if (isRentOrder) {
-      switch (currentStatus) {
-        case 'RESERVED':
-          return false; // Disable for reserved orders
-        case 'PICKUPED':
-        case 'RETURNED':
-          return true; // Enable for picked up and returned orders
-        default:
-          return false;
-      }
+    const enabledStatuses = ['RESERVED', 'PICKUPED', 'RETURNED'];
+    if (field === 'damageFee') {
+      // Damage fee only enabled for PICKUPED and RETURNED
+      return currentStatus === 'PICKUPED' || currentStatus === 'RETURNED';
     }
-    
-    return false;
+    // Security deposit and collateral enabled for all RENT statuses
+    return enabledStatuses.includes(currentStatus);
   };
   
-  // Security deposit enablement logic
-  const isSecurityDepositEnabled = () => {
-    if (isSaleOrder) return false; // SALE orders don't have security deposits
-    
-    if (isRentOrder) {
-      switch (currentStatus) {
-        case 'RESERVED':
-        case 'PICKUPED':
-        case 'RETURNED':
-          return true; // Always enable for RENT orders
-        default:
-          return false;
-      }
-    }
-    
-    return false;
-  };
-  
-  // Collateral type enablement logic
-  const isCollateralTypeEnabled = () => {
-    if (isSaleOrder) return false; // SALE orders don't have collateral
-    
-    if (isRentOrder) {
-      switch (currentStatus) {
-        case 'RESERVED':
-        case 'PICKUPED':
-        case 'RETURNED':
-          return true; // Always enable for RENT orders
-        default:
-          return false;
-      }
-    }
-    
-    return false;
-  };
-  
-  // Collateral details enablement logic
-  const isCollateralDetailsEnabled = () => {
-    if (isSaleOrder) return false; // SALE orders don't have collateral
-    
-    if (isRentOrder) {
-      switch (currentStatus) {
-        case 'RESERVED':
-        case 'PICKUPED':
-        case 'RETURNED':
-          return true; // Always enable for RENT orders
-        default:
-          return false;
-      }
-    }
-    
-    return false;
-  };
+  const isDamageFeeEnabled = () => isRentFieldEnabled('damageFee');
+  const isSecurityDepositEnabled = () => isRentFieldEnabled('securityDeposit');
+  const isCollateralTypeEnabled = () => isRentFieldEnabled('collateral');
+  const isCollateralDetailsEnabled = () => isRentFieldEnabled('collateral');
 
   const handleSettingsChange = (updates: Partial<SettingsForm>) => {
     setTempSettings(prev => ({ ...prev, ...updates }));
@@ -426,15 +332,17 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const handleSaveSettings = async () => {
     if (onSaveSettings) {
       setIsSavingSettings(true);
-      toastInfo('Saving...', 'Please wait while settings are being saved');
+      // Removed toastInfo - only show success/error, not loading state
       
       try {
         await onSaveSettings(tempSettings);
-        toastSuccess(t('detail.settingsSaved'), t('detail.settingsSavedMessage'));
+        // Success toast will be shown by parent component (page.tsx)
+        // Don't duplicate toast here
         setSettingsForm(tempSettings);
         setIsEditingSettings(false);
       } catch (error) {
-        toastError(t('detail.saveFailed'), t('detail.saveFailedMessage'));
+        // Error toast will be shown by parent component (page.tsx)
+        // Don't duplicate toast here
       } finally {
         setIsSavingSettings(false);
       }
@@ -452,32 +360,25 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   };
 
   const handlePrintOrder = () => {
-    // If onPrint prop is provided, use it (opens receipt preview modal)
-    // Otherwise, fallback to window.print()
     if (onPrint) {
       onPrint();
     } else {
-    try {
       window.print();
-      // No toast for print - this is a browser action, not an API call
-    } catch (error) {
-      toastError('Print Error', 'Failed to start printing. Please try again.');
-      }
     }
   };
 
   const handlePickupOrder = async () => {
+    if (!onPickup) return;
+    
     try {
       setIsPickupLoading(true);
-      await ordersApi.pickupOrder(order.id);
-      toastSuccess('Pickup Successful', 'Order pickup has been processed.');
-      onStatusChange && onStatusChange(order.id, 'PICKUPED');
-      setIsCollectionModalOpen(false); // Close modal after successful pickup
-      
-      // Trigger page refresh to update order data
-      if (typeof window !== 'undefined') {
-        window.location.reload();
-      }
+      await onPickup(order.id, {
+        order_status: 'PICKUPED',
+        bail_amount: tempSettings.securityDeposit || 0,
+        material: tempSettings.collateralType || '',
+        notes: tempSettings.notes || ''
+      });
+      setIsCollectionModalOpen(false);
     } catch (error) {
       toastError('Pickup Failed', 'Failed to process order pickup. Please try again.');
     } finally {
@@ -486,17 +387,16 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   };
 
   const handleReturnOrder = async () => {
+    if (!onReturn) return;
+    
     try {
       setIsReturnLoading(true);
-      await ordersApi.returnOrder(order.id);
-      toastSuccess('Return Successful', 'Order return has been processed.');
-      onStatusChange && onStatusChange(order.id, 'RETURNED');
-      setIsReturnModalOpen(false); // Close modal after successful return
-      
-      // Trigger page refresh to update order data
-      if (typeof window !== 'undefined') {
-        window.location.reload();
-      }
+      await onReturn(order.id, {
+        order_status: 'RETURNED',
+        notes: tempSettings.notes || '',
+        damage_fee: tempSettings.damageFee || 0
+      });
+      setIsReturnModalOpen(false);
     } catch (error) {
       toastError('Return Failed', 'Failed to process order return. Please try again.');
     } finally {
@@ -509,21 +409,16 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   };
 
   const handleCancelOrder = async () => {
+    if (!onCancel) return;
+    
     try {
       setIsCancelLoading(true);
-      await ordersApi.cancelOrder(order.id);
-      toastSuccess('Cancellation Successful', 'Order has been cancelled.');
-      onStatusChange && onStatusChange(order.id, 'CANCELLED');
-      
-      // Trigger page refresh to update order data
-      if (typeof window !== 'undefined') {
-        window.location.reload();
-      }
+      await onCancel(order);
+      setShowCancelConfirmDialog(false);
     } catch (error) {
       toastError('Cancellation Failed', 'Failed to cancel order. Please try again.');
     } finally {
       setIsCancelLoading(false);
-      setShowCancelConfirmDialog(false);
     }
   };
 
@@ -538,21 +433,8 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   };
 
   const handleEditOrder = () => {
-    if (onEdit) {
-      try {
-        onEdit(order);
-        // No toast for entering edit mode - this is just a UI state change
-      } catch (error) {
-        toastError('Edit Failed', 'Failed to enter edit mode. Please try again.');
-      }
-    }
-  };
-
-  // Enhanced edit function that includes settings
-  const handleEditOrderWithSettings = () => {
-    if (onEdit) {
-      try {
-        // Create an enhanced order object with current settings
+    if (!onEdit) return;
+    
         const enhancedOrder = {
           ...order,
           damageFee: tempSettings.damageFee,
@@ -561,13 +443,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
           collateralDetails: tempSettings.collateralDetails,
           notes: tempSettings.notes
         };
-        
         onEdit(enhancedOrder);
-        // No toast for entering edit mode - this is just a UI state change
-      } catch (error) {
-        toastError('Edit Failed', 'Failed to enter edit mode. Please try again.');
-      }
-    }
   };
 
   return (
@@ -651,17 +527,17 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         {showActions && (
           <OrderActionsSection
             order={order}
-            canEdit={canEdit}
-            canCancel={canCancel}
-            canPickup={canPickup}
-            canReturn={canReturn}
+            canEdit={!!canEdit}
+            canCancel={!!canCancel}
+            canPickup={!!canPickup}
+            canReturn={!!canReturn}
             canPrint={canPrint}
             isRentOrder={isRentOrder}
             isSaleOrder={isSaleOrder}
             isPickupLoading={isPickupLoading}
             isReturnLoading={isReturnLoading}
             isCancelLoading={isCancelLoading}
-            onEdit={handleEditOrderWithSettings}
+            onEdit={handleEditOrder}
             onCancel={handleCancelOrderClick}
             onPickup={handlePickupClick}
             onReturn={handleReturnClick}

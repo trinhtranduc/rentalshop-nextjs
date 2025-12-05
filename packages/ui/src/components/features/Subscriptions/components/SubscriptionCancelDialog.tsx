@@ -72,18 +72,19 @@ export function SubscriptionCancelDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-action-danger" />
             Cancel Subscription
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="mt-1">
             Cancel subscription for {subscription.merchant?.name || 'Unknown Merchant'}. 
             This action will stop auto-renewal but preserve all data.
           </DialogDescription>
         </DialogHeader>
 
+        <div className="px-6 py-4 overflow-y-auto">
         <div className="space-y-6">
           {/* Subscription Summary */}
           <Card>
@@ -93,21 +94,21 @@ export function SubscriptionCancelDialog({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">Plan</Label>
-                  <p className="text-sm font-medium">{subscription.plan?.name || 'Unknown Plan'}</p>
+                  <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Plan</Label>
+                  <p className="text-sm font-semibold">{subscription.plan?.name || 'Unknown Plan'}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">Amount</Label>
-                  <p className="text-sm font-medium">
+                  <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Amount</Label>
+                  <p className="text-sm font-semibold">
                     {formatCurrency(subscription.amount, subscription.currency)}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">Status</Label>
+                  <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</Label>
                   <p className="text-sm">{subscription.status}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">End Date</Label>
+                  <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">End Date</Label>
                   <p className="text-sm">
                     {subscription.endDate ? formatDate(subscription.endDate) : 'No end date'}
                   </p>
@@ -146,7 +147,7 @@ export function SubscriptionCancelDialog({
                 id="reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full mt-1 p-2 border border-border rounded-md focus:ring-2 focus:ring-action-primary focus:border-transparent"
               >
                 <option value="">Select a reason...</option>
                 {CANCELLATION_REASONS.map((r) => (
@@ -177,7 +178,7 @@ export function SubscriptionCancelDialog({
             <CardHeader>
               <CardTitle className="text-sm">Additional Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm text-gray-600">
+            <CardContent className="space-y-2 text-sm text-text-secondary">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 <span>
@@ -200,7 +201,8 @@ export function SubscriptionCancelDialog({
           </Card>
         </div>
 
-        <DialogFooter>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
           <Button variant="outline" onClick={handleClose} disabled={loading}>
             Keep Subscription
           </Button>
@@ -211,7 +213,8 @@ export function SubscriptionCancelDialog({
           >
             {loading ? 'Cancelling...' : 'Cancel Subscription'}
           </Button>
-        </DialogFooter>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -158,19 +158,17 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div>
-            <DialogTitle className="text-xl font-semibold">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold">
               Customer Orders
             </DialogTitle>
-            <DialogDescription className="text-sm text-gray-600 mt-1">
+          <DialogDescription className="mt-1">
               View all orders for {customer.firstName} {customer.lastName}
             </DialogDescription>
-          </div>
         </DialogHeader>
 
-        <div className="mt-6">
+        <div className="px-6 py-4 overflow-y-auto">
           {/* Customer Summary */}
           <Card className="mb-6">
             <CardHeader className="pb-3">
@@ -179,26 +177,26 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-gray-500" />
+                  <User className="w-5 h-5 text-text-tertiary" />
                   <div>
                     <p className="font-medium">{customer.firstName} {customer.lastName}</p>
-                    <p className="text-sm text-gray-500">{customer.email}</p>
+                    <p className="text-sm text-muted-foreground">{customer.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Package className="w-5 h-5 text-gray-500" />
+                  <Package className="w-5 h-5 text-text-tertiary" />
                   <div>
                     <p className="font-medium">{orders.length} Orders</p>
-                    <p className="text-sm text-gray-500">Total Orders</p>
+                    <p className="text-sm text-muted-foreground">Total Orders</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-gray-500" />
+                  <DollarSign className="w-5 h-5 text-text-tertiary" />
                   <div>
                     <p className="font-medium">
                       {formatCurrency(orders.reduce((sum, order) => sum + order.totalAmount, 0))}
                     </p>
-                    <p className="text-sm text-gray-500">Total Spent</p>
+                    <p className="text-sm text-muted-foreground">Total Spent</p>
                   </div>
                 </div>
               </div>
@@ -209,7 +207,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
           {loading ? (
             <Card>
               <CardContent className="text-center py-12">
-                <div className="text-gray-500">
+                <div className="text-text-tertiary">
                   <Package className="w-8 h-8 mx-auto mb-2 animate-spin" />
                   <p>Loading orders...</p>
                 </div>
@@ -218,7 +216,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
           ) : error ? (
             <Card>
               <CardContent className="text-center py-12">
-                <div className="text-red-500">
+                <div className="text-action-danger">
                   <Package className="w-8 h-8 mx-auto mb-2" />
                   <p>{error}</p>
                 </div>
@@ -227,7 +225,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
           ) : orders.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
-                <div className="text-gray-500">
+                <div className="text-text-tertiary">
                   <Package className="w-8 h-8 mx-auto mb-2" />
                   <p>{t('messages.noOrdersForCustomer')}</p>
                 </div>
@@ -253,21 +251,21 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-gray-500" />
-                            <span className="text-gray-600">{order.outletName}</span>
+                            <MapPin className="w-4 h-4 text-text-tertiary" />
+                            <span className="text-text-secondary">{order.outletName}</span>
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-gray-500" />
-                            <span className="text-gray-600">
+                            <Calendar className="w-4 h-4 text-text-tertiary" />
+                            <span className="text-text-secondary">
                               Created: {formatDate(order.createdAt)}
                             </span>
                           </div>
                           
                           {order.pickupPlanAt && (
                             <div className="flex items-center gap-2">
-                              <Package className="w-4 h-4 text-gray-500" />
-                              <span className="text-gray-600">
+                              <Package className="w-4 h-4 text-text-tertiary" />
+                              <span className="text-text-secondary">
                                 Pickup: {formatDate(order.pickupPlanAt)}
                               </span>
                             </div>
@@ -275,8 +273,8 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
                           
                           {order.returnPlanAt && (
                             <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-gray-500" />
-                              <span className="text-gray-600">
+                              <Clock className="w-4 h-4 text-text-tertiary" />
+                              <span className="text-text-secondary">
                                 Return: {formatDate(order.returnPlanAt)}
                               </span>
                             </div>
@@ -285,11 +283,11 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
                       </div>
                       
                       <div className="text-right ml-4">
-                        <div className="text-lg font-semibold text-gray-900">
+                        <div className="text-lg font-semibold text-text-primary">
                           {formatCurrency(order.totalAmount)}
                         </div>
                         {order.depositAmount > 0 && (
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             Deposit: {formatCurrency(order.depositAmount)}
                           </div>
                         )}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -24,20 +24,23 @@ export async function GET(
   
   return withPermissions(['users.view'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
+      if (isNaN(userPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
       const foundUser = await db.users.findById(userPublicId);
       if (!foundUser) {
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
+
+      // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
 
       return NextResponse.json({ success: true, data: foundUser });
     } catch (error) {
@@ -70,20 +73,23 @@ export async function PUT(
   
   return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
+      if (isNaN(userPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
       const existing = await db.users.findById(userPublicId);
       if (!existing) {
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
+
+      // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
 
       const body = await request.json();
       const updatedUser = await db.users.update(userPublicId, body);
@@ -119,25 +125,37 @@ export async function DELETE(
   
   return withPermissions(['users.manage'])(async (request, { user, userScope }) => {
     try {
-      
-      if (isNaN(merchantPublicId) || isNaN(userPublicId)) {
+      if (isNaN(userPublicId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
       }
 
-      const merchant = await db.merchants.findById(merchantPublicId);
-      if (!merchant) {
-        return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      // Validate merchant access (format, exists, association, scope)
+      const validation = await validateMerchantAccess(merchantPublicId, user, userScope);
+      if (!validation.valid) {
+        return validation.error!;
       }
+      const merchant = validation.merchant!;
 
       const existing = await db.users.findById(userPublicId);
       if (!existing) {
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
-      // Soft delete by setting isActive to false
-      const deletedUser = await db.users.update(userPublicId, { isActive: false });
+      // Note: Hard delete doesn't need to check deletedAt since user will be permanently removed
 
-      return NextResponse.json({ success: true, data: deletedUser });
+      // Invalidate all user sessions first
+      await db.sessions.invalidateAllUserSessions(userPublicId);
+      console.log(`🗑️ Invalidated all sessions for user ${userPublicId}`);
+
+      // Hard delete user (orders.createdById will remain with user's ID as historical reference)
+      const deletedUser = await db.users.delete(userPublicId);
+
+      return NextResponse.json({
+        success: true,
+        code: 'USER_DELETED_SUCCESS',
+        message: 'User deleted successfully',
+        data: deletedUser
+      });
     } catch (error) {
       console.error('Error deleting user:', error);
       

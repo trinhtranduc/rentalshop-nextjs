@@ -34,10 +34,13 @@
     "railway:reset": "yarn db:reset-railway",
     "db:check-sync": "./scripts/check-db-sync.sh",
     "db:check-sync:dev": "./scripts/check-db-sync.sh --service dev-apis",
-    "db:check-sync:prod": "./scripts/check-db-sync.sh --service apis"
+    "db:check-sync:prod": "./scripts/check-db-sync.sh --service apis",
+    "audit:error-translations": "node scripts/audit-error-translations.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/qrcode.react": "^3.0.0",
+    "@types/xlsx": "^0.0.36",
     "tsup": "^8.0.0",
     "turbo": "^1.10.0",
     "typescript": "^5.0.0"
@@ -48,6 +51,8 @@
     "@prisma/engines": "^6.16.2",
     "bcryptjs": "^3.0.2",
     "node-fetch": "^3.3.2",
-    "prisma": "6.16.2"
+    "prisma": "6.16.2",
+    "qrcode.react": "^4.2.0",
+    "xlsx": "^0.18.5"
   }
 }

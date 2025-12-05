@@ -15,6 +15,7 @@ import { simplifiedPlans } from './plan';
 import { simplifiedSubscriptions } from './subscription';
 import { simplifiedSubscriptionActivities } from './subscription-activity';
 import { simplifiedMerchants } from './merchant';
+import { simplifiedPlanLimitAddons } from './plan-limit-addon';
 import { simplifiedOrderNumbers } from './order-number-generator';
 import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
@@ -151,6 +152,11 @@ const db = {
   subscriptionActivities: simplifiedSubscriptionActivities,
 
   // ============================================================================
+  // PLAN LIMIT ADDON OPERATIONS
+  // ============================================================================
+  planLimitAddons: simplifiedPlanLimitAddons,
+
+  // ============================================================================
   // SESSION OPERATIONS (Single Session Enforcement)
   // ============================================================================
   sessions,
@@ -229,7 +235,7 @@ export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscript
 export { AuditLogger, getAuditLogger, extractAuditContext } from './audit';
 export type { AuditContext } from './audit';
 export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number-generator';
-export { getDefaultOutlet } from './outlet';
+export { getDefaultOutlet, getDefaultBankAccount } from './outlet';
 export type { OrderNumberFormat } from './order-number-generator';
 export { searchOrders } from './order'; // Legacy order search function
 

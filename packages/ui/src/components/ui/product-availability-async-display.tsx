@@ -8,6 +8,11 @@ interface AvailabilityStatus {
   status: string;
   text: string;
   color: string;
+  // Stock information for detailed display
+  totalStock?: number;
+  totalAvailableStock?: number;
+  totalRenting?: number;
+  effectivelyAvailable?: number;
 }
 
 interface ProductAvailabilityAsyncDisplayProps {
@@ -88,20 +93,41 @@ export const ProductAvailabilityAsyncDisplay: React.FC<ProductAvailabilityAsyncD
     return null;
   }
 
+  // Show detailed stock information when available (single line)
+  const showStockInfo = availability.totalStock !== undefined;
+  const effectivelyAvailable = availability.effectivelyAvailable ?? availability.totalAvailableStock ?? 0;
+
+  // Get status icon
+  const statusIcon = availability.status === 'date-conflict' ? '⚠️' :
+                     availability.status === 'out-of-stock' ? '🚫' :
+                     availability.status === 'unavailable' ? '⚠️' :
+                     availability.status === 'available' ? '✅' : '';
+
   return (
-    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${availability.color}`}>
+    <div className="text-sm flex items-center gap-2 flex-wrap">
+      {/* Stock Information and Badge on same line */}
+      {showStockInfo ? (
+        <>
+          <span className="text-gray-600"><span className="font-semibold">Kho:</span> {availability.totalStock}</span>
+          <span className="text-gray-400">|</span>
+          <span className="text-gray-600">
+            <span className="font-semibold">Có sẵn:</span>{' '}
+            <span className={effectivelyAvailable > 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+              {effectivelyAvailable}
+            </span>
+            {effectivelyAvailable === 0 && <span className="text-red-600 font-semibold"> (Hết)</span>}
+          </span>
+          <span className="text-gray-400">|</span>
+          <span className={`inline-flex items-center px-2 py-1 rounded-full font-semibold text-sm ${availability.color}`}>
+            {availability.text}
+            {statusIcon && <span className="ml-1">{statusIcon}</span>}
+          </span>
+        </>
+      ) : (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full font-semibold text-sm ${availability.color}`}>
       {availability.text}
-      {availability.status === 'date-conflict' && (
-        <span className="ml-1">⚠️</span>
-      )}
-      {availability.status === 'out-of-stock' && (
-        <span className="ml-1">🚫</span>
-      )}
-      {availability.status === 'unavailable' && (
-        <span className="ml-1">⚠️</span>
-      )}
-      {availability.status === 'available' && (
-        <span className="ml-1">✅</span>
+          {statusIcon && <span className="ml-1">{statusIcon}</span>}
+        </span>
       )}
     </div>
   );

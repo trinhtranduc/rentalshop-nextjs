@@ -129,10 +129,33 @@ export const filterCustomers = (
 /**
  * Get customer's full name
  * @param customer - Customer object
- * @returns Full name string
+ * @returns Full name string (only includes non-null parts)
  */
 export const getCustomerFullName = (customer: Customer): string => {
-  return `${customer.firstName || ''} ${customer.lastName || ''}`.trim();
+  const parts = [
+    customer.firstName,
+    customer.lastName
+  ].filter(part => part && part.trim() !== '');
+  return parts.join(' ').trim();
+};
+
+/**
+ * Get customer's display name for select/search
+ * @param customer - Customer object
+ * @returns Display string with name and phone (only if available)
+ */
+export const getCustomerDisplayName = (customer: Customer): string => {
+  const name = getCustomerFullName(customer);
+  const phone = customer.phone && customer.phone.trim() !== '' ? customer.phone : null;
+  
+  if (name && phone) {
+    return `${name} - ${phone}`;
+  } else if (name) {
+    return name;
+  } else if (phone) {
+    return phone;
+  }
+  return 'Customer'; // Fallback
 };
 
 /**

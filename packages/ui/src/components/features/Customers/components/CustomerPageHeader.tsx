@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@rentalshop/ui';
 
 interface CustomerPageHeaderProps {
@@ -20,11 +21,13 @@ export const CustomerPageHeader: React.FC<CustomerPageHeaderProps> = ({
   backUrl,
   children
 }) => {
+  const router = useRouter();
+  
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else if (backUrl) {
-      window.location.href = backUrl;
+      router.push(backUrl);
     }
   };
 

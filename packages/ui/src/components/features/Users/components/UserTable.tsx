@@ -198,6 +198,7 @@ export function UserTable({
                           <Edit className="h-4 w-4 mr-2" />
                           {t('actions.editUser')}
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => {
                           onUserAction(user.isActive ? 'deactivate' : 'activate', user.id);
                           setOpenDropdownId(null);

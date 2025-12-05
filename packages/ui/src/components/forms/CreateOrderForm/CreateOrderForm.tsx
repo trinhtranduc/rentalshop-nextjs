@@ -35,11 +35,10 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useToast, ToastContainer } from '@rentalshop/ui';
-import { AddCustomerForm } from '../../features/Customers/components/AddCustomerForm';
+import { useToast, ToastContainer, CustomerDetailDialog } from '@rentalshop/ui';
 
 import { customersApi, productsApi, handleApiError, formatCurrency, type ProductAvailabilityRequest } from '@rentalshop/utils';
-import { useProductAvailability, useOrderTranslations } from '@rentalshop/hooks';
+import { useProductAvailability, useOrderTranslations, useProductTranslations } from '@rentalshop/hooks';
 import { VALIDATION, BUSINESS } from '@rentalshop/constants';
 
 // Import our custom hooks and components
@@ -51,7 +50,9 @@ import { useAuth } from '@rentalshop/hooks';
 import { ProductsSection } from './components/ProductsSection';
 import { OrderInfoSection } from './components/OrderInfoSection';
 import { OrderSummarySection } from './components/OrderSummarySection';
+import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { CustomerCreationDialog } from './components/CustomerCreationDialog';
+import { EditCustomerDialog } from '@rentalshop/ui';
 
 import type { 
   CreateOrderFormProps, 
@@ -59,6 +60,7 @@ import type {
   ProductWithStock,
   ProductAvailabilityStatus 
 } from './types';
+import type { Customer, CustomerUpdateInput } from '@rentalshop/types';
 
 export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   const {
@@ -78,8 +80,9 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     onFormReady,
   } = props;
 
-  // Translation hook
+  // Translation hooks
   const t = useOrderTranslations();
+  const tp = useProductTranslations();
 
   // Custom hooks for state management
   const {
@@ -162,6 +165,10 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   }, [onFormReady, resetForm]);
 
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
+  const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
+  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+  const [showCustomerDetailDialog, setShowCustomerDetailDialog] = useState(false);
+  const [customerToView, setCustomerToView] = useState<CustomerSearchResult | null>(null);
 
   // Product availability hook
   const { calculateAvailability } = useProductAvailability();
@@ -191,13 +198,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         value: String(product.id),
         label: product.name,
         image: product.images?.[0],
-        subtitle: product.barcode ? `Barcode: ${product.barcode}` : t('messages.noBarcode'),
+        subtitle: product.barcode ? `${tp('labels.barcode')}: ${product.barcode}` : tp('labels.noBarcode'),
         details: [
           formatCurrency(product.rentPrice || 0, currency as any),
-          `Deposit: ${formatCurrency(product.deposit || 0, currency as any)}`,
-            `Available: ${available}`,
-            `Total Stock: ${stock}`,
-          product.category?.name || t('messages.noCategory')
+          `${tp('labels.deposit')}: ${formatCurrency(product.deposit || 0, currency as any)}`,
+          `${tp('labels.available')}: ${available}`,
+          `${tp('labels.totalStock')}: ${stock}`,
+          product.category?.name || tp('labels.noCategory')
         ].filter(Boolean),
         type: 'product' as const
         };
@@ -206,7 +213,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       console.error('Error searching products:', error);
       return [];
     }
-  }, [searchProducts, currency, formData.outletId, t]);
+  }, [searchProducts, currency, formData.outletId, t, tp]);
 
   // Create a custom getProductAvailabilityStatus function using new API
   const getProductAvailabilityStatus = useCallback(async (
@@ -247,20 +254,25 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         
         console.log('🔍 Availability API response:', availabilityData);
 
+        // Extract stock information from API response
+        const totalStock = availabilityData.totalStock || 0;
+        const totalAvailableStock = availabilityData.totalAvailableStock || 0;
+        const totalRenting = availabilityData.totalRenting || 0;
+        const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
+          sum + outlet.effectivelyAvailable, 0) || totalAvailableStock;
+
         // Determine status based on API response
         if (!availabilityData.stockAvailable) {
           return {
             status: 'out-of-stock',
-            text: `Out of Stock (need ${requestedQuantity}, have ${availabilityData.totalAvailableStock})`,
-            color: 'bg-red-100 text-red-600'
+            text: t('messages.outOfStockWithDetails', { need: requestedQuantity, have: totalAvailableStock }),
+            color: 'bg-red-100 text-red-600',
+            totalStock,
+            totalAvailableStock,
+            totalRenting,
+            effectivelyAvailable
           };
         }
-
-        // Simplified: Use canFulfillRequest as the single source of truth
-        // It already accounts for stock, conflicts, and requested quantity
-        const canFulfill = availabilityData.availabilityByOutlet?.some((outlet: any) => outlet.canFulfillRequest);
-        const effectivelyAvailable = availabilityData.availabilityByOutlet?.reduce((sum: number, outlet: any) => 
-          sum + outlet.effectivelyAvailable, 0) || availabilityData.totalAvailableStock;
 
         // Use isAvailable from API (which is now = canFulfillRequest)
         // This is the authoritative source that accounts for everything
@@ -269,9 +281,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
             return {
               status: 'unavailable',
               text: conflictCount > 0 
-                ? `Conflicts detected (${conflictCount} orders)`
-                : 'Unavailable for selected dates',
-              color: 'bg-orange-100 text-orange-600'
+                ? t('messages.conflictsDetected', { count: conflictCount })
+                : t('messages.unavailableForDates'),
+              color: 'bg-orange-100 text-orange-600',
+              totalStock,
+              totalAvailableStock,
+              totalRenting,
+              effectivelyAvailable
             };
           }
 
@@ -280,9 +296,13 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
           return {
             status: 'available',
           text: conflictCount > 0 
-            ? `Available (${effectivelyAvailable} units) - ${conflictCount} conflict(s) but sufficient stock`
-            : `Available (${effectivelyAvailable} units)`,
-            color: 'bg-green-100 text-green-600'
+            ? t('messages.availableWithConflicts', { units: effectivelyAvailable, conflicts: conflictCount })
+            : t('messages.availableWithUnits', { units: effectivelyAvailable }),
+            color: 'bg-green-100 text-green-600',
+            totalStock,
+            totalAvailableStock,
+            totalRenting,
+            effectivelyAvailable
           };
       } else {
         // API call failed, fallback to basic stock check
@@ -300,23 +320,37 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
 
         console.log('🔍 Fallback to basic stock check:', { available, stock, requestedQuantity });
 
+        const renting = stock - available; // Calculate renting from stock and available
+
         if (available === 0) {
           return { 
             status: 'out-of-stock', 
             text: t('messages.outOfStock'), 
-            color: 'bg-red-100 text-red-600' 
+            color: 'bg-red-100 text-red-600',
+            totalStock: stock,
+            totalAvailableStock: available,
+            totalRenting: renting,
+            effectivelyAvailable: available
           };
         } else if (available < requestedQuantity) {
           return { 
             status: 'low-stock', 
-            text: `Low Stock (${available}/${requestedQuantity})`, 
-            color: 'bg-orange-100 text-orange-600' 
+            text: t('messages.lowStock', { available, requested: requestedQuantity }), 
+            color: 'bg-orange-100 text-orange-600',
+            totalStock: stock,
+            totalAvailableStock: available,
+            totalRenting: renting,
+            effectivelyAvailable: available
           };
         } else {
           return { 
             status: 'available', 
-            text: `Available (${available})`, 
-            color: 'bg-green-100 text-green-600' 
+            text: t('messages.availableWithUnits', { units: available }), 
+            color: 'bg-green-100 text-green-600',
+            totalStock: stock,
+            totalAvailableStock: available,
+            totalRenting: renting,
+            effectivelyAvailable: available
           };
         }
       } catch (fallbackError) {
@@ -389,11 +423,23 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
       
       console.log('🔍 handleAddNewCustomer: No API duplicates found, creating customer...');
       
-      const result = await customersApi.createCustomer({
+      // Clean customer data: remove empty strings, only send fields with actual values
+      const cleanedCustomerData: any = {};
+      Object.entries({
         ...customerData,
         merchantId: currentMerchantId,
         isActive: true
+      }).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'string' && value.trim() !== '') {
+            cleanedCustomerData[key] = value;
+          } else if (typeof value !== 'string') {
+            cleanedCustomerData[key] = value;
+          }
+        }
       });
+      
+      const result = await customersApi.createCustomer(cleanedCustomerData);
       
       console.log('🔍 handleAddNewCustomer: API response:', result);
       console.log('🔍 handleAddNewCustomer: result.success:', result.success);
@@ -461,6 +507,37 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     setSearchQuery(`${customer.firstName} ${customer.lastName} - ${customer.phone}`);
   }, []);
 
+  // Handle customer edit
+  const handleCustomerEdit = useCallback((customer: CustomerSearchResult) => {
+    // Convert CustomerSearchResult to Customer type for EditCustomerDialog
+    const customerForEdit: Customer = {
+      id: customer.id,
+      firstName: customer.firstName,
+      lastName: customer.lastName || '',
+      name: `${customer.firstName} ${customer.lastName || ''}`.trim(),
+      email: customer.email || '',
+      phone: customer.phone || '',
+      address: customer.address,
+      city: customer.city,
+      state: customer.state,
+      zipCode: customer.zipCode,
+      country: customer.country,
+      isActive: customer.isActive ?? true,
+      createdAt: customer.createdAt || new Date(),
+      updatedAt: customer.updatedAt || new Date(),
+      merchantId: customer.merchantId || 0,
+      merchant: customer.merchant || { id: customer.merchantId || 0, name: '' }
+    };
+    
+    setCustomerToEdit(customerForEdit);
+    setShowEditCustomerDialog(true);
+  }, []);
+
+  const handleCustomerView = useCallback((customer: CustomerSearchResult) => {
+    setCustomerToView(customer);
+    setShowCustomerDetailDialog(true);
+  }, []);
+
   // Initialize form data when initialOrder changes (for edit mode)
   useEffect(() => {
     if (isEditMode && initialOrder) {
@@ -504,9 +581,10 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   return (
     <div className="w-full min-h-full bg-bg-secondary">
       <div className="w-full">
-        <div className="flex flex-col lg:flex-row gap-4 px-4 py-4">
-          {/* Column 1 - Products Section (40%) */}
-          <div className="lg:w-[40%] space-y-4">
+        <div className="flex flex-col lg:flex-row gap-4 px-4 py-4 items-stretch">
+          {/* Column 1 - Products Section (2/3 = 66.67%) */}
+          {/* items-stretch will make this column match Column 2's height */}
+          <div className="lg:w-2/3 flex flex-col">
             <ProductsSection
               orderItems={orderItems}
               products={[...products, ...searchedProducts]} // Combine initial products with searched products
@@ -520,11 +598,21 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               returnDate={formData.returnPlanAt}
               getProductAvailabilityStatus={getProductAvailabilityStatus}
               currency={currency}
+              outletId={formData.outletId}
             />
           </div>
 
-          {/* Column 2 - Order Information (30%) */}
-          <div className="lg:w-[30%] space-y-4">
+          {/* Column 2 - Order Information + Order Summary & Actions (1/3 = 33.33%) - Merged into 1 Card */}
+          {/* This column has dynamic height based on content */}
+          <div className="lg:w-1/3 flex flex-col">
+            <Card className="flex flex-col h-full w-full">
+              <CardHeader className="pb-3 flex-shrink-0">
+                <CardTitle className="text-base flex items-center gap-2">
+                  {t('detail.orderInformation')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col flex-1 overflow-visible p-6 pt-0">
+                {/* Order Information Content with Order Summary - Takes full height */}
             <OrderInfoSection
               formData={formData}
               outlets={outlets}
@@ -544,25 +632,18 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               onSearchQueryChange={setSearchQuery}
               onCustomerSearch={searchCustomers}
               onShowAddCustomerDialog={() => setShowAddCustomerDialog(true)}
+              onCustomerEdit={handleCustomerEdit}
+              onCustomerView={handleCustomerView}
               onUpdateRentalDates={updateRentalDates}
-              currency={currency}
-            />
-          </div>
-
-          {/* Column 3 - Order Summary & Actions (30%) - Sticky positioning */}
-          <div className="lg:w-[30%] space-y-4">
-            <div className="lg:sticky lg:top-4">
-              <OrderSummarySection
-                formData={formData}
+                  hideCardWrapper={true}
                 orderItems={orderItems}
-                isEditMode={isEditMode}
                 loading={loading || isSubmitting}
                 isFormValid={isFormValidForUI}
                 onSubmit={handleSubmit}
                 onCancel={onCancel}
-                currency={currency}
               />
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -573,7 +654,101 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
         onOpenChange={setShowAddCustomerDialog}
         onCustomerCreated={handleAddNewCustomer}
         merchantId={merchantId}
+        initialSearchQuery={searchQuery}
       />
+
+      {/* Customer Edit Dialog */}
+      {customerToEdit && (
+        <EditCustomerDialog
+          open={showEditCustomerDialog}
+          onOpenChange={(open) => {
+            setShowEditCustomerDialog(open);
+            if (!open) {
+              setCustomerToEdit(null);
+            }
+          }}
+          customer={customerToEdit}
+          onCustomerUpdated={async (customerData: CustomerUpdateInput) => {
+            try {
+              const response = await customersApi.updateCustomer(customerToEdit.id, customerData);
+              
+              if (response.success && response.data) {
+                // Update selected customer if it's the same one
+                if (selectedCustomer?.id === customerToEdit.id) {
+                  const updatedCustomer: CustomerSearchResult = {
+                    id: customerToEdit.id,
+                    firstName: customerData.firstName ?? customerToEdit.firstName ?? '',
+                    lastName: customerData.lastName ?? customerToEdit.lastName ?? '',
+                    email: customerData.email ?? customerToEdit.email ?? '',
+                    phone: customerData.phone ?? customerToEdit.phone ?? '',
+                    address: customerData.address ?? customerToEdit.address,
+                    city: customerData.city ?? customerToEdit.city,
+                    state: customerData.state ?? customerToEdit.state,
+                    zipCode: customerData.zipCode ?? customerToEdit.zipCode,
+                    country: customerData.country ?? customerToEdit.country,
+                    isActive: customerToEdit.isActive,
+                    createdAt: customerToEdit.createdAt,
+                    updatedAt: new Date(),
+                    merchantId: customerToEdit.merchantId,
+                    merchant: customerToEdit.merchant ? { id: customerToEdit.merchant.id, name: customerToEdit.merchant.name } : { id: customerToEdit.merchantId || 0, name: '' }
+                  };
+                  setSelectedCustomer(updatedCustomer);
+                  setSearchQuery(`${updatedCustomer.firstName} ${updatedCustomer.lastName} - ${updatedCustomer.phone}`);
+                }
+                
+                // Refresh customer search results
+                if (searchQuery.trim()) {
+                  await searchCustomers(searchQuery);
+                }
+                
+                toastSuccess('Customer updated', 'Customer information has been updated successfully');
+                setShowEditCustomerDialog(false);
+                setCustomerToEdit(null);
+              } else {
+                throw new Error(response.error || 'Failed to update customer');
+              }
+            } catch (error) {
+              console.error('Error updating customer:', error);
+              toastError('Error', error instanceof Error ? error.message : 'Failed to update customer');
+              throw error;
+            }
+          }}
+          onError={(error) => {
+            toastError('Error', error);
+          }}
+        />
+      )}
+
+      {/* Customer Detail Dialog */}
+      {customerToView && (
+        <CustomerDetailDialog
+          open={showCustomerDetailDialog}
+          onOpenChange={(open) => {
+            setShowCustomerDetailDialog(open);
+            if (!open) {
+              setCustomerToView(null);
+            }
+          }}
+          customer={{
+            id: customerToView.id,
+            firstName: customerToView.firstName,
+            lastName: customerToView.lastName || '',
+            name: `${customerToView.firstName} ${customerToView.lastName || ''}`.trim(),
+            email: customerToView.email || '',
+            phone: customerToView.phone || '',
+            address: customerToView.address,
+            city: customerToView.city,
+            state: customerToView.state,
+            zipCode: customerToView.zipCode,
+            country: customerToView.country,
+            isActive: customerToView.isActive ?? true,
+            createdAt: customerToView.createdAt || new Date(),
+            updatedAt: customerToView.updatedAt || new Date(),
+            merchantId: customerToView.merchantId || 0,
+            merchant: customerToView.merchant || { id: customerToView.merchantId || 0, name: '' }
+          }}
+        />
+      )}
     </div>
   );
 };

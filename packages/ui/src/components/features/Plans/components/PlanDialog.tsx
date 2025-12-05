@@ -236,13 +236,15 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{getDialogTitle()}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-lg font-semibold">{getDialogTitle()}</DialogTitle>
+          <DialogDescription className="mt-1">
             {getDialogDescription()}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="px-6 py-4 overflow-y-auto">
         
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -263,6 +265,7 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
             submitText={mode === 'create' ? 'Create Plan' : mode === 'edit' || mode === 'view' ? 'Update Plan' : 'Save Changes'}
         />
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );

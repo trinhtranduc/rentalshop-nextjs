@@ -27,7 +27,9 @@
     "browse": "Browse Files",
     "saving": "Saving...",
     "creating": "Creating...",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "viewMoreDetails": "View More Details",
+    "hideDetails": "Hide Details"
   },
   "labels": {
     "name": "Name",

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { subscriptionsApi } from '@rentalshop/utils';
 import { 
   SubscriptionForm,
@@ -24,6 +25,7 @@ interface EditSubscriptionPageProps {
 }
 
 export default function EditSubscriptionPage({ params }: EditSubscriptionPageProps) {
+  const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
@@ -72,7 +74,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
 
       if (result.success) {
         // Redirect to subscription detail page
-        window.location.href = `/admin/subscriptions/${params.id}`;
+        router.push(`/admin/subscriptions/${params.id}`);
       } else {
         alert(`Error updating subscription: ${result.message}`);
       }
@@ -85,7 +87,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
   };
 
   const handleCancel = () => {
-    window.location.href = `/admin/subscriptions/${params.id}`;
+    router.push(`/admin/subscriptions/${params.id}`);
   };
 
   if (loading) {
@@ -102,7 +104,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
         <h2 className="text-2xl font-bold text-gray-900">Subscription Not Found</h2>
         <p className="text-gray-600 mt-2">The subscription you're trying to edit doesn't exist.</p>
         <Button 
-          onClick={() => window.location.href = '/admin/subscriptions'}
+          onClick={() => router.push('/admin/subscriptions')}
           className="mt-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />

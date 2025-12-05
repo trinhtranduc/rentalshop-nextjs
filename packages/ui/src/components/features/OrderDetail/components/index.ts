@@ -12,3 +12,4 @@ export { OrderSettings } from './OrderSettings';
 export { OrderSummary } from './OrderSummary';
 export { OrderActions } from './OrderActions';
 export { NotesSection } from './NotesSection';
+export { PaymentQRCodeDialog } from './PaymentQRCodeDialog';

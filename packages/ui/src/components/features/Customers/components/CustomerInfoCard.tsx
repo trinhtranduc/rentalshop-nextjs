@@ -163,18 +163,24 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-normal text-gray-500 mb-2">{t('fields.fullName')}</label>
-                <p className="text-gray-900 text-base font-medium">{customer.firstName} {customer.lastName}</p>
+                <p className="text-gray-900 text-base font-medium">
+                  {[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'}
+                </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-normal text-gray-500 mb-2">{t('fields.email')}</label>
-                <p className="text-gray-900 text-base">{customer.email}</p>
-              </div>
+              {customer.email && customer.email.trim() !== '' && (
+                <div>
+                  <label className="block text-sm font-normal text-gray-500 mb-2">{t('fields.email')}</label>
+                  <p className="text-gray-900 text-base">{customer.email}</p>
+                </div>
+              )}
 
-              <div>
-                <label className="block text-sm font-normal text-gray-500 mb-2">{t('fields.phone')}</label>
-                <p className="text-gray-900 text-base">{customer.phone}</p>
-              </div>
+              {customer.phone && customer.phone.trim() !== '' && (
+                <div>
+                  <label className="block text-sm font-normal text-gray-500 mb-2">{t('fields.phone')}</label>
+                  <p className="text-gray-900 text-base">{customer.phone}</p>
+                </div>
+              )}
             </div>
           </div>
 

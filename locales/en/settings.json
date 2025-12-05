@@ -247,6 +247,10 @@
       "label": "Outlet",
       "description": "Manage your outlet information"
     },
+    "bankAccounts": {
+      "label": "Bank Accounts",
+      "description": "Manage bank accounts for payments"
+    },
     "subscription": {
       "label": "Subscription",
       "description": "Manage your subscription and billing"

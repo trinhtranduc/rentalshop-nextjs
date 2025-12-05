@@ -121,6 +121,37 @@ export const ordersApi = {
   },
 
   /**
+   * Export orders to Excel or CSV
+   */
+  async exportOrders(params: {
+    period?: '1month' | '3months' | '6months' | '1year' | 'custom';
+    startDate?: string;
+    endDate?: string;
+    format?: 'excel' | 'csv';
+    dateField?: 'createdAt' | 'pickupPlanAt' | 'returnPlanAt';
+    status?: string;
+    orderType?: string;
+  }): Promise<Blob> {
+    const queryParams = new URLSearchParams();
+    if (params.period) queryParams.append('period', params.period);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.format) queryParams.append('format', params.format);
+    if (params.dateField) queryParams.append('dateField', params.dateField);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.orderType) queryParams.append('orderType', params.orderType);
+
+    const url = `${apiUrls.orders.export}?${queryParams.toString()}`;
+    const response = await authenticatedFetch(url);
+    
+    if (!response.ok) {
+      throw new Error('Failed to export orders');
+    }
+    
+    return await response.blob();
+  },
+
+  /**
    * Delete an order
    */
   async deleteOrder(orderId: number): Promise<ApiResponse<void>> {
@@ -131,11 +162,23 @@ export const ordersApi = {
   },
 
   /**
-   * Get orders by customer
+   * Get orders by customer with pagination support
+   * Uses dedicated endpoint: /api/customers/[id]/orders
    */
-  async getOrdersByCustomer(customerId: number): Promise<ApiResponse<Order[]>> {
-    const response = await authenticatedFetch(`${apiUrls.orders.list}?customerId=${customerId}`);
-    return await parseApiResponse<Order[]>(response);
+  async getOrdersByCustomer(
+    customerId: number,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<ApiResponse<OrdersResponse>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    // Use dedicated endpoint for customer orders (better for role-based filtering)
+    const base = apiUrls.base || '';
+    const response = await authenticatedFetch(`${base}/api/customers/${customerId}/orders?${params.toString()}`);
+    return await parseApiResponse<OrdersResponse>(response);
   },
 
   /**
@@ -147,11 +190,21 @@ export const ordersApi = {
   },
 
   /**
-   * Get orders by product ID
+   * Get orders by product ID with pagination support
    */
-  async getOrdersByProduct(productId: number): Promise<ApiResponse<Order[]>> {
-    const response = await authenticatedFetch(`${apiUrls.orders.list}?productId=${productId}`);
-    return await parseApiResponse<Order[]>(response);
+  async getOrdersByProduct(
+    productId: number,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<ApiResponse<OrdersResponse>> {
+    const params = new URLSearchParams({
+      productId: productId.toString(),
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    
+    const response = await authenticatedFetch(`${apiUrls.orders.list}?${params.toString()}`);
+    return await parseApiResponse<OrdersResponse>(response);
   },
 
   /**

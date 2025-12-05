@@ -39,7 +39,7 @@ export const OrderFormHeader: React.FC<OrderFormHeaderProps> = ({
         <Breadcrumb items={breadcrumbItems} />
         {isEditMode && (
           <Badge variant="default" className="bg-blue-100 text-blue-800 ml-2">
-            EDIT MODE
+            {t('messages.editOrder')}
           </Badge>
         )}
       </div>

@@ -21,6 +21,7 @@ import { PageWrapper,
   useToast } from '@rentalshop/ui';
 import { Building2, Edit, Users, Package, ShoppingCart, Store } from 'lucide-react';
 import type { Outlet } from '@rentalshop/types';
+import { OutletBankAccountsSection } from './components/OutletBankAccountsSection';
 
 interface OutletDetail {
   id: number;
@@ -383,6 +384,12 @@ export default function OutletDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Bank Accounts */}
+          <OutletBankAccountsSection
+            merchantId={parseInt(merchantId)}
+            outletId={parseInt(outletId)}
+          />
         </div>
       </PageContent>
     </PageWrapper>

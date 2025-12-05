@@ -218,24 +218,76 @@ export function useAuth() {
   }, [logout]);
 
   // ============================================================================
-  // INITIALIZATION - Simple & Clean
+  // INITIALIZATION - Standard Approach with localStorage Event Listener
   // ============================================================================
 
-  useEffect(() => {
+  // Helper function to sync state from localStorage
+  const syncStateFromStorage = useCallback(() => {
     const token = getAuthToken();
     const storedUser = getStoredUser();
 
     if (token && storedUser) {
-      // ✅ SIMPLE: Just use stored user, no validation needed
-      setState(prev => ({ 
-        ...prev, 
-        user: storedUser as User, 
-        loading: false 
-      }));
+      setState(prev => {
+        // Only update if state is different to avoid unnecessary re-renders
+        if (prev.user?.id !== storedUser.id) {
+          console.log('🔄 useAuth: Syncing user state from localStorage');
+          return { 
+            ...prev, 
+            user: storedUser as User, 
+            loading: false 
+          };
+        }
+        // Ensure loading is false even if user is the same
+        if (prev.loading) {
+          return { ...prev, loading: false };
+        }
+        return prev;
+      });
     } else {
-      setState(prev => ({ ...prev, user: null, loading: false }));
+      setState(prev => {
+        // Always set loading to false, even if user is already null
+        if (prev.user !== null || prev.loading) {
+          console.log('🔄 useAuth: Clearing user state (no token found)');
+          return { ...prev, user: null, loading: false };
+        }
+        return prev;
+      });
     }
-  }, []); // Run once on mount
+  }, []);
+
+  // Initial load on mount
+  useEffect(() => {
+    syncStateFromStorage();
+  }, [syncStateFromStorage]);
+
+  // Listen to localStorage changes (standard approach for cross-component sync)
+  // This handles the case where login happened in another component/page
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorageChange = (e: StorageEvent) => {
+      // Only react to authData changes
+      if (e.key === 'authData' || e.key === 'authToken') {
+        console.log('🔄 useAuth: localStorage changed, syncing state...');
+        syncStateFromStorage();
+      }
+    };
+
+    // Listen to storage events (works across tabs and components)
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also listen to custom events for same-tab sync
+    // (storage event only fires in other tabs, not same tab)
+    const handleCustomStorageChange = () => {
+      syncStateFromStorage();
+    };
+    window.addEventListener('auth-storage-change', handleCustomStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-storage-change', handleCustomStorageChange);
+    };
+  }, [syncStateFromStorage]);
 
   // ============================================================================
   // RETURN VALUES

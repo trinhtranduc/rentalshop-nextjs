@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hashPassword } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { usersQuerySchema, userCreateSchema, userUpdateSchema, assertPlanLimit, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { usersQuerySchema, userCreateSchema, userUpdateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { captureAuditContext } from '@rentalshop/middleware';
 import { API, USER_ROLE, type UserRole } from '@rentalshop/constants';
 
@@ -109,6 +109,34 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
       } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
         // Allow these specific role requests from merchant
         console.log(`✅ MERCHANT user: Allowed request for ${q.role} users`);
+      }
+    }
+
+    // If user is OUTLET_ADMIN, only return OUTLET_ADMIN and OUTLET_STAFF users from their outlet
+    // Do not return ADMIN or MERCHANT users (even if they have the same outletId)
+    if (user.role === USER_ROLE.OUTLET_ADMIN) {
+      if (!q.role) {
+        // If no specific role filter is requested, restrict to outlet-level roles only
+        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
+        delete searchFilters.role; // Remove single role filter since we're using roles array
+        console.log('🔒 OUTLET_ADMIN user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
+      } else if (q.role === USER_ROLE.ADMIN || q.role === USER_ROLE.MERCHANT) {
+        // Outlet admin should not see ADMIN or MERCHANT users
+        console.log(`🚫 OUTLET_ADMIN user: Blocked request for ${q.role} users`);
+        return NextResponse.json({
+          success: true,
+          data: [],
+          pagination: {
+            page: 1,
+            limit: q.limit || 20,
+            total: 0,
+            hasMore: false,
+            totalPages: 0
+          }
+        });
+      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
+        // Allow these specific role requests from outlet admin
+        console.log(`✅ OUTLET_ADMIN user: Allowed request for ${q.role} users`);
       }
     }
 
@@ -216,17 +244,10 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     console.log('🔍 POST /api/users: merchantId:', merchantId, 'outletId:', outletId);
 
     // Check plan limits before creating user (only for non-ADMIN users)
+    // Note: Only check if creating non-ADMIN user and merchantId exists
     if (parsed.data.role !== USER_ROLE.ADMIN && merchantId) {
-      try {
-        await assertPlanLimit(merchantId, 'users');
-        console.log('✅ Plan limit check passed for users');
-      } catch (error: any) {
-        console.log('❌ Plan limit exceeded for users:', error.message);
-        return NextResponse.json(
-          ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || 'Plan limit exceeded for users'),
-          { status: 403 }
-        );
-      }
+      const planLimitError = await checkPlanLimitIfNeeded(user, merchantId, 'users');
+      if (planLimitError) return planLimitError;
     }
 
     const newUser = await db.users.create(userData);
@@ -339,12 +360,10 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
 
 /**
  * DELETE /api/users
- * Delete a user permanently (hard delete)
- * REFACTORED: Uses unified withAuth pattern
- */
-/**
- * DELETE /api/users
  * Delete a user (soft delete)
+ * 
+ * Soft delete preserves order history (Order.createdBy) and other related data.
+ * Deleted users are automatically excluded from all user listing queries.
  * 
  * Authorization: All roles with 'users.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
@@ -382,6 +401,8 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
       );
     }
 
+    // Note: Hard delete doesn't need to check deletedAt since user will be permanently removed
+
     // Scope validation
     if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
       return NextResponse.json(
@@ -407,55 +428,27 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
       }
     }
 
-    // Check if user has created orders (Order.createdBy doesn't have cascade delete)
-    const { prisma } = await import('@rentalshop/database');
-    const orderCount = await prisma.order.count({
-      where: { createdById: userId }
-    });
-
-    if (orderCount > 0) {
-      return NextResponse.json(
-        ResponseBuilder.error('USER_HAS_ORDERS', `Cannot delete user because they have created ${orderCount} order(s). Please reassign or delete the orders first.`),
-        { status: 409 }
-      );
-    }
-
     // Invalidate all user sessions first (using db pattern)
     await db.sessions.invalidateAllUserSessions(userId);
     console.log(`🗑️ Invalidated all sessions for user ${userId}`);
 
-    // Hard delete (permanently remove from database)
-    // Note: Related data with onDelete: Cascade will be automatically deleted:
-    // - EmailVerification
-    // - PasswordReset
-    // - AuditLog (if any)
-    // Note: Using prisma directly for hard delete as db.users.delete is soft delete only
-    await prisma.user.delete({
-      where: { id: userId }
-    });
+    // Hard delete user (orders.createdById will be set to null to preserve order history)
+    const deletedUser = await db.users.delete(userId);
     
-    console.log(`✅ User permanently deleted: ${existingUser.email} (ID: ${userId})`);
+    console.log(`✅ User hard deleted: ${existingUser.email} (ID: ${userId})`);
 
     return NextResponse.json({
       success: true,
       code: 'USER_DELETED_SUCCESS',
-      message: 'User deleted successfully'
+      message: 'User deleted successfully',
+      data: deletedUser
     });
 
   } catch (error: any) {
     console.error('❌ DELETE /api/users error:', error);
     
-    // Handle foreign key constraint errors
-    if (error.code === 'P2003' || error.message?.includes('Foreign key constraint')) {
-      return NextResponse.json(
-        ResponseBuilder.error('USER_HAS_RELATED_DATA', 'Cannot delete user because they have related data (orders, etc.). Please remove related data first.'),
-        { status: 409 }
-      );
-    }
-    
-    return NextResponse.json(
-      ResponseBuilder.error('DELETE_USER_FAILED', error.message || 'Failed to delete user'),
-      { status: 500 }
-    );
+    // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
