@@ -73,19 +73,25 @@ export default function ProductOrdersPage() {
     router.push('/products');
   };
 
+  // Show loading state while fetching product
+  if (loading) {
+    return (
+      <PageWrapper>
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+          <LoadingIndicator 
+            variant="circular" 
+            size="lg"
+            message={tc('labels.loading') || 'Loading product...'}
+          />
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  // Only show error/not found AFTER loading is complete
   if (error || !product) {
     return (
       <PageWrapper>
-        {/* Center Loading Indicator - Shows when waiting for API */}
-        {loading && (
-          <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
-            <LoadingIndicator 
-              variant="circular" 
-              size="lg"
-              message={tc('labels.loading') || 'Loading product...'}
-            />
-          </div>
-        )}
         <PageContent>
           <div className="text-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

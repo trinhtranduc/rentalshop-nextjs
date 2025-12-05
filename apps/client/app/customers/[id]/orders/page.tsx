@@ -15,7 +15,8 @@ import { ArrowLeft } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
 import { ordersApi } from "@rentalshop/utils";
 import { useAuth } from '@rentalshop/hooks';
-import type { Customer, OrderStatus, OrderFilters as OrderFiltersType } from '@rentalshop/types';
+import type { Customer, OrderFilters as OrderFiltersType } from '@rentalshop/types';
+import type { OrderStatus } from '@rentalshop/constants';
 
 // Use the Order type from the types package to match API response
 import type { Order } from '@rentalshop/types';
@@ -119,24 +120,14 @@ export default function CustomerOrdersPage() {
         
         console.log('🔍 CustomerOrdersPage: Fetching orders for customer:', customer.id);
         
-        // SECURITY: All filtering must be done at the backend/database level
-        // Frontend only sends the customer ID - backend handles role-based access control
-        const apiFilters = {
-          customerId: customer.id, // Filter orders by this specific customer
-          limit: 10,
-          offset: (currentPage - 1) * 10
-        };
-
-        // SECURITY: User role and outlet restrictions are handled by the backend API
-        // The backend will automatically filter based on user's role and scope
-        console.log('🔒 CustomerOrdersPage: Sending minimal filters to backend - backend handles security');
+        // SECURITY: Use dedicated endpoint /api/customers/[id]/orders
+        // This endpoint ensures proper role-based filtering and only returns orders for this specific customer
+        console.log('🔒 CustomerOrdersPage: Using dedicated customer orders endpoint - backend handles security');
         console.log('🔒 CustomerOrdersPage: User role:', user?.role);
         console.log('🔒 CustomerOrdersPage: User outlet ID:', user?.outletId);
 
-        console.log('🔍 CustomerOrdersPage: API filters:', apiFilters);
-        console.log('🔍 CustomerOrdersPage: API endpoint will be:', `/api/orders?customerId=${customer.id}&limit=10&offset=${(currentPage - 1) * 10}${filters.status !== undefined ? `&status=${filters.status}` : ''}${filters.orderType !== undefined ? `&orderType=${filters.orderType}` : ''}${filters.outlet ? `&outlet=${filters.outlet}` : ''}${filters.dateRange?.start && filters.dateRange?.end ? `&startDate=${filters.dateRange.start}&endDate=${filters.dateRange.end}` : ''}${filters.search ? `&q=${filters.search}` : ''}&sortBy=${filters.sortBy}&sortOrder=${filters.sortOrder}`);
-
-        const response = await ordersApi.searchOrders(apiFilters);
+        // Use dedicated getOrdersByCustomer method with pagination
+        const response = await ordersApi.getOrdersByCustomer(customer.id, currentPage, 10);
         
         if (response.success && response.data) {
           console.log('✅ CustomerOrdersPage: Orders fetched successfully:', response.data);
@@ -144,7 +135,7 @@ export default function CustomerOrdersPage() {
           console.log('🔍 CustomerOrdersPage: Setting orders state with:', response.data?.orders?.length || 0, 'orders');
           setOrders(response.data?.orders || []);
           setTotalOrders(response.data?.total || 0);
-          setTotalPages(Math.ceil((response.data?.total || 0) / 10));
+          setTotalPages(response.data?.totalPages || 1);
         } else {
           console.error('❌ CustomerOrdersPage: API error:', response);
           setOrders([]);
@@ -283,11 +274,9 @@ export default function CustomerOrdersPage() {
             orders: orders as any,
             total: totalOrders,
             hasMore: currentPage < totalPages,
-            page: currentPage,
             currentPage: currentPage,
-            limit: 20,
+            limit: 10,
             totalPages: totalPages,
-            filters: filters,
             stats: undefined
           }}
             filters={filters}
