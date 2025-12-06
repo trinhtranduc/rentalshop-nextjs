@@ -24,7 +24,7 @@ export async function GET(
 
       if (isNaN(id)) {
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_ID', 'Invalid addon ID'),
+          ResponseBuilder.error('INVALID_INPUT'),
           { status: 400 }
         );
       }
@@ -65,7 +65,7 @@ export async function PUT(
 
       if (isNaN(id)) {
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_ID', 'Invalid addon ID'),
+          ResponseBuilder.error('INVALID_INPUT'),
           { status: 400 }
         );
       }
@@ -120,7 +120,7 @@ export async function DELETE(
 
       if (isNaN(id)) {
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_ID', 'Invalid addon ID'),
+          ResponseBuilder.error('INVALID_INPUT'),
           { status: 400 }
         );
       }

@@ -72,6 +72,7 @@ __export(src_exports, {
   useOutletsWithFilters: () => useOutletsWithFilters,
   usePagination: () => usePagination,
   usePaymentsData: () => usePaymentsData,
+  usePermissions: () => usePermissions,
   usePlansData: () => usePlansData,
   usePlansTranslations: () => usePlansTranslations,
   useProductAvailability: () => useProductAvailability,
@@ -3760,6 +3761,143 @@ function useBankAccountTranslations() {
   return n2("bankAccounts");
 }
 
+// src/hooks/useApiError.ts
+function useApiError() {
+  const t3 = useErrorTranslations();
+  const translateError = (response) => {
+    console.log("\u{1F50D} translateError called with:", {
+      type: typeof response,
+      isError: response instanceof Error,
+      hasCode: !!response?.code,
+      code: response?.code,
+      hasMessage: !!response?.message,
+      message: response?.message,
+      hasResponse: !!response?.response,
+      responseData: response?.response?.data,
+      fullResponse: response
+    });
+    if (response?.response?.data) {
+      console.log("\u{1F50D} translateError: Handling nested axios error response");
+      return translateError(response.response.data);
+    }
+    if (response?.code && typeof response.code === "string") {
+      console.log("\u{1F50D} translateError: Found code field:", response.code);
+      const translated = t3(response.code);
+      console.log("\u{1F50D} translateError: Translation result:", { code: response.code, translated, isTranslated: translated !== response.code });
+      if (translated !== response.code) {
+        console.log("\u2705 translateError: Using translated message:", translated);
+        return translated;
+      }
+      if (response?.message) {
+        console.log("\u26A0\uFE0F translateError: Translation not found, using message:", response.message);
+        return response.message;
+      }
+      console.log("\u26A0\uFE0F translateError: No translation or message, returning code:", response.code);
+      return response.code;
+    }
+    if (response instanceof Error && response.code) {
+      const code = response.code;
+      const translated = t3(code);
+      if (translated !== code) {
+        return translated;
+      }
+      return response.message;
+    }
+    if (response?.message && typeof response.message === "string" && /^[A-Z_]+$/.test(response.message)) {
+      const translated = t3(response.message);
+      if (translated !== response.message) {
+        return translated;
+      }
+    }
+    if (response?.message) {
+      return response.message;
+    }
+    if (typeof response === "string") {
+      if (/^[A-Z_]+$/.test(response)) {
+        const translated = t3(response);
+        if (translated !== response) {
+          return translated;
+        }
+      }
+      return response;
+    }
+    return t3("UNKNOWN_ERROR");
+  };
+  const translateSuccess = (response) => {
+    if (response?.code && typeof response.code === "string") {
+      const translated = t3(response.code);
+      if (translated !== response.code) {
+        return translated;
+      }
+    }
+    if (response?.message) {
+      return response.message;
+    }
+    return t3("UNKNOWN_ERROR");
+  };
+  const translateResponse = (response) => {
+    if (response?.success === false) {
+      return translateError(response);
+    }
+    return translateSuccess(response);
+  };
+  const isError = (response) => {
+    return response?.success === false || !!response?.error || !!response?.response?.data?.error;
+  };
+  const getErrorCode = (response) => {
+    if (response?.response?.data?.code) {
+      return response.response.data.code;
+    }
+    if (response?.code && typeof response.code === "string") {
+      return response.code;
+    }
+    if (response?.message && typeof response.message === "string" && /^[A-Z_]+$/.test(response.message)) {
+      return response.message;
+    }
+    return null;
+  };
+  return {
+    translateError,
+    translateSuccess,
+    translateResponse,
+    isError,
+    getErrorCode
+  };
+}
+function extractErrorMessage(error) {
+  if (error?.response?.data) {
+    const data = error.response.data;
+    return data.message || data.error || "An error occurred";
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return "An unknown error occurred";
+}
+function extractErrorCode(error) {
+  if (error?.response?.data?.code) {
+    return error.response.data.code;
+  }
+  if (error?.code) {
+    return error.code;
+  }
+  return null;
+}
+function isErrorCode(error, code) {
+  return extractErrorCode(error) === code;
+}
+var ErrorCheckers = {
+  isUnauthorized: (error) => isErrorCode(error, "UNAUTHORIZED") || isErrorCode(error, "INVALID_TOKEN"),
+  isForbidden: (error) => isErrorCode(error, "FORBIDDEN"),
+  isNotFound: (error) => isErrorCode(error, "NOT_FOUND") || extractErrorCode(error)?.includes("_NOT_FOUND"),
+  isValidationError: (error) => isErrorCode(error, "VALIDATION_ERROR"),
+  isDuplicateEntry: (error) => isErrorCode(error, "DUPLICATE_ENTRY") || extractErrorCode(error)?.includes("_EXISTS"),
+  isNetworkError: (error) => isErrorCode(error, "NETWORK_ERROR") || error?.message?.includes("Network")
+};
+
 // src/hooks/useAuth.ts
 function useAuth() {
   const [state, setState] = (0, import_react5.useState)({
@@ -3767,25 +3905,7 @@ function useAuth() {
     loading: true,
     error: null
   });
-  const t3 = useErrorTranslations();
-  const translateError = (0, import_react5.useCallback)((errorData) => {
-    if (errorData?.code) {
-      const translated = t3(errorData.code);
-      if (translated !== errorData.code) {
-        return translated;
-      }
-    }
-    if (errorData?.message) {
-      if (typeof errorData.message === "string" && /^[A-Z_]+$/.test(errorData.message)) {
-        const translated = t3(errorData.message);
-        if (translated !== errorData.message) {
-          return translated;
-        }
-      }
-      return errorData.message;
-    }
-    return t3("UNKNOWN_ERROR");
-  }, [t3]);
+  const { translateError } = useApiError();
   const login = (0, import_react5.useCallback)(async (email, password) => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
@@ -3812,8 +3932,25 @@ function useAuth() {
         return false;
       }
       const data = await response.json();
+      console.log("\u{1F50D} LOGIN RESPONSE:", {
+        success: data.success,
+        hasToken: !!data.data?.token,
+        user: data.data?.user,
+        userPermissions: data.data?.user?.permissions,
+        permissionsCount: data.data?.user?.permissions?.length || 0
+      });
       if (data.success && data.data?.token) {
         (0, import_utils.storeAuthData)(data.data.token, data.data.user);
+        console.log("\u{1F50D} LOGIN: After storeAuthData, checking localStorage...");
+        const storedAuth = localStorage.getItem("authData");
+        if (storedAuth) {
+          const parsed = JSON.parse(storedAuth);
+          console.log("\u{1F50D} LOGIN: Stored permissions in localStorage:", {
+            hasPermissions: !!parsed.user?.permissions,
+            permissionsCount: parsed.user?.permissions?.length || 0,
+            permissions: parsed.user?.permissions
+          });
+        }
         const { getAuthToken: getAuthToken2 } = await import("@rentalshop/utils");
         await new Promise((resolve) => setTimeout(resolve, 10));
         const storedToken = getAuthToken2();
@@ -3850,7 +3987,7 @@ function useAuth() {
         return false;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t3("UNKNOWN_ERROR");
+      const errorMessage = translateError(err);
       setState((prev) => ({
         ...prev,
         error: errorMessage,
@@ -3858,7 +3995,7 @@ function useAuth() {
       }));
       return false;
     }
-  }, [translateError, t3]);
+  }, [translateError]);
   const logout = (0, import_react5.useCallback)(() => {
     (0, import_utils.clearAuthData)();
     setState({
@@ -3900,19 +4037,62 @@ function useAuth() {
       setState((prev) => ({ ...prev, loading: false }));
     }
   }, [logout]);
-  (0, import_react5.useEffect)(() => {
+  const syncStateFromStorage = (0, import_react5.useCallback)(() => {
     const token = (0, import_utils.getAuthToken)();
     const storedUser = (0, import_utils.getStoredUser)();
     if (token && storedUser) {
-      setState((prev) => ({
-        ...prev,
-        user: storedUser,
-        loading: false
-      }));
+      setState((prev) => {
+        if (prev.user?.id !== storedUser.id) {
+          console.log("\u{1F504} useAuth: Syncing user state from localStorage");
+          console.log("\u{1F50D} useAuth: Stored user permissions:", storedUser.permissions);
+          const userWithPermissions = {
+            ...storedUser,
+            permissions: storedUser.permissions || []
+            // ✅ Preserve permissions
+          };
+          return {
+            ...prev,
+            user: userWithPermissions,
+            loading: false
+          };
+        }
+        if (prev.loading) {
+          return { ...prev, loading: false };
+        }
+        return prev;
+      });
     } else {
-      setState((prev) => ({ ...prev, user: null, loading: false }));
+      setState((prev) => {
+        if (prev.user !== null || prev.loading) {
+          console.log("\u{1F504} useAuth: Clearing user state (no token found)");
+          return { ...prev, user: null, loading: false };
+        }
+        return prev;
+      });
     }
   }, []);
+  (0, import_react5.useEffect)(() => {
+    syncStateFromStorage();
+  }, [syncStateFromStorage]);
+  (0, import_react5.useEffect)(() => {
+    if (typeof window === "undefined")
+      return;
+    const handleStorageChange = (e3) => {
+      if (e3.key === "authData" || e3.key === "authToken") {
+        console.log("\u{1F504} useAuth: localStorage changed, syncing state...");
+        syncStateFromStorage();
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    const handleCustomStorageChange = () => {
+      syncStateFromStorage();
+    };
+    window.addEventListener("auth-storage-change", handleCustomStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("auth-storage-change", handleCustomStorageChange);
+    };
+  }, [syncStateFromStorage]);
   return {
     user: state.user,
     loading: state.loading,
@@ -3940,28 +4120,124 @@ var useAuthErrorHandler = () => {
   return { handleAuthError };
 };
 
+// src/hooks/usePermissions.ts
+var import_react7 = require("react");
+function usePermissions() {
+  const { user } = useAuth();
+  const permissions = (0, import_react7.useMemo)(() => {
+    return user?.permissions || [];
+  }, [user?.permissions]);
+  const hasPermission = (0, import_react7.useMemo)(() => {
+    return (permission) => {
+      if (!user || !permissions.length) {
+        return false;
+      }
+      return permissions.includes(permission);
+    };
+  }, [user, permissions]);
+  const hasAnyPermission = (0, import_react7.useMemo)(() => {
+    return (requiredPermissions) => {
+      if (!user || !permissions.length || !requiredPermissions.length) {
+        return false;
+      }
+      return requiredPermissions.some((permission) => permissions.includes(permission));
+    };
+  }, [user, permissions]);
+  const hasAllPermissions = (0, import_react7.useMemo)(() => {
+    return (requiredPermissions) => {
+      if (!user || !permissions.length || !requiredPermissions.length) {
+        return false;
+      }
+      return requiredPermissions.every((permission) => permissions.includes(permission));
+    };
+  }, [user, permissions]);
+  const canManageProducts = (0, import_react7.useMemo)(() => hasPermission("products.manage"), [hasPermission]);
+  const canViewProducts = (0, import_react7.useMemo)(() => hasPermission("products.view"), [hasPermission]);
+  const canExportProducts = (0, import_react7.useMemo)(() => hasPermission("products.export"), [hasPermission]);
+  const canManageOrders = (0, import_react7.useMemo)(() => hasPermission("orders.manage"), [hasPermission]);
+  const canCreateOrders = (0, import_react7.useMemo)(() => hasPermission("orders.create"), [hasPermission]);
+  const canUpdateOrders = (0, import_react7.useMemo)(() => hasPermission("orders.update"), [hasPermission]);
+  const canDeleteOrders = (0, import_react7.useMemo)(() => hasPermission("orders.delete"), [hasPermission]);
+  const canViewOrders = (0, import_react7.useMemo)(() => hasPermission("orders.view"), [hasPermission]);
+  const canExportOrders = (0, import_react7.useMemo)(() => hasPermission("orders.export"), [hasPermission]);
+  const canManageCustomers = (0, import_react7.useMemo)(() => hasPermission("customers.manage"), [hasPermission]);
+  const canViewCustomers = (0, import_react7.useMemo)(() => hasPermission("customers.view"), [hasPermission]);
+  const canExportCustomers = (0, import_react7.useMemo)(() => hasPermission("customers.export"), [hasPermission]);
+  const canManageUsers = (0, import_react7.useMemo)(() => hasPermission("users.manage"), [hasPermission]);
+  const canViewUsers = (0, import_react7.useMemo)(() => hasPermission("users.view"), [hasPermission]);
+  const canManageOutlets = (0, import_react7.useMemo)(() => hasPermission("outlet.manage"), [hasPermission]);
+  const canViewOutlets = (0, import_react7.useMemo)(() => hasPermission("outlet.view"), [hasPermission]);
+  const canManageMerchants = (0, import_react7.useMemo)(() => hasPermission("merchant.manage"), [hasPermission]);
+  const canViewMerchants = (0, import_react7.useMemo)(() => hasPermission("merchant.view"), [hasPermission]);
+  const canViewAnalytics = (0, import_react7.useMemo)(() => hasPermission("analytics.view"), [hasPermission]);
+  const canManageBilling = (0, import_react7.useMemo)(() => hasPermission("billing.manage"), [hasPermission]);
+  const canViewBilling = (0, import_react7.useMemo)(() => hasPermission("billing.view"), [hasPermission]);
+  const canManageBankAccounts = (0, import_react7.useMemo)(() => hasPermission("bankAccounts.manage"), [hasPermission]);
+  const canViewBankAccounts = (0, import_react7.useMemo)(() => hasPermission("bankAccounts.view"), [hasPermission]);
+  return {
+    // Core permission checking methods
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    permissions,
+    // Raw permissions array
+    // Convenience methods for products
+    canManageProducts,
+    canViewProducts,
+    canExportProducts,
+    // Convenience methods for orders
+    canManageOrders,
+    canCreateOrders,
+    canUpdateOrders,
+    canDeleteOrders,
+    canViewOrders,
+    canExportOrders,
+    // Convenience methods for customers
+    canManageCustomers,
+    canViewCustomers,
+    canExportCustomers,
+    // Convenience methods for users
+    canManageUsers,
+    canViewUsers,
+    // Convenience methods for outlets
+    canManageOutlets,
+    canViewOutlets,
+    // Convenience methods for merchants
+    canManageMerchants,
+    canViewMerchants,
+    // Convenience methods for analytics
+    canViewAnalytics,
+    // Convenience methods for billing
+    canManageBilling,
+    canViewBilling,
+    // Convenience methods for bank accounts
+    canManageBankAccounts,
+    canViewBankAccounts
+  };
+}
+
 // src/hooks/useCanPerform.ts
-var import_react8 = require("react");
+var import_react9 = require("react");
 
 // src/hooks/useSubscriptionStatusInfo.ts
-var import_react7 = require("react");
+var import_react8 = require("react");
 function useSubscriptionStatusInfo(options = {}) {
   const { checkInterval = 5 * 60 * 1e3 } = options;
   const { user } = useAuth();
-  const [loading, setLoading] = (0, import_react7.useState)(true);
-  const [hasActiveSubscription, setHasActiveSubscription] = (0, import_react7.useState)(false);
-  const [isExpired, setIsExpired] = (0, import_react7.useState)(false);
-  const [isExpiringSoon, setIsExpiringSoon] = (0, import_react7.useState)(false);
-  const [daysUntilExpiry, setDaysUntilExpiry] = (0, import_react7.useState)(null);
-  const [subscriptionType, setSubscriptionType] = (0, import_react7.useState)(null);
-  const [hasSubscription, setHasSubscription] = (0, import_react7.useState)(false);
-  const [subscription, setSubscription] = (0, import_react7.useState)(null);
-  const [status, setStatus] = (0, import_react7.useState)("");
-  const [isTrial, setIsTrial] = (0, import_react7.useState)(false);
-  const [isActive, setIsActive] = (0, import_react7.useState)(false);
-  const [planName, setPlanName] = (0, import_react7.useState)("");
-  const [error, setError] = (0, import_react7.useState)(null);
-  const fetchSubscriptionStatus = (0, import_react7.useCallback)(async () => {
+  const [loading, setLoading] = (0, import_react8.useState)(true);
+  const [hasActiveSubscription, setHasActiveSubscription] = (0, import_react8.useState)(false);
+  const [isExpired, setIsExpired] = (0, import_react8.useState)(false);
+  const [isExpiringSoon, setIsExpiringSoon] = (0, import_react8.useState)(false);
+  const [daysUntilExpiry, setDaysUntilExpiry] = (0, import_react8.useState)(null);
+  const [subscriptionType, setSubscriptionType] = (0, import_react8.useState)(null);
+  const [hasSubscription, setHasSubscription] = (0, import_react8.useState)(false);
+  const [subscription, setSubscription] = (0, import_react8.useState)(null);
+  const [status, setStatus] = (0, import_react8.useState)("");
+  const [isTrial, setIsTrial] = (0, import_react8.useState)(false);
+  const [isActive, setIsActive] = (0, import_react8.useState)(false);
+  const [planName, setPlanName] = (0, import_react8.useState)("");
+  const [error, setError] = (0, import_react8.useState)(null);
+  const fetchSubscriptionStatus = (0, import_react8.useCallback)(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -4034,19 +4310,19 @@ function useSubscriptionStatusInfo(options = {}) {
       setLoading(false);
     }
   }, [user]);
-  const canAccessFeature = (0, import_react7.useCallback)((feature) => {
+  const canAccessFeature = (0, import_react8.useCallback)((feature) => {
     if (!hasActiveSubscription || isExpired) {
       return false;
     }
     return true;
   }, [hasActiveSubscription, isExpired]);
-  const refreshStatus = (0, import_react7.useCallback)(async () => {
+  const refreshStatus = (0, import_react8.useCallback)(async () => {
     await fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (!user)
       return;
     const interval = setInterval(fetchSubscriptionStatus, checkInterval);
@@ -4102,7 +4378,7 @@ function useSubscriptionStatusInfo(options = {}) {
 function useCanPerform(action) {
   const { user } = useAuth();
   const { hasActiveSubscription, isExpired, canAccessFeature } = useSubscriptionStatusInfo();
-  const checkPermission = (0, import_react8.useCallback)((action2) => {
+  const checkPermission = (0, import_react9.useCallback)((action2) => {
     if (!user) {
       return false;
     }
@@ -4215,43 +4491,43 @@ function useCanPerform(action) {
 }
 
 // src/hooks/useCurrency.tsx
-var import_react9 = require("react");
+var import_react10 = require("react");
 var import_utils3 = require("@rentalshop/utils");
-var CurrencyContext = (0, import_react9.createContext)(void 0);
+var CurrencyContext = (0, import_react10.createContext)(void 0);
 function CurrencyProvider({
   children,
   initialSettings = {}
 }) {
-  const [settings, setSettings] = (0, import_react9.useState)({
+  const [settings, setSettings] = (0, import_react10.useState)({
     ...import_utils3.DEFAULT_CURRENCY_SETTINGS,
     ...initialSettings
   });
   const currentCurrency = (0, import_utils3.getCurrentCurrency)(settings);
-  const setCurrency = (0, import_react9.useCallback)((currencyCode) => {
+  const setCurrency = (0, import_react10.useCallback)((currencyCode) => {
     setSettings((prev) => ({
       ...prev,
       currentCurrency: currencyCode
     }));
     localStorage.setItem("rentalshop-currency", currencyCode);
   }, []);
-  const toggleSymbol = (0, import_react9.useCallback)(() => {
+  const toggleSymbol = (0, import_react10.useCallback)(() => {
     setSettings((prev) => ({
       ...prev,
       showSymbol: !prev.showSymbol
     }));
     localStorage.setItem("rentalshop-show-symbol", (!settings.showSymbol).toString());
   }, [settings.showSymbol]);
-  const toggleCode = (0, import_react9.useCallback)(() => {
+  const toggleCode = (0, import_react10.useCallback)(() => {
     setSettings((prev) => ({
       ...prev,
       showCode: !prev.showCode
     }));
     localStorage.setItem("rentalshop-show-code", (!settings.showCode).toString());
   }, [settings.showCode]);
-  const getCurrencyByCode = (0, import_react9.useCallback)((code) => {
+  const getCurrencyByCode = (0, import_react10.useCallback)((code) => {
     return (0, import_utils3.getCurrency)(code);
   }, []);
-  const convertAmount = (0, import_react9.useCallback)((amount, from, to) => {
+  const convertAmount = (0, import_react10.useCallback)((amount, from, to) => {
     if (from === to)
       return amount;
     const fromCurrency = (0, import_utils3.getCurrency)(from);
@@ -4262,7 +4538,7 @@ function CurrencyProvider({
     const amountInUSD = amount / fromCurrency.exchangeRate;
     return amountInUSD * toCurrency.exchangeRate;
   }, []);
-  (0, import_react9.useEffect)(() => {
+  (0, import_react10.useEffect)(() => {
     try {
       const savedCurrency = localStorage.getItem("rentalshop-currency");
       const savedShowSymbol = localStorage.getItem("rentalshop-show-symbol");
@@ -4292,7 +4568,7 @@ function CurrencyProvider({
   return /* @__PURE__ */ React.createElement(CurrencyContext.Provider, { value: contextValue }, children);
 }
 function useCurrency() {
-  const context = (0, import_react9.useContext)(CurrencyContext);
+  const context = (0, import_react10.useContext)(CurrencyContext);
   if (context === void 0) {
     throw new Error("useCurrency must be used within a CurrencyProvider");
   }
@@ -4303,7 +4579,7 @@ function isValidCurrencyCode(code) {
 }
 
 // src/utils/useDedupedApi.ts
-var import_react10 = require("react");
+var import_react11 = require("react");
 var requestCache = /* @__PURE__ */ new Map();
 var dataCache = /* @__PURE__ */ new Map();
 function useDedupedApi(options) {
@@ -4319,18 +4595,18 @@ function useDedupedApi(options) {
     refetchOnMount = false
     // Default to false to prevent infinite loops
   } = options;
-  const [data, setData] = (0, import_react10.useState)(null);
-  const [loading, setLoading] = (0, import_react10.useState)(true);
-  const [error, setError] = (0, import_react10.useState)(null);
-  const [isStale, setIsStale] = (0, import_react10.useState)(false);
-  const [refetchKey, setRefetchKey] = (0, import_react10.useState)(0);
-  const fetchIdRef = (0, import_react10.useRef)(0);
-  const filtersRef = (0, import_react10.useRef)("");
-  const fetchFnRef = (0, import_react10.useRef)(fetchFn);
-  const isMountedRef = (0, import_react10.useRef)(true);
-  const isFirstMountRef = (0, import_react10.useRef)(true);
+  const [data, setData] = (0, import_react11.useState)(null);
+  const [loading, setLoading] = (0, import_react11.useState)(true);
+  const [error, setError] = (0, import_react11.useState)(null);
+  const [isStale, setIsStale] = (0, import_react11.useState)(false);
+  const [refetchKey, setRefetchKey] = (0, import_react11.useState)(0);
+  const fetchIdRef = (0, import_react11.useRef)(0);
+  const filtersRef = (0, import_react11.useRef)("");
+  const fetchFnRef = (0, import_react11.useRef)(fetchFn);
+  const isMountedRef = (0, import_react11.useRef)(true);
+  const isFirstMountRef = (0, import_react11.useRef)(true);
   fetchFnRef.current = fetchFn;
-  (0, import_react10.useEffect)(() => {
+  (0, import_react11.useEffect)(() => {
     isMountedRef.current = true;
     if (isFirstMountRef.current) {
       filtersRef.current = "";
@@ -4340,7 +4616,7 @@ function useDedupedApi(options) {
       isMountedRef.current = false;
     };
   }, []);
-  const cacheKey = (0, import_react10.useMemo)(() => {
+  const cacheKey = (0, import_react11.useMemo)(() => {
     const normalized = {};
     Object.keys(filters).sort().forEach((key) => {
       const value = filters[key];
@@ -4350,7 +4626,7 @@ function useDedupedApi(options) {
     });
     return JSON.stringify(normalized);
   }, [filters]);
-  (0, import_react10.useEffect)(() => {
+  (0, import_react11.useEffect)(() => {
     if (!enabled || !isMountedRef.current) {
       if (!enabled)
         setLoading(false);
@@ -4468,7 +4744,7 @@ function useDedupedApi(options) {
       requestCache.delete(cacheKey);
     });
   }, [cacheKey, enabled, staleTime, cacheTime, refetchKey]);
-  (0, import_react10.useEffect)(() => {
+  (0, import_react11.useEffect)(() => {
     if (refetchKey > 0 && !loading) {
       const timer = setTimeout(() => {
         setRefetchKey(0);
@@ -4476,7 +4752,7 @@ function useDedupedApi(options) {
       return () => clearTimeout(timer);
     }
   }, [refetchKey, loading]);
-  (0, import_react10.useEffect)(() => {
+  (0, import_react11.useEffect)(() => {
     if (!refetchOnWindowFocus || !enabled)
       return;
     const handleFocus = () => {
@@ -4494,7 +4770,7 @@ function useDedupedApi(options) {
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [refetchOnWindowFocus, enabled, cacheKey, staleTime]);
-  const refetch = (0, import_react10.useCallback)(async () => {
+  const refetch = (0, import_react11.useCallback)(async () => {
     if (!enabled)
       return;
     console.log("\u{1F504} Manual refetch triggered");
@@ -4634,13 +4910,13 @@ function useMerchantsData(options) {
 }
 
 // src/hooks/useOrdersData.ts
-var import_react11 = require("react");
+var import_react12 = require("react");
 var import_navigation = require("next/navigation");
 var import_utils7 = require("@rentalshop/utils");
 function useOrdersData(options) {
   const { filters, enabled = true } = options;
   const pathname = (0, import_navigation.usePathname)();
-  const filtersWithPath = (0, import_react11.useMemo)(() => ({
+  const filtersWithPath = (0, import_react12.useMemo)(() => ({
     ...filters,
     _pathname: pathname
     // Internal key to force refetch on navigation
@@ -4685,11 +4961,11 @@ function useOrdersData(options) {
 }
 
 // src/hooks/usePagination.ts
-var import_react12 = require("react");
+var import_react13 = require("react");
 var import_constants = require("@rentalshop/constants");
 function usePagination(config = {}) {
   const { initialLimit = import_constants.PAGINATION.DEFAULT_PAGE_SIZE, initialOffset = 0 } = config;
-  const [pagination, setPaginationState] = (0, import_react12.useState)({
+  const [pagination, setPaginationState] = (0, import_react13.useState)({
     total: 0,
     limit: initialLimit,
     offset: initialOffset,
@@ -4697,7 +4973,7 @@ function usePagination(config = {}) {
     currentPage: 1,
     totalPages: 1
   });
-  const setPagination = (0, import_react12.useCallback)((newPagination) => {
+  const setPagination = (0, import_react13.useCallback)((newPagination) => {
     setPaginationState((prev) => ({
       ...prev,
       ...newPagination,
@@ -4705,14 +4981,14 @@ function usePagination(config = {}) {
       totalPages: Math.ceil((newPagination.total ?? prev.total) / (newPagination.limit ?? prev.limit))
     }));
   }, []);
-  const handlePageChange = (0, import_react12.useCallback)((page) => {
+  const handlePageChange = (0, import_react13.useCallback)((page) => {
     const newOffset = (page - 1) * pagination.limit;
     setPagination({
       offset: newOffset,
       currentPage: page
     });
   }, [pagination.limit, setPagination]);
-  const resetPagination = (0, import_react12.useCallback)(() => {
+  const resetPagination = (0, import_react13.useCallback)(() => {
     setPagination({
       total: 0,
       offset: initialOffset,
@@ -4721,7 +4997,7 @@ function usePagination(config = {}) {
       totalPages: 1
     });
   }, [initialOffset, setPagination]);
-  const updatePaginationFromResponse = (0, import_react12.useCallback)((response) => {
+  const updatePaginationFromResponse = (0, import_react13.useCallback)((response) => {
     setPagination({
       total: response.total,
       limit: response.limit,
@@ -4885,10 +5161,10 @@ function usePlansData(options) {
 }
 
 // src/hooks/useProductAvailability.ts
-var import_react13 = require("react");
+var import_react14 = require("react");
 var import_utils10 = require("@rentalshop/utils");
 function useProductAvailability() {
-  const calculateAvailability = (0, import_react13.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const calculateAvailability = (0, import_react14.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const pickup = new Date(pickupDate);
     const return_ = new Date(returnDate);
     if (pickup >= return_) {
@@ -4931,11 +5207,11 @@ function useProductAvailability() {
       message
     };
   }, []);
-  const isProductAvailable = (0, import_react13.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const isProductAvailable = (0, import_react14.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const status = calculateAvailability(product, pickupDate, returnDate, requestedQuantity, existingOrders);
     return status.available;
   }, [calculateAvailability]);
-  const getAvailabilityForDateRange = (0, import_react13.useCallback)((product, startDate, endDate, existingOrders = []) => {
+  const getAvailabilityForDateRange = (0, import_react14.useCallback)((product, startDate, endDate, existingOrders = []) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const results = [];
@@ -5093,12 +5369,12 @@ function useSubscriptionsData(options) {
 }
 
 // src/hooks/useSubscriptionError.ts
-var import_react14 = require("react");
+var import_react15 = require("react");
 var import_ui = require("@rentalshop/ui");
 function useSubscriptionError() {
-  const [error, setError] = (0, import_react14.useState)(null);
+  const [error, setError] = (0, import_react15.useState)(null);
   const { addToast } = (0, import_ui.useToasts)();
-  const handleSubscriptionError = (0, import_react14.useCallback)((error2) => {
+  const handleSubscriptionError = (0, import_react15.useCallback)((error2) => {
     console.error("Subscription error:", error2);
     if (error2?.error === "SUBSCRIPTION_ERROR" || error2?.code === "SUBSCRIPTION_REQUIRED") {
       const subscriptionError = {
@@ -5113,7 +5389,7 @@ function useSubscriptionError() {
       addToast("error", "Error", error2?.message || "An error occurred");
     }
   }, [addToast]);
-  const showSubscriptionError = (0, import_react14.useCallback)((error2) => {
+  const showSubscriptionError = (0, import_react15.useCallback)((error2) => {
     const { subscriptionStatus, merchantStatus } = error2;
     let message = error2.message;
     let action = "";
@@ -5137,7 +5413,7 @@ function useSubscriptionError() {
 
 ${action}` : message, 8e3);
   }, [addToast]);
-  const clearError = (0, import_react14.useCallback)(() => {
+  const clearError = (0, import_react15.useCallback)(() => {
     setError(null);
   }, []);
   return {
@@ -5149,19 +5425,19 @@ ${action}` : message, 8e3);
 }
 
 // src/hooks/useThrottledSearch.ts
-var import_react15 = require("react");
+var import_react16 = require("react");
 function useThrottledSearch(options) {
   const { delay, minLength, onSearch } = options;
-  const [query, setQuery] = (0, import_react15.useState)("");
-  const [isSearching, setIsSearching] = (0, import_react15.useState)(false);
-  const timeoutRef = (0, import_react15.useRef)(null);
-  const isSearchingRef = (0, import_react15.useRef)(false);
-  const isInitialRender = (0, import_react15.useRef)(true);
-  const onSearchRef = (0, import_react15.useRef)(onSearch);
-  (0, import_react15.useEffect)(() => {
+  const [query, setQuery] = (0, import_react16.useState)("");
+  const [isSearching, setIsSearching] = (0, import_react16.useState)(false);
+  const timeoutRef = (0, import_react16.useRef)(null);
+  const isSearchingRef = (0, import_react16.useRef)(false);
+  const isInitialRender = (0, import_react16.useRef)(true);
+  const onSearchRef = (0, import_react16.useRef)(onSearch);
+  (0, import_react16.useEffect)(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
-  const handleSearchChange = (0, import_react15.useCallback)((value) => {
+  const handleSearchChange = (0, import_react16.useCallback)((value) => {
     console.log("\u{1F50D} useThrottledSearch: handleSearchChange called with:", value);
     setQuery(value);
     if (timeoutRef.current) {
@@ -5190,7 +5466,7 @@ function useThrottledSearch(options) {
       isSearchingRef.current = false;
     }
   }, [delay, minLength]);
-  const clearSearch = (0, import_react15.useCallback)(() => {
+  const clearSearch = (0, import_react16.useCallback)(() => {
     setQuery("");
     setIsSearching(false);
     isSearchingRef.current = false;
@@ -5201,12 +5477,12 @@ function useThrottledSearch(options) {
       onSearchRef.current("");
     }
   }, []);
-  const cleanup = (0, import_react15.useCallback)(() => {
+  const cleanup = (0, import_react16.useCallback)(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
   }, []);
-  (0, import_react15.useEffect)(() => {
+  (0, import_react16.useEffect)(() => {
     isInitialRender.current = false;
     return cleanup;
   }, [cleanup]);
@@ -5221,7 +5497,7 @@ function useThrottledSearch(options) {
 }
 
 // src/hooks/useToast.ts
-var import_react16 = require("react");
+var import_react17 = require("react");
 var import_utils13 = require("@rentalshop/utils");
 var import_ui2 = require("@rentalshop/ui");
 var useErrorHandler = (options = {}) => {
@@ -5231,30 +5507,29 @@ var useErrorHandler = (options = {}) => {
     onDismiss,
     autoHandleAuth = true
   } = options;
-  const [isLoading, setIsLoading] = (0, import_react16.useState)(false);
+  const [isLoading, setIsLoading] = (0, import_react17.useState)(false);
   const { addToast } = (0, import_ui2.useToasts)();
-  const handleError = (0, import_react16.useCallback)((error) => {
-    const errorInfo = (0, import_utils13.analyzeError)(error);
-    return errorInfo;
+  const { translateError } = useApiError();
+  const handleError = (0, import_react17.useCallback)((error) => {
+    const errorCode = error?.code || error?.response?.data?.code;
+    return {
+      type: "unknown",
+      message: errorCode || "UNKNOWN_ERROR",
+      title: "Error",
+      showLoginButton: false,
+      originalError: error
+    };
   }, []);
-  const showErrorToast = (0, import_react16.useCallback)((error) => {
-    const errorInfo = (0, import_utils13.analyzeError)(error);
-    const toastType = (0, import_utils13.getToastType)(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
+  const showErrorToast = (0, import_react17.useCallback)((error) => {
+    const translatedMessage = translateError(error);
+    const errorCode = error?.code || error?.response?.data?.code;
+    let toastType = "error";
+    if (errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode?.includes("SUBSCRIPTION")) {
+      toastType = "warning";
     }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-  }, [addToast]);
-  const handleApiCall = (0, import_react16.useCallback)(async (apiCall) => {
+    addToast(toastType, "L\u1ED7i", translatedMessage, 0);
+  }, [addToast, translateError]);
+  const handleApiCall = (0, import_react17.useCallback)(async (apiCall) => {
     setIsLoading(true);
     try {
       const result = await (0, import_utils13.withErrorHandlingForUI)(apiCall);
@@ -5266,12 +5541,12 @@ var useErrorHandler = (options = {}) => {
       setIsLoading(false);
     }
   }, [showErrorToast]);
-  const retry = (0, import_react16.useCallback)(() => {
+  const retry = (0, import_react17.useCallback)(() => {
     if (onRetry) {
       onRetry();
     }
   }, [onRetry]);
-  const login = (0, import_react16.useCallback)(() => {
+  const login = (0, import_react17.useCallback)(() => {
     if (onLogin) {
       onLogin();
     } else if (typeof window !== "undefined") {
@@ -5288,60 +5563,66 @@ var useErrorHandler = (options = {}) => {
 };
 var useSimpleErrorHandler = () => {
   const { addToast } = (0, import_ui2.useToasts)();
-  const handleError = (0, import_react16.useCallback)((error) => {
-    const errorInfo = (0, import_utils13.analyzeError)(error);
-    const toastType = (0, import_utils13.getToastType)(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
+  const { translateError } = useApiError();
+  const handleError = (0, import_react17.useCallback)((error) => {
+    const translatedMessage = translateError(error);
+    const errorCode = error?.code || error?.response?.data?.code;
+    let toastType = "error";
+    if (errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode?.includes("SUBSCRIPTION")) {
+      toastType = "warning";
     }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
+    addToast(toastType, "L\u1ED7i", translatedMessage, 0);
+    return {
+      type: toastType,
+      message: translatedMessage,
+      code: errorCode
+    };
+  }, [addToast, translateError]);
   return {
     handleError
   };
 };
 var useToastHandler = () => {
   const { addToast } = (0, import_ui2.useToasts)();
-  const showError = (0, import_react16.useCallback)((title, message) => {
+  const { translateError } = useApiError();
+  const t3 = useCommonTranslations();
+  const showError = (0, import_react17.useCallback)((title, message) => {
     addToast("error", title, message, 0);
   }, [addToast]);
-  const showSuccess = (0, import_react16.useCallback)((title, message) => {
+  const showSuccess = (0, import_react17.useCallback)((title, message) => {
     addToast("success", title, message, 5e3);
   }, [addToast]);
-  const showWarning = (0, import_react16.useCallback)((title, message) => {
+  const showWarning = (0, import_react17.useCallback)((title, message) => {
     addToast("warning", title, message, 5e3);
   }, [addToast]);
-  const showInfo = (0, import_react16.useCallback)((title, message) => {
+  const showInfo = (0, import_react17.useCallback)((title, message) => {
     addToast("info", title, message, 5e3);
   }, [addToast]);
-  const handleError = (0, import_react16.useCallback)((error) => {
-    const errorInfo = (0, import_utils13.analyzeError)(error);
-    const toastType = (0, import_utils13.getToastType)(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
-    }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
+  const handleError = (0, import_react17.useCallback)((error) => {
+    console.log("\u{1F50D} useToastHandler.handleError called with:", {
+      type: typeof error,
+      isError: error instanceof Error,
+      hasCode: !!error?.code,
+      code: error?.code,
+      hasMessage: !!error?.message,
+      message: error?.message,
+      hasSuccess: error?.success !== void 0,
+      success: error?.success,
+      fullError: error
+    });
+    const translatedMessage = translateError(error);
+    console.log("\u{1F50D} useToastHandler.handleError: Translated message:", translatedMessage);
+    const errorCode = error?.code || error?.response?.data?.code;
+    let toastType = "error";
+    let title = t3("labels.error");
+    console.log("\u{1F50D} useToastHandler.handleError: Showing toast:", { type: toastType, title, message: translatedMessage, code: errorCode });
+    addToast(toastType, title, translatedMessage, 0);
+    return {
+      type: toastType,
+      message: translatedMessage,
+      code: errorCode
+    };
+  }, [addToast, translateError, t3]);
   return {
     showError,
     showSuccess,
@@ -5353,12 +5634,12 @@ var useToastHandler = () => {
 
 // src/hooks/useLocale.ts
 var import_navigation2 = require("next/navigation");
-var import_react17 = require("react");
+var import_react18 = require("react");
 function useLocale() {
   const locale = Z();
   const router = (0, import_navigation2.useRouter)();
   const pathname = (0, import_navigation2.usePathname)();
-  const [isPending, startTransition] = (0, import_react17.useTransition)();
+  const [isPending, startTransition] = (0, import_react18.useTransition)();
   const setLocale = (newLocale) => {
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
     startTransition(() => {
@@ -5484,14 +5765,14 @@ function useUsersData(options) {
 }
 
 // src/hooks/useOptimisticNavigation.ts
-var import_react18 = require("react");
+var import_react19 = require("react");
 var import_navigation3 = require("next/navigation");
 function useOptimisticNavigation() {
-  const [navigatingTo, setNavigatingTo] = (0, import_react18.useState)(null);
-  const [isPending, startTransition] = (0, import_react18.useTransition)();
+  const [navigatingTo, setNavigatingTo] = (0, import_react19.useState)(null);
+  const [isPending, startTransition] = (0, import_react19.useTransition)();
   const pathname = (0, import_navigation3.usePathname)();
   const router = (0, import_navigation3.useRouter)();
-  (0, import_react18.useEffect)(() => {
+  (0, import_react19.useEffect)(() => {
     if (navigatingTo && pathname === navigatingTo) {
       const timer = setTimeout(() => {
         setNavigatingTo(null);
@@ -5499,11 +5780,11 @@ function useOptimisticNavigation() {
       return () => clearTimeout(timer);
     }
   }, [pathname, navigatingTo]);
-  const navigate = (0, import_react18.useCallback)((path) => {
+  const navigate = (0, import_react19.useCallback)((path) => {
     setNavigatingTo(path);
     router.push(path, { scroll: false });
   }, [router]);
-  const prefetch = (0, import_react18.useCallback)((path) => {
+  const prefetch = (0, import_react19.useCallback)((path) => {
     router.prefetch(path);
   }, [router]);
   return {
@@ -5513,101 +5794,6 @@ function useOptimisticNavigation() {
     prefetch
   };
 }
-
-// src/hooks/useApiError.ts
-function useApiError() {
-  const t3 = useErrorTranslations();
-  const translateError = (response) => {
-    if (response?.response?.data) {
-      return translateError(response.response.data);
-    }
-    if (response?.code) {
-      const translated = t3(response.code);
-      if (translated === response.code && response.message) {
-        return response.message;
-      }
-      return translated;
-    }
-    if (response?.message) {
-      return response.message;
-    }
-    if (typeof response === "string") {
-      return response;
-    }
-    return t3("UNKNOWN_ERROR");
-  };
-  const translateSuccess = (response) => {
-    if (response?.code) {
-      const translated = t3(response.code);
-      if (translated === response.code && response.message) {
-        return response.message;
-      }
-      return translated;
-    }
-    if (response?.message) {
-      return response.message;
-    }
-    return t3("UNKNOWN_ERROR");
-  };
-  const translateResponse = (response) => {
-    if (response?.success === false) {
-      return translateError(response);
-    }
-    return translateSuccess(response);
-  };
-  const isError = (response) => {
-    return response?.success === false || !!response?.error || !!response?.response?.data?.error;
-  };
-  const getErrorCode = (response) => {
-    if (response?.response?.data?.code) {
-      return response.response.data.code;
-    }
-    if (response?.code) {
-      return response.code;
-    }
-    return null;
-  };
-  return {
-    translateError,
-    translateSuccess,
-    translateResponse,
-    isError,
-    getErrorCode
-  };
-}
-function extractErrorMessage(error) {
-  if (error?.response?.data) {
-    const data = error.response.data;
-    return data.message || data.error || "An error occurred";
-  }
-  if (error?.message) {
-    return error.message;
-  }
-  if (typeof error === "string") {
-    return error;
-  }
-  return "An unknown error occurred";
-}
-function extractErrorCode(error) {
-  if (error?.response?.data?.code) {
-    return error.response.data.code;
-  }
-  if (error?.code) {
-    return error.code;
-  }
-  return null;
-}
-function isErrorCode(error, code) {
-  return extractErrorCode(error) === code;
-}
-var ErrorCheckers = {
-  isUnauthorized: (error) => isErrorCode(error, "UNAUTHORIZED") || isErrorCode(error, "INVALID_TOKEN"),
-  isForbidden: (error) => isErrorCode(error, "FORBIDDEN"),
-  isNotFound: (error) => isErrorCode(error, "NOT_FOUND") || extractErrorCode(error)?.includes("_NOT_FOUND"),
-  isValidationError: (error) => isErrorCode(error, "VALIDATION_ERROR"),
-  isDuplicateEntry: (error) => isErrorCode(error, "DUPLICATE_ENTRY") || extractErrorCode(error)?.includes("_EXISTS"),
-  isNetworkError: (error) => isErrorCode(error, "NETWORK_ERROR") || error?.message?.includes("Network")
-};
 
 // src/hooks/useFiltersData.ts
 var import_utils15 = require("@rentalshop/utils");
@@ -5794,6 +5980,7 @@ function useCategoriesWithFilters(options) {
   useOutletsWithFilters,
   usePagination,
   usePaymentsData,
+  usePermissions,
   usePlansData,
   usePlansTranslations,
   useProductAvailability,

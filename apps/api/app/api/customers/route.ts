@@ -23,7 +23,7 @@ function parseQueryParams<T>(request: NextRequest, schema: any): { success: true
       return {
         success: false,
         response: NextResponse.json(
-          ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+          ResponseBuilder.validationError(parsed.error.flatten()),
           { status: 400 }
         )
       };
@@ -46,7 +46,7 @@ async function parseRequestBody<T>(request: NextRequest, schema: any): Promise<{
       return {
         success: false,
         response: NextResponse.json(
-          ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+          ResponseBuilder.validationError(parsed.error.flatten()),
           { status: 400 }
         )
       };
@@ -57,7 +57,7 @@ async function parseRequestBody<T>(request: NextRequest, schema: any): Promise<{
       return {
         success: false,
         response: NextResponse.json(
-          ResponseBuilder.error('INVALID_JSON', 'Invalid JSON in request body'),
+          ResponseBuilder.error('INVALID_INPUT'),
           { status: 400 }
         )
       };
@@ -287,7 +287,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           
           console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
-            ResponseBuilder.error('CUSTOMER_DUPLICATE', `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`),
+            ResponseBuilder.error('CUSTOMER_DUPLICATE'),
             { status: 409 }
           );
         }
@@ -446,7 +446,7 @@ export const PUT = withPermissions(['customers.manage'])(async (request, { user,
           
           console.log('❌ Customer duplicate found:', { field: duplicateField, value: duplicateValue });
           return NextResponse.json(
-            ResponseBuilder.error('CUSTOMER_DUPLICATE', `A customer with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`),
+            ResponseBuilder.error('CUSTOMER_DUPLICATE'),
             { status: 409 }
           );
         }

@@ -66,7 +66,7 @@ export const POST = withPermissions(['users.manage'])(
         );
         if (invalidUsers.length > 0) {
           return NextResponse.json(
-            ResponseBuilder.error('FORBIDDEN', 'Cannot manage permissions for users outside your outlet or non-staff users'),
+            ResponseBuilder.error('FORBIDDEN'),
             { status: API.STATUS.FORBIDDEN }
           );
         }
@@ -77,7 +77,7 @@ export const POST = withPermissions(['users.manage'])(
         const invalidUsers = users.filter((u) => u.merchantId !== userScope.merchantId);
         if (invalidUsers.length > 0) {
           return NextResponse.json(
-            ResponseBuilder.error('FORBIDDEN', 'Cannot manage permissions for users outside your merchant'),
+            ResponseBuilder.error('FORBIDDEN'),
             { status: API.STATUS.FORBIDDEN }
           );
         }

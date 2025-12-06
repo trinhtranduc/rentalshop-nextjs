@@ -94,7 +94,17 @@
     "collectionAmount": "Collection Amount",
     "collateral": "Collateral",
     "alreadyCollected": "Already collected",
-    "noCollectionNeeded": "No collection needed"
+    "noCollectionNeeded": "No collection needed",
+    "pickupOrderTitle": "Pickup Order - Collection Details",
+    "returnOrderTitle": "Return Order - Return Details",
+    "confirmPickup": "Confirm Pickup & Collect",
+    "confirmReturn": "Confirm Return & Process Refund",
+    "collectFromCustomer": "Collect from Customer",
+    "returnToCustomer": "Return to Customer",
+    "orderNumberLabel": "Order",
+    "customerLabel": "Customer",
+    "statusLabel": "Status",
+    "close": "Close"
   },
   "payment": {
     "subtotal": "Subtotal",
@@ -199,7 +209,7 @@
     "noBarcode": "No Barcode",
     "noCategory": "No Category",
     "outOfStock": "Out of Stock",
-    "lowStock": "Low Stock",
+    "lowStockLabel": "Low Stock",
     "inStock": "In Stock",
     "error": "Error",
     "duplicateCustomer": "Duplicate Customer",

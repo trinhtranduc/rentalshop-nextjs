@@ -211,7 +211,7 @@ export async function DELETE(
 
         if (adminCount <= 1) {
           return NextResponse.json(
-            ResponseBuilder.error('CANNOT_DELETE_LAST_ADMIN', 'Cannot delete the last administrator. Please assign another administrator first.'),
+            ResponseBuilder.error('CANNOT_DELETE_LAST_ADMIN'),
             { status: API.STATUS.CONFLICT }
           );
         }

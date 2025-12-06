@@ -1,6 +1,8 @@
 /**
  * useApiError Hook
- * Hook để translate API error/success messages dựa trên error codes
+ * Simple hook để translate API error/success messages dựa trên error codes
+ * 
+ * Flow: API returns error code -> translate code -> show translated message
  * 
  * @example
  * const { translateError, translateSuccess } = useApiError();
@@ -15,44 +17,91 @@
 
 import { useErrorTranslations } from './useTranslation';
 
-interface ApiResponse {
-  success: boolean;
-  code?: string;
-  message?: string;
-  data?: any;
-  error?: any;
-}
-
 export function useApiError() {
   const t = useErrorTranslations();
 
   /**
    * Translate error response từ API
-   * Ưu tiên dùng code để translate, fallback sang message
+   * 
+   * STANDARD FORMAT: { success: false, code: "...", message: "...", error: "..." }
+   * Single source of truth: ResponseBuilder.error() format
+   * 
+   * Flow: code -> translate -> done
    */
   const translateError = (response: any): string => {
-    // Handle axios error response
+    console.log('🔍 translateError called with:', {
+      type: typeof response,
+      isError: response instanceof Error,
+      hasCode: !!response?.code,
+      code: response?.code,
+      hasMessage: !!response?.message,
+      message: response?.message,
+      hasResponse: !!response?.response,
+      responseData: response?.response?.data,
+      fullResponse: response
+    });
+
+    // Handle nested axios error response
     if (response?.response?.data) {
+      console.log('🔍 translateError: Handling nested axios error response');
       return translateError(response.response.data);
     }
 
-    // Handle API error response với code
-    if (response?.code) {
+    // ✅ PRIORITY 1: Standard API error format
+    // Format: { success: false, code: "PLAN_LIMIT_EXCEEDED", message: "...", error: "..." }
+    if (response?.code && typeof response.code === 'string') {
+      console.log('🔍 translateError: Found code field:', response.code);
       const translated = t(response.code);
-      // Nếu translation key không tồn tại, fallback sang message
-      if (translated === response.code && response.message) {
+      console.log('🔍 translateError: Translation result:', { code: response.code, translated, isTranslated: translated !== response.code });
+      
+      // Translation exists if it's different from the code
+      if (translated !== response.code) {
+        console.log('✅ translateError: Using translated message:', translated);
+        return translated;
+      }
+      // Fallback to message if translation doesn't exist
+      if (response?.message) {
+        console.log('⚠️ translateError: Translation not found, using message:', response.message);
         return response.message;
       }
-      return translated;
+      // Last resort: return code itself
+      console.log('⚠️ translateError: No translation or message, returning code:', response.code);
+      return response.code;
     }
 
-    // Handle error object với message
+    // ✅ PRIORITY 2: Error object with code attached (from authenticatedFetch)
+    // Format: Error { code: "PLAN_LIMIT_EXCEEDED", message: "...", response: { data: {...} } }
+    if (response instanceof Error && (response as any).code) {
+      const code = (response as any).code;
+      const translated = t(code);
+      if (translated !== code) {
+        return translated;
+      }
+      // Fallback to error message
+      return response.message;
+    }
+
+    // ✅ PRIORITY 3: Check if message is an error code format (legacy support)
+    if (response?.message && typeof response.message === 'string' && /^[A-Z_]+$/.test(response.message)) {
+      const translated = t(response.message);
+      if (translated !== response.message) {
+        return translated;
+      }
+    }
+
+    // ✅ PRIORITY 4: Use message as plain text
     if (response?.message) {
       return response.message;
     }
 
-    // Handle string error
+    // ✅ PRIORITY 5: Handle string errors
     if (typeof response === 'string') {
+      if (/^[A-Z_]+$/.test(response)) {
+        const translated = t(response);
+        if (translated !== response) {
+          return translated;
+        }
+      }
       return response;
     }
 
@@ -62,20 +111,19 @@ export function useApiError() {
 
   /**
    * Translate success response từ API
-   * Ưu tiên dùng code để translate, fallback sang message
+   * Priority: code -> message -> UNKNOWN_ERROR
    */
   const translateSuccess = (response: any): string => {
-    // Handle API success response với code
-    if (response?.code) {
+    // Priority 1: Use code field
+    if (response?.code && typeof response.code === 'string') {
       const translated = t(response.code);
-      // Nếu translation key không tồn tại, fallback sang message
-      if (translated === response.code && response.message) {
-        return response.message;
+      // If translation exists, use it; otherwise fallback to message
+      if (translated !== response.code) {
+        return translated;
       }
-      return translated;
     }
 
-    // Handle success response với message
+    // Priority 2: Use message if available
     if (response?.message) {
       return response.message;
     }
@@ -103,13 +151,20 @@ export function useApiError() {
 
   /**
    * Extract error code từ response
+   * Returns the error code for programmatic checks
    */
   const getErrorCode = (response: any): string | null => {
+    // Handle nested axios error response
     if (response?.response?.data?.code) {
       return response.response.data.code;
     }
-    if (response?.code) {
+    // Check direct code property (API response format)
+    if (response?.code && typeof response.code === 'string') {
       return response.code;
+    }
+    // Check if message is an error code
+    if (response?.message && typeof response.message === 'string' && /^[A-Z_]+$/.test(response.message)) {
+      return response.message;
     }
     return null;
   };

@@ -23,7 +23,8 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations, useToastHandler } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import type { ProductFilters, Product, ProductWithDetails, ProductUpdateInput, Category, Outlet } from '@rentalshop/types';
 
@@ -59,9 +60,12 @@ export default function ProductsPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const { handleError } = useToastHandler();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
+  // ✅ Use permissions hook to check if user can manage products
+  const { canManageProducts } = usePermissions();
   
   // Dialog states
   const [selectedProduct, setSelectedProduct] = useState<ProductWithDetails | null>(null);
@@ -336,14 +340,26 @@ export default function ProductsPage() {
         setShowAddDialog(false);
         refetch();
       } else {
-        throw new Error(response.error || t('messages.createFailed'));
+        // Pass the full response object so translateError can use the code field
+        console.log('🔍 page.tsx: Throwing response object (not Error):', response);
+        throw response;
       }
-    } catch (error) {
-      console.error('Error creating product:', error);
-      toastError(tc('labels.error'), error instanceof Error ? error.message : t('messages.createFailed'));
+    } catch (error: any) {
+      console.error('🔍 page.tsx: Error caught:', {
+        type: typeof error,
+        isError: error instanceof Error,
+        hasCode: !!error?.code,
+        code: error?.code,
+        message: error?.message,
+        success: error?.success,
+        fullError: error
+      });
+      // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
+      // This automatically translates error.code and shows toast
+      handleError(error);
       throw error; // Re-throw to let dialog handle it
     }
-  }, [toastSuccess, toastError, refetch, t, tc]);
+  }, [toastSuccess, handleError, refetch, t]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -396,14 +412,17 @@ export default function ProductsPage() {
                 {tc('buttons.export')}
               </Button>
             )}
-            <Button 
-              onClick={() => setShowAddDialog(true)}
-              variant="default"
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t('createProduct')}
-            </Button>
+            {/* ✅ Only show Add Product button if user can manage products */}
+            {canManageProducts && (
+              <Button 
+                onClick={() => setShowAddDialog(true)}
+                variant="default"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {t('createProduct')}
+              </Button>
+            )}
           </div>
         </div>
       </PageHeader>
@@ -469,7 +488,8 @@ export default function ProductsPage() {
         merchantId={String(user?.merchantId || user?.merchant?.id || 0)}
         onProductCreated={handleProductCreated}
         onError={(error) => {
-          toastError(tc('labels.error'), error);
+          // ✅ onProductCreated already shows toast, so onError is only for logging
+          console.error('❌ ProductAddDialog: Error occurred:', error);
         }}
       />
 

@@ -2,13 +2,13 @@
 
 import { useState, useCallback } from 'react';
 import { 
-  analyzeError, 
   handleApiErrorForUI, 
   withErrorHandlingForUI,
-  getToastType,
   type ErrorInfo 
 } from '@rentalshop/utils';
 import { useToasts } from '@rentalshop/ui';
+import { useApiError } from './useApiError';
+import { useCommonTranslations } from './useTranslation';
 
 /**
  * Toast Management Hooks
@@ -55,33 +55,32 @@ export const useErrorHandler = (options: UseErrorHandlerOptions = {}): UseErrorH
 
   const [isLoading, setIsLoading] = useState(false);
   const { addToast } = useToasts();
+  const { translateError } = useApiError();
 
   const handleError = useCallback((error: any): ErrorInfo => {
-    const errorInfo = analyzeError(error);
-    return errorInfo;
+    // ✅ SIMPLE: Return basic error info
+    const errorCode = error?.code || error?.response?.data?.code;
+    return {
+      type: 'unknown',
+      message: errorCode || 'UNKNOWN_ERROR',
+      title: 'Error',
+      showLoginButton: false,
+      originalError: error
+    };
   }, []);
 
   const showErrorToast = useCallback((error: any) => {
-    const errorInfo = analyzeError(error);
-    const toastType = getToastType(errorInfo.type);
+    // ✅ SIMPLE: Translate error code và show toast
+    const translatedMessage = translateError(error);
+    const errorCode = error?.code || error?.response?.data?.code;
     
-    // Create toast message with specific action guidance
-    let toastMessage = errorInfo.message;
-    
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === 'auth') {
-        toastMessage += ' Click to log in again.';
-      } else if (errorInfo.type === 'permission') {
-        toastMessage += ' Click to log in with a different account.';
-      } else if (errorInfo.type === 'subscription') {
-        toastMessage += ' Click to log in and upgrade your plan.';
-      } else {
-        toastMessage += ' Click to log in.';
-      }
+    let toastType: 'error' | 'warning' = 'error';
+    if (errorCode === 'PLAN_LIMIT_EXCEEDED' || errorCode?.includes('SUBSCRIPTION')) {
+      toastType = 'warning';
     }
     
-    addToast(toastType, errorInfo.title, toastMessage, 0); // No auto-hide for errors
-  }, [addToast]);
+    addToast(toastType, 'Lỗi', translatedMessage, 0);
+  }, [addToast, translateError]);
 
   const handleApiCall = useCallback(async <T>(apiCall: () => Promise<T>) => {
     setIsLoading(true);
@@ -129,27 +128,25 @@ export const useErrorHandler = (options: UseErrorHandlerOptions = {}): UseErrorH
  */
 export const useSimpleErrorHandler = () => {
   const { addToast } = useToasts();
+  const { translateError } = useApiError();
 
   const handleError = useCallback((error: any) => {
-    const errorInfo = analyzeError(error);
-    const toastType = getToastType(errorInfo.type);
+    // ✅ SIMPLE: Translate error code và show toast
+    const translatedMessage = translateError(error);
+    const errorCode = error?.code || error?.response?.data?.code;
     
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === 'auth') {
-        toastMessage += ' Click to log in again.';
-      } else if (errorInfo.type === 'permission') {
-        toastMessage += ' Click to log in with a different account.';
-      } else if (errorInfo.type === 'subscription') {
-        toastMessage += ' Click to log in and upgrade your plan.';
-      } else {
-        toastMessage += ' Click to log in.';
-      }
+    let toastType: 'error' | 'warning' = 'error';
+    if (errorCode === 'PLAN_LIMIT_EXCEEDED' || errorCode?.includes('SUBSCRIPTION')) {
+      toastType = 'warning';
     }
     
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
+    addToast(toastType, 'Lỗi', translatedMessage, 0);
+    return {
+      type: toastType,
+      message: translatedMessage,
+      code: errorCode,
+    };
+  }, [addToast, translateError]);
 
   return {
     handleError
@@ -157,18 +154,22 @@ export const useSimpleErrorHandler = () => {
 };
 
 /**
- * Toast handler hook that provides both error and success toast functionality
- * This is the recommended way to handle toasts in components
+ * Toast handler hook - SIMPLE & CLEAN
+ * Recommended way to handle toasts in components
+ * 
+ * Flow: error -> translateError(code) -> showToast(translated message)
  */
 export const useToastHandler = () => {
   const { addToast } = useToasts();
+  const { translateError } = useApiError();
+  const t = useCommonTranslations();
 
   const showError = useCallback((title: string, message?: string) => {
-    addToast('error', title, message, 0); // No auto-hide for errors
+    addToast('error', title, message, 0);
   }, [addToast]);
 
   const showSuccess = useCallback((title: string, message?: string) => {
-    addToast('success', title, message, 5000); // 5 second auto-hide for success
+    addToast('success', title, message, 5000);
   }, [addToast]);
 
   const showWarning = useCallback((title: string, message?: string) => {
@@ -179,26 +180,41 @@ export const useToastHandler = () => {
     addToast('info', title, message, 5000);
   }, [addToast]);
 
+  /**
+   * Handle error và show toast với translated message
+   * SIMPLE: error -> translateError(code) -> showToast
+   */
   const handleError = useCallback((error: any) => {
-    const errorInfo = analyzeError(error);
-    const toastType = getToastType(errorInfo.type);
+    console.log('🔍 useToastHandler.handleError called with:', {
+      type: typeof error,
+      isError: error instanceof Error,
+      hasCode: !!error?.code,
+      code: error?.code,
+      hasMessage: !!error?.message,
+      message: error?.message,
+      hasSuccess: error?.success !== undefined,
+      success: error?.success,
+      fullError: error
+    });
+
+    // ✅ SIMPLE: Chỉ cần translate error code và show toast
+    const translatedMessage = translateError(error);
+    console.log('🔍 useToastHandler.handleError: Translated message:', translatedMessage);
     
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === 'auth') {
-        toastMessage += ' Click to log in again.';
-      } else if (errorInfo.type === 'permission') {
-        toastMessage += ' Click to log in with a different account.';
-      } else if (errorInfo.type === 'subscription') {
-        toastMessage += ' Click to log in and upgrade your plan.';
-      } else {
-        toastMessage += ' Click to log in.';
-      }
-    }
+    // Determine toast type from error code
+    const errorCode = error?.code || error?.response?.data?.code;
+    let toastType: 'error' | 'warning' = 'error';
+    let title = t('labels.error');
     
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
+    console.log('🔍 useToastHandler.handleError: Showing toast:', { type: toastType, title, message: translatedMessage, code: errorCode });
+    addToast(toastType, title, translatedMessage, 0);
+    
+    return {
+      type: toastType,
+      message: translatedMessage,
+      code: errorCode,
+    };
+  }, [addToast, translateError, t]);
 
   return {
     showError,

@@ -81,7 +81,7 @@ export async function GET(
       const userMerchantId = userScope.merchantId;
       if (user.role !== 'ADMIN' && !userMerchantId) {
         return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED', 'User must be associated with a merchant'),
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 403 }
         );
       }
@@ -283,7 +283,7 @@ export async function PUT(
             const validation = validateImage(file);
             if (!validation.isValid) {
               return NextResponse.json(
-                ResponseBuilder.error('IMAGE_VALIDATION_FAILED', { details: validation.error }),
+                ResponseBuilder.error('IMAGE_VALIDATION_FAILED'),
                 { status: 400 }
               );
             }
@@ -334,7 +334,7 @@ export async function PUT(
             } else {
               console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
               return NextResponse.json(
-                ResponseBuilder.error('IMAGE_UPLOAD_FAILED', { details: uploadResult.error }),
+                ResponseBuilder.error('IMAGE_UPLOAD_FAILED'),
                 { status: 500 }
               );
             }
@@ -474,7 +474,7 @@ export async function PUT(
         if (duplicateProduct) {
           console.log('❌ Product name already exists:', productUpdateData.name);
           return NextResponse.json(
-            ResponseBuilder.error('PRODUCT_NAME_EXISTS', `A product with the name "${productUpdateData.name}" already exists. Please choose a different name.`),
+            ResponseBuilder.error('BUSINESS_NAME_EXISTS'),
             { status: 409 }
           );
         }

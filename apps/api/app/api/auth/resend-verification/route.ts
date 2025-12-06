@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     if (user.emailVerified) {
       console.log('⚠️ [Resend Verification] Email already verified');
       return NextResponse.json(
-        ResponseBuilder.error('EMAIL_ALREADY_VERIFIED', 'Email đã được xác thực rồi'),
+        ResponseBuilder.error('EMAIL_ALREADY_VERIFIED'),
         { status: 400 }
       );
     }
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       // Include the actual error message in the response
       const errorMessage = `Không thể gửi email xác thực. ${errorDetails}`;
       return NextResponse.json(
-        ResponseBuilder.error('EMAIL_SEND_FAILED', errorMessage),
+        ResponseBuilder.error('EMAIL_SEND_FAILED'),
         { status: 500 }
       );
     }

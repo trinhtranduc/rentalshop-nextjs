@@ -64,9 +64,7 @@ export async function GET(
       const parsedQuery = availabilityQuerySchema.safeParse(query);
       if (!parsedQuery.success) {
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_QUERY_PARAMETERS', { 
-            details: parsedQuery.error.flatten() 
-          }),
+          ResponseBuilder.error('INVALID_QUERY_PARAMETERS'),
           { status: 400 }
         );
       }
@@ -95,7 +93,7 @@ export async function GET(
         // Merchants/Admins: outletId is required in query
         if (!outletId) {
           return NextResponse.json(
-            ResponseBuilder.error('OUTLET_REQUIRED', 'Outlet ID is required for merchants and admins'),
+            ResponseBuilder.error('OUTLET_REQUIRED'),
             { status: 400 }
           );
         }
@@ -103,7 +101,7 @@ export async function GET(
       } else {
         // Fallback for unknown roles
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_USER_ROLE', 'Invalid user role'),
+          ResponseBuilder.error('INVALID_USER_ROLE'),
           { status: 400 }
         );
       }
@@ -111,7 +109,7 @@ export async function GET(
       // Validate finalOutletId
       if (!finalOutletId || finalOutletId <= 0) {
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_OUTLET_ID', 'Invalid outlet ID'),
+          ResponseBuilder.error('INVALID_OUTLET_ID'),
           { status: 400 }
         );
       }
@@ -158,7 +156,7 @@ export async function GET(
 
       if (!outletStock) {
         return NextResponse.json(
-          ResponseBuilder.error('PRODUCT_OUTLET_NOT_FOUND', 'Product not found in specified outlet'),
+          ResponseBuilder.error('PRODUCT_OUTLET_NOT_FOUND'),
           { status: 404 }
         );
       }
@@ -233,9 +231,7 @@ export async function GET(
       // Validate date range
       if (rentalStart >= rentalEnd) {
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_RENTAL_DATES', {
-            message: 'Start date must be before end date'
-          }),
+          ResponseBuilder.error('INVALID_RENTAL_DATES'),
           { status: 400 }
         );
       }

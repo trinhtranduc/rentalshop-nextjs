@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const existingUser = await db.users.findByEmail(validatedData.email);
     if (existingUser) {
       return NextResponse.json(
-        ResponseBuilder.error('EMAIL_ALREADY_EXISTS', 'Email already exists'),
+        ResponseBuilder.error('EMAIL_EXISTS'),
         { status: 409 }
       );
     }
@@ -62,9 +62,7 @@ export async function POST(request: NextRequest) {
         });
         return NextResponse.json(
           ResponseBuilder.error(
-            'MERCHANT_DUPLICATE',
-            `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
-          ),
+            'MERCHANT_DUPLICATE'),
           { status: 409 }
         );
       }
@@ -74,10 +72,7 @@ export async function POST(request: NextRequest) {
       if (existingUser) {
         console.log('❌ User email already exists:', validatedData.email);
         return NextResponse.json(
-          ResponseBuilder.error(
-            'EMAIL_EXISTS',
-            `A user with email ${validatedData.email} already exists. Please use a different email.`
-          ),
+          ResponseBuilder.error('EMAIL_EXISTS'),
           { status: 409 }
         );
       }

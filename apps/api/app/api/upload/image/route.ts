@@ -111,7 +111,7 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
         error: validation.error
       });
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', { details: validation.error }),
+        ResponseBuilder.error('VALIDATION_ERROR'),
         { status: 400 }
       );
     }
@@ -240,7 +240,7 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
   } catch (error) {
     console.error('Error uploading image:', error);
     return NextResponse.json(
-      ResponseBuilder.error('UPLOAD_IMAGE_FAILED', error instanceof Error ? error.message : 'Failed to upload image'),
+      ResponseBuilder.error('UPLOAD_IMAGE_FAILED'),
       { status: 500 }
     );
   }

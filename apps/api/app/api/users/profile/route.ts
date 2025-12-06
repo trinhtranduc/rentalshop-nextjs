@@ -155,7 +155,7 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        ResponseBuilder.error('NO_VALID_FIELDS', 'No valid fields to update'),
+        ResponseBuilder.error('NO_VALID_FIELDS'),
         { status: 400 }
       );
     }
@@ -190,7 +190,7 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
           ? 'globally' 
           : 'in your organization';
         return NextResponse.json(
-          ResponseBuilder.error('PHONE_ALREADY_EXISTS', `Phone number already exists ${scopeMessage}`),
+          ResponseBuilder.error('PHONE_EXISTS'),
           { status: 400 }
         );
       }
@@ -244,7 +244,7 @@ export const PUT = withAnyAuth(async (request: NextRequest, context: any) => {
     });
     
     return NextResponse.json(
-      ResponseBuilder.error('UPDATE_PROFILE_FAILED', error instanceof Error ? error.message : 'Failed to update user profile'),
+      ResponseBuilder.error('UPDATE_PROFILE_FAILED'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }

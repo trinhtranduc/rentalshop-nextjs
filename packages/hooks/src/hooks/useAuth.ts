@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getAuthToken, getStoredUser, clearAuthData, storeAuthData } from '@rentalshop/utils';
 import type { User } from '@rentalshop/types';
-import { useErrorTranslations } from './useTranslation';
+import { useApiError } from './useApiError';
 
 // ============================================================================
 // TYPES
@@ -41,35 +41,8 @@ export function useAuth() {
     error: null,
   });
   
-  // Use translation hook for error messages
-  const t = useErrorTranslations();
-
-  // Helper function to translate error from API response
-  const translateError = useCallback((errorData: any): string => {
-    // If error has a code, use it for translation
-    if (errorData?.code) {
-      const translated = t(errorData.code);
-      // If translation exists (not the same as code), use it
-      if (translated !== errorData.code) {
-        return translated;
-      }
-    }
-    
-    // Fallback to message if available
-    if (errorData?.message) {
-      // Check if message is an error code (all caps)
-      if (typeof errorData.message === 'string' && /^[A-Z_]+$/.test(errorData.message)) {
-        const translated = t(errorData.message);
-        if (translated !== errorData.message) {
-          return translated;
-        }
-      }
-      return errorData.message;
-    }
-    
-    // Default fallback
-    return t('UNKNOWN_ERROR');
-  }, [t]);
+  // Use useApiError for consistent error translation
+  const { translateError } = useApiError();
 
   // ============================================================================
   // AUTH FUNCTIONS
@@ -111,9 +84,30 @@ export function useAuth() {
 
       const data: LoginResponse = await response.json();
 
+      // ✅ DEBUG: Log login response
+      console.log('🔍 LOGIN RESPONSE:', {
+        success: data.success,
+        hasToken: !!data.data?.token,
+        user: data.data?.user,
+        userPermissions: (data.data?.user as any)?.permissions,
+        permissionsCount: (data.data?.user as any)?.permissions?.length || 0,
+      });
+
       if (data.success && data.data?.token) {
         // Store auth data
         storeAuthData(data.data.token, data.data.user);
+        
+        // ✅ DEBUG: Log after storing
+        console.log('🔍 LOGIN: After storeAuthData, checking localStorage...');
+        const storedAuth = localStorage.getItem('authData');
+        if (storedAuth) {
+          const parsed = JSON.parse(storedAuth);
+          console.log('🔍 LOGIN: Stored permissions in localStorage:', {
+            hasPermissions: !!parsed.user?.permissions,
+            permissionsCount: parsed.user?.permissions?.length || 0,
+            permissions: parsed.user?.permissions,
+          });
+        }
         
         // Step 3: Verify token was actually stored before proceeding
         const { getAuthToken } = await import('@rentalshop/utils');
@@ -158,7 +152,7 @@ export function useAuth() {
         return false;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t('UNKNOWN_ERROR');
+      const errorMessage = translateError(err);
       setState(prev => ({ 
         ...prev, 
         error: errorMessage,
@@ -166,7 +160,7 @@ export function useAuth() {
       }));
       return false;
     }
-  }, [translateError, t]);
+  }, [translateError]);
 
   const logout = useCallback(() => {
     clearAuthData();
@@ -231,10 +225,16 @@ export function useAuth() {
         // Only update if state is different to avoid unnecessary re-renders
         if (prev.user?.id !== storedUser.id) {
           console.log('🔄 useAuth: Syncing user state from localStorage');
+          console.log('🔍 useAuth: Stored user permissions:', (storedUser as any).permissions);
+          // ✅ Ensure permissions are included when syncing from localStorage
+          const userWithPermissions = {
+            ...storedUser,
+            permissions: (storedUser as any).permissions || [], // ✅ Preserve permissions
+          } as User;
           return { 
-            ...prev, 
-            user: storedUser as User, 
-            loading: false 
+        ...prev, 
+        user: userWithPermissions, 
+        loading: false 
           };
         }
         // Ensure loading is false even if user is the same

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rentalshop/database';
+import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 
 /**
  * DEBUG ENDPOINT: Check subscription status in database
@@ -32,12 +33,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (!subscription) {
-      return NextResponse.json({
-        success: false,
-        code: 'SUBSCRIPTION_NOT_FOUND',
-        message: 'Subscription not found',
-        merchantId
-      });
+      return NextResponse.json(
+        ResponseBuilder.error('SUBSCRIPTION_NOT_FOUND'),
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
@@ -60,10 +59,9 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Debug endpoint error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    // Use unified error handling system (uses ResponseBuilder internally)
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 

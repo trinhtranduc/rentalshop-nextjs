@@ -732,7 +732,7 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<{
     };
   } catch (error) {
     console.error('Error getting entity counts:', error);
-    throw new ApiError(ErrorCode.DATABASE_ERROR, 'Failed to get entity counts');
+    throw new ApiError(ErrorCode.DATABASE_ERROR);
   }
 }
 
@@ -754,11 +754,11 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     });
 
     if (!merchant) {
-      throw new ApiError(ErrorCode.MERCHANT_NOT_FOUND, 'Merchant not found');
+      throw new ApiError(ErrorCode.MERCHANT_NOT_FOUND);
     }
 
     if (!merchant.subscription) {
-      throw new ApiError(ErrorCode.NOT_FOUND, 'No subscription found for merchant');
+      throw new ApiError(ErrorCode.SUBSCRIPTION_NOT_FOUND);
     }
     
     console.log('🔍 getPlanLimitsInfo - Subscription data:', {
@@ -773,7 +773,7 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
       where: { id: merchant.subscription.planId }
     });
     if (!plan) {
-      throw new ApiError(ErrorCode.NOT_FOUND, `Plan not found for planId: ${merchant.subscription.planId}`);
+      throw new ApiError(ErrorCode.PLAN_NOT_FOUND);
     }
     
     // Parse plan limits - handle both string and object formats
@@ -822,15 +822,33 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     const { db } = await import('@rentalshop/database');
     const addonLimits = await db.planLimitAddons.calculateTotal(merchantId);
     
+    // Store base plan limits (before adding addons) for reference
+    // This ensures total limit never goes below the original plan base limit
+    const basePlanLimits = { ...planLimits };
+    
     // Calculate total limits: plan limits + addon limits
     // Note: If plan limit is -1 (unlimited), total is also -1 (unlimited)
     // Otherwise, add addon limits to plan limits
+    // IMPORTANT: Total limit must always be >= base plan limit (never below original plan limit)
+    // This prevents issues when addons are removed - limit should never drop below plan default
+    const calculateTotalLimit = (baseLimit: number, addonLimit: number): number => {
+      // If base limit is unlimited, total is also unlimited
+      if (baseLimit === -1) return -1;
+      
+      // Calculate total: base + addon
+      const total = baseLimit + addonLimit;
+      
+      // Ensure total is never less than base plan limit
+      // This ensures that even if addon is negative or removed, limit stays at least at plan default
+      return Math.max(baseLimit, total);
+    };
+    
     const totalLimits = {
-      outlets: planLimits.outlets === -1 ? -1 : planLimits.outlets + addonLimits.outlets,
-      users: planLimits.users === -1 ? -1 : planLimits.users + addonLimits.users,
-      products: planLimits.products === -1 ? -1 : planLimits.products + addonLimits.products,
-      customers: planLimits.customers === -1 ? -1 : planLimits.customers + addonLimits.customers,
-      orders: planLimits.orders === -1 ? -1 : planLimits.orders + addonLimits.orders,
+      outlets: calculateTotalLimit(planLimits.outlets, addonLimits.outlets),
+      users: calculateTotalLimit(planLimits.users, addonLimits.users),
+      products: calculateTotalLimit(planLimits.products, addonLimits.products),
+      customers: calculateTotalLimit(planLimits.customers, addonLimits.customers),
+      orders: calculateTotalLimit(planLimits.orders, addonLimits.orders),
     };
 
     // Get current counts
@@ -850,11 +868,12 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
       subscriptionId: merchant.subscription.id,
       planId: merchant.subscription.planId,
       planName: plan.name,
-      planLimits,
+      basePlanLimits: basePlanLimits, // Original plan limits (before addons)
       addonLimits,
-      totalLimits,
+      totalLimits, // Final limits (base + addon, guaranteed >= base)
       limitsType: typeof plan.limits,
       ordersLimit: totalLimits.orders,
+      ordersBaseLimit: basePlanLimits.orders,
       ordersUnlimited: isUnlimited.orders,
       currentOrdersCount: currentCounts.orders,
       canCreateOrder: isUnlimited.orders || (totalLimits.orders !== undefined && currentCounts.orders < totalLimits.orders),
@@ -869,8 +888,8 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     };
 
     return {
-      planLimits: totalLimits, // Return total limits (plan + addon)
-      basePlanLimits: planLimits, // Keep original plan limits for reference
+      planLimits: totalLimits, // Return total limits (plan + addon, guaranteed >= base plan limit)
+      basePlanLimits: basePlanLimits, // Keep original plan limits for reference (before addons)
       addonLimits, // Include addon limits for transparency
       platform: platform || 'mobile',
       currentCounts,
@@ -882,7 +901,7 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR, 'Failed to get plan limits information');
+    throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -938,9 +957,10 @@ export async function validatePlanLimits(
         limit,
         comparison: `${currentCount} >= ${limit}`
       });
+      // Return error code only - translation system will handle the message
       return {
         isValid: false,
-        error: `${entityType} limit exceeded. Current: ${currentCount}, Limit: ${limit}`,
+        error: 'PLAN_LIMIT_EXCEEDED', // Use error code for translation
         currentCount,
         limit,
         entityType
@@ -955,7 +975,7 @@ export async function validatePlanLimits(
     };
   } catch (error) {
     console.error('Error validating plan limits:', error);
-    throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR, 'Failed to validate plan limits');
+    throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -996,19 +1016,13 @@ export async function assertPlanLimit(
     const validation = await validatePlanLimits(merchantId, entityType);
     
     if (!validation.isValid) {
-      throw new ApiError(
-        ErrorCode.PLAN_LIMIT_EXCEEDED,
-        validation.error || `Plan limit exceeded for ${entityType}`
-      );
+      throw new ApiError(ErrorCode.PLAN_LIMIT_EXCEEDED);
     }
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(
-      ErrorCode.INTERNAL_SERVER_ERROR,
-      `Failed to validate plan limits for ${entityType}`
-    );
+    throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -1051,8 +1065,11 @@ export async function checkPlanLimitIfNeeded(
   } catch (error: any) {
     console.log(`❌ Plan limit exceeded for ${entityType} (merchantId: ${merchantId}):`, error.message);
     const { ResponseBuilder } = await import('../api/response-builder');
+    
+    // Use error code only - translation system will handle the message
+    // Don't pass detailed message to preserve translation
     return NextResponse.json(
-      ResponseBuilder.error('PLAN_LIMIT_EXCEEDED', error.message || `Plan limit exceeded for ${entityType}`),
+      ResponseBuilder.error('PLAN_LIMIT_EXCEEDED'),
       { status: 403 }
     );
   }

@@ -27,14 +27,14 @@ export const PUT = withPermissions(['merchant.view'])(async (request: NextReques
     // Validate currency code
     if (!currency) {
       return NextResponse.json(
-        ResponseBuilder.error('CURRENCY_REQUIRED', 'Currency is required'),
+        ResponseBuilder.error('CURRENCY_REQUIRED'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
 
     if (!isValidCurrency(currency)) {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_CURRENCY', 'Invalid currency code. Supported currencies: USD, VND'),
+        ResponseBuilder.error('INVALID_CURRENCY'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
@@ -52,7 +52,7 @@ export const PUT = withPermissions(['merchant.view'])(async (request: NextReques
     if (!dbUser || !dbUser.merchant) {
       console.log('🔍 CURRENCY API: User or merchant not found, returning 403');
       return NextResponse.json(
-        ResponseBuilder.error('NO_MERCHANT_ACCESS', 'User does not have merchant access'),
+        ResponseBuilder.error('NO_MERCHANT_ACCESS'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -99,7 +99,7 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
 
     if (!dbUser || !dbUser.merchant) {
       return NextResponse.json(
-        ResponseBuilder.error('NO_MERCHANT_ACCESS', 'User does not have merchant access'),
+        ResponseBuilder.error('NO_MERCHANT_ACCESS'),
         { status: API.STATUS.FORBIDDEN }
       );
     }

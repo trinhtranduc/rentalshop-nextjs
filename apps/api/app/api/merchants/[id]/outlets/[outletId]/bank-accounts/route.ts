@@ -91,7 +91,7 @@ export async function POST(
       // Block OUTLET_STAFF from creating bank accounts
       if (user.role === USER_ROLE.OUTLET_STAFF) {
         return NextResponse.json(
-          ResponseBuilder.error('FORBIDDEN', 'OUTLET_STAFF cannot create bank accounts'),
+          ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }
         );
       }
@@ -126,7 +126,7 @@ export async function POST(
 
       if (!bankAccountValidation.valid) {
         return NextResponse.json(
-          ResponseBuilder.error('VALIDATION_ERROR', bankAccountValidation.errors.join(', ')),
+          ResponseBuilder.validationError(bankAccountValidation.errors.join(', ')),
           { status: 400 }
         );
       }

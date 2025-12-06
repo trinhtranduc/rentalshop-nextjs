@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     
     if (!result.success || !result.user) {
       return NextResponse.json(
-        ResponseBuilder.error('EMAIL_VERIFICATION_FAILED', result.error || 'Token không hợp lệ hoặc đã hết hạn'),
+        ResponseBuilder.error('EMAIL_VERIFICATION_FAILED'),
         { status: 400 }
       );
     }
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const user = await db.users.findById(result.user.id);
     if (!user) {
       return NextResponse.json(
-        ResponseBuilder.error('USER_NOT_FOUND', 'User không tồn tại'),
+        ResponseBuilder.error('USER_NOT_FOUND'),
         { status: 404 }
       );
     }
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     
     if (!token) {
       return NextResponse.json(
-        ResponseBuilder.error('TOKEN_REQUIRED', 'Token xác thực không được cung cấp'),
+        ResponseBuilder.error('TOKEN_REQUIRED'),
         { status: 400 }
       );
     }
@@ -152,7 +152,7 @@ export async function resendVerification(request: NextRequest) {
     // Check if already verified
     if (user.emailVerified) {
       return NextResponse.json(
-        ResponseBuilder.error('EMAIL_ALREADY_VERIFIED', 'Email đã được xác thực rồi'),
+        ResponseBuilder.error('EMAIL_ALREADY_VERIFIED'),
         { status: 400 }
       );
     }
@@ -173,7 +173,7 @@ export async function resendVerification(request: NextRequest) {
     if (!emailResult.success) {
       console.error('Failed to send verification email:', emailResult.error);
       return NextResponse.json(
-        ResponseBuilder.error('EMAIL_SEND_FAILED', 'Không thể gửi email xác thực. Vui lòng thử lại sau.'),
+        ResponseBuilder.error('EMAIL_SEND_FAILED'),
         { status: 500 }
       );
     }

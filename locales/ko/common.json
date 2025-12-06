@@ -158,5 +158,11 @@
     "weeklyReport": "주간 보고서",
     "monthlyReport": "월간 보고서",
     "yearlyReport": "연간 보고서"
+  },
+  "roles": {
+    "ADMIN": "관리자",
+    "MERCHANT": "상인",
+    "OUTLET_ADMIN": "매장 관리자",
+    "OUTLET_STAFF": "매장 직원"
   }
 }

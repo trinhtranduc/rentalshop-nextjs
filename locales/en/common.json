@@ -160,6 +160,12 @@
     "weeklyReport": "Weekly Report",
     "monthlyReport": "Monthly Report",
     "yearlyReport": "Yearly Report"
+  },
+  "roles": {
+    "ADMIN": "Admin",
+    "MERCHANT": "Merchant",
+    "OUTLET_ADMIN": "Outlet Admin",
+    "OUTLET_STAFF": "Outlet Staff"
   }
 }
 

@@ -41,6 +41,7 @@
   },
   "dialogs": {
     "addOutletTitle": "Thêm cửa hàng mới",
+    "addOutletDescription": "Tạo một cửa hàng mới cho doanh nghiệp của bạn",
     "editOutletTitle": "Sửa cửa hàng",
     "deleteOutletTitle": "Xóa cửa hàng",
     "outletDetails": "Chi tiết cửa hàng",

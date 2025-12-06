@@ -30,7 +30,7 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
 
     if (!startDate || !endDate) {
       return NextResponse.json(
-        ResponseBuilder.error('MISSING_PARAMETERS', 'startDate and endDate are required'),
+        ResponseBuilder.error('MISSING_REQUIRED_FIELD'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
@@ -44,14 +44,14 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
     // Validate date range
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_DATE_FORMAT', 'Invalid date format. Use ISO 8601 format (YYYY-MM-DD)'),
+        ResponseBuilder.error('INVALID_DATE_FORMAT'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
 
     if (start > end) {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_DATE_RANGE', 'startDate must be before or equal to endDate'),
+        ResponseBuilder.error('INVALID_INPUT'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }

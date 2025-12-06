@@ -160,6 +160,12 @@
     "weeklyReport": "Báo cáo hàng tuần",
     "monthlyReport": "Báo cáo hàng tháng",
     "yearlyReport": "Báo cáo hàng năm"
+  },
+  "roles": {
+    "ADMIN": "Quản trị viên",
+    "MERCHANT": "Chủ doanh nghiệp",
+    "OUTLET_ADMIN": "Quản lý cửa hàng",
+    "OUTLET_STAFF": "Nhân viên cửa hàng"
   }
 }
 

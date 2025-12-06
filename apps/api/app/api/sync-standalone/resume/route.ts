@@ -38,9 +38,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     // Check if session can be resumed
     if (session.status !== 'PARTIALLY_COMPLETED' && session.status !== 'FAILED') {
       return NextResponse.json(
-        ResponseBuilder.error('SESSION_CANNOT_BE_RESUMED', {
-          message: `Session status is ${session.status}, only PARTIALLY_COMPLETED or FAILED sessions can be resumed`
-        }),
+        ResponseBuilder.error('SESSION_CANNOT_BE_RESUMED'),
         { status: 400 }
       );
     }
@@ -549,13 +547,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       });
 
       return NextResponse.json(
-        ResponseBuilder.error('SYNC_RESUME_FAILED', {
-          message: error.message || 'Resume failed',
-          sessionId,
-          stats,
-          canResume: true,
-          canRollback: true
-        }),
+        ResponseBuilder.error('SYNC_RESUME_FAILED'),
         { status: 500 }
       );
     }

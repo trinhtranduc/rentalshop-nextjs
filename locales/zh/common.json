@@ -158,5 +158,11 @@
     "weeklyReport": "周报",
     "monthlyReport": "月报",
     "yearlyReport": "年报"
+  },
+  "roles": {
+    "ADMIN": "管理员",
+    "MERCHANT": "商户",
+    "OUTLET_ADMIN": "门店管理员",
+    "OUTLET_STAFF": "门店员工"
   }
 }

@@ -7,7 +7,7 @@ import {
   Button
 } from '../../../ui';
 import { Plus, Download, Upload, Edit3 } from 'lucide-react';
-import { useUserRole } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { AddCategoryDialog } from './AddCategoryDialog';
 
 interface CategoryActionsProps {
@@ -28,9 +28,9 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
   onError
 }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  // Use hook instead of prop
-  const { canManageCategories } = useUserRole();
-  // Filter actions based on user role - Only ADMIN and MERCHANT can manage categories
+  // ✅ Use permissions hook for UI control
+  const { canManageProducts, canExportProducts } = usePermissions();
+  // ✅ Filter actions based on permissions - Only users with products.manage can manage categories
   const allActions = [
     {
       id: 'add-category',
@@ -39,7 +39,7 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
       icon: '➕',
       variant: 'default' as const,
       onClick: () => setIsAddDialogOpen(true),
-      roles: canManageCategories ? ['ALL'] : [] // Use permission check
+      roles: canManageProducts ? ['ALL'] : [] // ✅ Use products.manage permission
     },
     {
       id: 'import-categories',
@@ -48,7 +48,7 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
       icon: '📥',
       variant: 'secondary' as const,
       onClick: onImportCategories,
-      roles: canManageCategories ? ['ALL'] : [] // Use permission check
+      roles: canManageProducts ? ['ALL'] : [] // ✅ Use products.manage permission
     },
     {
       id: 'export-categories',
@@ -57,7 +57,7 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
       icon: '📤',
       variant: 'outline' as const,
       onClick: onExportCategories,
-      roles: ['ALL'] // All roles can export
+      roles: canExportProducts ? ['ALL'] : [] // ✅ Use products.export permission
     },
     {
       id: 'bulk-edit',
@@ -66,7 +66,7 @@ export const CategoryActions: React.FC<CategoryActionsProps> = ({
       icon: '✏️',
       variant: 'outline' as const,
       onClick: onBulkEdit,
-      roles: canManageCategories ? ['ALL'] : [] // Use permission check
+      roles: canManageProducts ? ['ALL'] : [] // ✅ Use products.manage permission
     }
   ];
 

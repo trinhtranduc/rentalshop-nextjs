@@ -110,7 +110,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
     console.error('Error fetching merchants:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      ResponseBuilder.error('FETCH_MERCHANTS_FAILED', { error: errorMessage }),
+      ResponseBuilder.error('FETCH_MERCHANTS_FAILED'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
@@ -140,11 +140,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       
       console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
       return NextResponse.json(
-        {
-          success: false,
-          code: 'MERCHANT_DUPLICATE',
-          message: `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
-        },
+        ResponseBuilder.error('MERCHANT_DUPLICATE'),
         { status: 409 }
       );
     }

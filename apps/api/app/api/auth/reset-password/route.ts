@@ -31,20 +31,20 @@ export async function POST(request: NextRequest) {
       // Return appropriate error based on token status
       if (tokenVerification.error?.includes('hết hạn')) {
         return NextResponse.json(
-          ResponseBuilder.error('PASSWORD_RESET_TOKEN_EXPIRED', tokenVerification.error || 'Token đã hết hạn'),
+          ResponseBuilder.error('PASSWORD_RESET_TOKEN_EXPIRED'),
           { status: 400 }
         );
       }
       
       if (tokenVerification.error?.includes('đã được sử dụng')) {
         return NextResponse.json(
-          ResponseBuilder.error('PASSWORD_RESET_TOKEN_USED', tokenVerification.error || 'Token đã được sử dụng'),
+          ResponseBuilder.error('PASSWORD_RESET_TOKEN_USED'),
           { status: 400 }
         );
       }
       
       return NextResponse.json(
-        ResponseBuilder.error('PASSWORD_RESET_TOKEN_INVALID', tokenVerification.error || 'Token không hợp lệ'),
+        ResponseBuilder.error('PASSWORD_RESET_TOKEN_INVALID'),
         { status: 400 }
       );
     }

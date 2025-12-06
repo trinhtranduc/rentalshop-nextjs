@@ -8,7 +8,7 @@ interface AddCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCustomerCreated?: (customerData: CustomerCreateInput) => Promise<void>;
-  onError?: (error: string) => void;
+  onError?: (error: any) => void;
   merchantId?: number;
   initialSearchQuery?: string;
 }
@@ -33,8 +33,10 @@ export const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({
       onOpenChange(false);
     } catch (error) {
       console.error('❌ AddCustomerDialog: Error occurred:', error);
+      // ✅ Pass error object (not string) so onError can extract code for translation
+      // onCustomerCreated already shows toast, so onError is only for additional handling if needed
       if (onError) {
-        onError(error instanceof Error ? error.message : 'Failed to create customer');
+        onError(error); // Pass full error object to preserve code field
       }
       throw error; // Re-throw to let CustomerFormDialog handle it
     }

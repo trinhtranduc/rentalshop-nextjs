@@ -107,6 +107,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   'API_KEY_NAME_REQUIRED': 'API key name is required',
   'VALID_USER_ID_REQUIRED': 'Valid user ID is required',
   
+  // Plan Limits
+  'PLAN_LIMIT_EXCEEDED': 'Plan limit exceeded',
+  
   // Password Reset Errors
   'PASSWORD_RESET_TOKEN_INVALID': 'Password reset token is invalid',
   'PASSWORD_RESET_TOKEN_EXPIRED': 'Password reset token has expired',
@@ -221,26 +224,12 @@ export class ResponseBuilder {
   /**
    * Build error response
    * @param code - Error code (e.g., 'INVALID_CREDENTIALS')
-   * @param error - Optional error details
+   * Note: Only accepts error code to ensure translation system works properly
+   * Message is automatically fetched from ERROR_MESSAGES or translation files
    */
-  static error(code: string, error?: any): ApiResponse {
-    // Ensure error is always a string
-    let errorString: string;
-    
-    if (typeof error === 'string') {
-      errorString = error;
-    } else if (error && typeof error === 'object') {
-      // Convert object to readable string
-      if (error.message) {
-        errorString = error.message;
-      } else if (error.details) {
-        errorString = error.details;
-      } else {
-        errorString = JSON.stringify(error);
-      }
-    } else {
-      errorString = getDefaultMessage(code);
-    }
+  static error(code: string): ApiResponse {
+    // Automatically get message from ERROR_MESSAGES or translation system
+    const errorString = getDefaultMessage(code);
     
     return {
       success: false,
@@ -308,12 +297,18 @@ export class ResponseBuilder {
       });
     }
     
+    // Return validation error with field-level details in error field
+    // Message comes from translation system via error code
     const errorString = errorMessages.length > 0 
       ? errorMessages.join('; ') 
       : 'Input validation failed';
     
-    // Reuse ResponseBuilder.error() for consistency
-    return ResponseBuilder.error('VALIDATION_ERROR', errorString);
+    return {
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: getDefaultMessage('VALIDATION_ERROR'),
+      error: errorString // Keep detailed validation errors for debugging
+    };
   }
 
 }
@@ -346,15 +341,12 @@ export function buildErrorResponseFromError(error: any): ApiResponse {
 
   // Custom error with code
   if (error?.code) {
-    return ResponseBuilder.error(error.code, error.details);
+    return ResponseBuilder.error(error.code);
   }
 
   // Standard errors
   const code = getErrorCode(error);
-  return ResponseBuilder.error(code, {
-    message: error?.message,
-    stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
-  });
+  return ResponseBuilder.error(code);
 }
 
 /**

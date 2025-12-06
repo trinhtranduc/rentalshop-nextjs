@@ -16,7 +16,7 @@ interface AddOutletDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOutletCreated?: (outletData: OutletCreateInput) => Promise<void>;
-  onError?: (error: string) => void;
+  onError?: (error: any) => void;
   merchantId?: number;
 }
 
@@ -45,8 +45,10 @@ export const AddOutletDialog: React.FC<AddOutletDialogProps> = ({
       
     } catch (error) {
       console.error('❌ AddOutletDialog: Error occurred:', error);
+      // ✅ Pass error object (not string) so onError can extract code for translation
+      // onOutletCreated already shows toast, so onError is only for additional handling if needed
       if (onError) {
-        onError(error instanceof Error ? error.message : 'Failed to create outlet');
+        onError(error); // Pass full error object to preserve code field
       }
     } finally {
       setIsSubmitting(false);
