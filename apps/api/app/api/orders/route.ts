@@ -208,9 +208,17 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
  */
 export const POST = withPermissions(['orders.create'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/orders - User: ${user.email} (${user.role})`);
+  console.log(`🔍 POST /api/orders - UserScope:`, userScope);
   
   try {
     const body = await request.json();
+    
+    // ✅ Auto-fill outletId from userScope if not provided
+    if (!body.outletId && userScope.outletId) {
+      console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
+      body.outletId = userScope.outletId;
+    }
+    
     const parsed = orderCreateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -219,6 +227,25 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       );
     }
 
+    // ✅ Validate outletId based on user role
+    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      // Outlet users can only create orders for their assigned outlet
+      if (parsed.data.outletId !== userScope.outletId) {
+        console.log('❌ Outlet user trying to create order for different outlet:', {
+          requestedOutletId: parsed.data.outletId,
+          userOutletId: userScope.outletId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
+          { status: 403 }
+        );
+      }
+    } else if (user.role === USER_ROLE.MERCHANT) {
+      // Merchant users can create orders for any outlet of their merchant
+      // Validation will happen when we check outlet.merchantId
+    }
+    // ADMIN users can create orders for any outlet (no restriction)
+
     // Get outlet and merchant to check association and plan limits
     const outlet = await db.outlets.findById(parsed.data.outletId);
     if (!outlet) {
@@ -226,6 +253,20 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         ResponseBuilder.error('OUTLET_NOT_FOUND'),
         { status: 404 }
       );
+    }
+
+    // ✅ Validate merchant association for non-admin users
+    if (user.role !== USER_ROLE.ADMIN) {
+      if (outlet.merchantId !== userScope.merchantId) {
+        console.log('❌ User trying to create order for outlet from different merchant:', {
+          outletMerchantId: outlet.merchantId,
+          userMerchantId: userScope.merchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT'),
+          { status: 403 }
+        );
+      }
     }
 
     // Get merchant for pricing configuration
@@ -572,13 +613,21 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
  */
 export const PUT = withPermissions(['orders.update'])(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/orders - User: ${user.email} (${user.role})`);
+  console.log(`🔍 PUT /api/orders - UserScope:`, userScope);
   
   try {
     const body = await request.json();
+    
+    // ✅ Auto-fill outletId from userScope if not provided and user has outletId
+    if (!body.outletId && userScope.outletId) {
+      console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
+      body.outletId = userScope.outletId;
+    }
+    
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.validationError( parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -603,17 +652,97 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       );
     }
 
-    // Check if user can access this order (orders are scoped to merchant via userScope)
-    // Access is controlled by the database API based on merchantId filter
+    // ✅ Validate outletId if provided in update
+    if (parsed.data.outletId !== undefined) {
+      const targetOutletId = parsed.data.outletId;
+      
+      // If updating outletId, validate based on user role
+      if (targetOutletId !== existingOrder.outletId) {
+        // Get target outlet to validate
+        const targetOutlet = await db.outlets.findById(targetOutletId);
+        if (!targetOutlet) {
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_NOT_FOUND'),
+            { status: 404 }
+          );
+        }
+
+        // Outlet users cannot change order outlet
+        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+          if (targetOutletId !== userScope.outletId) {
+            return NextResponse.json(
+              ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
+              { status: 403 }
+            );
+          }
+        }
+
+        // Non-admin users can only move to outlets from same merchant
+        if (user.role !== USER_ROLE.ADMIN) {
+          // Get existing order's outlet to check merchant
+          const existingOutlet = await db.outlets.findById(existingOrder.outletId);
+          if (!existingOutlet) {
+            return NextResponse.json(
+              ResponseBuilder.error('OUTLET_NOT_FOUND'),
+              { status: 404 }
+            );
+          }
+
+          if (targetOutlet.merchantId !== existingOutlet.merchantId) {
+            return NextResponse.json(
+              ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT'),
+              { status: 403 }
+            );
+          }
+
+          // Verify target outlet belongs to user's merchant
+          if (targetOutlet.merchantId !== userScope.merchantId) {
+            return NextResponse.json(
+              ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT'),
+              { status: 403 }
+            );
+          }
+        }
+      } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        // If not changing outletId but user is outlet-level, validate current order belongs to their outlet
+        if (existingOrder.outletId !== userScope.outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+            { status: 403 }
+          );
+        }
+      }
+    } else {
+      // If no outletId in update, validate existing order belongs to user's scope
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (existingOrder.outletId !== userScope.outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+            { status: 403 }
+          );
+        }
+      } else if (user.role !== USER_ROLE.ADMIN) {
+        // Non-admin users can only update orders from their merchant
+        const existingOutlet = await db.outlets.findById(existingOrder.outletId);
+        if (existingOutlet && existingOutlet.merchantId !== userScope.merchantId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT'),
+            { status: 403 }
+          );
+        }
+      }
+    }
 
     // Extract only basic fields for update (avoid complex orderItems)
-    const updateData = {
+    const updateData: any = {
       status: parsed.data.status,
       totalAmount: parsed.data.totalAmount,
       depositAmount: parsed.data.depositAmount,
       pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : undefined,
       returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : undefined,
       notes: parsed.data.notes,
+      // Add outletId if provided
+      ...(parsed.data.outletId !== undefined && { outletId: parsed.data.outletId }),
       // Add other simple fields as needed
     };
 

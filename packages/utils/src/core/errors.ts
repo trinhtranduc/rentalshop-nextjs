@@ -34,6 +34,11 @@ export enum ErrorCode {
   
   // Business Logic Errors
   PLAN_LIMIT_EXCEEDED = 'PLAN_LIMIT_EXCEEDED',
+  CANNOT_DELETE_ADDON_LIMIT_EXCEEDED = 'CANNOT_DELETE_ADDON_LIMIT_EXCEEDED',
+  CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET = 'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET',
+  CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT = 'CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT',
+  CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET = 'CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET',
+  CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT = 'CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT',
   INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
   BUSINESS_RULE_VIOLATION = 'BUSINESS_RULE_VIOLATION',
   ACCOUNT_DEACTIVATED = 'ACCOUNT_DEACTIVATED',
@@ -116,6 +121,11 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   
   // Business Logic Errors
   [ErrorCode.PLAN_LIMIT_EXCEEDED]: 'Plan limit exceeded',
+  [ErrorCode.CANNOT_DELETE_ADDON_LIMIT_EXCEEDED]: 'Cannot delete addon: Current usage exceeds limits after deletion',
+  [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET]: 'Cannot create order for other outlet. You can only create orders for your assigned outlet.',
+  [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT]: 'Cannot create order for outlet from different merchant.',
+  [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET]: 'Cannot update order from other outlet. You can only update orders from your assigned outlet.',
+  [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT]: 'Cannot update order from outlet of different merchant.',
   [ErrorCode.INSUFFICIENT_PERMISSIONS]: 'Insufficient permissions',
   [ErrorCode.BUSINESS_RULE_VIOLATION]: 'Business rule violation',
   [ErrorCode.ACCOUNT_DEACTIVATED]: 'Account is deactivated',
@@ -183,6 +193,11 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   
   // Business Logic Errors (4xx)
   [ErrorCode.PLAN_LIMIT_EXCEEDED]: 403,
+  [ErrorCode.CANNOT_DELETE_ADDON_LIMIT_EXCEEDED]: 422,
+  [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET]: 403,
+  [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT]: 403,
+  [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET]: 403,
+  [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT]: 403,
   [ErrorCode.INSUFFICIENT_PERMISSIONS]: 403,
   [ErrorCode.BUSINESS_RULE_VIOLATION]: 422,
   [ErrorCode.ACCOUNT_DEACTIVATED]: 403,
