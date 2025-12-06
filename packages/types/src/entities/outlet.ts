@@ -29,6 +29,7 @@ export interface Outlet extends BaseEntityWithMerchant, Address, ContactInfo {
   description?: string;
   isActive: boolean;
   isDefault?: boolean; // Indicates if this is the default outlet for the merchant
+  avatar?: string; // Avatar image URL
   
   // Related entities (populated when needed)
   merchant?: MerchantReference;
@@ -52,6 +53,7 @@ export interface OutletCreateInput extends BaseFormInput {
   country?: string;
   description?: string;
   merchantId: number;
+  avatar?: string; // Avatar image URL
 }
 
 /**
@@ -69,6 +71,7 @@ export interface OutletUpdateInput extends BaseUpdateInput {
   description?: string;
   isActive?: boolean;
   isDefault?: boolean;
+  avatar?: string; // Avatar image URL
 }
 
 // ============================================================================
