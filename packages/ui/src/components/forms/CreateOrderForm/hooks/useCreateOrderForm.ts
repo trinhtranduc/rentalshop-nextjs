@@ -139,12 +139,20 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   }, [orderItems, formData.discountType, formData.discountValue]);
 
   // Calculate deposit amount for rent orders
+  // Deposit = sum of (deposit per unit * quantity) for each item
+  // Auto-calculate when items change, user can manually override depositAmount
   useEffect(() => {
     if (formData.orderType === 'RENT') {
-      const totalDeposit = orderItems.reduce((sum, item) => sum + (item.deposit ?? 0), 0);
+      const calculatedDeposit = orderItems.reduce((sum, item) => {
+        // item.deposit is deposit per unit, multiply by quantity
+        return sum + ((item.deposit ?? 0) * (item.quantity || 1));
+      }, 0);
+      
+      // Auto-update depositAmount when items change
+      // User can manually change depositAmount and it will be sent to backend as-is
       setFormData(prev => ({
         ...prev,
-        depositAmount: totalDeposit,
+        depositAmount: calculatedDeposit,
       }));
     } else {
       setFormData(prev => ({
@@ -237,7 +245,10 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         
         // Calculate deposit amount from order items after they're set
         if (initialOrder.orderType === 'RENT') {
-          const totalDeposit = initialOrderItems.reduce((sum, item) => sum + (item.deposit ?? 0), 0);
+          // Calculate: deposit per unit * quantity for each item
+          const totalDeposit = initialOrderItems.reduce((sum, item) => {
+            return sum + ((item.deposit ?? 0) * (item.quantity || 1));
+          }, 0);
           setFormData(prev => ({
             ...prev,
             depositAmount: totalDeposit,

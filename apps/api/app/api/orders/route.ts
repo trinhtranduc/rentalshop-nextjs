@@ -420,22 +420,15 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         quantity: item.quantity,
         unitPrice: pricing.unitPrice,
         totalPrice: pricing.totalPrice,
-        deposit: pricing.deposit * item.quantity, // ✅ Deposit per unit * quantity
+        deposit: pricing.deposit, // Deposit per unit (frontend calculates total)
         notes: item.notes,
         rentalDays: rentalDays
       };
     }) || []);
 
-    // Calculate total depositAmount from all order items (deposit * quantity for each item)
-    // If depositAmount is provided in request, use it; otherwise calculate from items
-    const calculatedDepositAmount = orderItemsData.reduce((sum, item) => {
-      // item.deposit is already deposit * quantity from above calculation
-      return sum + (item.deposit || 0);
-    }, 0);
-
-    const finalDepositAmount = parsed.data.depositAmount !== undefined 
-      ? parsed.data.depositAmount 
-      : calculatedDepositAmount;
+    // Use depositAmount from request (frontend calculates it from items)
+    // Backend trusts frontend value - no recalculation needed
+    const finalDepositAmount = parsed.data.depositAmount || 0;
 
     // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {

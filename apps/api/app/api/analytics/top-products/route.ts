@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -61,8 +61,10 @@ export const GET = withPermissions(['analytics.view.products'])(async (request, 
     // Add date filtering if provided
     if (startDate || endDate) {
       orderWhereClause.createdAt = {};
-      if (startDate) orderWhereClause.createdAt.gte = new Date(startDate);
-      if (endDate) orderWhereClause.createdAt.lte = new Date(endDate);
+      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
+      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
+      if (normalizedStart) orderWhereClause.createdAt.gte = normalizedStart;
+      if (normalizedEnd) orderWhereClause.createdAt.lte = normalizedEnd;
     }
 
     // Get orders based on user scope
