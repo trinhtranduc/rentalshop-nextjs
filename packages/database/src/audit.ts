@@ -10,6 +10,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 
 // Types for audit logging
 export interface AuditContext {
@@ -309,8 +310,10 @@ export class AuditLogger {
     
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
-      if (filter.startDate) where.createdAt.gte = filter.startDate;
-      if (filter.endDate) where.createdAt.lte = filter.endDate;
+      const normalizedStart = filter.startDate ? normalizeStartDate(filter.startDate) : null;
+      const normalizedEnd = filter.endDate ? normalizeEndDate(filter.endDate) : null;
+      if (normalizedStart) where.createdAt.gte = normalizedStart;
+      if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
     const limit = filter.limit || 50;
@@ -377,8 +380,10 @@ export class AuditLogger {
     if (filter.outletId) where.outletId = filter.outletId;
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
-      if (filter.startDate) where.createdAt.gte = filter.startDate;
-      if (filter.endDate) where.createdAt.lte = filter.endDate;
+      const normalizedStart = filter.startDate ? normalizeStartDate(filter.startDate) : null;
+      const normalizedEnd = filter.endDate ? normalizeEndDate(filter.endDate) : null;
+      if (normalizedStart) where.createdAt.gte = normalizedStart;
+      if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
     // Temporarily disabled - AuditLog model not in schema

@@ -69,6 +69,8 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
     if (orderType) where.orderType = orderType;
     
     // Apply date range filter
+    // Note: startDate and endDate are already normalized by parseDateRangeFromQuery
+    // startDate is set to 00:00:00.000 and endDate is set to 23:59:59.999
     if (dateField === 'createdAt') {
       where.createdAt = {
         gte: startDate,

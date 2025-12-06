@@ -190,17 +190,39 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       });
 
       // Filter orders that are active on the specific date for availability calculation
+      // Use actual pickup date (pickedUpAt) if available, otherwise use planned date (pickupPlanAt)
       const activeOrders = allOrders.filter(order => {
-        const orderPickup = order.pickupPlanAt ? new Date(order.pickupPlanAt) : null;
-        const orderReturn = order.returnPlanAt ? new Date(order.returnPlanAt) : null;
+        // For PICKUPED/RETURNED orders: use actual dates if available, fallback to planned dates
+        // For RESERVED orders: use planned dates (not picked up yet)
+        const orderPickup = order.status === ORDER_STATUS.PICKUPED || order.status === ORDER_STATUS.RETURNED
+          ? (order.pickedUpAt ? new Date(order.pickedUpAt) : (order.pickupPlanAt ? new Date(order.pickupPlanAt) : null))
+          : (order.pickupPlanAt ? new Date(order.pickupPlanAt) : null);
+        
+        const orderReturn = order.status === ORDER_STATUS.RETURNED
+          ? (order.returnedAt ? new Date(order.returnedAt) : (order.returnPlanAt ? new Date(order.returnPlanAt) : null))
+          : (order.returnPlanAt ? new Date(order.returnPlanAt) : null);
         
         if (!orderPickup) return false;
         
         // Order is active if:
-        // 1. Pickup date is on or before the check date
-        // 2. Return date is on or after the check date (or no return date for PICKUPED orders)
+        // 1. Pickup date (actual or planned) is on or before the check date
+        // 2. Return date (actual or planned) is on or after the check date (or not returned yet for PICKUPED orders)
         const isPickupOnOrBefore = orderPickup <= endOfDay;
-        const isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : (order.status === ORDER_STATUS.PICKUPED);
+        
+        // For RETURNED orders: check if returned date is on or after check date start
+        // For PICKUPED orders: check if return plan date is on or after check date start (or no return date)
+        // For RESERVED orders: check if return plan date is on or after check date start
+        let isReturnOnOrAfter = true;
+        if (order.status === ORDER_STATUS.RETURNED) {
+          // If returned, order is active if returned on or after check date start
+          isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : true;
+        } else if (order.status === ORDER_STATUS.PICKUPED) {
+          // If picked up but not returned, order is active if return plan date is on or after check date start
+          isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : true;
+        } else {
+          // RESERVED orders: check return plan date
+          isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : true;
+        }
         
         return isPickupOnOrBefore && isReturnOnOrAfter;
       });

@@ -6,7 +6,7 @@ import type {
   OrderSearchResult,
   OrderSearchResponse
 } from '@rentalshop/types';
-import { removeVietnameseDiacritics } from '@rentalshop/utils';
+import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 
 export interface OrderWithRelations {
   id: number
@@ -623,12 +623,10 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
   // Date filters
   if (startDate || endDate) {
     where.createdAt = {};
-    if (startDate) {
-      where.createdAt.gte = new Date(startDate);
-    }
-    if (endDate) {
-      where.createdAt.lte = new Date(endDate);
-    }
+    const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
+    const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
+    if (normalizedStart) where.createdAt.gte = normalizedStart;
+    if (normalizedEnd) where.createdAt.lte = normalizedEnd;
   }
 
   // Pickup date filter
@@ -885,8 +883,10 @@ export const simplifiedOrders = {
     // Date range
     if (whereFilters.startDate || whereFilters.endDate) {
       where.createdAt = {};
-      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
-      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
+      const normalizedStart = whereFilters.startDate ? normalizeStartDate(whereFilters.startDate) : null;
+      const normalizedEnd = whereFilters.endDate ? normalizeEndDate(whereFilters.endDate) : null;
+      if (normalizedStart) where.createdAt.gte = normalizedStart;
+      if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
     // Text search (case-insensitive and diacritics-insensitive for customer names)
@@ -1140,8 +1140,10 @@ export const simplifiedOrders = {
     // Date range
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
+      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
+      if (normalizedStart) where.createdAt.gte = normalizedStart;
+      if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
     // Text search
@@ -1240,8 +1242,10 @@ export const simplifiedOrders = {
     if (orderType) where.orderType = orderType;
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
+      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
+      if (normalizedStart) where.createdAt.gte = normalizedStart;
+      if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
     if (search) {
       const searchTerm = search.trim();
@@ -1447,8 +1451,10 @@ export const simplifiedOrders = {
     
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
+      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
+      if (normalizedStart) where.createdAt.gte = normalizedStart;
+      if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
     // Search functionality: search in order number, customer name, and customer phone (diacritics-insensitive)
@@ -2089,8 +2095,10 @@ export const simplifiedOrders = {
     }
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
+      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
+      if (normalizedStart) where.createdAt.gte = normalizedStart;
+      if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
     // Add cursor condition for pagination
@@ -2235,8 +2243,10 @@ export const simplifiedOrders = {
     }
     if (startDate || endDate) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
+      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
+      if (normalizedStart) where.createdAt.gte = normalizedStart;
+      if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
     const [
