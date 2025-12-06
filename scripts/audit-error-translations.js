@@ -1,484 +1,420 @@
-#!/usr/bin/env node
-
-/**
- * Error Translation Audit Script
- * 
- * Audits all error codes from API and database to check if they have translations
- * in locale files. Generates a detailed report.
- */
-
 const fs = require('fs');
+const { execSync } = require('child_process');
 const path = require('path');
 
-// Configuration
-const ROOT_DIR = path.join(__dirname, '..');
-const LOCALES_DIR = path.join(ROOT_DIR, 'locales');
-const ERROR_CODE_FILE = path.join(ROOT_DIR, 'packages/utils/src/core/errors.ts');
-const RESPONSE_BUILDER_FILE = path.join(ROOT_DIR, 'packages/utils/src/api/response-builder.ts');
-const API_ROUTES_DIR = path.join(ROOT_DIR, 'apps/api/app/api');
-const REPORT_FILE = path.join(ROOT_DIR, 'ERROR_TRANSLATION_AUDIT_REPORT.md');
-
-// Locale codes to check
-const LOCALES = ['en', 'vi', 'ja', 'ko', 'zh'];
+/**
+ * Comprehensive Error Code Translation Audit Script
+ * 
+ * This script:
+ * 1. Extracts all error codes from ResponseBuilder.error() calls in apps/api/
+ * 2. Extracts error codes from response-builder.ts (ERROR_MESSAGES, SUCCESS_MESSAGES)
+ * 3. Extracts error codes from errors.ts (ErrorCode enum)
+ * 4. Compares with translation files (en/errors.json, vi/errors.json)
+ * 5. Generates comprehensive report
+ */
 
 // ============================================================================
-// STEP 1: Extract Error Codes from Codebase
+// HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Extract error codes from a file using regex
+ */
+function extractErrorCodesFromFile(filePath, pattern) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const matches = [...content.matchAll(new RegExp(pattern, 'g'))];
+    return matches.map(match => match[1]).filter(Boolean);
+  } catch (error) {
+    console.warn(`  ⚠️  Could not read ${filePath}: ${error.message}`);
+    return [];
+  }
+}
 
 /**
  * Extract error codes from ErrorCode enum
  */
-function extractErrorCodeEnum() {
-  const content = fs.readFileSync(ERROR_CODE_FILE, 'utf8');
-  const codes = new Set();
-  
-  // Match enum values: UNAUTHORIZED = 'UNAUTHORIZED',
-  const enumRegex = /^\s*(\w+)\s*=\s*['"]([^'"]+)['"]/gm;
-  let match;
-  
-  // Find the enum block
-  const enumStart = content.indexOf('export enum ErrorCode {');
-  if (enumStart === -1) return codes;
-  
-  const enumEnd = content.indexOf('}', enumStart);
-  const enumContent = content.substring(enumStart, enumEnd);
-  
-  while ((match = enumRegex.exec(enumContent)) !== null) {
-    codes.add(match[2]); // Use the string value
-  }
-  
-  return codes;
-}
-
-/**
- * Extract error codes from ResponseBuilder ERROR_MESSAGES
- */
-function extractResponseBuilderErrors() {
-  const content = fs.readFileSync(RESPONSE_BUILDER_FILE, 'utf8');
-  const codes = new Set();
-  
-  // Find ERROR_MESSAGES object
-  const errorMessagesStart = content.indexOf("const ERROR_MESSAGES:");
-  if (errorMessagesStart === -1) return codes;
-  
-  // Find the closing brace (looking for }; after ERROR_MESSAGES)
-  let braceCount = 0;
-  let inObject = false;
-  let i = errorMessagesStart;
-  
-  for (; i < content.length; i++) {
-    if (content[i] === '{') {
-      braceCount++;
-      inObject = true;
-    } else if (content[i] === '}') {
-      braceCount--;
-      if (braceCount === 0 && inObject) break;
-    }
-  }
-  
-  const errorMessagesContent = content.substring(errorMessagesStart, i + 1);
-  
-  // Match keys: 'ERROR_CODE': 'message'
-  const keyRegex = /['"]([A-Z_][A-Z0-9_]*)['"]\s*:/g;
-  let match;
-  
-  while ((match = keyRegex.exec(errorMessagesContent)) !== null) {
-    codes.add(match[1]);
-  }
-  
-  return codes;
-}
-
-/**
- * Extract success codes from ResponseBuilder SUCCESS_MESSAGES
- */
-function extractResponseBuilderSuccess() {
-  const content = fs.readFileSync(RESPONSE_BUILDER_FILE, 'utf8');
-  const codes = new Set();
-  
-  // Find SUCCESS_MESSAGES object
-  const successMessagesStart = content.indexOf("const SUCCESS_MESSAGES:");
-  if (successMessagesStart === -1) return codes;
-  
-  // Find the closing brace
-  let braceCount = 0;
-  let inObject = false;
-  let i = successMessagesStart;
-  
-  for (; i < content.length; i++) {
-    if (content[i] === '{') {
-      braceCount++;
-      inObject = true;
-    } else if (content[i] === '}') {
-      braceCount--;
-      if (braceCount === 0 && inObject) break;
-    }
-  }
-  
-  const successMessagesContent = content.substring(successMessagesStart, i + 1);
-  
-  // Match keys: 'SUCCESS_CODE': 'message'
-  const keyRegex = /['"]([A-Z_][A-Z0-9_]*)['"]\s*:/g;
-  let match;
-  
-  while ((match = keyRegex.exec(successMessagesContent)) !== null) {
-    codes.add(match[1]);
-  }
-  
-  return codes;
-}
-
-/**
- * Recursively find all TypeScript files in a directory
- */
-function findTsFiles(dir, fileList = []) {
-  if (!fs.existsSync(dir)) {
-    return fileList;
-  }
-  
-  const files = fs.readdirSync(dir);
-  
-  for (const file of files) {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    
-    if (stat.isDirectory() && !filePath.includes('node_modules')) {
-      findTsFiles(filePath, fileList);
-    } else if (file.endsWith('.ts') && !file.endsWith('.d.ts')) {
-      fileList.push(filePath);
-    }
-  }
-  
-  return fileList;
-}
-
-/**
- * Extract error/success codes from API routes
- */
-function extractApiRouteCodes() {
-  const codes = new Set();
-  const apiFiles = findTsFiles(API_ROUTES_DIR);
-  
-  // Patterns to match:
-  // ResponseBuilder.error('CODE')
-  // ResponseBuilder.success('CODE')
-  // ResponseBuilder.error("CODE")
-  // ResponseBuilder.success("CODE")
-  const errorPattern = /ResponseBuilder\.error\(['"]([A-Z_][A-Z0-9_]*)['"]/g;
-  const successPattern = /ResponseBuilder\.success\(['"]([A-Z_][A-Z0-9_]*)['"]/g;
-  
-  for (const file of apiFiles) {
-    try {
-      const content = fs.readFileSync(file, 'utf8');
-      
-      let match;
-      while ((match = errorPattern.exec(content)) !== null) {
-        codes.add(match[1]);
-      }
-      
-      while ((match = successPattern.exec(content)) !== null) {
-        codes.add(match[1]);
-      }
-    } catch (error) {
-      console.warn(`Warning: Could not read ${file}:`, error.message);
-    }
-  }
-  
-  return codes;
-}
-
-/**
- * Extract Prisma error codes from handlePrismaError
- */
-function extractPrismaErrorCodes() {
-  const content = fs.readFileSync(ERROR_CODE_FILE, 'utf8');
-  const codes = new Set();
-  
-  // Find handlePrismaError function and extract ErrorCode values used
-  // This function returns ErrorCode enum values, so we need to extract those
-  const prismaErrorStart = content.indexOf('export function handlePrismaError');
-  if (prismaErrorStart === -1) return codes;
-  
-  const prismaErrorEnd = content.indexOf('}', content.indexOf('}', prismaErrorStart) + 1);
-  const prismaErrorContent = content.substring(prismaErrorStart, prismaErrorEnd);
-  
-  // Match ErrorCode.CODE_NAME
-  const errorCodePattern = /ErrorCode\.([A-Z_][A-Z0-9_]*)/g;
-  let match;
-  
-  while ((match = errorCodePattern.exec(prismaErrorContent)) !== null) {
-    codes.add(match[1]);
-  }
-  
-  return codes;
-}
-
-// ============================================================================
-// STEP 2: Extract Translation Keys from Locale Files
-// ============================================================================
-
-/**
- * Extract translation keys from a locale file
- */
-function extractLocaleKeys(locale) {
-  const localeFile = path.join(LOCALES_DIR, locale, 'errors.json');
-  
-  if (!fs.existsSync(localeFile)) {
-    return new Set();
-  }
-  
+function extractErrorCodesFromEnum(filePath) {
   try {
-    const content = fs.readFileSync(localeFile, 'utf8');
-    const data = JSON.parse(content);
-    const keys = new Set();
+    const content = fs.readFileSync(filePath, 'utf8');
+    const enumMatch = content.match(/export enum ErrorCode \{[\s\S]*?\}/);
+    if (!enumMatch) return [];
     
-    // Extract all keys except those starting with _
-    for (const key in data) {
-      if (!key.startsWith('_')) {
-        keys.add(key);
-      }
-    }
-    
-    return keys;
+    const enumContent = enumMatch[0];
+    // Match: ERROR_CODE = 'ERROR_CODE' or ERROR_CODE = "ERROR_CODE"
+    const matches = [...enumContent.matchAll(/([A-Z_]+)\s*=\s*['"]([A-Z_]+)['"]/g)];
+    return matches.map(match => match[2]).filter(Boolean);
   } catch (error) {
-    console.warn(`Warning: Could not parse ${localeFile}:`, error.message);
-    return new Set();
+    console.warn(`  ⚠️  Could not extract from enum: ${error.message}`);
+    return [];
   }
 }
 
 /**
- * Get all translation keys for all locales
+ * Extract error codes from ERROR_MESSAGES or SUCCESS_MESSAGES
  */
-function getAllTranslationKeys() {
-  const result = {};
-  
-  for (const locale of LOCALES) {
-    result[locale] = extractLocaleKeys(locale);
+function extractErrorCodesFromMessages(filePath, messageType) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const pattern = new RegExp(`const ${messageType}: Record<string, string> = \\{([\\s\\S]*?)\\};`, 'g');
+    const match = pattern.exec(content);
+    if (!match) return [];
+    
+    const messagesContent = match[1];
+    // Match: 'ERROR_CODE': or "ERROR_CODE":
+    const matches = [...messagesContent.matchAll(/['"]([A-Z_]+)['"]\s*:/g)];
+    return matches.map(match => match[1]).filter(Boolean);
+  } catch (error) {
+    console.warn(`  ⚠️  Could not extract ${messageType}: ${error.message}`);
+    return [];
   }
-  
-  return result;
 }
 
-// ============================================================================
-// STEP 3: Compare and Analyze
-// ============================================================================
+/**
+ * Extract error codes from all API route files
+ */
+function extractErrorCodesFromApiRoutes() {
+  try {
+    // Use grep to find all ResponseBuilder.error() calls
+    // Pattern: ResponseBuilder.error('ERROR_CODE') or ResponseBuilder.error("ERROR_CODE")
+    const grepCmd = 'grep -roh "ResponseBuilder\\.error([\\"\\\']\\([A-Z_][A-Z_]*\\)[\\"\\\']" apps/api --include="*.ts" --include="*.tsx" 2>/dev/null | grep -oE "[A-Z_][A-Z_]*" | sort -u';
+    const grepOutput = execSync(grepCmd, { 
+      encoding: 'utf8', 
+      maxBuffer: 10 * 1024 * 1024,
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    const codes = grepOutput.trim().split('\n').filter(Boolean);
+    // Filter out invalid codes (must contain underscore and be uppercase)
+    return codes.filter(code => code.includes('_') && code === code.toUpperCase() && code.length > 2);
+  } catch (error) {
+    console.warn(`  ⚠️  Could not extract from API routes: ${error.message}`);
+    return [];
+  }
+}
 
 /**
- * Analyze error codes vs translations
+ * Load translation file and filter out comment keys
  */
-function analyzeTranslations(allCodes, translationKeys) {
-  const analysis = {
-    fullyTranslated: [],
-    partiallyTranslated: [],
-    missingTranslation: [],
-    missingByLocale: {}
+function loadTranslationFile(filePath) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const data = JSON.parse(content);
+    const keys = Object.keys(data).filter(k => !k.startsWith('_'));
+    return { data, keys };
+  } catch (error) {
+    console.error(`  ❌ Could not load ${filePath}: ${error.message}`);
+    return { data: {}, keys: [] };
+  }
+}
+
+/**
+ * Group error codes by category
+ */
+function categorizeErrorCodes(codes, enErrors) {
+  const categories = {
+    'Authentication & Authorization': [],
+    'Validation Errors': [],
+    'Not Found Errors': [],
+    'Conflict Errors': [],
+    'Business Rules': [],
+    'System Errors': [],
+    'File Upload': [],
+    'Success Messages': [],
+    'Other': []
   };
   
-  // Initialize missing by locale
-  for (const locale of LOCALES) {
-    analysis.missingByLocale[locale] = [];
+  codes.forEach(code => {
+    const message = enErrors[code] || '';
+    if (code.includes('AUTH') || code.includes('TOKEN') || code.includes('CREDENTIAL') || code.includes('PERMISSION') || code.includes('ACCESS')) {
+      categories['Authentication & Authorization'].push(code);
+    } else if (code.includes('VALIDATION') || code.includes('INVALID') || code.includes('MISSING') || code.includes('REQUIRED')) {
+      categories['Validation Errors'].push(code);
+    } else if (code.includes('NOT_FOUND') || code.includes('NO_')) {
+      categories['Not Found Errors'].push(code);
+    } else if (code.includes('EXISTS') || code.includes('DUPLICATE') || code.includes('ALREADY')) {
+      categories['Conflict Errors'].push(code);
+    } else if (code.includes('CANNOT') || code.includes('HAS_ACTIVE') || code.includes('LIMIT')) {
+      categories['Business Rules'].push(code);
+    } else if (code.includes('FAILED') || code.includes('ERROR') || code.includes('INTERNAL')) {
+      categories['System Errors'].push(code);
+    } else if (code.includes('IMAGE') || code.includes('UPLOAD') || code.includes('FILE')) {
+      categories['File Upload'].push(code);
+    } else if (code.includes('SUCCESS')) {
+      categories['Success Messages'].push(code);
+    } else {
+      categories['Other'].push(code);
+    }
+  });
+  
+  return categories;
+}
+
+// ============================================================================
+// MAIN AUDIT FUNCTION
+// ============================================================================
+
+function runAudit() {
+  console.log('=== ERROR CODE TRANSLATION AUDIT ===\n');
+  
+  // Load translation files
+  console.log('📂 Loading translation files...');
+  const enTranslation = loadTranslationFile('locales/en/errors.json');
+  const viTranslation = loadTranslationFile('locales/vi/errors.json');
+  const enKeys = enTranslation.keys;
+  const viKeys = viTranslation.keys;
+  
+  console.log(`   ✅ Loaded ${enKeys.length} English error codes`);
+  console.log(`   ✅ Loaded ${viKeys.length} Vietnamese error codes\n`);
+  
+  // Extract error codes from various sources
+  console.log('🔍 Extracting error codes from codebase...\n');
+  
+  // 1. From ErrorCode enum
+  console.log('1. Extracting from ErrorCode enum...');
+  const enumCodes = extractErrorCodesFromEnum('packages/utils/src/core/errors.ts');
+  console.log(`   Found ${enumCodes.length} error codes in ErrorCode enum`);
+  
+  // 2. From response-builder.ts ERROR_MESSAGES
+  console.log('\n2. Extracting from response-builder.ts ERROR_MESSAGES...');
+  const errorMessages = extractErrorCodesFromMessages('packages/utils/src/api/response-builder.ts', 'ERROR_MESSAGES');
+  console.log(`   Found ${errorMessages.length} error codes in ERROR_MESSAGES`);
+  
+  // 3. From response-builder.ts SUCCESS_MESSAGES
+  console.log('\n3. Extracting from response-builder.ts SUCCESS_MESSAGES...');
+  const successMessages = extractErrorCodesFromMessages('packages/utils/src/api/response-builder.ts', 'SUCCESS_MESSAGES');
+  console.log(`   Found ${successMessages.length} success codes in SUCCESS_MESSAGES`);
+  
+  // 4. From API route files
+  console.log('\n4. Extracting from API route files...');
+  const apiRouteCodes = extractErrorCodesFromApiRoutes();
+  console.log(`   Found ${apiRouteCodes.length} error codes in API routes`);
+  
+  // Combine all codes from codebase
+  const allCodebaseCodes = [...new Set([...enumCodes, ...errorMessages, ...successMessages, ...apiRouteCodes])];
+  console.log(`\n   📊 Total unique error codes in codebase: ${allCodebaseCodes.length}`);
+  
+  // ============================================================================
+  // COMPARISON AND ANALYSIS
+  // ============================================================================
+  
+  console.log('\n📊 COMPARISON AND ANALYSIS\n');
+  
+  // Missing in English
+  const missingInEn = allCodebaseCodes.filter(code => !enKeys.includes(code));
+  
+  // Missing in Vietnamese
+  const missingInVi = enKeys.filter(code => !viKeys.includes(code));
+  
+  // Unused codes (in translation files but not in codebase)
+  const unusedCodes = enKeys.filter(code => !allCodebaseCodes.includes(code));
+  
+  // Statistics
+  const totalInCodebase = allCodebaseCodes.length;
+  const totalInEn = enKeys.length;
+  const totalInVi = viKeys.length;
+  const coverageEn = totalInCodebase > 0 ? ((totalInCodebase - missingInEn.length) / totalInCodebase * 100).toFixed(1) : 100;
+  const coverageVi = totalInEn > 0 ? ((totalInEn - missingInVi.length) / totalInEn * 100).toFixed(1) : 100;
+  
+  // ============================================================================
+  // CONSOLE OUTPUT
+  // ============================================================================
+  
+  console.log('📊 STATISTICS:');
+  console.log(`   - Total error codes in codebase: ${totalInCodebase}`);
+  console.log(`   - Total error codes in en/errors.json: ${totalInEn}`);
+  console.log(`   - Total error codes in vi/errors.json: ${totalInVi}`);
+  console.log(`   - English coverage: ${coverageEn}%`);
+  console.log(`   - Vietnamese coverage: ${coverageVi}%`);
+  
+  // Missing in English
+  console.log(`\n❌ MISSING IN ENGLISH (${missingInEn.length}):`);
+  if (missingInEn.length === 0) {
+    console.log('   ✅ All error codes from codebase are in English translations!');
+  } else {
+    const categorized = categorizeErrorCodes(missingInEn, enTranslation.data);
+    Object.entries(categorized).forEach(([category, codes]) => {
+      if (codes.length > 0) {
+        console.log(`\n   ${category}:`);
+        codes.forEach(code => {
+          // Try to find where it's used
+          const usedIn = [];
+          if (apiRouteCodes.includes(code)) usedIn.push('API routes');
+          if (errorMessages.includes(code)) usedIn.push('ERROR_MESSAGES');
+          if (successMessages.includes(code)) usedIn.push('SUCCESS_MESSAGES');
+          if (enumCodes.includes(code)) usedIn.push('ErrorCode enum');
+          console.log(`      - ${code} (used in: ${usedIn.join(', ') || 'unknown'})`);
+        });
+      }
+    });
   }
   
-  // Check each code
-  for (const code of allCodes) {
-    const localesWithTranslation = LOCALES.filter(
-      locale => translationKeys[locale].has(code)
-    );
-    
-    if (localesWithTranslation.length === LOCALES.length) {
-      // Fully translated
-      analysis.fullyTranslated.push(code);
-    } else if (localesWithTranslation.length === 0) {
-      // Not in any locale
-      analysis.missingTranslation.push(code);
-      for (const locale of LOCALES) {
-        analysis.missingByLocale[locale].push(code);
+  // Missing in Vietnamese
+  console.log(`\n❌ MISSING IN VIETNAMESE (${missingInVi.length}):`);
+  if (missingInVi.length === 0) {
+    console.log('   ✅ All English codes have Vietnamese translations!');
+  } else {
+    const categorized = categorizeErrorCodes(missingInVi, enTranslation.data);
+    Object.entries(categorized).forEach(([category, codes]) => {
+      if (codes.length > 0) {
+        console.log(`\n   ${category}:`);
+        codes.forEach(code => {
+          const enMessage = enTranslation.data[code] || 'N/A';
+          console.log(`      - ${code}: "${enMessage}"`);
+        });
       }
-    } else {
-      // Partially translated
-      analysis.partiallyTranslated.push({
-        code,
-        translatedIn: localesWithTranslation,
-        missingIn: LOCALES.filter(l => !localesWithTranslation.includes(l))
-      });
-      
-      for (const locale of LOCALES) {
-        if (!localesWithTranslation.includes(locale)) {
-          analysis.missingByLocale[locale].push(code);
+    });
+  }
+  
+  // Unused codes
+  console.log(`\n⚠️  UNUSED CODES (${unusedCodes.length}):`);
+  if (unusedCodes.length === 0) {
+    console.log('   ✅ No unused codes found!');
+  } else {
+    console.log('   (Codes in translation files but not used in codebase)');
+    const categorized = categorizeErrorCodes(unusedCodes, enTranslation.data);
+    Object.entries(categorized).forEach(([category, codes]) => {
+      if (codes.length > 0 && codes.length <= 20) {
+        console.log(`\n   ${category}:`);
+        codes.slice(0, 20).forEach(code => {
+          console.log(`      - ${code}`);
+        });
+        if (codes.length > 20) {
+          console.log(`      ... and ${codes.length - 20} more`);
         }
       }
+    });
+  }
+  
+  // ============================================================================
+  // GENERATE REPORT
+  // ============================================================================
+  
+  console.log('\n📝 Generating report...');
+  
+  const report = {
+    generatedAt: new Date().toISOString(),
+    statistics: {
+      totalInCodebase,
+      totalInEn,
+      totalInVi,
+      coverageEn: parseFloat(coverageEn),
+      coverageVi: parseFloat(coverageVi),
+      missingInEnCount: missingInEn.length,
+      missingInViCount: missingInVi.length,
+      unusedCount: unusedCodes.length
+    },
+    missingInEnglish: categorizeErrorCodes(missingInEn, enTranslation.data),
+    missingInVietnamese: categorizeErrorCodes(missingInVi, enTranslation.data),
+    unusedCodes: categorizeErrorCodes(unusedCodes, enTranslation.data)
+  };
+  
+  // Generate markdown report
+  let markdown = `# Error Code Translation Audit Report\n\n`;
+  markdown += `**Generated at:** ${new Date().toLocaleString()}\n\n`;
+  
+  markdown += `## 📊 Statistics\n\n`;
+  markdown += `- **Total error codes in codebase:** ${totalInCodebase}\n`;
+  markdown += `- **Total error codes in en/errors.json:** ${totalInEn}\n`;
+  markdown += `- **Total error codes in vi/errors.json:** ${totalInVi}\n`;
+  markdown += `- **English coverage:** ${coverageEn}%\n`;
+  markdown += `- **Vietnamese coverage:** ${coverageVi}%\n\n`;
+  
+  if (missingInEn.length > 0) {
+    markdown += `## ❌ Missing in English Translations\n\n`;
+    markdown += `**Total:** ${missingInEn.length} error codes\n\n`;
+    Object.entries(report.missingInEnglish).forEach(([category, codes]) => {
+      if (codes.length > 0) {
+        markdown += `### ${category}\n\n`;
+        codes.forEach(code => {
+          const usedIn = [];
+          if (apiRouteCodes.includes(code)) usedIn.push('API routes');
+          if (errorMessages.includes(code)) usedIn.push('ERROR_MESSAGES');
+          if (successMessages.includes(code)) usedIn.push('SUCCESS_MESSAGES');
+          if (enumCodes.includes(code)) usedIn.push('ErrorCode enum');
+          markdown += `- \`${code}\` (used in: ${usedIn.join(', ') || 'unknown'})\n`;
+        });
+        markdown += '\n';
+      }
+    });
+  }
+  
+  if (missingInVi.length > 0) {
+    markdown += `## ❌ Missing in Vietnamese Translations\n\n`;
+    markdown += `**Total:** ${missingInVi.length} error codes\n\n`;
+    Object.entries(report.missingInVietnamese).forEach(([category, codes]) => {
+      if (codes.length > 0) {
+        markdown += `### ${category}\n\n`;
+        codes.forEach(code => {
+          const enMessage = enTranslation.data[code] || 'N/A';
+          markdown += `- \`${code}\`: "${enMessage}"\n`;
+        });
+        markdown += '\n';
+      }
+    });
+  }
+  
+  if (unusedCodes.length > 0) {
+    markdown += `## ⚠️  Unused Codes\n\n`;
+    markdown += `**Total:** ${unusedCodes.length} error codes\n\n`;
+    markdown += `These codes exist in translation files but are not used in the codebase.\n\n`;
+    Object.entries(report.unusedCodes).forEach(([category, codes]) => {
+      if (codes.length > 0) {
+        markdown += `### ${category}\n\n`;
+        codes.slice(0, 50).forEach(code => {
+          markdown += `- \`${code}\`\n`;
+        });
+        if (codes.length > 50) {
+          markdown += `\n... and ${codes.length - 50} more\n`;
+        }
+        markdown += '\n';
+      }
+    });
+  }
+  
+  markdown += `## ✅ Recommendations\n\n`;
+  if (missingInEn.length === 0 && missingInVi.length === 0) {
+    markdown += `🎉 **Perfect!** All error codes are fully translated!\n\n`;
+    markdown += `- All codes from codebase are in English translations\n`;
+    markdown += `- All English codes have Vietnamese translations\n`;
+  } else {
+    if (missingInEn.length > 0) {
+      markdown += `1. **Add missing English translations** (${missingInEn.length} codes)\n`;
+      markdown += `   - Add these codes to \`locales/en/errors.json\`\n`;
+      markdown += `   - Provide appropriate English error messages\n\n`;
+    }
+    if (missingInVi.length > 0) {
+      markdown += `2. **Add missing Vietnamese translations** (${missingInVi.length} codes)\n`;
+      markdown += `   - Add these codes to \`locales/vi/errors.json\`\n`;
+      markdown += `   - Translate from English messages\n\n`;
     }
   }
   
-  return analysis;
-}
-
-// ============================================================================
-// STEP 4: Generate Report
-// ============================================================================
-
-/**
- * Generate markdown report
- */
-function generateReport(allCodes, successCodes, translationKeys, analysis) {
-  const totalCodes = allCodes.size;
+  // Write report
+  fs.writeFileSync('ERROR_TRANSLATION_AUDIT_REPORT.md', markdown, 'utf8');
+  console.log('   ✅ Report generated: ERROR_TRANSLATION_AUDIT_REPORT.md');
   
-  let report = `# Error Translation Audit Report\n\n`;
-  report += `Generated on: ${new Date().toISOString()}\n\n`;
+  // ============================================================================
+  // SUMMARY
+  // ============================================================================
   
-  // Summary
-  report += `## Summary\n\n`;
-  report += `- **Total Error & Success Codes Found**: ${totalCodes}\n`;
-  report += `  - Includes error codes from ErrorCode enum, ResponseBuilder, API routes, and Prisma handlers\n`;
-  report += `  - Includes success codes from ResponseBuilder and API routes\n\n`;
-  
-  // Translation coverage by locale
-  report += `### Translation Coverage by Locale\n\n`;
-  for (const locale of LOCALES) {
-    const hasTranslation = [...allCodes].filter(
-      code => translationKeys[locale].has(code)
-    ).length;
-    const percentage = totalCodes > 0 
-      ? ((hasTranslation / totalCodes) * 100).toFixed(1) 
-      : 0;
-    
-    const exists = fs.existsSync(path.join(LOCALES_DIR, locale, 'errors.json'));
-    const status = exists ? '✅' : '❌ (File does not exist)';
-    
-    report += `- **${locale.toUpperCase()}**: ${hasTranslation}/${totalCodes} (${percentage}%) ${status}\n`;
-  }
-  
-  report += `\n`;
-  
-  // Fully translated codes
-  report += `## Fully Translated Codes\n\n`;
-  report += `Total: ${analysis.fullyTranslated.length}\n\n`;
-  if (analysis.fullyTranslated.length > 0) {
-    report += `\`\`\`\n`;
-    report += analysis.fullyTranslated.sort().join(', ');
-    report += `\n\`\`\`\n\n`;
-  }
-  
-  // Partially translated codes
-  report += `## Partially Translated Codes\n\n`;
-  report += `Total: ${analysis.partiallyTranslated.length}\n\n`;
-  if (analysis.partiallyTranslated.length > 0) {
-    for (const item of analysis.partiallyTranslated) {
-      report += `- **${item.code}**\n`;
-      report += `  - ✅ Translated in: ${item.translatedIn.join(', ')}\n`;
-      report += `  - ❌ Missing in: ${item.missingIn.join(', ')}\n\n`;
+  console.log('\n=== SUMMARY ===');
+  if (missingInEn.length === 0 && missingInVi.length === 0) {
+    console.log('✅ PERFECT! All error codes are fully translated!');
+    console.log('   - All codes from codebase are in English translations');
+    console.log('   - All English codes have Vietnamese translations');
+    process.exit(0);
+  } else {
+    console.log('⚠️  ISSUES FOUND:');
+    if (missingInEn.length > 0) {
+      console.log(`   - ${missingInEn.length} codes in codebase missing from English translations`);
     }
-  }
-  
-  // Missing translations by locale
-  report += `## Missing Translations by Locale\n\n`;
-  for (const locale of LOCALES) {
-    const missing = analysis.missingByLocale[locale];
-    if (missing.length === 0) {
-      report += `### ${locale.toUpperCase()} (${locale})\n\n`;
-      report += `✅ All codes have translations!\n\n`;
-    } else {
-      report += `### ${locale.toUpperCase()} (${locale})\n\n`;
-      report += `Total missing: ${missing.length}\n\n`;
-      report += `\`\`\`\n`;
-      report += missing.sort().join(', ');
-      report += `\n\`\`\`\n\n`;
+    if (missingInVi.length > 0) {
+      console.log(`   - ${missingInVi.length} English codes missing Vietnamese translations`);
     }
+    console.log('\n   📄 See ERROR_TRANSLATION_AUDIT_REPORT.md for details');
+    process.exit(1);
   }
-  
-  // Code sources breakdown
-  report += `## Code Sources Breakdown\n\n`;
-  report += `This report includes codes from:\n`;
-  report += `- ErrorCode enum (packages/utils/src/core/errors.ts)\n`;
-  report += `- ResponseBuilder ERROR_MESSAGES (packages/utils/src/api/response-builder.ts)\n`;
-  report += `- ResponseBuilder SUCCESS_MESSAGES (packages/utils/src/api/response-builder.ts)\n`;
-  report += `- API routes (apps/api/app/api/**/*.ts)\n`;
-  report += `- Prisma error handlers (handlePrismaError function)\n\n`;
-  
-  return report;
 }
 
-// ============================================================================
-// MAIN EXECUTION
-// ============================================================================
-
-async function main() {
-  console.log('🔍 Starting Error Translation Audit...\n');
-  
-  // Step 1: Extract all error codes
-  console.log('Step 1: Extracting error codes from codebase...');
-  const errorCodeEnum = extractErrorCodeEnum();
-  console.log(`  - ErrorCode enum: ${errorCodeEnum.size} codes`);
-  
-  const responseBuilderErrors = extractResponseBuilderErrors();
-  console.log(`  - ResponseBuilder ERROR_MESSAGES: ${responseBuilderErrors.size} codes`);
-  
-  const responseBuilderSuccess = extractResponseBuilderSuccess();
-  console.log(`  - ResponseBuilder SUCCESS_MESSAGES: ${responseBuilderSuccess.size} codes`);
-  
-  const apiRouteCodes = extractApiRouteCodes();
-  console.log(`  - API routes: ${apiRouteCodes.size} codes`);
-  
-  const prismaErrorCodes = extractPrismaErrorCodes();
-  console.log(`  - Prisma error handlers: ${prismaErrorCodes.size} codes`);
-  
-  // Combine all error codes (excluding success codes for error analysis)
-  const allErrorCodes = new Set([
-    ...errorCodeEnum,
-    ...responseBuilderErrors,
-    ...apiRouteCodes,
-    ...prismaErrorCodes
-  ]);
-  
-  // All codes (errors + success)
-  const allCodes = new Set([
-    ...allErrorCodes,
-    ...responseBuilderSuccess,
-    ...apiRouteCodes // Might include success codes
-  ]);
-  
-  console.log(`  ✅ Total unique error codes: ${allErrorCodes.size}`);
-  console.log(`  ✅ Total unique codes (errors + success): ${allCodes.size}\n`);
-  
-  // Step 2: Extract translation keys
-  console.log('Step 2: Extracting translation keys from locale files...');
-  const translationKeys = getAllTranslationKeys();
-  for (const locale of LOCALES) {
-    console.log(`  - ${locale}: ${translationKeys[locale].size} keys`);
-  }
-  console.log('');
-  
-  // Step 3: Analyze
-  console.log('Step 3: Analyzing translations...');
-  const analysis = analyzeTranslations(allCodes, translationKeys);
-  console.log(`  - Fully translated: ${analysis.fullyTranslated.length}`);
-  console.log(`  - Partially translated: ${analysis.partiallyTranslated.length}`);
-  console.log(`  - Missing translations: ${analysis.missingTranslation.length}\n`);
-  
-  // Step 4: Generate report
-  console.log('Step 4: Generating report...');
-  const report = generateReport(allCodes, responseBuilderSuccess, translationKeys, analysis);
-  fs.writeFileSync(REPORT_FILE, report, 'utf8');
-  console.log(`  ✅ Report saved to: ${REPORT_FILE}\n`);
-  
-  // Summary
-  console.log('📊 Summary:');
-  console.log(`  Total codes: ${allCodes.size}`);
-  for (const locale of LOCALES) {
-    const hasTranslation = [...allCodes].filter(
-      code => translationKeys[locale].has(code)
-    ).length;
-    const percentage = ((hasTranslation / allCodes.size) * 100).toFixed(1);
-    const exists = fs.existsSync(path.join(LOCALES_DIR, locale, 'errors.json'));
-    console.log(`  ${locale.toUpperCase()}: ${hasTranslation}/${allCodes.size} (${percentage}%) ${exists ? '✅' : '❌'}`);
-  }
-  console.log('');
-}
-
-// Run the audit
-main().catch(error => {
-  console.error('❌ Error running audit:', error);
-  console.error(error.stack);
-  process.exit(1);
-});
-
+// Run audit
+runAudit();

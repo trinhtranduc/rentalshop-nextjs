@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from './button';
@@ -51,7 +52,7 @@ export const Toast: React.FC<ToastProps> = ({
     if (duration > 0) {
       const timer = setTimeout(() => {
         setIsVisible(false);
-        setTimeout(() => onClose(id), 300); // Wait for fade out animation
+        setTimeout(() => onClose(id), 300);
       }, duration);
 
       return () => clearTimeout(timer);
@@ -60,16 +61,21 @@ export const Toast: React.FC<ToastProps> = ({
 
   const Icon = toastIcons[type];
 
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(() => onClose(id), 300);
+  };
+
   return (
     <div
       className={cn(
-        'w-full transition-all duration-300 ease-in-out',
+        'w-full transition-all duration-300 ease-in-out pointer-events-auto',
         isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
       )}
     >
       <div
         className={cn(
-          'border rounded-lg shadow-lg p-4 flex items-start space-x-3',
+          'border rounded-lg shadow-lg p-4 flex items-start space-x-3 pointer-events-auto',
           toastStyles[type]
         )}
       >
@@ -85,10 +91,7 @@ export const Toast: React.FC<ToastProps> = ({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => {
-            setIsVisible(false);
-            setTimeout(() => onClose(id), 300);
-          }}
+          onClick={handleClose}
           className="ml-2 flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity h-6 w-6 p-0"
         >
           <X className="w-4 h-4" />
@@ -104,14 +107,25 @@ export interface ToastContainerProps {
 }
 
 export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose }) => {
-  console.log('🎯 ToastContainer render:', { toastsCount: toasts?.length || 0, toasts });
-  
-  return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 max-w-sm">
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  const toastContent = (
+    <div 
+      className="fixed top-4 right-4 z-[10000] flex flex-col gap-3 max-w-sm pointer-events-none"
+      style={{ zIndex: 10000 }}
+    >
       {toasts?.map((toast, index) => (
         <div 
           key={toast.id} 
-          className="animate-slide-in-from-right"
+          className="animate-slide-in-from-right pointer-events-auto"
           style={{ 
             animationDelay: `${index * 100}ms`,
             transform: `translateY(${index * 8}px)`
@@ -122,6 +136,8 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose 
       ))}
     </div>
   );
+
+  return createPortal(toastContent, document.body);
 };
 
 // Toast Context Type
@@ -177,7 +193,6 @@ export const useToasts = () => {
 export const useToast = () => {
   const { addToast, removeToast } = useToasts();
   
-  // ✅ NEW: Prefixed naming to avoid conflicts with state variables
   const toastSuccess = (title: string, message?: string) => addToast('success', title, message);
   const toastError = (title: string, message?: string) => addToast('error', title, message, 0); // No auto-hide for errors
   const toastWarning = (title: string, message?: string) => addToast('warning', title, message);
