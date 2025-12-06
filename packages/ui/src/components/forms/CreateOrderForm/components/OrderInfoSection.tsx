@@ -150,6 +150,8 @@ interface OrderInfoSectionProps {
   isFormValid?: boolean;
   onSubmit?: (e: React.FormEvent) => void;
   onCancel?: () => void;
+  // Reset key to force re-mount date pickers
+  resetKey?: number;
 }
 
 export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
@@ -168,13 +170,15 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
   onCustomerSearch,
   onShowAddCustomerDialog,
   onCustomerEdit,
+  onCustomerView,
   onUpdateRentalDates,
   hideCardWrapper = false,
   orderItems = [],
   loading = false,
   isFormValid = false,
   onSubmit,
-  onCancel
+  onCancel,
+  resetKey = 0
 }) => {
   const t = useOrderTranslations();
   const formatMoney = useFormatCurrency();
@@ -230,6 +234,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
           <div className="space-y-2 w-full">
             {merchantData ? (
               <RentalPeriodSelector
+                key={`rental-period-${resetKey}`}
                 product={{
                   id: 0, // Placeholder - will be updated when product is selected
                   name: t('messages.rentalPeriod'),
@@ -267,7 +272,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
               />
             ) : (
               // Fallback to basic DateRangePicker if no merchant data
-              <div className="space-y-2">
+              <div className="space-y-2" key={`date-range-${resetKey}`}>
                 <label className="text-sm font-medium text-text-primary">
                   {t('messages.rentalPeriod')} <span className="text-red-500">*</span>
                 </label>
@@ -683,7 +688,15 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={onCancel}
+                  onClick={(e) => {
+                    // Prevent all default behaviors
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Call reset handler
+                    onCancel();
+                    // Explicitly return false to prevent any form submission
+                    return false;
+                  }}
                   className="flex-1"
                 >
                   {isEditMode ? t('messages.cancel') : t('messages.resetSelection')}

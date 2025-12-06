@@ -36,9 +36,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     // Check if session can be rolled back
     if (session.status === 'COMPLETED') {
       return NextResponse.json(
-        ResponseBuilder.error('SESSION_CANNOT_BE_ROLLED_BACK', {
-          message: 'Completed sessions cannot be rolled back. Please verify before rolling back.'
-        }),
+        ResponseBuilder.error('SESSION_CANNOT_BE_ROLLED_BACK'),
         { status: 400 }
       );
     }

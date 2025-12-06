@@ -157,12 +157,47 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
     return '';
   });
 
+  // Reset key to force re-mount of date picker components when resetting
+  const [resetKey, setResetKey] = useState(0);
+
+  // Simple reset function - just reset all fields to default values
+  const handleResetForm = useCallback(() => {
+    // Reset form data and order items to default
+    // This resets: pickupPlanAt, returnPlanAt, customerId, discountValue, discountAmount, notes, and all other fields
+    resetForm();
+    
+    // Reset customer selection (khách hàng)
+    setSelectedCustomer(null);
+    setSearchQuery('');
+    clearCustomerSearchResults();
+    
+    // Reset product search
+    setSearchedProducts([]);
+    
+    // Force re-mount date picker components by incrementing resetKey
+    // This ensures RentalPeriodSelector and DateRangePicker reset their internal state
+    setResetKey(prev => prev + 1);
+    
+    // Note: resetForm() already resets all fields including:
+    // - pickupPlanAt: '' (thời gian thuê - start)
+    // - returnPlanAt: '' (thời gian thuê - end)
+    // - customerId: undefined (khách hàng)
+    // - discountValue: BUSINESS.DEFAULT_DISCOUNT (discount)
+    // - discountAmount: BUSINESS.DEFAULT_DISCOUNT (discount)
+    // - notes: '' (note)
+  }, [resetForm, clearCustomerSearchResults]);
+
+  // Internal cancel handler for create mode - simply reset to defaults, no navigation
+  const handleInternalCancel = useCallback(() => {
+    handleResetForm();
+  }, [handleResetForm]);
+
   // Expose resetForm function to parent component
   useEffect(() => {
     if (onFormReady) {
-      onFormReady(resetForm);
+      onFormReady(handleResetForm);
     }
-  }, [onFormReady, resetForm]);
+  }, [onFormReady, handleResetForm]);
 
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
   const [showEditCustomerDialog, setShowEditCustomerDialog] = useState(false);
@@ -640,7 +675,8 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
                 loading={loading || isSubmitting}
                 isFormValid={isFormValidForUI}
                 onSubmit={handleSubmit}
-                onCancel={onCancel}
+                onCancel={isEditMode ? onCancel : handleInternalCancel}
+                resetKey={resetKey}
               />
               </CardContent>
             </Card>

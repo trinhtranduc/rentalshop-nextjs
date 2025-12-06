@@ -134,10 +134,8 @@ export const OrderFilters = React.memo(function OrderFilters({
   // ===========================================================================-
   
   useEffect(() => {
-    // Check if merchantId filter is present in filters (admin view)
-    const hasMerchantFilter = 'merchantId' in filters;
-    
-    if (hasMerchantFilter) {
+    // Only fetch merchants for ADMIN users
+    if (userRole === 'ADMIN') {
       const fetchMerchants = async () => {
         try {
           setLoadingMerchants(true);
@@ -161,7 +159,7 @@ export const OrderFilters = React.memo(function OrderFilters({
 
       fetchMerchants();
     }
-  }, []); // Only run once
+  }, [userRole]); // Run when userRole changes
 
   // ============================================================================
   // HANDLERS - Simple passthrough to parent
@@ -250,7 +248,7 @@ export const OrderFilters = React.memo(function OrderFilters({
           </Select>
           
           {/* Merchant Filter - SearchableSelect (Admin only) */}
-          {'merchantId' in filters && (
+          {userRole === 'ADMIN' && (
             <SearchableSelect
               value={(filters as any).merchantId as number | undefined}
               onChange={(value) => handleFilterChange('merchantId' as keyof OrderFiltersType, value || undefined)}

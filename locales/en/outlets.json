@@ -41,6 +41,7 @@
   },
   "dialogs": {
     "addOutletTitle": "Add New Outlet",
+    "addOutletDescription": "Create a new outlet for your business",
     "editOutletTitle": "Edit Outlet",
     "deleteOutletTitle": "Delete Outlet",
     "outletDetails": "Outlet Details",

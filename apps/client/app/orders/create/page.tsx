@@ -41,7 +41,7 @@ export default function CreateOrderPage() {
   const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [outlets, setOutlets] = useState<Array<{ id: number; name: string; merchantId?: number }>>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [resetForm, setResetForm] = useState<(() => void) | null>(null);
+  const [resetFormFn, setResetFormFn] = useState<(() => void) | null>(null);
   
   // Quick action dialogs state
   const [showProductDialog, setShowProductDialog] = useState(false);
@@ -176,11 +176,14 @@ export default function CreateOrderPage() {
   };
 
   const handleCancel = () => {
-    router.push('/orders');
+    // Simply reset form to default values - no navigation
+    if (resetFormFn) {
+      resetFormFn();
+    }
   };
 
-  const handleFormReady = (resetFormFn: () => void) => {
-    setResetForm(() => resetFormFn);
+  const handleFormReady = (resetForm: () => void) => {
+    setResetFormFn(() => resetForm);
   };
 
   // Quick action handlers

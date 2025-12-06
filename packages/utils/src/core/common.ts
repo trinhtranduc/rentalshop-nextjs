@@ -388,8 +388,28 @@ export const authenticatedFetch = async (
       throw new Error('Unauthorized access - redirecting to login');
     }
     
+    // Handle forbidden errors (403) - return response to let parseApiResponse handle it
+    // This preserves the error code structure for translation
     if (response.status === API.STATUS.FORBIDDEN) {
-      throw new Error('Access forbidden - insufficient permissions');
+      console.log('🔍 FRONTEND: 403 Forbidden response received - returning response for parseApiResponse');
+      
+      // Log error data for debugging
+      try {
+        const errorData = await response.clone().json();
+        console.log('🔍 FRONTEND: 403 Error data:', {
+          hasCode: !!errorData.code,
+          code: errorData.code,
+          message: errorData.message,
+          error: errorData.error,
+          fullData: errorData
+        });
+      } catch (e) {
+        console.log('🔍 FRONTEND: Could not parse 403 error data:', e);
+      }
+      
+      // Don't throw here - let parseApiResponse handle the error structure
+      // This ensures error.code is preserved for translation
+      return response;
     }
     
     if (response.status >= 500) {
@@ -466,100 +486,49 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
     
     const errorText = await response.text();
     console.log('🔍 parseApiResponse: Error response text:', errorText);
+    console.log('🔍 parseApiResponse: Response status:', response.status);
     
     try {
       const errorData = JSON.parse(errorText);
       console.log('🔍 parseApiResponse: Parsed error data:', errorData);
+      console.log('🔍 parseApiResponse: Error data has code?', !!errorData.code, 'code:', errorData.code);
       
-      // Handle structured error responses that include both message and error code
-      if (errorData.success === false && errorData.message && errorData.error) {
-        console.log('🔍 parseApiResponse: Structured error response detected');
-        const result = {
-          success: false as const,
-          message: errorData.message, // Use the user-friendly message
-          error: errorData.error as ErrorCode, // Preserve the error code for specific handling
+      // ✅ STANDARD FORMAT: { success: false, code: "...", message: "...", error: "..." }
+      // Single source of truth: ResponseBuilder.error() format
+      if (errorData.success === false) {
+        const result: ApiResponse = {
+          success: false,
+          code: errorData.code || 'INTERNAL_SERVER_ERROR', // Required for translation
+          message: errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+          error: errorData.error || errorData.message || errorData.code || 'INTERNAL_SERVER_ERROR',
         };
-        console.log('🔍 parseApiResponse: Returning structured error:', result);
+        console.log('🔍 parseApiResponse: Returning standardized error:', {
+          hasCode: !!result.code,
+          code: result.code,
+          message: result.message,
+          error: result.error,
+          fullResult: result
+        });
+        console.log('🔍 parseApiResponse: Return type check - is ApiResponse?', result.success === false && 'code' in result);
         return result;
       }
       
-      // Handle API error responses with error field (most common case)
-      if (errorData.success === false && errorData.error) {
-        console.log('🔍 parseApiResponse: API error response detected');
-        
-        // Check if this is a subscription-related "Invalid token" error
-        const isSubscriptionInvalidToken = (
-          errorData.error === 'Invalid token' && (
-            // Check for subscription-related context
-            errorData.subscriptionError === true ||
-            errorData.context === 'subscription' ||
-            errorData.context === 'plan' ||
-            errorData.subscriptionStatus === 'CANCELLED' ||
-            errorData.subscriptionStatus === 'EXPIRED' ||
-            // Check if this came from a subscription-related endpoint
-            response.url.includes('/subscription') ||
-            response.url.includes('/plan') ||
-            response.url.includes('/billing') ||
-            // Check for subscription-specific error codes
-            errorData.errorCode === 'SUBSCRIPTION_CANCELLED' ||
-            errorData.errorCode === 'PLAN_CANCELLED' ||
-            errorData.errorCode === 'SUBSCRIPTION_EXPIRED'
-          )
-        );
-        
-        const result = {
-          success: false as const,
-          message: errorData.error, // Use the error message directly
-          error: errorData.errorCode as ErrorCode || 'INTERNAL_SERVER_ERROR',
-          // Add subscription context if detected
-          ...(isSubscriptionInvalidToken && {
-            details: 'subscription'
-          })
-        };
-        console.log('🔍 parseApiResponse: Returning API error:', result);
-        return result;
-      }
-      
-      // Handle legacy error responses
-      console.log('🔍 parseApiResponse: Legacy error response detected');
-      
-      // Check if this is a subscription-related "Invalid token" error using message field
-      const isSubscriptionInvalidTokenMessage = (
-        errorData.message === 'Invalid token' && (
-          // Check for subscription-related context
-          errorData.subscriptionError === true ||
-          errorData.context === 'subscription' ||
-          errorData.context === 'plan' ||
-          errorData.subscriptionStatus === 'CANCELLED' ||
-          errorData.subscriptionStatus === 'EXPIRED' ||
-          // Check if this came from a subscription-related endpoint
-          response.url.includes('/subscription') ||
-          response.url.includes('/plan') ||
-          response.url.includes('/billing') ||
-          // Check for subscription-specific error codes
-          errorData.errorCode === 'SUBSCRIPTION_CANCELLED' ||
-          errorData.errorCode === 'PLAN_CANCELLED' ||
-          errorData.errorCode === 'SUBSCRIPTION_EXPIRED'
-        )
-      );
-      
-      const result = {
-        success: false as const,
+      // Fallback for non-standard format
+      const result: ApiResponse = {
+        success: false,
+        code: 'INTERNAL_SERVER_ERROR',
         message: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
-        error: errorData.errorCode as ErrorCode || 'INTERNAL_SERVER_ERROR',
-        // Add subscription context if detected
-        ...(isSubscriptionInvalidTokenMessage && {
-          details: 'subscription'
-        })
+        error: errorData.error || 'INTERNAL_SERVER_ERROR',
       };
-      console.log('🔍 parseApiResponse: Returning legacy error:', result);
+      console.log('🔍 parseApiResponse: Returning fallback error:', result);
       return result;
     } catch {
       console.log('🔍 parseApiResponse: Failed to parse error JSON, using fallback');
-      const result = {
-        success: false as const,
+      const result: ApiResponse = {
+        success: false,
+        code: 'INTERNAL_SERVER_ERROR',
         message: `HTTP ${response.status}: ${response.statusText}`,
-        error: 'INTERNAL_SERVER_ERROR' as ErrorCode,
+        error: 'INTERNAL_SERVER_ERROR',
       };
       console.log('🔍 parseApiResponse: Returning fallback error:', result);
       return result;
@@ -585,8 +554,10 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
       data: responseData,
     };
   } catch (error) {
+    // ✅ STANDARD FORMAT: Always include code field for translation
     return {
       success: false as const,
+      code: 'INTERNAL_SERVER_ERROR',
       message: 'Failed to parse response',
       error: 'INTERNAL_SERVER_ERROR' as ErrorCode,
     };
@@ -657,8 +628,11 @@ export interface StoredUser {
   updatedAt: Date | string;
   merchantId?: number;
   outletId?: number;
-  token: string;
-  expiresAt: number;
+  permissions?: string[]; // ✅ Permissions array for UI control (from login response)
+  merchant?: any; // ✅ Merchant object (optional)
+  outlet?: any; // ✅ Outlet object (optional)
+  token?: string; // Optional - token is stored separately in authData
+  expiresAt?: number; // Optional - expiresAt is stored separately in authData
 }
 
 /**

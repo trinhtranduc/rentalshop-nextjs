@@ -7,6 +7,7 @@ import { cn } from '@rentalshop/ui';
 import { Button, Logo } from '@rentalshop/ui';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useCommonTranslations, useOptimisticNavigation } from '@rentalshop/hooks';
+import { formatRoleDisplayName } from '../../utils/role-utils';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -413,7 +414,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
                 {user.name || user.email}
               </p>
               <p className="text-xs text-text-tertiary truncate">
-                {user.role}
+                {formatRoleDisplayName(user.role, t)}
               </p>
             </div>
             <div className="flex items-center space-x-2">

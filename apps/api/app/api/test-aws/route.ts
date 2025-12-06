@@ -37,7 +37,7 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
   } catch (error) {
     console.error('Error testing AWS S3:', error);
     return NextResponse.json(
-      ResponseBuilder.error('AWS_S3_TEST_FAILED', error instanceof Error ? error.message : 'Unknown error'),
+      ResponseBuilder.error('AWS_S3_TEST_FAILED'),
       { status: 500 }
     );
   }

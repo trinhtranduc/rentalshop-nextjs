@@ -30,6 +30,7 @@ import {
   useCanExportData,
   useCommonTranslations,
   useOutletsTranslations,
+  useToastHandler,
 } from "@rentalshop/hooks";
 import { outletsApi } from "@rentalshop/utils";
 import type {
@@ -58,6 +59,7 @@ export default function OutletsPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const { handleError } = useToastHandler();
   const t = useCommonTranslations();
   const to = useOutletsTranslations();
   const canExport = useCanExportData();
@@ -681,21 +683,29 @@ export default function OutletsPage() {
               );
               refetch();
             } else {
-              throw new Error(response.error || to("messages.createFailed"));
+              // Pass the full response object so translateError can use the code field
+              console.log('🔍 page.tsx: Throwing response object (not Error):', response);
+              throw response;
             }
-          } catch (error) {
-            console.error("Error creating outlet:", error);
-            toastError(
-              t("labels.error"),
-              error instanceof Error
-                ? error.message
-                : to("messages.createFailed")
-            );
-            throw error;
+          } catch (error: any) {
+            console.error('🔍 page.tsx: Error caught:', {
+              type: typeof error,
+              isError: error instanceof Error,
+              hasCode: !!error?.code,
+              code: error?.code,
+              message: error?.message,
+              success: error?.success,
+              fullError: error
+            });
+            // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
+            // This automatically translates error.code and shows toast
+            handleError(error);
+            throw error; // Re-throw to let dialog handle it
           }
         }}
         onError={(error) => {
-          toastError(t("labels.error"), error);
+          // ✅ onOutletCreated already shows toast, so onError is only for logging
+          console.error('❌ AddOutletDialog: Error occurred:', error);
         }}
       />
 

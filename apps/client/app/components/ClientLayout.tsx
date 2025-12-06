@@ -100,7 +100,7 @@ export default function ClientLayout({
     }
     return null;
   }
-  
+
   // ============================================================================
   // HELPER COMPONENTS
   // ============================================================================
@@ -118,7 +118,7 @@ export default function ClientLayout({
   // ============================================================================
   
   const handleLogout = () => logout();
-  
+
   const handleSearch = (query: string) => {
     onSearch?.(query) || console.log('Search query:', query);
   };

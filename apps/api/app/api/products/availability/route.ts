@@ -42,7 +42,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       const parsed = productAvailabilitySchema.safeParse(Object.fromEntries(searchParams.entries()));
       if (!parsed.success) {
         return NextResponse.json(
-          ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+          ResponseBuilder.validationError(parsed.error.flatten()),
           { status: 400 }
         );
       }
@@ -55,7 +55,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       today.setHours(0, 0, 0, 0);
       if (targetDate < today) {
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_DATE', 'Date cannot be in the past'),
+          ResponseBuilder.error('INVALID_DATE'),
           { status: 400 }
         );
       }
@@ -70,7 +70,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         // Merchants: outletId is required
         if (!queryOutletId) {
           return NextResponse.json(
-            ResponseBuilder.error('OUTLET_REQUIRED', 'Outlet ID is required for merchants'),
+            ResponseBuilder.error('OUTLET_REQUIRED'),
             { status: 400 }
           );
         }
@@ -79,7 +79,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         // Admins: outletId is required
         if (!queryOutletId) {
           return NextResponse.json(
-            ResponseBuilder.error('OUTLET_REQUIRED', 'Outlet ID is required for admins'),
+            ResponseBuilder.error('OUTLET_REQUIRED'),
             { status: 400 }
           );
         }
@@ -90,7 +90,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       const product = await db.products.findById(productId);
       if (!product) {
         return NextResponse.json(
-          ResponseBuilder.error('PRODUCT_NOT_FOUND', 'Product not found'),
+          ResponseBuilder.error('PRODUCT_NOT_FOUND'),
           { status: 404 }
         );
       }
@@ -105,7 +105,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
 
       if (!outletStock) {
         return NextResponse.json(
-          ResponseBuilder.error('PRODUCT_OUTLET_NOT_FOUND', 'Product not found in specified outlet'),
+          ResponseBuilder.error('PRODUCT_OUTLET_NOT_FOUND'),
           { status: 404 }
         );
       }

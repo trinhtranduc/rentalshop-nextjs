@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ResponseBuilder } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
@@ -151,14 +151,9 @@ export async function GET(
     } catch (error: any) {
       console.error('❌ Error fetching order:', error);
       
-      // Use ResponseBuilder for consistent error format
-      const errorCode = error?.code || 'INTERNAL_SERVER_ERROR';
-      const errorMessage = error?.message || 'An error occurred';
-      
-      return NextResponse.json(
-        ResponseBuilder.error(errorCode, errorMessage),
-        { status: 500 }
-      );
+      // Use unified error handling system (uses ResponseBuilder internally)
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
   })(request);
 }

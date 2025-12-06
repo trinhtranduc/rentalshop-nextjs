@@ -8,7 +8,19 @@ const nextConfig = {
   experimental: {
     // Point to monorepo root for file tracing
     outputFileTracingRoot: require('path').join(__dirname, '../../'),
-    serverComponentsExternalPackages: ['@prisma/client', '@prisma/engines', 'prisma'],
+    serverComponentsExternalPackages: [
+      '@prisma/client',
+      '@prisma/engines',
+      'prisma',
+      '.prisma/client',
+    ],
+  },
+  
+  // Include Prisma binaries in file tracing (for production builds)
+  outputFileTracingIncludes: {
+    '/api/**': [
+      '../../node_modules/.prisma/client/**/*',
+    ],
   },
   
   transpilePackages: [
@@ -34,7 +46,33 @@ const nextConfig = {
   // Webpack config for Prisma in monorepo  
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Ensure Prisma Client resolves to root node_modules
+      // CRITICAL: External Prisma completely to prevent bundling (native binaries needed)
+      // This ensures Prisma is loaded from node_modules at runtime, not bundled
+      config.externals = config.externals || [];
+      
+      // External Prisma packages as CommonJS modules
+      const prismaExternals = {
+        '@prisma/client': 'commonjs @prisma/client',
+        '.prisma/client': 'commonjs .prisma/client',
+        '@prisma/engines': 'commonjs @prisma/engines',
+      };
+      
+      // Add to externals array (handle both array and function formats)
+      if (Array.isArray(config.externals)) {
+        config.externals.push(prismaExternals);
+      } else if (typeof config.externals === 'function') {
+        const originalExternals = config.externals;
+        config.externals = (context, request, callback) => {
+          if (prismaExternals[request]) {
+            return callback(null, prismaExternals[request]);
+          }
+          return originalExternals(context, request, callback);
+        };
+      } else {
+        config.externals = [config.externals, prismaExternals];
+      }
+      
+      // Ensure Prisma Client resolves to root node_modules (fallback)
       config.resolve.alias = {
         ...config.resolve.alias,
         '.prisma/client': require('path').join(__dirname, '../../node_modules/.prisma/client'),

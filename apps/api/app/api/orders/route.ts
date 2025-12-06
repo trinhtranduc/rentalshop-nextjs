@@ -28,7 +28,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       outletId: userScope.outletId
     });
     return NextResponse.json(
-      ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED', 'User must be associated with a merchant'),
+      ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
       { status: 403 }
     );
   }
@@ -41,7 +41,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -214,7 +214,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const parsed = orderCreateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -556,14 +556,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
   } catch (error: any) {
     console.error('Error in POST /api/orders:', error);
     
-    // Use ResponseBuilder for consistent error format
-    const errorCode = error?.code || 'INTERNAL_SERVER_ERROR';
-    const errorMessage = error?.message || 'An error occurred';
-    
-    return NextResponse.json(
-      ResponseBuilder.error(errorCode, errorMessage),
-      { status: 500 }
-    );
+    // Use unified error handling system (uses ResponseBuilder internally)
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
@@ -583,7 +578,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError( parsed.error.flatten()),
         { status: 400 }
       );
     }

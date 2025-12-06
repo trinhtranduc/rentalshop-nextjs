@@ -11,6 +11,7 @@ import {
 } from '../../../ui/dropdown-menu';
 import { Category } from '@rentalshop/types';
 import { useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { Eye, Edit, Trash2, CheckCircle, XCircle, MoreVertical, FolderOpen } from 'lucide-react';
 
 interface CategoryTableProps {
@@ -31,6 +32,8 @@ export function CategoryTable({
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
   const t = useCategoriesTranslations();
   const tc = useCommonTranslations();
+  // ✅ Use permissions hook for UI control
+  const { canManageProducts } = usePermissions();
   
   if (categories.length === 0) {
     return (
@@ -168,6 +171,7 @@ export function CategoryTable({
                       open={openDropdownId === category.id}
                       onOpenChange={(open) => setOpenDropdownId(open ? category.id : null)}
                     >
+                      {/* ✅ View - Available if user can view products */}
                       <DropdownMenuItem
                         onClick={() => {
                           onCategoryAction('view', category.id);
@@ -179,6 +183,8 @@ export function CategoryTable({
                         {t('actions.viewDetails')}
                       </DropdownMenuItem>
                       
+                      {/* ✅ Edit - Only available if user can manage products */}
+                      {canManageProducts && (
                       <DropdownMenuItem
                         onClick={() => {
                           onCategoryAction('edit', category.id);
@@ -189,6 +195,7 @@ export function CategoryTable({
                         <Edit className="mr-2 h-4 w-4" />
                         {t('actions.edit')}
                       </DropdownMenuItem>
+                      )}
                       
                       {/* Activate/Deactivate hidden as requested */}
                       {/* <DropdownMenuSeparator />
@@ -213,8 +220,8 @@ export function CategoryTable({
                         )}
                       </DropdownMenuItem> */}
                       
-                      {/* Only show delete for non-default categories */}
-                      {!category.isDefault && (
+                      {/* ✅ Delete - Only available if user can manage products AND category is not default */}
+                      {canManageProducts && !category.isDefault && (
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem

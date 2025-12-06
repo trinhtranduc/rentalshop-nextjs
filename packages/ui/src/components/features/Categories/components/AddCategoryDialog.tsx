@@ -16,7 +16,7 @@ interface AddCategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCategoryCreated?: (category: Category) => void;
-  onError?: (error: string) => void;
+  onError?: (error: any) => void;
 }
 
 export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
@@ -43,8 +43,10 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
       
     } catch (error) {
       console.error('❌ AddCategoryDialog: Error occurred:', error);
+      // ✅ Pass error object (not string) so onError can extract code for translation
+      // onCategoryCreated already shows toast, so onError is only for additional handling if needed
       if (onError) {
-        onError(error instanceof Error ? error.message : 'Failed to create category');
+        onError(error); // Pass full error object to preserve code field
       }
     } finally {
       setIsSubmitting(false);

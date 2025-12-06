@@ -52,7 +52,7 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
   } catch (error) {
     console.error('Error cleaning up staging files:', error);
     return NextResponse.json(
-      ResponseBuilder.error('CLEANUP_FAILED', error instanceof Error ? error.message : 'Unknown error'),
+      ResponseBuilder.error('CLEANUP_FAILED'),
       { status: 500 }
     );
   }

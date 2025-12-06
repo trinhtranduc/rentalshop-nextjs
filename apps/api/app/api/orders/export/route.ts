@@ -46,7 +46,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
     const dateRangeResult = parseDateRangeFromQuery(period, startDateParam, endDateParam);
     if ('error' in dateRangeResult) {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_DATE_RANGE', dateRangeResult.error),
+        ResponseBuilder.error('INVALID_DATE_RANGE'),
         { status: 400 }
       );
     }

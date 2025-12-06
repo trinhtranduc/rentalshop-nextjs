@@ -75,7 +75,7 @@ export const POST = withAuthRoles()(async (request, { user, userScope }) => {
     }
 
       return NextResponse.json(
-        ResponseBuilder.error('DELETE_ACCOUNT_FAILED', { error: error.message }),
+        ResponseBuilder.error('DELETE_ACCOUNT_FAILED'),
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
   }

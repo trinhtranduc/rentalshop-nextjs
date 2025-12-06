@@ -5,6 +5,7 @@
 // Export all business logic hooks
 export * from './hooks/useAuth';
 export * from './hooks/useAuthErrorHandler';
+export * from './hooks/usePermissions';
 export * from './hooks/useCanPerform';
 export * from './hooks/useCurrency';
 export * from './hooks/useCustomersData';

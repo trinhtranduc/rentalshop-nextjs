@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
-import { useOptimisticNavigation } from '@rentalshop/hooks';
+import { useOptimisticNavigation, useCommonTranslations } from '@rentalshop/hooks';
+import { formatRoleDisplayName } from '../../utils/role-utils';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -119,6 +120,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onCollapseToggle,
   notificationsCount = 0
 }) => {
+  const t = useCommonTranslations();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const pathname = usePathname();
   const { navigatingTo, navigate, prefetch } = useOptimisticNavigation();
@@ -299,7 +301,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 {user.name || user.email}
               </p>
               <p className="text-xs text-text-tertiary truncate">
-                {user.role}
+                {formatRoleDisplayName(user.role, t)}
               </p>
             </div>
           </div>

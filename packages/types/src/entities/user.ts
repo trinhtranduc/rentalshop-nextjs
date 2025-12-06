@@ -46,6 +46,9 @@ export interface User extends BaseEntityWithMerchant {
   // Optional outlet assignment (for outlet-level users)
   outletId?: number;
   
+  // ✅ Permissions array for UI control (from login response)
+  permissions?: string[]; // Array of permission strings like 'products.manage', 'orders.create', etc.
+  
   // Related entities (populated when needed)
   merchant?: MerchantReference;
   outlet?: OutletReference;

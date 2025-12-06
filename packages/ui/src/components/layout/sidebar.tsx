@@ -7,7 +7,8 @@ import { cn } from '@rentalshop/ui';
 import { Button, Card } from '@rentalshop/ui';
 import { ChevronLeft, ChevronRight, Home, Users, Package, ShoppingCart, Building2, Settings } from 'lucide-react';
 // @ts-ignore - hooks package doesn't have type declarations yet
-import { useOptimisticNavigation } from '@rentalshop/hooks';
+import { useOptimisticNavigation, useCommonTranslations } from '@rentalshop/hooks';
+import { formatRoleDisplayName } from '../../utils/role-utils';
 
 export interface SidebarProps {
   user?: any;
@@ -104,6 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const router = useRouter();
   const { navigate, navigatingTo } = useOptimisticNavigation();
+  const t = useCommonTranslations();
 
   // Prefetch all pages on mount for instant navigation
   useEffect(() => {
@@ -261,7 +263,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }
                       </p>
                       <p className="text-xs text-gray-500 truncate">
-                        {user.role || 'User'}
+                        {formatRoleDisplayName(user.role, t) || 'User'}
                       </p>
                     </div>
                   )}

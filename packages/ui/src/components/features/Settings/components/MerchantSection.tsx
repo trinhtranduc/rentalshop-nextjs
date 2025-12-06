@@ -21,7 +21,7 @@ import {
 } from '@rentalshop/constants';
 import type { BusinessType, PricingType } from '@rentalshop/constants/src/pricing';
 import type { CurrencyCode } from '@rentalshop/types';
-import { useSettingsTranslations } from '@rentalshop/hooks';
+import { useSettingsTranslations, usePermissions } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPES
@@ -69,6 +69,8 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
 }) => {
   const t = useSettingsTranslations();
   const locale = useLocale() as 'en' | 'vi';
+  // ✅ Use permissions hook to check if user can manage merchants
+  const { canManageMerchants } = usePermissions();
   const [merchantData, setMerchantData] = useState<any>(null);
   const [loadingMerchant, setLoadingMerchant] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -210,19 +212,22 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between py-4 pb-3">
           <h3 className="text-base font-semibold text-gray-900">{t('merchant.businessInformation')}</h3>
-          {!isEditing ? (
-            <Button onClick={onEdit} size="sm">
-              {t('merchant.edit')}
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button onClick={onSave} variant="default" size="sm" disabled={isUpdating}>
-                {isUpdating ? t('merchant.saving') : t('merchant.save')}
+          {/* ✅ Only show edit button if user can manage merchants */}
+          {canManageMerchants && (
+            !isEditing ? (
+              <Button onClick={onEdit} size="sm">
+                {t('merchant.edit')}
               </Button>
-              <Button onClick={onCancel} variant="outline" size="sm" disabled={isUpdating}>
-                {t('merchant.cancel')}
-              </Button>
-            </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button onClick={onSave} variant="default" size="sm" disabled={isUpdating}>
+                  {isUpdating ? t('merchant.saving') : t('merchant.save')}
+                </Button>
+                <Button onClick={onCancel} variant="outline" size="sm" disabled={isUpdating}>
+                  {t('merchant.cancel')}
+                </Button>
+              </div>
+            )
           )}
         </CardHeader>
         <CardContent className="p-6 pt-4">
@@ -246,7 +251,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 <Label htmlFor="merchantName" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('merchant.name')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageMerchants ? (
                   <Input
                     id="merchantName"
                     name="name"
@@ -283,7 +288,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 <Label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('merchant.taxId')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageMerchants ? (
                   <Input
                     id="taxId"
                     name="taxId"
@@ -303,7 +308,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 <Label htmlFor="merchantPhone" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('merchant.phone')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageMerchants ? (
                   <Input
                     id="merchantPhone"
                     name="phone"
@@ -369,7 +374,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 <Label htmlFor="merchantAddress" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('merchant.address')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageMerchants ? (
                   <Input
                     id="merchantAddress"
                     name="address"
@@ -389,7 +394,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 <Label htmlFor="merchantCity" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('merchant.city')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageMerchants ? (
                   <Input
                     id="merchantCity"
                     name="city"
@@ -409,7 +414,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 <Label htmlFor="merchantState" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('merchant.state')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageMerchants ? (
                   <Input
                     id="merchantState"
                     name="state"
@@ -429,7 +434,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 <Label htmlFor="merchantZipCode" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('merchant.zipCode')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageMerchants ? (
                   <Input
                     id="merchantZipCode"
                     name="zipCode"
@@ -449,7 +454,7 @@ export const MerchantSection: React.FC<MerchantSectionProps> = ({
                 <Label htmlFor="merchantCountry" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('merchant.country')}
                 </Label>
-                {isEditing ? (
+                {isEditing && canManageMerchants ? (
                   <SearchableCountrySelect
                     options={COUNTRIES}
                     value={formData.country}

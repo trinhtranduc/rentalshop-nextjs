@@ -20,7 +20,7 @@ interface ProductAddDialogProps {
   outlets: Outlet[];
   merchantId: string;
   onProductCreated?: (product: ProductWithDetails) => void;
-  onError?: (error: string) => void;
+  onError?: (error: any) => void;
 }
 
 export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
@@ -52,8 +52,10 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
       
     } catch (error) {
       console.error('❌ ProductAddDialog: Error occurred:', error);
+      // ✅ Pass error object (not string) so onError can extract code for translation
+      // onProductCreated already shows toast, so onError is only for additional handling if needed
       if (onError) {
-        onError(error instanceof Error ? error.message : 'Failed to create product');
+        onError(error); // Pass full error object to preserve code field
       }
     } finally {
       setIsSubmitting(false);

@@ -37,7 +37,7 @@ async function handleChangePlan(
       // Verify plan exists before updating
       const plan = await db.plans.findById(planId);
       if (!plan) {
-        return NextResponse.json(ResponseBuilder.error('PLAN_NOT_FOUND', `Plan with ID ${planId} not found`), { status: API.STATUS.NOT_FOUND });
+        return NextResponse.json(ResponseBuilder.error('PLAN_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       console.log('🔍 Changing subscription plan:', {

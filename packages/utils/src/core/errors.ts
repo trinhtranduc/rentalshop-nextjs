@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { clearAuthData } from './common';
 import CONSTANTS from '@rentalshop/constants';
 import type { ApiResponse as ResponseBuilderApiResponse } from '../api/response-builder';
+import { ResponseBuilder } from '../api/response-builder';
 
 const API = CONSTANTS.API;
 
@@ -333,73 +334,37 @@ export function handlePrismaError(error: any): ApiError {
       const field = Array.isArray(target) ? target[0] : target;
       
       if (field?.includes('email')) {
-        return new ApiError(
-          ErrorCode.EMAIL_EXISTS,
-          `Email address is already registered`,
-          `Field: ${field}`,
-          'email'
-        );
+        return new ApiError(ErrorCode.EMAIL_EXISTS);
       }
       
       if (field?.includes('phone')) {
-        return new ApiError(
-          ErrorCode.PHONE_EXISTS,
-          `Phone number is already registered`,
-          `Field: ${field}`,
-          'phone'
-        );
+        return new ApiError(ErrorCode.PHONE_EXISTS);
       }
       
       if (field?.includes('tenantKey')) {
-        return new ApiError(
-          ErrorCode.BUSINESS_NAME_EXISTS,
-          'Business name already exists',
-          'Trùng tên doanh nghiệp',
-          'businessName'
-        );
+        return new ApiError(ErrorCode.BUSINESS_NAME_EXISTS);
       }
       
-      return new ApiError(
-        ErrorCode.DUPLICATE_ENTRY,
-        'Record with this information already exists',
-        `Field: ${field}`
-      );
+      return new ApiError(ErrorCode.DUPLICATE_ENTRY);
     }
     
     case 'P2003': {
       // Foreign key constraint violation
-      const fieldName = error.meta?.field_name;
-      return new ApiError(
-        ErrorCode.FOREIGN_KEY_CONSTRAINT,
-        `Invalid reference: ${fieldName}`,
-        `Field: ${fieldName}`
-      );
+      return new ApiError(ErrorCode.FOREIGN_KEY_CONSTRAINT);
     }
     
     case 'P2025': {
       // Record not found
-      return new ApiError(
-        ErrorCode.NOT_FOUND,
-        'Record not found',
-        error.message
-      );
+      return new ApiError(ErrorCode.NOT_FOUND);
     }
     
     case 'P2014': {
       // Relation violation
-      return new ApiError(
-        ErrorCode.BUSINESS_RULE_VIOLATION,
-        'Cannot perform this operation due to existing relationships',
-        error.message
-      );
+      return new ApiError(ErrorCode.BUSINESS_RULE_VIOLATION);
     }
     
     default: {
-      return new ApiError(
-        ErrorCode.DATABASE_ERROR,
-        'Database operation failed',
-        error.message
-      );
+      return new ApiError(ErrorCode.DATABASE_ERROR);
     }
   }
 }
@@ -436,114 +401,120 @@ export function handleBusinessError(error: any): ApiError {
     return error;
   }
   
+  // ✅ PRIORITY 1: Check if error has code field (from API response object)
+  // Format: { success: false, code: "PLAN_LIMIT_EXCEEDED", ... }
+  if (error?.code && typeof error.code === 'string') {
+    console.log('🔍 handleBusinessError: Found code field in error:', error.code);
+    // Map code to ErrorCode enum if needed, or use directly
+    const errorCode = error.code as ErrorCode;
+    return new ApiError(errorCode, error.message, error.error);
+  }
+  
   if (error.message?.includes('not found')) {
     if (error.message.includes('Merchant')) {
-      return new ApiError(ErrorCode.MERCHANT_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.MERCHANT_NOT_FOUND);
     }
     if (error.message.includes('Outlet')) {
-      return new ApiError(ErrorCode.OUTLET_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.OUTLET_NOT_FOUND);
     }
     if (error.message.includes('User')) {
-      return new ApiError(ErrorCode.USER_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.USER_NOT_FOUND);
     }
     if (error.message.includes('Product')) {
-      return new ApiError(ErrorCode.PRODUCT_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.PRODUCT_NOT_FOUND);
     }
     if (error.message.includes('Order')) {
-      return new ApiError(ErrorCode.ORDER_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.ORDER_NOT_FOUND);
     }
     if (error.message.includes('Customer')) {
-      return new ApiError(ErrorCode.CUSTOMER_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.CUSTOMER_NOT_FOUND);
     }
     if (error.message.includes('Category')) {
-      return new ApiError(ErrorCode.CATEGORY_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.CATEGORY_NOT_FOUND);
     }
     if (error.message.includes('Plan')) {
-      return new ApiError(ErrorCode.PLAN_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.PLAN_NOT_FOUND);
     }
     if (error.message.includes('Subscription')) {
-      return new ApiError(ErrorCode.SUBSCRIPTION_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.SUBSCRIPTION_NOT_FOUND);
     }
     if (error.message.includes('Payment')) {
-      return new ApiError(ErrorCode.PAYMENT_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.PAYMENT_NOT_FOUND);
     }
     if (error.message.includes('Audit log')) {
-      return new ApiError(ErrorCode.AUDIT_LOG_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.AUDIT_LOG_NOT_FOUND);
     }
     if (error.message.includes('Billing cycle')) {
-      return new ApiError(ErrorCode.BILLING_CYCLE_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.BILLING_CYCLE_NOT_FOUND);
     }
     if (error.message.includes('Plan variant')) {
-      return new ApiError(ErrorCode.PLAN_VARIANT_NOT_FOUND, error.message);
+      return new ApiError(ErrorCode.PLAN_VARIANT_NOT_FOUND);
     }
   }
   
   if (error.message?.includes('already registered')) {
     if (error.message.includes('Email')) {
-      return new ApiError(ErrorCode.EMAIL_EXISTS, error.message);
+      return new ApiError(ErrorCode.EMAIL_EXISTS);
     }
     if (error.message.includes('Phone')) {
-      return new ApiError(ErrorCode.PHONE_EXISTS, error.message);
+      return new ApiError(ErrorCode.PHONE_EXISTS);
     }
   }
   
   if (error.message?.includes('already exists')) {
     if (error.message.includes('order')) {
-      return new ApiError(ErrorCode.ORDER_ALREADY_EXISTS, error.message);
+      return new ApiError(ErrorCode.ORDER_ALREADY_EXISTS);
     }
   }
   
   if (error.message?.includes('Plan limit')) {
-    return new ApiError(ErrorCode.PLAN_LIMIT_EXCEEDED, error.message);
+    return new ApiError(ErrorCode.PLAN_LIMIT_EXCEEDED);
   }
   
   if (error.message?.includes('permission')) {
-    return new ApiError(ErrorCode.INSUFFICIENT_PERMISSIONS, error.message);
+    return new ApiError(ErrorCode.INSUFFICIENT_PERMISSIONS);
   }
   
   if (error.message?.includes('deactivated')) {
-    return new ApiError(ErrorCode.ACCOUNT_DEACTIVATED, error.message);
+    return new ApiError(ErrorCode.ACCOUNT_DEACTIVATED);
   }
   
   if (error.message?.includes('subscription')) {
     if (error.message.includes('expired')) {
-      return new ApiError(ErrorCode.SUBSCRIPTION_EXPIRED, error.message);
+      return new ApiError(ErrorCode.SUBSCRIPTION_EXPIRED);
     }
     if (error.message.includes('cancelled')) {
-      return new ApiError(ErrorCode.SUBSCRIPTION_CANCELLED, error.message);
+      return new ApiError(ErrorCode.SUBSCRIPTION_CANCELLED);
     }
     if (error.message.includes('paused')) {
-      return new ApiError(ErrorCode.SUBSCRIPTION_PAUSED, error.message);
+      return new ApiError(ErrorCode.SUBSCRIPTION_PAUSED);
     }
   }
   
   if (error.message?.includes('trial')) {
     if (error.message.includes('expired')) {
-      return new ApiError(ErrorCode.TRIAL_EXPIRED, error.message);
+      return new ApiError(ErrorCode.TRIAL_EXPIRED);
     }
   }
   
   if (error.message?.includes('out of stock')) {
-    return new ApiError(ErrorCode.PRODUCT_OUT_OF_STOCK, error.message);
+    return new ApiError(ErrorCode.PRODUCT_OUT_OF_STOCK);
   }
   
   if (error.message?.includes('payment')) {
     if (error.message.includes('failed')) {
-      return new ApiError(ErrorCode.PAYMENT_FAILED, error.message);
+      return new ApiError(ErrorCode.PAYMENT_FAILED);
     }
     if (error.message.includes('invalid')) {
-      return new ApiError(ErrorCode.INVALID_PAYMENT_METHOD, error.message);
+      return new ApiError(ErrorCode.INVALID_PAYMENT_METHOD);
     }
   }
   
   if (error.message?.includes('invalid order status')) {
-    return new ApiError(ErrorCode.INVALID_ORDER_STATUS, error.message);
+    return new ApiError(ErrorCode.INVALID_ORDER_STATUS);
   }
   
-  return new ApiError(
-    ErrorCode.BUSINESS_RULE_VIOLATION,
-    error.message || 'Business rule violation'
-  );
+  return new ApiError(ErrorCode.BUSINESS_RULE_VIOLATION);
 }
 
 // ============================================================================
@@ -564,9 +535,20 @@ export function handleApiError(error: any): {
   } else if (
     error.name === 'PrismaClientInitializationError' ||
     error.message?.includes("Can't reach database server") ||
-    error.message?.includes('database server is running')
+    error.message?.includes('database server is running') ||
+    error.message?.includes('Can\'t reach database') ||
+    error.code === 'P1001' || // Prisma error code for connection issues
+    error.code === 'P1017'    // Prisma error code for server closed connection
   ) {
-    // Database connection errors
+    // Database connection errors - Enhanced logging
+    console.error('❌ DATABASE CONNECTION ERROR DETECTED:', {
+      errorName: error.name,
+      errorMessage: error.message,
+      errorCode: error.code,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      databaseUrlPreview: process.env.DATABASE_URL?.substring(0, 30) || 'NOT SET',
+    });
+    
     apiError = new ApiError(
       ErrorCode.SERVICE_UNAVAILABLE,
       'Database connection failed. Please check your database server and try again.',
@@ -609,15 +591,16 @@ export function handleApiError(error: any): {
   
   // Convert code to string to match ResponseBuilder.error format
   const errorCode = String(apiError.code);
-  const errorMessage = typeof apiError.details === 'string' ? apiError.details : apiError.message;
   
-  // Return response with same format as ResponseBuilder.error
-  const response: ResponseBuilderApiResponse = {
-    success: false,
-    code: errorCode,
-    message: errorMessage,
-    error: errorMessage
-  };
+  // Use ResponseBuilder to get default message from translation system
+  // This ensures consistent format and allows frontend to translate
+  const response = ResponseBuilder.error(errorCode);
+  
+  // If there are details (like dynamic values), include them in error field for debugging
+  // But keep message as translated version from ResponseBuilder
+  if (apiError.details && typeof apiError.details === 'string') {
+    response.error = apiError.details;
+  }
 
   return {
     response,
@@ -699,7 +682,7 @@ export const isPermissionError = (error: any): boolean => {
 /**
  * Check if an error is subscription-related (402)
  */
-const isSubscriptionErrorNew = (error: any): boolean => {
+export const isSubscriptionError = (error: any): boolean => {
   if (!error) return false;
 
   const message = error.message || error.error || '';
@@ -707,6 +690,10 @@ const isSubscriptionErrorNew = (error: any): boolean => {
 
   return (
     code === 'PLAN_LIMIT_EXCEEDED' ||
+    code === 'SUBSCRIPTION_EXPIRED' ||
+    code === 'SUBSCRIPTION_CANCELLED' ||
+    code === 'SUBSCRIPTION_PAUSED' ||
+    code === 'TRIAL_EXPIRED' ||
     message.toLowerCase().includes('subscription') ||
     message.toLowerCase().includes('plan limit') ||
     message.toLowerCase().includes('trial expired') ||
@@ -746,9 +733,15 @@ export const isValidationError = (error: any): boolean => {
 
 /**
  * Analyze error and provide enhanced information
+ * Returns error code in message field so frontend can translate it
+ * Frontend should use useApiError.translateError() to get translated message
  */
 export const analyzeError = (error: any): ErrorInfo => {
   console.log('🔍 analyzeError called with:', error);
+
+  // Extract error code from various error formats
+  const errorCode = error?.code || error?.response?.data?.code || error?.error?.code || '';
+  const errorCodeString = typeof errorCode === 'string' ? errorCode : '';
 
   // Authentication errors
   if (isAuthError(error)) {
@@ -757,7 +750,7 @@ export const analyzeError = (error: any): ErrorInfo => {
     
     return {
       type: 'auth',
-      message: 'Your session has expired. Please log in again.',
+      message: errorCodeString || 'UNAUTHORIZED',
       title: 'Session Expired',
       showLoginButton: true,
       originalError: error
@@ -768,18 +761,18 @@ export const analyzeError = (error: any): ErrorInfo => {
   if (isPermissionError(error)) {
     return {
       type: 'permission',
-      message: 'You do not have permission to perform this action.',
+      message: errorCodeString || 'FORBIDDEN',
       title: 'Access Denied',
       showLoginButton: false,
       originalError: error
     };
   }
 
-  // Subscription errors
-  if (isSubscriptionErrorNew(error)) {
+  // Subscription errors (including PLAN_LIMIT_EXCEEDED)
+  if (isSubscriptionError(error)) {
     return {
       type: 'subscription',
-      message: 'Your subscription has expired or been cancelled. Please renew to continue.',
+      message: errorCodeString || 'PLAN_LIMIT_EXCEEDED',
       title: 'Subscription Issue',
       showLoginButton: false,
       originalError: error
@@ -790,7 +783,7 @@ export const analyzeError = (error: any): ErrorInfo => {
   if (isNetworkError(error)) {
     return {
       type: 'network',
-      message: 'Network connection failed. Please check your internet connection and try again.',
+      message: errorCodeString || 'NETWORK_ERROR',
       title: 'Connection Error',
       showLoginButton: false,
       originalError: error
@@ -801,17 +794,17 @@ export const analyzeError = (error: any): ErrorInfo => {
   if (isValidationError(error)) {
     return {
       type: 'validation',
-      message: 'Please check your input and try again.',
+      message: errorCodeString || 'VALIDATION_ERROR',
       title: 'Invalid Input',
       showLoginButton: false,
       originalError: error
     };
   }
 
-  // Unknown errors
+  // Unknown errors - use error code if available
   return {
     type: 'unknown',
-    message: 'An unexpected error occurred. Please try again later.',
+    message: errorCodeString || 'UNKNOWN_ERROR',
     title: 'Error',
     showLoginButton: false,
     originalError: error

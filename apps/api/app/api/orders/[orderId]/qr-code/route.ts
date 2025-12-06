@@ -35,7 +35,7 @@ export const GET = async (
         // Validate orderId format
         if (!/^\d+$/.test(orderId)) {
           return NextResponse.json(
-            ResponseBuilder.error('INVALID_ORDER_ID_FORMAT', 'Order ID must be numeric'),
+            ResponseBuilder.error('INVALID_ORDER_ID_FORMAT'),
             { status: 400 }
           );
         }
@@ -66,7 +66,7 @@ export const GET = async (
         const isAdmin = user.role === USER_ROLE.ADMIN;
         if (!isAdmin && order.merchantId !== userMerchantId) {
           return NextResponse.json(
-            ResponseBuilder.error('ACCESS_DENIED', 'You do not have access to this order'),
+            ResponseBuilder.error('ACCESS_DENIED'),
             { status: 403 }
           );
         }
@@ -85,7 +85,7 @@ export const GET = async (
         
         if (!bankAccountData) {
           return NextResponse.json(
-            ResponseBuilder.error('NO_DEFAULT_BANK_ACCOUNT', 'No default bank account found for this outlet'),
+            ResponseBuilder.error('NO_DEFAULT_BANK_ACCOUNT'),
             { status: 404 }
           );
         }
@@ -176,7 +176,7 @@ export const GET = async (
         } catch (error: any) {
           console.error('Error generating VietQR string:', error);
           return NextResponse.json(
-            ResponseBuilder.error('QR_CODE_GENERATION_FAILED', error.message || 'Failed to generate QR code'),
+            ResponseBuilder.error('QR_CODE_GENERATION_FAILED'),
             { status: 500 }
           );
         }

@@ -68,7 +68,8 @@ export async function registerUser(
       });
 
       if (existingUser) {
-        throw new Error('User with this email already exists');
+        const { ApiError, ErrorCode } = await import('@rentalshop/utils');
+        throw new ApiError(ErrorCode.EMAIL_EXISTS);
       }
 
       // Determine registration type based on role and data
@@ -126,7 +127,8 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
   });
 
   if (existingMerchant) {
-    throw new Error('Merchant with this email already exists');
+    const { ApiError, ErrorCode } = await import('@rentalshop/utils');
+    throw new ApiError(ErrorCode.EMAIL_EXISTS);
   }
 
   // 2. Get or create trial plan (modern SaaS pattern)

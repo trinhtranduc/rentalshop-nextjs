@@ -191,7 +191,7 @@ export async function PUT(
           } catch (e) {
             console.error('❌ Invalid JSON string for limits:', body.limits);
             return NextResponse.json(
-              ResponseBuilder.error('INVALID_LIMITS_FORMAT', 'Limits must be a valid JSON string'),
+              ResponseBuilder.error('INVALID_LIMITS_FORMAT'),
               { status: 400 }
             );
           }
@@ -214,7 +214,7 @@ export async function PUT(
           } catch (e) {
             console.error('❌ Invalid JSON string for features:', body.features);
             return NextResponse.json(
-              ResponseBuilder.error('INVALID_FEATURES_FORMAT', 'Features must be a valid JSON string or array'),
+              ResponseBuilder.error('INVALID_FEATURES_FORMAT'),
               { status: 400 }
             );
           }
@@ -226,7 +226,7 @@ export async function PUT(
       // Validate that we have at least one field to update
       if (Object.keys(updateData).length === 0) {
         return NextResponse.json(
-          ResponseBuilder.error('NO_FIELDS_TO_UPDATE', 'No valid fields provided for update'),
+          ResponseBuilder.error('NO_FIELDS_TO_UPDATE'),
           { status: 400 }
         );
       }
@@ -242,14 +242,14 @@ export async function PUT(
         // Handle specific Prisma errors
         if (dbError.code === 'P2002') {
           return NextResponse.json(
-            ResponseBuilder.error('PLAN_NAME_EXISTS', `Plan with name "${updateData.name}" already exists`),
+            ResponseBuilder.error('PLAN_NAME_EXISTS'),
             { status: 409 }
           );
         }
         
         if (dbError.code === 'P2025') {
           return NextResponse.json(
-            ResponseBuilder.error('PLAN_NOT_FOUND', 'Plan not found'),
+            ResponseBuilder.error('PLAN_NOT_FOUND'),
             { status: API.STATUS.NOT_FOUND }
           );
         }
@@ -334,7 +334,7 @@ export async function DELETE(
       if (activeSubscriptions > 0) {
         console.log('❌ Cannot delete plan with active subscriptions:', activeSubscriptions);
         return NextResponse.json(
-          ResponseBuilder.error('PLAN_HAS_ACTIVE_SUBSCRIPTIONS', `Cannot delete plan with ${activeSubscriptions} active subscription(s). Please wait for subscriptions to expire or cancel them first.`),
+          ResponseBuilder.error('PLAN_HAS_ACTIVE_SUBSCRIPTIONS'),
           { status: API.STATUS.CONFLICT }
         );
       }
