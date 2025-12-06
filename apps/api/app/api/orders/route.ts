@@ -351,6 +351,92 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       }
     }
 
+    // Calculate order items with pricing
+    const orderItemsData = await Promise.all(parsed.data.orderItems?.map(async item => {
+      // Get product details for snapshot
+      const product = await db.products.findById(item.productId) as any;
+      if (!product) {
+        throw new Error(`Product with ID ${item.productId} not found`);
+      }
+
+      // Calculate pricing using PricingResolver with product pricing type
+      let pricing;
+      try {
+        // Get product pricing type (defaults to FIXED if null)
+        const productPricingType = PricingResolver.resolvePricingType(product as Product, merchant);
+        
+        // Calculate duration for this item if dates are provided
+        let itemDuration: number | undefined;
+        if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
+          const pickup = new Date(parsed.data.pickupPlanAt);
+          const returnDate = new Date(parsed.data.returnPlanAt);
+          const { duration } = calculateDurationInUnit(pickup, returnDate, productPricingType);
+          itemDuration = duration;
+        }
+        
+        // Calculate pricing based on product pricing type
+        pricing = PricingResolver.calculatePricing(
+          product as Product,
+          merchant,
+          itemDuration,
+          item.quantity
+        );
+      } catch (pricingError) {
+        console.error('Pricing calculation error:', pricingError);
+        // Fallback to provided values (default FIXED)
+        // Note: item.deposit should be deposit per unit, will be multiplied by quantity later
+        pricing = {
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
+          deposit: (item.deposit || 0) / (item.quantity || 1), // Extract deposit per unit from provided total
+          pricingType: 'FIXED' as PricingType,
+          duration: undefined,
+          durationUnit: 'rental'
+        };
+      }
+
+      // Calculate rentalDays for this item based on pricing type
+      // For FIXED: rentalDays = 1 (per rental)
+      // For HOURLY/DAILY: use calculated duration
+      let rentalDays: number | null = null;
+      if (pricing.pricingType === 'FIXED') {
+        rentalDays = 1; // Per rental, not time-based
+      } else if (pricing.duration) {
+        rentalDays = pricing.duration; // Use calculated duration from pricing
+      } else if (rentalDuration) {
+        rentalDays = rentalDuration; // Fallback to order-level duration
+      } else {
+        rentalDays = 1; // Default
+      }
+
+      // Snapshot product info to preserve it even if product is deleted later
+      return {
+        product: { connect: { id: item.productId } },
+        // Snapshot fields
+        productName: product.name || null,
+        productBarcode: product.barcode || null,
+        productImages: product.images || null,
+        // Order item fields
+        quantity: item.quantity,
+        unitPrice: pricing.unitPrice,
+        totalPrice: pricing.totalPrice,
+        deposit: pricing.deposit * item.quantity, // ✅ Deposit per unit * quantity
+        notes: item.notes,
+        rentalDays: rentalDays
+      };
+    }) || []);
+
+    // Calculate total depositAmount from all order items (deposit * quantity for each item)
+    // If depositAmount is provided in request, use it; otherwise calculate from items
+    const calculatedDepositAmount = orderItemsData.reduce((sum, item) => {
+      // item.deposit is already deposit * quantity from above calculation
+      return sum + (item.deposit || 0);
+    }, 0);
+
+    const finalDepositAmount = parsed.data.depositAmount !== undefined 
+      ? parsed.data.depositAmount 
+      : calculatedDepositAmount;
+
     // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {
       orderNumber,
@@ -360,7 +446,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       orderType: parsed.data.orderType,
       status: initialStatus,
       totalAmount: parsed.data.totalAmount,
-      depositAmount: parsed.data.depositAmount || 0,
+      depositAmount: finalDepositAmount, // ✅ Use calculated deposit or provided value
       securityDeposit: parsed.data.securityDeposit || 0,
       damageFee: parsed.data.damageFee || 0,
       lateFee: parsed.data.lateFee || 0,
@@ -377,78 +463,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       pickupNotes: parsed.data.pickupNotes,
       // Add order items with pricing calculation
       orderItems: {
-        create: await Promise.all(parsed.data.orderItems?.map(async item => {
-          // Get product details for snapshot
-          const product = await db.products.findById(item.productId) as any;
-          if (!product) {
-            throw new Error(`Product with ID ${item.productId} not found`);
-          }
-
-          // Calculate pricing using PricingResolver with product pricing type
-          let pricing;
-          try {
-            // Get product pricing type (defaults to FIXED if null)
-            const productPricingType = PricingResolver.resolvePricingType(product as Product, merchant);
-            
-            // Calculate duration for this item if dates are provided
-            let itemDuration: number | undefined;
-            if (parsed.data.pickupPlanAt && parsed.data.returnPlanAt) {
-              const pickup = new Date(parsed.data.pickupPlanAt);
-              const returnDate = new Date(parsed.data.returnPlanAt);
-              const { duration } = calculateDurationInUnit(pickup, returnDate, productPricingType);
-              itemDuration = duration;
-            }
-            
-            // Calculate pricing based on product pricing type
-            pricing = PricingResolver.calculatePricing(
-              product as Product,
-              merchant,
-              itemDuration,
-              item.quantity
-            );
-          } catch (pricingError) {
-            console.error('Pricing calculation error:', pricingError);
-            // Fallback to provided values (default FIXED)
-            pricing = {
-              unitPrice: item.unitPrice,
-              totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
-              deposit: item.deposit || 0,
-              pricingType: 'FIXED' as PricingType,
-              duration: undefined,
-              durationUnit: 'rental'
-            };
-          }
-
-          // Calculate rentalDays for this item based on pricing type
-          // For FIXED: rentalDays = 1 (per rental)
-          // For HOURLY/DAILY: use calculated duration
-          let rentalDays: number | null = null;
-          if (pricing.pricingType === 'FIXED') {
-            rentalDays = 1; // Per rental, not time-based
-          } else if (pricing.duration) {
-            rentalDays = pricing.duration; // Use calculated duration from pricing
-          } else if (rentalDuration) {
-            rentalDays = rentalDuration; // Fallback to order-level duration
-          } else {
-            rentalDays = 1; // Default
-          }
-
-          // Snapshot product info to preserve it even if product is deleted later
-          return {
-            product: { connect: { id: item.productId } },
-            // Snapshot fields
-            productName: product.name || null,
-            productBarcode: product.barcode || null,
-            productImages: product.images || null,
-            // Order item fields
-            quantity: item.quantity,
-            unitPrice: pricing.unitPrice,
-            totalPrice: pricing.totalPrice,
-            deposit: pricing.deposit,
-            notes: item.notes,
-            rentalDays: rentalDays
-          };
-        }) || [])
+        create: orderItemsData
       }
     };
 
