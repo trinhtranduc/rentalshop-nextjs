@@ -317,7 +317,14 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   const updateOrderItem = useCallback((productId: number, field: keyof OrderItemFormData, value: string | number) => {
     const updatedItems = orderItems.map(item => {
       if (item.productId === productId) {
-        return { ...item, [field]: value };
+        const updatedItem = { ...item, [field]: value };
+        
+        // Recalculate totalPrice when quantity or unitPrice changes
+        if (field === 'quantity' || field === 'unitPrice') {
+          updatedItem.totalPrice = (updatedItem.unitPrice || 0) * (updatedItem.quantity || 1);
+        }
+        
+        return updatedItem;
       }
       return item;
     });
