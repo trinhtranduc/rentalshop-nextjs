@@ -623,10 +623,10 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
         <div className="text-sm text-gray-600">
           Total: {item.quantity} × {formatMoney(item.unitPrice)} = {formatMoney(item.quantity * item.unitPrice)}
         </div>
-        {/* Only show deposit for RENT orders */}
+        {/* Only show deposit for RENT orders - Display total deposit (deposit per unit * quantity) */}
         {orderType === 'RENT' && (
           <div className="text-sm text-gray-600">
-            {t('messages.deposit')}: {formatMoney(item.deposit || 0)}
+            {t('messages.deposit')}: {formatMoney((item.deposit || 0) * (item.quantity || 1))}
           </div>
         )}
       </div>

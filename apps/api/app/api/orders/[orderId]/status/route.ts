@@ -83,6 +83,23 @@ export async function PATCH(
       collateralDetails
     } = parsed.data;
 
+    // Get existing order to check current status and timestamps
+    const orderPublicId = parseInt(orderId);
+    if (isNaN(orderPublicId)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid order ID format' },
+        { status: 400 }
+      );
+    }
+    
+    const existingOrder = await db.orders.findById(orderPublicId);
+    if (!existingOrder) {
+      return NextResponse.json(
+        { success: false, error: 'Order not found' },
+        { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
     // Build update input with automatic timestamp handling
     const updateInput: any = {
       status,
@@ -94,13 +111,32 @@ export async function PATCH(
       ...(collateralDetails && { collateralDetails }),
     };
 
-    // Automatically set timestamps based on status
-    if (status === ORDER_STATUS.PICKUPED && !pickedUpAt) {
-      updateInput.pickedUpAt = new Date().toISOString();
+    // CRITICAL: Always set pickedUpAt when status is PICKUPED (if not already set or if explicitly provided)
+    // This ensures orders that are already PICKUPED but have null pickedUpAt get the timestamp set
+    if (status === ORDER_STATUS.PICKUPED) {
+      if (pickedUpAt) {
+        // Use provided timestamp
+        updateInput.pickedUpAt = pickedUpAt;
+      } else if (!existingOrder.pickedUpAt) {
+        // Auto-set if not already set (either null or missing)
+        updateInput.pickedUpAt = new Date().toISOString();
+        console.log('✅ Auto-setting pickedUpAt for PICKUPED order');
+      }
+      // If pickedUpAt already exists, keep it (don't override)
     }
     
-    if (status === ORDER_STATUS.RETURNED && !returnedAt) {
-      updateInput.returnedAt = new Date().toISOString();
+    // CRITICAL: Always set returnedAt when status is RETURNED (if not already set or if explicitly provided)
+    // This ensures orders that are already RETURNED but have null returnedAt get the timestamp set
+    if (status === ORDER_STATUS.RETURNED) {
+      if (returnedAt) {
+        // Use provided timestamp
+        updateInput.returnedAt = returnedAt;
+      } else if (!existingOrder.returnedAt) {
+        // Auto-set if not already set (either null or missing)
+        updateInput.returnedAt = new Date().toISOString();
+        console.log('✅ Auto-setting returnedAt for RETURNED order');
+      }
+      // If returnedAt already exists, keep it (don't override)
       
       // Enhanced return handling with collateral management
       if (returnAmount === undefined) {
@@ -119,24 +155,7 @@ export async function PATCH(
       }
     }
 
-    // Allow manual timestamp override if provided
-    if (pickedUpAt) {
-      updateInput.pickedUpAt = pickedUpAt;
-    }
-    
-    if (returnedAt) {
-      updateInput.returnedAt = returnedAt;
-    }
-
-    // Update the order - convert orderId string to number
-    const orderPublicId = parseInt(orderId);
-    if (isNaN(orderPublicId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid order ID format' },
-        { status: 400 }
-      );
-    }
-    
+    // Update the order (orderPublicId already validated above)
     const updatedOrder = await db.orders.update(orderPublicId, updateInput);
 
     if (!updatedOrder) {

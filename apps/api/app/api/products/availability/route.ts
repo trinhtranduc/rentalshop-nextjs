@@ -189,118 +189,73 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         }
       });
 
-      // Filter orders that are active on the specific date for availability calculation
-      // Use actual pickup date (pickedUpAt) if available, otherwise use planned date (pickupPlanAt)
-      const activeOrders = allOrders.filter(order => {
-        // For PICKUPED/RETURNED orders: use actual dates if available, fallback to planned dates
-        // For RESERVED orders: use planned dates (not picked up yet)
-        const orderPickup = order.status === ORDER_STATUS.PICKUPED || order.status === ORDER_STATUS.RETURNED
-          ? (order.pickedUpAt ? new Date(order.pickedUpAt) : (order.pickupPlanAt ? new Date(order.pickupPlanAt) : null))
-          : (order.pickupPlanAt ? new Date(order.pickupPlanAt) : null);
+      // Helper function: Check if order is active on target date
+      const isOrderActiveOnDate = (order: any) => {
+        const status = order.status;
         
-        const orderReturn = order.status === ORDER_STATUS.RETURNED
-          ? (order.returnedAt ? new Date(order.returnedAt) : (order.returnPlanAt ? new Date(order.returnPlanAt) : null))
-          : (order.returnPlanAt ? new Date(order.returnPlanAt) : null);
-        
-        if (!orderPickup) return false;
-        
-        // Order is active if:
-        // 1. Pickup date (actual or planned) is on or before the check date
-        // 2. Return date (actual or planned) is on or after the check date (or not returned yet for PICKUPED orders)
-        const isPickupOnOrBefore = orderPickup <= endOfDay;
-        
-        // For RETURNED orders: check if returned date is on or after check date start
-        // For PICKUPED orders: check if return plan date is on or after check date start (or no return date)
-        // For RESERVED orders: check if return plan date is on or after check date start
-        let isReturnOnOrAfter = true;
-        if (order.status === ORDER_STATUS.RETURNED) {
-          // If returned, order is active if returned on or after check date start
-          isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : true;
-        } else if (order.status === ORDER_STATUS.PICKUPED) {
-          // If picked up but not returned, order is active if return plan date is on or after check date start
-          isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : true;
-        } else {
-          // RESERVED orders: check return plan date
-          isReturnOnOrAfter = orderReturn ? orderReturn >= startOfDay : true;
+        // PICKUPED: Order is active if return date hasn't passed (or no return date)
+        if (status === ORDER_STATUS.PICKUPED) {
+          if (!order.returnPlanAt) return true; // No return date = still active
+          return new Date(order.returnPlanAt) >= startOfDay;
         }
         
-        return isPickupOnOrBefore && isReturnOnOrAfter;
-      });
-
-      // Calculate product summary
-      const totalStock = outletStock.stock;
-      let totalRented = 0;
-      let totalReserved = 0;
-
-      // Enhanced logging for debugging
-      console.log('🔍 Product availability calculation:', {
-        productId,
-        outletId: finalOutletId,
-        targetDate: date,
-        totalStock,
-        ordersFound: allOrders.length,
-        ordersDetails: allOrders.map(o => ({
-          orderNumber: o.orderNumber,
-          orderType: o.orderType,
-          status: o.status,
-          outletId: o.outletId,
-          items: o.orderItems.map(i => ({
-            productId: i.productId,
-            quantity: i.quantity
-          }))
-        }))
-      });
-
-      activeOrders.forEach((order: any) => {
-        // Double-check that order belongs to the correct outlet
-        if (order.outletId !== finalOutletId) {
-          console.warn(`Order ${order.orderNumber} belongs to outlet ${order.outletId}, expected ${finalOutletId}`);
-          return; // Skip this order
+        // RETURNED: Order was active if rental period overlaps with check date
+        if (status === ORDER_STATUS.RETURNED) {
+          const pickupDate = order.pickedUpAt || order.pickupPlanAt;
+          const returnDate = order.returnedAt || order.returnPlanAt;
+          if (!pickupDate) return false;
+          
+          return new Date(pickupDate) <= endOfDay && 
+                 (!returnDate || new Date(returnDate) >= startOfDay);
         }
+        
+        // RESERVED: Order is active if pickup date passed and return date hasn't
+        if (status === ORDER_STATUS.RESERVED) {
+          if (!order.pickupPlanAt) return false;
+          
+          const pickupDate = new Date(order.pickupPlanAt);
+          const returnDate = order.returnPlanAt ? new Date(order.returnPlanAt) : null;
+          
+          return pickupDate <= endOfDay && 
+                 (!returnDate || returnDate >= startOfDay);
+        }
+        
+        return false;
+      };
+      
+      const activeOrders = allOrders.filter(isOrderActiveOnDate);
 
-        order.orderItems.forEach((item: any) => {
-          if (item.productId === productId) {
+      // Helper function: Calculate quantity for each order status
+      const calculateQuantities = () => {
+        let totalRented = 0;
+        let totalReserved = 0;
+
+        activeOrders.forEach((order: any) => {
+          order.orderItems.forEach((item: any) => {
+            if (item.productId !== productId) return;
+
+            // RENT orders: PICKUPED = rented, RESERVED = reserved
             if (order.orderType === ORDER_TYPE.RENT) {
-              // RENT orders: Use renting logic (temporary)
-              // PICKUPED: items are rented (count as rented)
-              // RESERVED: items are reserved (count as reserved)
               if (order.status === ORDER_STATUS.PICKUPED) {
                 totalRented += item.quantity;
               } else if (order.status === ORDER_STATUS.RESERVED) {
                 totalReserved += item.quantity;
               }
-            } else if (order.orderType === ORDER_TYPE.SALE) {
-              // SALE orders: Permanently reduce stock (not renting)
-              // COMPLETED/PICKUPED: items are sold (already reflected in stock reduction)
-              // RESERVED: items are reserved (count as reserved, but stock not reduced yet)
-              // Note: SALE orders that are COMPLETED/PICKUPED have already reduced stock,
-              // so we don't need to count them again here. The stock field already reflects this.
-              if (order.status === ORDER_STATUS.RESERVED) {
-                totalReserved += item.quantity;
-              }
-              // COMPLETED/PICKUPED SALE orders don't need to be counted here
-              // because they've already permanently reduced the stock field
             }
-          }
+            
+            // SALE orders: Only RESERVED counts (COMPLETED/PICKUPED already reduced stock)
+            if (order.orderType === ORDER_TYPE.SALE && order.status === ORDER_STATUS.RESERVED) {
+              totalReserved += item.quantity;
+            }
+          });
         });
-      });
 
-      // Calculate available: stock - renting - reserved
-      // For RENT: available = stock - renting (temporary)
-      // For SALE: available = stock (already reduced for completed sales)
-      // Reserved items (both RENT and SALE) reduce available temporarily
-      const totalAvailable = totalStock - totalRented - totalReserved;
+        return { totalRented, totalReserved };
+      };
 
-      // Enhanced logging for final calculation
-      console.log('🔍 Final availability calculation:', {
-        productId,
-        outletId: finalOutletId,
-        totalStock,
-        totalRented,
-        totalReserved,
-        totalAvailable,
-        isAvailable: totalAvailable > 0
-      });
+      const totalStock = outletStock.stock;
+      const { totalRented, totalReserved } = calculateQuantities();
+      const totalAvailable = Math.max(0, totalStock - totalRented - totalReserved);
 
       // Format response
       const response = {
