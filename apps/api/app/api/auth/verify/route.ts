@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withAuthRoles, getUserPermissions } from '@rentalshop/auth';
 import { handleApiError } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -11,7 +11,10 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
   console.log(`🔍 GET /api/auth/verify - User: ${user.email}`);
   
   try {
-    // Return user information (include outlet for role-based UI)
+    // Get user permissions (required for UI control)
+    const permissions = await getUserPermissions(user);
+
+    // Return user information (include permissions, merchant, outlet for role-based UI)
     return NextResponse.json({
       success: true,
       data: {
@@ -23,6 +26,9 @@ export const GET = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_S
           name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
           role: user.role,
           phone: user.phone || null,
+          merchantId: user.merchantId || null,
+          outletId: user.outletId || null,
+          permissions: permissions, // ✅ Include permissions for UI control
           merchant: user.merchant || null,
           outlet: user.outlet || null,
         }

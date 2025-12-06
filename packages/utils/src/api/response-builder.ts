@@ -109,6 +109,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   
   // Plan Limits
   'PLAN_LIMIT_EXCEEDED': 'Plan limit exceeded',
+  'CANNOT_DELETE_ADDON_LIMIT_EXCEEDED': 'Cannot delete addon: Current usage exceeds limits after deletion',
+  'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET': 'Cannot create order for other outlet. You can only create orders for your assigned outlet.',
+  'CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT': 'Cannot create order for outlet from different merchant.',
+  'CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET': 'Cannot update order from other outlet. You can only update orders from your assigned outlet.',
+  'CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT': 'Cannot update order from outlet of different merchant.',
   
   // Password Reset Errors
   'PASSWORD_RESET_TOKEN_INVALID': 'Password reset token is invalid',
@@ -391,6 +396,13 @@ export function getErrorStatusCode(error: any, defaultCode: number = 500): numbe
   if (code === 'BUSINESS_RULE_VIOLATION') return 422;
   if (code?.includes('PRODUCT_NO_STOCK')) return 422;
   if (code === 'PLAN_LIMIT_EXCEEDED') return 422;
+  if (code === 'CANNOT_DELETE_ADDON_LIMIT_EXCEEDED') return 422;
+  
+  // Authorization errors for order creation/update (403)
+  if (code === 'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET') return 403;
+  if (code === 'CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT') return 403;
+  if (code === 'CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET') return 403;
+  if (code === 'CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT') return 403;
   
   // Service unavailable (503)
   if (code === 'SERVICE_UNAVAILABLE') return 503;

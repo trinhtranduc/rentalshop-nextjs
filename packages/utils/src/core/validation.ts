@@ -809,21 +809,26 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
     
     // ✅ FIX: Treat orders: 0 as unlimited (-1) for backward compatibility
     // This handles cases where old plan data has orders: 0 instead of undefined or proper limit
+    // CRITICAL: This must happen BEFORE spread operator to ensure correct value
     const ordersLimit = (planLimits.orders === undefined || planLimits.orders === null || planLimits.orders === 0)
       ? -1  // Unlimited if missing, null, or 0
       : planLimits.orders;
     
+    // ✅ IMPORTANT: Build planLimits object WITHOUT spread to ensure ordersLimit is used correctly
     planLimits = {
       outlets: planLimits.outlets !== undefined ? planLimits.outlets : -1,
       users: planLimits.users !== undefined ? planLimits.users : -1,
       products: planLimits.products !== undefined ? planLimits.products : -1,
       customers: planLimits.customers !== undefined ? planLimits.customers : -1,
-      ...planLimits, // Override with actual values if they exist
-      orders: ordersLimit // ✅ Ensure orders is set correctly (override spread, treat 0 as unlimited)
+      orders: ordersLimit, // ✅ Set orders FIRST (before any spread)
+      // Don't spread planLimits here to avoid overriding orders with original value
+      allowWebAccess: planLimits.allowWebAccess,
+      allowMobileAccess: planLimits.allowMobileAccess,
     };
     
     // ✅ Log orders limit parsing for debugging
     console.log('🔍 Plan limits after processing:', {
+      merchantId,
       originalOrders,
       finalOrders: planLimits.orders,
       wasDefaulted: (originalOrders === undefined || originalOrders === null || originalOrders === 0) && planLimits.orders === -1,
@@ -832,7 +837,9 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
         ? '⚠️ WARNING: orders field missing in plan limits, defaulting to unlimited (-1)' 
         : originalOrders === 0
         ? '⚠️ WARNING: orders field is 0 (legacy data), treating as unlimited (-1) for backward compatibility'
-        : `✅ orders field found: ${originalOrders}`
+        : `✅ orders field found: ${originalOrders}`,
+      // ✅ Verify the fix worked
+      verification: planLimits.orders === -1 ? '✅ Orders correctly set to unlimited (-1)' : `❌ Orders still ${planLimits.orders} (should be -1)`
     });
     
     // Parse plan features - handle both string and array formats
@@ -1089,6 +1096,161 @@ export async function assertPlanLimit(
     if (error instanceof ApiError) {
       throw error;
     }
+    throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR);
+  }
+}
+
+/**
+ * Validate if deleting a plan limit addon would cause limit exceeded
+ * 
+ * This function checks if the merchant's current entity counts would exceed
+ * the limits after removing the addon. If so, deletion should be prevented.
+ * 
+ * @param merchantId - Merchant ID
+ * @param addonToRemove - The addon limits that will be removed
+ * @returns Object with validation result and exceeded limits details
+ */
+export async function validateAddonDeletion(
+  merchantId: number,
+  addonToRemove: {
+    outlets: number;
+    users: number;
+    products: number;
+    customers: number;
+    orders: number;
+  }
+): Promise<{
+  isValid: boolean;
+  exceededLimits?: Array<{
+    entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders';
+    current: number;
+    futureLimit: number;
+  }>;
+  currentCounts?: {
+    outlets: number;
+    users: number;
+    products: number;
+    customers: number;
+    orders: number;
+  };
+  futureLimits?: {
+    outlets: number;
+    users: number;
+    products: number;
+    customers: number;
+    orders: number;
+  };
+}> {
+  try {
+    console.log(`🔍 validateAddonDeletion called:`, {
+      merchantId,
+      addonToRemove
+    });
+
+    // Get current plan limits (with all active addons)
+    const currentPlanInfo = await getPlanLimitsInfo(merchantId);
+    const currentCounts = currentPlanInfo.currentCounts;
+
+    // ✅ FIX: Get base plan limits (before addons) to calculate correctly
+    // Current planLimits = base plan + all active addons
+    // Future planLimits = base plan + (all active addons - addonToRemove)
+    // Use basePlanLimits if available, otherwise fallback to planLimits (shouldn't happen but safe)
+    const baseLimits = currentPlanInfo.basePlanLimits || currentPlanInfo.planLimits;
+    
+    // Calculate future limits: current total - addon to remove
+    // Only subtract if addon is actually contributing to current limit
+    const calculateFutureLimit = (currentTotalLimit: number, addonValue: number, baseLimit: number): number => {
+      // If base limit is unlimited (-1), future limit stays unlimited
+      if (baseLimit === -1) return -1;
+      
+      // If current total is unlimited, future stays unlimited
+      if (currentTotalLimit === -1) return -1;
+      
+      // Future = current total - addon value
+      // Ensure it doesn't go below base plan limit
+      const future = currentTotalLimit - addonValue;
+      return Math.max(baseLimit, future);
+    };
+
+    const futureLimits = {
+      outlets: calculateFutureLimit(
+        currentPlanInfo.planLimits.outlets, 
+        addonToRemove.outlets,
+        baseLimits.outlets
+      ),
+      users: calculateFutureLimit(
+        currentPlanInfo.planLimits.users, 
+        addonToRemove.users,
+        baseLimits.users
+      ),
+      products: calculateFutureLimit(
+        currentPlanInfo.planLimits.products, 
+        addonToRemove.products,
+        baseLimits.products
+      ),
+      customers: calculateFutureLimit(
+        currentPlanInfo.planLimits.customers, 
+        addonToRemove.customers,
+        baseLimits.customers
+      ),
+      orders: calculateFutureLimit(
+        currentPlanInfo.planLimits.orders, 
+        addonToRemove.orders,
+        baseLimits.orders
+      ),
+    };
+
+    // Check if any entity type would exceed limits after deletion
+    const exceededLimits: Array<{
+      entityType: 'outlets' | 'users' | 'products' | 'customers' | 'orders';
+      current: number;
+      futureLimit: number;
+    }> = [];
+
+    const entityTypes: Array<'outlets' | 'users' | 'products' | 'customers' | 'orders'> = [
+      'outlets',
+      'users',
+      'products',
+      'customers',
+      'orders',
+    ];
+
+    for (const entityType of entityTypes) {
+      const currentCount = currentCounts[entityType];
+      const futureLimit = futureLimits[entityType];
+
+      // Skip if unlimited (-1)
+      if (futureLimit === -1) continue;
+
+      // Check if current count exceeds future limit
+      if (currentCount > futureLimit) {
+        exceededLimits.push({
+          entityType,
+          current: currentCount,
+          futureLimit,
+        });
+      }
+    }
+
+    const isValid = exceededLimits.length === 0;
+
+    console.log(`🔍 validateAddonDeletion result:`, {
+      merchantId,
+      isValid,
+      exceededLimits: exceededLimits.length > 0 ? exceededLimits : undefined,
+      currentCounts,
+      futureLimits,
+      currentLimits: currentPlanInfo.planLimits,
+    });
+
+    return {
+      isValid,
+      exceededLimits: exceededLimits.length > 0 ? exceededLimits : undefined,
+      currentCounts,
+      futureLimits,
+    };
+  } catch (error) {
+    console.error('Error validating addon deletion:', error);
     throw new ApiError(ErrorCode.INTERNAL_SERVER_ERROR);
   }
 }
