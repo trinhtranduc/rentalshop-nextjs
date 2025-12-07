@@ -342,8 +342,9 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'products.view', // ❌ NO products.export
     'orders.create', 'orders.view', 'orders.update', // ❌ NO orders.delete, orders.export
     'customers.view', 'customers.manage', // ❌ NO customers.export
-    'analytics.view.dashboard',          // ✅ Only daily/today-metrics (dashboard only)
-    // ❌ NO analytics.view.revenue, orders, customers, products
+    'analytics.view.dashboard',          // ✅ Daily/today-metrics (dashboard only)
+    'analytics.view.revenue',            // ✅ Daily Income Analytics (daily income only)
+    // ❌ NO analytics.view.orders, customers, products
     // ❌ NO analytics.export
     // ❌ NO bankAccounts permissions - staff cannot see bank accounts
   ]

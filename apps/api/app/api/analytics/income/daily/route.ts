@@ -16,7 +16,7 @@ import { API } from '@rentalshop/constants';
  * 
  * Authorization: Roles with 'analytics.view.revenue' permission can access
  * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view revenue analytics
- * - OUTLET_STAFF: Cannot access (dashboard only)
+ * - OUTLET_STAFF: Can view daily income analytics
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
