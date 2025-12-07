@@ -241,6 +241,45 @@ export interface AuthorizedRequest {
 }
 
 // ============================================================================
+// CRITICAL PERMISSIONS - Never Remove (Security & Functionality)
+// ============================================================================
+
+/**
+ * Critical permissions that should NEVER be removed for each role
+ * These are essential for basic functionality and security
+ * 
+ * Note: With ADD merge strategy, these are already protected by including all default permissions.
+ * This is an extra safety net in case merge strategy changes in the future.
+ */
+export const CRITICAL_PERMISSIONS: Record<Role, Permission[]> = {
+  'ADMIN': [], // Admin has no restrictions
+  
+  'MERCHANT': [
+    'merchant.view',        // Must view own merchant info
+    'outlet.view',          // Must view outlets to manage business
+    'products.manage',      // ✅ Critical: Must manage products (core business function)
+    'products.view',        // Must view products to manage orders
+    'orders.view',          // Must view orders for business operations
+    'customers.view',       // Must view customers for order management
+  ],
+  
+  'OUTLET_ADMIN': [
+    'outlet.view',          // Must view own outlet
+    'products.manage',      // ✅ Critical: Must manage products (core function)
+    'products.view',        // Must view products to process orders
+    'orders.view',          // Must view orders for daily operations
+    'customers.view',       // Must view customers for order management
+  ],
+  
+  'OUTLET_STAFF': [
+    'outlet.view',          // Must view own outlet
+    'products.view',        // Must view products to check availability
+    'orders.view',          // Must view orders to process them
+    'customers.view',       // Must view customers for order management
+  ]
+};
+
+// ============================================================================
 // ROLE-PERMISSION MAPPING (SINGLE SOURCE OF TRUTH)
 // ============================================================================
 
@@ -309,6 +348,45 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // ❌ NO bankAccounts permissions - staff cannot see bank accounts
   ]
 };
+
+// ============================================================================
+// PERMISSION MERGE STRATEGIES
+// ============================================================================
+
+/**
+ * Smart merge permissions with critical protection
+ * 
+ * Strategy: ADD (Default - Safe)
+ * - Default permissions are always included
+ * - Custom permissions are added (union)
+ * - Critical permissions are protected (never removed)
+ * 
+ * @param defaultPermissions - Default permissions from ROLE_PERMISSIONS
+ * @param customPermissions - Custom permissions from MerchantRole
+ * @param role - User's role for critical permissions check
+ * @returns Merged permissions array
+ */
+function mergePermissionsWithProtection(
+  defaultPermissions: Permission[],
+  customPermissions: Permission[],
+  role: Role
+): Permission[] {
+  // Get critical permissions for this role (never remove these)
+  const criticalPermissions = CRITICAL_PERMISSIONS[role] || [];
+  
+  // Merge: Default + Custom (union)
+  // This ensures:
+  // 1. All default permissions are included
+  // 2. Custom permissions are added (may include additional ones)
+  // 3. Critical permissions are always protected
+  const merged = Array.from(new Set([
+    ...defaultPermissions,  // ✅ All default permissions
+    ...customPermissions,    // ✅ Custom permissions (additions)
+    ...criticalPermissions   // ✅ Critical permissions (extra protection)
+  ]));
+  
+  return merged as Permission[];
+}
 
 // ============================================================================
 // CORE AUTHENTICATION FUNCTIONS
@@ -689,10 +767,36 @@ export async function getUserPermissions(user: AuthUser): Promise<Permission[]> 
         }
       });
 
-      // If custom permissions exist and are active, use them
+      // If custom permissions exist and are active, MERGE with default permissions
+      // This ensures critical permissions like products.manage are never lost
       if (systemRoleCustomization && systemRoleCustomization.isActive && systemRoleCustomization.permissions.length > 0) {
-        console.log(`🔍 Using custom permissions for merchant ${user.merchantId}, system role ${normalizedRole}`);
-        return systemRoleCustomization.permissions as Permission[];
+        // Get default permissions for this role
+        const defaultPermissions = ROLE_PERMISSIONS[normalizedRole] || [];
+        const customPermissions = systemRoleCustomization.permissions as Permission[];
+        
+        // Smart merge: Default + Custom with critical protection
+        const mergedPermissions = mergePermissionsWithProtection(
+          defaultPermissions,
+          customPermissions,
+          normalizedRole
+        );
+        
+        // Detailed logging for debugging
+        const addedPermissions = customPermissions.filter(p => !defaultPermissions.includes(p));
+        const criticalPermissions = CRITICAL_PERMISSIONS[normalizedRole] || [];
+        
+        console.log(`🔍 Smart merge custom permissions for merchant ${user.merchantId}, system role ${normalizedRole}`, {
+          strategy: 'ADD (Safe)',
+          defaultCount: defaultPermissions.length,
+          customCount: customPermissions.length,
+          mergedCount: mergedPermissions.length,
+          criticalCount: criticalPermissions.length,
+          addedPermissions: addedPermissions.length > 0 ? addedPermissions : 'none',
+          criticalProtected: criticalPermissions,
+          result: '✅ All default permissions preserved + custom permissions added'
+        });
+        
+        return mergedPermissions;
       }
     } catch (error) {
       // If database error, fallback to default (backward compatible)

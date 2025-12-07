@@ -515,6 +515,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       outletId: order.outletId,
       outletName: order.outlet?.name || null,
       customerId: order.customerId,
+      customerFirstName: order.customer?.firstName || null,
+      customerLastName: order.customer?.lastName || null,
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : null,
       customerPhone: order.customer?.phone || null,
       customerEmail: order.customer?.email || null,

@@ -278,6 +278,8 @@ export const PUT = async (
         outletId: fullOrder.outletId,
         outletName: fullOrder.outlet?.name || null,
         customerId: fullOrder.customerId,
+        customerFirstName: fullOrder.customer?.firstName || null,
+        customerLastName: fullOrder.customer?.lastName || null,
         customerName: fullOrder.customer ? `${fullOrder.customer.firstName} ${fullOrder.customer.lastName}`.trim() : null,
         customerPhone: fullOrder.customer?.phone || null,
         customerEmail: fullOrder.customer?.email || null,
