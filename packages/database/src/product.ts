@@ -304,6 +304,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
     totalStock: product.totalStock,
     rentPrice: product.rentPrice,
     salePrice: product.salePrice,
+    costPrice: product.costPrice, // Include costPrice (giá vốn)
     deposit: product.deposit,
     images: product.images,
     isActive: product.isActive,

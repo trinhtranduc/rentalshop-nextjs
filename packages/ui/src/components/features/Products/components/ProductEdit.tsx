@@ -54,6 +54,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     categoryId: product.category?.id || product.categoryId,
     rentPrice: product.rentPrice,
     salePrice: (product as any).salePrice || 0, // Use actual salePrice if available, default to 0
+    costPrice: (product as any).costPrice || 0, // Use actual costPrice if available, default to 0
     deposit: product.deposit,
     totalStock: (() => {
       // Calculate total stock from all outlets (including those with 0 stock)
