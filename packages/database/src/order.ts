@@ -1639,6 +1639,8 @@ export const simplifiedOrders = {
       
       // Flatten customer data (simplified)
       customerId: order.customerId,
+      customerFirstName: order.customer?.firstName || null,
+      customerLastName: order.customer?.lastName || null,
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
       customerPhone: order.customer?.phone || null,
       
