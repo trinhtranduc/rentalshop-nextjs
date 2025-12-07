@@ -14,12 +14,12 @@ import { API } from '@rentalshop/constants';
  * - List of orders with their individual revenue contributions
  * - Number of new orders created that day
  * 
- * Authorization: Roles with 'analytics.view.revenue' permission can access
- * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view revenue analytics
- * - OUTLET_STAFF: Can view daily income analytics
+ * Authorization: Roles with 'analytics.view.revenue' or 'analytics.view.revenue.daily' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view revenue analytics (analytics.view.revenue)
+ * - OUTLET_STAFF: Can view daily income analytics only (analytics.view.revenue.daily)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
   console.log(`💰 GET /api/analytics/income/daily - User: ${user.email}`);
   
   try {

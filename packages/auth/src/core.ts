@@ -211,7 +211,8 @@ export type Permission =
   // Analytics (Granular Permissions)
   | 'analytics.view'                    // Base permission (backward compatibility)
   | 'analytics.view.dashboard'          // Dashboard & overview metrics (today, today-metrics)
-  | 'analytics.view.revenue'            // Revenue/income analytics
+  | 'analytics.view.revenue'            // Revenue/income analytics (full access)
+  | 'analytics.view.revenue.daily'      // Daily income analytics only (limited access)
   | 'analytics.view.orders'             // Order analytics
   | 'analytics.view.customers'          // Customer analytics (top customers)
   | 'analytics.view.products'          // Product analytics (top products)
@@ -343,7 +344,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'orders.create', 'orders.view', 'orders.update', // ❌ NO orders.delete, orders.export
     'customers.view', 'customers.manage', // ❌ NO customers.export
     'analytics.view.dashboard',          // ✅ Daily/today-metrics (dashboard only)
-    'analytics.view.revenue',            // ✅ Daily Income Analytics (daily income only)
+    'analytics.view.revenue.daily',      // ✅ Daily Income Analytics only (not full revenue analytics)
+    // ❌ NO analytics.view.revenue (full revenue analytics)
     // ❌ NO analytics.view.orders, customers, products
     // ❌ NO analytics.export
     // ❌ NO bankAccounts permissions - staff cannot see bank accounts
