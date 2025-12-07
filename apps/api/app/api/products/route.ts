@@ -575,7 +575,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       barcode: parsed.data.barcode,
       totalStock,
       rentPrice: parsed.data.rentPrice ?? 0,
-      salePrice: parsed.data.salePrice ?? undefined,
+      salePrice: parsed.data.salePrice ?? 0,
+      costPrice: parsed.data.costPrice ?? 0, // Include costPrice (giá vốn)
       deposit: parsed.data.deposit ?? 0,
       images: imagesValue,
       // Optional pricing configuration (default FIXED if null)
