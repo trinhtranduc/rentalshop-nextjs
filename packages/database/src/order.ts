@@ -1654,21 +1654,39 @@ export const simplifiedOrders = {
       createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
       
       // Order items with flattened product data
-      orderItems: order.orderItems?.map(item => ({
-        id: item.id,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
-        notes: item.notes,
-        // Flatten product data
-        productId: item.product?.id,
-        productName: item.product?.name,
-        productBarcode: item.product?.barcode,
-        productImages: item.product?.images ? 
-          (Array.isArray(item.product.images) ? item.product.images : []) : [],
-        productRentPrice: item.product?.rentPrice,
-        productDeposit: item.product?.deposit
-      })) || [],
+      orderItems: order.orderItems?.map(item => {
+        // Helper function to parse productImages (handle both JSON string and array)
+        const parseProductImages = (images: any): string[] => {
+          if (!images) return [];
+          if (Array.isArray(images)) return images;
+          if (typeof images === 'string') {
+            try {
+              const parsed = JSON.parse(images);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          }
+          return [];
+        };
+
+        const productImages = parseProductImages(item.product?.images);
+
+        return {
+          id: item.id,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          notes: item.notes,
+          // Flatten product data
+          productId: item.product?.id,
+          productName: item.product?.name,
+          productBarcode: item.product?.barcode,
+          productImages: productImages,
+          productRentPrice: item.product?.rentPrice,
+          productDeposit: item.product?.deposit
+        };
+      }) || [],
       
       // Calculated fields
       itemCount: itemCountMap.get(order.id) || 0,

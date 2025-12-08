@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError, formatFullName } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
@@ -280,13 +280,13 @@ export const PUT = async (
         customerId: fullOrder.customerId,
         customerFirstName: fullOrder.customer?.firstName || null,
         customerLastName: fullOrder.customer?.lastName || null,
-        customerName: fullOrder.customer ? `${fullOrder.customer.firstName} ${fullOrder.customer.lastName}`.trim() : null,
+        customerName: fullOrder.customer ? formatFullName(fullOrder.customer.firstName, fullOrder.customer.lastName) : null,
         customerPhone: fullOrder.customer?.phone || null,
         customerEmail: fullOrder.customer?.email || null,
         merchantId: null, // Will be populated from outlet if needed
         merchantName: null, // Will be populated from outlet if needed
         createdById: fullOrder.createdById,
-        createdByName: fullOrder.createdBy ? `${fullOrder.createdBy.firstName} ${fullOrder.createdBy.lastName}`.trim() : null,
+        createdByName: fullOrder.createdBy ? formatFullName(fullOrder.createdBy.firstName, fullOrder.createdBy.lastName) : null,
         totalAmount: fullOrder.totalAmount,
         depositAmount: fullOrder.depositAmount,
         securityDeposit: fullOrder.securityDeposit,
