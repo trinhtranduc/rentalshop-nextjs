@@ -150,6 +150,46 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
 
     // Use transaction for atomic creation
     const result = await db.prisma.$transaction(async (tx) => {
+      // Generate unique tenantKey from merchant name if not provided
+      let tenantKey: string | undefined;
+      if (body.tenantKey && body.tenantKey.trim().length > 0) {
+        // User provided custom tenant key - check for uniqueness
+        const customKey = body.tenantKey.trim();
+        const exists = await tx.merchant.findUnique({
+          where: { tenantKey: customKey }
+        });
+        
+        if (exists) {
+          // Custom key exists, generate unique one with random suffix
+          const { generateUniqueTenantKey } = await import('@rentalshop/utils');
+          tenantKey = await generateUniqueTenantKey(
+            name || customKey,
+            async (key: string) => {
+              const found = await tx.merchant.findUnique({
+                where: { tenantKey: key }
+              });
+              return !!found;
+            }
+          );
+          console.log(`⚠️ Custom tenant key "${customKey}" already exists, generated unique key: "${tenantKey}"`);
+        } else {
+          tenantKey = customKey;
+        }
+      } else if (name) {
+        // Generate from merchant name with uniqueness check
+        const { generateUniqueTenantKey } = await import('@rentalshop/utils');
+        tenantKey = await generateUniqueTenantKey(
+          name,
+          async (key: string) => {
+            const found = await tx.merchant.findUnique({
+              where: { tenantKey: key }
+            });
+            return !!found;
+          }
+        );
+        console.log(`✅ Generated unique tenant key: "${tenantKey}"`);
+      }
+
       // Create new merchant
       const merchant = await tx.merchant.create({
         data: {
@@ -159,7 +199,8 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
           address,
           planId,
           businessType: businessType || 'GENERAL',
-          pricingConfig: JSON.stringify(pricingConfig)
+          pricingConfig: JSON.stringify(pricingConfig),
+          ...(tenantKey ? { tenantKey } : {})
         }
       });
 

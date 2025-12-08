@@ -30,10 +30,10 @@ export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   
-  // Name: Support both formats - either 'name' or both 'firstName' and 'lastName'
+  // Name: Support both formats - either 'name' or 'firstName' (lastName is optional)
   name: z.string().min(1, 'Name is required').optional(),
   firstName: z.string().min(1, 'First name is required').optional(),
-  lastName: z.string().min(1, 'Last name is required').optional(),
+  lastName: z.string().optional(), // Allow empty string or undefined
   
   // For merchant registration - businessName is required if registering as merchant
   businessName: z.string().optional(),
@@ -64,10 +64,13 @@ export const registerSchema = z.object({
   merchantCode: z.string().optional(),
   outletCode: z.string().optional(),
 }).refine((data) => {
-  // Either 'name' or both 'firstName' and 'lastName' must be provided
-  return data.name || (data.firstName && data.lastName);
+  // Either 'name' or 'firstName' must be provided (lastName is optional)
+  // lastName can be empty string or undefined
+  const hasName = data.name && data.name.trim().length > 0;
+  const hasFirstName = data.firstName && data.firstName.trim().length > 0;
+  return hasName || hasFirstName;
 }, {
-  message: "Either 'name' or both 'firstName' and 'lastName' must be provided"
+  message: "Either 'name' or 'firstName' must be provided"
 }).refine((data) => {
   // For MERCHANT registration, businessName is required
   if (data.role === 'MERCHANT' || data.businessName) {
