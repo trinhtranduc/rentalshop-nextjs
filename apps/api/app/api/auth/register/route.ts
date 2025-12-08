@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, createEmailVerification } from '@rentalshop/database';
-import { registerSchema, sendVerificationEmail, generateTenantKeyFromName } from '@rentalshop/utils';
+import { registerSchema, sendVerificationEmail, generateTenantKeyFromName, generateUniqueTenantKey } from '@rentalshop/utils';
 import { generateToken, hashPassword } from '@rentalshop/auth';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
@@ -81,17 +81,51 @@ export async function POST(request: NextRequest) {
       console.log('🔄 Starting transaction for merchant registration...');
       
       const result = await db.prisma.$transaction(async (tx) => {
-        // Generate tenantKey from businessName if not provided
-        const tenantKey =
-          validatedData.tenantKey && validatedData.tenantKey.trim().length > 0
-            ? validatedData.tenantKey.trim()
-            : generateTenantKeyFromName(validatedData.businessName || '');
+        // Generate unique tenantKey from businessName if not provided
+        // Check for duplicates and add random suffix if needed
+        let tenantKey: string;
+        if (validatedData.tenantKey && validatedData.tenantKey.trim().length > 0) {
+          // User provided custom tenant key - still need to check for uniqueness
+          const customKey = validatedData.tenantKey.trim();
+          const exists = await tx.merchant.findUnique({
+            where: { tenantKey: customKey }
+          });
+          
+          if (exists) {
+            // Custom key exists, generate unique one with random suffix
+            tenantKey = await generateUniqueTenantKey(
+              validatedData.businessName || customKey,
+              async (key: string) => {
+                const found = await tx.merchant.findUnique({
+                  where: { tenantKey: key }
+                });
+                return !!found;
+              }
+            );
+            console.log(`⚠️ Custom tenant key "${customKey}" already exists, generated unique key: "${tenantKey}"`);
+          } else {
+            tenantKey = customKey;
+          }
+        } else {
+          // Generate from business name with uniqueness check
+          tenantKey = await generateUniqueTenantKey(
+            validatedData.businessName || '',
+            async (key: string) => {
+              const found = await tx.merchant.findUnique({
+                where: { tenantKey: key }
+              });
+              return !!found;
+            }
+          );
+          console.log(`✅ Generated unique tenant key: "${tenantKey}"`);
+        }
 
         // 3. Create merchant with business configuration
         console.log('📝 Step 1: Creating merchant with data:', {
           name: validatedData.businessName,
           email: validatedData.email,
-          phone: validatedData.phone
+          phone: validatedData.phone,
+          tenantKey
         });
         
         const merchant = await tx.merchant.create({
@@ -100,7 +134,7 @@ export async function POST(request: NextRequest) {
             email: validatedData.email,
             phone: validatedData.phone,
             // New tenantKey field (used for future multi-tenant routing)
-            ...(tenantKey ? { tenantKey } : {}),
+            tenantKey,
             address: validatedData.address,
             city: validatedData.city,
             state: validatedData.state,
