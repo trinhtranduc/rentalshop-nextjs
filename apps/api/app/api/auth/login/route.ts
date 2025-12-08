@@ -222,11 +222,12 @@ export async function POST(request: NextRequest) {
         const { getDefaultBankAccount } = await import('@rentalshop/database');
         const defaultBankAccount = await getDefaultBankAccount(user.outletId);
         
-        // ✅ Follow OutletReference type: { id, name, address?, merchantId, defaultBankAccount? }
+        // ✅ Follow OutletReference type: { id, name, address?, phone?, merchantId, defaultBankAccount? }
         outletData = {
           id: outlet.id,
           name: outlet.name,
           address: outlet.address || undefined,
+          phone: outlet.phone || undefined,
           merchantId: outlet.merchantId,
           defaultBankAccount: defaultBankAccount || undefined
         };

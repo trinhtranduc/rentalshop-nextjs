@@ -243,3 +243,29 @@ export const removeVietnameseDiacritics = (text: string): string => {
   
   return result;
 };
+
+/**
+ * Format full name from firstName and lastName
+ * Handles null values correctly (filters out null before joining)
+ * 
+ * @param firstName - First name (can be null or undefined)
+ * @param lastName - Last name (can be null or undefined)
+ * @returns Formatted full name or null if both are null/empty
+ * 
+ * @example
+ * formatFullName("Trinh", "Duc") => "Trinh Duc"
+ * formatFullName("Trinh", null) => "Trinh"
+ * formatFullName(null, "Duc") => "Duc"
+ * formatFullName(null, null) => null
+ * formatFullName("", "") => null
+ */
+export function formatFullName(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined
+): string | null {
+  const parts = [firstName, lastName]
+    .filter(part => part != null && part.trim() !== '')
+    .map(part => part!.trim());
+  
+  return parts.length > 0 ? parts.join(' ') : null;
+}

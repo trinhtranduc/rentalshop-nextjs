@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, formatFullName } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -266,7 +266,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         status: order.status,
         orderType: order.orderType,
         totalAmount: order.totalAmount,
-        customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
+        customerName: order.customer ? formatFullName(order.customer.firstName, order.customer.lastName) || 'Guest' : 'Guest',
         outletName: order.outlet?.name || 'Unknown',
         createdAt: order.createdAt?.toISOString() || null,
         pickupPlanAt: order.pickupPlanAt?.toISOString() || null,

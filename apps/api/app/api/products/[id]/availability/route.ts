@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
 import { z } from 'zod';
 
 // Validation schema for availability query
@@ -401,7 +401,7 @@ export async function GET(
               
               outletConflicts.conflicts.push({
                 orderNumber: order.orderNumber,
-                customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
+                customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
                 pickupDate: orderPickup.toISOString(),
                 returnDate: orderReturn.toISOString(),
                 pickupDateLocal: includeTimePrecision 
@@ -419,7 +419,7 @@ export async function GET(
               // Fallback for orders without precise times
               outletConflicts.conflicts.push({
                 orderNumber: order.orderNumber,
-                customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
+                customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
                 pickupDate: orderPickup?.toISOString() || '',
                 returnDate: orderReturn?.toISOString() || '',
                 pickupDateLocal: orderPickup ? 

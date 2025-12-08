@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
 import { z } from 'zod';
 
 // Validation schema for product availability query
@@ -231,7 +231,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         let totalReserved = 0;
 
         activeOrders.forEach((order: any) => {
-          order.orderItems.forEach((item: any) => {
+        order.orderItems.forEach((item: any) => {
             if (item.productId !== productId) return;
 
             // RENT orders: PICKUPED = rented, RESERVED = reserved
@@ -245,10 +245,10 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
             
             // SALE orders: Only RESERVED counts (COMPLETED/PICKUPED already reduced stock)
             if (order.orderType === ORDER_TYPE.SALE && order.status === ORDER_STATUS.RESERVED) {
-              totalReserved += item.quantity;
-            }
-          });
+                totalReserved += item.quantity;
+          }
         });
+      });
 
         return { totalRented, totalReserved };
       };
@@ -319,7 +319,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
           
           // Flatten customer info
           customerId: order.customerId,
-          customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown',
+          customerName: order.customer ? formatFullName(order.customer.firstName, order.customer.lastName) || 'Unknown' : 'Unknown',
           customerPhone: order.customer?.phone || null,
           customerEmail: order.customer?.email || null,
           
@@ -329,23 +329,42 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
           
           // Created by info
           createdById: order.createdById || null,
-          createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
+          createdByName: order.createdBy ? formatFullName(order.createdBy.firstName, order.createdBy.lastName) : null,
           
           // Order items (only for this product)
-          orderItems: productItems.map((item: any) => ({
-            id: item.id,
-            productId: item.productId,
-            productName: item.product?.name || 'Unknown Product',
-            productBarcode: item.product?.barcode || null,
-            productImages: item.product?.images || null,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice,
-            deposit: item.deposit || 0,
-            productRentPrice: item.product?.rentPrice || 0,
-            productDeposit: item.product?.deposit || 0,
-            notes: item.notes || ''
-          })),
+          orderItems: productItems.map((item: any) => {
+            // Helper function to parse productImages (handle both JSON string and array)
+            const parseProductImages = (images: any): string[] => {
+              if (!images) return [];
+              if (Array.isArray(images)) return images;
+              if (typeof images === 'string') {
+                try {
+                  const parsed = JSON.parse(images);
+                  return Array.isArray(parsed) ? parsed : [];
+                } catch {
+                  return [];
+                }
+              }
+              return [];
+            };
+
+            const productImages = parseProductImages(item.product?.images);
+
+            return {
+              id: item.id,
+              productId: item.productId,
+              productName: item.product?.name || 'Unknown Product',
+              productBarcode: item.product?.barcode || null,
+              productImages: productImages,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice,
+              deposit: item.deposit || 0,
+              productRentPrice: item.product?.rentPrice || 0,
+              productDeposit: item.product?.deposit || 0,
+              notes: item.notes || ''
+            };
+          }),
           
           // Summary counts
           itemCount: productItems.length,
