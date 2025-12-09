@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Badge, Skeleton, ConfirmationDialog, Card, CardHeader, CardContent } from '@rentalshop/ui';
 import { useToast } from '@rentalshop/ui';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
-import { useOrderTranslations, usePermissions } from '@rentalshop/hooks';
+import { useOrderTranslations, usePermissions, useAuth } from '@rentalshop/hooks';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { CollectionReturnModal } from './components/CollectionReturnModal';
 import { OrderInformation } from './components/OrderInformation';
@@ -205,7 +205,19 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const { toastSuccess, toastError, toastInfo } = useToast();
   const t = useOrderTranslations();
   // ✅ Use permissions hook to check if user can delete orders
-  const { canDeleteOrders } = usePermissions();
+  const { canDeleteOrders, permissions } = usePermissions();
+  
+  // Debug: Log permissions for troubleshooting
+  useEffect(() => {
+    if (permissions) {
+      console.log('🔍 OrderDetail - User permissions:', {
+        permissionsCount: permissions.length,
+        hasOrdersDelete: permissions.includes('orders.delete'),
+        canDeleteOrders,
+        orderPermissions: permissions.filter((p: string) => p.includes('orders'))
+      });
+    }
+  }, [permissions, canDeleteOrders]);
   
   // Predefined collateral types
   const COLLATERAL_TYPES = [

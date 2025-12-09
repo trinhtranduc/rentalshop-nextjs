@@ -119,7 +119,7 @@ export async function PATCH(
         updateInput.pickedUpAt = pickedUpAt;
       } else if (!existingOrder.pickedUpAt) {
         // Auto-set if not already set (either null or missing)
-        updateInput.pickedUpAt = new Date().toISOString();
+      updateInput.pickedUpAt = new Date().toISOString();
         console.log('✅ Auto-setting pickedUpAt for PICKUPED order');
       }
       // If pickedUpAt already exists, keep it (don't override)
@@ -133,7 +133,7 @@ export async function PATCH(
         updateInput.returnedAt = returnedAt;
       } else if (!existingOrder.returnedAt) {
         // Auto-set if not already set (either null or missing)
-        updateInput.returnedAt = new Date().toISOString();
+      updateInput.returnedAt = new Date().toISOString();
         console.log('✅ Auto-setting returnedAt for RETURNED order');
       }
       // If returnedAt already exists, keep it (don't override)

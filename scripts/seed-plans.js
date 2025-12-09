@@ -212,7 +212,7 @@ async function seedPlans() {
             users: planConfig.limits.users,
             products: planConfig.limits.products,
             customers: planConfig.limits.customers,
-            orders: planConfig.limits.orders || 0 // Ensure orders field exists
+            orders: planConfig.limits.orders ?? (planConfig.limits.orders === undefined ? 0 : planConfig.limits.orders) // Use exact value from config
           }),
           features: JSON.stringify(planConfig.features),
           isActive: planConfig.isActive !== undefined ? planConfig.isActive : true,

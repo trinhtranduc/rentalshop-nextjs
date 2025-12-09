@@ -68,15 +68,21 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     }
 
     // Role-based outlet filtering:
-    // - MERCHANT role: Can see products from all outlets of their merchant (unless queryOutletId is specified)
+    // - MERCHANT role: Should see ALL products of merchant (outletId only for viewing stock, NOT filtering)
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their assigned outlet
-    let filterOutletId = userScope.outletId;
+    // - ADMIN: No outlet filtering unless specified
+    let filterOutletId: number | undefined = undefined;
+    
     if (user.role === USER_ROLE.MERCHANT) {
-      // Merchants can see all outlets unless specifically filtering by outlet
-      filterOutletId = queryOutletId || userScope.outletId;
+      // MERCHANT: Don't filter by outlet - they should see ALL products of their merchant
+      // outletId parameter is only for viewing stock at specific outlet, not for filtering products
+      filterOutletId = undefined; // Always show all products for merchant
     } else if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all products (no outlet filtering unless specified)
       filterOutletId = queryOutletId;
+    } else {
+      // OUTLET_ADMIN/OUTLET_STAFF: Always filter by their assigned outlet
+      filterOutletId = userScope.outletId;
     }
 
     // Use simplified database API with role-based filtering
@@ -99,7 +105,8 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     const result = await db.products.search(searchFilters);
     console.log('✅ Search completed, found:', result.data?.length || 0, 'products');
 
-    // Process product images - parse from database format
+    // Process product images and filter outletStock based on queryOutletId
+    // For MERCHANT role: queryOutletId is only for viewing stock at specific outlet, NOT filtering products
     const processedProducts = result.data?.map((product: any) => {
       let imageUrls: string[] = [];
       
@@ -117,9 +124,17 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         imageUrls = product.images;
       }
       
+      // For MERCHANT role: if queryOutletId is provided, filter outletStock to show only that outlet
+      // This allows merchant to see ALL products but view stock at specific outlet
+      let outletStock = product.outletStock || [];
+      if (user.role === USER_ROLE.MERCHANT && queryOutletId && outletStock.length > 0) {
+        outletStock = outletStock.filter((stock: any) => stock.outlet?.id === queryOutletId);
+      }
+      
       return {
         ...product,
-        images: imageUrls
+        images: imageUrls,
+        outletStock: outletStock // Show stock filtered by outletId (if provided)
       };
     }) || [];
 

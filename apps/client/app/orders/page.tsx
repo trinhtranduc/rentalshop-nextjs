@@ -10,6 +10,7 @@ import {
   Button,
   LoadingIndicator,
   ExportDialog,
+  ConfirmationDialog,
   type QuickFilterOption
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
@@ -63,6 +64,8 @@ export default function OrdersPage() {
   );
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<{ id: number; orderNumber: string } | null>(null);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -327,19 +330,9 @@ export default function OrdersPage() {
       case 'cancel':
         const orderForCancel = data?.orders.find(o => o.orderNumber === orderNumber);
         if (orderForCancel) {
-          if (!confirm(t('messages.confirmCancel'))) return;
-          try {
-            const response = await ordersApi.cancelOrder(orderForCancel.id);
-            if (response.success) {
-              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
-              // ✅ Force re-fetch by updating URL (trigger data refresh)
-              refetch();
-            } else {
-              throw new Error(response.error || t('messages.updateFailed'));
-            }
-          } catch (error) {
-            toastError(t('messages.updateFailed'), (error as Error).message);
-          }
+          // Show confirmation dialog instead of browser confirm()
+          setOrderToCancel({ id: orderForCancel.id, orderNumber: orderForCancel.orderNumber });
+          setShowCancelConfirmDialog(true);
         }
         break;
         
@@ -541,6 +534,38 @@ export default function OrdersPage() {
           } finally {
             setIsExporting(false);
           }
+        }}
+      />
+
+      {/* Cancel Order Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showCancelConfirmDialog}
+        onOpenChange={setShowCancelConfirmDialog}
+        type="danger"
+        title={t('detail.cancelOrderTitle') || 'Cancel Order'}
+        description={t('detail.cancelOrderMessage') || t('messages.confirmCancel') || 'Are you sure you want to cancel this order? This action cannot be undone.'}
+        confirmText={t('actions.cancelOrder') || 'Cancel Order'}
+        cancelText={t('detail.keepOrder') || 'Keep Order'}
+        onConfirm={async () => {
+          if (!orderToCancel) return;
+          try {
+            const response = await ordersApi.cancelOrder(orderToCancel.id);
+            if (response.success) {
+              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
+              setShowCancelConfirmDialog(false);
+              setOrderToCancel(null);
+              // ✅ Force re-fetch by updating URL (trigger data refresh)
+              refetch();
+            } else {
+              throw new Error(response.error || t('messages.updateFailed'));
+            }
+          } catch (error) {
+            toastError(t('messages.updateFailed'), (error as Error).message);
+          }
+        }}
+        onCancel={() => {
+          setShowCancelConfirmDialog(false);
+          setOrderToCancel(null);
         }}
       />
     </PageWrapper>

@@ -7,7 +7,8 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle,
+  useToast
 } from '../../../ui';
 import type { Order, OrderItemWithProduct } from '@rentalshop/types';
 import type { OutletReference, MerchantReference } from '@rentalshop/types';
@@ -48,6 +49,7 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
 }) => {
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
+  const { toastError } = useToast();
   const [isPrinting, setIsPrinting] = useState(false);
   const receiptContentRef = useRef<HTMLDivElement>(null);
 
@@ -160,7 +162,8 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
       }, 500);
     } catch (error) {
       console.error('Print error:', error);
-      alert(`Lỗi khi in: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // ✅ Use toast instead of alert
+      toastError('Lỗi khi in', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsPrinting(false);
     }
