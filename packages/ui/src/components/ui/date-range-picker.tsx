@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocale as useNextIntlLocale } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from './button';
 import { Input } from './input';
@@ -212,7 +212,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   };
 
   // Get locale from next-intl
-  const locale = useNextIntlLocale() as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+  const locale = useLocale() as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
   
   // Map locale to Intl locale string
   const intlLocaleMap: Record<string, string> = {
@@ -223,6 +223,19 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     'ja': 'ja-JP'
   };
   const intlLocale = intlLocaleMap[locale] || 'vi-VN';
+  
+  // Debug: Log locale for troubleshooting (remove after testing)
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const monthText = currentMonth.toLocaleDateString(intlLocale, { month: 'long', year: 'numeric' });
+      console.log('📅 DateRangePicker locale debug:', { 
+        locale, 
+        intlLocale, 
+        monthText,
+        browserLocale: navigator.language
+      });
+    }
+  }, [locale, intlLocale, currentMonth]);
   
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentMonth);
   
