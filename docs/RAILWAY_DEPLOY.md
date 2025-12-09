@@ -723,18 +723,14 @@ railway login
 # Link project
 railway link
 
-# List services
-railway service list
-
-# Select service
-railway service
+# Switch environment
+railway environment production  # or development
 
 # View logs
-railway logs
-railway logs -f  # Follow mode
+railway logs --service apis -f  # Follow mode
 
 # View/set environment variables
-railway variables
+railway variables --service apis
 railway variables --set KEY=value --service apis
 
 # Run command in Railway environment
@@ -748,9 +744,54 @@ railway up
 
 # Restart service
 railway restart --service apis
+```
 
-# Delete service
-railway service delete
+## 🔗 DATABASE_URL Configuration
+
+### Railway Tự Động Inject DATABASE_URL
+
+Khi bạn add PostgreSQL service:
+```bash
+railway add postgresql
+```
+
+Railway tự động:
+- ✅ Tạo DATABASE_URL environment variable
+- ✅ Inject vào tất cả services trong project
+- ✅ Format: `${{Postgres.DATABASE_URL}}`
+
+**Trong Railway Dashboard:**
+```
+Variables:
+  DATABASE_URL = ${{Postgres.DATABASE_URL}}
+```
+
+### Internal vs Public URL
+
+**Railway tự động resolve:**
+- **Internal URL**: `postgresql://postgres:pass@postgres.railway.internal:5432/railway`
+  - Chỉ hoạt động trong Railway network
+  - Dùng khi chạy migration từ Railway Dashboard
+- **Public URL**: `postgresql://postgres:pass@proxy.rlwy.net:port/railway`
+  - Hoạt động từ internet
+  - Dùng khi chạy migration từ local machine
+
+### Migration trên Railway
+
+**Tự động (Khuyến nghị):**
+- Migration tự động chạy khi deploy (trong `start.sh`)
+- Railway tự động inject DATABASE_URL
+- Không cần config thêm
+
+**Manual (Nếu cần):**
+```bash
+# Railway Dashboard → Service API → Run Command
+npx prisma migrate deploy --schema=./prisma/schema.prisma
+
+# Hoặc từ local với public URL
+export DATABASE_URL="postgresql://postgres:pass@proxy.rlwy.net:port/railway"
+npx prisma migrate deploy --schema=./prisma/schema.prisma
+unset DATABASE_URL
 ```
 
 ---
