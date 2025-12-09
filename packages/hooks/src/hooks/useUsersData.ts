@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import { useDedupedApi } from '../utils/useDedupedApi';
 import { usersApi } from '@rentalshop/utils';
 import type { UserFilters, User } from '@rentalshop/types';
@@ -55,13 +57,24 @@ export interface UseUsersDataReturn {
  */
 export function useUsersData(options: UseUsersDataOptions): UseUsersDataReturn {
   const { filters, enabled = true } = options;
+  const pathname = usePathname();
+  
+  // Include pathname in filters to ensure refetch when navigating between pages
+  // This ensures that when user navigates to /users from another page, data is refetched
+  // The pathname change will cause cacheKey to change, forcing a refetch
+  const filtersWithPath = useMemo(() => ({
+    ...filters,
+    _pathname: pathname // Internal key to force refetch on navigation
+  }), [filters, pathname]);
   
   const result = useDedupedApi({
-    filters,
-    fetchFn: async (filters: UserFilters) => {
-      console.log('👤 useUsersData: Fetching with filters:', filters);
+    filters: filtersWithPath,
+    fetchFn: async (filtersWithPath: UserFilters & { _pathname?: string }) => {
+      // Remove internal _pathname before making API call
+      const { _pathname, ...apiFilters } = filtersWithPath;
+      console.log('👤 useUsersData: Fetching with filters:', apiFilters);
       
-      const response = await usersApi.searchUsers(filters);
+      const response = await usersApi.searchUsers(apiFilters);
 
       if (!response.success || !response.data) {
         throw new Error('Failed to fetch users');
@@ -116,9 +129,10 @@ export function useUsersData(options: UseUsersDataOptions): UseUsersDataReturn {
       return transformed;
     },
     enabled,
-    staleTime: 30000, // 30 seconds cache
+    staleTime: 0, // ✅ Set to 0 to always refetch on navigation (no stale cache)
     cacheTime: 300000, // 5 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: true // ✅ Force refetch when component mounts (navigating to page)
   });
 
   return result;
