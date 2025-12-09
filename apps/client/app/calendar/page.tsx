@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Calendars, PageWrapper, Breadcrumb, Button, PageLoadingIndicator } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
@@ -25,14 +25,25 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 1)); // Month is 0-based, so 9 = October
   
   // Handle month change from Calendars component
+  // Use useRef to prevent unnecessary updates
   const handleMonthChange = useCallback((date: Date) => {
-    setCurrentDate(date);
+    setCurrentDate(prev => {
+      // Only update if month/year actually changed
+      if (prev.getMonth() !== date.getMonth() || prev.getFullYear() !== date.getFullYear()) {
+        return date;
+      }
+      return prev;
+    });
   }, []);
   
   // 🎯 NEW: State for daily order details modal
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dailyOrders, setDailyOrders] = useState<(CalendarOrderSummary & { type: 'pickup' | 'return' })[]>([]);
   const [showDailyModal, setShowDailyModal] = useState(false);
+
+  // Track previous month to avoid unnecessary fetches
+  const prevMonthRef = useRef<{ year: number; month: number } | null>(null);
+  const prevUserIdRef = useRef<number | null>(null);
 
   // 🎯 NEW: Fetch calendar data using specialized calendar API
   const fetchCalendarData = useCallback(async () => {
@@ -64,13 +75,21 @@ export default function CalendarPage() {
       });
       
       // 🎯 NEW: Use specialized calendar API with startDate and endDate
-      // Use UTC date format (YYYY-MM-DD) to match backend
+      // Use UTC date format (YYYY-MM-DD) to match backend API validation
       const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
       const endOfMonth = new Date(currentYear, currentMonth, 0);
       
+      // Format dates as YYYY-MM-DD for API (not YYYY/MM/DD from getUTCDateKey)
+      const formatDateForAPI = (date: Date): string => {
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
       const result = await calendarApi.getCalendarOrders({
-        startDate: getUTCDateKey(startOfMonth),
-        endDate: getUTCDateKey(endOfMonth),
+        startDate: formatDateForAPI(startOfMonth),
+        endDate: formatDateForAPI(endOfMonth),
         outletId: user?.outletId,
         limit: 4 // Max 4 orders per day
       });
@@ -102,12 +121,36 @@ export default function CalendarPage() {
     } finally {
       setLoading(false);
     }
-  }, [authenticated, currentDate, user, handleError]);
+  }, [authenticated, handleError]);
 
-  // Fetch calendar data when component mounts or dependencies change
+  // Fetch calendar data when component mounts or when month/user actually changes
   useEffect(() => {
-    fetchCalendarData();
-  }, [fetchCalendarData]);
+    if (!authenticated) {
+      setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
+      setLoading(false);
+      return;
+    }
+
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    const currentUserId = user?.id || null;
+    
+    const prevMonth = prevMonthRef.current;
+    const prevUserId = prevUserIdRef.current;
+
+    // Only fetch if month/year or user actually changed
+    const monthChanged = !prevMonth || prevMonth.year !== currentYear || prevMonth.month !== currentMonth;
+    const userChanged = prevUserId !== currentUserId;
+
+    if (monthChanged || userChanged) {
+      prevMonthRef.current = { year: currentYear, month: currentMonth };
+      prevUserIdRef.current = currentUserId;
+      
+      // Call fetchCalendarData directly (don't include in dependencies to avoid loops)
+      fetchCalendarData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, currentDate, user?.id]);
 
   // Handle retry with better error handling
   const handleRetry = useCallback(() => {

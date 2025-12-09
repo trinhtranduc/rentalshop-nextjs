@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CalendarHeader } from './components/CalendarHeader';
 import { CalendarNavigation } from './components/CalendarNavigation';
 import { CalendarStats } from './components/CalendarStats';
@@ -54,9 +54,20 @@ export function Calendars({
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Notify parent when currentDate changes
+  // Track previous month to avoid unnecessary callbacks
+  const prevMonthRef = useRef<{ year: number; month: number } | null>(null);
+
+  // Notify parent when currentDate changes (only when month actually changes)
   useEffect(() => {
-    onMonthChange?.(currentDate);
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    const prevMonth = prevMonthRef.current;
+
+    // Only call onMonthChange if month/year actually changed
+    if (!prevMonth || prevMonth.year !== currentYear || prevMonth.month !== currentMonth) {
+      prevMonthRef.current = { year: currentYear, month: currentMonth };
+      onMonthChange?.(currentDate);
+    }
   }, [currentDate, onMonthChange]);
 
   // Navigation functions

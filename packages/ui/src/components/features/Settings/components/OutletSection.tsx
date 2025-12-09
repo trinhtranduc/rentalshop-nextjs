@@ -23,6 +23,10 @@ export interface OutletSectionProps {
     name: string;
     phone: string;
     address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
     description: string;
   };
   onEdit: () => void;
@@ -142,6 +146,90 @@ export const OutletSection: React.FC<OutletSectionProps> = ({
                 ) : (
                   <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
                     {user?.outlet?.address || t('outlet.notProvided')}
+                  </p>
+                )}
+              </div>
+
+              {/* City, State, ZIP Code - In one row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-2">
+                <div>
+                  <Label htmlFor="outletCity" className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('outlet.city') || 'City'}
+                  </Label>
+                  {isEditing && canManageOutlets ? (
+                    <Input
+                      id="outletCity"
+                      name="city"
+                      type="text"
+                      value={formData.city}
+                      onChange={onInputChange}
+                      placeholder={t('outlet.enterCity') || 'Enter city'}
+                    />
+                  ) : (
+                    <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                      {user?.outlet?.city || t('outlet.notProvided')}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="outletState" className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('outlet.state') || 'State/Province'}
+                  </Label>
+                  {isEditing && canManageOutlets ? (
+                    <Input
+                      id="outletState"
+                      name="state"
+                      type="text"
+                      value={formData.state}
+                      onChange={onInputChange}
+                      placeholder={t('outlet.enterState') || 'Enter state'}
+                    />
+                  ) : (
+                    <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                      {user?.outlet?.state || t('outlet.notProvided')}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="outletZipCode" className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('outlet.zipCode') || 'ZIP/Postal Code'}
+                  </Label>
+                  {isEditing && canManageOutlets ? (
+                    <Input
+                      id="outletZipCode"
+                      name="zipCode"
+                      type="text"
+                      value={formData.zipCode}
+                      onChange={onInputChange}
+                      placeholder={t('outlet.enterZipCode') || 'Enter ZIP code'}
+                    />
+                  ) : (
+                    <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                      {user?.outlet?.zipCode || t('outlet.notProvided')}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Country */}
+              <div className="md:col-span-2">
+                <Label htmlFor="outletCountry" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('outlet.country') || 'Country'}
+                </Label>
+                {isEditing && canManageOutlets ? (
+                  <Input
+                    id="outletCountry"
+                    name="country"
+                    type="text"
+                    value={formData.country}
+                    onChange={onInputChange}
+                    placeholder={t('outlet.enterCountry') || 'Enter country'}
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
+                    {user?.outlet?.country || t('outlet.notProvided')}
                   </p>
                 )}
               </div>
