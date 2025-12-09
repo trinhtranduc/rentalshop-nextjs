@@ -75,13 +75,21 @@ export default function CalendarPage() {
       });
       
       // 🎯 NEW: Use specialized calendar API with startDate and endDate
-      // Use UTC date format (YYYY-MM-DD) to match backend
+      // Use UTC date format (YYYY-MM-DD) to match backend API validation
       const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
       const endOfMonth = new Date(currentYear, currentMonth, 0);
       
+      // Format dates as YYYY-MM-DD for API (not YYYY/MM/DD from getUTCDateKey)
+      const formatDateForAPI = (date: Date): string => {
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
       const result = await calendarApi.getCalendarOrders({
-        startDate: getUTCDateKey(startOfMonth),
-        endDate: getUTCDateKey(endOfMonth),
+        startDate: formatDateForAPI(startOfMonth),
+        endDate: formatDateForAPI(endOfMonth),
         outletId: user?.outletId,
         limit: 4 // Max 4 orders per day
       });
@@ -137,9 +145,12 @@ export default function CalendarPage() {
     if (monthChanged || userChanged) {
       prevMonthRef.current = { year: currentYear, month: currentMonth };
       prevUserIdRef.current = currentUserId;
+      
+      // Call fetchCalendarData directly (don't include in dependencies to avoid loops)
       fetchCalendarData();
     }
-  }, [authenticated, currentDate, user?.id, fetchCalendarData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, currentDate, user?.id]);
 
   // Handle retry with better error handling
   const handleRetry = useCallback(() => {
