@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocale as useNextIntlLocale } from 'next-intl';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from './button';
 import { Input } from './input';
@@ -210,8 +211,32 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     });
   };
 
+  // Get locale from next-intl
+  const locale = useNextIntlLocale() as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+  
+  // Map locale to Intl locale string
+  const intlLocaleMap: Record<string, string> = {
+    'vi': 'vi-VN',
+    'en': 'en-US',
+    'zh': 'zh-CN',
+    'ko': 'ko-KR',
+    'ja': 'ja-JP'
+  };
+  const intlLocale = intlLocaleMap[locale] || 'vi-VN';
+  
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentMonth);
-  const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  
+  // Get weekdays based on locale
+  const weekdays = React.useMemo(() => {
+    const date = new Date(2024, 0, 7); // Sunday
+    const days: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(date);
+      day.setDate(date.getDate() + i);
+      days.push(day.toLocaleDateString(intlLocale, { weekday: 'short' }));
+    }
+    return days;
+  }, [intlLocale]);
 
   return (
     <div className={cn("relative", className)} ref={containerRef}>
@@ -278,7 +303,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             </Button>
             
             <h4 className="text-sm font-medium text-gray-900">
-              {currentMonth.toLocaleDateString('en-US', { 
+              {currentMonth.toLocaleDateString(intlLocale, { 
                 month: 'long', 
                 year: 'numeric' 
               })}
