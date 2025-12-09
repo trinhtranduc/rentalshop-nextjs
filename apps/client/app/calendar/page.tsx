@@ -8,6 +8,7 @@ import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTrans
 import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
+import { ORDER_STATUS } from '@rentalshop/constants';
 import type { PickupOrder } from '@rentalshop/ui';
 
 export default function CalendarPage() {
