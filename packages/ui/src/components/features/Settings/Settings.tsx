@@ -88,7 +88,7 @@ const createSettingsMenuItems = (t: any) => [
 
 export const SettingsComponent: React.FC = () => {
   const t = useSettingsTranslations();
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, refreshUser } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const { currency, setCurrency } = useCurrency();
   const router = useRouter();
@@ -402,35 +402,10 @@ export const SettingsComponent: React.FC = () => {
       console.log('🔧 API response:', response);
       
       if (response.success) {
-        console.log('🔧 API success, updating localStorage...');
+        console.log('🔧 API success, refreshing user data...');
         
-        // Update authData in localStorage (NOT 'user' key - it's 'authData')
-        const storedAuth = localStorage.getItem('authData');
-        console.log('🔧 storedAuth before update:', storedAuth ? 'exists' : 'null');
-        
-        if (storedAuth) {
-          const authData = JSON.parse(storedAuth);
-          console.log('🔧 authData.user.merchant before:', authData.user?.merchant);
-          
-          if (authData.user && authData.user.merchant) {
-            // Only update the country field (API already updated all fields in database)
-            authData.user.merchant.country = merchantFormData.country;
-            console.log('🔧 Updated country in authData.user.merchant:', authData.user.merchant.country);
-            
-            localStorage.setItem('authData', JSON.stringify(authData));
-            console.log('✅ Updated merchant country in localStorage:', authData.user.merchant.country);
-            
-            // IMPORTANT: Also update user object in memory so next Edit shows new country
-            if (user && user.merchant) {
-              user.merchant.country = merchantFormData.country;
-              console.log('✅ Updated merchant country in memory:', user.merchant.country);
-            }
-          } else {
-            console.log('❌ authData.user.merchant is null/undefined');
-          }
-        } else {
-          console.log('❌ No authData found in localStorage');
-        }
+        // Refresh user data from API to get updated merchant info
+        await refreshUser();
         
         setIsEditingMerchant(false);
         toastSuccess('Success', t('messages.businessInfoUpdated'));
@@ -453,6 +428,11 @@ export const SettingsComponent: React.FC = () => {
       setIsUpdating(true);
       const response = await settingsApi.updateOutletInfo(outletFormData);
       if (response.success) {
+        console.log('🔧 Outlet update success, refreshing user data...');
+        
+        // Refresh user data from API to get updated outlet info
+        await refreshUser();
+        
         setIsEditingOutlet(false);
         toastSuccess('Success', t('messages.outletInfoUpdated'));
       } else {
