@@ -249,11 +249,35 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
     }
 
     // Check if user can access this outlet
-    if (user.role !== USER_ROLE.ADMIN && existingOutlet.merchantId !== userScope.merchantId) {
-      return NextResponse.json(
-        ResponseBuilder.error('FORBIDDEN'),
-        { status: 403 }
-      );
+    // Authorization rules:
+    // - ADMIN: Can update any outlet
+    // - MERCHANT: Can update outlets of their merchant (check merchantId)
+    // - OUTLET_ADMIN: Can update their assigned outlet (check outletId)
+    // - OUTLET_STAFF: Cannot update (only view permission)
+    if (user.role !== USER_ROLE.ADMIN) {
+      if (user.role === USER_ROLE.MERCHANT) {
+        // MERCHANT: Must be same merchant
+        if (existingOutlet.merchantId !== userScope.merchantId) {
+          return NextResponse.json(
+            ResponseBuilder.error('FORBIDDEN'),
+            { status: 403 }
+          );
+        }
+      } else if (user.role === USER_ROLE.OUTLET_ADMIN) {
+        // OUTLET_ADMIN: Must be their assigned outlet
+        if (existingOutlet.id !== userScope.outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('FORBIDDEN'),
+            { status: 403 }
+          );
+        }
+      } else {
+        // OUTLET_STAFF or other roles: Cannot update outlets
+        return NextResponse.json(
+          ResponseBuilder.error('FORBIDDEN'),
+          { status: 403 }
+        );
+      }
     }
 
     // Check if trying to deactivate default outlet
