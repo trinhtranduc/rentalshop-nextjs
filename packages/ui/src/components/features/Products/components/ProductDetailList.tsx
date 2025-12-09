@@ -116,15 +116,15 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
               {formatRentalPrice(product.rentPrice, product.pricingType, t, formatCurrency)}
             </p>
             <p className="text-sm text-muted-foreground mt-0.5">{getRentalPriceLabel(product.pricingType, t)}</p>
-          </div>
-          {product.salePrice && product.salePrice > 0 && (
+            </div>
+            {product.salePrice && product.salePrice > 0 && (
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t('fields.salePrice')}</label>
               <p className="text-base font-semibold text-action-success">
-                {formatCurrency(product.salePrice)}
+                  {formatCurrency(product.salePrice)}
               </p>
-            </div>
-          )}
+              </div>
+            )}
           {product.costPrice && product.costPrice > 0 && (
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t('fields.costPrice')}</label>
@@ -136,7 +136,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t('fields.deposit')}</label>
             <p className="text-base font-semibold">
-              {formatCurrency(product.deposit)}
+                {formatCurrency(product.deposit)}
             </p>
           </div>
         </div>
