@@ -24,6 +24,7 @@ import {
   DollarSign, 
   Users, 
   CreditCard,
+  ShoppingCart,
   Plus,
   Trash2,
   CheckCircle,
@@ -98,6 +99,7 @@ interface PlanFormData {
   maxUsers: number;
   maxProducts: number;
   maxCustomers: number;
+  maxOrders: number;
   features: string[];
   isActive: boolean;
   isPopular: boolean;
@@ -225,6 +227,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
     maxUsers: getLimitValue('users', 'maxUsers', 1),
     maxProducts: getLimitValue('products', 'maxProducts', 10),
     maxCustomers: getLimitValue('customers', 'maxCustomers', 50),
+    maxOrders: getLimitValue('orders', 'maxOrders', -1), // Default to unlimited (-1)
     features: parseFeatures(initialData?.features || []),
     isActive: initialData?.isActive !== undefined ? initialData.isActive : true,
     isPopular: initialData?.isPopular !== undefined ? initialData.isPopular : false,
@@ -261,6 +264,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
       maxUsers: limits.users ?? prev.maxUsers,
       maxProducts: limits.products ?? prev.maxProducts,
       maxCustomers: limits.customers ?? prev.maxCustomers,
+      maxOrders: limits.orders ?? prev.maxOrders,
       features: parseFeatures(initialData?.features || []),
       isActive: initialData.isActive ?? prev.isActive,
       isPopular: initialData.isPopular ?? prev.isPopular,
@@ -333,6 +337,10 @@ export const PlanForm: React.FC<PlanFormProps> = ({
       newErrors.maxCustomers = 'Max customers must be -1 (unlimited) or positive';
     }
 
+    if (formData.maxOrders < -1) {
+      newErrors.maxOrders = 'Max orders must be -1 (unlimited) or positive';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -360,7 +368,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         users: formData.maxUsers,
         products: formData.maxProducts,
         customers: formData.maxCustomers,
-        orders: 0, // Default, can be updated later
+        orders: formData.maxOrders, // ✅ Use formData.maxOrders instead of hardcoded 0
         allowWebAccess: formData.allowWebAccess,
         allowMobileAccess: formData.allowMobileAccess,
       };
@@ -913,12 +921,23 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                 error={!!errors.maxCustomers}
               />
               {errors.maxCustomers && <p className="text-sm text-red-500">{errors.maxCustomers}</p>}
+
+              <LimitInput
+                id="maxOrders"
+                label="Max Orders"
+                value={formData.maxOrders}
+                onChange={(value) => handleInputChange('maxOrders', value)}
+                placeholder="-1 (unlimited)"
+                helpText="Use -1 for unlimited"
+                error={!!errors.maxOrders}
+              />
+              {errors.maxOrders && <p className="text-sm text-red-500">{errors.maxOrders}</p>}
             </div>
 
             {/* Limits Preview */}
             <div className="bg-bg-secondary p-4 rounded-lg">
               <div className="text-sm text-text-secondary mb-2">Limits Preview:</div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div>
                   <div className="flex items-center gap-2">
                     <Package className="w-4 h-4 text-text-tertiary" />
@@ -946,6 +965,13 @@ export const PlanForm: React.FC<PlanFormProps> = ({
                     <span className="text-text-secondary">Customers:</span>
                   </div>
                   <div className="font-medium text-text-primary">{getLimitText(formData.maxCustomers)}</div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="w-4 h-4 text-text-tertiary" />
+                    <span className="text-text-secondary">Orders:</span>
+                  </div>
+                  <div className="font-medium text-text-primary">{getLimitText(formData.maxOrders)}</div>
                 </div>
               </div>
             </div>

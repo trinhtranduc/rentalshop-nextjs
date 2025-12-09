@@ -304,6 +304,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
     totalStock: product.totalStock,
     rentPrice: product.rentPrice,
     salePrice: product.salePrice,
+    costPrice: product.costPrice, // Include costPrice (giá vốn)
     deposit: product.deposit,
     images: product.images,
     isActive: product.isActive,
@@ -1062,85 +1063,43 @@ export const simplifiedProducts = {
    */
   create: async (data: any) => {
     try {
-      console.log('🔍 simplifiedProducts.create called with data:', JSON.stringify(data, null, 2));
-      console.log('🔍 Category check:', {
-        hasCategoryId: !!data.categoryId,
-        hasCategoryConnect: !!(data.category && data.category.connect),
-        categoryIdValue: data.categoryId,
-        categoryConnectId: data.category?.connect?.id
-      });
+      // Get merchant ID for default category fallback
+      const merchantId = data.merchant?.connect?.id;
       
-      // If no category provided (neither categoryId nor category.connect), get or create default category
-      // Check both categoryId and category.connect to avoid overriding explicitly set category
-      const hasCategory = data.categoryId || (data.category && data.category.connect);
-      console.log('🔍 hasCategory result:', hasCategory);
+      // Check if category is provided (either via categoryId or category.connect)
+      const providedCategoryId = data.categoryId || data.category?.connect?.id;
       
-      if (!hasCategory && data.merchant && data.merchant.connect && data.merchant.connect.id) {
-        const merchantPublicId = data.merchant.connect.id; // This is the public ID (number)
-        console.log('⚠️ No category provided, creating default category for merchant:', merchantPublicId);
-        const defaultCategory = await getOrCreateDefaultCategory(merchantPublicId);
-        
-        // Add category connection to data
-        data.category = { connect: { id: defaultCategory.id } };
-        console.log('✅ Using default category:', defaultCategory.id, 'for merchant:', merchantPublicId);
-      } else if (data.category && data.category.connect) {
-        // Validate category exists and is active
-        const categoryId = data.category.connect.id;
-        console.log('🔍 Validating category:', categoryId);
-        
+      // If category is provided, validate it
+      if (providedCategoryId) {
         const category = await prisma.category.findUnique({
-          where: { id: categoryId },
+          where: { id: providedCategoryId },
           select: { id: true, merchantId: true, isActive: true, name: true }
         });
         
-        console.log('🔍 Category lookup result:', category);
-        
         if (!category) {
-          const errorMsg = `Category with id ${categoryId} not found`;
-          console.error('❌', errorMsg);
-          throw new Error(errorMsg);
+          throw new Error(`Category with id ${providedCategoryId} not found`);
         }
         
         if (!category.isActive) {
-          const errorMsg = `Category "${category.name}" (id: ${categoryId}) is not active`;
-          console.error('❌', errorMsg);
-          throw new Error(errorMsg);
+          throw new Error(`Category "${category.name}" (id: ${providedCategoryId}) is not active`);
         }
         
         // Validate merchant match if merchant is provided
-        if (data.merchant && data.merchant.connect) {
-          const merchantId = data.merchant.connect.id;
-          console.log('🔍 Checking merchant match:', { categoryMerchantId: category.merchantId, providedMerchantId: merchantId });
-          if (category.merchantId !== merchantId) {
-            const errorMsg = `Category "${category.name}" (id: ${categoryId}) does not belong to merchant ${merchantId}. It belongs to merchant ${category.merchantId}`;
-            console.error('❌', errorMsg);
-            throw new Error(errorMsg);
-          }
+        if (merchantId && category.merchantId !== merchantId) {
+          throw new Error(`Category "${category.name}" (id: ${providedCategoryId}) does not belong to merchant ${merchantId}`);
         }
         
-        console.log('✅ Using provided category:', categoryId, `(${category.name})`);
-      } else {
-        console.log('⚠️ No category logic matched - hasCategory:', hasCategory, 'category:', data.category);
-      }
-      
-      // Ensure category is set before creating product
-      // If category.connect exists but validation passed, keep it
-      // If no category at all, ensure we have one
-      if (!data.category && !data.categoryId && data.merchant && data.merchant.connect && data.merchant.connect.id) {
-        console.log('⚠️ No category found in final data, creating default category');
-        const merchantPublicId = data.merchant.connect.id;
-        const defaultCategory = await getOrCreateDefaultCategory(merchantPublicId);
+        // Ensure category.connect is set (convert categoryId to connect format if needed)
+        if (!data.category?.connect) {
+          data.category = { connect: { id: providedCategoryId } };
+        }
+      } else if (merchantId) {
+        // No category provided, use default category
+        const defaultCategory = await getOrCreateDefaultCategory(merchantId);
         data.category = { connect: { id: defaultCategory.id } };
-        console.log('✅ Added default category:', defaultCategory.id);
       }
       
-      console.log('🔍 Final data before Prisma create:', JSON.stringify({
-        name: data.name,
-        category: data.category,
-        categoryId: data.categoryId,
-        merchant: data.merchant
-      }, null, 2));
-      
+      // Create product
       const product = await prisma.product.create({
         data,
         include: {
@@ -1154,13 +1113,6 @@ export const simplifiedProducts = {
         }
       });
       
-      console.log('🔍 Product created with category:', {
-        productId: product.id,
-        categoryId: product.categoryId,
-        categoryName: product.category?.name
-      });
-      
-      console.log('✅ Product created successfully:', product.id);
       return product;
     } catch (error) {
       console.error('❌ Error in simplifiedProducts.create:', error);

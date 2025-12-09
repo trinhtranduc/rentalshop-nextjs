@@ -173,13 +173,28 @@ const db = {
 
 /**
  * Check database connection health
+ * Enhanced with detailed error information for diagnostics
  */
 const checkDatabaseConnection = async () => {
   try {
+    console.log('🔍 DATABASE CONNECTION CHECK: Starting...');
     await prisma.$queryRaw`SELECT 1`;
+    console.log('✅ DATABASE CONNECTION CHECK: Success');
     return { status: 'connected' };
-  } catch (error) {
-    return { status: 'disconnected', error: error instanceof Error ? error.message : 'Unknown error' };
+  } catch (error: any) {
+    console.error('❌ DATABASE CONNECTION CHECK: Failed', {
+      errorName: error?.name,
+      errorMessage: error?.message,
+      errorCode: error?.code,
+      isPrismaError: error?.name === 'PrismaClientInitializationError',
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+    });
+    return { 
+      status: 'disconnected', 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      errorName: error?.name,
+      errorCode: error?.code,
+    };
   }
 };
 

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { ResponseBuilder, handleApiError, formatFullName } from '@rentalshop/utils';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
 
@@ -102,14 +102,9 @@ export const GET = async (
     } catch (error: any) {
       console.error('❌ Error fetching order:', error);
       
-      // Use ResponseBuilder for consistent error format
-      const errorCode = error?.code || 'INTERNAL_SERVER_ERROR';
-      const errorMessage = error?.message || 'An error occurred';
-      
-      return NextResponse.json(
-        ResponseBuilder.error(errorCode, errorMessage),
-        { status: 500 }
-      );
+      // Use unified error handling system (uses ResponseBuilder internally)
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
   })(request);
 }
@@ -132,6 +127,8 @@ export const PUT = async (
   
   return withPermissions(['orders.update'])(async (request, { user, userScope }) => {
     try {
+      console.log(`🔍 PUT /api/orders/[orderId] - User: ${user.email} (${user.role})`);
+      console.log(`🔍 PUT /api/orders/[orderId] - UserScope:`, userScope);
 
       // Check if the ID is numeric (public ID)
       if (!/^\d+$/.test(orderId)) {
@@ -146,7 +143,7 @@ export const PUT = async (
       // Get user scope for merchant isolation
       const userMerchantId = userScope.merchantId;
       
-      if (!userMerchantId) {
+      if (!userMerchantId && user.role !== USER_ROLE.ADMIN) {
         return NextResponse.json(
           ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 400 }
@@ -157,6 +154,12 @@ export const PUT = async (
       const body = await request.json();
       console.log('🔍 PUT /api/orders/[orderId] - Update request body:', body);
 
+      // ✅ Auto-fill outletId from userScope if not provided
+      if (!body.outletId && userScope.outletId) {
+        console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
+        body.outletId = userScope.outletId;
+      }
+
       // Check if order exists and user has access to it
       const existingOrder = await db.orders.findById(orderIdNum);
       if (!existingOrder) {
@@ -164,6 +167,87 @@ export const PUT = async (
           ResponseBuilder.error('ORDER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
+      }
+
+      // ✅ Validate outletId if provided in update
+      if (body.outletId !== undefined) {
+        const targetOutletId = body.outletId;
+        
+        // If updating outletId, validate based on user role
+        if (targetOutletId !== existingOrder.outletId) {
+          // Get target outlet to validate
+          const targetOutlet = await db.outlets.findById(targetOutletId);
+          if (!targetOutlet) {
+            return NextResponse.json(
+              ResponseBuilder.error('OUTLET_NOT_FOUND'),
+              { status: 404 }
+            );
+          }
+
+          // Outlet users cannot change order outlet
+          if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+            if (targetOutletId !== userScope.outletId) {
+              return NextResponse.json(
+                ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
+                { status: 403 }
+              );
+            }
+          }
+
+          // Non-admin users can only move to outlets from same merchant
+          if (user.role !== USER_ROLE.ADMIN) {
+            // Get existing order's outlet to check merchant
+            const existingOutlet = await db.outlets.findById(existingOrder.outletId);
+            if (!existingOutlet) {
+              return NextResponse.json(
+                ResponseBuilder.error('OUTLET_NOT_FOUND'),
+                { status: 404 }
+              );
+            }
+
+            if (targetOutlet.merchantId !== existingOutlet.merchantId) {
+              return NextResponse.json(
+                ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT'),
+                { status: 403 }
+              );
+            }
+
+            // Verify target outlet belongs to user's merchant
+            if (targetOutlet.merchantId !== userScope.merchantId) {
+              return NextResponse.json(
+                ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT'),
+                { status: 403 }
+              );
+            }
+          }
+        } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+          // If not changing outletId but user is outlet-level, validate current order belongs to their outlet
+          if (existingOrder.outletId !== userScope.outletId) {
+            return NextResponse.json(
+              ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+              { status: 403 }
+            );
+          }
+        }
+      } else {
+        // If no outletId in update, validate existing order belongs to user's scope
+        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+          if (existingOrder.outletId !== userScope.outletId) {
+            return NextResponse.json(
+              ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+              { status: 403 }
+            );
+          }
+        } else if (user.role !== USER_ROLE.ADMIN) {
+          // Non-admin users can only update orders from their merchant
+          const existingOutlet = await db.outlets.findById(existingOrder.outletId);
+          if (existingOutlet && existingOutlet.merchantId !== userScope.merchantId) {
+            return NextResponse.json(
+              ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT'),
+              { status: 403 }
+            );
+          }
+        }
       }
 
       // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
@@ -194,13 +278,15 @@ export const PUT = async (
         outletId: fullOrder.outletId,
         outletName: fullOrder.outlet?.name || null,
         customerId: fullOrder.customerId,
-        customerName: fullOrder.customer ? `${fullOrder.customer.firstName} ${fullOrder.customer.lastName}`.trim() : null,
+        customerFirstName: fullOrder.customer?.firstName || null,
+        customerLastName: fullOrder.customer?.lastName || null,
+        customerName: fullOrder.customer ? formatFullName(fullOrder.customer.firstName, fullOrder.customer.lastName) : null,
         customerPhone: fullOrder.customer?.phone || null,
         customerEmail: fullOrder.customer?.email || null,
         merchantId: null, // Will be populated from outlet if needed
         merchantName: null, // Will be populated from outlet if needed
         createdById: fullOrder.createdById,
-        createdByName: fullOrder.createdBy ? `${fullOrder.createdBy.firstName} ${fullOrder.createdBy.lastName}`.trim() : null,
+        createdByName: fullOrder.createdBy ? formatFullName(fullOrder.createdBy.firstName, fullOrder.createdBy.lastName) : null,
         totalAmount: fullOrder.totalAmount,
         depositAmount: fullOrder.depositAmount,
         securityDeposit: fullOrder.securityDeposit,
@@ -283,14 +369,9 @@ export const PUT = async (
     } catch (error: any) {
       console.error('❌ Error updating order:', error);
       
-      // Use ResponseBuilder for consistent error format
-      const errorCode = error?.code || 'INTERNAL_SERVER_ERROR';
-      const errorMessage = error?.message || 'An error occurred';
-      
-      return NextResponse.json(
-        ResponseBuilder.error(errorCode, errorMessage),
-        { status: 500 }
-      );
+      // Use unified error handling system (uses ResponseBuilder internally)
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
     }
   })(request);
 }

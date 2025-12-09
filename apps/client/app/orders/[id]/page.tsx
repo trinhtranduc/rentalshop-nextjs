@@ -80,10 +80,7 @@ export default function OrderDetailPage() {
   const handleCancelOrder = async (orderToCancel: Order) => {
     if (!orderToCancel) return;
 
-    if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
-      return;
-    }
-
+    // ✅ No need for confirm() - OrderDetail component already has ConfirmationDialog
     try {
       setActionLoading(true);
 

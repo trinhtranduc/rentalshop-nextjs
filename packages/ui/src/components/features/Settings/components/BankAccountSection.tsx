@@ -39,33 +39,12 @@ export const BankAccountSection: React.FC<BankAccountSectionProps> = ({
   const { toastSuccess, toastError } = useToast();
   const t = useBankAccountTranslations();
   const tc = useCommonTranslations();
+  
+  // ✅ ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   // ✅ Use permissions hook for UI control
   const { canManageBankAccounts, canViewBankAccounts, hasPermission, permissions } = usePermissions();
   
-  // Debug logging for permissions
-  console.log('🔍 BankAccountSection - User:', user);
-  console.log('🔍 BankAccountSection - User role:', user?.role);
-  console.log('🔍 BankAccountSection - Permissions:', permissions);
-  console.log('🔍 BankAccountSection - Has bankAccounts.view:', hasPermission('bankAccounts.view'));
-  console.log('🔍 BankAccountSection - Has bankAccounts.manage:', hasPermission('bankAccounts.manage'));
-  console.log('🔍 BankAccountSection - canViewBankAccounts:', canViewBankAccounts);
-  console.log('🔍 BankAccountSection - canManageBankAccounts:', canManageBankAccounts);
-  
-  // ✅ If user cannot view bank accounts, don't render anything
-  if (!canViewBankAccounts) {
-    console.warn('⚠️ BankAccountSection - User cannot view bank accounts, returning null');
-    return null;
-  }
-
-  const outletId = user?.outlet?.id || user?.outletId || 0;
-  const merchantId = user?.merchant?.id || user?.merchantId || 0;
-
-  // Debug logging for IDs
-  console.log('🔍 BankAccountSection - outletId:', outletId);
-  console.log('🔍 BankAccountSection - merchantId:', merchantId);
-  console.log('🔍 BankAccountSection - user.outlet:', user?.outlet);
-  console.log('🔍 BankAccountSection - user.merchant:', user?.merchant);
-
+  // ✅ State hooks - must be called unconditionally
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -74,7 +53,27 @@ export const BankAccountSection: React.FC<BankAccountSectionProps> = ({
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
-  // Fetch bank accounts
+  // ✅ Get IDs after hooks
+  const outletId = user?.outlet?.id || user?.outletId || 0;
+  const merchantId = user?.merchant?.id || user?.merchantId || 0;
+
+  // Debug logging for permissions
+  console.log('🔍 BankAccountSection - User:', user);
+  console.log('🔍 BankAccountSection - User role:', user?.role);
+  console.log('🔍 BankAccountSection - User permissions (from user object):', user?.permissions);
+  console.log('🔍 BankAccountSection - Permissions (from hook):', permissions);
+  console.log('🔍 BankAccountSection - Has bankAccounts.view:', hasPermission('bankAccounts.view'));
+  console.log('🔍 BankAccountSection - Has bankAccounts.manage:', hasPermission('bankAccounts.manage'));
+  console.log('🔍 BankAccountSection - canViewBankAccounts:', canViewBankAccounts);
+  console.log('🔍 BankAccountSection - canManageBankAccounts:', canManageBankAccounts);
+  
+  // Debug logging for IDs
+  console.log('🔍 BankAccountSection - outletId:', outletId);
+  console.log('🔍 BankAccountSection - merchantId:', merchantId);
+  console.log('🔍 BankAccountSection - user.outlet:', user?.outlet);
+  console.log('🔍 BankAccountSection - user.merchant:', user?.merchant);
+
+  // ✅ Fetch bank accounts function - must be defined before useEffect
   const fetchBankAccounts = async () => {
     console.log('🔍 BankAccountSection - fetchBankAccounts called with:', { merchantId, outletId });
     
@@ -116,11 +115,38 @@ export const BankAccountSection: React.FC<BankAccountSectionProps> = ({
     }
   };
 
+  // ✅ useEffect hook - must be called before any conditional returns
   useEffect(() => {
-    if (merchantId && outletId) {
+    if (merchantId && outletId && canViewBankAccounts) {
       fetchBankAccounts();
+    } else {
+      setLoading(false);
     }
-  }, [merchantId, outletId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merchantId, outletId, canViewBankAccounts]); // fetchBankAccounts is stable, no need in deps
+
+  // ✅ NOW we can do conditional returns AFTER all hooks
+  // ✅ If user cannot view bank accounts, show message instead of returning null
+  if (!canViewBankAccounts) {
+    console.warn('⚠️ BankAccountSection - User cannot view bank accounts');
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <p className="text-gray-500">
+              {t('messages.noPermission') || 'You do not have permission to view bank accounts.'}
+            </p>
+            <p className="text-sm text-gray-400 mt-2">
+              Required permission: bankAccounts.view
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Your permissions: {permissions.length > 0 ? permissions.join(', ') : 'None'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Handle add bank account
   const handleAdd = () => {

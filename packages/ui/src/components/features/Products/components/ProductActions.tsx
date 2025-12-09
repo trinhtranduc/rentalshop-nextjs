@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
-import { useUserRole } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { ProductAddDialog } from './ProductAddDialog';
 
 import type { ProductWithDetails, Category, Outlet } from '@rentalshop/types';
@@ -27,8 +27,8 @@ export function ProductActions({
   onProductUpdated,
   onError
 }: ProductActionsProps) {
-  // Use hook instead of prop
-  const { role: currentUserRole, canManageProducts, canManageCategories } = useUserRole();
+  // ✅ Use permissions hook for UI control
+  const { canManageProducts, canExportProducts } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null);
 
@@ -89,7 +89,7 @@ export function ProductActions({
       icon: '📤',
       variant: 'outline' as const,
       onClick: () => onAction('export-products'),
-      roles: ['ALL'] // All roles can export
+      roles: canExportProducts ? ['ALL'] : [] // ✅ Only if user has products.export permission
     },
     {
       id: 'bulk-edit',
@@ -107,7 +107,7 @@ export function ProductActions({
       icon: '🏷️',
       variant: 'outline' as const,
       onClick: () => onAction('manage-categories'),
-      roles: canManageCategories ? ['ALL'] : [] // Use permission check
+      roles: canManageProducts ? ['ALL'] : [] // ✅ Use products.manage permission (categories are part of products)
     },
     {
       id: 'inventory-check',

@@ -31,6 +31,8 @@ export function ProductGrid({
   onError,
   showAddButton = false
 }: ProductGridProps) {
+  // ✅ Use permissions hook to check if user can manage products
+  const { canManageProducts } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const handleAddProduct = () => {
@@ -63,7 +65,8 @@ export function ProductGrid({
           <p className="text-sm mb-4">
             Try adjusting your filters or add some products to get started.
           </p>
-          {showAddButton && categories.length > 0 && outlets.length > 0 && merchantId && (
+          {/* ✅ Only show Add Product button if user can manage products */}
+          {showAddButton && canManageProducts && categories.length > 0 && outlets.length > 0 && merchantId && (
             <Button
               onClick={handleAddProduct}
               className="px-4 py-2"

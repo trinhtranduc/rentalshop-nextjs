@@ -86,14 +86,17 @@ const nextConfig = {
     ];
   },
   
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${process.env.API_URL || 'http://localhost:3002'}/api/:path*`,
-      },
-    ];
-  },
+  // Removed rewrites() - client app calls API directly using NEXT_PUBLIC_API_URL
+  // API calls are made from client-side (browser) to the API URL configured in @rentalshop/utils
+  // No need to proxy through Next.js server
+  // async rewrites() {
+  //   return [
+  //     {
+  //       source: '/api/:path*',
+  //       destination: `${process.env.API_URL || 'http://localhost:3002'}/api/:path*`,
+  //     },
+  //   ];
+  // },
   
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {

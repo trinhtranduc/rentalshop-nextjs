@@ -32,7 +32,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -68,15 +68,21 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     }
 
     // Role-based outlet filtering:
-    // - MERCHANT role: Can see products from all outlets of their merchant (unless queryOutletId is specified)
+    // - MERCHANT role: Should see ALL products of merchant (outletId only for viewing stock, NOT filtering)
     // - OUTLET_ADMIN/OUTLET_STAFF: Can only see products from their assigned outlet
-    let filterOutletId = userScope.outletId;
+    // - ADMIN: No outlet filtering unless specified
+    let filterOutletId: number | undefined = undefined;
+    
     if (user.role === USER_ROLE.MERCHANT) {
-      // Merchants can see all outlets unless specifically filtering by outlet
-      filterOutletId = queryOutletId || userScope.outletId;
+      // MERCHANT: Don't filter by outlet - they should see ALL products of their merchant
+      // outletId parameter is only for viewing stock at specific outlet, not for filtering products
+      filterOutletId = undefined; // Always show all products for merchant
     } else if (user.role === USER_ROLE.ADMIN) {
       // Admins can see all products (no outlet filtering unless specified)
       filterOutletId = queryOutletId;
+    } else {
+      // OUTLET_ADMIN/OUTLET_STAFF: Always filter by their assigned outlet
+      filterOutletId = userScope.outletId;
     }
 
     // Use simplified database API with role-based filtering
@@ -99,7 +105,8 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     const result = await db.products.search(searchFilters);
     console.log('✅ Search completed, found:', result.data?.length || 0, 'products');
 
-    // Process product images - parse from database format
+    // Process product images and filter outletStock based on queryOutletId
+    // For MERCHANT role: queryOutletId is only for viewing stock at specific outlet, NOT filtering products
     const processedProducts = result.data?.map((product: any) => {
       let imageUrls: string[] = [];
       
@@ -117,9 +124,17 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         imageUrls = product.images;
       }
       
+      // For MERCHANT role: if queryOutletId is provided, filter outletStock to show only that outlet
+      // This allows merchant to see ALL products but view stock at specific outlet
+      let outletStock = product.outletStock || [];
+      if (user.role === USER_ROLE.MERCHANT && queryOutletId && outletStock.length > 0) {
+        outletStock = outletStock.filter((stock: any) => stock.outlet?.id === queryOutletId);
+      }
+      
       return {
         ...product,
-        images: imageUrls
+        images: imageUrls,
+        outletStock: outletStock // Show stock filtered by outletId (if provided)
       };
     }) || [];
 
@@ -252,7 +267,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           const validation = validateImage(file);
           if (!validation.isValid) {
             return NextResponse.json(
-              ResponseBuilder.error('IMAGE_VALIDATION_FAILED', { details: validation.error }),
+              ResponseBuilder.error('IMAGE_VALIDATION_FAILED'),
               { status: 400 }
             );
           }
@@ -303,7 +318,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           } else {
             console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
             return NextResponse.json(
-              ResponseBuilder.error('IMAGE_UPLOAD_FAILED', { details: uploadResult.error }),
+              ResponseBuilder.error('IMAGE_UPLOAD_FAILED'),
               { status: 500 }
             );
           }
@@ -356,7 +371,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     parsedResult = productCreateSchema.safeParse(productDataFromRequest);
     if (!parsedResult.success) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsedResult.error.flatten()),
+        ResponseBuilder.validationError(parsedResult.error.flatten()),
         { status: 400 }
       );
     }
@@ -380,7 +395,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     if (existingProduct) {
       console.log('❌ Product name already exists:', parsed.data.name);
       return NextResponse.json(
-        ResponseBuilder.error('PRODUCT_NAME_EXISTS', `A product with the name "${parsed.data.name}" already exists. Please choose a different name.`),
+        ResponseBuilder.error('BUSINESS_NAME_EXISTS'),
         { status: 409 }
       );
     }
@@ -394,9 +409,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       merchantId = parsed.data.merchantId;
     } else if (!merchantId) {
       return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_ID_REQUIRED', user.role === USER_ROLE.ADMIN 
-          ? 'MerchantId is required for ADMIN users when creating products' 
-          : 'User is not associated with any merchant'),
+        ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
         { status: 400 }
       );
     }
@@ -412,7 +425,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
     if (!merchant) {
       return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_NOT_FOUND', `Merchant with ID ${merchantId} not found`),
+        ResponseBuilder.error('MERCHANT_NOT_FOUND'),
         { status: 404 }
       );
     }
@@ -421,7 +434,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     // outletStock is REQUIRED - mobile must provide it
     if (!parsed.data.outletStock || !Array.isArray(parsed.data.outletStock) || parsed.data.outletStock.length === 0) {
       return NextResponse.json(
-        ResponseBuilder.error('OUTLET_STOCK_REQUIRED', 'outletStock is required. Please provide at least one outlet with stock.'),
+        ResponseBuilder.error('OUTLET_STOCK_REQUIRED'),
         { status: 400 }
       );
     }
@@ -440,7 +453,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           if (outletMerchantId !== merchant.id) {
             console.log(`❌ Outlet ${stock.outletId} does not belong to merchant ${merchant.id}`);
             return NextResponse.json(
-              ResponseBuilder.error('OUTLET_NOT_IN_MERCHANT', `Outlet with ID ${stock.outletId} does not belong to your merchant`),
+              ResponseBuilder.error('FORBIDDEN'),
               { status: 403 }
             );
           }
@@ -453,14 +466,14 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         } else {
           console.log(`❌ Outlet not found for ID: ${stock.outletId}`);
           return NextResponse.json(
-            ResponseBuilder.error('OUTLET_NOT_FOUND', `Outlet with ID ${stock.outletId} not found`),
+            ResponseBuilder.error('OUTLET_NOT_FOUND'),
             { status: 404 }
           );
         }
       } else {
         console.log(`❌ Invalid outletStock entry:`, stock);
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_OUTLET_STOCK', 'Invalid outletStock entry. Both outletId (number) and stock (number) are required.'),
+          ResponseBuilder.error('INVALID_OUTLET_STOCK'),
           { status: 400 }
         );
       }
@@ -577,7 +590,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       barcode: parsed.data.barcode,
       totalStock,
       rentPrice: parsed.data.rentPrice ?? 0,
-      salePrice: parsed.data.salePrice ?? undefined,
+      salePrice: parsed.data.salePrice ?? 0,
+      costPrice: parsed.data.costPrice ?? 0, // Include costPrice (giá vốn)
       deposit: parsed.data.deposit ?? 0,
       images: imagesValue,
       // Optional pricing configuration (default FIXED if null)

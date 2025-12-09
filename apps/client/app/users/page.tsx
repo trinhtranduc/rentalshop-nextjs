@@ -21,7 +21,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useUsersData, useCanExportData, useCommonTranslations, useUsersTranslations } from '@rentalshop/hooks';
+import { useAuth, useUsersData, useCanExportData, useCommonTranslations, useUsersTranslations, useToastHandler } from '@rentalshop/hooks';
 import { usersApi } from '@rentalshop/utils';
 import type { UserFilters, User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 
@@ -43,6 +43,7 @@ export default function UsersPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const { handleError: handleApiError } = useToastHandler();
   const t = useCommonTranslations();
   const tu = useUsersTranslations();
   const canExport = useCanExportData();
@@ -411,21 +412,44 @@ export default function UsersPage() {
         onUserCreated={async (userData) => {
           try {
             const response = await usersApi.createUser(userData);
+            console.log('🔍 page.tsx: createUser response:', {
+              success: response.success,
+              hasCode: !!(response as any).code,
+              code: (response as any).code,
+              message: (response as any).message,
+              isError: response instanceof Error,
+              type: typeof response,
+              fullResponse: response
+            });
             
             if (response.success) {
               toastSuccess(tu('messages.createSuccess'), `${tu('messages.createSuccess')} - "${userData.firstName} ${userData.lastName}"`);
               refetch();
             } else {
-              throw new Error(response.error || tu('messages.createFailed'));
+              // Pass the full response object so translateError can use the code field
+              console.log('🔍 page.tsx: Throwing response object (not Error):', response);
+              throw response;
             }
-          } catch (error) {
-            console.error('Error creating user:', error);
-            toastError(t('labels.error'), error instanceof Error ? error.message : tu('messages.createFailed'));
+          } catch (error: any) {
+            console.error('🔍 page.tsx: Error caught:', {
+              type: typeof error,
+              isError: error instanceof Error,
+              hasCode: !!error?.code,
+              code: error?.code,
+              message: error?.message,
+              success: error?.success,
+              fullError: error
+            });
+            // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
+            // This automatically translates error.code and shows toast
+            handleApiError(error);
             throw error; // Re-throw to let dialog handle it
           }
         }}
         onError={(error) => {
-          toastError(t('labels.error'), error);
+          // ✅ onUserCreated already shows toast, so onError is only for logging
+          // Don't show toast again to avoid duplicate toasts
+          console.log('🔍 page.tsx: onError callback (toast already shown by onUserCreated):', error);
         }}
       />
 

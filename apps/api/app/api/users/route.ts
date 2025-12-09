@@ -42,7 +42,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
     const parsed = usersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -161,7 +161,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
   } catch (error) {
     console.error('❌ GET /api/users error:', error);
     return NextResponse.json(
-      ResponseBuilder.error('RETRIEVE_USERS_FAILED', 'Failed to retrieve users'),
+      ResponseBuilder.error('RETRIEVE_USERS_FAILED'),
       { status: 500 }
     );
   }
@@ -191,7 +191,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -288,7 +288,7 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
     
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -299,7 +299,7 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
     
     if (!id) {
       return NextResponse.json(
-        ResponseBuilder.error('USER_ID_REQUIRED', 'User ID is required in request body'),
+        ResponseBuilder.error('USER_ID_REQUIRED'),
         { status: 400 }
       );
     }
@@ -308,7 +308,7 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
     const existingUser = await db.users.findById(id);
     if (!existingUser) {
       return NextResponse.json(
-        ResponseBuilder.error('USER_NOT_FOUND', 'User not found'),
+        ResponseBuilder.error('USER_NOT_FOUND'),
         { status: 404 }
       );
     }
@@ -316,7 +316,7 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
     // Scope validation
     if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
       return NextResponse.json(
-        ResponseBuilder.error('UPDATE_USER_OUT_OF_SCOPE', 'Cannot update user outside your scope'),
+        ResponseBuilder.error('UPDATE_USER_OUT_OF_SCOPE'),
         { status: 403 }
       );
     }
@@ -352,7 +352,7 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
   } catch (error) {
     console.error('❌ PUT /api/users error:', error);
     return NextResponse.json(
-      ResponseBuilder.error('UPDATE_USER_FAILED', 'Failed to update user'),
+      ResponseBuilder.error('UPDATE_USER_FAILED'),
       { status: 500 }
     );
   }
@@ -379,7 +379,7 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
 
     if (!userId) {
       return NextResponse.json(
-        ResponseBuilder.error('USER_ID_REQUIRED', 'User ID is required'),
+        ResponseBuilder.error('USER_ID_REQUIRED'),
         { status: 400 }
       );
     }
@@ -387,7 +387,7 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
     // Prevent deleting yourself
     if (userId === user.id) {
       return NextResponse.json(
-        ResponseBuilder.error('CANNOT_DELETE_SELF', 'You cannot delete your own account. Please contact another administrator.'),
+        ResponseBuilder.error('CANNOT_DELETE_SELF'),
         { status: 403 }
       );
     }
@@ -396,7 +396,7 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
     const existingUser = await db.users.findById(userId);
     if (!existingUser) {
       return NextResponse.json(
-        ResponseBuilder.error('USER_NOT_FOUND', 'User not found'),
+        ResponseBuilder.error('USER_NOT_FOUND'),
         { status: 404 }
       );
     }
@@ -406,7 +406,7 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
     // Scope validation
     if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
       return NextResponse.json(
-        ResponseBuilder.error('DELETE_USER_OUT_OF_SCOPE', 'Cannot delete user outside your scope'),
+        ResponseBuilder.error('DELETE_USER_OUT_OF_SCOPE'),
         { status: 403 }
       );
     }
@@ -422,7 +422,7 @@ export const DELETE = withPermissions(['users.manage'])(async (request, { user, 
 
       if (adminCount <= 1) {
         return NextResponse.json(
-          ResponseBuilder.error('CANNOT_DELETE_LAST_ADMIN', 'Cannot delete the last administrator. Please assign another administrator first.'),
+          ResponseBuilder.error('CANNOT_DELETE_LAST_ADMIN'),
           { status: 403 }
         );
       }

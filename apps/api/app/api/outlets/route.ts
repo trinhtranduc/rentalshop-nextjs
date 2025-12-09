@@ -20,7 +20,7 @@ export const GET = withPermissions(['outlet.view'])(async (request, { user, user
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -112,12 +112,10 @@ export const POST = withPermissions(['outlet.manage'])(async (request, { user, u
     const body = await request.json();
     const parsed = outletCreateSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ 
-        success: false, 
-        code: 'INVALID_PAYLOAD',
-        message: 'Invalid payload', 
-        error: parsed.error.flatten() 
-      }, { status: 400 });
+      return NextResponse.json(
+        ResponseBuilder.validationError(parsed.error.flatten()),
+        { status: 400 }
+      );
     }
 
     // Get merchantId from userScope or from request body
@@ -154,11 +152,7 @@ export const POST = withPermissions(['outlet.manage'])(async (request, { user, u
     if (existingOutlet) {
       console.log('❌ Outlet name already exists:', parsed.data.name);
       return NextResponse.json(
-        {
-          success: false,
-          code: 'OUTLET_NAME_EXISTS',
-          message: `An outlet with the name "${parsed.data.name}" already exists. Please choose a different name.`
-        },
+        ResponseBuilder.error('OUTLET_NAME_EXISTS'),
         { status: 409 }
       );
     }
@@ -229,7 +223,7 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
     const parsed = outletUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -255,11 +249,35 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
     }
 
     // Check if user can access this outlet
-    if (user.role !== USER_ROLE.ADMIN && existingOutlet.merchantId !== userScope.merchantId) {
-      return NextResponse.json(
-        ResponseBuilder.error('FORBIDDEN'),
-        { status: 403 }
-      );
+    // Authorization rules:
+    // - ADMIN: Can update any outlet
+    // - MERCHANT: Can update outlets of their merchant (check merchantId)
+    // - OUTLET_ADMIN: Can update their assigned outlet (check outletId)
+    // - OUTLET_STAFF: Cannot update (only view permission)
+    if (user.role !== USER_ROLE.ADMIN) {
+      if (user.role === USER_ROLE.MERCHANT) {
+        // MERCHANT: Must be same merchant
+        if (existingOutlet.merchantId !== userScope.merchantId) {
+          return NextResponse.json(
+            ResponseBuilder.error('FORBIDDEN'),
+            { status: 403 }
+          );
+        }
+      } else if (user.role === USER_ROLE.OUTLET_ADMIN) {
+        // OUTLET_ADMIN: Must be their assigned outlet
+        if (existingOutlet.id !== userScope.outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('FORBIDDEN'),
+            { status: 403 }
+          );
+        }
+      } else {
+        // OUTLET_STAFF or other roles: Cannot update outlets
+        return NextResponse.json(
+          ResponseBuilder.error('FORBIDDEN'),
+          { status: 403 }
+        );
+      }
     }
 
     // Check if trying to deactivate default outlet
@@ -282,11 +300,7 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
       if (duplicateOutlet) {
         console.log('❌ Outlet name already exists:', parsed.data.name);
         return NextResponse.json(
-          {
-            success: false,
-            code: 'OUTLET_NAME_EXISTS',
-            message: `An outlet with the name "${parsed.data.name}" already exists. Please choose a different name.`
-          },
+          ResponseBuilder.error('OUTLET_NAME_EXISTS'),
           { status: 409 }
         );
       }
@@ -375,11 +389,7 @@ export const DELETE = withPermissions(['outlet.manage'])(async (request, { user,
     if (existingOutlet.isDefault) {
       console.log('❌ Cannot delete default outlet:', id);
       return NextResponse.json(
-        {
-          success: false,
-          code: 'CANNOT_DELETE_DEFAULT_OUTLET',
-          message: 'Cannot delete the default outlet. This is the main outlet created during registration and must remain active.'
-        },
+        ResponseBuilder.error('CANNOT_DELETE_DEFAULT_OUTLET'),
         { status: 400 }
       );
     }

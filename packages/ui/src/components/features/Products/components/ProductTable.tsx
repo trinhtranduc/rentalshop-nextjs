@@ -13,6 +13,7 @@ import {
 } from '../../../ui/dropdown-menu';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
 import { getProductImageUrl } from '@rentalshop/utils/client';
 import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-react';
@@ -32,6 +33,8 @@ export function ProductTable({
   sortOrder = 'asc',
   onSort 
 }: ProductTableProps) {
+  // ✅ Use permissions hook for UI control
+  const { canManageProducts, canViewProducts, canDeleteOrders } = usePermissions();
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   
   // Use formatCurrency hook - automatically uses merchant's currency
@@ -199,7 +202,7 @@ export function ProductTable({
                       </div>
                       {product.barcode && (
                         <div className="text-gray-500 dark:text-gray-400 text-xs">
-                          SKU: {product.barcode}
+                          Barcode: {product.barcode}
                         </div>
                       )}
                     </div>
@@ -287,6 +290,8 @@ export function ProductTable({
                       open={openDropdownId === product.id}
                       onOpenChange={(open: boolean) => setOpenDropdownId(open ? product.id : null)}
                     >
+                      {/* ✅ View - Available if user can view products */}
+                      {canViewProducts && (
                       <DropdownMenuItem onClick={() => {
                         onProductAction('view', product.id);
                         setOpenDropdownId(null);
@@ -294,6 +299,10 @@ export function ProductTable({
                         <Eye className="h-4 w-4 mr-2" />
                         {t('actions.viewDetails')}
                       </DropdownMenuItem>
+                      )}
+                      
+                      {/* ✅ Edit - Only available if user can manage products */}
+                      {canManageProducts && (
                       <DropdownMenuItem onClick={() => {
                         onProductAction('edit', product.id);
                         setOpenDropdownId(null);
@@ -301,6 +310,11 @@ export function ProductTable({
                         <Edit className="h-4 w-4 mr-2" />
                         {t('actions.edit')}
                       </DropdownMenuItem>
+                      )}
+                      
+                      {/* ✅ View Orders - Available if user can view orders */}
+                      {canViewProducts && (
+                        <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => {
                         onProductAction('view-orders', product.id);
@@ -309,6 +323,9 @@ export function ProductTable({
                         <ShoppingCart className="h-4 w-4 mr-2" />
                         {t('actions.viewOrders')}
                       </DropdownMenuItem>
+                        </>
+                      )}
+                      
                       {/* Activate/Deactivate hidden as requested */}
                       {/* <DropdownMenuItem onClick={() => {
                         onProductAction('toggle-status', product.id);
@@ -317,6 +334,10 @@ export function ProductTable({
                         <Package className="h-4 w-4 mr-2" />
                         {product.isActive ? t('actions.deactivate') : t('actions.activate')}
                       </DropdownMenuItem> */}
+                      
+                      {/* ✅ Delete - Only available if user can manage products */}
+                      {canManageProducts && (
+                        <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 
                         onClick={() => {
@@ -328,6 +349,8 @@ export function ProductTable({
                         <Trash2 className="h-4 w-4 mr-2" />
                         {t('actions.delete')}
                       </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>

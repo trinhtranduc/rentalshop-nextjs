@@ -114,7 +114,7 @@ export async function PUT(
       // Block OUTLET_STAFF from updating bank accounts
       if (user.role === USER_ROLE.OUTLET_STAFF) {
         return NextResponse.json(
-          ResponseBuilder.error('FORBIDDEN', 'OUTLET_STAFF cannot update bank accounts'),
+          ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }
         );
       }
@@ -257,7 +257,7 @@ export async function DELETE(
       // Block OUTLET_STAFF from deleting bank accounts
       if (user.role === USER_ROLE.OUTLET_STAFF) {
         return NextResponse.json(
-          ResponseBuilder.error('FORBIDDEN', 'OUTLET_STAFF cannot delete bank accounts'),
+          ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }
         );
       }

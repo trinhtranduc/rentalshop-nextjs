@@ -21,7 +21,8 @@ import {
 } from '@rentalshop/ui';
 import { Plus } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useCategoriesWithFilters, useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useCategoriesWithFilters, useCategoriesTranslations, useCommonTranslations, useToastHandler } from '@rentalshop/hooks';
+import { usePermissions } from '@rentalshop/hooks';
 import { categoriesApi } from '@rentalshop/utils';
 import type { CategoryFilters, Category } from '@rentalshop/types';
 
@@ -34,8 +35,11 @@ export default function CategoriesPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const { handleError } = useToastHandler();
   const t = useCommonTranslations();
   const tc = useCategoriesTranslations();
+  // ✅ Use permissions hook to check if user can manage products (categories are part of products)
+  const { canManageProducts } = usePermissions();
   
   // Dialog states
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -222,14 +226,17 @@ export default function CategoriesPage() {
               {tc('title')}
             </PageTitle>
           </div>
-          <Button 
-            onClick={() => setShowAddDialog(true)}
-            variant="default"
-            size="sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {t('buttons.add')} {t('labels.category')}
-          </Button>
+          {/* ✅ Only show Add Category button if user can manage products */}
+          {canManageProducts && (
+            <Button 
+              onClick={() => setShowAddDialog(true)}
+              variant="default"
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t('buttons.add')} {t('labels.category')}
+            </Button>
+          )}
         </div>
       </PageHeader>
 
@@ -300,16 +307,29 @@ export default function CategoriesPage() {
               toastSuccess(tc('messages.createSuccess'), tc('messages.createSuccess'));
               refetch();
             } else {
-              throw new Error(response.error || tc('messages.createFailed'));
+              // Pass the full response object so translateError can use the code field
+              console.log('🔍 page.tsx: Throwing response object (not Error):', response);
+              throw response;
             }
-          } catch (error) {
-            console.error('Error creating category:', error);
-            toastError(tc('messages.createFailed'), error instanceof Error ? error.message : tc('messages.createFailed'));
+          } catch (error: any) {
+            console.error('🔍 page.tsx: Error caught:', {
+              type: typeof error,
+              isError: error instanceof Error,
+              hasCode: !!error?.code,
+              code: error?.code,
+              message: error?.message,
+              success: error?.success,
+              fullError: error
+            });
+            // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
+            // This automatically translates error.code and shows toast
+            handleError(error);
             throw error; // Re-throw to let dialog handle it
           }
         }}
         onError={(error) => {
-          toastError(tc('messages.createFailed'), error);
+          // ✅ onCategoryCreated already shows toast, so onError is only for logging
+          console.error('❌ AddCategoryDialog: Error occurred:', error);
         }}
       />
 

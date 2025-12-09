@@ -10,7 +10,7 @@ import type {
   OrderSearchResult,
   OrderSearchResponse
 } from '@rentalshop/types';
-import { removeVietnameseDiacritics } from '@rentalshop/utils';
+import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 
 /**
  * Performance monitoring utility
@@ -88,12 +88,10 @@ function buildOptimizedWhereClause(filters: OrderSearchFilter): any {
   // Date filters - optimized with createdAt index
   if (filters.startDate || filters.endDate) {
     where.createdAt = {};
-    if (filters.startDate) {
-      where.createdAt.gte = new Date(filters.startDate);
-    }
-    if (filters.endDate) {
-      where.createdAt.lte = new Date(filters.endDate);
-    }
+    const normalizedStart = filters.startDate ? normalizeStartDate(filters.startDate) : null;
+    const normalizedEnd = filters.endDate ? normalizeEndDate(filters.endDate) : null;
+    if (normalizedStart) where.createdAt.gte = normalizedStart;
+    if (normalizedEnd) where.createdAt.lte = normalizedEnd;
   }
 
   // Pickup date filter

@@ -10,6 +10,7 @@ import {
   Button,
   LoadingIndicator,
   ExportDialog,
+  ConfirmationDialog,
   type QuickFilterOption
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
@@ -63,6 +64,8 @@ export default function OrdersPage() {
   );
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<{ id: number; orderNumber: string } | null>(null);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -101,19 +104,42 @@ export default function OrdersPage() {
   // DATA FETCHING - Clean & Simple
   // ============================================================================
   
+  // Get merchant ID from user (for merchant/outlet users, set as default)
+  const userMerchantId = user?.merchant?.id || user?.merchantId;
+  const merchantIdParam = searchParams.get('merchant') ? parseInt(searchParams.get('merchant')!) : undefined;
+  
   // ✅ SIMPLE: Memoize filters - use strings directly, no Date objects
-  const filters: OrderFilters = useMemo(() => ({
-    search: search || undefined,
-    status: (status as any) || undefined,
-    orderType: (orderType as any) || undefined,
-    outletId,
-    startDate: startDateParam || undefined, // ⭐ String from URL params
-    endDate: endDateParam || undefined,     // ⭐ String from URL params
-    page,
-    limit,
-    sortBy,
-    sortOrder
-  }), [search, status, orderType, outletId, startDateParam, endDateParam, page, limit, sortBy, sortOrder]);
+  // For merchant/outlet users, automatically set merchantId (hidden from UI)
+  // For admin users, merchantId comes from URL params (visible in UI)
+  const filters: OrderFilters = useMemo(() => {
+    const baseFilters: OrderFilters = {
+      search: search || undefined,
+      status: (status as any) || undefined,
+      orderType: (orderType as any) || undefined,
+      outletId,
+      startDate: startDateParam || undefined, // ⭐ String from URL params
+      endDate: endDateParam || undefined,     // ⭐ String from URL params
+      page,
+      limit,
+      sortBy,
+      sortOrder
+    };
+    
+    // Only add merchantId to filters if:
+    // 1. User is ADMIN and merchantId is in URL params, OR
+    // 2. User is MERCHANT/OUTLET and we need to set their merchantId (but don't show in UI)
+    if (user?.role === 'ADMIN') {
+      // Admin can select merchant from dropdown
+      if (merchantIdParam) {
+        baseFilters.merchantId = merchantIdParam;
+      }
+    } else if (userMerchantId) {
+      // Merchant/Outlet users: automatically filter by their merchant (hidden from UI)
+      baseFilters.merchantId = Number(userMerchantId);
+    }
+    
+    return baseFilters;
+  }, [search, status, orderType, outletId, startDateParam, endDateParam, page, limit, sortBy, sortOrder, merchantIdParam, user?.role, userMerchantId]);
 
   const { data, loading, error, refetch } = useOrdersData({ filters });
   
@@ -177,6 +203,10 @@ export default function OrdersPage() {
     if ('outletId' in newFilters) {
       updates.outlet = newFilters.outletId as any;
     }
+    // Only update merchantId in URL if user is ADMIN (merchant/outlet users don't see this field)
+    if ('merchantId' in newFilters && user?.role === 'ADMIN') {
+      updates.merchant = newFilters.merchantId as any;
+    }
     if ('sortBy' in newFilters) {
       updates.sortBy = newFilters.sortBy;
     }
@@ -185,7 +215,7 @@ export default function OrdersPage() {
     }
     
     updateURL(updates);
-  }, [updateURL]);
+  }, [updateURL, user?.role]);
 
   const handleClearFilters = useCallback(() => {
     console.log('🔧 Page: Clear all filters');
@@ -300,19 +330,9 @@ export default function OrdersPage() {
       case 'cancel':
         const orderForCancel = data?.orders.find(o => o.orderNumber === orderNumber);
         if (orderForCancel) {
-          if (!confirm(t('messages.confirmCancel'))) return;
-          try {
-            const response = await ordersApi.cancelOrder(orderForCancel.id);
-            if (response.success) {
-              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
-              // ✅ Force re-fetch by updating URL (trigger data refresh)
-              refetch();
-            } else {
-              throw new Error(response.error || t('messages.updateFailed'));
-            }
-          } catch (error) {
-            toastError(t('messages.updateFailed'), (error as Error).message);
-          }
+          // Show confirmation dialog instead of browser confirm()
+          setOrderToCancel({ id: orderForCancel.id, orderNumber: orderForCancel.orderNumber });
+          setShowCancelConfirmDialog(true);
         }
         break;
         
@@ -476,6 +496,7 @@ export default function OrdersPage() {
             showQuickFilters={true}                         // 🆕 Show date range filter
             filterStyle="dropdown"                          // 🆕 Dropdown style (Shopify/Stripe)
             showStats={false}
+            userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
           />
         )}
       </div>
@@ -513,6 +534,38 @@ export default function OrdersPage() {
           } finally {
             setIsExporting(false);
           }
+        }}
+      />
+
+      {/* Cancel Order Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showCancelConfirmDialog}
+        onOpenChange={setShowCancelConfirmDialog}
+        type="danger"
+        title={t('detail.cancelOrderTitle') || 'Cancel Order'}
+        description={t('detail.cancelOrderMessage') || t('messages.confirmCancel') || 'Are you sure you want to cancel this order? This action cannot be undone.'}
+        confirmText={t('actions.cancelOrder') || 'Cancel Order'}
+        cancelText={t('detail.keepOrder') || 'Keep Order'}
+        onConfirm={async () => {
+          if (!orderToCancel) return;
+          try {
+            const response = await ordersApi.cancelOrder(orderToCancel.id);
+            if (response.success) {
+              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
+              setShowCancelConfirmDialog(false);
+              setOrderToCancel(null);
+              // ✅ Force re-fetch by updating URL (trigger data refresh)
+              refetch();
+            } else {
+              throw new Error(response.error || t('messages.updateFailed'));
+            }
+          } catch (error) {
+            toastError(t('messages.updateFailed'), (error as Error).message);
+          }
+        }}
+        onCancel={() => {
+          setShowCancelConfirmDialog(false);
+          setOrderToCancel(null);
         }}
       />
     </PageWrapper>

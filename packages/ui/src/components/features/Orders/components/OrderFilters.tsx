@@ -79,19 +79,38 @@ export const OrderFilters = React.memo(function OrderFilters({
   // OUTLET FILTERING - Fetch outlets for dropdown
   // ============================================================================
   
-  // Determine if outlet filter should be enabled
+  // Determine if outlet filter should be shown (completely hidden for outlet users)
+  const shouldShowOutletFilter = React.useMemo(() => {
+    // OUTLET_ADMIN and OUTLET_STAFF should not see outlet filter (they only have one outlet)
+    if (userRole === 'OUTLET_ADMIN' || userRole === 'OUTLET_STAFF') {
+      return false;
+    }
+    return true; // ADMIN and MERCHANT can see outlet filter
+  }, [userRole]);
+
+  // Determine if outlet filter should be enabled (can interact with it)
   const isOutletFilterEnabled = React.useMemo(() => {
+    if (!shouldShowOutletFilter) {
+      return false; // Hidden, so not enabled
+    }
     if (userRole === 'MERCHANT') {
-      return true; // Merchants can always filter by outlet
+      return true; // Merchants can always filter by outlet (they have multiple outlets)
     }
     if (userRole === 'ADMIN') {
       return 'merchantId' in filters && (filters as any).merchantId; // Admin needs merchant selected first
     }
-    return false; // Other roles don't need outlet filter
-  }, [userRole, filters]);
+    return false;
+  }, [userRole, filters, shouldShowOutletFilter]);
 
   // Fetch outlets based on user role and selected merchant
   useEffect(() => {
+    // Don't fetch if filter should be hidden
+    if (!shouldShowOutletFilter) {
+      setOutlets([]);
+      return;
+    }
+
+    // Don't fetch if filter is disabled (waiting for merchant selection for ADMIN)
     if (!isOutletFilterEnabled) {
       setOutlets([]);
       return;
@@ -107,7 +126,7 @@ export const OrderFilters = React.memo(function OrderFilters({
           // Admin: fetch outlets for selected merchant
           result = await outletsApi.getOutletsByMerchant((filters as any).merchantId);
         } else {
-          // Merchant: fetch all outlets (they can only see their own)
+          // Merchant: fetch all outlets (they can only see their own via backend filtering)
           result = await outletsApi.getOutlets();
         }
         
@@ -127,17 +146,15 @@ export const OrderFilters = React.memo(function OrderFilters({
     };
 
     fetchOutlets();
-  }, [isOutletFilterEnabled, userRole, filters]);
+  }, [shouldShowOutletFilter, isOutletFilterEnabled, userRole, filters]);
 
   // ============================================================================
   // FETCH MERCHANTS (admin only, one-time)
   // ===========================================================================-
   
   useEffect(() => {
-    // Check if merchantId filter is present in filters (admin view)
-    const hasMerchantFilter = 'merchantId' in filters;
-    
-    if (hasMerchantFilter) {
+    // Only fetch merchants for ADMIN users
+    if (userRole === 'ADMIN') {
       const fetchMerchants = async () => {
         try {
           setLoadingMerchants(true);
@@ -161,7 +178,7 @@ export const OrderFilters = React.memo(function OrderFilters({
 
       fetchMerchants();
     }
-  }, []); // Only run once
+  }, [userRole]); // Run when userRole changes
 
   // ============================================================================
   // HANDLERS - Simple passthrough to parent
@@ -250,7 +267,7 @@ export const OrderFilters = React.memo(function OrderFilters({
           </Select>
           
           {/* Merchant Filter - SearchableSelect (Admin only) */}
-          {'merchantId' in filters && (
+          {userRole === 'ADMIN' && (
             <SearchableSelect
               value={(filters as any).merchantId as number | undefined}
               onChange={(value) => handleFilterChange('merchantId' as keyof OrderFiltersType, value || undefined)}
@@ -266,7 +283,8 @@ export const OrderFilters = React.memo(function OrderFilters({
             />
           )}
           
-          {/* Outlet Filter - SearchableSelect */}
+          {/* Outlet Filter - SearchableSelect (Hidden for OUTLET users) */}
+          {shouldShowOutletFilter && (
           <SearchableSelect
             value={filters.outletId ? Number(filters.outletId) : undefined}
             onChange={(value) => handleFilterChange('outletId', value || undefined)}
@@ -289,6 +307,7 @@ export const OrderFilters = React.memo(function OrderFilters({
             emptyText="No outlets found"
             disabled={!isOutletFilterEnabled}
           />
+          )}
           
       {/* Clear Filters Button */}
       {onClearFilters && (filters.status || filters.orderType || filters.outletId || (filters as any).merchantId || localSearch) && (

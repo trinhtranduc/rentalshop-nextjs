@@ -37,6 +37,7 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   taxId?: string;
   currency: string; // Currency code (USD, VND)
   isActive: boolean;
+  avatar?: string; // Avatar image URL
   
   // Subscription and plan information
   planId?: number;
@@ -111,6 +112,7 @@ export interface MerchantCreateInput extends BaseFormInput {
   pricingType?: string; // Pricing type (FIXED, HOURLY, DAILY)
   planId?: number;
   isActive?: boolean;
+  avatar?: string; // Avatar image URL
 }
 
 /**
@@ -131,6 +133,7 @@ export interface MerchantUpdateInput extends BaseUpdateInput {
   taxId?: number;
   currency?: string; // Currency code (USD, VND)
   isActive?: boolean;
+  avatar?: string; // Avatar image URL
 }
 
 // ============================================================================

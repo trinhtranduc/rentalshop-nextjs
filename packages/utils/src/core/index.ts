@@ -38,9 +38,11 @@ export {
 
 // Export unified ApiResponse type from errors.ts (re-exported from response-builder)
 export type { 
-  ApiResponse,
-  ErrorCode
+  ApiResponse
 } from './errors';
+
+// Export ErrorCode enum as value (not type, since it's an enum)
+export { ErrorCode } from './errors';
 
 // Export types from common.ts
 export type { StoredUser } from './common';
@@ -138,6 +140,9 @@ export {
 // export * from './customer-utils';
 // export * from './product-utils';
 // export * from './user-utils';
+
+// Export pure utility functions from badge-utils (safe for server-side use)
+export { formatRoleDisplayName } from './badge-utils';
 
 // Validation (plan limits validation now consolidated in validation.ts)
 export * from './validation';

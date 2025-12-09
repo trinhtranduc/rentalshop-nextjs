@@ -94,7 +94,17 @@
     "collectionAmount": "Số tiền thu",
     "collateral": "Thế chấp",
     "alreadyCollected": "Đã thu tiền",
-    "noCollectionNeeded": "Không cần thu tiền"
+    "noCollectionNeeded": "Không cần thu tiền",
+    "pickupOrderTitle": "Lấy hàng - Chi tiết thu tiền",
+    "returnOrderTitle": "Trả hàng - Chi tiết hoàn tiền",
+    "confirmPickup": "Xác nhận lấy hàng & Thu tiền",
+    "confirmReturn": "Xác nhận trả hàng & Hoàn tiền",
+    "collectFromCustomer": "Thu từ khách hàng",
+    "returnToCustomer": "Hoàn trả cho khách hàng",
+    "orderNumberLabel": "Đơn hàng",
+    "customerLabel": "Khách hàng",
+    "statusLabel": "Trạng thái",
+    "close": "Đóng"
   },
   "payment": {
     "subtotal": "Tạm tính",
@@ -201,7 +211,7 @@
     "noBarcode": "Không có mã vạch",
     "noCategory": "Không có danh mục",
     "outOfStock": "Hết hàng",
-    "lowStock": "Sắp hết hàng",
+    "lowStockLabel": "Sắp hết hàng",
     "inStock": "Còn hàng",
     "error": "Lỗi",
     "duplicateCustomer": "Khách hàng trùng lặp",

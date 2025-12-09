@@ -24,6 +24,50 @@ export const DATE_RANGE_PERIODS: Record<DateRangePeriod, { days: number; label: 
 export const MAX_DATE_RANGE_DAYS = 365;
 
 /**
+ * Normalize start date to beginning of day (00:00:00.000)
+ * Useful for date range filtering to ensure all records from the start date are included
+ * 
+ * @param date - Date object or date string
+ * @returns Date object set to beginning of day (00:00:00.000)
+ * 
+ * @example
+ * normalizeStartDate('2025-12-06') // 2025-12-06T00:00:00.000Z
+ * normalizeStartDate(new Date('2025-12-06T15:30:00')) // 2025-12-06T00:00:00.000Z
+ */
+export function normalizeStartDate(date: Date | string | null | undefined): Date | null {
+  if (!date) return null;
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(dateObj.getTime())) return null;
+  
+  const normalized = new Date(dateObj);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+}
+
+/**
+ * Normalize end date to end of day (23:59:59.999)
+ * Useful for date range filtering to ensure all records from the end date are included
+ * 
+ * @param date - Date object or date string
+ * @returns Date object set to end of day (23:59:59.999)
+ * 
+ * @example
+ * normalizeEndDate('2025-12-06') // 2025-12-06T23:59:59.999Z
+ * normalizeEndDate(new Date('2025-12-06T15:30:00')) // 2025-12-06T23:59:59.999Z
+ */
+export function normalizeEndDate(date: Date | string | null | undefined): Date | null {
+  if (!date) return null;
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(dateObj.getTime())) return null;
+  
+  const normalized = new Date(dateObj);
+  normalized.setHours(23, 59, 59, 999);
+  return normalized;
+}
+
+/**
  * Get date range from period option
  * 
  * @param period - Period option (1month, 3months, 6months, 1year)
@@ -135,8 +179,12 @@ export function parseDateRangeFromQuery(
       return { error: 'Both startDate and endDate are required for custom range' };
     }
     
-    const startDate = new Date(startDateParam);
-    const endDate = new Date(endDateParam);
+    const startDate = normalizeStartDate(startDateParam);
+    const endDate = normalizeEndDate(endDateParam);
+    
+    if (!startDate || !endDate) {
+      return { error: 'Invalid date format' };
+    }
     
     // Validate date range
     const validation = validateDateRange(startDate, endDate);

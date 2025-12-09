@@ -139,12 +139,20 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   }, [orderItems, formData.discountType, formData.discountValue]);
 
   // Calculate deposit amount for rent orders
+  // Deposit = sum of (deposit per unit * quantity) for each item
+  // Auto-calculate when items change, user can manually override depositAmount
   useEffect(() => {
     if (formData.orderType === 'RENT') {
-      const totalDeposit = orderItems.reduce((sum, item) => sum + (item.deposit ?? 0), 0);
+      const calculatedDeposit = orderItems.reduce((sum, item) => {
+        // item.deposit is deposit per unit, multiply by quantity
+        return sum + ((item.deposit ?? 0) * (item.quantity || 1));
+      }, 0);
+      
+      // Auto-update depositAmount when items change
+      // User can manually change depositAmount and it will be sent to backend as-is
       setFormData(prev => ({
         ...prev,
-        depositAmount: totalDeposit,
+        depositAmount: calculatedDeposit,
       }));
     } else {
       setFormData(prev => ({
@@ -237,7 +245,10 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         
         // Calculate deposit amount from order items after they're set
         if (initialOrder.orderType === 'RENT') {
-          const totalDeposit = initialOrderItems.reduce((sum, item) => sum + (item.deposit ?? 0), 0);
+          // Calculate: deposit per unit * quantity for each item
+          const totalDeposit = initialOrderItems.reduce((sum, item) => {
+            return sum + ((item.deposit ?? 0) * (item.quantity || 1));
+          }, 0);
           setFormData(prev => ({
             ...prev,
             depositAmount: totalDeposit,
@@ -306,7 +317,14 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   const updateOrderItem = useCallback((productId: number, field: keyof OrderItemFormData, value: string | number) => {
     const updatedItems = orderItems.map(item => {
       if (item.productId === productId) {
-        return { ...item, [field]: value };
+        const updatedItem = { ...item, [field]: value };
+        
+        // Recalculate totalPrice when quantity or unitPrice changes
+        if (field === 'quantity' || field === 'unitPrice') {
+          updatedItem.totalPrice = (updatedItem.unitPrice || 0) * (updatedItem.quantity || 1);
+        }
+        
+        return updatedItem;
       }
       return item;
     });

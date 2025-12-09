@@ -13,15 +13,10 @@ All detailed documentation is available in the [`docs/`](docs/) folder:
 
 ### Deployment & Infrastructure
 - **[Railway Deployment](docs/RAILWAY_DEPLOY.md)** - 🚀 Complete deployment guide for Railway (Recommended)
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - General deployment instructions
-- **[Railway CLI Steps](docs/RAILWAY_CLI_STEPS.md)** - Railway CLI usage
-- **[Railway Database URL Guide](docs/RAILWAY_DATABASE_URL_GUIDE.md)** - Database URL configuration
+- **[Database Migration Workflow](docs/DATABASE_MIGRATION_WORKFLOW.md)** - 🗄️ Migration workflow: Dev → Production với case cụ thể
 
 ### Email Configuration
-- **[Email Setup Guide](docs/EMAIL_SETUP_GUIDE.md)** - Email service configuration
-- **[Email Configuration Checklist](docs/EMAIL_CONFIGURATION_CHECKLIST.md)** - Email setup checklist
-- **[Email Verification Setup](docs/EMAIL_VERIFICATION_SETUP.md)** - Email verification flow
-- **[AWS SES Setup](docs/AWS_SES_SETUP.md)** - AWS SES configuration
+- **[AWS SES Complete Setup](docs/AWS_SES_COMPLETE_SETUP.md)** - 📧 Complete AWS SES setup guide (domain verification, IAM, troubleshooting)
 
 ### Development
 - **[Git Workflow Guide](docs/GIT_WORKFLOW_GUIDE.md)** - Git workflow and best practices

@@ -32,9 +32,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
     // Validate required fields
     if (!endpoint || !token) {
       return NextResponse.json(
-        ResponseBuilder.error('MISSING_ENDPOINT_OR_TOKEN', {
-          message: 'endpoint and token query parameters are required'
-        }),
+        ResponseBuilder.error('MISSING_ENDPOINT_OR_TOKEN'),
         { status: 400 }
       );
     }
@@ -222,7 +220,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     if (action === 'preview') {
       if (!entities || !Array.isArray(entities) || entities.length === 0) {
         return NextResponse.json(
-          { success: false, error: 'MISSING_ENTITIES' },
+          ResponseBuilder.error('MISSING_ENTITIES'),
           { status: 400 }
         );
       }
@@ -879,13 +877,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         console.error('❌ Sync failed partially. Session can be resumed or rolled back:', syncSession.id);
 
         return NextResponse.json(
-          ResponseBuilder.error('SYNC_PARTIALLY_FAILED', {
-            message: error.message || 'Sync failed partially',
-            sessionId: syncSession.id,
-            stats,
-            canResume: true,
-            canRollback: true
-          }),
+          ResponseBuilder.error('SYNC_PARTIALLY_FAILED'),
           { status: 500 }
         );
       }

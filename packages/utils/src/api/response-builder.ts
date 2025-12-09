@@ -107,6 +107,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   'API_KEY_NAME_REQUIRED': 'API key name is required',
   'VALID_USER_ID_REQUIRED': 'Valid user ID is required',
   
+  // Plan Limits
+  'PLAN_LIMIT_EXCEEDED': 'Plan limit exceeded',
+  'CANNOT_DELETE_ADDON_LIMIT_EXCEEDED': 'Cannot delete addon: Current usage exceeds limits after deletion',
+  'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET': 'Cannot create order for other outlet. You can only create orders for your assigned outlet.',
+  'CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT': 'Cannot create order for outlet from different merchant.',
+  'CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET': 'Cannot update order from other outlet. You can only update orders from your assigned outlet.',
+  'CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT': 'Cannot update order from outlet of different merchant.',
+  
   // Password Reset Errors
   'PASSWORD_RESET_TOKEN_INVALID': 'Password reset token is invalid',
   'PASSWORD_RESET_TOKEN_EXPIRED': 'Password reset token has expired',
@@ -221,26 +229,12 @@ export class ResponseBuilder {
   /**
    * Build error response
    * @param code - Error code (e.g., 'INVALID_CREDENTIALS')
-   * @param error - Optional error details
+   * Note: Only accepts error code to ensure translation system works properly
+   * Message is automatically fetched from ERROR_MESSAGES or translation files
    */
-  static error(code: string, error?: any): ApiResponse {
-    // Ensure error is always a string
-    let errorString: string;
-    
-    if (typeof error === 'string') {
-      errorString = error;
-    } else if (error && typeof error === 'object') {
-      // Convert object to readable string
-      if (error.message) {
-        errorString = error.message;
-      } else if (error.details) {
-        errorString = error.details;
-      } else {
-        errorString = JSON.stringify(error);
-      }
-    } else {
-      errorString = getDefaultMessage(code);
-    }
+  static error(code: string): ApiResponse {
+    // Automatically get message from ERROR_MESSAGES or translation system
+    const errorString = getDefaultMessage(code);
     
     return {
       success: false,
@@ -308,12 +302,18 @@ export class ResponseBuilder {
       });
     }
     
+    // Return validation error with field-level details in error field
+    // Message comes from translation system via error code
     const errorString = errorMessages.length > 0 
       ? errorMessages.join('; ') 
       : 'Input validation failed';
     
-    // Reuse ResponseBuilder.error() for consistency
-    return ResponseBuilder.error('VALIDATION_ERROR', errorString);
+    return {
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: getDefaultMessage('VALIDATION_ERROR'),
+      error: errorString // Keep detailed validation errors for debugging
+    };
   }
 
 }
@@ -346,15 +346,12 @@ export function buildErrorResponseFromError(error: any): ApiResponse {
 
   // Custom error with code
   if (error?.code) {
-    return ResponseBuilder.error(error.code, error.details);
+    return ResponseBuilder.error(error.code);
   }
 
   // Standard errors
   const code = getErrorCode(error);
-  return ResponseBuilder.error(code, {
-    message: error?.message,
-    stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
-  });
+  return ResponseBuilder.error(code);
 }
 
 /**
@@ -399,6 +396,13 @@ export function getErrorStatusCode(error: any, defaultCode: number = 500): numbe
   if (code === 'BUSINESS_RULE_VIOLATION') return 422;
   if (code?.includes('PRODUCT_NO_STOCK')) return 422;
   if (code === 'PLAN_LIMIT_EXCEEDED') return 422;
+  if (code === 'CANNOT_DELETE_ADDON_LIMIT_EXCEEDED') return 422;
+  
+  // Authorization errors for order creation/update (403)
+  if (code === 'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET') return 403;
+  if (code === 'CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT') return 403;
+  if (code === 'CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET') return 403;
+  if (code === 'CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT') return 403;
   
   // Service unavailable (503)
   if (code === 'SERVICE_UNAVAILABLE') return 503;

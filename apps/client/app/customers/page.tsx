@@ -18,7 +18,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useCustomersData, useCanExportData, useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useCustomersData, useCanExportData, useCustomerTranslations, useCommonTranslations, useToastHandler } from '@rentalshop/hooks';
 import { customersApi } from '@rentalshop/utils';
 import type { CustomerFilters, Customer, CustomerUpdateInput } from '@rentalshop/types';
 
@@ -40,6 +40,7 @@ export default function CustomersPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  const { handleError } = useToastHandler();
   const t = useCustomerTranslations();
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
@@ -360,6 +361,7 @@ export default function CustomersPage() {
             const response = await customersApi.createCustomer({
               ...customerData,
               phone: customerData.phone || '', // Ensure phone is not undefined
+              lastName: customerData.lastName || '', // Ensure lastName is not undefined
               merchantId: user?.merchant?.id || user?.merchantId || 0
             });
             
@@ -367,16 +369,29 @@ export default function CustomersPage() {
               toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
               refetch();
             } else {
-              throw new Error(response.error || t('messages.createFailed'));
+              // Pass the full response object so translateError can use the code field
+              console.log('🔍 page.tsx: Throwing response object (not Error):', response);
+              throw response;
             }
-          } catch (error) {
-            console.error('Error creating customer:', error);
-            toastError(tc('labels.error'), error instanceof Error ? error.message : t('messages.createFailed'));
+          } catch (error: any) {
+            console.error('🔍 page.tsx: Error caught:', {
+              type: typeof error,
+              isError: error instanceof Error,
+              hasCode: !!error?.code,
+              code: error?.code,
+              message: error?.message,
+              success: error?.success,
+              fullError: error
+            });
+            // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
+            // This automatically translates error.code and shows toast
+            handleError(error);
             throw error; // Re-throw to let dialog handle it
           }
         }}
         onError={(error) => {
-          toastError(tc('labels.error'), error);
+          // ✅ onCustomerCreated already shows toast, so onError is only for logging
+          console.error('❌ AddCustomerDialog: Error occurred:', error);
         }}
       />
 

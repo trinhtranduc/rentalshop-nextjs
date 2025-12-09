@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { prisma } from './client';
-import { calculateSubscriptionPrice, getPricingBreakdown } from '@rentalshop/utils';
+import { calculateSubscriptionPrice, getPricingBreakdown, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   Subscription, 
@@ -286,8 +286,10 @@ export async function searchSubscriptions(filters: {
 
   if (filters.startDate || filters.endDate) {
     where.currentPeriodStart = {};
-    if (filters.startDate) where.currentPeriodStart.gte = filters.startDate;
-    if (filters.endDate) where.currentPeriodStart.lte = filters.endDate;
+    const normalizedStart = filters.startDate ? normalizeStartDate(filters.startDate) : null;
+    const normalizedEnd = filters.endDate ? normalizeEndDate(filters.endDate) : null;
+    if (normalizedStart) where.currentPeriodStart.gte = normalizedStart;
+    if (normalizedEnd) where.currentPeriodStart.lte = normalizedEnd;
   }
 
   // Get total count
@@ -800,8 +802,10 @@ export async function getSubscriptionPaymentHistory(
 
   if (filters?.startDate || filters?.endDate) {
     where.createdAt = {};
-    if (filters.startDate) where.createdAt.gte = filters.startDate;
-    if (filters.endDate) where.createdAt.lte = filters.endDate;
+    const normalizedStart = filters.startDate ? normalizeStartDate(filters.startDate) : null;
+    const normalizedEnd = filters.endDate ? normalizeEndDate(filters.endDate) : null;
+    if (normalizedStart) where.createdAt.gte = normalizedStart;
+    if (normalizedEnd) where.createdAt.lte = normalizedEnd;
   }
 
   const limit = filters?.limit || 20;
@@ -1069,8 +1073,10 @@ export const simplifiedSubscriptions = {
     // Date range filters
     if (whereFilters.startDate || whereFilters.endDate) {
       where.createdAt = {};
-      if (whereFilters.startDate) where.createdAt.gte = whereFilters.startDate;
-      if (whereFilters.endDate) where.createdAt.lte = whereFilters.endDate;
+      const normalizedStart = whereFilters.startDate ? normalizeStartDate(whereFilters.startDate) : null;
+      const normalizedEnd = whereFilters.endDate ? normalizeEndDate(whereFilters.endDate) : null;
+      if (normalizedStart) where.createdAt.gte = normalizedStart;
+      if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
     const [subscriptions, total] = await Promise.all([

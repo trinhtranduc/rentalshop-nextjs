@@ -9,7 +9,7 @@
 import { prisma } from './client';
 import type { UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { hashPassword } from '@rentalshop/auth';
-import { removeVietnameseDiacritics } from '@rentalshop/utils';
+import { removeVietnameseDiacritics, ApiError, ErrorCode } from '@rentalshop/utils';
 
 // ============================================================================
 // USER LOOKUP FUNCTIONS
@@ -545,7 +545,7 @@ export const simplifiedUsers = {
         });
         
         if (existingEmail) {
-          throw new Error(`Email ${userData.email} is already registered`);
+          throw new ApiError(ErrorCode.EMAIL_EXISTS);
         }
       }
 
@@ -560,7 +560,7 @@ export const simplifiedUsers = {
         });
         
         if (existingPhone) {
-          throw new Error(`Phone number ${userData.phone} is already registered in this merchant`);
+          throw new ApiError(ErrorCode.PHONE_EXISTS);
         }
       }
 

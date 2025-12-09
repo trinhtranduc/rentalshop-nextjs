@@ -113,7 +113,15 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={onCancel}
+                onClick={(e) => {
+                  // Prevent all default behaviors
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // Call reset handler
+                  onCancel();
+                  // Explicitly return false to prevent any form submission
+                  return false;
+                }}
                 className="flex-1"
               >
                 {isEditMode ? t('messages.cancel') : t('messages.resetSelection')}

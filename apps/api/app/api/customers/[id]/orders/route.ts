@@ -42,7 +42,7 @@ export async function GET(
           outletId: userScope.outletId
         });
         return NextResponse.json(
-          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED', 'User must be associated with a merchant'),
+          ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
           { status: 403 }
         );
       }

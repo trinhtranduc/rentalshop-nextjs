@@ -61,7 +61,7 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }

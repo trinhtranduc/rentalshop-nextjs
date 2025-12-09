@@ -16,7 +16,8 @@ import {
   CardHeader,
   CardTitle,
   Switch,
-  SearchableSelect
+  SearchableSelect,
+  useToast
 } from '@rentalshop/ui';
 import { merchantsApi } from '@rentalshop/utils';
 import { Calendar, DollarSign, CreditCard, User, Package } from 'lucide-react';
@@ -120,6 +121,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   mode = 'create', // ✅ NEW: Default to create mode
   existingPayment // ✅ NEW: Existing payment data for edit mode
 }) => {
+  const { toastError } = useToast();
   // ✅ Initialize form data based on mode
   const [formData, setFormData] = useState<PaymentFormData>(() => {
     if (mode === 'edit' && existingPayment) {
@@ -300,7 +302,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     e.preventDefault();
     
     if (formData.extendSubscription && !formData.monthsToExtend) {
-      alert('Please specify months to extend when extending subscription');
+      // ✅ Use toast instead of alert
+      toastError('Validation Error', 'Please specify months to extend when extending subscription');
       return;
     }
     
@@ -310,7 +313,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       const endDate = new Date(formData.endDate);
       
       if (endDate <= startDate) {
-        alert('End date must be after start date');
+        // ✅ Use toast instead of alert
+        toastError('Validation Error', 'End date must be after start date');
         return;
       }
     }

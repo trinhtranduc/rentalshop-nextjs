@@ -64,6 +64,7 @@ export async function GET(
           categoryId: product.categoryId,
           rentPrice: product.rentPrice,
           salePrice: product.salePrice,
+          costPrice: product.costPrice, // Include costPrice (giá vốn)
           deposit: product.deposit,
           totalStock: product.totalStock,
           images: Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []),

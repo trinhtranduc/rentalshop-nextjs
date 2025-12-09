@@ -11,6 +11,8 @@
     "build": "npx prisma generate --schema=./prisma/schema.prisma && turbo run build --concurrency=12",
     "dev": "turbo run dev",
     "dev:all": "turbo run dev --concurrency=20",
+    "dev:all:development": "concurrently -n \"API,ADMIN,CLIENT\" -c \"blue,green,yellow\" \"cd apps/api && NEXT_PUBLIC_API_URL=https://dev-api.anyrent.shop NODE_ENV=development yarn dev\" \"cd apps/admin && NEXT_PUBLIC_API_URL=https://dev-api.anyrent.shop NODE_ENV=development yarn dev\" \"cd apps/client && NEXT_PUBLIC_API_URL=https://dev-api.anyrent.shop NODE_ENV=development yarn dev\"",
+    "dev:all:production": "concurrently -n \"API,ADMIN,CLIENT\" -c \"blue,green,yellow\" \"cd apps/api && NEXT_PUBLIC_API_URL=https://api.anyrent.shop NODE_ENV=production yarn dev\" \"cd apps/admin && NEXT_PUBLIC_API_URL=https://api.anyrent.shop NODE_ENV=production yarn dev\" \"cd apps/client && NEXT_PUBLIC_API_URL=https://api.anyrent.shop NODE_ENV=production yarn dev\"",
     "dev:client": "cd apps/client && yarn dev",
     "dev:admin": "cd apps/admin && yarn dev",
     "dev:api": "cd apps/api && yarn dev",
@@ -41,6 +43,7 @@
     "@types/node": "^20.0.0",
     "@types/qrcode.react": "^3.0.0",
     "@types/xlsx": "^0.0.36",
+    "concurrently": "^9.2.1",
     "tsup": "^8.0.0",
     "turbo": "^1.10.0",
     "typescript": "^5.0.0"

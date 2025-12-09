@@ -46,14 +46,57 @@ export async function OPTIONS(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const corsHeaders = buildCorsHeaders(request);
   
+  // 🔍 DIAGNOSTIC LOGGING: Log request origin and environment
+  const origin = request.headers.get('origin') || 'unknown';
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+  console.log('🔍 LOGIN REQUEST:', {
+    origin,
+    userAgent: userAgent.substring(0, 50),
+    timestamp: new Date().toISOString(),
+    DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+    NODE_ENV: process.env.NODE_ENV,
+  });
+  
   try {
+    // 🔍 DIAGNOSTIC LOGGING: Test Prisma client connection before use
+    try {
+      const { prisma } = await import('@rentalshop/database');
+      console.log('🔍 PRISMA CLIENT STATUS:', {
+        isInitialized: !!prisma,
+        clientType: prisma?.constructor?.name || 'unknown',
+      });
+      
+      // Test database connection with a simple query
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('✅ DATABASE CONNECTION: Successfully connected');
+    } catch (dbTestError: any) {
+      console.error('❌ DATABASE CONNECTION TEST FAILED:', {
+        errorName: dbTestError?.name,
+        errorMessage: dbTestError?.message,
+        errorCode: dbTestError?.code,
+        isPrismaError: dbTestError?.name === 'PrismaClientInitializationError',
+      });
+      // Don't throw here - let the actual query fail to get better error context
+    }
+    
     const body = await request.json();
     
     // Validate input
     const validatedData = loginSchema.parse(body);
     
+    console.log('🔍 LOGIN ATTEMPT:', {
+      email: validatedData.email,
+      emailLength: validatedData.email.length,
+    });
+    
     // Find user in database by email
+    console.log('🔍 DATABASE QUERY: Starting findByEmail...');
     const user = await db.users.findByEmail(validatedData.email);
+    console.log('🔍 DATABASE QUERY: findByEmail completed', {
+      userFound: !!user,
+      userId: user?.id,
+      userRole: user?.role,
+    });
 
     if (!user) {
       return NextResponse.json(
@@ -179,11 +222,12 @@ export async function POST(request: NextRequest) {
         const { getDefaultBankAccount } = await import('@rentalshop/database');
         const defaultBankAccount = await getDefaultBankAccount(user.outletId);
         
-        // ✅ Follow OutletReference type: { id, name, address?, merchantId, defaultBankAccount? }
+        // ✅ Follow OutletReference type: { id, name, address?, phone?, merchantId, defaultBankAccount? }
         outletData = {
           id: outlet.id,
           name: outlet.name,
           address: outlet.address || undefined,
+          phone: outlet.phone || undefined,
           merchantId: outlet.merchantId,
           defaultBankAccount: defaultBankAccount || undefined
         };
@@ -249,6 +293,15 @@ export async function POST(request: NextRequest) {
       permissionsCount: permissions.length,
       permissions: permissions
     });
+    
+    // ✅ DEBUG: Log permissions that will be sent to frontend
+    console.log('🔍 LOGIN: Permissions to be sent to frontend:', {
+      userRole: user.role,
+      permissionsCount: permissions.length,
+      permissions: permissions,
+      hasBankAccountsView: permissions.includes('bankAccounts.view'),
+      hasBankAccountsManage: permissions.includes('bankAccounts.manage'),
+    });
 
     if (permissions.length === 0) {
       console.error('❌ WARNING: getUserPermissions returned empty array!', {
@@ -303,10 +356,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { headers: corsHeaders });
     
   } catch (error: any) {
-    console.error('Login error:', error);
+    // 🔍 DIAGNOSTIC LOGGING: Detailed error information
+    console.error('❌ LOGIN ERROR DETAILS:', {
+      errorName: error?.name,
+      errorMessage: error?.message,
+      errorCode: error?.code,
+      errorStack: error?.stack?.substring(0, 500),
+      isPrismaError: error?.name === 'PrismaClientInitializationError',
+      isDatabaseError: error?.message?.includes('database') || error?.message?.includes('Can\'t reach'),
+      origin,
+      timestamp: new Date().toISOString(),
+    });
     
     // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
+    
+    console.log('🔍 ERROR RESPONSE:', {
+      statusCode,
+      errorCode: response.code,
+      errorMessage: response.message,
+    });
+    
     return NextResponse.json(response, { 
       status: statusCode,
       headers: corsHeaders

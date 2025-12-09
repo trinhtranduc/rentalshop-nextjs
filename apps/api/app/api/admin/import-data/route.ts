@@ -59,9 +59,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        ResponseBuilder.error('FILE_TOO_LARGE', {
-          message: `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`
-        }),
+        ResponseBuilder.error('FILE_TOO_LARGE'),
         { status: 400 }
       );
     }
@@ -69,9 +67,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     // Validate file type
     if (!file.name.endsWith('.json')) {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_FILE_TYPE', {
-          message: 'Only JSON files are supported'
-        }),
+        ResponseBuilder.error('INVALID_FILE_TYPE'),
         { status: 400 }
       );
     }
@@ -103,9 +99,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       parsedData = JSON.parse(fileContent);
     } catch (parseError: any) {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_JSON', {
-          message: `Failed to parse JSON: ${parseError.message}`
-        }),
+        ResponseBuilder.error('INVALID_JSON'),
         { status: 400 }
       );
     }
@@ -120,9 +114,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       // Direct array format - need entityType from formData
       if (!entityType) {
         return NextResponse.json(
-          ResponseBuilder.error('MISSING_ENTITY_TYPE', {
-            message: 'Entity type is required when importing array format. Please specify customers, products, or orders.'
-          }),
+          ResponseBuilder.error('MISSING_ENTITY_TYPE'),
           { status: 400 }
         );
       }
@@ -140,9 +132,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       
       if (foundEntities.length === 0) {
         return NextResponse.json(
-          ResponseBuilder.error('INVALID_ENTITY_TYPE', {
-            message: 'No valid entities found in data. Expected customers, products, or orders.'
-          }),
+          ResponseBuilder.error('INVALID_ENTITY_TYPE'),
           { status: 400 }
         );
       }
@@ -166,9 +156,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       } else {
         // Multiple entities found but no entityType specified
         return NextResponse.json(
-          ResponseBuilder.error('MULTIPLE_ENTITIES_FOUND', {
-            message: `Multiple entities found: ${foundEntities.join(', ')}. Please specify entityType.`
-          }),
+          ResponseBuilder.error('MULTIPLE_ENTITIES_FOUND'),
           { status: 400 }
         );
       }
@@ -186,9 +174,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         importData = { data: { orders: Array.isArray(parsedData) ? parsedData : [parsedData] } };
       } else {
         return NextResponse.json(
-          ResponseBuilder.error('CANNOT_DETECT_ENTITY', {
-            message: 'Cannot detect entity type from file. Please specify entityType or use standard format.'
-          }),
+          ResponseBuilder.error('CANNOT_DETECT_ENTITY'),
           { status: 400 }
         );
       }
@@ -211,10 +197,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     // If validation failed, return errors
     if (!validation.valid && validation.errors.length > 0) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_FAILED', {
-          errors: validation.errors,
-          preview: validation.preview
-        }),
+        ResponseBuilder.error('VALIDATION_FAILED'),
         { status: 400 }
       );
     }
@@ -243,11 +226,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     
     if (entitiesToImport.length === 0) {
       return NextResponse.json(
-        ResponseBuilder.error('NO_ENTITIES_TO_IMPORT', {
-          message: 'No valid entities found in import data',
-          availableEntities,
-          detectedEntityType
-        }),
+        ResponseBuilder.error('NO_ENTITIES_TO_IMPORT'),
         { status: 400 }
       );
     }
@@ -255,10 +234,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
     // For single file import, should only have one entity
     if (entitiesToImport.length > 1) {
       return NextResponse.json(
-        ResponseBuilder.error('MULTIPLE_ENTITIES_IN_FILE', {
-          message: 'File contains multiple entities. Please import one entity type per file.',
-          entities: entitiesToImport
-        }),
+        ResponseBuilder.error('MULTIPLE_ENTITIES_IN_FILE'),
         { status: 400 }
       );
     }

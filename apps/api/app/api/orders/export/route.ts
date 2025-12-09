@@ -8,6 +8,7 @@ import {
   createExcelWorkbook,
   formatDateForExcel,
   formatNumberForExcel,
+  formatFullName,
   generateExcelFilename,
   type ExcelColumn
 } from '@rentalshop/utils';
@@ -46,7 +47,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
     const dateRangeResult = parseDateRangeFromQuery(period, startDateParam, endDateParam);
     if ('error' in dateRangeResult) {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_DATE_RANGE', dateRangeResult.error),
+        ResponseBuilder.error('INVALID_DATE_RANGE'),
         { status: 400 }
       );
     }
@@ -69,6 +70,8 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
     if (orderType) where.orderType = orderType;
     
     // Apply date range filter
+    // Note: startDate and endDate are already normalized by parseDateRangeFromQuery
+    // startDate is set to 00:00:00.000 and endDate is set to 23:59:59.999
     if (dateField === 'createdAt') {
       where.createdAt = {
         gte: startDate,
@@ -140,14 +143,14 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       orderNumber: order.orderNumber || '',
       orderType: order.orderType || '',
       status: order.status || '',
-      customerName: `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim(),
+      customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
       customerEmail: order.customer?.email || '',
       customerPhone: order.customer?.phone || '',
       outletId: order.outlet?.id || '',
       outletName: order.outlet?.name || '',
       outletAddress: order.outlet?.address || '',
       createdById: order.createdBy?.id || '',
-      createdByName: `${order.createdBy?.firstName || ''} ${order.createdBy?.lastName || ''}`.trim() || order.createdBy?.email || '',
+      createdByName: formatFullName(order.createdBy?.firstName, order.createdBy?.lastName) || order.createdBy?.email || '',
       createdByEmail: order.createdBy?.email || '',
       discountType: order.discountType || '',
       discountValue: formatNumberForExcel(order.discountValue || 0),

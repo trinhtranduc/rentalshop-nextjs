@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError } from '@rentalshop/utils';
+import { ordersQuerySchema, orderCreateSchema, orderUpdateSchema, checkPlanLimitIfNeeded, PricingResolver, calculateDurationInUnit, getDurationUnitLabel, ResponseBuilder, handleApiError, formatFullName } from '@rentalshop/utils';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
@@ -28,7 +28,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       outletId: userScope.outletId
     });
     return NextResponse.json(
-      ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED', 'User must be associated with a merchant'),
+      ResponseBuilder.error('MERCHANT_ASSOCIATION_REQUIRED'),
       { status: 403 }
     );
   }
@@ -41,7 +41,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     if (!parsed.success) {
       console.log('Validation error:', parsed.error.flatten());
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -208,16 +208,43 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
  */
 export const POST = withPermissions(['orders.create'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/orders - User: ${user.email} (${user.role})`);
+  console.log(`🔍 POST /api/orders - UserScope:`, userScope);
   
   try {
     const body = await request.json();
+    
+    // ✅ Auto-fill outletId from userScope if not provided
+    if (!body.outletId && userScope.outletId) {
+      console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
+      body.outletId = userScope.outletId;
+    }
+    
     const parsed = orderCreateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
+
+    // ✅ Validate outletId based on user role
+    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      // Outlet users can only create orders for their assigned outlet
+      if (parsed.data.outletId !== userScope.outletId) {
+        console.log('❌ Outlet user trying to create order for different outlet:', {
+          requestedOutletId: parsed.data.outletId,
+          userOutletId: userScope.outletId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
+          { status: 403 }
+        );
+      }
+    } else if (user.role === USER_ROLE.MERCHANT) {
+      // Merchant users can create orders for any outlet of their merchant
+      // Validation will happen when we check outlet.merchantId
+    }
+    // ADMIN users can create orders for any outlet (no restriction)
 
     // Get outlet and merchant to check association and plan limits
     const outlet = await db.outlets.findById(parsed.data.outletId);
@@ -226,6 +253,20 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         ResponseBuilder.error('OUTLET_NOT_FOUND'),
         { status: 404 }
       );
+    }
+
+    // ✅ Validate merchant association for non-admin users
+    if (user.role !== USER_ROLE.ADMIN) {
+      if (outlet.merchantId !== userScope.merchantId) {
+        console.log('❌ User trying to create order for outlet from different merchant:', {
+          outletMerchantId: outlet.merchantId,
+          userMerchantId: userScope.merchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT'),
+          { status: 403 }
+        );
+      }
     }
 
     // Get merchant for pricing configuration
@@ -310,33 +351,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       }
     }
 
-    // Create order with proper relations (Order does NOT have direct merchant relation)
-    const orderData = {
-      orderNumber,
-      outlet: { connect: { id: parsed.data.outletId } },
-      customer: parsed.data.customerId ? { connect: { id: parsed.data.customerId } } : undefined,
-      createdBy: { connect: { id: user.id } },
-      orderType: parsed.data.orderType,
-      status: initialStatus,
-      totalAmount: parsed.data.totalAmount,
-      depositAmount: parsed.data.depositAmount || 0,
-      securityDeposit: parsed.data.securityDeposit || 0,
-      damageFee: parsed.data.damageFee || 0,
-      lateFee: parsed.data.lateFee || 0,
-      discountType: parsed.data.discountType,
-      discountValue: parsed.data.discountValue || 0,
-      discountAmount: parsed.data.discountAmount || 0,
-      pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
-      returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
-      rentalDuration: rentalDuration,
-      isReadyToDeliver: parsed.data.isReadyToDeliver || false,
-      collateralType: parsed.data.collateralType,
-      collateralDetails: parsed.data.collateralDetails,
-      notes: parsed.data.notes,
-      pickupNotes: parsed.data.pickupNotes,
-      // Add order items with pricing calculation
-      orderItems: {
-        create: await Promise.all(parsed.data.orderItems?.map(async item => {
+    // Calculate order items with pricing
+    const orderItemsData = await Promise.all(parsed.data.orderItems?.map(async item => {
           // Get product details for snapshot
           const product = await db.products.findById(item.productId) as any;
           if (!product) {
@@ -368,10 +384,11 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           } catch (pricingError) {
             console.error('Pricing calculation error:', pricingError);
             // Fallback to provided values (default FIXED)
+        // Note: item.deposit should be deposit per unit, will be multiplied by quantity later
             pricing = {
               unitPrice: item.unitPrice,
               totalPrice: item.totalPrice || (item.quantity * item.unitPrice),
-              deposit: item.deposit || 0,
+          deposit: (item.deposit || 0) / (item.quantity || 1), // Extract deposit per unit from provided total
               pricingType: 'FIXED' as PricingType,
               duration: undefined,
               durationUnit: 'rental'
@@ -403,11 +420,43 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             quantity: item.quantity,
             unitPrice: pricing.unitPrice,
             totalPrice: pricing.totalPrice,
-            deposit: pricing.deposit,
+        deposit: pricing.deposit, // Deposit per unit (frontend calculates total)
             notes: item.notes,
             rentalDays: rentalDays
           };
-        }) || [])
+    }) || []);
+
+    // Use depositAmount from request (frontend calculates it from items)
+    // Backend trusts frontend value - no recalculation needed
+    const finalDepositAmount = parsed.data.depositAmount || 0;
+
+    // Create order with proper relations (Order does NOT have direct merchant relation)
+    const orderData = {
+      orderNumber,
+      outlet: { connect: { id: parsed.data.outletId } },
+      customer: parsed.data.customerId ? { connect: { id: parsed.data.customerId } } : undefined,
+      createdBy: { connect: { id: user.id } },
+      orderType: parsed.data.orderType,
+      status: initialStatus,
+      totalAmount: parsed.data.totalAmount,
+      depositAmount: finalDepositAmount, // ✅ Use calculated deposit or provided value
+      securityDeposit: parsed.data.securityDeposit || 0,
+      damageFee: parsed.data.damageFee || 0,
+      lateFee: parsed.data.lateFee || 0,
+      discountType: parsed.data.discountType,
+      discountValue: parsed.data.discountValue || 0,
+      discountAmount: parsed.data.discountAmount || 0,
+      pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
+      returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
+      rentalDuration: rentalDuration,
+      isReadyToDeliver: parsed.data.isReadyToDeliver || false,
+      collateralType: parsed.data.collateralType,
+      collateralDetails: parsed.data.collateralDetails,
+      notes: parsed.data.notes,
+      pickupNotes: parsed.data.pickupNotes,
+      // Add order items with pricing calculation
+      orderItems: {
+        create: orderItemsData
       }
     };
 
@@ -466,13 +515,15 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       outletId: order.outletId,
       outletName: order.outlet?.name || null,
       customerId: order.customerId,
-      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}`.trim() : null,
+      customerFirstName: order.customer?.firstName || null,
+      customerLastName: order.customer?.lastName || null,
+      customerName: order.customer ? formatFullName(order.customer.firstName, order.customer.lastName) : null,
       customerPhone: order.customer?.phone || null,
       customerEmail: order.customer?.email || null,
       merchantId: null, // Will be populated from outlet if needed
       merchantName: null, // Will be populated from outlet if needed
       createdById: order.createdById,
-      createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}`.trim() : null,
+      createdByName: order.createdBy ? formatFullName(order.createdBy.firstName, order.createdBy.lastName) : null,
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
       securityDeposit: order.securityDeposit,
@@ -556,14 +607,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
   } catch (error: any) {
     console.error('Error in POST /api/orders:', error);
     
-    // Use ResponseBuilder for consistent error format
-    const errorCode = error?.code || 'INTERNAL_SERVER_ERROR';
-    const errorMessage = error?.message || 'An error occurred';
-    
-    return NextResponse.json(
-      ResponseBuilder.error(errorCode, errorMessage),
-      { status: 500 }
-    );
+    // Use unified error handling system (uses ResponseBuilder internally)
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
@@ -577,13 +623,21 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
  */
 export const PUT = withPermissions(['orders.update'])(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/orders - User: ${user.email} (${user.role})`);
+  console.log(`🔍 PUT /api/orders - UserScope:`, userScope);
   
   try {
     const body = await request.json();
+    
+    // ✅ Auto-fill outletId from userScope if not provided and user has outletId
+    if (!body.outletId && userScope.outletId) {
+      console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
+      body.outletId = userScope.outletId;
+    }
+    
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        ResponseBuilder.error('VALIDATION_ERROR', parsed.error.flatten()),
+        ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
     }
@@ -608,17 +662,97 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       );
     }
 
-    // Check if user can access this order (orders are scoped to merchant via userScope)
-    // Access is controlled by the database API based on merchantId filter
+    // ✅ Validate outletId if provided in update
+    if (parsed.data.outletId !== undefined) {
+      const targetOutletId = parsed.data.outletId;
+      
+      // If updating outletId, validate based on user role
+      if (targetOutletId !== existingOrder.outletId) {
+        // Get target outlet to validate
+        const targetOutlet = await db.outlets.findById(targetOutletId);
+        if (!targetOutlet) {
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_NOT_FOUND'),
+            { status: 404 }
+          );
+        }
+
+        // Outlet users cannot change order outlet
+        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+          if (targetOutletId !== userScope.outletId) {
+            return NextResponse.json(
+              ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
+              { status: 403 }
+            );
+          }
+        }
+
+        // Non-admin users can only move to outlets from same merchant
+        if (user.role !== USER_ROLE.ADMIN) {
+          // Get existing order's outlet to check merchant
+          const existingOutlet = await db.outlets.findById(existingOrder.outletId);
+          if (!existingOutlet) {
+            return NextResponse.json(
+              ResponseBuilder.error('OUTLET_NOT_FOUND'),
+              { status: 404 }
+            );
+          }
+
+          if (targetOutlet.merchantId !== existingOutlet.merchantId) {
+            return NextResponse.json(
+              ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT'),
+              { status: 403 }
+            );
+          }
+
+          // Verify target outlet belongs to user's merchant
+          if (targetOutlet.merchantId !== userScope.merchantId) {
+            return NextResponse.json(
+              ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT'),
+              { status: 403 }
+            );
+          }
+        }
+      } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        // If not changing outletId but user is outlet-level, validate current order belongs to their outlet
+        if (existingOrder.outletId !== userScope.outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+            { status: 403 }
+          );
+        }
+      }
+    } else {
+      // If no outletId in update, validate existing order belongs to user's scope
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (existingOrder.outletId !== userScope.outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+            { status: 403 }
+          );
+        }
+      } else if (user.role !== USER_ROLE.ADMIN) {
+        // Non-admin users can only update orders from their merchant
+        const existingOutlet = await db.outlets.findById(existingOrder.outletId);
+        if (existingOutlet && existingOutlet.merchantId !== userScope.merchantId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT'),
+            { status: 403 }
+          );
+        }
+      }
+    }
 
     // Extract only basic fields for update (avoid complex orderItems)
-    const updateData = {
+    const updateData: any = {
       status: parsed.data.status,
       totalAmount: parsed.data.totalAmount,
       depositAmount: parsed.data.depositAmount,
       pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : undefined,
       returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : undefined,
       notes: parsed.data.notes,
+      // Add outletId if provided
+      ...(parsed.data.outletId !== undefined && { outletId: parsed.data.outletId }),
       // Add other simple fields as needed
     };
 

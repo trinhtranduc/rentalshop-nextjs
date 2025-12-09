@@ -109,7 +109,7 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
       {/* Pricing Information */}
       <div className="border-t pt-4 mt-4">
         <h3 className="text-sm font-semibold text-muted-foreground mb-4">{t('pricing.title')}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t('fields.rentPrice')}</label>
             <p className="text-base font-semibold">
@@ -125,6 +125,14 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
               </p>
               </div>
             )}
+          {product.costPrice && product.costPrice > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t('fields.costPrice')}</label>
+              <p className="text-base font-semibold text-muted-foreground">
+                {formatCurrency(product.costPrice)}
+              </p>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t('fields.deposit')}</label>
             <p className="text-base font-semibold">

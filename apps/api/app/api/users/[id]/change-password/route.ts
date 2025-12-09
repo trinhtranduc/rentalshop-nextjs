@@ -125,7 +125,7 @@ export async function PATCH(
         targetUserOutletId: targetOutletId
       });
       return NextResponse.json(
-        ResponseBuilder.error('INSUFFICIENT_PERMISSIONS', 'Insufficient permissions to change password for this user'),
+        ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
         { status: API.STATUS.FORBIDDEN }
       );
     }
@@ -141,7 +141,7 @@ export async function PATCH(
     } catch (hashError: any) {
       console.error('❌ Error hashing password:', hashError);
       return NextResponse.json(
-        ResponseBuilder.error('PASSWORD_HASH_FAILED', `Failed to hash password: ${hashError?.message || 'Unknown error'}`),
+        ResponseBuilder.error('PASSWORD_HASH_FAILED'),
         { status: 500 }
       );
     }
@@ -153,7 +153,7 @@ export async function PATCH(
     if (!targetUser.id || typeof targetUser.id !== 'number') {
       console.error('❌ Invalid targetUser.id:', targetUser.id, 'Type:', typeof targetUser.id);
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_USER_ID', 'Invalid user ID format'),
+        ResponseBuilder.error('INVALID_USER_ID'),
         { status: 400 }
       );
     }
@@ -174,7 +174,7 @@ export async function PATCH(
         stack: updateError?.stack
       });
       return NextResponse.json(
-        ResponseBuilder.error('PASSWORD_UPDATE_FAILED', `Failed to update password: ${updateError?.message || 'Unknown error'}`),
+        ResponseBuilder.error('PASSWORD_UPDATE_FAILED'),
         { status: 500 }
       );
     }

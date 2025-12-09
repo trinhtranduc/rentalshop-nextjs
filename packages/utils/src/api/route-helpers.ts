@@ -70,7 +70,7 @@ export async function parseRequestBody<T extends z.ZodTypeAny>(
       return {
         success: false,
         response: NextResponse.json(
-          ResponseBuilder.error('INVALID_JSON', 'Invalid JSON in request body'),
+          ResponseBuilder.error('INVALID_INPUT'),
           { status: 400 }
         )
       };
@@ -103,7 +103,7 @@ export function createErrorResponse(
   error?: any,
   status: number = API.STATUS.BAD_REQUEST
 ): NextResponse {
-  return NextResponse.json(ResponseBuilder.error(code, error), { status });
+  return NextResponse.json(ResponseBuilder.error(code), { status });
 }
 
 /**

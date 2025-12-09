@@ -11,6 +11,7 @@ import {
 import { Calculator, Info, DollarSign, Package, RotateCcw } from 'lucide-react';
 import { formatCurrency } from '@rentalshop/ui';
 import { OrderWithDetails } from '@rentalshop/types';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 // Define SettingsForm interface locally
 interface SettingsForm {
@@ -44,6 +45,7 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
   onConfirmPickup,
   onConfirmReturn
 }) => {
+  const t = useOrderTranslations();
   const isCollectionMode = mode === 'collection';
   const isReturnMode = mode === 'return';
   
@@ -54,9 +56,9 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
 
   const getModalTitle = () => {
     if (isCollectionMode) {
-      return 'Pickup Order - Collection Details';
+      return t('detail.pickupOrderTitle');
     }
-    return 'Return Order - Return Details';
+    return t('detail.returnOrderTitle');
   };
 
   const getModalIcon = () => {
@@ -68,9 +70,9 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
 
   const getActionButtonText = () => {
     if (isCollectionMode) {
-      return 'Confirm Pickup & Collect';
+      return t('detail.confirmPickup');
     }
-    return 'Confirm Return & Process Refund';
+    return t('detail.confirmReturn');
   };
 
   const handleConfirm = async () => {
@@ -101,16 +103,16 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
           {/* Order Info Header */}
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Order #{order.orderNumber}</span>
+              <span className="text-sm font-medium text-gray-700">{t('detail.orderNumberLabel')} #{order.orderNumber}</span>
               <Badge variant={order.orderType === 'RENT' ? 'default' : 'secondary'}>
                 {order.orderType}
               </Badge>
             </div>
             <div className="text-sm text-gray-600">
-              Customer: {order.customer?.firstName} {order.customer?.lastName}
+              {t('detail.customerLabel')}: {order.customer?.firstName} {order.customer?.lastName}
             </div>
             <div className="text-sm text-gray-600">
-              Status: {order.status}
+              {t('detail.statusLabel')}: {order.status}
             </div>
           </div>
 
@@ -119,7 +121,7 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
             {/* Clean Collection/Return Summary */}
             <div className="text-center">
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {isCollectionMode ? 'Collect from Customer' : 'Return to Customer'}
+              {isCollectionMode ? t('detail.collectFromCustomer') : t('detail.returnToCustomer')}
             </h3>
               
               {/* Simple one-line summary */}
@@ -154,7 +156,7 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
 
         <DialogFooter className="flex gap-3">
           <Button variant="outline" onClick={onClose}>
-            Close
+            {t('detail.close')}
           </Button>
           {details.calculation && details.calculation.length > 0 && (
             <Button onClick={handleConfirm}>

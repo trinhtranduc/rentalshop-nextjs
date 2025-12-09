@@ -3666,6 +3666,143 @@ function useBankAccountTranslations() {
   return n2("bankAccounts");
 }
 
+// src/hooks/useApiError.ts
+function useApiError() {
+  const t3 = useErrorTranslations();
+  const translateError = (response) => {
+    console.log("\u{1F50D} translateError called with:", {
+      type: typeof response,
+      isError: response instanceof Error,
+      hasCode: !!response?.code,
+      code: response?.code,
+      hasMessage: !!response?.message,
+      message: response?.message,
+      hasResponse: !!response?.response,
+      responseData: response?.response?.data,
+      fullResponse: response
+    });
+    if (response?.response?.data) {
+      console.log("\u{1F50D} translateError: Handling nested axios error response");
+      return translateError(response.response.data);
+    }
+    if (response?.code && typeof response.code === "string") {
+      console.log("\u{1F50D} translateError: Found code field:", response.code);
+      const translated = t3(response.code);
+      console.log("\u{1F50D} translateError: Translation result:", { code: response.code, translated, isTranslated: translated !== response.code });
+      if (translated !== response.code) {
+        console.log("\u2705 translateError: Using translated message:", translated);
+        return translated;
+      }
+      if (response?.message) {
+        console.log("\u26A0\uFE0F translateError: Translation not found, using message:", response.message);
+        return response.message;
+      }
+      console.log("\u26A0\uFE0F translateError: No translation or message, returning code:", response.code);
+      return response.code;
+    }
+    if (response instanceof Error && response.code) {
+      const code = response.code;
+      const translated = t3(code);
+      if (translated !== code) {
+        return translated;
+      }
+      return response.message;
+    }
+    if (response?.message && typeof response.message === "string" && /^[A-Z_]+$/.test(response.message)) {
+      const translated = t3(response.message);
+      if (translated !== response.message) {
+        return translated;
+      }
+    }
+    if (response?.message) {
+      return response.message;
+    }
+    if (typeof response === "string") {
+      if (/^[A-Z_]+$/.test(response)) {
+        const translated = t3(response);
+        if (translated !== response) {
+          return translated;
+        }
+      }
+      return response;
+    }
+    return t3("UNKNOWN_ERROR");
+  };
+  const translateSuccess = (response) => {
+    if (response?.code && typeof response.code === "string") {
+      const translated = t3(response.code);
+      if (translated !== response.code) {
+        return translated;
+      }
+    }
+    if (response?.message) {
+      return response.message;
+    }
+    return t3("UNKNOWN_ERROR");
+  };
+  const translateResponse = (response) => {
+    if (response?.success === false) {
+      return translateError(response);
+    }
+    return translateSuccess(response);
+  };
+  const isError = (response) => {
+    return response?.success === false || !!response?.error || !!response?.response?.data?.error;
+  };
+  const getErrorCode = (response) => {
+    if (response?.response?.data?.code) {
+      return response.response.data.code;
+    }
+    if (response?.code && typeof response.code === "string") {
+      return response.code;
+    }
+    if (response?.message && typeof response.message === "string" && /^[A-Z_]+$/.test(response.message)) {
+      return response.message;
+    }
+    return null;
+  };
+  return {
+    translateError,
+    translateSuccess,
+    translateResponse,
+    isError,
+    getErrorCode
+  };
+}
+function extractErrorMessage(error) {
+  if (error?.response?.data) {
+    const data = error.response.data;
+    return data.message || data.error || "An error occurred";
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return "An unknown error occurred";
+}
+function extractErrorCode(error) {
+  if (error?.response?.data?.code) {
+    return error.response.data.code;
+  }
+  if (error?.code) {
+    return error.code;
+  }
+  return null;
+}
+function isErrorCode(error, code) {
+  return extractErrorCode(error) === code;
+}
+var ErrorCheckers = {
+  isUnauthorized: (error) => isErrorCode(error, "UNAUTHORIZED") || isErrorCode(error, "INVALID_TOKEN"),
+  isForbidden: (error) => isErrorCode(error, "FORBIDDEN"),
+  isNotFound: (error) => isErrorCode(error, "NOT_FOUND") || extractErrorCode(error)?.includes("_NOT_FOUND"),
+  isValidationError: (error) => isErrorCode(error, "VALIDATION_ERROR"),
+  isDuplicateEntry: (error) => isErrorCode(error, "DUPLICATE_ENTRY") || extractErrorCode(error)?.includes("_EXISTS"),
+  isNetworkError: (error) => isErrorCode(error, "NETWORK_ERROR") || error?.message?.includes("Network")
+};
+
 // src/hooks/useAuth.ts
 function useAuth() {
   const [state, setState] = useState({
@@ -3673,25 +3810,7 @@ function useAuth() {
     loading: true,
     error: null
   });
-  const t3 = useErrorTranslations();
-  const translateError = useCallback((errorData) => {
-    if (errorData?.code) {
-      const translated = t3(errorData.code);
-      if (translated !== errorData.code) {
-        return translated;
-      }
-    }
-    if (errorData?.message) {
-      if (typeof errorData.message === "string" && /^[A-Z_]+$/.test(errorData.message)) {
-        const translated = t3(errorData.message);
-        if (translated !== errorData.message) {
-          return translated;
-        }
-      }
-      return errorData.message;
-    }
-    return t3("UNKNOWN_ERROR");
-  }, [t3]);
+  const { translateError } = useApiError();
   const login = useCallback(async (email, password) => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
@@ -3718,8 +3837,25 @@ function useAuth() {
         return false;
       }
       const data = await response.json();
+      console.log("\u{1F50D} LOGIN RESPONSE:", {
+        success: data.success,
+        hasToken: !!data.data?.token,
+        user: data.data?.user,
+        userPermissions: data.data?.user?.permissions,
+        permissionsCount: data.data?.user?.permissions?.length || 0
+      });
       if (data.success && data.data?.token) {
         storeAuthData(data.data.token, data.data.user);
+        console.log("\u{1F50D} LOGIN: After storeAuthData, checking localStorage...");
+        const storedAuth = localStorage.getItem("authData");
+        if (storedAuth) {
+          const parsed = JSON.parse(storedAuth);
+          console.log("\u{1F50D} LOGIN: Stored permissions in localStorage:", {
+            hasPermissions: !!parsed.user?.permissions,
+            permissionsCount: parsed.user?.permissions?.length || 0,
+            permissions: parsed.user?.permissions
+          });
+        }
         const { getAuthToken: getAuthToken2 } = await import("@rentalshop/utils");
         await new Promise((resolve) => setTimeout(resolve, 10));
         const storedToken = getAuthToken2();
@@ -3756,7 +3892,7 @@ function useAuth() {
         return false;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t3("UNKNOWN_ERROR");
+      const errorMessage = translateError(err);
       setState((prev) => ({
         ...prev,
         error: errorMessage,
@@ -3764,7 +3900,7 @@ function useAuth() {
       }));
       return false;
     }
-  }, [translateError, t3]);
+  }, [translateError]);
   const logout = useCallback(() => {
     clearAuthData();
     setState({
@@ -3806,19 +3942,62 @@ function useAuth() {
       setState((prev) => ({ ...prev, loading: false }));
     }
   }, [logout]);
-  useEffect(() => {
+  const syncStateFromStorage = useCallback(() => {
     const token = getAuthToken();
     const storedUser = getStoredUser();
     if (token && storedUser) {
-      setState((prev) => ({
-        ...prev,
-        user: storedUser,
-        loading: false
-      }));
+      setState((prev) => {
+        if (prev.user?.id !== storedUser.id) {
+          console.log("\u{1F504} useAuth: Syncing user state from localStorage");
+          console.log("\u{1F50D} useAuth: Stored user permissions:", storedUser.permissions);
+          const userWithPermissions = {
+            ...storedUser,
+            permissions: storedUser.permissions || []
+            // ✅ Preserve permissions
+          };
+          return {
+            ...prev,
+            user: userWithPermissions,
+            loading: false
+          };
+        }
+        if (prev.loading) {
+          return { ...prev, loading: false };
+        }
+        return prev;
+      });
     } else {
-      setState((prev) => ({ ...prev, user: null, loading: false }));
+      setState((prev) => {
+        if (prev.user !== null || prev.loading) {
+          console.log("\u{1F504} useAuth: Clearing user state (no token found)");
+          return { ...prev, user: null, loading: false };
+        }
+        return prev;
+      });
     }
   }, []);
+  useEffect(() => {
+    syncStateFromStorage();
+  }, [syncStateFromStorage]);
+  useEffect(() => {
+    if (typeof window === "undefined")
+      return;
+    const handleStorageChange = (e3) => {
+      if (e3.key === "authData" || e3.key === "authToken") {
+        console.log("\u{1F504} useAuth: localStorage changed, syncing state...");
+        syncStateFromStorage();
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    const handleCustomStorageChange = () => {
+      syncStateFromStorage();
+    };
+    window.addEventListener("auth-storage-change", handleCustomStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("auth-storage-change", handleCustomStorageChange);
+    };
+  }, [syncStateFromStorage]);
   return {
     user: state.user,
     loading: state.loading,
@@ -3845,6 +4024,102 @@ var useAuthErrorHandler = () => {
   }, []);
   return { handleAuthError };
 };
+
+// src/hooks/usePermissions.ts
+import { useMemo } from "react";
+function usePermissions() {
+  const { user } = useAuth();
+  const permissions = useMemo(() => {
+    return user?.permissions || [];
+  }, [user?.permissions]);
+  const hasPermission = useMemo(() => {
+    return (permission) => {
+      if (!user || !permissions.length) {
+        return false;
+      }
+      return permissions.includes(permission);
+    };
+  }, [user, permissions]);
+  const hasAnyPermission = useMemo(() => {
+    return (requiredPermissions) => {
+      if (!user || !permissions.length || !requiredPermissions.length) {
+        return false;
+      }
+      return requiredPermissions.some((permission) => permissions.includes(permission));
+    };
+  }, [user, permissions]);
+  const hasAllPermissions = useMemo(() => {
+    return (requiredPermissions) => {
+      if (!user || !permissions.length || !requiredPermissions.length) {
+        return false;
+      }
+      return requiredPermissions.every((permission) => permissions.includes(permission));
+    };
+  }, [user, permissions]);
+  const canManageProducts = useMemo(() => hasPermission("products.manage"), [hasPermission]);
+  const canViewProducts = useMemo(() => hasPermission("products.view"), [hasPermission]);
+  const canExportProducts = useMemo(() => hasPermission("products.export"), [hasPermission]);
+  const canManageOrders = useMemo(() => hasPermission("orders.manage"), [hasPermission]);
+  const canCreateOrders = useMemo(() => hasPermission("orders.create"), [hasPermission]);
+  const canUpdateOrders = useMemo(() => hasPermission("orders.update"), [hasPermission]);
+  const canDeleteOrders = useMemo(() => hasPermission("orders.delete"), [hasPermission]);
+  const canViewOrders = useMemo(() => hasPermission("orders.view"), [hasPermission]);
+  const canExportOrders = useMemo(() => hasPermission("orders.export"), [hasPermission]);
+  const canManageCustomers = useMemo(() => hasPermission("customers.manage"), [hasPermission]);
+  const canViewCustomers = useMemo(() => hasPermission("customers.view"), [hasPermission]);
+  const canExportCustomers = useMemo(() => hasPermission("customers.export"), [hasPermission]);
+  const canManageUsers = useMemo(() => hasPermission("users.manage"), [hasPermission]);
+  const canViewUsers = useMemo(() => hasPermission("users.view"), [hasPermission]);
+  const canManageOutlets = useMemo(() => hasPermission("outlet.manage"), [hasPermission]);
+  const canViewOutlets = useMemo(() => hasPermission("outlet.view"), [hasPermission]);
+  const canManageMerchants = useMemo(() => hasPermission("merchant.manage"), [hasPermission]);
+  const canViewMerchants = useMemo(() => hasPermission("merchant.view"), [hasPermission]);
+  const canViewAnalytics = useMemo(() => hasPermission("analytics.view"), [hasPermission]);
+  const canManageBilling = useMemo(() => hasPermission("billing.manage"), [hasPermission]);
+  const canViewBilling = useMemo(() => hasPermission("billing.view"), [hasPermission]);
+  const canManageBankAccounts = useMemo(() => hasPermission("bankAccounts.manage"), [hasPermission]);
+  const canViewBankAccounts = useMemo(() => hasPermission("bankAccounts.view"), [hasPermission]);
+  return {
+    // Core permission checking methods
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    permissions,
+    // Raw permissions array
+    // Convenience methods for products
+    canManageProducts,
+    canViewProducts,
+    canExportProducts,
+    // Convenience methods for orders
+    canManageOrders,
+    canCreateOrders,
+    canUpdateOrders,
+    canDeleteOrders,
+    canViewOrders,
+    canExportOrders,
+    // Convenience methods for customers
+    canManageCustomers,
+    canViewCustomers,
+    canExportCustomers,
+    // Convenience methods for users
+    canManageUsers,
+    canViewUsers,
+    // Convenience methods for outlets
+    canManageOutlets,
+    canViewOutlets,
+    // Convenience methods for merchants
+    canManageMerchants,
+    canViewMerchants,
+    // Convenience methods for analytics
+    canViewAnalytics,
+    // Convenience methods for billing
+    canManageBilling,
+    canViewBilling,
+    // Convenience methods for bank accounts
+    canManageBankAccounts,
+    canViewBankAccounts
+  };
+}
 
 // src/hooks/useCanPerform.ts
 import { useCallback as useCallback4 } from "react";
@@ -4213,7 +4488,7 @@ function isValidCurrencyCode(code) {
 }
 
 // src/utils/useDedupedApi.ts
-import { useState as useState4, useEffect as useEffect4, useRef, useCallback as useCallback6, useMemo } from "react";
+import { useState as useState4, useEffect as useEffect4, useRef, useCallback as useCallback6, useMemo as useMemo2 } from "react";
 var requestCache = /* @__PURE__ */ new Map();
 var dataCache = /* @__PURE__ */ new Map();
 function useDedupedApi(options) {
@@ -4250,7 +4525,7 @@ function useDedupedApi(options) {
       isMountedRef.current = false;
     };
   }, []);
-  const cacheKey = useMemo(() => {
+  const cacheKey = useMemo2(() => {
     const normalized = {};
     Object.keys(filters).sort().forEach((key) => {
       const value = filters[key];
@@ -4544,13 +4819,13 @@ function useMerchantsData(options) {
 }
 
 // src/hooks/useOrdersData.ts
-import { useMemo as useMemo2 } from "react";
+import { useMemo as useMemo3 } from "react";
 import { usePathname } from "next/navigation";
 import { ordersApi } from "@rentalshop/utils";
 function useOrdersData(options) {
   const { filters, enabled = true } = options;
   const pathname = usePathname();
-  const filtersWithPath = useMemo2(() => ({
+  const filtersWithPath = useMemo3(() => ({
     ...filters,
     _pathname: pathname
     // Internal key to force refetch on navigation
@@ -5133,9 +5408,7 @@ function useThrottledSearch(options) {
 // src/hooks/useToast.ts
 import { useState as useState8, useCallback as useCallback11 } from "react";
 import {
-  analyzeError,
-  withErrorHandlingForUI,
-  getToastType
+  withErrorHandlingForUI
 } from "@rentalshop/utils";
 import { useToasts as useToasts2 } from "@rentalshop/ui";
 var useErrorHandler = (options = {}) => {
@@ -5147,27 +5420,26 @@ var useErrorHandler = (options = {}) => {
   } = options;
   const [isLoading, setIsLoading] = useState8(false);
   const { addToast } = useToasts2();
+  const { translateError } = useApiError();
   const handleError = useCallback11((error) => {
-    const errorInfo = analyzeError(error);
-    return errorInfo;
+    const errorCode = error?.code || error?.response?.data?.code;
+    return {
+      type: "unknown",
+      message: errorCode || "UNKNOWN_ERROR",
+      title: "Error",
+      showLoginButton: false,
+      originalError: error
+    };
   }, []);
   const showErrorToast = useCallback11((error) => {
-    const errorInfo = analyzeError(error);
-    const toastType = getToastType(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
+    const translatedMessage = translateError(error);
+    const errorCode = error?.code || error?.response?.data?.code;
+    let toastType = "error";
+    if (errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode?.includes("SUBSCRIPTION")) {
+      toastType = "warning";
     }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-  }, [addToast]);
+    addToast(toastType, "L\u1ED7i", translatedMessage, 0);
+  }, [addToast, translateError]);
   const handleApiCall = useCallback11(async (apiCall) => {
     setIsLoading(true);
     try {
@@ -5202,30 +5474,29 @@ var useErrorHandler = (options = {}) => {
 };
 var useSimpleErrorHandler = () => {
   const { addToast } = useToasts2();
+  const { translateError } = useApiError();
   const handleError = useCallback11((error) => {
-    const errorInfo = analyzeError(error);
-    const toastType = getToastType(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
+    const translatedMessage = translateError(error);
+    const errorCode = error?.code || error?.response?.data?.code;
+    let toastType = "error";
+    if (errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode?.includes("SUBSCRIPTION")) {
+      toastType = "warning";
     }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
+    addToast(toastType, "L\u1ED7i", translatedMessage, 0);
+    return {
+      type: toastType,
+      message: translatedMessage,
+      code: errorCode
+    };
+  }, [addToast, translateError]);
   return {
     handleError
   };
 };
 var useToastHandler = () => {
   const { addToast } = useToasts2();
+  const { translateError } = useApiError();
+  const t3 = useCommonTranslations();
   const showError = useCallback11((title, message) => {
     addToast("error", title, message, 0);
   }, [addToast]);
@@ -5239,23 +5510,30 @@ var useToastHandler = () => {
     addToast("info", title, message, 5e3);
   }, [addToast]);
   const handleError = useCallback11((error) => {
-    const errorInfo = analyzeError(error);
-    const toastType = getToastType(errorInfo.type);
-    let toastMessage = errorInfo.message;
-    if (errorInfo.showLoginButton) {
-      if (errorInfo.type === "auth") {
-        toastMessage += " Click to log in again.";
-      } else if (errorInfo.type === "permission") {
-        toastMessage += " Click to log in with a different account.";
-      } else if (errorInfo.type === "subscription") {
-        toastMessage += " Click to log in and upgrade your plan.";
-      } else {
-        toastMessage += " Click to log in.";
-      }
-    }
-    addToast(toastType, errorInfo.title, toastMessage, 0);
-    return errorInfo;
-  }, [addToast]);
+    console.log("\u{1F50D} useToastHandler.handleError called with:", {
+      type: typeof error,
+      isError: error instanceof Error,
+      hasCode: !!error?.code,
+      code: error?.code,
+      hasMessage: !!error?.message,
+      message: error?.message,
+      hasSuccess: error?.success !== void 0,
+      success: error?.success,
+      fullError: error
+    });
+    const translatedMessage = translateError(error);
+    console.log("\u{1F50D} useToastHandler.handleError: Translated message:", translatedMessage);
+    const errorCode = error?.code || error?.response?.data?.code;
+    let toastType = "error";
+    let title = t3("labels.error");
+    console.log("\u{1F50D} useToastHandler.handleError: Showing toast:", { type: toastType, title, message: translatedMessage, code: errorCode });
+    addToast(toastType, title, translatedMessage, 0);
+    return {
+      type: toastType,
+      message: translatedMessage,
+      code: errorCode
+    };
+  }, [addToast, translateError, t3]);
   return {
     showError,
     showSuccess,
@@ -5427,101 +5705,6 @@ function useOptimisticNavigation() {
     prefetch
   };
 }
-
-// src/hooks/useApiError.ts
-function useApiError() {
-  const t3 = useErrorTranslations();
-  const translateError = (response) => {
-    if (response?.response?.data) {
-      return translateError(response.response.data);
-    }
-    if (response?.code) {
-      const translated = t3(response.code);
-      if (translated === response.code && response.message) {
-        return response.message;
-      }
-      return translated;
-    }
-    if (response?.message) {
-      return response.message;
-    }
-    if (typeof response === "string") {
-      return response;
-    }
-    return t3("UNKNOWN_ERROR");
-  };
-  const translateSuccess = (response) => {
-    if (response?.code) {
-      const translated = t3(response.code);
-      if (translated === response.code && response.message) {
-        return response.message;
-      }
-      return translated;
-    }
-    if (response?.message) {
-      return response.message;
-    }
-    return t3("UNKNOWN_ERROR");
-  };
-  const translateResponse = (response) => {
-    if (response?.success === false) {
-      return translateError(response);
-    }
-    return translateSuccess(response);
-  };
-  const isError = (response) => {
-    return response?.success === false || !!response?.error || !!response?.response?.data?.error;
-  };
-  const getErrorCode = (response) => {
-    if (response?.response?.data?.code) {
-      return response.response.data.code;
-    }
-    if (response?.code) {
-      return response.code;
-    }
-    return null;
-  };
-  return {
-    translateError,
-    translateSuccess,
-    translateResponse,
-    isError,
-    getErrorCode
-  };
-}
-function extractErrorMessage(error) {
-  if (error?.response?.data) {
-    const data = error.response.data;
-    return data.message || data.error || "An error occurred";
-  }
-  if (error?.message) {
-    return error.message;
-  }
-  if (typeof error === "string") {
-    return error;
-  }
-  return "An unknown error occurred";
-}
-function extractErrorCode(error) {
-  if (error?.response?.data?.code) {
-    return error.response.data.code;
-  }
-  if (error?.code) {
-    return error.code;
-  }
-  return null;
-}
-function isErrorCode(error, code) {
-  return extractErrorCode(error) === code;
-}
-var ErrorCheckers = {
-  isUnauthorized: (error) => isErrorCode(error, "UNAUTHORIZED") || isErrorCode(error, "INVALID_TOKEN"),
-  isForbidden: (error) => isErrorCode(error, "FORBIDDEN"),
-  isNotFound: (error) => isErrorCode(error, "NOT_FOUND") || extractErrorCode(error)?.includes("_NOT_FOUND"),
-  isValidationError: (error) => isErrorCode(error, "VALIDATION_ERROR"),
-  isDuplicateEntry: (error) => isErrorCode(error, "DUPLICATE_ENTRY") || extractErrorCode(error)?.includes("_EXISTS"),
-  isNetworkError: (error) => isErrorCode(error, "NETWORK_ERROR") || error?.message?.includes("Network")
-};
 
 // src/hooks/useFiltersData.ts
 import { outletsApi, categoriesApi } from "@rentalshop/utils";
@@ -5707,6 +5890,7 @@ export {
   useOutletsWithFilters,
   usePagination,
   usePaymentsData,
+  usePermissions,
   usePlansData,
   usePlansTranslations,
   useProductAvailability,

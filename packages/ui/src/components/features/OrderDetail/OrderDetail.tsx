@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Badge, Skeleton, ConfirmationDialog, Card, CardHeader, CardContent } from '@rentalshop/ui';
 import { useToast } from '@rentalshop/ui';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
-import { useOrderTranslations } from '@rentalshop/hooks';
+import { useOrderTranslations, usePermissions, useAuth } from '@rentalshop/hooks';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { CollectionReturnModal } from './components/CollectionReturnModal';
 import { OrderInformation } from './components/OrderInformation';
@@ -204,6 +204,20 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
 }) => {
   const { toastSuccess, toastError, toastInfo } = useToast();
   const t = useOrderTranslations();
+  // ✅ Use permissions hook to check if user can delete orders
+  const { canDeleteOrders, permissions } = usePermissions();
+  
+  // Debug: Log permissions for troubleshooting
+  useEffect(() => {
+    if (permissions) {
+      console.log('🔍 OrderDetail - User permissions:', {
+        permissionsCount: permissions.length,
+        hasOrdersDelete: permissions.includes('orders.delete'),
+        canDeleteOrders,
+        orderPermissions: permissions.filter((p: string) => p.includes('orders'))
+      });
+    }
+  }, [permissions, canDeleteOrders]);
   
   // Predefined collateral types
   const COLLATERAL_TYPES = [
@@ -273,8 +287,9 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   // BUTTON VISIBILITY LOGIC
   // ============================================================================
   
-  // Cancel button visibility
+  // ✅ Cancel button visibility - Staff cannot cancel orders
   const canCancel = onCancel && 
+    canDeleteOrders && // ✅ Check permission: staff cannot delete orders
     currentStatus !== 'PICKUPED' && 
     currentStatus !== 'RETURNED' && 
     currentStatus !== 'CANCELLED';

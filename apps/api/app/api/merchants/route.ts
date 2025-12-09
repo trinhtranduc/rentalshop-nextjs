@@ -110,7 +110,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
     console.error('Error fetching merchants:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      ResponseBuilder.error('FETCH_MERCHANTS_FAILED', { error: errorMessage }),
+      ResponseBuilder.error('FETCH_MERCHANTS_FAILED'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }
     );
   }
@@ -140,11 +140,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       
       console.log('❌ Merchant duplicate found:', { field: duplicateField, value: duplicateValue });
       return NextResponse.json(
-        {
-          success: false,
-          code: 'MERCHANT_DUPLICATE',
-          message: `A merchant with this ${duplicateField} (${duplicateValue}) already exists. Please use a different ${duplicateField}.`
-        },
+        ResponseBuilder.error('MERCHANT_DUPLICATE'),
         { status: 409 }
       );
     }
@@ -154,6 +150,46 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
 
     // Use transaction for atomic creation
     const result = await db.prisma.$transaction(async (tx) => {
+      // Generate unique tenantKey from merchant name if not provided
+      let tenantKey: string | undefined;
+      if (body.tenantKey && body.tenantKey.trim().length > 0) {
+        // User provided custom tenant key - check for uniqueness
+        const customKey = body.tenantKey.trim();
+        const exists = await tx.merchant.findUnique({
+          where: { tenantKey: customKey }
+        });
+        
+        if (exists) {
+          // Custom key exists, generate unique one with random suffix
+          const { generateUniqueTenantKey } = await import('@rentalshop/utils');
+          tenantKey = await generateUniqueTenantKey(
+            name || customKey,
+            async (key: string) => {
+              const found = await tx.merchant.findUnique({
+                where: { tenantKey: key }
+              });
+              return !!found;
+            }
+          );
+          console.log(`⚠️ Custom tenant key "${customKey}" already exists, generated unique key: "${tenantKey}"`);
+        } else {
+          tenantKey = customKey;
+        }
+      } else if (name) {
+        // Generate from merchant name with uniqueness check
+        const { generateUniqueTenantKey } = await import('@rentalshop/utils');
+        tenantKey = await generateUniqueTenantKey(
+          name,
+          async (key: string) => {
+            const found = await tx.merchant.findUnique({
+              where: { tenantKey: key }
+            });
+            return !!found;
+          }
+        );
+        console.log(`✅ Generated unique tenant key: "${tenantKey}"`);
+      }
+
       // Create new merchant
       const merchant = await tx.merchant.create({
         data: {
@@ -163,7 +199,8 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
           address,
           planId,
           businessType: businessType || 'GENERAL',
-          pricingConfig: JSON.stringify(pricingConfig)
+          pricingConfig: JSON.stringify(pricingConfig),
+          ...(tenantKey ? { tenantKey } : {})
         }
       });
 

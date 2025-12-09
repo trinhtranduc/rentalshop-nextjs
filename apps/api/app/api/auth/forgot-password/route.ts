@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     } catch (parseError) {
       console.error('❌ [Forget Password] Invalid JSON format:', parseError);
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_REQUEST', 'Invalid JSON format in request body'),
+        ResponseBuilder.error('INVALID_REQUEST'),
         { status: 400 }
       );
     }

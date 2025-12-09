@@ -4,6 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
+    "dev:prod": "NEXT_PUBLIC_API_URL=https://api.anyrent.shop NODE_ENV=production next dev -p 3002",
+    "dev:dev": "NEXT_PUBLIC_API_URL=https://dev-api.anyrent.shop NODE_ENV=development next dev -p 3002",
+    "dev:local": "NEXT_PUBLIC_API_URL=http://localhost:3002 NODE_ENV=development next dev -p 3002",
+    "dev:all:development": "NEXT_PUBLIC_API_URL=https://dev-api.anyrent.shop NODE_ENV=development next dev -p 3002",
+    "dev:all:production": "NEXT_PUBLIC_API_URL=https://api.anyrent.shop NODE_ENV=production next dev -p 3002",
     "build": "npx prisma generate --schema=../../prisma/schema.prisma && SKIP_ENV_VALIDATION=true next build",
     "build:railway": "npx prisma migrate deploy --schema=../../prisma/schema.prisma && npx prisma generate --schema=../../prisma/schema.prisma && next build",
     "start": "next start -p 3002",
@@ -33,13 +38,9 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
-    "@types/sharp": "^0.32.0",
-    "@types/swagger-ui-react": "^5.18.0",
-    "autoprefixer": "^10.0.0",
+    "concurrently": "^9.2.1",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
-    "postcss": "^8.0.0",
-    "tailwindcss": "^3.3.0",
     "typescript": "^5.0.0"
   }
 }

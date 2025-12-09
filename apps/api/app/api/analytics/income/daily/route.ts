@@ -14,12 +14,12 @@ import { API } from '@rentalshop/constants';
  * - List of orders with their individual revenue contributions
  * - Number of new orders created that day
  * 
- * Authorization: Roles with 'analytics.view.revenue' permission can access
- * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view revenue analytics
- * - OUTLET_STAFF: Cannot access (dashboard only)
+ * Authorization: Roles with 'analytics.view.revenue' or 'analytics.view.revenue.daily' permission can access
+ * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view revenue analytics (analytics.view.revenue)
+ * - OUTLET_STAFF: Can view daily income analytics only (analytics.view.revenue.daily)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
-export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
+export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
   console.log(`💰 GET /api/analytics/income/daily - User: ${user.email}`);
   
   try {
@@ -30,7 +30,7 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
 
     if (!startDate || !endDate) {
       return NextResponse.json(
-        ResponseBuilder.error('MISSING_PARAMETERS', 'startDate and endDate are required'),
+        ResponseBuilder.error('MISSING_REQUIRED_FIELD'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
@@ -44,14 +44,14 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
     // Validate date range
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_DATE_FORMAT', 'Invalid date format. Use ISO 8601 format (YYYY-MM-DD)'),
+        ResponseBuilder.error('INVALID_DATE_FORMAT'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
 
     if (start > end) {
       return NextResponse.json(
-        ResponseBuilder.error('INVALID_DATE_RANGE', 'startDate must be before or equal to endDate'),
+        ResponseBuilder.error('INVALID_INPUT'),
         { status: API.STATUS.BAD_REQUEST }
       );
     }
