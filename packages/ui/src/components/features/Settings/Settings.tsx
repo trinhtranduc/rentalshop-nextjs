@@ -130,6 +130,10 @@ export const SettingsComponent: React.FC = () => {
     name: '',
     phone: '',
     address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
     description: '',
   });
   
@@ -302,6 +306,10 @@ export const SettingsComponent: React.FC = () => {
         name: user.outlet.name || '',
         phone: user.outlet.phone || '',
         address: user.outlet.address || '',
+        city: user.outlet.city || '',
+        state: user.outlet.state || '',
+        zipCode: user.outlet.zipCode || '',
+        country: user.outlet.country || '',
         description: user.outlet.description || '',
       });
     }
