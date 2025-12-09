@@ -190,8 +190,14 @@ export function useAuth() {
         const data = await response.json();
         
         if (data.success && data.data) {
-          // Save to localStorage
-          localStorage.setItem('user', JSON.stringify(data.data));
+          // Use storeAuthData to properly save user data (maintains token and authData structure)
+          const token = getAuthToken();
+          if (token) {
+            storeAuthData(token, data.data);
+          } else {
+            // Fallback: just save user if no token
+            localStorage.setItem('user', JSON.stringify(data.data));
+          }
           
           setState(prev => ({ 
             ...prev, 
