@@ -108,7 +108,7 @@ export async function createUser(input: UserCreateInput): Promise<any> {
       email: input.email,
       password: input.password,
       firstName: input.firstName,
-      lastName: input.lastName,
+      lastName: input.lastName || '', // Default to empty string if not provided
       phone: input.phone,
       role: input.role,
       isActive: true,

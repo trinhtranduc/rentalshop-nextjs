@@ -147,7 +147,7 @@ export async function POST(
       // Create new user
       const newUser = await db.users.create({
         firstName,
-        lastName,
+        lastName: lastName || '', // Default to empty string if not provided
         email,
         phone,
         role,

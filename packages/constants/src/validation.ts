@@ -33,8 +33,32 @@ export const VALIDATION = {
   MIN_DISCOUNT_AMOUNT: 0,
   MAX_DISCOUNT_PERCENTAGE: 100,
   
-  // File Uploads
-  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+  // File Uploads - Optimized sizes for web/mobile performance
+  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB (general upload limit)
+  
+  // Image size limits by type (optimized for performance)
+  IMAGE_SIZES: {
+    THUMBNAIL: 150 * 1024,      // 150KB - Small thumbnails, avatars
+    PRODUCT: 400 * 1024,        // 400KB - Product images (recommended)
+    PRODUCT_STRICT: 300 * 1024, // 300KB - Strict limit for mobile-first
+    DOCUMENT: 2 * 1024 * 1024,  // 2MB - Documents, contracts
+    MAX: 5 * 1024 * 1024,       // 5MB - Maximum allowed (rare cases)
+  },
+  
+  // Image quality settings
+  IMAGE_QUALITY: {
+    THUMBNAIL: 70,   // Lower quality for small images
+    PRODUCT: 75,     // Balanced quality for product images
+    HIGH: 85,        // High quality for special cases
+  },
+  
+  // Image dimensions (max width to maintain performance)
+  IMAGE_DIMENSIONS: {
+    THUMBNAIL: 300,   // 300px width
+    PRODUCT: 1920,    // 1920px width (Full HD)
+    PRODUCT_MOBILE: 800, // 800px for mobile-optimized
+  },
+  
   ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
 } as const;
 

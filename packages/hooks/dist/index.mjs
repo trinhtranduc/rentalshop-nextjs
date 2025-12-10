@@ -3924,7 +3924,12 @@ function useAuth() {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          localStorage.setItem("user", JSON.stringify(data.data));
+          const token2 = getAuthToken();
+          if (token2) {
+            storeAuthData(token2, data.data);
+          } else {
+            localStorage.setItem("user", JSON.stringify(data.data));
+          }
           setState((prev) => ({
             ...prev,
             user: data.data,
@@ -4487,6 +4492,10 @@ function isValidCurrencyCode(code) {
   return ["USD", "VND"].includes(code);
 }
 
+// src/hooks/useCustomersData.ts
+import { useMemo as useMemo3 } from "react";
+import { usePathname } from "next/navigation";
+
 // src/utils/useDedupedApi.ts
 import { useState as useState4, useEffect as useEffect4, useRef, useCallback as useCallback6, useMemo as useMemo2 } from "react";
 var requestCache = /* @__PURE__ */ new Map();
@@ -4713,11 +4722,18 @@ function getApiCacheStats() {
 import { customersApi } from "@rentalshop/utils";
 function useCustomersData(options) {
   const { filters, enabled = true } = options;
+  const pathname = usePathname();
+  const filtersWithPath = useMemo3(() => ({
+    ...filters,
+    _pathname: pathname
+    // Internal key to force refetch on navigation
+  }), [filters, pathname]);
   const result = useDedupedApi({
-    filters,
-    fetchFn: async (filters2) => {
-      console.log("\u{1F465} useCustomersData: Fetching with filters:", filters2);
-      const response = await customersApi.searchCustomers(filters2);
+    filters: filtersWithPath,
+    fetchFn: async (filtersWithPath2) => {
+      const { _pathname, ...apiFilters } = filtersWithPath2;
+      console.log("\u{1F465} useCustomersData: Fetching with filters:", apiFilters);
+      const response = await customersApi.searchCustomers(apiFilters);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch customers");
       }
@@ -4740,11 +4756,13 @@ function useCustomersData(options) {
       return transformed;
     },
     enabled,
-    staleTime: 3e4,
-    // 30 seconds cache
+    staleTime: 0,
+    // ✅ Set to 0 to always refetch on navigation (no stale cache)
     cacheTime: 3e5,
     // 5 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
+    // ✅ Force refetch when component mounts (navigating to page)
   });
   return result;
 }
@@ -4819,13 +4837,13 @@ function useMerchantsData(options) {
 }
 
 // src/hooks/useOrdersData.ts
-import { useMemo as useMemo3 } from "react";
-import { usePathname } from "next/navigation";
+import { useMemo as useMemo4 } from "react";
+import { usePathname as usePathname2 } from "next/navigation";
 import { ordersApi } from "@rentalshop/utils";
 function useOrdersData(options) {
   const { filters, enabled = true } = options;
-  const pathname = usePathname();
-  const filtersWithPath = useMemo3(() => ({
+  const pathname = usePathname2();
+  const filtersWithPath = useMemo4(() => ({
     ...filters,
     _pathname: pathname
     // Internal key to force refetch on navigation
@@ -5544,12 +5562,12 @@ var useToastHandler = () => {
 };
 
 // src/hooks/useLocale.ts
-import { useRouter, usePathname as usePathname2 } from "next/navigation";
+import { useRouter, usePathname as usePathname3 } from "next/navigation";
 import { useTransition } from "react";
 function useLocale() {
   const locale = Z();
   const router = useRouter();
-  const pathname = usePathname2();
+  const pathname = usePathname3();
   const [isPending, startTransition] = useTransition();
   const setLocale = (newLocale) => {
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
@@ -5614,14 +5632,23 @@ function useCanExportData() {
 }
 
 // src/hooks/useUsersData.ts
+import { useMemo as useMemo5 } from "react";
+import { usePathname as usePathname4 } from "next/navigation";
 import { usersApi } from "@rentalshop/utils";
 function useUsersData(options) {
   const { filters, enabled = true } = options;
+  const pathname = usePathname4();
+  const filtersWithPath = useMemo5(() => ({
+    ...filters,
+    _pathname: pathname
+    // Internal key to force refetch on navigation
+  }), [filters, pathname]);
   const result = useDedupedApi({
-    filters,
-    fetchFn: async (filters2) => {
-      console.log("\u{1F464} useUsersData: Fetching with filters:", filters2);
-      const response = await usersApi.searchUsers(filters2);
+    filters: filtersWithPath,
+    fetchFn: async (filtersWithPath2) => {
+      const { _pathname, ...apiFilters } = filtersWithPath2;
+      console.log("\u{1F464} useUsersData: Fetching with filters:", apiFilters);
+      const response = await usersApi.searchUsers(apiFilters);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch users");
       }
@@ -5666,22 +5693,24 @@ function useUsersData(options) {
       return transformed;
     },
     enabled,
-    staleTime: 3e4,
-    // 30 seconds cache
+    staleTime: 0,
+    // ✅ Set to 0 to always refetch on navigation (no stale cache)
     cacheTime: 3e5,
     // 5 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
+    // ✅ Force refetch when component mounts (navigating to page)
   });
   return result;
 }
 
 // src/hooks/useOptimisticNavigation.ts
 import { useState as useState9, useCallback as useCallback12, useEffect as useEffect6, useTransition as useTransition2 } from "react";
-import { usePathname as usePathname3, useRouter as useRouter2 } from "next/navigation";
+import { usePathname as usePathname5, useRouter as useRouter2 } from "next/navigation";
 function useOptimisticNavigation() {
   const [navigatingTo, setNavigatingTo] = useState9(null);
   const [isPending, startTransition] = useTransition2();
-  const pathname = usePathname3();
+  const pathname = usePathname5();
   const router = useRouter2();
   useEffect6(() => {
     if (navigatingTo && pathname === navigatingTo) {

@@ -1,16 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth';
-import { productUpdateSchema, handleApiError, ResponseBuilder, uploadToS3, generateAccessUrl, commitStagingFiles, deleteFromS3, extractS3KeyFromUrl, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { 
+  productUpdateSchema, 
+  handleApiError, 
+  ResponseBuilder, 
+  uploadToS3, 
+  commitStagingFiles, 
+  deleteFromS3, 
+  extractS3KeyFromUrl, 
+  generateStagingKey, 
+  generateProductImageKey, 
+  generateFileName, 
+  splitKeyIntoParts,
+  parseProductImages,
+  normalizeImagesInput,
+  combineProductImages,
+  compressImageTo1MB
+} from '@rentalshop/utils';
+import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 
 /**
  * Helper function to validate image file
  */
 function validateImage(file: File): { isValid: boolean; error?: string } {
-  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const ALLOWED_TYPES = VALIDATION.ALLOWED_IMAGE_TYPES;
   const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+  // Allow larger initial upload (5MB), will be compressed to 400KB
+  const MAX_FILE_SIZE = VALIDATION.MAX_FILE_SIZE;
   
   const fileTypeLower = file.type.toLowerCase().trim();
   const fileNameLower = file.name.toLowerCase().trim();
@@ -114,17 +131,7 @@ export async function GET(
       console.log('✅ Product found, transforming data...');
 
       // Parse images from database
-      let imageUrls: string[] = [];
-      if (typeof product.images === 'string') {
-        try {
-          const parsed = JSON.parse(product.images);
-          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
-        } catch {
-          imageUrls = product.images.split(',').filter(Boolean);
-        }
-      } else if (Array.isArray(product.images)) {
-        imageUrls = product.images.map(String).filter(Boolean);
-      }
+      const imageUrls = parseProductImages(product.images);
 
       // Transform the data to match the expected format
       const transformedProduct = {
@@ -254,16 +261,9 @@ export async function PUT(
           
           // Normalize images to array of strings
           if (productDataFromRequest.images !== undefined) {
-            if (Array.isArray(productDataFromRequest.images)) {
-              productDataFromRequest.images = productDataFromRequest.images.filter(Boolean);
-            } else if (typeof productDataFromRequest.images === 'string') {
-              productDataFromRequest.images = productDataFromRequest.images
-                .split(',')
-                .filter(Boolean)
-                .map((url: string) => url.trim());
-            }
-            
-            if (productDataFromRequest.images.length === 0) {
+            const normalized = normalizeImagesInput(productDataFromRequest.images);
+            productDataFromRequest.images = normalized.length > 0 ? normalized : undefined;
+            if (!productDataFromRequest.images) {
               delete productDataFromRequest.images;
             }
           }
@@ -288,62 +288,17 @@ export async function PUT(
               );
             }
             
-            // Convert file to buffer
+            // Convert file to buffer and compress
             const bytes = await file.arrayBuffer();
-            let buffer = Buffer.from(bytes);
+            const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
             
-            // Compress image to reduce file size - ensure < 1MB after compression
-            try {
-              const sharp = (await import('sharp')).default as any;
-              const originalSize = buffer.length;
-              const MAX_SIZE = 1 * 1024 * 1024; // 1MB target
-              
-              // Start with quality 80, reduce if needed to stay under 1MB
-              let quality = 80;
-              let compressedBuffer = buffer;
-              
-              do {
-                compressedBuffer = await sharp(buffer)
-                  .resize(1920, null, {
-                    withoutEnlargement: true,
-                    fit: 'inside'
-                  })
-                  .jpeg({ 
-                    quality,
-                    progressive: true,
-                    mozjpeg: true
-                  })
-                  .toBuffer();
-                
-                // If still too large and quality > 50, reduce quality and retry
-                if (compressedBuffer.length > MAX_SIZE && quality > 50) {
-                  quality -= 10;
-                } else {
-                  break;
-                }
-              } while (compressedBuffer.length > MAX_SIZE && quality > 50);
-              
-              buffer = compressedBuffer;
-              const compressedSize = buffer.length;
-              const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-              console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction, quality: ${quality})`);
-              
-              // Final check - reject if still > 1MB after compression
-              if (buffer.length > MAX_SIZE) {
-                return NextResponse.json(
-                  ResponseBuilder.error('IMAGE_TOO_LARGE'),
-                  { status: 400 }
-                );
-              }
-            } catch (compressError) {
-              console.warn('⚠️ Image compression failed, using original:', compressError);
-              // If compression fails and original > 1MB, reject
-              if (buffer.length > 1 * 1024 * 1024) {
-                return NextResponse.json(
-                  ResponseBuilder.error('IMAGE_TOO_LARGE'),
-                  { status: 400 }
-                );
-              }
+            // Final check - reject if still too large after compression
+            const MAX_SIZE = VALIDATION.IMAGE_SIZES.PRODUCT;
+            if (buffer.length > MAX_SIZE) {
+              return NextResponse.json(
+                ResponseBuilder.error('IMAGE_TOO_LARGE'),
+                { status: 400 }
+              );
             }
             
             // Generate filename and staging key using new structure
@@ -438,43 +393,18 @@ export async function PUT(
                 return url; // Fallback to original URL
               });
               
-              const existingImages = productDataFromRequest.images || [];
-              const allImages = [
-                ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
-                ...updatedUploadedFiles
-              ];
-              // Ensure allImages is properly normalized (not stringified JSON)
-              productDataFromRequest.images = allImages.map(img => {
-                if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
-                  try {
-                    const parsed = JSON.parse(img);
-                    return Array.isArray(parsed) ? parsed[0] : img;
-                  } catch {
-                    return img;
-                  }
-                }
-                return img;
-              }).flat().filter(Boolean);
+              // Combine existing images with new production URLs
+              productDataFromRequest.images = combineProductImages(
+                productDataFromRequest.images,
+                updatedUploadedFiles
+              );
             } else {
               console.error('❌ Failed to commit staging files:', commitResult.errors);
               // Fallback to staging URLs if commit fails
-              const existingImages = productDataFromRequest.images || [];
-              const allImages = [
-                ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
-                ...uploadedFiles
-              ];
-              // Ensure allImages is properly normalized (not stringified JSON)
-              productDataFromRequest.images = allImages.map(img => {
-                if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
-                  try {
-                    const parsed = JSON.parse(img);
-                    return Array.isArray(parsed) ? parsed[0] : img;
-                  } catch {
-                    return img;
-                  }
-                }
-                return img;
-              }).flat().filter(Boolean);
+              productDataFromRequest.images = combineProductImages(
+                productDataFromRequest.images,
+                uploadedFiles
+              );
             }
           }
         }
@@ -495,6 +425,11 @@ export async function PUT(
       // Extract outletStock from validated data
       const { outletStock, ...productUpdateData } = validatedData;
       console.log('🔍 PUT /api/products/[id] - Processing outletStock:', outletStock);
+      
+      // Normalize images to array format before saving
+      if (productUpdateData.images !== undefined) {
+        productUpdateData.images = normalizeImagesInput(productUpdateData.images);
+      }
 
       // Check if product exists and user has access to it
       const existingProduct = await db.products.findById(productId);
@@ -585,6 +520,9 @@ export async function PUT(
         }
       }
 
+      // Parse images from database
+      const imageUrls = parseProductImages(updatedProduct.images);
+
       // Transform the response to match frontend expectations
       const transformedProduct = {
         id: updatedProduct.id, // Return id directly to frontend
@@ -597,7 +535,7 @@ export async function PUT(
         costPrice: (updatedProduct as any).costPrice ?? null, // Include costPrice (giá vốn)
         deposit: updatedProduct.deposit,
         totalStock: updatedProduct.totalStock,
-        images: updatedProduct.images,
+        images: imageUrls, // Parse images properly
         isActive: updatedProduct.isActive,
         category: updatedProduct.category,
         merchant: updatedProduct.merchant,
@@ -670,17 +608,7 @@ export async function DELETE(
       }
 
       // Parse images from existing product to delete them from S3
-      let imageUrls: string[] = [];
-      if (typeof existingProduct.images === 'string') {
-        try {
-          const parsed = JSON.parse(existingProduct.images);
-          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
-        } catch {
-          imageUrls = existingProduct.images.split(',').filter(Boolean);
-        }
-      } else if (Array.isArray(existingProduct.images)) {
-        imageUrls = existingProduct.images.map(String).filter(Boolean);
-      }
+      const imageUrls = parseProductImages(existingProduct.images);
 
       // Delete all product images from S3 storage
       if (imageUrls.length > 0) {
