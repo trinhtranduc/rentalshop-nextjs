@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, extractStagingKeysFromUrls, mapStagingUrlsToProductionUrls, combineProductImages, normalizeImagesInput, parseProductImages } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../lib/image-compression';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
@@ -109,21 +109,8 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     // Process product images and filter outletStock based on queryOutletId
     // For MERCHANT role: queryOutletId is only for viewing stock at specific outlet, NOT filtering products
     const processedProducts = result.data?.map((product: any) => {
-      let imageUrls: string[] = [];
-      
-      // Images are stored as JSON string in database
-      if (typeof product.images === 'string') {
-        try {
-          const parsed = JSON.parse(product.images);
-          // Handle both cases: JSON array string or already parsed
-          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
-        } catch {
-          // Not JSON, treat as comma-separated
-          imageUrls = product.images.split(',').filter(Boolean);
-        }
-      } else if (Array.isArray(product.images)) {
-        imageUrls = product.images;
-      }
+      // Parse images using shared helper function for consistency
+      const imageUrls = parseProductImages(product.images);
       
       // For MERCHANT role: if queryOutletId is provided, filter outletStock to show only that outlet
       // This allows merchant to see ALL products but view stock at specific outlet
@@ -317,24 +304,12 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         }
       }
       
-      // Combine uploaded files with existing images
-      const existingImages = productDataFromRequest.images || [];
-      const allImages = [
-        ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
-        ...uploadedFiles
-      ];
-      // Ensure allImages is properly normalized (not stringified JSON)
-      productDataFromRequest.images = allImages.map(img => {
-        if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
-          try {
-            const parsed = JSON.parse(img);
-            return Array.isArray(parsed) ? parsed[0] : img;
-          } catch {
-            return img;
-          }
-        }
-        return img;
-      }).flat().filter(Boolean);
+      // Combine uploaded files (staging URLs) with existing images
+      // Note: We'll commit staging files to production after merchantId is determined
+      productDataFromRequest.images = combineProductImages(
+        productDataFromRequest.images,
+        uploadedFiles
+      );
       
     } else {
       // Handle regular JSON request
@@ -491,13 +466,30 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           : [];
 
       // Extract staging keys from URLs (both uploaded files and existing staging files)
+      // Support both old structure (staging/...) and new structure (env/prod/staging/...)
       stagingKeys = imageUrls
-        .filter(url => url && url.includes('amazonaws.com'))
+        .filter(url => url && (url.includes('amazonaws.com') || url.includes('cloudfront')))
         .map(url => {
-          const urlParts = url.split('amazonaws.com/');
-          return urlParts.length > 1 ? urlParts[1].split('?')[0] : null;
+          // Extract key from S3 URL or CloudFront URL
+          let key = '';
+          if (url.includes('amazonaws.com/')) {
+            const urlParts = url.split('amazonaws.com/');
+            key = urlParts.length > 1 ? urlParts[1].split('?')[0] : '';
+          } else if (url.includes('/')) {
+              // CloudFront URL or direct path
+              const urlParts = url.split('/');
+              const stagingIndex = urlParts.findIndex((part: string) => part.includes('staging'));
+              if (stagingIndex >= 0) {
+                key = urlParts.slice(stagingIndex).join('/');
+              }
+          }
+          return key || null;
         })
-        .filter((key): key is string => key !== null && key.startsWith('staging/'));
+        .filter((key): key is string => {
+          if (!key) return false;
+          // Check if key contains staging (supports both old and new structure)
+          return key.includes('/staging/') || key.startsWith('staging/');
+        });
 
       console.log('🔍 Found staging keys to commit:', stagingKeys);
       console.log('🔍 All image URLs:', imageUrls);
@@ -632,23 +624,10 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       }
     }
 
-    // Parse images from database response to return array
-    let imageUrls: string[] = [];
-    if (typeof product.images === 'string') {
-      try {
-        const parsed = JSON.parse(product.images);
-        imageUrls = Array.isArray(parsed) ? parsed : [parsed];
-      } catch {
-        imageUrls = product.images.split(',').filter(Boolean);
-      }
-    } else if (Array.isArray(product.images)) {
-      imageUrls = product.images.map(String).filter(Boolean);
-    }
-
-    // Return product with parsed images
+    // Return product with parsed images using shared helper function
     const responseProduct = {
       ...product,
-      images: imageUrls
+      images: parseProductImages(product.images)
     };
 
     return NextResponse.json({

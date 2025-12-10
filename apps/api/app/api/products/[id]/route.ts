@@ -15,7 +15,9 @@ import {
   splitKeyIntoParts,
   parseProductImages,
   normalizeImagesInput,
-  combineProductImages
+  combineProductImages,
+  extractStagingKeysFromUrls,
+  mapStagingUrlsToProductionUrls
 } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
@@ -274,12 +276,15 @@ export async function PUT(
           );
         }
 
-        // Handle file uploads
+        // Upload image files
         const imageFiles = formData.getAll('images') as File[];
-        console.log(`🔍 Found ${imageFiles.length} image files`);
-        
-        for (const file of imageFiles) {
-          if (file && file.size > 0) {
+        if (imageFiles.length > 0) {
+          console.log(`🔍 Processing ${imageFiles.length} image file(s)`);
+          
+          for (const file of imageFiles) {
+            if (!file || file.size === 0) continue;
+            
+            // Validate image
             const validation = validateImage(file);
             if (!validation.isValid) {
               return NextResponse.json(
@@ -288,124 +293,96 @@ export async function PUT(
               );
             }
             
-            // Convert file to buffer and compress
+            // Compress image
             const bytes = await file.arrayBuffer();
             const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
             
-            // Final check - reject if still too large after compression
-            const MAX_SIZE = VALIDATION.IMAGE_SIZES.PRODUCT;
-            if (buffer.length > MAX_SIZE) {
+            // Verify size after compression
+            if (buffer.length > VALIDATION.IMAGE_SIZES.PRODUCT) {
               return NextResponse.json(
                 ResponseBuilder.error('IMAGE_TOO_LARGE'),
                 { status: 400 }
               );
             }
             
-            // Generate filename and staging key using new structure
-            const fileName = generateFileName(
-              file.name.replace(/\.[^/.]+$/, '') || 'product-image'
-            );
+            // Upload to S3 staging
+            const fileName = generateFileName(file.name.replace(/\.[^/.]+$/, '') || 'product-image');
             const stagingKey = generateStagingKey(fileName);
             const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
             
-            // Upload compressed image to S3 staging folder with new structure
             const uploadResult = await uploadToS3(buffer, {
               folder,
               fileName: finalFileName,
-              contentType: 'image/jpeg', // Always JPEG after compression
+              contentType: 'image/jpeg',
               preserveOriginalName: false
             });
             
-            if (uploadResult.success && uploadResult.data) {
-              // Use CloudFront URL if available, otherwise fallback to S3 URL
-              const accessUrl = uploadResult.data.url; // Already uses CloudFront if configured
-              uploadedFiles.push(accessUrl);
-              console.log(`✅ Uploaded image: ${file.name} -> ${accessUrl}`);
-            } else {
+            if (!uploadResult.success || !uploadResult.data) {
               console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
               return NextResponse.json(
                 ResponseBuilder.error('IMAGE_UPLOAD_FAILED'),
                 { status: 500 }
               );
             }
+            
+            uploadedFiles.push(uploadResult.data.url);
+            console.log(`✅ Uploaded: ${file.name}`);
           }
         }
         
-        // Combine uploaded files with existing images (only if there are files)
+        // Commit staging files to production (if any uploaded)
         if (uploadedFiles.length > 0) {
-          // Extract staging keys from uploaded files
-          const stagingKeys = uploadedFiles.map(url => {
-            const urlParts = url.split('amazonaws.com/');
-            if (urlParts.length > 1) {
-              return urlParts[1].split('?')[0];
-            }
-            return null;
-          }).filter(Boolean) as string[];
+          const stagingKeys = extractStagingKeysFromUrls(uploadedFiles);
           
-          console.log('🔍 Found staging keys to commit:', stagingKeys);
-          
-          // Commit staging files to production
           if (stagingKeys.length > 0) {
-            // Use new structure: env/prod/products/merchant-{id}/outlet-{id}
+            console.log('🔍 Committing staging files to production:', stagingKeys.length);
+            
+            // Generate target folder using new structure: env/prod/products/merchant-{id}/outlet-{id}
             const outletId = userScope.outletId || undefined;
             const fileName = generateFileName('product-image');
-            
-            // Generate production key to get target folder
             const productionKey = generateProductImageKey(userMerchantId, fileName, outletId);
             const { folder: targetFolder } = splitKeyIntoParts(productionKey);
+            
+            // Commit staging files to production
             const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
             
             if (commitResult.success) {
-              // Generate production URLs using CloudFront directly
+              // Generate production URLs
               const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
-              const productionUrls = commitResult.committedKeys.map(key => {
-                // Always use CloudFront URL if configured, otherwise S3 URL
-                if (cloudfrontDomain) {
-                  return `https://${cloudfrontDomain}/${key}`;
-                }
-                // Fallback to direct URL if CloudFront not configured
-                const region = process.env.AWS_REGION || 'ap-southeast-1';
-                const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
-                return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-              });
+              const productionUrls = commitResult.committedKeys.map(key => 
+                cloudfrontDomain 
+                  ? `https://${cloudfrontDomain}/${key}`
+                  : `https://${process.env.AWS_S3_BUCKET_NAME || 'anyrent-images'}.s3.${process.env.AWS_REGION || 'ap-southeast-1'}.amazonaws.com/${key}`
+              );
               
               // Map staging URLs to production URLs
-              const updatedUploadedFiles = uploadedFiles.map(url => {
-                // Extract key from CloudFront or S3 URL
-                let key = '';
-                if (url.includes('amazonaws.com/')) {
-                  // S3 URL
-                  const urlParts = url.split('amazonaws.com/');
-                  key = urlParts[1]?.split('?')[0] || '';
-                } else if (cloudfrontDomain && url.includes(cloudfrontDomain)) {
-                  // CloudFront URL
-                  key = url.split(cloudfrontDomain + '/')[1] || '';
-                }
-                
-                if (key) {
-                  const committedKey = commitResult.committedKeys.find(ck => 
-                    ck.replace('product/', '') === key.replace('staging/', '')
-                  );
-                  if (committedKey) {
-                    return productionUrls[commitResult.committedKeys.indexOf(committedKey)];
-                  }
-                }
-                return url; // Fallback to original URL
-              });
+              const productionImageUrls = mapStagingUrlsToProductionUrls(
+                uploadedFiles,
+                commitResult.committedKeys,
+                productionUrls
+              );
               
-              // Combine existing images with new production URLs
+              // Combine with existing images
               productDataFromRequest.images = combineProductImages(
                 productDataFromRequest.images,
-                updatedUploadedFiles
+                productionImageUrls
               );
+              
+              console.log('✅ Committed staging files to production');
             } else {
               console.error('❌ Failed to commit staging files:', commitResult.errors);
-              // Fallback to staging URLs if commit fails
+              // Fallback: use staging URLs if commit fails
               productDataFromRequest.images = combineProductImages(
                 productDataFromRequest.images,
                 uploadedFiles
               );
             }
+          } else {
+            // No staging keys found, just combine uploaded files as-is
+            productDataFromRequest.images = combineProductImages(
+              productDataFromRequest.images,
+              uploadedFiles
+            );
           }
         }
         
@@ -418,15 +395,11 @@ export async function PUT(
 
       console.log('🔍 PUT /api/products/[id] - Update request body:', productDataFromRequest);
 
-      // Validate input data
+      // Validate and normalize input data
       const validatedData = productUpdateSchema.parse(productDataFromRequest);
-      console.log('✅ Validated update data:', validatedData);
-      
-      // Extract outletStock from validated data
       const { outletStock, ...productUpdateData } = validatedData;
-      console.log('🔍 PUT /api/products/[id] - Processing outletStock:', outletStock);
       
-      // Normalize images to array format before saving
+      // Normalize images to array format
       if (productUpdateData.images !== undefined) {
         productUpdateData.images = normalizeImagesInput(productUpdateData.images);
       }
@@ -520,22 +493,19 @@ export async function PUT(
         }
       }
 
-      // Parse images from database
-      const imageUrls = parseProductImages(updatedProduct.images);
-
-      // Transform the response to match frontend expectations
+      // Transform product for response
       const transformedProduct = {
-        id: updatedProduct.id, // Return id directly to frontend
+        id: updatedProduct.id,
         name: updatedProduct.name,
         description: updatedProduct.description,
         barcode: updatedProduct.barcode,
         categoryId: updatedProduct.categoryId,
         rentPrice: updatedProduct.rentPrice,
         salePrice: updatedProduct.salePrice,
-        costPrice: (updatedProduct as any).costPrice ?? null, // Include costPrice (giá vốn)
+        costPrice: (updatedProduct as any).costPrice ?? null,
         deposit: updatedProduct.deposit,
         totalStock: updatedProduct.totalStock,
-        images: imageUrls, // Parse images properly
+        images: parseProductImages(updatedProduct.images),
         isActive: updatedProduct.isActive,
         category: updatedProduct.category,
         merchant: updatedProduct.merchant,
