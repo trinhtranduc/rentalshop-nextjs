@@ -55,11 +55,14 @@ export function getS3Environment(): S3Environment {
 /**
  * Get environment prefix for folder path
  * @param environment Optional environment override
- * @returns Environment folder path (e.g., 'env/dev')
+ * @returns Empty string (no prefix needed - using separate buckets per environment)
+ * 
+ * @deprecated This function is kept for backward compatibility but returns empty string.
+ * We now use separate buckets: anyrent-images-dev and anyrent-images-pro
  */
 export function getEnvironmentPrefix(environment?: S3Environment): string {
-  const env = environment || getS3Environment();
-  return `env/${env}`;
+  // No prefix needed - environment is handled by bucket selection
+  return '';
 }
 
 // ============================================================================
@@ -70,16 +73,18 @@ export function getEnvironmentPrefix(environment?: S3Environment): string {
  * Generate folder path based on options
  * 
  * @param options Folder path configuration
- * @returns Full folder path (e.g., 'env/prod/products/merchant-1/outlet-2')
+ * @returns Full folder path WITHOUT env prefix (e.g., 'products/merchant-1' or 'staging')
+ * 
+ * ⚠️ IMPORTANT: No longer includes 'env/prod/' or 'env/dev/' prefix.
+ * Environment is handled by bucket selection (anyrent-images-dev vs anyrent-images-pro).
  * 
  * @example
- * // Product image with merchant and outlet
+ * // Product image (merchant level only, no outlet level)
  * generateFolderPath({
  *   imageType: 'product',
- *   merchantId: 1,
- *   outletId: 2
+ *   merchantId: 1
  * })
- * // Returns: 'env/prod/products/merchant-1/outlet-2'
+ * // Returns: 'products/merchant-1' (NO env/prod/ prefix)
  * 
  * @example
  * // User avatar
@@ -87,48 +92,46 @@ export function getEnvironmentPrefix(environment?: S3Environment): string {
  *   imageType: 'avatar',
  *   avatarSubType: 'user'
  * })
- * // Returns: 'env/prod/avatars/users'
+ * // Returns: 'avatars/users' (NO env/prod/ prefix)
  * 
  * @example
  * // Staging folder
  * generateFolderPath({
  *   imageType: 'staging'
  * })
- * // Returns: 'env/prod/staging'
+ * // Returns: 'staging' (NO env/prod/ prefix)
  */
 export function generateFolderPath(options: FolderPathOptions): string {
-  const basePath = getEnvironmentPrefix(options.environment);
-  
+  // Simplified structure: NO env prefix (environment handled by bucket selection)
   switch (options.imageType) {
     case 'product': {
-      if (options.merchantId && options.outletId) {
-        return `${basePath}/products/merchant-${options.merchantId}/outlet-${options.outletId}`;
-      } else if (options.merchantId) {
-        return `${basePath}/products/merchant-${options.merchantId}`;
+      // Products belong to merchant level only (no outlet level)
+      if (options.merchantId) {
+        return `products/merchant-${options.merchantId}`;
       }
-      return `${basePath}/products`;
+      return 'products';
     }
     
     case 'avatar': {
       const avatarSubType = options.avatarSubType || 'users';
-      return `${basePath}/avatars/${avatarSubType}`;
+      return `avatars/${avatarSubType}`;
     }
     
     case 'document': {
       const docSubType = options.documentSubType || 'other';
-      return `${basePath}/documents/${docSubType}`;
+      return `documents/${docSubType}`;
     }
     
     case 'temp': {
-      return `${basePath}/temp`;
+      return 'temp';
     }
     
     case 'staging': {
-      return `${basePath}/staging`;
+      return 'staging';
     }
     
     default: {
-      return `${basePath}/uploads`;
+      return 'uploads';
     }
   }
 }
@@ -141,16 +144,25 @@ export function generateFolderPath(options: FolderPathOptions): string {
  * Generate full S3 key (folder path + filename)
  * 
  * @param options Key generation options
- * @returns Full S3 key (e.g., 'env/prod/products/merchant-1/product-image-1234567890-abc123.jpg')
+ * @returns Full S3 key WITHOUT env prefix (e.g., 'products/merchant-1/product-image-1234567890-abc123.jpg')
+ * 
+ * ⚠️ IMPORTANT: No longer includes 'env/prod/' or 'env/dev/' prefix.
+ * Environment is handled by bucket selection (anyrent-images-dev vs anyrent-images-pro).
  * 
  * @example
  * generateS3Key({
  *   imageType: 'product',
  *   merchantId: 1,
- *   outletId: 2,
  *   fileName: 'product-image-1234567890-abc123.jpg'
  * })
- * // Returns: 'env/prod/products/merchant-1/outlet-2/product-image-1234567890-abc123.jpg'
+ * // Returns: 'products/merchant-1/product-image-1234567890-abc123.jpg' (NO env/prod/ prefix)
+ * 
+ * @example
+ * generateS3Key({
+ *   imageType: 'staging',
+ *   fileName: 'image-1234567890-abc123.jpg'
+ * })
+ * // Returns: 'staging/image-1234567890-abc123.jpg' (NO env/prod/ prefix)
  */
 export function generateS3Key(options: GenerateKeyOptions): string {
   const folderPath = generateFolderPath(options);
@@ -216,17 +228,19 @@ export function parseS3Key(key: string): {
   let avatarSubType: AvatarSubType | null = null;
   let documentSubType: DocumentSubType | null = null;
   
-  // Check for environment prefix
+  // Check for environment prefix (backward compatibility - old structure)
+  // New structure: no env prefix (environment handled by bucket selection)
   if (parts[0] === 'env' && parts[1]) {
     environment = parts[1] as S3Environment;
   }
   
-  // Find image type
-  const imageTypeIndex = parts.indexOf('products') !== -1 ? parts.indexOf('products') :
-                         parts.indexOf('avatars') !== -1 ? parts.indexOf('avatars') :
-                         parts.indexOf('documents') !== -1 ? parts.indexOf('documents') :
-                         parts.indexOf('temp') !== -1 ? parts.indexOf('temp') :
-                         parts.indexOf('staging') !== -1 ? parts.indexOf('staging') : -1;
+  // Find image type (starting from beginning or after env prefix)
+  const startIndex = parts[0] === 'env' ? 2 : 0;
+  const imageTypeIndex = parts.indexOf('products', startIndex) !== -1 ? parts.indexOf('products', startIndex) :
+                         parts.indexOf('avatars', startIndex) !== -1 ? parts.indexOf('avatars', startIndex) :
+                         parts.indexOf('documents', startIndex) !== -1 ? parts.indexOf('documents', startIndex) :
+                         parts.indexOf('temp', startIndex) !== -1 ? parts.indexOf('temp', startIndex) :
+                         parts.indexOf('staging', startIndex) !== -1 ? parts.indexOf('staging', startIndex) : -1;
   
   if (imageTypeIndex !== -1) {
     const typeStr = parts[imageTypeIndex];
@@ -335,18 +349,19 @@ export function convertStagingToProductionKey(
 
 /**
  * Generate product image key
+ * Products belong to merchant level only (no outlet level)
  */
 export function generateProductImageKey(
   merchantId: number,
   fileName: string,
-  outletId?: number,
+  outletId?: number, // Deprecated: kept for backward compatibility, not used
   environment?: S3Environment
 ): string {
   return generateS3Key({
     environment,
     imageType: 'product',
     merchantId,
-    outletId,
+    // outletId removed - products belong to merchant level
     fileName
   });
 }

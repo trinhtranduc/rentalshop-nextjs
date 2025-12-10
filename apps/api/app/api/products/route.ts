@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, extractStagingKeysFromUrls, mapStagingUrlsToProductionUrls, combineProductImages, normalizeImagesInput, parseProductImages } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, extractStagingKeysFromUrls, mapStagingUrlsToProductionUrls, combineProductImages, normalizeImagesInput, parseProductImages, getBucketName } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../lib/image-compression';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
@@ -466,7 +466,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           : [];
 
       // Extract staging keys from URLs (both uploaded files and existing staging files)
-      // Support both old structure (staging/...) and new structure (env/prod/staging/...)
+      // Structure: staging/filename.jpg (simplified, no env prefix)
       stagingKeys = imageUrls
         .filter(url => url && (url.includes('amazonaws.com') || url.includes('cloudfront')))
         .map(url => {
@@ -496,12 +496,11 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
       // Commit staging files to production (including newly uploaded files)
       if (stagingKeys.length > 0) {
-        // Use new structure: env/prod/products/merchant-{id}/outlet-{id}
-        const outletId = userScope.outletId || undefined;
+        // Structure: products/merchant-{id} (simplified, no env prefix, no outlet level)
         const fileName = generateFileName('product-image');
         
-        // Generate production key to get target folder
-        const productionKey = generateProductImageKey(merchantId, fileName, outletId);
+        // Generate production key to get target folder (products belong to merchant level)
+        const productionKey = generateProductImageKey(merchantId, fileName);
         const { folder: targetFolder } = splitKeyIntoParts(productionKey);
         
         const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
@@ -516,7 +515,9 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
               }
               // Fallback to direct URL if presigned fails
               const region = process.env.AWS_REGION || 'ap-southeast-1';
-              const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
+              // Get bucket name (auto-selected based on NODE_ENV)
+              const bucketName = process.env.AWS_S3_BUCKET_NAME || 
+                (process.env.NODE_ENV === 'production' ? 'anyrent-images-pro' : 'anyrent-images-dev');
               return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
             })
           );
