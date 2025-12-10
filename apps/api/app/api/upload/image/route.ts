@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
 import { ResponseBuilder } from '@rentalshop/utils';
-import { uploadToS3, generateAccessUrl } from '@rentalshop/utils';
+import { uploadToS3, generateAccessUrl, generateStagingKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
+import { compressImageTo1MB } from '../../../../lib/image-compression';
+import { VALIDATION } from '@rentalshop/constants';
 
 // Allowed image types - JPG, PNG, and WebP (browser often converts to WebP)
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const ALLOWED_TYPES = VALIDATION.ALLOWED_IMAGE_TYPES;
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-const MAX_FILE_SIZE = 1 * 1024 * 1024; // 5MB
+// Allow larger initial upload (5MB), will be compressed to 400KB
+const MAX_FILE_SIZE = VALIDATION.MAX_FILE_SIZE;
 
 /**
  * Validate image file
@@ -116,37 +119,20 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
       );
     }
 
-    // Convert file to buffer
+    // Convert file to buffer and compress
     const bytes = await file.arrayBuffer();
-    let buffer = Buffer.from(bytes);
-
-    // Compress image to reduce file size
-    try {
-      const sharp = (await import('sharp')).default as any;
-      const originalSize = buffer.length;
-      
-      // Compress image: resize max width 1920px, quality 85%, convert to JPEG
-      buffer = await sharp(buffer)
-        .resize(1920, null, {
-          withoutEnlargement: true,
-          fit: 'inside'
-        })
-        .jpeg({ 
-          quality: 85,
-          progressive: true,
-          mozjpeg: true
-        })
-        .toBuffer();
-      
-      const compressedSize = buffer.length;
-      const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-      console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction)`);
-    } catch (compressError) {
-      console.warn('⚠️ Image compression failed, using original:', compressError);
-      // Continue with original buffer if compression fails
+    const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
+    
+    // Final check - reject if still too large after compression
+    const MAX_SIZE = VALIDATION.IMAGE_SIZES.PRODUCT;
+    if (buffer.length > MAX_SIZE) {
+      return NextResponse.json(
+        ResponseBuilder.error('IMAGE_TOO_LARGE'),
+        { status: 400 }
+      );
     }
 
-    // Smart filename handling: prioritize originalName, then file.name, with preservation option
+    // Smart filename handling: prioritize originalName, then file.name
     const effectiveFileName = (() => {
       // Case 1: Frontend provides originalName (best case)
       if (originalName && originalName.trim()) {
@@ -162,21 +148,30 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
       return null;
     })();
 
+    // Generate filename and staging key using new structure
+    const fileName = effectiveFileName
+      ? generateFileName(effectiveFileName.replace(/\.[^/.]+$/, ''))
+      : generateFileName('upload-image');
+    const stagingKey = generateStagingKey(fileName);
+    const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
+
     console.log('📸 Uploading image:', {
       originalFile: file.name,
       providedOriginalName: originalName,
       effectiveFileName: effectiveFileName,
+      finalFileName: finalFileName,
+      stagingKey: stagingKey,
       preserveFilename,
       contentType: file.type,
       size: file.size
     });
 
-    // Upload compressed image to AWS S3 staging folder
+    // Upload compressed image to AWS S3 staging folder with new structure
     const result = await uploadToS3(buffer, {
-      folder: 'staging',
-      fileName: effectiveFileName || undefined,
+      folder,
+      fileName: finalFileName,
       contentType: 'image/jpeg', // Always JPEG after compression
-      preserveOriginalName: preserveFilename
+      preserveOriginalName: false // Always use generated filename for consistency
     });
     console.log('✅ Image uploaded to AWS S3');
     console.log('📊 Upload result:', JSON.stringify(result, null, 2));

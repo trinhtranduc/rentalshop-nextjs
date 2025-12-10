@@ -4,7 +4,7 @@ const nextConfig = {
   // Only use standalone in production (Railway/Docker)
   output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   
-  // CRITICAL: Tell Next.js NOT to bundle Prisma (it needs native binaries)
+  // CRITICAL: Tell Next.js NOT to bundle native modules (Prisma, Sharp)
   experimental: {
     // Point to monorepo root for file tracing
     outputFileTracingRoot: require('path').join(__dirname, '../../'),
@@ -13,6 +13,7 @@ const nextConfig = {
       '@prisma/engines',
       'prisma',
       '.prisma/client',
+      'sharp', // Externalize Sharp (Node.js native module)
     ],
   },
   
@@ -50,26 +51,28 @@ const nextConfig = {
       // This ensures Prisma is loaded from node_modules at runtime, not bundled
       config.externals = config.externals || [];
       
-      // External Prisma packages as CommonJS modules
-      const prismaExternals = {
+      // External native Node.js packages as CommonJS modules
+      // These cannot be bundled by webpack (they need native binaries)
+      const nativeExternals = {
         '@prisma/client': 'commonjs @prisma/client',
         '.prisma/client': 'commonjs .prisma/client',
         '@prisma/engines': 'commonjs @prisma/engines',
+        'sharp': 'commonjs sharp', // Externalize Sharp (image processing native module)
       };
       
       // Add to externals array (handle both array and function formats)
       if (Array.isArray(config.externals)) {
-        config.externals.push(prismaExternals);
+        config.externals.push(nativeExternals);
       } else if (typeof config.externals === 'function') {
         const originalExternals = config.externals;
         config.externals = (context, request, callback) => {
-          if (prismaExternals[request]) {
-            return callback(null, prismaExternals[request]);
+          if (nativeExternals[request]) {
+            return callback(null, nativeExternals[request]);
           }
           return originalExternals(context, request, callback);
         };
       } else {
-        config.externals = [config.externals, prismaExternals];
+        config.externals = [config.externals, nativeExternals];
       }
       
       // Ensure Prisma Client resolves to root node_modules (fallback)

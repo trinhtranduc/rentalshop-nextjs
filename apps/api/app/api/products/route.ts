@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, extractStagingKeysFromUrls, mapStagingUrlsToProductionUrls, combineProductImages, normalizeImagesInput, parseProductImages, getBucketName } from '@rentalshop/utils';
+import { compressImageTo1MB } from '../../../lib/image-compression';
 import { searchRateLimiter } from '@rentalshop/middleware';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { z } from 'zod';
 
 /**
@@ -108,21 +109,8 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     // Process product images and filter outletStock based on queryOutletId
     // For MERCHANT role: queryOutletId is only for viewing stock at specific outlet, NOT filtering products
     const processedProducts = result.data?.map((product: any) => {
-      let imageUrls: string[] = [];
-      
-      // Images are stored as JSON string in database
-      if (typeof product.images === 'string') {
-        try {
-          const parsed = JSON.parse(product.images);
-          // Handle both cases: JSON array string or already parsed
-          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
-        } catch {
-          // Not JSON, treat as comma-separated
-          imageUrls = product.images.split(',').filter(Boolean);
-        }
-      } else if (Array.isArray(product.images)) {
-        imageUrls = product.images;
-      }
+      // Parse images using shared helper function for consistency
+      const imageUrls = parseProductImages(product.images);
       
       // For MERCHANT role: if queryOutletId is provided, filter outletStock to show only that outlet
       // This allows merchant to see ALL products but view stock at specific outlet
@@ -172,9 +160,10 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
  * Helper function to validate image file
  */
 function validateImage(file: File): { isValid: boolean; error?: string } {
-  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const ALLOWED_TYPES = VALIDATION.ALLOWED_IMAGE_TYPES;
   const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  // Allow larger initial upload (5MB), will be compressed to 400KB
+  const MAX_FILE_SIZE = VALIDATION.MAX_FILE_SIZE;
   
   const fileTypeLower = file.type.toLowerCase().trim();
   const fileNameLower = file.name.toLowerCase().trim();
@@ -272,40 +261,30 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             );
           }
           
-          // Convert file to buffer
+          // Convert file to buffer and compress
           const bytes = await file.arrayBuffer();
-          let buffer = Buffer.from(bytes);
+          const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
           
-          // Compress image to reduce file size
-          try {
-            const sharp = (await import('sharp')).default as any;
-            const originalSize = buffer.length;
-            
-            // Compress image: resize max width 1920px, quality 85%, convert to JPEG
-            buffer = await sharp(buffer)
-              .resize(1920, null, {
-                withoutEnlargement: true,
-                fit: 'inside'
-              })
-              .jpeg({ 
-                quality: 85,
-                progressive: true,
-                mozjpeg: true
-              })
-              .toBuffer();
-            
-            const compressedSize = buffer.length;
-            const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-            console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction)`);
-          } catch (compressError) {
-            console.warn('⚠️ Image compression failed, using original:', compressError);
-            // Continue with original buffer if compression fails
+          // Final check - reject if still too large after compression
+          const MAX_SIZE = VALIDATION.IMAGE_SIZES.PRODUCT;
+          if (buffer.length > MAX_SIZE) {
+            return NextResponse.json(
+              ResponseBuilder.error('IMAGE_TOO_LARGE'),
+              { status: 400 }
+            );
           }
           
-          // Upload compressed image to S3
+          // Generate filename and staging key using new structure
+          const fileName = generateFileName(
+            file.name.replace(/\.[^/.]+$/, '') || 'product-image'
+          );
+          const stagingKey = generateStagingKey(fileName);
+          const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
+          
+          // Upload compressed image to S3 staging folder with new structure
           const uploadResult = await uploadToS3(buffer, {
-            folder: 'staging',
-            fileName: file.name,
+            folder,
+            fileName: finalFileName,
             contentType: 'image/jpeg', // Always JPEG after compression
             preserveOriginalName: false
           });
@@ -325,24 +304,12 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         }
       }
       
-      // Combine uploaded files with existing images
-      const existingImages = productDataFromRequest.images || [];
-      const allImages = [
-        ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
-        ...uploadedFiles
-      ];
-      // Ensure allImages is properly normalized (not stringified JSON)
-      productDataFromRequest.images = allImages.map(img => {
-        if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
-          try {
-            const parsed = JSON.parse(img);
-            return Array.isArray(parsed) ? parsed[0] : img;
-          } catch {
-            return img;
-          }
-        }
-        return img;
-      }).flat().filter(Boolean);
+      // Combine uploaded files (staging URLs) with existing images
+      // Note: We'll commit staging files to production after merchantId is determined
+      productDataFromRequest.images = combineProductImages(
+        productDataFromRequest.images,
+        uploadedFiles
+      );
       
     } else {
       // Handle regular JSON request
@@ -499,21 +466,43 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           : [];
 
       // Extract staging keys from URLs (both uploaded files and existing staging files)
+      // Structure: staging/filename.jpg (simplified, no env prefix)
       stagingKeys = imageUrls
-        .filter(url => url && url.includes('amazonaws.com'))
+        .filter(url => url && (url.includes('amazonaws.com') || url.includes('cloudfront')))
         .map(url => {
-          const urlParts = url.split('amazonaws.com/');
-          return urlParts.length > 1 ? urlParts[1].split('?')[0] : null;
+          // Extract key from S3 URL or CloudFront URL
+          let key = '';
+          if (url.includes('amazonaws.com/')) {
+            const urlParts = url.split('amazonaws.com/');
+            key = urlParts.length > 1 ? urlParts[1].split('?')[0] : '';
+          } else if (url.includes('/')) {
+              // CloudFront URL or direct path
+              const urlParts = url.split('/');
+              const stagingIndex = urlParts.findIndex((part: string) => part.includes('staging'));
+              if (stagingIndex >= 0) {
+                key = urlParts.slice(stagingIndex).join('/');
+              }
+          }
+          return key || null;
         })
-        .filter((key): key is string => key !== null && key.startsWith('staging/'));
+        .filter((key): key is string => {
+          if (!key) return false;
+          // Check if key contains staging (supports both old and new structure)
+          return key.includes('/staging/') || key.startsWith('staging/');
+        });
 
       console.log('🔍 Found staging keys to commit:', stagingKeys);
       console.log('🔍 All image URLs:', imageUrls);
 
       // Commit staging files to production (including newly uploaded files)
       if (stagingKeys.length > 0) {
-        // Use product/merchantId/ structure for better organization
-        const targetFolder = `product/${merchantId}`;
+        // Structure: products/merchant-{id} (simplified, no env prefix, no outlet level)
+        const fileName = generateFileName('product-image');
+        
+        // Generate production key to get target folder (products belong to merchant level)
+        const productionKey = generateProductImageKey(merchantId, fileName);
+        const { folder: targetFolder } = splitKeyIntoParts(productionKey);
+        
         const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
         
         if (commitResult.success) {
@@ -526,7 +515,9 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
               }
               // Fallback to direct URL if presigned fails
               const region = process.env.AWS_REGION || 'ap-southeast-1';
-              const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
+              // Get bucket name (auto-selected based on NODE_ENV)
+              const bucketName = process.env.AWS_S3_BUCKET_NAME || 
+                (process.env.NODE_ENV === 'production' ? 'anyrent-images-pro' : 'anyrent-images-dev');
               return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
             })
           );
@@ -634,23 +625,10 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       }
     }
 
-    // Parse images from database response to return array
-    let imageUrls: string[] = [];
-    if (typeof product.images === 'string') {
-      try {
-        const parsed = JSON.parse(product.images);
-        imageUrls = Array.isArray(parsed) ? parsed : [parsed];
-      } catch {
-        imageUrls = product.images.split(',').filter(Boolean);
-      }
-    } else if (Array.isArray(product.images)) {
-      imageUrls = product.images.map(String).filter(Boolean);
-    }
-
-    // Return product with parsed images
+    // Return product with parsed images using shared helper function
     const responseProduct = {
       ...product,
-      images: imageUrls
+      images: parseProductImages(product.images)
     };
 
     return NextResponse.json({

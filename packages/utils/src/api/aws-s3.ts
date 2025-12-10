@@ -51,7 +51,30 @@ try {
   s3Client = new S3Client({ region: AWS_REGION });
 }
 
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
+/**
+ * Get S3 bucket name based on environment
+ * Uses separate buckets for dev and prod: anyrent-images-dev, anyrent-images-pro
+ * 
+ * @returns Bucket name based on NODE_ENV or explicit AWS_S3_BUCKET_NAME
+ */
+export function getBucketName(): string {
+  const env = (process.env.NODE_ENV || 'development').toLowerCase();
+  
+  // Allow explicit override via environment variable
+  if (process.env.AWS_S3_BUCKET_NAME) {
+    return process.env.AWS_S3_BUCKET_NAME;
+  }
+  
+  // Auto-select bucket based on environment
+  if (env === 'production' || env === 'prod') {
+    return 'anyrent-images-pro';
+  }
+  
+  // Development and staging use dev bucket
+  return 'anyrent-images-dev';
+}
+
+const BUCKET_NAME = getBucketName();
 const CLOUDFRONT_DOMAIN = process.env.AWS_CLOUDFRONT_DOMAIN || '';
 
 // ============================================================================
@@ -388,8 +411,11 @@ export async function cleanupStagingFiles(
     try {
       const cleanStagingKey = stagingKey.trim().replace(/\/+/g, '/');
       
-      // Ensure it's a staging file for safety
-      if (!cleanStagingKey.startsWith('staging/')) {
+      // Ensure it's a staging file for safety (support both old and new structure)
+      const isOldStaging = cleanStagingKey.startsWith('staging/');
+      const isNewStaging = cleanStagingKey.includes('/staging/');
+      
+      if (!isOldStaging && !isNewStaging) {
         console.warn(`⚠️ Skipping non-staging file: ${cleanStagingKey}`);
         continue;
       }
@@ -418,6 +444,12 @@ export async function cleanupStagingFiles(
 /**
  * Move file from staging to production folder in S3
  * This implements the Two-Phase Upload Pattern
+ * 
+ * Structure:
+ * - Staging: staging/filename.jpg (root level)
+ * - Production: products/merchant-{id}/outlet-{id}/filename.jpg
+ * 
+ * Supports backward compatibility with old structure (env/prod/staging/...)
  */
 export async function commitStagingFiles(
   stagingKeys: string[], 
@@ -428,7 +460,22 @@ export async function commitStagingFiles(
 
   for (const stagingKey of stagingKeys) {
     const cleanStagingKey = stagingKey.trim().replace(/\/+/g, '/');
-    const filename = cleanStagingKey.replace(/^staging\//, '').replace(/^\./, '');
+    
+    // Extract filename - supports both old (env/prod/staging/...) and new (staging/...) structure
+    let filename: string;
+    if (cleanStagingKey.includes('/staging/')) {
+      // Could be: env/prod/staging/filename.jpg (old) or staging/filename.jpg (new)
+      const parts = cleanStagingKey.split('/staging/');
+      filename = parts[1] || cleanStagingKey.split('/').pop() || '';
+    } else if (cleanStagingKey.startsWith('staging/')) {
+      // New simplified structure: staging/filename.jpg
+      filename = cleanStagingKey.replace(/^staging\//, '');
+    } else {
+      // Fallback: just get filename
+      filename = cleanStagingKey.split('/').pop() || '';
+    }
+    
+    filename = filename.replace(/^\./, ''); // Remove leading dots
     const cleanTargetKey = `${targetFolder}/${filename}`.replace(/\/+/g, '/');
     
     try {

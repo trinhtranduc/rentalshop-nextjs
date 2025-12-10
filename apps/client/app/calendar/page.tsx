@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocale as useNextIntlLocale } from 'next-intl';
 import { Calendars, PageWrapper, Breadcrumb, Button, PageLoadingIndicator } from '@rentalshop/ui';
 import { X } from 'lucide-react';
 import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
+import { ORDER_STATUS } from '@rentalshop/constants';
 import type { PickupOrder } from '@rentalshop/ui';
 
 export default function CalendarPage() {
@@ -16,6 +18,7 @@ export default function CalendarPage() {
   const t = useCommonTranslations();
   const tcal = useCalendarTranslations();
   const to = useOrderTranslations();
+  const locale = useNextIntlLocale() as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -280,7 +283,18 @@ export default function CalendarPage() {
                   {(() => {
                     // Get translation value
                     let ordersForText = tcal('modal.ordersFor');
-                    const dateText = selectedDate.toLocaleDateString('vi-VN', { 
+                    
+                    // Map locale to Intl locale string
+                    const intlLocaleMap: Record<string, string> = {
+                      'vi': 'vi-VN',
+                      'en': 'en-US',
+                      'zh': 'zh-CN',
+                      'ko': 'ko-KR',
+                      'ja': 'ja-JP'
+                    };
+                    const intlLocale = intlLocaleMap[locale] || 'vi-VN';
+                    
+                    const dateText = selectedDate.toLocaleDateString(intlLocale, { 
                       weekday: 'long', 
                       year: 'numeric', 
                       month: 'long', 

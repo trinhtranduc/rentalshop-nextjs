@@ -1,16 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth';
-import { productUpdateSchema, handleApiError, ResponseBuilder, uploadToS3, generateAccessUrl, commitStagingFiles, deleteFromS3, extractS3KeyFromUrl } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { 
+  productUpdateSchema, 
+  handleApiError, 
+  ResponseBuilder, 
+  uploadToS3, 
+  commitStagingFiles, 
+  deleteFromS3, 
+  extractS3KeyFromUrl, 
+  generateStagingKey, 
+  generateProductImageKey, 
+  generateFileName, 
+  splitKeyIntoParts,
+  parseProductImages,
+  normalizeImagesInput,
+  combineProductImages,
+  extractStagingKeysFromUrls,
+  mapStagingUrlsToProductionUrls
+} from '@rentalshop/utils';
+import { compressImageTo1MB } from '../../../../lib/image-compression';
+import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 
 /**
  * Helper function to validate image file
  */
 function validateImage(file: File): { isValid: boolean; error?: string } {
-  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const ALLOWED_TYPES = VALIDATION.ALLOWED_IMAGE_TYPES;
   const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 5MB
+  // Allow larger initial upload (5MB), will be compressed to 400KB
+  const MAX_FILE_SIZE = VALIDATION.MAX_FILE_SIZE;
   
   const fileTypeLower = file.type.toLowerCase().trim();
   const fileNameLower = file.name.toLowerCase().trim();
@@ -114,17 +133,7 @@ export async function GET(
       console.log('✅ Product found, transforming data...');
 
       // Parse images from database
-      let imageUrls: string[] = [];
-      if (typeof product.images === 'string') {
-        try {
-          const parsed = JSON.parse(product.images);
-          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
-        } catch {
-          imageUrls = product.images.split(',').filter(Boolean);
-        }
-      } else if (Array.isArray(product.images)) {
-        imageUrls = product.images.map(String).filter(Boolean);
-      }
+      const imageUrls = parseProductImages(product.images);
 
       // Transform the data to match the expected format
       const transformedProduct = {
@@ -254,16 +263,9 @@ export async function PUT(
           
           // Normalize images to array of strings
           if (productDataFromRequest.images !== undefined) {
-            if (Array.isArray(productDataFromRequest.images)) {
-              productDataFromRequest.images = productDataFromRequest.images.filter(Boolean);
-            } else if (typeof productDataFromRequest.images === 'string') {
-              productDataFromRequest.images = productDataFromRequest.images
-                .split(',')
-                .filter(Boolean)
-                .map((url: string) => url.trim());
-            }
-            
-            if (productDataFromRequest.images.length === 0) {
+            const normalized = normalizeImagesInput(productDataFromRequest.images);
+            productDataFromRequest.images = normalized.length > 0 ? normalized : undefined;
+            if (!productDataFromRequest.images) {
               delete productDataFromRequest.images;
             }
           }
@@ -274,12 +276,15 @@ export async function PUT(
           );
         }
 
-        // Handle file uploads
+        // Upload image files
         const imageFiles = formData.getAll('images') as File[];
-        console.log(`🔍 Found ${imageFiles.length} image files`);
-        
-        for (const file of imageFiles) {
-          if (file && file.size > 0) {
+        if (imageFiles.length > 0) {
+          console.log(`🔍 Processing ${imageFiles.length} image file(s)`);
+          
+          for (const file of imageFiles) {
+            if (!file || file.size === 0) continue;
+            
+            // Validate image
             const validation = validateImage(file);
             if (!validation.isValid) {
               return NextResponse.json(
@@ -288,154 +293,95 @@ export async function PUT(
               );
             }
             
-            // Convert file to buffer
+            // Compress image
             const bytes = await file.arrayBuffer();
-            let buffer = Buffer.from(bytes);
+            const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
             
-            // Compress image to reduce file size
-            try {
-              const sharp = (await import('sharp')).default as any;
-              const originalSize = buffer.length;
-              
-              // Compress image: resize max width 1920px, quality 85%, convert to JPEG
-              buffer = await sharp(buffer)
-                .resize(1920, null, {
-                  withoutEnlargement: true,
-                  fit: 'inside'
-                })
-                .jpeg({ 
-                  quality: 85,
-                  progressive: true,
-                  mozjpeg: true
-                })
-                .toBuffer();
-              
-              const compressedSize = buffer.length;
-              const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-              console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction)`);
-            } catch (compressError) {
-              console.warn('⚠️ Image compression failed, using original:', compressError);
-              // Continue with original buffer if compression fails
+            // Verify size after compression
+            if (buffer.length > VALIDATION.IMAGE_SIZES.PRODUCT) {
+              return NextResponse.json(
+                ResponseBuilder.error('IMAGE_TOO_LARGE'),
+                { status: 400 }
+              );
             }
             
-            // Upload compressed image to S3
+            // Upload to S3 staging
+            const fileName = generateFileName(file.name.replace(/\.[^/.]+$/, '') || 'product-image');
+            const stagingKey = generateStagingKey(fileName);
+            const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
+            
             const uploadResult = await uploadToS3(buffer, {
-              folder: 'staging',
-              fileName: file.name,
-              contentType: 'image/jpeg', // Always JPEG after compression
+              folder,
+              fileName: finalFileName,
+              contentType: 'image/jpeg',
               preserveOriginalName: false
             });
             
-            if (uploadResult.success && uploadResult.data) {
-              // Use CloudFront URL if available, otherwise fallback to S3 URL
-              const accessUrl = uploadResult.data.url; // Already uses CloudFront if configured
-              uploadedFiles.push(accessUrl);
-              console.log(`✅ Uploaded image: ${file.name} -> ${accessUrl}`);
-            } else {
+            if (!uploadResult.success || !uploadResult.data) {
               console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
               return NextResponse.json(
                 ResponseBuilder.error('IMAGE_UPLOAD_FAILED'),
                 { status: 500 }
               );
             }
+            
+            uploadedFiles.push(uploadResult.data.url);
+            console.log(`✅ Uploaded: ${file.name}`);
           }
         }
         
-        // Combine uploaded files with existing images (only if there are files)
+        // Commit staging files to production (if any uploaded)
         if (uploadedFiles.length > 0) {
-          // Extract staging keys from uploaded files
-          const stagingKeys = uploadedFiles.map(url => {
-            const urlParts = url.split('amazonaws.com/');
-            if (urlParts.length > 1) {
-              return urlParts[1].split('?')[0];
-            }
-            return null;
-          }).filter(Boolean) as string[];
+          const stagingKeys = extractStagingKeysFromUrls(uploadedFiles);
           
-          console.log('🔍 Found staging keys to commit:', stagingKeys);
-          
-          // Commit staging files to production
           if (stagingKeys.length > 0) {
-            // Use product/merchantId/ structure for better organization
-            const targetFolder = `product/${userMerchantId}`;
+            console.log('🔍 Committing staging files to production:', stagingKeys.length);
+            
+            // Structure: products/merchant-{id} (simplified, no env prefix, no outlet level)
+            const fileName = generateFileName('product-image');
+            const productionKey = generateProductImageKey(userMerchantId, fileName);
+            const { folder: targetFolder } = splitKeyIntoParts(productionKey);
+            
+            // Commit staging files to production
             const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
             
             if (commitResult.success) {
-              // Generate production URLs using CloudFront directly
+              // Generate production URLs
               const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
-              const productionUrls = commitResult.committedKeys.map(key => {
-                // Always use CloudFront URL if configured, otherwise S3 URL
-                if (cloudfrontDomain) {
-                  return `https://${cloudfrontDomain}/${key}`;
-                }
-                // Fallback to direct URL if CloudFront not configured
-                const region = process.env.AWS_REGION || 'ap-southeast-1';
-                const bucketName = process.env.AWS_S3_BUCKET_NAME || 'anyrent-images';
-                return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-              });
+              const productionUrls = commitResult.committedKeys.map(key => 
+                cloudfrontDomain 
+                  ? `https://${cloudfrontDomain}/${key}`
+                  : `https://${process.env.AWS_S3_BUCKET_NAME || 'anyrent-images'}.s3.${process.env.AWS_REGION || 'ap-southeast-1'}.amazonaws.com/${key}`
+              );
               
               // Map staging URLs to production URLs
-              const updatedUploadedFiles = uploadedFiles.map(url => {
-                // Extract key from CloudFront or S3 URL
-                let key = '';
-                if (url.includes('amazonaws.com/')) {
-                  // S3 URL
-                  const urlParts = url.split('amazonaws.com/');
-                  key = urlParts[1]?.split('?')[0] || '';
-                } else if (cloudfrontDomain && url.includes(cloudfrontDomain)) {
-                  // CloudFront URL
-                  key = url.split(cloudfrontDomain + '/')[1] || '';
-                }
-                
-                if (key) {
-                  const committedKey = commitResult.committedKeys.find(ck => 
-                    ck.replace('product/', '') === key.replace('staging/', '')
-                  );
-                  if (committedKey) {
-                    return productionUrls[commitResult.committedKeys.indexOf(committedKey)];
-                  }
-                }
-                return url; // Fallback to original URL
-              });
+              const productionImageUrls = mapStagingUrlsToProductionUrls(
+                uploadedFiles,
+                commitResult.committedKeys,
+                productionUrls
+              );
               
-              const existingImages = productDataFromRequest.images || [];
-              const allImages = [
-                ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
-                ...updatedUploadedFiles
-              ];
-              // Ensure allImages is properly normalized (not stringified JSON)
-              productDataFromRequest.images = allImages.map(img => {
-                if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
-                  try {
-                    const parsed = JSON.parse(img);
-                    return Array.isArray(parsed) ? parsed[0] : img;
-                  } catch {
-                    return img;
-                  }
-                }
-                return img;
-              }).flat().filter(Boolean);
+              // Combine with existing images
+              productDataFromRequest.images = combineProductImages(
+                productDataFromRequest.images,
+                productionImageUrls
+              );
+              
+              console.log('✅ Committed staging files to production');
             } else {
               console.error('❌ Failed to commit staging files:', commitResult.errors);
-              // Fallback to staging URLs if commit fails
-              const existingImages = productDataFromRequest.images || [];
-              const allImages = [
-                ...(Array.isArray(existingImages) ? existingImages : existingImages ? [existingImages] : []),
-                ...uploadedFiles
-              ];
-              // Ensure allImages is properly normalized (not stringified JSON)
-              productDataFromRequest.images = allImages.map(img => {
-                if (typeof img === 'string' && img.trim().startsWith('[') && img.trim().endsWith(']')) {
-                  try {
-                    const parsed = JSON.parse(img);
-                    return Array.isArray(parsed) ? parsed[0] : img;
-                  } catch {
-                    return img;
-                  }
-                }
-                return img;
-              }).flat().filter(Boolean);
+              // Fallback: use staging URLs if commit fails
+              productDataFromRequest.images = combineProductImages(
+                productDataFromRequest.images,
+                uploadedFiles
+              );
             }
+          } else {
+            // No staging keys found, just combine uploaded files as-is
+            productDataFromRequest.images = combineProductImages(
+              productDataFromRequest.images,
+              uploadedFiles
+            );
           }
         }
         
@@ -448,13 +394,14 @@ export async function PUT(
 
       console.log('🔍 PUT /api/products/[id] - Update request body:', productDataFromRequest);
 
-      // Validate input data
+      // Validate and normalize input data
       const validatedData = productUpdateSchema.parse(productDataFromRequest);
-      console.log('✅ Validated update data:', validatedData);
-      
-      // Extract outletStock from validated data
       const { outletStock, ...productUpdateData } = validatedData;
-      console.log('🔍 PUT /api/products/[id] - Processing outletStock:', outletStock);
+      
+      // Normalize images to array format
+      if (productUpdateData.images !== undefined) {
+        productUpdateData.images = normalizeImagesInput(productUpdateData.images);
+      }
 
       // Check if product exists and user has access to it
       const existingProduct = await db.products.findById(productId);
@@ -545,19 +492,19 @@ export async function PUT(
         }
       }
 
-      // Transform the response to match frontend expectations
+      // Transform product for response
       const transformedProduct = {
-        id: updatedProduct.id, // Return id directly to frontend
+        id: updatedProduct.id,
         name: updatedProduct.name,
         description: updatedProduct.description,
         barcode: updatedProduct.barcode,
         categoryId: updatedProduct.categoryId,
         rentPrice: updatedProduct.rentPrice,
         salePrice: updatedProduct.salePrice,
-        costPrice: (updatedProduct as any).costPrice ?? null, // Include costPrice (giá vốn)
+        costPrice: (updatedProduct as any).costPrice ?? null,
         deposit: updatedProduct.deposit,
         totalStock: updatedProduct.totalStock,
-        images: updatedProduct.images,
+        images: parseProductImages(updatedProduct.images),
         isActive: updatedProduct.isActive,
         category: updatedProduct.category,
         merchant: updatedProduct.merchant,
@@ -630,17 +577,7 @@ export async function DELETE(
       }
 
       // Parse images from existing product to delete them from S3
-      let imageUrls: string[] = [];
-      if (typeof existingProduct.images === 'string') {
-        try {
-          const parsed = JSON.parse(existingProduct.images);
-          imageUrls = Array.isArray(parsed) ? parsed : [parsed];
-        } catch {
-          imageUrls = existingProduct.images.split(',').filter(Boolean);
-        }
-      } else if (Array.isArray(existingProduct.images)) {
-        imageUrls = existingProduct.images.map(String).filter(Boolean);
-      }
+      const imageUrls = parseProductImages(existingProduct.images);
 
       // Delete all product images from S3 storage
       if (imageUrls.length > 0) {

@@ -393,8 +393,8 @@ export const usersQuerySchema = z.object({
 export const userCreateSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  firstName: z.string().min(1).or(z.literal('')), // Allow empty string for firstName
-  lastName: z.string().min(1).or(z.literal('')), // Allow empty string for lastName
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().optional(), // lastName is optional - can be undefined, null, or empty string
   phone: z.string().optional(), // Phone is optional
   role: userRoleEnum.optional(),
   merchantId: z.coerce.number().int().positive().optional(),

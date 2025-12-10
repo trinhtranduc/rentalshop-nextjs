@@ -36,3 +36,16 @@ export * from './import/validator';
 // Plan features utilities
 export * from './plan-features';
 
+// S3 path helper utilities
+export * from './utils/s3-path-helper';
+
+// Product image helper utilities (server-only functions exported separately)
+export { 
+  parseProductImages, 
+  normalizeImagesInput, 
+  combineProductImages,
+  extractKeyFromImageUrl,
+  extractStagingKeysFromUrls,
+  mapStagingUrlsToProductionUrls
+} from './utils/product-image-helpers';
+

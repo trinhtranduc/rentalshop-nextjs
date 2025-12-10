@@ -4019,7 +4019,12 @@ function useAuth() {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          localStorage.setItem("user", JSON.stringify(data.data));
+          const token2 = (0, import_utils.getAuthToken)();
+          if (token2) {
+            (0, import_utils.storeAuthData)(token2, data.data);
+          } else {
+            localStorage.setItem("user", JSON.stringify(data.data));
+          }
           setState((prev) => ({
             ...prev,
             user: data.data,
@@ -4578,6 +4583,10 @@ function isValidCurrencyCode(code) {
   return ["USD", "VND"].includes(code);
 }
 
+// src/hooks/useCustomersData.ts
+var import_react12 = require("react");
+var import_navigation = require("next/navigation");
+
 // src/utils/useDedupedApi.ts
 var import_react11 = require("react");
 var requestCache = /* @__PURE__ */ new Map();
@@ -4804,11 +4813,18 @@ function getApiCacheStats() {
 var import_utils4 = require("@rentalshop/utils");
 function useCustomersData(options) {
   const { filters, enabled = true } = options;
+  const pathname = (0, import_navigation.usePathname)();
+  const filtersWithPath = (0, import_react12.useMemo)(() => ({
+    ...filters,
+    _pathname: pathname
+    // Internal key to force refetch on navigation
+  }), [filters, pathname]);
   const result = useDedupedApi({
-    filters,
-    fetchFn: async (filters2) => {
-      console.log("\u{1F465} useCustomersData: Fetching with filters:", filters2);
-      const response = await import_utils4.customersApi.searchCustomers(filters2);
+    filters: filtersWithPath,
+    fetchFn: async (filtersWithPath2) => {
+      const { _pathname, ...apiFilters } = filtersWithPath2;
+      console.log("\u{1F465} useCustomersData: Fetching with filters:", apiFilters);
+      const response = await import_utils4.customersApi.searchCustomers(apiFilters);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch customers");
       }
@@ -4831,11 +4847,13 @@ function useCustomersData(options) {
       return transformed;
     },
     enabled,
-    staleTime: 3e4,
-    // 30 seconds cache
+    staleTime: 0,
+    // ✅ Set to 0 to always refetch on navigation (no stale cache)
     cacheTime: 3e5,
     // 5 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
+    // ✅ Force refetch when component mounts (navigating to page)
   });
   return result;
 }
@@ -4910,13 +4928,13 @@ function useMerchantsData(options) {
 }
 
 // src/hooks/useOrdersData.ts
-var import_react12 = require("react");
-var import_navigation = require("next/navigation");
+var import_react13 = require("react");
+var import_navigation2 = require("next/navigation");
 var import_utils7 = require("@rentalshop/utils");
 function useOrdersData(options) {
   const { filters, enabled = true } = options;
-  const pathname = (0, import_navigation.usePathname)();
-  const filtersWithPath = (0, import_react12.useMemo)(() => ({
+  const pathname = (0, import_navigation2.usePathname)();
+  const filtersWithPath = (0, import_react13.useMemo)(() => ({
     ...filters,
     _pathname: pathname
     // Internal key to force refetch on navigation
@@ -4961,11 +4979,11 @@ function useOrdersData(options) {
 }
 
 // src/hooks/usePagination.ts
-var import_react13 = require("react");
+var import_react14 = require("react");
 var import_constants = require("@rentalshop/constants");
 function usePagination(config = {}) {
   const { initialLimit = import_constants.PAGINATION.DEFAULT_PAGE_SIZE, initialOffset = 0 } = config;
-  const [pagination, setPaginationState] = (0, import_react13.useState)({
+  const [pagination, setPaginationState] = (0, import_react14.useState)({
     total: 0,
     limit: initialLimit,
     offset: initialOffset,
@@ -4973,7 +4991,7 @@ function usePagination(config = {}) {
     currentPage: 1,
     totalPages: 1
   });
-  const setPagination = (0, import_react13.useCallback)((newPagination) => {
+  const setPagination = (0, import_react14.useCallback)((newPagination) => {
     setPaginationState((prev) => ({
       ...prev,
       ...newPagination,
@@ -4981,14 +4999,14 @@ function usePagination(config = {}) {
       totalPages: Math.ceil((newPagination.total ?? prev.total) / (newPagination.limit ?? prev.limit))
     }));
   }, []);
-  const handlePageChange = (0, import_react13.useCallback)((page) => {
+  const handlePageChange = (0, import_react14.useCallback)((page) => {
     const newOffset = (page - 1) * pagination.limit;
     setPagination({
       offset: newOffset,
       currentPage: page
     });
   }, [pagination.limit, setPagination]);
-  const resetPagination = (0, import_react13.useCallback)(() => {
+  const resetPagination = (0, import_react14.useCallback)(() => {
     setPagination({
       total: 0,
       offset: initialOffset,
@@ -4997,7 +5015,7 @@ function usePagination(config = {}) {
       totalPages: 1
     });
   }, [initialOffset, setPagination]);
-  const updatePaginationFromResponse = (0, import_react13.useCallback)((response) => {
+  const updatePaginationFromResponse = (0, import_react14.useCallback)((response) => {
     setPagination({
       total: response.total,
       limit: response.limit,
@@ -5161,10 +5179,10 @@ function usePlansData(options) {
 }
 
 // src/hooks/useProductAvailability.ts
-var import_react14 = require("react");
+var import_react15 = require("react");
 var import_utils10 = require("@rentalshop/utils");
 function useProductAvailability() {
-  const calculateAvailability = (0, import_react14.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const calculateAvailability = (0, import_react15.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const pickup = new Date(pickupDate);
     const return_ = new Date(returnDate);
     if (pickup >= return_) {
@@ -5207,11 +5225,11 @@ function useProductAvailability() {
       message
     };
   }, []);
-  const isProductAvailable = (0, import_react14.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+  const isProductAvailable = (0, import_react15.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const status = calculateAvailability(product, pickupDate, returnDate, requestedQuantity, existingOrders);
     return status.available;
   }, [calculateAvailability]);
-  const getAvailabilityForDateRange = (0, import_react14.useCallback)((product, startDate, endDate, existingOrders = []) => {
+  const getAvailabilityForDateRange = (0, import_react15.useCallback)((product, startDate, endDate, existingOrders = []) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const results = [];
@@ -5369,12 +5387,12 @@ function useSubscriptionsData(options) {
 }
 
 // src/hooks/useSubscriptionError.ts
-var import_react15 = require("react");
+var import_react16 = require("react");
 var import_ui = require("@rentalshop/ui");
 function useSubscriptionError() {
-  const [error, setError] = (0, import_react15.useState)(null);
+  const [error, setError] = (0, import_react16.useState)(null);
   const { addToast } = (0, import_ui.useToasts)();
-  const handleSubscriptionError = (0, import_react15.useCallback)((error2) => {
+  const handleSubscriptionError = (0, import_react16.useCallback)((error2) => {
     console.error("Subscription error:", error2);
     if (error2?.error === "SUBSCRIPTION_ERROR" || error2?.code === "SUBSCRIPTION_REQUIRED") {
       const subscriptionError = {
@@ -5389,7 +5407,7 @@ function useSubscriptionError() {
       addToast("error", "Error", error2?.message || "An error occurred");
     }
   }, [addToast]);
-  const showSubscriptionError = (0, import_react15.useCallback)((error2) => {
+  const showSubscriptionError = (0, import_react16.useCallback)((error2) => {
     const { subscriptionStatus, merchantStatus } = error2;
     let message = error2.message;
     let action = "";
@@ -5413,7 +5431,7 @@ function useSubscriptionError() {
 
 ${action}` : message, 8e3);
   }, [addToast]);
-  const clearError = (0, import_react15.useCallback)(() => {
+  const clearError = (0, import_react16.useCallback)(() => {
     setError(null);
   }, []);
   return {
@@ -5425,19 +5443,19 @@ ${action}` : message, 8e3);
 }
 
 // src/hooks/useThrottledSearch.ts
-var import_react16 = require("react");
+var import_react17 = require("react");
 function useThrottledSearch(options) {
   const { delay, minLength, onSearch } = options;
-  const [query, setQuery] = (0, import_react16.useState)("");
-  const [isSearching, setIsSearching] = (0, import_react16.useState)(false);
-  const timeoutRef = (0, import_react16.useRef)(null);
-  const isSearchingRef = (0, import_react16.useRef)(false);
-  const isInitialRender = (0, import_react16.useRef)(true);
-  const onSearchRef = (0, import_react16.useRef)(onSearch);
-  (0, import_react16.useEffect)(() => {
+  const [query, setQuery] = (0, import_react17.useState)("");
+  const [isSearching, setIsSearching] = (0, import_react17.useState)(false);
+  const timeoutRef = (0, import_react17.useRef)(null);
+  const isSearchingRef = (0, import_react17.useRef)(false);
+  const isInitialRender = (0, import_react17.useRef)(true);
+  const onSearchRef = (0, import_react17.useRef)(onSearch);
+  (0, import_react17.useEffect)(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
-  const handleSearchChange = (0, import_react16.useCallback)((value) => {
+  const handleSearchChange = (0, import_react17.useCallback)((value) => {
     console.log("\u{1F50D} useThrottledSearch: handleSearchChange called with:", value);
     setQuery(value);
     if (timeoutRef.current) {
@@ -5466,7 +5484,7 @@ function useThrottledSearch(options) {
       isSearchingRef.current = false;
     }
   }, [delay, minLength]);
-  const clearSearch = (0, import_react16.useCallback)(() => {
+  const clearSearch = (0, import_react17.useCallback)(() => {
     setQuery("");
     setIsSearching(false);
     isSearchingRef.current = false;
@@ -5477,12 +5495,12 @@ function useThrottledSearch(options) {
       onSearchRef.current("");
     }
   }, []);
-  const cleanup = (0, import_react16.useCallback)(() => {
+  const cleanup = (0, import_react17.useCallback)(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
   }, []);
-  (0, import_react16.useEffect)(() => {
+  (0, import_react17.useEffect)(() => {
     isInitialRender.current = false;
     return cleanup;
   }, [cleanup]);
@@ -5497,7 +5515,7 @@ function useThrottledSearch(options) {
 }
 
 // src/hooks/useToast.ts
-var import_react17 = require("react");
+var import_react18 = require("react");
 var import_utils13 = require("@rentalshop/utils");
 var import_ui2 = require("@rentalshop/ui");
 var useErrorHandler = (options = {}) => {
@@ -5507,10 +5525,10 @@ var useErrorHandler = (options = {}) => {
     onDismiss,
     autoHandleAuth = true
   } = options;
-  const [isLoading, setIsLoading] = (0, import_react17.useState)(false);
+  const [isLoading, setIsLoading] = (0, import_react18.useState)(false);
   const { addToast } = (0, import_ui2.useToasts)();
   const { translateError } = useApiError();
-  const handleError = (0, import_react17.useCallback)((error) => {
+  const handleError = (0, import_react18.useCallback)((error) => {
     const errorCode = error?.code || error?.response?.data?.code;
     return {
       type: "unknown",
@@ -5520,7 +5538,7 @@ var useErrorHandler = (options = {}) => {
       originalError: error
     };
   }, []);
-  const showErrorToast = (0, import_react17.useCallback)((error) => {
+  const showErrorToast = (0, import_react18.useCallback)((error) => {
     const translatedMessage = translateError(error);
     const errorCode = error?.code || error?.response?.data?.code;
     let toastType = "error";
@@ -5529,7 +5547,7 @@ var useErrorHandler = (options = {}) => {
     }
     addToast(toastType, "L\u1ED7i", translatedMessage, 0);
   }, [addToast, translateError]);
-  const handleApiCall = (0, import_react17.useCallback)(async (apiCall) => {
+  const handleApiCall = (0, import_react18.useCallback)(async (apiCall) => {
     setIsLoading(true);
     try {
       const result = await (0, import_utils13.withErrorHandlingForUI)(apiCall);
@@ -5541,12 +5559,12 @@ var useErrorHandler = (options = {}) => {
       setIsLoading(false);
     }
   }, [showErrorToast]);
-  const retry = (0, import_react17.useCallback)(() => {
+  const retry = (0, import_react18.useCallback)(() => {
     if (onRetry) {
       onRetry();
     }
   }, [onRetry]);
-  const login = (0, import_react17.useCallback)(() => {
+  const login = (0, import_react18.useCallback)(() => {
     if (onLogin) {
       onLogin();
     } else if (typeof window !== "undefined") {
@@ -5564,7 +5582,7 @@ var useErrorHandler = (options = {}) => {
 var useSimpleErrorHandler = () => {
   const { addToast } = (0, import_ui2.useToasts)();
   const { translateError } = useApiError();
-  const handleError = (0, import_react17.useCallback)((error) => {
+  const handleError = (0, import_react18.useCallback)((error) => {
     const translatedMessage = translateError(error);
     const errorCode = error?.code || error?.response?.data?.code;
     let toastType = "error";
@@ -5586,19 +5604,19 @@ var useToastHandler = () => {
   const { addToast } = (0, import_ui2.useToasts)();
   const { translateError } = useApiError();
   const t3 = useCommonTranslations();
-  const showError = (0, import_react17.useCallback)((title, message) => {
+  const showError = (0, import_react18.useCallback)((title, message) => {
     addToast("error", title, message, 0);
   }, [addToast]);
-  const showSuccess = (0, import_react17.useCallback)((title, message) => {
+  const showSuccess = (0, import_react18.useCallback)((title, message) => {
     addToast("success", title, message, 5e3);
   }, [addToast]);
-  const showWarning = (0, import_react17.useCallback)((title, message) => {
+  const showWarning = (0, import_react18.useCallback)((title, message) => {
     addToast("warning", title, message, 5e3);
   }, [addToast]);
-  const showInfo = (0, import_react17.useCallback)((title, message) => {
+  const showInfo = (0, import_react18.useCallback)((title, message) => {
     addToast("info", title, message, 5e3);
   }, [addToast]);
-  const handleError = (0, import_react17.useCallback)((error) => {
+  const handleError = (0, import_react18.useCallback)((error) => {
     console.log("\u{1F50D} useToastHandler.handleError called with:", {
       type: typeof error,
       isError: error instanceof Error,
@@ -5633,13 +5651,13 @@ var useToastHandler = () => {
 };
 
 // src/hooks/useLocale.ts
-var import_navigation2 = require("next/navigation");
-var import_react18 = require("react");
+var import_navigation3 = require("next/navigation");
+var import_react19 = require("react");
 function useLocale() {
   const locale = Z();
-  const router = (0, import_navigation2.useRouter)();
-  const pathname = (0, import_navigation2.usePathname)();
-  const [isPending, startTransition] = (0, import_react18.useTransition)();
+  const router = (0, import_navigation3.useRouter)();
+  const pathname = (0, import_navigation3.usePathname)();
+  const [isPending, startTransition] = (0, import_react19.useTransition)();
   const setLocale = (newLocale) => {
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
     startTransition(() => {
@@ -5703,14 +5721,23 @@ function useCanExportData() {
 }
 
 // src/hooks/useUsersData.ts
+var import_react20 = require("react");
+var import_navigation4 = require("next/navigation");
 var import_utils14 = require("@rentalshop/utils");
 function useUsersData(options) {
   const { filters, enabled = true } = options;
+  const pathname = (0, import_navigation4.usePathname)();
+  const filtersWithPath = (0, import_react20.useMemo)(() => ({
+    ...filters,
+    _pathname: pathname
+    // Internal key to force refetch on navigation
+  }), [filters, pathname]);
   const result = useDedupedApi({
-    filters,
-    fetchFn: async (filters2) => {
-      console.log("\u{1F464} useUsersData: Fetching with filters:", filters2);
-      const response = await import_utils14.usersApi.searchUsers(filters2);
+    filters: filtersWithPath,
+    fetchFn: async (filtersWithPath2) => {
+      const { _pathname, ...apiFilters } = filtersWithPath2;
+      console.log("\u{1F464} useUsersData: Fetching with filters:", apiFilters);
+      const response = await import_utils14.usersApi.searchUsers(apiFilters);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch users");
       }
@@ -5755,24 +5782,26 @@ function useUsersData(options) {
       return transformed;
     },
     enabled,
-    staleTime: 3e4,
-    // 30 seconds cache
+    staleTime: 0,
+    // ✅ Set to 0 to always refetch on navigation (no stale cache)
     cacheTime: 3e5,
     // 5 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
+    // ✅ Force refetch when component mounts (navigating to page)
   });
   return result;
 }
 
 // src/hooks/useOptimisticNavigation.ts
-var import_react19 = require("react");
-var import_navigation3 = require("next/navigation");
+var import_react21 = require("react");
+var import_navigation5 = require("next/navigation");
 function useOptimisticNavigation() {
-  const [navigatingTo, setNavigatingTo] = (0, import_react19.useState)(null);
-  const [isPending, startTransition] = (0, import_react19.useTransition)();
-  const pathname = (0, import_navigation3.usePathname)();
-  const router = (0, import_navigation3.useRouter)();
-  (0, import_react19.useEffect)(() => {
+  const [navigatingTo, setNavigatingTo] = (0, import_react21.useState)(null);
+  const [isPending, startTransition] = (0, import_react21.useTransition)();
+  const pathname = (0, import_navigation5.usePathname)();
+  const router = (0, import_navigation5.useRouter)();
+  (0, import_react21.useEffect)(() => {
     if (navigatingTo && pathname === navigatingTo) {
       const timer = setTimeout(() => {
         setNavigatingTo(null);
@@ -5780,11 +5809,11 @@ function useOptimisticNavigation() {
       return () => clearTimeout(timer);
     }
   }, [pathname, navigatingTo]);
-  const navigate = (0, import_react19.useCallback)((path) => {
+  const navigate = (0, import_react21.useCallback)((path) => {
     setNavigatingTo(path);
     router.push(path, { scroll: false });
   }, [router]);
-  const prefetch = (0, import_react19.useCallback)((path) => {
+  const prefetch = (0, import_react21.useCallback)((path) => {
     router.prefetch(path);
   }, [router]);
   return {
