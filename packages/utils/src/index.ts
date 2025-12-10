@@ -36,3 +36,6 @@ export * from './import/validator';
 // Plan features utilities
 export * from './plan-features';
 
+// S3 path helper utilities
+export * from './utils/s3-path-helper';
+

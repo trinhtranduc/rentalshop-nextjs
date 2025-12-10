@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3 } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
@@ -174,7 +174,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
 function validateImage(file: File): { isValid: boolean; error?: string } {
   const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
   
   const fileTypeLower = file.type.toLowerCase().trim();
   const fileNameLower = file.name.toLowerCase().trim();
@@ -276,36 +276,71 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           const bytes = await file.arrayBuffer();
           let buffer = Buffer.from(bytes);
           
-          // Compress image to reduce file size
+          // Compress image to reduce file size - ensure < 1MB after compression
           try {
             const sharp = (await import('sharp')).default as any;
             const originalSize = buffer.length;
+            const MAX_SIZE = 1 * 1024 * 1024; // 1MB target
             
-            // Compress image: resize max width 1920px, quality 85%, convert to JPEG
-            buffer = await sharp(buffer)
-              .resize(1920, null, {
-                withoutEnlargement: true,
-                fit: 'inside'
-              })
-              .jpeg({ 
-                quality: 85,
-                progressive: true,
-                mozjpeg: true
-              })
-              .toBuffer();
+            // Start with quality 80, reduce if needed to stay under 1MB
+            let quality = 80;
+            let compressedBuffer = buffer;
             
+            do {
+              compressedBuffer = await sharp(buffer)
+                .resize(1920, null, {
+                  withoutEnlargement: true,
+                  fit: 'inside'
+                })
+                .jpeg({ 
+                  quality,
+                  progressive: true,
+                  mozjpeg: true
+                })
+                .toBuffer();
+              
+              // If still too large and quality > 50, reduce quality and retry
+              if (compressedBuffer.length > MAX_SIZE && quality > 50) {
+                quality -= 10;
+              } else {
+                break;
+              }
+            } while (compressedBuffer.length > MAX_SIZE && quality > 50);
+            
+            buffer = compressedBuffer;
             const compressedSize = buffer.length;
             const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-            console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction)`);
+            console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction, quality: ${quality})`);
+            
+            // Final check - reject if still > 1MB after compression
+            if (buffer.length > MAX_SIZE) {
+              return NextResponse.json(
+                ResponseBuilder.error('IMAGE_TOO_LARGE'),
+                { status: 400 }
+              );
+            }
           } catch (compressError) {
             console.warn('⚠️ Image compression failed, using original:', compressError);
-            // Continue with original buffer if compression fails
+            // If compression fails and original > 1MB, reject
+            if (buffer.length > 1 * 1024 * 1024) {
+              return NextResponse.json(
+                ResponseBuilder.error('IMAGE_TOO_LARGE'),
+                { status: 400 }
+              );
+            }
           }
           
-          // Upload compressed image to S3
+          // Generate filename and staging key using new structure
+          const fileName = generateFileName(
+            file.name.replace(/\.[^/.]+$/, '') || 'product-image'
+          );
+          const stagingKey = generateStagingKey(fileName);
+          const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
+          
+          // Upload compressed image to S3 staging folder with new structure
           const uploadResult = await uploadToS3(buffer, {
-            folder: 'staging',
-            fileName: file.name,
+            folder,
+            fileName: finalFileName,
             contentType: 'image/jpeg', // Always JPEG after compression
             preserveOriginalName: false
           });
@@ -512,8 +547,14 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
       // Commit staging files to production (including newly uploaded files)
       if (stagingKeys.length > 0) {
-        // Use product/merchantId/ structure for better organization
-        const targetFolder = `product/${merchantId}`;
+        // Use new structure: env/prod/products/merchant-{id}/outlet-{id}
+        const outletId = userScope.outletId || undefined;
+        const fileName = generateFileName('product-image');
+        
+        // Generate production key to get target folder
+        const productionKey = generateProductImageKey(merchantId, fileName, outletId);
+        const { folder: targetFolder } = splitKeyIntoParts(productionKey);
+        
         const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
         
         if (commitResult.success) {

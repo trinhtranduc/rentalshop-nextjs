@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
 import { ResponseBuilder } from '@rentalshop/utils';
-import { uploadToS3, generateAccessUrl } from '@rentalshop/utils';
+import { uploadToS3, generateAccessUrl, generateStagingKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
 
 // Allowed image types - JPG, PNG, and WebP (browser often converts to WebP)
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-const MAX_FILE_SIZE = 1 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 
 /**
  * Validate image file
@@ -120,33 +120,61 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
     const bytes = await file.arrayBuffer();
     let buffer = Buffer.from(bytes);
 
-    // Compress image to reduce file size
+    // Compress image to reduce file size - ensure < 1MB after compression
     try {
       const sharp = (await import('sharp')).default as any;
       const originalSize = buffer.length;
+      const MAX_SIZE = 1 * 1024 * 1024; // 1MB target
       
-      // Compress image: resize max width 1920px, quality 85%, convert to JPEG
-      buffer = await sharp(buffer)
-        .resize(1920, null, {
-          withoutEnlargement: true,
-          fit: 'inside'
-        })
-        .jpeg({ 
-          quality: 85,
-          progressive: true,
-          mozjpeg: true
-        })
-        .toBuffer();
+      // Start with quality 80, reduce if needed to stay under 1MB
+      let quality = 80;
+      let compressedBuffer = buffer;
       
+      do {
+        compressedBuffer = await sharp(buffer)
+          .resize(1920, null, {
+            withoutEnlargement: true,
+            fit: 'inside'
+          })
+          .jpeg({ 
+            quality,
+            progressive: true,
+            mozjpeg: true
+          })
+          .toBuffer();
+        
+        // If still too large and quality > 50, reduce quality and retry
+        if (compressedBuffer.length > MAX_SIZE && quality > 50) {
+          quality -= 10;
+        } else {
+          break;
+        }
+      } while (compressedBuffer.length > MAX_SIZE && quality > 50);
+      
+      buffer = compressedBuffer;
       const compressedSize = buffer.length;
       const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-      console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction)`);
+      console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction, quality: ${quality})`);
+      
+      // Final check - reject if still > 1MB after compression
+      if (buffer.length > MAX_SIZE) {
+        return NextResponse.json(
+          ResponseBuilder.error('IMAGE_TOO_LARGE'),
+          { status: 400 }
+        );
+      }
     } catch (compressError) {
       console.warn('⚠️ Image compression failed, using original:', compressError);
-      // Continue with original buffer if compression fails
+      // If compression fails and original > 1MB, reject
+      if (buffer.length > 1 * 1024 * 1024) {
+        return NextResponse.json(
+          ResponseBuilder.error('IMAGE_TOO_LARGE'),
+          { status: 400 }
+        );
+      }
     }
 
-    // Smart filename handling: prioritize originalName, then file.name, with preservation option
+    // Smart filename handling: prioritize originalName, then file.name
     const effectiveFileName = (() => {
       // Case 1: Frontend provides originalName (best case)
       if (originalName && originalName.trim()) {
@@ -162,21 +190,30 @@ export const POST = withAnyAuth(async (request: NextRequest) => {
       return null;
     })();
 
+    // Generate filename and staging key using new structure
+    const fileName = effectiveFileName
+      ? generateFileName(effectiveFileName.replace(/\.[^/.]+$/, ''))
+      : generateFileName('upload-image');
+    const stagingKey = generateStagingKey(fileName);
+    const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
+
     console.log('📸 Uploading image:', {
       originalFile: file.name,
       providedOriginalName: originalName,
       effectiveFileName: effectiveFileName,
+      finalFileName: finalFileName,
+      stagingKey: stagingKey,
       preserveFilename,
       contentType: file.type,
       size: file.size
     });
 
-    // Upload compressed image to AWS S3 staging folder
+    // Upload compressed image to AWS S3 staging folder with new structure
     const result = await uploadToS3(buffer, {
-      folder: 'staging',
-      fileName: effectiveFileName || undefined,
+      folder,
+      fileName: finalFileName,
       contentType: 'image/jpeg', // Always JPEG after compression
-      preserveOriginalName: preserveFilename
+      preserveOriginalName: false // Always use generated filename for consistency
     });
     console.log('✅ Image uploaded to AWS S3');
     console.log('📊 Upload result:', JSON.stringify(result, null, 2));

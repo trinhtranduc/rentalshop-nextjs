@@ -388,8 +388,11 @@ export async function cleanupStagingFiles(
     try {
       const cleanStagingKey = stagingKey.trim().replace(/\/+/g, '/');
       
-      // Ensure it's a staging file for safety
-      if (!cleanStagingKey.startsWith('staging/')) {
+      // Ensure it's a staging file for safety (support both old and new structure)
+      const isOldStaging = cleanStagingKey.startsWith('staging/');
+      const isNewStaging = cleanStagingKey.includes('/staging/');
+      
+      if (!isOldStaging && !isNewStaging) {
         console.warn(`⚠️ Skipping non-staging file: ${cleanStagingKey}`);
         continue;
       }
@@ -418,6 +421,7 @@ export async function cleanupStagingFiles(
 /**
  * Move file from staging to production folder in S3
  * This implements the Two-Phase Upload Pattern
+ * Supports both old structure (staging/...) and new structure (env/prod/staging/...)
  */
 export async function commitStagingFiles(
   stagingKeys: string[], 
@@ -428,7 +432,22 @@ export async function commitStagingFiles(
 
   for (const stagingKey of stagingKeys) {
     const cleanStagingKey = stagingKey.trim().replace(/\/+/g, '/');
-    const filename = cleanStagingKey.replace(/^staging\//, '').replace(/^\./, '');
+    
+    // Extract filename - support both old (staging/...) and new (env/prod/staging/...) structure
+    let filename: string;
+    if (cleanStagingKey.includes('/staging/')) {
+      // New structure: env/prod/staging/filename.jpg
+      const parts = cleanStagingKey.split('/staging/');
+      filename = parts[1] || cleanStagingKey.split('/').pop() || '';
+    } else if (cleanStagingKey.startsWith('staging/')) {
+      // Old structure: staging/filename.jpg
+      filename = cleanStagingKey.replace(/^staging\//, '');
+    } else {
+      // Fallback: just get filename
+      filename = cleanStagingKey.split('/').pop() || '';
+    }
+    
+    filename = filename.replace(/^\./, ''); // Remove leading dots
     const cleanTargetKey = `${targetFolder}/${filename}`.replace(/\/+/g, '/');
     
     try {
