@@ -337,10 +337,9 @@ export async function PUT(
           if (stagingKeys.length > 0) {
             console.log('🔍 Committing staging files to production:', stagingKeys.length);
             
-            // Generate target folder using new structure: env/prod/products/merchant-{id}/outlet-{id}
-            const outletId = userScope.outletId || undefined;
+            // Structure: products/merchant-{id} (simplified, no env prefix, no outlet level)
             const fileName = generateFileName('product-image');
-            const productionKey = generateProductImageKey(userMerchantId, fileName, outletId);
+            const productionKey = generateProductImageKey(userMerchantId, fileName);
             const { folder: targetFolder } = splitKeyIntoParts(productionKey);
             
             // Commit staging files to production
