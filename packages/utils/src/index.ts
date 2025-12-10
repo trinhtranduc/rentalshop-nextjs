@@ -43,6 +43,9 @@ export * from './utils/s3-path-helper';
 export { 
   parseProductImages, 
   normalizeImagesInput, 
-  combineProductImages 
+  combineProductImages,
+  extractKeyFromImageUrl,
+  extractStagingKeysFromUrls,
+  mapStagingUrlsToProductionUrls
 } from './utils/product-image-helpers';
 
