@@ -266,6 +266,7 @@ export const CRITICAL_PERMISSIONS: Record<Role, Permission[]> = {
   
   'OUTLET_ADMIN': [
     'outlet.view',          // Must view own outlet
+    'users.manage',         // ✅ Critical: Must manage outlet staff (core function)
     'products.manage',      // ✅ Critical: Must manage products (core function)
     'products.view',        // Must view products to process orders
     'orders.view',          // Must view orders for daily operations
@@ -324,7 +325,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   'OUTLET_ADMIN': [
     'outlet.manage', 'outlet.view', 
-    'users.view',
+    'users.manage', 'users.view',
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
     'customers.manage', 'customers.view', 'customers.export',
