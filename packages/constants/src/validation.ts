@@ -39,7 +39,7 @@ export const VALIDATION = {
   // Image size limits by type (optimized for performance)
   IMAGE_SIZES: {
     THUMBNAIL: 150 * 1024,      // 150KB - Small thumbnails, avatars
-    PRODUCT: 200 * 1024,        // 400KB - Product images (recommended)
+    PRODUCT: 200 * 1024,        // 200KB - Product images (recommended)
     PRODUCT_STRICT: 100 * 1024, // 300KB - Strict limit for mobile-first
     DOCUMENT: 2 * 1024 * 1024,  // 2MB - Documents, contracts
     MAX: 5 * 1024 * 1024,       // 5MB - Maximum allowed (rare cases)
