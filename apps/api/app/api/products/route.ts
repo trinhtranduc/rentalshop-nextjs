@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, compressImageTo1MB } from '@rentalshop/utils';
 import { searchRateLimiter } from '@rentalshop/middleware';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { z } from 'zod';
 
 /**
@@ -172,9 +172,10 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
  * Helper function to validate image file
  */
 function validateImage(file: File): { isValid: boolean; error?: string } {
-  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const ALLOWED_TYPES = VALIDATION.ALLOWED_IMAGE_TYPES;
   const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
-  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+  // Allow larger initial upload (5MB), will be compressed to 400KB
+  const MAX_FILE_SIZE = VALIDATION.MAX_FILE_SIZE;
   
   const fileTypeLower = file.type.toLowerCase().trim();
   const fileNameLower = file.name.toLowerCase().trim();
@@ -272,62 +273,17 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             );
           }
           
-          // Convert file to buffer
+          // Convert file to buffer and compress
           const bytes = await file.arrayBuffer();
-          let buffer = Buffer.from(bytes);
+          const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
           
-          // Compress image to reduce file size - ensure < 1MB after compression
-          try {
-            const sharp = (await import('sharp')).default as any;
-            const originalSize = buffer.length;
-            const MAX_SIZE = 1 * 1024 * 1024; // 1MB target
-            
-            // Start with quality 80, reduce if needed to stay under 1MB
-            let quality = 80;
-            let compressedBuffer = buffer;
-            
-            do {
-              compressedBuffer = await sharp(buffer)
-                .resize(1920, null, {
-                  withoutEnlargement: true,
-                  fit: 'inside'
-                })
-                .jpeg({ 
-                  quality,
-                  progressive: true,
-                  mozjpeg: true
-                })
-                .toBuffer();
-              
-              // If still too large and quality > 50, reduce quality and retry
-              if (compressedBuffer.length > MAX_SIZE && quality > 50) {
-                quality -= 10;
-              } else {
-                break;
-              }
-            } while (compressedBuffer.length > MAX_SIZE && quality > 50);
-            
-            buffer = compressedBuffer;
-            const compressedSize = buffer.length;
-            const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-            console.log(`📦 Image compressed: ${(originalSize / 1024).toFixed(1)}KB -> ${(compressedSize / 1024).toFixed(1)}KB (${compressionRatio}% reduction, quality: ${quality})`);
-            
-            // Final check - reject if still > 1MB after compression
-            if (buffer.length > MAX_SIZE) {
-              return NextResponse.json(
-                ResponseBuilder.error('IMAGE_TOO_LARGE'),
-                { status: 400 }
-              );
-            }
-          } catch (compressError) {
-            console.warn('⚠️ Image compression failed, using original:', compressError);
-            // If compression fails and original > 1MB, reject
-            if (buffer.length > 1 * 1024 * 1024) {
-              return NextResponse.json(
-                ResponseBuilder.error('IMAGE_TOO_LARGE'),
-                { status: 400 }
-              );
-            }
+          // Final check - reject if still too large after compression
+          const MAX_SIZE = VALIDATION.IMAGE_SIZES.PRODUCT;
+          if (buffer.length > MAX_SIZE) {
+            return NextResponse.json(
+              ResponseBuilder.error('IMAGE_TOO_LARGE'),
+              { status: 400 }
+            );
           }
           
           // Generate filename and staging key using new structure

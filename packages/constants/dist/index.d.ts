@@ -392,6 +392,23 @@ declare const VALIDATION: {
     readonly MIN_DISCOUNT_AMOUNT: 0;
     readonly MAX_DISCOUNT_PERCENTAGE: 100;
     readonly MAX_FILE_SIZE: number;
+    readonly IMAGE_SIZES: {
+        readonly THUMBNAIL: number;
+        readonly PRODUCT: number;
+        readonly PRODUCT_STRICT: number;
+        readonly DOCUMENT: number;
+        readonly MAX: number;
+    };
+    readonly IMAGE_QUALITY: {
+        readonly THUMBNAIL: 70;
+        readonly PRODUCT: 75;
+        readonly HIGH: 85;
+    };
+    readonly IMAGE_DIMENSIONS: {
+        readonly THUMBNAIL: 300;
+        readonly PRODUCT: 1920;
+        readonly PRODUCT_MOBILE: 800;
+    };
     readonly ALLOWED_IMAGE_TYPES: readonly ["image/jpeg", "image/png", "image/webp"];
 };
 type ValidationValue = typeof VALIDATION[keyof typeof VALIDATION];
@@ -1423,6 +1440,23 @@ declare const CONSTANTS: {
         readonly MIN_DISCOUNT_AMOUNT: 0;
         readonly MAX_DISCOUNT_PERCENTAGE: 100;
         readonly MAX_FILE_SIZE: number;
+        readonly IMAGE_SIZES: {
+            readonly THUMBNAIL: number;
+            readonly PRODUCT: number;
+            readonly PRODUCT_STRICT: number;
+            readonly DOCUMENT: number;
+            readonly MAX: number;
+        };
+        readonly IMAGE_QUALITY: {
+            readonly THUMBNAIL: 70;
+            readonly PRODUCT: 75;
+            readonly HIGH: 85;
+        };
+        readonly IMAGE_DIMENSIONS: {
+            readonly THUMBNAIL: 300;
+            readonly PRODUCT: 1920;
+            readonly PRODUCT_MOBILE: 800;
+        };
         readonly ALLOWED_IMAGE_TYPES: readonly ["image/jpeg", "image/png", "image/webp"];
     };
     readonly UI: {

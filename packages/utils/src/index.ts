@@ -39,3 +39,6 @@ export * from './plan-features';
 // S3 path helper utilities
 export * from './utils/s3-path-helper';
 
+// Product image helper utilities
+export * from './utils/product-image-helpers';
+
