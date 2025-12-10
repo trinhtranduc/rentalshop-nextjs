@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth';
-import { ResponseBuilder, compressImageTo1MB } from '@rentalshop/utils';
+import { ResponseBuilder } from '@rentalshop/utils';
 import { uploadToS3, generateAccessUrl, generateStagingKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
+import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { VALIDATION } from '@rentalshop/constants';
 
 // Allowed image types - JPG, PNG, and WebP (browser often converts to WebP)

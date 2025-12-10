@@ -15,9 +15,9 @@ import {
   splitKeyIntoParts,
   parseProductImages,
   normalizeImagesInput,
-  combineProductImages,
-  compressImageTo1MB
+  combineProductImages
 } from '@rentalshop/utils';
+import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 
 /**

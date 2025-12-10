@@ -39,6 +39,10 @@ export * from './plan-features';
 // S3 path helper utilities
 export * from './utils/s3-path-helper';
 
-// Product image helper utilities
-export * from './utils/product-image-helpers';
+// Product image helper utilities (server-only functions exported separately)
+export { 
+  parseProductImages, 
+  normalizeImagesInput, 
+  combineProductImages 
+} from './utils/product-image-helpers';
 
