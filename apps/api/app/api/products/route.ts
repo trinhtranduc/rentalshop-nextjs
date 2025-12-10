@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
-import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, compressImageTo1MB } from '@rentalshop/utils';
+import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts } from '@rentalshop/utils';
+import { compressImageTo1MB } from '../../../lib/image-compression';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { z } from 'zod';
