@@ -492,6 +492,54 @@ export async function PUT(
         }
       }
 
+      // Cleanup old images that are no longer in the new images list
+      if (productUpdateData.images !== undefined) {
+        try {
+          // Parse existing images before update
+          const existingImageUrls = parseProductImages(existingProduct.images);
+          // Parse new images after update
+          const newImageUrls = parseProductImages(updatedProduct.images);
+          
+          // Find images that existed before but are not in the new list
+          const imagesToDelete = existingImageUrls.filter(existingUrl => {
+            // Normalize URLs for comparison (remove query params, trailing slashes)
+            const normalizedExisting = existingUrl.split('?')[0].replace(/\/$/, '');
+            return !newImageUrls.some(newUrl => {
+              const normalizedNew = newUrl.split('?')[0].replace(/\/$/, '');
+              return normalizedExisting === normalizedNew;
+            });
+          });
+          
+          // Delete orphaned images from S3
+          if (imagesToDelete.length > 0) {
+            console.log(`🗑️ Deleting ${imagesToDelete.length} orphaned image(s) from S3 for product ${productId}`);
+            const deletePromises = imagesToDelete.map(async (imageUrl) => {
+              try {
+                const s3Key = extractS3KeyFromUrl(imageUrl);
+                if (s3Key) {
+                  const deleted = await deleteFromS3(s3Key);
+                  if (deleted) {
+                    console.log(`✅ Deleted orphaned image from S3: ${s3Key}`);
+                  } else {
+                    console.warn(`⚠️ Failed to delete orphaned image from S3: ${s3Key}`);
+                  }
+                } else {
+                  console.warn(`⚠️ Could not extract S3 key from URL: ${imageUrl}`);
+                }
+              } catch (error) {
+                console.error(`❌ Error deleting orphaned image ${imageUrl}:`, error);
+              }
+            });
+            await Promise.all(deletePromises);
+          } else {
+            console.log('ℹ️ No orphaned images to delete');
+          }
+        } catch (error) {
+          console.error('❌ Error cleaning up old images:', error);
+          // Don't throw - product update succeeded, cleanup failed
+        }
+      }
+
       // Transform product for response
       const transformedProduct = {
         id: updatedProduct.id,
