@@ -12,6 +12,7 @@ import {
   useFormatCurrency
 } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 import type { 
   OrderFormData, 
   OrderItemFormData 
@@ -63,8 +64,8 @@ export const OrderSummarySection: React.FC<OrderSummarySectionProps> = ({
                 </span>
               </div>
               <div className="flex justify-between text-xs text-text-tertiary">
-                <span>{t('summary.from')}: {new Date(formData.pickupPlanAt).toLocaleDateString('en-GB')}</span>
-                <span>{t('summary.to')}: {new Date(formData.returnPlanAt).toLocaleDateString('en-GB')}</span>
+                <span>{t('summary.from')}: {useFormattedFullDate(formData.pickupPlanAt)}</span>
+                <span>{t('summary.to')}: {useFormattedFullDate(formData.returnPlanAt)}</span>
               </div>
             </div>
           )}

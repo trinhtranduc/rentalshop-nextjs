@@ -110,6 +110,10 @@
     "description": "Mô tả",
     "workingHours": "Giờ làm việc",
     "contactPerson": "Người liên hệ",
+    "city": "Thành phố",
+    "state": "Tỉnh/Thành",
+    "zipCode": "Mã bưu điện",
+    "country": "Quốc gia",
     "edit": "Chỉnh sửa",
     "save": "Lưu",
     "cancel": "Hủy",
@@ -119,7 +123,11 @@
     "enterOutletName": "Nhập tên cửa hàng",
     "enterOutletPhone": "Nhập số điện thoại cửa hàng",
     "enterOutletAddress": "Nhập địa chỉ cửa hàng",
-    "enterDescription": "Nhập mô tả cửa hàng"
+    "enterDescription": "Nhập mô tả cửa hàng",
+    "enterCity": "Nhập thành phố",
+    "enterState": "Nhập tỉnh/thành",
+    "enterZipCode": "Nhập mã bưu điện",
+    "enterCountry": "Nhập quốc gia"
   },
   "security": {
     "title": "Cài đặt bảo mật",

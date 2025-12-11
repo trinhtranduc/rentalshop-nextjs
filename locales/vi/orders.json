@@ -295,7 +295,22 @@
     "today": "Hôm nay",
     "thisWeek": "Tuần này",
     "thisMonth": "Tháng này",
-    "dateRange": "Khoảng thời gian"
+    "dateRange": "Khoảng thời gian",
+    "dateRangeOptions": {
+      "last30Days": "30 ngày qua",
+      "last90Days": "90 ngày qua",
+      "last12Months": "12 tháng qua",
+      "allTime": "Tất cả",
+      "customRange": "Tùy chọn...",
+      "default": "Mặc định",
+      "customDateRange": "Tùy chọn khoảng thời gian",
+      "startDate": "Ngày bắt đầu",
+      "endDate": "Ngày kết thúc",
+      "cancel": "Hủy",
+      "applyRange": "Áp dụng",
+      "tip": "💡 <strong>Gợi ý:</strong> Đối với khoảng thời gian lớn, hãy cân nhắc sử dụng tính năng xuất dữ liệu thay vì xem tất cả dữ liệu trong bảng.",
+      "viewingAllOrdersWarning": "Đang xem tất cả {count} đơn hàng có thể chậm"
+    }
   },
   "search": {
     "placeholder": "Tìm kiếm theo mã đơn, tên hoặc số điện thoại khách hàng...",

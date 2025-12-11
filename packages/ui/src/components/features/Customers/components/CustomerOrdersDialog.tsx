@@ -7,6 +7,7 @@ import { Badge } from '@rentalshop/ui';
 import type { CustomerWithMerchant } from '@rentalshop/types';
 import { Package, Calendar, DollarSign, User, MapPin, Clock } from 'lucide-react';
 import { getOrderStatusClassName } from '@rentalshop/constants';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface CustomerOrdersDialogProps {
@@ -137,14 +138,8 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
     }).format(amount);
   };
 
-  const formatDate = (date: Date | undefined) => {
-    if (!date) return 'N/A';
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  // Use centralized date formatting hook (DRY principle)
+  const formatDate = useFormattedFullDate;
 
   const getDaysOverdue = (returnDate: Date | undefined) => {
     if (!returnDate) return 0;

@@ -13,6 +13,7 @@ import {
 import type { Order, OrderItemWithProduct } from '@rentalshop/types';
 import type { OutletReference, MerchantReference } from '@rentalshop/types';
 import { formatCurrency } from '@rentalshop/utils';
+import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 interface ReceiptPreviewModalProps {
@@ -275,12 +276,9 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
   const phone = (outlet as any)?.phone || merchant?.email || '';
   const address = outlet?.address || '';
 
-  // Format dates
-  const formatDate = (date: Date | string | undefined | null): string => {
-    if (!date) return '';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('vi-VN');
-  };
+  // Use centralized date formatting hooks (DRY principle)
+  const formatDate = useFormattedFullDate; // For pickup/return dates (date only)
+  const formatDateTime = useFormattedDateTime; // For createdAt (with time)
 
   // Calculate totals
   const subtotal = order.totalAmount || 0;
@@ -326,7 +324,7 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
           
           {/* Created Date */}
           {order.createdAt && (
-            <div>{t('receipt.createdDate')}: {formatDate(order.createdAt)}</div>
+            <div>{t('receipt.createdDate')}: {formatDateTime(order.createdAt)}</div>
           )}
 
           {/* Rent Date and Return Date */}
@@ -350,12 +348,12 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
         <div className="mb-2">
           {/* Created Date */}
           {order.createdAt && (
-            <div>{t('receipt.createdDate')}: {formatDate(order.createdAt)}</div>
+            <div>{t('receipt.createdDate')}: {formatDateTime(order.createdAt)}</div>
           )}
           
           {/* Sale Date */}
           {order.createdAt && (
-            <div>{t('receipt.saleDate')}: {formatDate(order.createdAt)}</div>
+            <div>{t('receipt.saleDate')}: {formatDateTime(order.createdAt)}</div>
           )}
         </div>
       )}

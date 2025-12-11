@@ -12,6 +12,7 @@ import {
 import { User } from '@rentalshop/types';
 import { Eye, Edit, Trash2, MoreVertical, UserCheck, UserX } from 'lucide-react';
 import { useUsersTranslations } from '@rentalshop/hooks';
+import { useFormattedDateTime } from '@rentalshop/utils/client';
 
 interface UserTableProps {
   users: User[];
@@ -47,14 +48,10 @@ export function UserTable({
     );
   }
 
+  // Use useFormattedDateTime for createdAt (with time)
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return t('messages.na');
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return useFormattedDateTime(dateString);
   };
 
   const getRoleBadge = (role: string) => {

@@ -13,6 +13,7 @@ import {
 import { Trash2 } from 'lucide-react';
 import type { Customer, Merchant } from '@rentalshop/types';
 import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 
 interface CustomerDetailDialogProps {
   open: boolean;
@@ -72,15 +73,8 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
 
   if (!customer) return null;
 
-  const formatDate = (date: Date | string) => {
-    if (!date) return t('messages.na');
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  // Use centralized date formatting hook (DRY principle)
+  const formatDate = useFormattedFullDate;
 
   const getStatusBadgeStyle = (isActive: boolean) => {
     if (isActive) {

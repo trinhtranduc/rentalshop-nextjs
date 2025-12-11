@@ -280,8 +280,8 @@ export async function PUT(
         const imageFiles = formData.getAll('images') as File[];
         if (imageFiles.length > 0) {
           console.log(`🔍 Processing ${imageFiles.length} image file(s)`);
-          
-          for (const file of imageFiles) {
+        
+        for (const file of imageFiles) {
             if (!file || file.size === 0) continue;
             
             // Validate image
@@ -492,6 +492,70 @@ export async function PUT(
         }
       }
 
+      // Cleanup old images that are no longer in the new images list
+      // IMPORTANT: This ensures orphaned images are deleted from S3 when updating product images
+      if (productUpdateData.images !== undefined) {
+        try {
+          // Parse existing images before update
+          const existingImageUrls = parseProductImages(existingProduct.images);
+          // Parse new images after update
+          const newImageUrls = parseProductImages(updatedProduct.images);
+          
+          console.log(`🔍 Image cleanup check for product ${productId}:`, {
+            existingCount: existingImageUrls.length,
+            newCount: newImageUrls.length
+          });
+          
+          // Find images that existed before but are not in the new list
+          const imagesToDelete = existingImageUrls.filter(existingUrl => {
+            // Normalize URLs for comparison (remove query params, trailing slashes)
+            const normalizedExisting = existingUrl.split('?')[0].replace(/\/$/, '').toLowerCase();
+            return !newImageUrls.some(newUrl => {
+              const normalizedNew = newUrl.split('?')[0].replace(/\/$/, '').toLowerCase();
+              return normalizedExisting === normalizedNew;
+            });
+          });
+          
+          // Delete orphaned images from S3
+          if (imagesToDelete.length > 0) {
+            console.log(`🗑️ Deleting ${imagesToDelete.length} orphaned image(s) from S3 for product ${productId}`);
+            const deletePromises = imagesToDelete.map(async (imageUrl) => {
+              try {
+                const s3Key = extractS3KeyFromUrl(imageUrl);
+                if (s3Key) {
+                  const deleted = await deleteFromS3(s3Key);
+                  if (deleted) {
+                    console.log(`✅ Deleted orphaned image from S3: ${s3Key}`);
+                    return { success: true, key: s3Key };
+                  } else {
+                    console.warn(`⚠️ Failed to delete orphaned image from S3: ${s3Key}`);
+                    return { success: false, key: s3Key, error: 'Delete failed' };
+                  }
+                } else {
+                  console.warn(`⚠️ Could not extract S3 key from URL: ${imageUrl}`);
+                  return { success: false, key: null, error: 'Could not extract S3 key' };
+                }
+              } catch (error) {
+                console.error(`❌ Error deleting orphaned image ${imageUrl}:`, error);
+                return { success: false, key: imageUrl, error: error instanceof Error ? error.message : 'Unknown error' };
+              }
+            });
+            
+            const results = await Promise.all(deletePromises);
+            const successCount = results.filter(r => r.success).length;
+            const failCount = results.filter(r => !r.success).length;
+            
+            console.log(`📊 Image cleanup summary for product ${productId}: ${successCount} deleted, ${failCount} failed`);
+          } else {
+            console.log('ℹ️ No orphaned images to delete - all existing images are still in use');
+          }
+        } catch (error) {
+          console.error('❌ Error cleaning up old images:', error);
+          // Don't throw - product update succeeded, cleanup failed (images will remain in S3)
+          // This is acceptable as orphaned images don't affect functionality, just storage cost
+        }
+      }
+
       // Transform product for response
       const transformedProduct = {
         id: updatedProduct.id,
@@ -576,7 +640,8 @@ export async function DELETE(
         throw new Error('Product not found');
       }
 
-      // Parse images from existing product to delete them from S3
+      // IMPORTANT: Delete all product images from S3 before soft deleting the product
+      // This prevents orphaned images in S3 storage
       const imageUrls = parseProductImages(existingProduct.images);
 
       // Delete all product images from S3 storage
@@ -589,17 +654,34 @@ export async function DELETE(
               const deleted = await deleteFromS3(s3Key);
               if (deleted) {
                 console.log(`✅ Deleted image from S3: ${s3Key}`);
+                return { success: true, key: s3Key };
               } else {
                 console.warn(`⚠️ Failed to delete image from S3: ${s3Key}`);
+                return { success: false, key: s3Key, error: 'Delete failed' };
               }
             } else {
               console.warn(`⚠️ Could not extract S3 key from URL: ${imageUrl}`);
+              return { success: false, key: null, error: 'Could not extract S3 key' };
             }
           } catch (error) {
             console.error(`❌ Error deleting image ${imageUrl}:`, error);
+            return { success: false, key: imageUrl, error: error instanceof Error ? error.message : 'Unknown error' };
           }
         });
-        await Promise.all(deletePromises);
+        
+        const results = await Promise.all(deletePromises);
+        const successCount = results.filter(r => r.success).length;
+        const failCount = results.filter(r => !r.success).length;
+        
+        console.log(`📊 Image deletion summary for product ${productId}: ${successCount} deleted, ${failCount} failed`);
+        
+        // Continue with product deletion even if some images failed to delete
+        // This ensures product is deleted even if S3 cleanup has issues
+        if (failCount > 0) {
+          console.warn(`⚠️ Warning: ${failCount} image(s) failed to delete from S3. Product will still be deleted.`);
+        }
+      } else {
+        console.log('ℹ️ No images to delete for product', productId);
       }
 
       // Soft delete by setting isActive to false

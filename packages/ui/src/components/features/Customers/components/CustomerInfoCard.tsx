@@ -16,6 +16,7 @@ import {
 import type { CustomerWithMerchant } from '@rentalshop/types';
 import type { Customer } from '@rentalshop/types';
 import { useCustomerTranslations } from '@rentalshop/hooks';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 
 // Union type to handle both local and database customer types
 type CustomerData = Customer | CustomerWithMerchant;
@@ -39,15 +40,8 @@ export const CustomerInfoCard: React.FC<CustomerInfoCardProps> = ({
 }) => {
   const t = useCustomerTranslations();
   
-  const formatDate = (date: Date | string) => {
-    if (!date) return t('messages.na');
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  // Use centralized date formatting hook (DRY principle)
+  const formatDate = useFormattedFullDate;
 
   const formatAddress = () => {
     if (!customer) return t('fields.noAddress');

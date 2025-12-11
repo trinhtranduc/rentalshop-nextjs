@@ -7,6 +7,7 @@ import { FormField, RoleSelect, MerchantSelect, OutletSelect } from './UserFormF
 import { validateUserCreateInput, validateUserUpdateInput } from './UserFormValidation';
 import type { User, UserCreateInput, UserUpdateInput, UserRole } from '@rentalshop/types';
 import { merchantsApi, outletsApi } from '@rentalshop/utils';
+import { useFormattedDateTime } from '@rentalshop/utils/client';
 import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
@@ -554,14 +555,14 @@ export const UserForm: React.FC<UserFormProps> = ({
               <div>
               <span className="font-medium text-text-primary">{t('created')}:</span>
               <span className="ml-2 text-muted-foreground">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {useFormattedDateTime(user.createdAt)}
                 </span>
               </div>
               {user.lastLoginAt && (
                 <div>
                 <span className="font-medium text-text-primary">{t('fields.lastLogin')}:</span>
                 <span className="ml-2 text-muted-foreground">
-                    {new Date(user.lastLoginAt).toLocaleDateString()}
+                    {useFormattedFullDate(user.lastLoginAt)}
                   </span>
                 </div>
               )}

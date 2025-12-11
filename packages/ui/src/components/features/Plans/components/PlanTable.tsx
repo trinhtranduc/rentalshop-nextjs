@@ -29,6 +29,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import type { Plan } from '@rentalshop/types';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 
 interface PlanTableProps {
   plans: Plan[];
@@ -66,14 +67,8 @@ export const PlanTable: React.FC<PlanTableProps> = ({
     return limit === -1 ? 'Unlimited' : limit.toString();
   };
 
-  const formatDate = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  // Use centralized date formatting hook (DRY principle)
+  const formatDate = useFormattedFullDate;
 
   const handleSort = (field: string) => {
     if (onSort) {
