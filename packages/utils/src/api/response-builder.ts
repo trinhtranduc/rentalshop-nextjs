@@ -120,6 +120,12 @@ const ERROR_MESSAGES: Record<string, string> = {
   'PASSWORD_RESET_TOKEN_EXPIRED': 'Password reset token has expired',
   'PASSWORD_RESET_TOKEN_USED': 'Password reset token has already been used',
   
+  // Email Verification Errors
+  'EMAIL_VERIFICATION_FAILED': 'Email verification failed',
+  'EMAIL_ALREADY_VERIFIED': 'Email has already been verified',
+  'EMAIL_SEND_FAILED': 'Failed to send email',
+  'TOKEN_REQUIRED': 'Token is required',
+  
   // System Errors
   'INTERNAL_SERVER_ERROR': 'Internal server error',
   'SERVICE_UNAVAILABLE': 'Service temporarily unavailable. Please try again later.',
@@ -148,6 +154,10 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'PASSWORD_CHANGED_SUCCESS': 'Password changed successfully',
   'PASSWORD_RESET_SUCCESS': 'Password has been reset successfully',
   'PASSWORD_RESET_LINK_SENT': 'If an account with that email exists, a password reset link has been sent',
+  
+  // Email Verification Success
+  'EMAIL_VERIFIED_SUCCESS': 'Email verified successfully',
+  'VERIFICATION_EMAIL_SENT': 'Verification email has been sent',
   
   // Create Operations
   'USER_CREATED_SUCCESS': 'User created successfully',

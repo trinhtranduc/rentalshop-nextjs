@@ -19,7 +19,6 @@ s3-bucket/
 │   │   ├── staging/            # Upload tạm thời (chờ commit)
 │   │   ├── products/           # Hình sản phẩm
 │   │   │   └── merchant-{id}/
-│   │   │       └── outlet-{id}/
 │   │   ├── avatars/            # Ảnh đại diện
 │   │   │   ├── users/
 │   │   │   ├── merchants/
