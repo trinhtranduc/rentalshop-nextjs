@@ -8,8 +8,8 @@ import {
   Calendar, 
   ShoppingCart 
 } from 'lucide-react';
-import { formatDate } from '@rentalshop/utils';
 import { VALIDATION } from '@rentalshop/constants';
+import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 
 interface OrderOverviewProps {
   order: OrderDetailData;
@@ -73,45 +73,51 @@ const OutletInfo: React.FC<{ outlet: OrderDetailData['outlet'] }> = ({ outlet })
   </InfoSection>
 );
 
-const ImportantDates: React.FC<{ order: OrderDetailData }> = ({ order }) => (
-  <InfoSection
-    icon={<Calendar className="w-4 h-4 text-gray-600" />}
-    title="Important Dates"
-  >
-    <div className="space-y-2 text-sm text-gray-600">
-      {/* Order creation date - always displayed */}
-      <div className="flex justify-between">
-        <span>Created:</span>
-        <span>{formatDate(new Date(order.createdAt))}</span>
+const ImportantDates: React.FC<{ order: OrderDetailData }> = ({ order }) => {
+  // Use centralized date formatting hooks (DRY principle)
+  const formatDate = useFormattedFullDate; // For pickup/return dates (date only)
+  const formatDateTime = useFormattedDateTime; // For createdAt/updatedAt (with time)
+  
+  return (
+    <InfoSection
+      icon={<Calendar className="w-4 h-4 text-gray-600" />}
+      title="Important Dates"
+    >
+      <div className="space-y-2 text-sm text-gray-600">
+        {/* Order creation date - always displayed with time */}
+        <div className="flex justify-between">
+          <span>Created:</span>
+          <span>{formatDateTime(order.createdAt)}</span>
+        </div>
+        
+        {order.pickupPlanAt && (
+          <div className="flex justify-between">
+            <span>Pickup:</span>
+            <span>{formatDate(order.pickupPlanAt)}</span>
+          </div>
+        )}
+        {order.returnPlanAt && (
+          <div className="flex justify-between">
+            <span>Return:</span>
+            <span>{formatDate(order.returnPlanAt)}</span>
+          </div>
+        )}
+        {order.pickedUpAt && (
+          <div className="flex justify-between">
+            <span>Picked Up:</span>
+            <span>{formatDate(order.pickedUpAt)}</span>
+          </div>
+        )}
+        {order.returnedAt && (
+          <div className="flex justify-between">
+            <span>Returned:</span>
+            <span>{formatDate(order.returnedAt)}</span>
+          </div>
+        )}
       </div>
-      
-      {order.pickupPlanAt && (
-        <div className="flex justify-between">
-          <span>Pickup:</span>
-          <span>{formatDate(new Date(order.pickupPlanAt))}</span>
-        </div>
-      )}
-      {order.returnPlanAt && (
-        <div className="flex justify-between">
-          <span>Return:</span>
-          <span>{formatDate(new Date(order.returnPlanAt))}</span>
-        </div>
-      )}
-      {order.pickedUpAt && (
-        <div className="flex justify-between">
-          <span>Picked Up:</span>
-          <span>{formatDate(new Date(order.pickedUpAt))}</span>
-        </div>
-      )}
-      {order.returnedAt && (
-        <div className="flex justify-between">
-          <span>Returned:</span>
-          <span>{formatDate(new Date(order.returnedAt))}</span>
-        </div>
-      )}
-    </div>
-  </InfoSection>
-);
+    </InfoSection>
+  );
+};
 
 const OrderSummaryInfo: React.FC<{ order: OrderDetailData }> = ({ order }) => (
   <InfoSection

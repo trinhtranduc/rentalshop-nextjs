@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { Info } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
+import { useFormattedDateTime } from '@rentalshop/utils/client';
 import type { OrderWithDetails } from '@rentalshop/types';
 
 interface OrderInformationProps {
@@ -76,7 +76,7 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">{t('detail.orderDate')}:</span>
               <span className="text-sm font-medium">
-                {order.createdAt ? useFormattedFullDate(order.createdAt) : 'N/A'}
+                {order.createdAt ? useFormattedDateTime(order.createdAt) : 'N/A'}
               </span>
             </div>
           </div>

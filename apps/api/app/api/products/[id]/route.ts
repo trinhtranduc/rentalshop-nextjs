@@ -280,8 +280,8 @@ export async function PUT(
         const imageFiles = formData.getAll('images') as File[];
         if (imageFiles.length > 0) {
           console.log(`🔍 Processing ${imageFiles.length} image file(s)`);
-          
-          for (const file of imageFiles) {
+        
+        for (const file of imageFiles) {
             if (!file || file.size === 0) continue;
             
             // Validate image

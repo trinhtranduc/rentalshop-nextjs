@@ -5,9 +5,9 @@ import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks
 import { Package, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../../../ui';
 import type { ProductWithStock } from '@rentalshop/types';
-import { formatDate } from '../../../../lib';
 import { getRentalPriceLabel, formatRentalPrice } from '../utils';
 import { useFormatCurrency } from '@rentalshop/ui';
+import { useFormattedDateTime } from '@rentalshop/utils/client';
 
 interface ProductDetailListProps {
   product: ProductWithStock;
@@ -98,11 +98,11 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
             )}
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-1.5">{tc('labels.createdAt')}</label>
-          <p className="text-base">{formatDate(product.createdAt)}</p>
+          <p className="text-base">{product.createdAt ? useFormattedDateTime(product.createdAt) : 'N/A'}</p>
         </div>
               <div>
           <label className="block text-sm font-medium text-muted-foreground mb-1.5">{tc('labels.updatedAt')}</label>
-          <p className="text-base">{formatDate(product.updatedAt)}</p>
+          <p className="text-base">{product.updatedAt ? useFormattedDateTime(product.updatedAt) : 'N/A'}</p>
               </div>
             </div>
             

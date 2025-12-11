@@ -15,7 +15,7 @@ import { useFormatCurrency } from '@rentalshop/ui';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
-import { getProductImageUrl } from '@rentalshop/utils/client';
+import { getProductImageUrl, useFormattedDateTime } from '@rentalshop/utils/client';
 import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-react';
 
 interface ProductTableProps {
@@ -264,11 +264,7 @@ export function ProductTable({
                 {/* Created Date */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900 dark:text-white">
-                    {product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    }) : 'N/A'}
+                    {product.createdAt ? useFormattedDateTime(product.createdAt) : 'N/A'}
                   </div>
                 </td>
                 

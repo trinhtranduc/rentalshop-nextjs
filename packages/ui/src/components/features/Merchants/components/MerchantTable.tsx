@@ -29,11 +29,13 @@ interface MerchantTableProps {
 
 export function MerchantTable({ 
   merchants, 
-  onMerchantAction,
-  sortBy = 'name',
+  onMerchantAction, 
+  sortBy = 'name', 
   sortOrder = 'asc',
   onSort
 }: MerchantTableProps) {
+  // Use centralized date formatting hook (DRY principle)
+  const formatDate = useFormattedFullDate;
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   const getStatusBadge = (merchant: Merchant) => {
@@ -127,13 +129,7 @@ export function MerchantTable({
                   {/* Created At */}
                   <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
-                      {merchant.createdAt 
-                        ? new Date(merchant.createdAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
-                        : 'N/A'}
+                      {merchant.createdAt ? useFormattedDateTime(merchant.createdAt) : 'N/A'}
                     </div>
                   </td>
 
@@ -141,17 +137,9 @@ export function MerchantTable({
                   <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
                       {merchant.subscription?.currentPeriodStart 
-                        ? new Date(merchant.subscription.currentPeriodStart).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
+                        ? useFormattedDateTime(merchant.subscription.currentPeriodStart)
                         : merchant.createdAt
-                        ? new Date(merchant.createdAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
+                        ? useFormattedDateTime(merchant.createdAt)
                         : 'N/A'}
                     </div>
                   </td>
@@ -160,17 +148,9 @@ export function MerchantTable({
                   <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
                       {merchant.subscription?.currentPeriodEnd 
-                        ? new Date(merchant.subscription.currentPeriodEnd).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
+                        ? useFormattedDateTime(merchant.subscription.currentPeriodEnd)
                         : merchant.lastActiveAt
-                        ? new Date(merchant.lastActiveAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
+                        ? useFormattedDateTime(merchant.lastActiveAt)
                         : 'No end date'}
                     </div>
                   </td>

@@ -15,6 +15,7 @@ import {
   Switch,
   Label
 } from '@rentalshop/ui';
+import { useFormattedDateTime } from '@rentalshop/utils/client';
 import { 
   Calendar,
   Percent,
@@ -99,15 +100,8 @@ export const BillingCycleDetailDialog: React.FC<BillingCycleDetailDialogProps> =
     setIsEditing(false);
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Use centralized date formatting hook (DRY principle) - with time for createdAt/updatedAt
+  const formatDate = useFormattedDateTime;
 
   if (!billingCycle) return null;
 

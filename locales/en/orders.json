@@ -295,7 +295,22 @@
     "today": "Today",
     "thisWeek": "This Week",
     "thisMonth": "This Month",
-    "dateRange": "Date Range"
+    "dateRange": "Date Range",
+    "dateRangeOptions": {
+      "last30Days": "Last 30 days",
+      "last90Days": "Last 90 days",
+      "last12Months": "Last 12 months",
+      "allTime": "All time",
+      "customRange": "Custom range...",
+      "default": "Default",
+      "customDateRange": "Custom Date Range",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "cancel": "Cancel",
+      "applyRange": "Apply Range",
+      "tip": "💡 <strong>Tip:</strong> For large date ranges, consider using the export feature instead of viewing all data in the table.",
+      "viewingAllOrdersWarning": "Viewing all {count} orders may be slow"
+    }
   },
   "search": {
     "placeholder": "Search orders by number, customer name, or phone...",

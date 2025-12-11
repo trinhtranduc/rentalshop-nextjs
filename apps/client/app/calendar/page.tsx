@@ -24,8 +24,8 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null);
   const [calendarData, setCalendarData] = useState<CalendarResponse>({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
   const [calendarMeta, setCalendarMeta] = useState<CalendarMeta | null>(null);
-  // Initialize to October 2025 to match test data
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 1)); // Month is 0-based, so 9 = October
+  // Initialize to current month
+  const [currentDate, setCurrentDate] = useState(new Date());
   
   // Handle month change from Calendars component
   // Use useRef to prevent unnecessary updates
@@ -161,42 +161,6 @@ export default function CalendarPage() {
     fetchCalendarData();
   }, [fetchCalendarData]);
 
-  // 🎯 NEW: Handle date click to show daily orders
-  const handleDateClick = useCallback((date: Date) => {
-    console.log('📅 Date clicked:', date);
-    
-    // Convert date to YYYY-MM-DD format using local timezone to match backend (which uses local date keys)
-    const dateKey = getLocalDateKey(date);
-    const dayData = calendarData.calendar.find(day => day.date === dateKey);
-    
-    console.log('📅 Looking for dateKey:', dateKey);
-    console.log('📅 Available dates:', calendarData.calendar.map(day => day.date));
-    
-    if (dayData) {
-      // Show ALL orders from dayData.orders (both pickup and return)
-      const allOrders = dayData.orders.map((order: CalendarOrderSummary) => ({ 
-        ...order, 
-        type: 'pickup' as const 
-      }));
-      
-      console.log('📅 Orders found for selected date:', {
-        dateKey,
-        calendarOrders: dayData.orders.length,
-        allOrders: allOrders.length,
-        orderNumbers: allOrders.map(o => o.orderNumber)
-      });
-      
-      setSelectedDate(date);
-      setDailyOrders(allOrders);
-      setShowDailyModal(true);
-    } else {
-      console.log('📅 No orders for selected date:', dateKey);
-      setSelectedDate(date);
-      setDailyOrders([]);
-      setShowDailyModal(true);
-    }
-  }, [calendarData]);
-
   // Convert calendar data to the format expected by Calendars component
   const pickupOrders: PickupOrder[] = React.useMemo(() => {
     console.log('📅 Transforming calendar data:', { 
@@ -245,6 +209,113 @@ export default function CalendarPage() {
     
     return orders;
   }, [calendarData]);
+
+  // 🎯 NEW: Handle date click to show daily orders
+  const handleDateClick = useCallback((date: Date) => {
+    console.log('📅 Date clicked:', date);
+    
+    // Fix: Normalize date to local timezone before creating dateKey
+    // This ensures consistency with CalendarGrid and backend date matching
+    // Create a new Date object using local date components to avoid timezone issues
+    const normalizedDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+    
+    // Use getLocalDateKey to ensure consistency with CalendarGrid date matching
+    // This ensures the dateKey matches exactly how CalendarGrid matches dates with orders
+    const dateKey = getLocalDateKey(normalizedDate);
+    
+    console.log('📅 Date click debug:', {
+      originalDate: date,
+      normalizedDate: normalizedDate,
+      dateKey,
+      originalDateComponents: {
+        year: date.getFullYear(),
+        month: date.getMonth(),
+        day: date.getDate()
+      },
+      normalizedDateComponents: {
+        year: normalizedDate.getFullYear(),
+        month: normalizedDate.getMonth(),
+        day: normalizedDate.getDate()
+      }
+    });
+    
+    // CRITICAL FIX: Find orders from pickupOrders array (transformed data)
+    // instead of calendarData.calendar (backend data) because:
+    // - Backend may group orders by different dateKey (e.g., timezone conversion)
+    // - CalendarGrid matches orders by pickupPlanAt (actual pickup date)
+    // - pickupOrders array contains orders with correct pickupDate from pickupPlanAt
+    const matchingOrders = pickupOrders.filter(order => {
+      // Match by pickupPlanAt (actual pickup date), not backend dateKey
+      const orderPickupDate = (order as any).pickupPlanAt 
+        ? new Date((order as any).pickupPlanAt)
+        : order.pickupDate;
+      
+      if (!orderPickupDate) return false;
+      
+      const orderDateKey = getLocalDateKey(orderPickupDate);
+      return orderDateKey === dateKey;
+    });
+    
+    console.log('📅 Looking for dateKey:', dateKey);
+    console.log('📅 Available dates from backend:', calendarData.calendar.map(day => day.date));
+    console.log('📅 Orders matching dateKey:', {
+      dateKey,
+      matchingOrdersCount: matchingOrders.length,
+      orderNumbers: matchingOrders.map(o => o.orderNumber)
+    });
+    
+    if (matchingOrders.length > 0) {
+      // Find original CalendarOrderSummary from calendarData to preserve all fields
+      const allOrders: (CalendarOrderSummary & { type: 'pickup' | 'return' })[] = matchingOrders.map(order => {
+        // Find original order data from calendarData
+        let originalOrder: CalendarOrderSummary | undefined;
+        for (const dayData of calendarData.calendar) {
+          originalOrder = dayData.orders.find(o => o.id === order.id);
+          if (originalOrder) break;
+        }
+        
+        // Use original order data if found, otherwise construct from PickupOrder
+        return originalOrder ? {
+          ...originalOrder,
+          type: 'pickup' as const
+        } : {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone || undefined,
+          totalAmount: order.totalAmount || 0,
+          status: order.status,
+          outletName: order.outletName || undefined,
+          notes: order.notes || undefined,
+          pickupPlanAt: (order as any).pickupPlanAt || order.pickupDate?.toISOString(),
+          returnPlanAt: order.returnDate?.toISOString(),
+          productName: order.productName,
+          productCount: order.productCount || 1,
+          orderItems: [], // Fallback empty array
+          type: 'pickup' as const
+        };
+      });
+      
+      console.log('📅 Orders found for selected date:', {
+        dateKey,
+        matchingOrders: allOrders.length,
+        orderNumbers: allOrders.map(o => o.orderNumber)
+      });
+      
+      setSelectedDate(date);
+      setDailyOrders(allOrders);
+      setShowDailyModal(true);
+    } else {
+      console.log('📅 No orders for selected date:', dateKey);
+      setSelectedDate(date);
+      setDailyOrders([]);
+      setShowDailyModal(true);
+    }
+  }, [pickupOrders, calendarData]);
 
   return (
     <PageWrapper>

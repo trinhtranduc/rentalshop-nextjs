@@ -168,9 +168,9 @@ export function CalendarGrid({
               </span>
             </div>
 
-            {/* 🎯 NEW: Order Count Display (User's Requested Strategy) */}
+            {/* 🎯 NEW: Order Count Display (Pickup Orders Only) */}
             <div className="space-y-1">
-              {/* Show order counts instead of individual orders */}
+              {/* Show pickup order counts */}
               {(day as any).hasEvents && (
                 <div className="space-y-1">
                   {/* Pickup Count */}
@@ -178,14 +178,6 @@ export function CalendarGrid({
                     <div className="flex items-center justify-between px-2 py-1 bg-green-50 border border-green-200 rounded text-xs">
                       <span className="text-green-700 font-medium">{t('labels.pickup')}</span>
                       <span className="text-green-800 font-bold">{(day as any).pickupCount}</span>
-                    </div>
-                  )}
-                  
-                  {/* Return Count */}
-                  {(day as any).returnCount > 0 && (
-                    <div className="flex items-center justify-between px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs">
-                      <span className="text-blue-700 font-medium">{t('labels.return')}</span>
-                      <span className="text-blue-800 font-bold">{(day as any).returnCount}</span>
                     </div>
                   )}
                 </div>

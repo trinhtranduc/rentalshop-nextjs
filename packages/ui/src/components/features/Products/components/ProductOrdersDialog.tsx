@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { Product, OrderWithDetails } from '@rentalshop/types';
 import { ordersApi } from '@rentalshop/utils';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface ProductOrdersDialogProps {
@@ -79,16 +80,8 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
     }).format(amount);
   };
 
-  const formatDate = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Use centralized date formatting hook (DRY principle)
+  const formatDate = useFormattedFullDate;
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
