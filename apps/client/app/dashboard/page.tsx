@@ -767,17 +767,18 @@ export default function DashboardPage() {
     checkTokenAndFetch();
   }, [userId, merchantId, timePeriod, selectedOutletsKey, fetchDashboardData, authLoading]); // Include authLoading
 
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    if (!userId) return; // Don't set interval if no user
-    
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing dashboard data...');
-      fetchDashboardData();
-    }, 30000); // 30 seconds
+  // Auto-refresh disabled - user can manually refresh using browser refresh button
+  // Uncomment below to enable auto-refresh every 30 seconds
+  // useEffect(() => {
+  //   if (!userId) return; // Don't set interval if no user
+  //   
+  //   const interval = setInterval(() => {
+  //     console.log('🔄 Auto-refreshing dashboard data...');
+  //     fetchDashboardData();
+  //   }, 30000); // 30 seconds
 
-    return () => clearInterval(interval);
-  }, [fetchDashboardData, userId]); // Use memoized function and userId
+  //   return () => clearInterval(interval);
+  // }, [fetchDashboardData, userId]); // Use memoized function and userId
 
   const getStats = () => {
     // Always return the actual stats from API - no hardcoded data
