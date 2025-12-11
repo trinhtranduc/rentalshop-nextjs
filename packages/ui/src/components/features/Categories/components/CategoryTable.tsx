@@ -12,6 +12,7 @@ import {
 import { Category } from '@rentalshop/types';
 import { useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
+import { useFormattedDateTime } from '@rentalshop/utils/client';
 import { Eye, Edit, Trash2, CheckCircle, XCircle, MoreVertical, FolderOpen } from 'lucide-react';
 
 interface CategoryTableProps {
@@ -51,14 +52,10 @@ export function CategoryTable({
     );
   }
 
+  // Use useFormattedDateTime for createdAt (with time)
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return 'N/A';
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return useFormattedDateTime(dateString);
   };
 
   const getStatusBadge = (isActive: boolean) => {
@@ -152,7 +149,7 @@ export function CategoryTable({
                   {getStatusBadge(category.isActive)}
                 </td> */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(category.createdAt)}
+                  {category.createdAt ? useFormattedDateTime(category.createdAt) : 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <DropdownMenu>

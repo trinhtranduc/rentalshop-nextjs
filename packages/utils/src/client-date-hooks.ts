@@ -56,7 +56,7 @@ export function useFormattedFullDate(date: string | Date): string {
  * Hook to get formatted datetime using current locale
  * 
  * @param date - Date string or Date object
- * @returns Formatted datetime string (hh:mm dd/mm/yy for Vietnamese, standard for English)
+ * @returns Formatted datetime string (dd/mm/yyyy hh:mm for Vietnamese, standard for English)
  */
 export function useFormattedDateTime(date: string | Date): string {
   const locale = useNextIntlLocale() as 'en' | 'vi';

@@ -12,6 +12,7 @@ import {
 import { Outlet } from '@rentalshop/types';
 import { Eye, Edit, XCircle, CheckCircle, MoreVertical, Building2, CreditCard } from 'lucide-react';
 import { useOutletsTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 
 interface OutletTableProps {
   outlets: Outlet[];
@@ -48,15 +49,8 @@ export function OutletTable({
     );
   }
 
-  const formatDate = (dateString: string | Date | undefined) => {
-    if (!dateString) return t('fields.notAvailable');
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  // Use centralized date formatting hook (DRY principle)
+  const formatDate = useFormattedFullDate;
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (

@@ -28,6 +28,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useSubscriptionStatusInfo, useSubscriptionTranslations, useAuth } from '@rentalshop/hooks';
+import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { useLocale } from 'next-intl';
 
 interface SubscriptionStatusBannerProps {
@@ -50,6 +51,8 @@ export function SubscriptionStatusBanner({
   dashboardLoaded = true // Default to true for backward compatibility
 }: SubscriptionStatusBannerProps) {
   const t = useSubscriptionTranslations();
+  // Use centralized date formatting hook (DRY principle)
+  const formatDate = useFormattedFullDate;
   const locale = useLocale();
   const { user } = useAuth();
   const {
@@ -147,19 +150,11 @@ export function SubscriptionStatusBanner({
             }`}>
               {isExpiringWarning && subscription?.currentPeriodEnd ? (
                 t('banner.expiresOn', {
-                  date: new Date(subscription.currentPeriodEnd).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })
+                  date: formatDate(subscription.currentPeriodEnd)
                 })
               ) : isExpiringSoon && daysUntilExpiry !== null && daysUntilExpiry <= 1 ? (
                 t('banner.expiresOn', {
-                  date: new Date(subscription?.currentPeriodEnd || Date.now()).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })
+                  date: formatDate(subscription?.currentPeriodEnd || new Date())
                 })
               ) : (
                 statusMessage
@@ -182,7 +177,7 @@ export function SubscriptionStatusBanner({
               }`}>
                 <Clock className="w-4 h-4 inline mr-1" />
                 {t('banner.gracePeriodEnds', {
-                  date: gracePeriodEnds.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US')
+                  date: useFormattedFullDate(gracePeriodEnds)
                 })}
               </div>
             )}
@@ -326,7 +321,7 @@ export function SubscriptionStatusCard({
               {gracePeriodEnds && (
                 <div className="text-sm text-gray-600 mb-3">
                   <Clock className="w-4 h-4 inline mr-1" />
-                  Grace period ends: {gracePeriodEnds.toLocaleDateString()}
+                  Grace period ends: {formatDate(gracePeriodEnds)}
                 </div>
               )}
 

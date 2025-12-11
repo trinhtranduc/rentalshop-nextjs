@@ -245,25 +245,32 @@ export function formatChartPeriod(date: string | Date, locale: string): string {
 
 /**
  * Format date for full display (day + month + year)
+ * Standardized format: Vietnamese dd/mm/yyyy, English MMM dd, yyyy (e.g., "Nov 28, 2020")
  * 
  * @param date - Date string or Date object
  * @param locale - Current locale ('en' or 'vi')
- * @returns Formatted date string (e.g., "20/01/05" or "Jan 20, 2025")
+ * @returns Formatted date string (e.g., "28/11/2020" for vi, "Nov 28, 2020" for en)
  */
 export function formatFullDateByLocale(date: string | Date, locale: string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(dateObj.getTime())) return date.toString();
+  
   if (locale === 'vi') {
-    // Vietnamese format: dd/mm/yy
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(dateObj.getTime())) return date.toString();
-    
+    // Vietnamese format: dd/mm/yyyy (e.g., "28/11/2020")
     const day = dateObj.getDate().toString().padStart(2, '0');
     const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-    const year = dateObj.getFullYear().toString().slice(-2);
+    const year = dateObj.getFullYear().toString(); // Full 4-digit year
     
     return `${day}/${month}/${year}`;
   }
   
-  return formatDateByLocale(date, locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  // English format: MMM dd, yyyy (US standard, e.g., "Nov 28, 2020")
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[dateObj.getMonth()];
+  const day = dateObj.getDate();
+  const year = dateObj.getFullYear();
+  
+  return `${month} ${day}, ${year}`;
 }
 
 /**
@@ -330,17 +337,17 @@ export function formatTimeByLocale(date: string | Date, locale: string): string 
  */
 export function formatDateTimeByLocale(date: string | Date, locale: string): string {
   if (locale === 'vi') {
-    // Vietnamese format: hh:mm dd/mm/yy
+    // Vietnamese format: dd/mm/yyyy hh:mm
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) return date.toString();
     
-    const hours = dateObj.getHours().toString().padStart(2, '0');
-    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
     const day = dateObj.getDate().toString().padStart(2, '0');
     const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-    const year = dateObj.getFullYear().toString().slice(-2);
+    const year = dateObj.getFullYear().toString(); // Full 4-digit year
+    const hours = dateObj.getHours().toString().padStart(2, '0');
+    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
     
-    return `${hours}:${minutes} ${day}/${month}/${year}`;
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   }
   
   return formatDateByLocale(date, locale, { 

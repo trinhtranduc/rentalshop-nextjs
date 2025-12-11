@@ -473,7 +473,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           // Extract key from S3 URL or CloudFront URL
           let key = '';
           if (url.includes('amazonaws.com/')) {
-            const urlParts = url.split('amazonaws.com/');
+          const urlParts = url.split('amazonaws.com/');
             key = urlParts.length > 1 ? urlParts[1].split('?')[0] : '';
           } else if (url.includes('/')) {
               // CloudFront URL or direct path

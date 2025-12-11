@@ -110,6 +110,10 @@
     "description": "Description",
     "workingHours": "Working Hours",
     "contactPerson": "Contact Person",
+    "city": "City",
+    "state": "State",
+    "zipCode": "ZIP Code",
+    "country": "Country",
     "edit": "Edit",
     "save": "Save",
     "cancel": "Cancel",
@@ -119,7 +123,11 @@
     "enterOutletName": "Enter outlet name",
     "enterOutletPhone": "Enter outlet phone",
     "enterOutletAddress": "Enter outlet address",
-    "enterDescription": "Enter outlet description"
+    "enterDescription": "Enter outlet description",
+    "enterCity": "Enter city",
+    "enterState": "Enter state",
+    "enterZipCode": "Enter ZIP code",
+    "enterCountry": "Enter country"
   },
   "security": {
     "title": "Security Settings",

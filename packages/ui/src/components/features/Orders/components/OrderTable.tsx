@@ -4,7 +4,7 @@ import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
@@ -75,8 +75,14 @@ export const OrderTable = React.memo(function OrderTable({
 
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return 'N/A';
-    // Use the new date utility for consistent formatting
+    // Use the new date utility for consistent formatting (date only for pickup/return dates)
     return useFormattedFullDate(dateString);
+  };
+  
+  // Format date with time for createdAt
+  const formatDateTime = (dateString: string | Date | undefined) => {
+    if (!dateString) return 'N/A';
+    return useFormattedDateTime(dateString);
   };
 
   const getOrderIcon = () => {
@@ -247,7 +253,7 @@ export const OrderTable = React.memo(function OrderTable({
                 
                 {/* Created Date */}
                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(order.createdAt)}
+                  {formatDateTime(order.createdAt)}
                 </td>
                 
                 {/* Actions */}
