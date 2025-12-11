@@ -414,6 +414,84 @@ Tạo CloudFront distribution thứ 2 cho dev bucket (optional):
 
 ---
 
+## 🌐 Bước 5.5: Thêm Domain Mới vào CloudFront Distribution (Optional)
+
+Nếu bạn muốn thêm domain/subdomain mới vào CloudFront distribution hiện có:
+
+### **5.5.1. Kiểm Tra SSL Certificate**
+
+Đảm bảo SSL certificate của bạn đã bao gồm domain mới:
+- Wildcard certificate `*.anyrent.shop` sẽ cover tất cả subdomains (recommended)
+- Nếu dùng specific certificate, có 2 options:
+  1. **Tạo certificate mới** với domain mới (trong ACM us-east-1)
+  2. **Dùng CloudFront auto-create**: Khi thêm domain, CloudFront sẽ tự động đề xuất tạo certificate
+
+### **5.5.2. Thêm Alternate Domain Name (CNAME) vào CloudFront**
+
+1. Vào **AWS Console** → **CloudFront**
+2. Chọn distribution cần update
+3. Click tab **General** → Click **Edit**
+4. Scroll xuống **Alternate domain names (CNAMEs)**
+5. Click **Add item**
+6. Thêm domain mới (ví dụ: `dev-images.anyrent.shop`)
+7. Click **Save changes**
+
+**Ví dụ các domains có thể thêm**:
+```
+images.anyrent.shop        ← Production
+dev-images.anyrent.shop    ← Development  
+staging-images.anyrent.shop ← Staging
+```
+
+### **5.5.3. Cập Nhật DNS CNAME Record**
+
+1. Vào DNS provider (Route 53, Cloudflare, etc.)
+2. Tạo CNAME record mới:
+   - **Type**: `CNAME`
+   - **Name**: `dev-images` (hoặc tên subdomain)
+   - **Value**: `d1234567890.cloudfront.net` (CloudFront distribution domain)
+   - **TTL**: `300` (5 minutes) hoặc `3600` (1 hour)
+
+**Ví dụ** (Route 53):
+```
+Record name: dev-images
+Record type: CNAME
+Value: d1234567890.cloudfront.net
+TTL: 3600 (1 Hour)
+```
+
+**Ví dụ** (DNS Provider khác):
+```
+Type: CNAME
+Name: dev-images
+Value: d1234567890.cloudfront.net
+TTL: 3600
+```
+
+### **5.5.4. Verify Domain**
+
+Chờ DNS propagate (5-30 phút), sau đó test:
+
+```bash
+# Test DNS resolution
+dig dev-images.anyrent.shop
+# Hoặc
+nslookup dev-images.anyrent.shop
+```
+
+Kết quả phải trỏ về CloudFront domain.
+
+### **5.5.5. Test Access**
+
+Sau khi DNS propagate, test truy cập:
+```bash
+curl -I https://dev-images.anyrent.shop/products/merchant-1/image.jpg
+```
+
+Response phải có `HTTP/2 200` và headers từ CloudFront.
+
+---
+
 ## ⚙️ Bước 6: Cấu Hình Environment Variables
 
 ### **6.1. Development Environment**
@@ -421,7 +499,7 @@ Tạo CloudFront distribution thứ 2 cho dev bucket (optional):
 ```bash
 NODE_ENV=development
 AWS_S3_BUCKET_NAME=anyrent-images-dev
-AWS_CLOUDFRONT_DOMAIN=images-dev.anyrent.shop  # Optional
+AWS_CLOUDFRONT_DOMAIN=dev-images.anyrent.shop  # Custom domain cho dev
 AWS_REGION=ap-southeast-1
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
@@ -432,15 +510,34 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 ```bash
 NODE_ENV=production
 # AWS_S3_BUCKET_NAME sẽ auto-select: anyrent-images-pro
-AWS_CLOUDFRONT_DOMAIN=images.anyrent.shop
+AWS_CLOUDFRONT_DOMAIN=images.anyrent.shop  # ⚠️ REQUIRED: Set custom domain
 AWS_REGION=ap-southeast-1
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
 
-**Lưu ý**: Nếu không set `AWS_S3_BUCKET_NAME`, code sẽ tự động chọn:
-- `NODE_ENV=production` → `anyrent-images-pro`
-- `NODE_ENV=development` → `anyrent-images-dev`
+**Lưu ý**:
+- Nếu không set `AWS_S3_BUCKET_NAME`, code sẽ tự động chọn:
+  - `NODE_ENV=production` → `anyrent-images-pro`
+  - `NODE_ENV=development` → `anyrent-images-dev`
+- **Set `AWS_CLOUDFRONT_DOMAIN`** để dùng custom domain thay vì CloudFront domain mặc định
+  - ✅ `AWS_CLOUDFRONT_DOMAIN=images.anyrent.shop` → URLs sẽ là `https://images.anyrent.shop/...`
+  - ❌ Nếu không set → URLs sẽ là `https://d1234567890.cloudfront.net/...` hoặc S3 URL
+
+### **6.3. Verify Custom Domain Setup**
+
+Sau khi set `AWS_CLOUDFRONT_DOMAIN`, test lại:
+
+```bash
+# Test DNS resolution
+ping images.anyrent.shop
+# Hoặc
+dig images.anyrent.shop
+```
+
+Kết quả phải trỏ về CloudFront distribution domain.
+
+**Restart server** sau khi update environment variables để áp dụng thay đổi.
 
 ---
 
@@ -577,6 +674,7 @@ Khi cần clear cache (sau khi update images):
 
 ## 📝 Checklist
 
+### **Initial Setup**
 - [ ] Tạo 2 S3 buckets: `anyrent-images-dev`, `anyrent-images-pro`
 - [ ] Config bucket policies (public read hoặc CloudFront OAC)
 - [ ] Tạo SSL certificate ở `us-east-1` region
@@ -588,6 +686,23 @@ Khi cần clear cache (sau khi update images):
 - [ ] Set environment variables
 - [ ] Test upload và access images
 - [ ] Verify CloudFront URLs hoạt động
+
+### **Thêm Domain Mới vào CloudFront**
+- [ ] Verify SSL certificate bao gồm domain mới (wildcard `*.anyrent.shop` cover tất cả)
+- [ ] Vào CloudFront distribution → Tab General → Edit
+- [ ] Thêm Alternate Domain Name (CNAME) mới vào list
+- [ ] Save changes (deployment mất 5-15 phút)
+- [ ] Tạo CNAME record mới trong DNS provider
+- [ ] Verify DNS resolution với `dig` hoặc `nslookup`
+- [ ] Test access image qua domain mới
+
+### **Enable Custom Domain cho Image URLs**
+- [ ] Set `AWS_CLOUDFRONT_DOMAIN` environment variable:
+  - Production: `AWS_CLOUDFRONT_DOMAIN=images.anyrent.shop`
+  - Development: `AWS_CLOUDFRONT_DOMAIN=dev-images.anyrent.shop`
+- [ ] Restart API server để apply changes
+- [ ] Upload test image và verify URL dùng custom domain
+- [ ] Test access image qua custom domain URL
 
 ---
 

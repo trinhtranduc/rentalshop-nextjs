@@ -466,30 +466,9 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           : [];
 
       // Extract staging keys from URLs (both uploaded files and existing staging files)
+      // Supports: S3 URLs, CloudFront URLs, and custom domains (images.anyrent.shop, dev-images.anyrent.shop)
       // Structure: staging/filename.jpg (simplified, no env prefix)
-      stagingKeys = imageUrls
-        .filter(url => url && (url.includes('amazonaws.com') || url.includes('cloudfront')))
-        .map(url => {
-          // Extract key from S3 URL or CloudFront URL
-          let key = '';
-          if (url.includes('amazonaws.com/')) {
-          const urlParts = url.split('amazonaws.com/');
-            key = urlParts.length > 1 ? urlParts[1].split('?')[0] : '';
-          } else if (url.includes('/')) {
-              // CloudFront URL or direct path
-              const urlParts = url.split('/');
-              const stagingIndex = urlParts.findIndex((part: string) => part.includes('staging'));
-              if (stagingIndex >= 0) {
-                key = urlParts.slice(stagingIndex).join('/');
-              }
-          }
-          return key || null;
-        })
-        .filter((key): key is string => {
-          if (!key) return false;
-          // Check if key contains staging (supports both old and new structure)
-          return key.includes('/staging/') || key.startsWith('staging/');
-        });
+      stagingKeys = extractStagingKeysFromUrls(imageUrls);
 
       console.log('🔍 Found staging keys to commit:', stagingKeys);
       console.log('🔍 All image URLs:', imageUrls);
@@ -506,63 +485,38 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
         
         if (commitResult.success) {
-          // Generate production URLs with presigned access
-          const productionUrls = await Promise.all(
-            commitResult.committedKeys.map(async (key) => {
-              const presignedUrl = await generateAccessUrl(key, 86400 * 365); // 1 year expiration
-              if (presignedUrl) {
-                return presignedUrl;
-              }
-              // Fallback to direct URL if presigned fails
-              const region = process.env.AWS_REGION || 'ap-southeast-1';
-              // Get bucket name (auto-selected based on NODE_ENV)
-              const bucketName = process.env.AWS_S3_BUCKET_NAME || 
-                (process.env.NODE_ENV === 'production' ? 'anyrent-images-pro' : 'anyrent-images-dev');
-              return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-            })
+          // Generate production URLs using CloudFront custom domain
+          // Uses AWS_CLOUDFRONT_DOMAIN (images.anyrent.shop for prod, dev-images.anyrent.shop for dev)
+          const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
+          if (!cloudfrontDomain) {
+            console.error('❌ AWS_CLOUDFRONT_DOMAIN not configured');
+            return NextResponse.json(
+              ResponseBuilder.error('SERVICE_UNAVAILABLE'),
+              { status: 503 }
+            );
+          }
+          
+          const productionUrls = commitResult.committedKeys.map(key => 
+            `https://${cloudfrontDomain}/${key}`
           );
           
-          // Map staging URLs to production URLs
-          committedImageUrls = imageUrls.map(url => {
-            const urlParts = url.split('amazonaws.com/');
-            if (urlParts.length > 1) {
-              const key = urlParts[1].split('?')[0];
-              const committedKey = commitResult.committedKeys.find(ck => 
-                ck.replace('product/', '') === key.replace('staging/', '')
-              );
-              if (committedKey) {
-                return productionUrls[commitResult.committedKeys.indexOf(committedKey)];
-              }
-            }
-            return url; // Keep original URL if not found in staging
-          });
+          // Map staging URLs to production URLs using helper function
+          committedImageUrls = mapStagingUrlsToProductionUrls(
+            imageUrls,
+            commitResult.committedKeys,
+            productionUrls
+          );
           
-          console.log('✅ Committed staging files with presigned URLs:', committedImageUrls);
+          console.log('✅ Committed staging files to production:', committedImageUrls);
         } else {
           console.error('❌ Failed to commit staging files:', commitResult.errors);
           // Continue with original URLs if commit fails
           committedImageUrls = imageUrls;
         }
       } else {
-        // No staging files, but ensure URLs have presigned access if they're S3 URLs
-        committedImageUrls = await Promise.all(
-          imageUrls.map(async (url) => {
-            // If it's already a presigned URL or external URL, keep it as is
-            if (url.includes('?') || !url.includes('amazonaws.com')) {
-              return url;
-            }
-            
-            // Extract key from S3 URL and generate presigned URL
-            const urlParts = url.split('amazonaws.com/');
-            if (urlParts.length > 1) {
-              const key = urlParts[1];
-              const presignedUrl = await generateAccessUrl(key, 86400 * 365);
-              return presignedUrl || url;
-            }
-            
-            return url;
-          })
-        );
+        // No staging files, keep original URLs as-is
+        // URLs should already be using CloudFront custom domain if configured
+        committedImageUrls = imageUrls;
       }
     }
 

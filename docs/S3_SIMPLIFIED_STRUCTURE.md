@@ -7,18 +7,26 @@
 Thay vì dùng `env/` prefix, chúng ta dùng **2 buckets riêng biệt**:
 
 ```
-anyrent-images-dev/        ← Development bucket
-├── staging/              ← Staging folder (tạm thời)
-└── products/             ← Production folder (lâu dài)
+anyrent-images-dev/        ← Development environment bucket
+├── staging/              ← 📦 TEMPORARY folder (xóa sau khi commit)
+│   └── image-temp.jpg   ← Files tạm thời, sẽ được xóa sau commit
+└── products/             ← ✅ PRODUCTION folder (lưu trữ lâu dài)
     └── merchant-{id}/
         └── image.jpg     ← Products belong to merchant level
 
-anyrent-images-pro/        ← Production bucket  
-├── staging/              ← Staging folder (tạm thời)
-└── products/             ← Production folder (lâu dài)
+anyrent-images-pro/        ← Production environment bucket  
+├── staging/              ← 📦 TEMPORARY folder (xóa sau khi commit)
+│   └── image-temp.jpg   ← Files tạm thời, sẽ được xóa sau commit
+└── products/             ← ✅ PRODUCTION folder (lưu trữ lâu dài)
     └── merchant-{id}/
         └── image.jpg     ← Products belong to merchant level
 ```
+
+### ⚠️ **Lưu Ý Quan Trọng**
+
+- **`staging/` folder**: Folder **TẠM THỜI** trong mỗi bucket, chỉ để upload files trước khi commit. Files sẽ bị **XÓA** sau khi commit thành công sang `products/`.
+- **Staging environment**: Là một môi trường deployment (như dev, staging, prod), **KHÁC** với `staging/` folder.
+- **Flow**: Upload → `staging/` → Commit sang `products/` → Xóa files trong `staging/`
 
 ## ✅ Benefits
 
@@ -124,15 +132,39 @@ AWS_S3_BUCKET_NAME=anyrent-images-pro
 
 ## 📂 Folder Paths
 
-### **Staging**
+### **📦 Staging Folder (Tạm Thời)**
 ```
 staging/image_0-1234567890-abc123.jpg
 ```
+**Mục đích**: Folder tạm thời để upload files trước khi commit
+**Vòng đời**: Files sẽ bị xóa sau khi commit thành công sang `products/`
+**⚠️ KHÔNG phải nơi lưu trữ lâu dài**
 
-### **Products**  
+### **✅ Products Folder (Lưu Trữ Lâu Dài)**
 ```
 products/merchant-1/product-image-1234567890-abc123.jpg
 ```
+**Mục đích**: Folder chính thức để lưu trữ product images
+**Vòng đời**: Lưu trữ lâu dài, chỉ xóa khi product bị xóa
+
+### **🔄 Two-Phase Upload Pattern**
+
+1. **Phase 1 - Upload**: Files được upload vào `staging/` folder
+   ```
+   staging/image_0-1234567890-abc123.jpg  ← Upload tạm thời
+   ```
+
+2. **Phase 2 - Commit**: Sau khi tạo/update product thành công:
+   - Copy từ `staging/` sang `products/merchant-{id}/`
+   - Xóa files trong `staging/`
+   ```
+   products/merchant-1/image_0-1234567890-abc123.jpg  ← Lưu trữ lâu dài
+   ```
+
+**Lợi ích**:
+- ✅ Không mất files nếu create/update product thất bại
+- ✅ Staging folder luôn sạch (files được cleanup tự động)
+- ✅ Production folder chỉ chứa files đã được commit thành công
 
 ## 🔄 Migration từ Old Structure
 
@@ -206,12 +238,32 @@ https://images.anyrent.shop/products/merchant-1/image.jpg
 3. **CloudFront Signed URLs**: Optional for private content
 4. **CORS**: Configure properly for web/mobile access
 
-## 📊 Folder Sizes
+## 📊 Folder Sizes & Cleanup
 
-Monitor folder sizes để cleanup staging files:
+### **Monitoring Staging Folder**
+
+Staging folder chỉ chứa files tạm thời, nhưng nên monitor để đảm bảo không có orphaned files:
 
 ```bash
 # Check staging folder size
 aws s3 ls s3://anyrent-images-pro/staging/ --recursive --human-readable --summarize
 ```
+
+### **Automatic Cleanup**
+
+Code tự động cleanup staging files sau khi commit thành công:
+- ✅ **Sau khi commit**: Files trong `staging/` được **TỰ ĐỘNG XÓA**
+- ⚠️ **Nếu commit thất bại**: Files vẫn ở `staging/`, có thể commit lại lần sau
+- 🔄 **Recommendation**: Nên có scheduled job để cleanup orphaned staging files (files cũ hơn 24h)
+
+### **Manual Cleanup (Optional)**
+
+Nếu cần cleanup thủ công:
+
+```bash
+# Delete all files in staging folder older than 24 hours
+aws s3 rm s3://anyrent-images-pro/staging/ --recursive
+```
+
+⚠️ **Lưu ý**: Chỉ cleanup staging folder, KHÔNG xóa files trong `products/` folder!
 

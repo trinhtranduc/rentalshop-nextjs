@@ -3,12 +3,27 @@ import { ChevronDown, Check } from "lucide-react"
 import { cn } from "../../lib/cn"
 import { Button } from "./button"
 
+// Context to share open state between DropdownMenu components
+const DropdownMenuContext = React.createContext<{
+  open: boolean
+  setOpen: (open: boolean) => void
+}>({
+  open: false,
+  setOpen: () => {}
+})
+
 const DropdownMenu = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("relative", className)} {...props} />
-))
+>(({ className, ...props }, ref) => {
+  const [open, setOpen] = React.useState(false)
+  
+  return (
+    <DropdownMenuContext.Provider value={{ open, setOpen }}>
+      <div ref={ref} className={cn("relative", className)} {...props} />
+    </DropdownMenuContext.Provider>
+  )
+})
 DropdownMenu.displayName = "DropdownMenu"
 
 const DropdownMenuTrigger = React.forwardRef<
@@ -18,13 +33,26 @@ const DropdownMenuTrigger = React.forwardRef<
     asChild?: boolean
   }
 >(({ className, children, onToggle, asChild = false, ...props }, ref) => {
+  const context = React.useContext(DropdownMenuContext)
+  const hasContext = context && typeof context.setOpen === 'function'
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (hasContext) {
+      const newOpen = !context.open
+      context.setOpen(newOpen)
+      onToggle?.(newOpen)
+    } else {
+      onToggle?.(true)
+    }
+  }
+  
   if (asChild && React.isValidElement(children)) {
     return React.cloneElement(children as React.ReactElement<any>, {
       ...props,
       ref,
       onClick: (e: React.MouseEvent) => {
-        e.stopPropagation()
-        onToggle?.(true)
+        handleClick(e)
         children.props.onClick?.(e)
       }
     })
@@ -38,10 +66,7 @@ const DropdownMenuTrigger = React.forwardRef<
         "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         className
       )}
-      onClick={(e) => {
-        e.stopPropagation()
-        onToggle?.(true)
-      }}
+      onClick={handleClick}
       {...props}
     >
       {children}
@@ -58,13 +83,19 @@ const DropdownMenuContent = React.forwardRef<
     open?: boolean
     onOpenChange?: (open: boolean) => void
   }
->(({ className, align = "start", sideOffset = 4, open = false, onOpenChange, ...props }, ref) => {
+>(({ className, align = "start", sideOffset = 4, open: controlledOpen, onOpenChange, ...props }, ref) => {
+  const context = React.useContext(DropdownMenuContext)
+  // Use controlled open if provided, otherwise use context (if available)
+  const hasContext = context && typeof context.setOpen === 'function'
+  const open = controlledOpen !== undefined ? controlledOpen : (hasContext ? context.open : false)
+  const setOpen = onOpenChange || (hasContext ? context.setOpen : () => {})
+  
   const contentRef = React.useRef<HTMLDivElement>(null)
   
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (open && contentRef.current && !contentRef.current.contains(event.target as Node)) {
-        onOpenChange?.(false)
+        setOpen(false)
       }
     }
 
@@ -72,7 +103,7 @@ const DropdownMenuContent = React.forwardRef<
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [open, onOpenChange])
+  }, [open, setOpen])
 
   if (!open) return null
   
@@ -105,23 +136,32 @@ const DropdownMenuItem = React.forwardRef<
     inset?: boolean
     onSelect?: () => void
   }
->(({ className, inset, onSelect, onClick, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "relative flex cursor-pointer select-none items-center justify-start rounded-sm px-2 py-1.5 text-sm text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      inset && "pl-8",
-      className
-    )}
-    onClick={(e) => {
-      e.stopPropagation()
-      e.preventDefault()
-      onSelect?.()
-      onClick?.(e)
-    }}
-    {...props}
-  />
-))
+>(({ className, inset, onSelect, onClick, ...props }, ref) => {
+  const context = React.useContext(DropdownMenuContext)
+  const hasContext = context && typeof context.setOpen === 'function'
+  
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "relative flex cursor-pointer select-none items-center justify-start rounded-sm px-2 py-1.5 text-sm text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        inset && "pl-8",
+        className
+      )}
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        onSelect?.()
+        onClick?.(e)
+        // Close dropdown after selection (if context is available)
+        if (hasContext) {
+          context.setOpen(false)
+        }
+      }}
+      {...props}
+    />
+  )
+})
 DropdownMenuItem.displayName = "DropdownMenuItem"
 
 const DropdownMenuSeparator = React.forwardRef<
