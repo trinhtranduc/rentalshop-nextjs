@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../ui/card';
 import { Info } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
-import { useFormattedDateTime } from '@rentalshop/utils/client';
+import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import type { OrderWithDetails } from '@rentalshop/types';
 
 interface OrderInformationProps {
@@ -11,6 +11,16 @@ interface OrderInformationProps {
 
 export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => {
   const t = useOrderTranslations();
+  
+  // Use centralized date formatting hooks (DRY principle)
+  const formatDate = (dateString: string | Date | undefined) => {
+    if (!dateString) return 'N/A';
+    return useFormattedFullDate(dateString);
+  };
+  const formatDateTime = (dateString: string | Date | undefined) => {
+    if (!dateString) return 'N/A';
+    return useFormattedDateTime(dateString);
+  };
 
   return (
     <Card className="flex flex-col">
@@ -60,13 +70,13 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">{t('dates.pickupDate')}:</span>
                   <span className="text-sm font-medium">
-                    {order.pickupPlanAt ? useFormattedFullDate(order.pickupPlanAt) : 'N/A'}
+                    {formatDate(order.pickupPlanAt)}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">{t('dates.returnDate')}:</span>
                   <span className="text-sm font-medium">
-                    {order.returnPlanAt ? useFormattedFullDate(order.returnPlanAt) : 'N/A'}
+                    {formatDate(order.returnPlanAt)}
                   </span>
                 </div>
               </>
@@ -76,7 +86,7 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">{t('detail.orderDate')}:</span>
               <span className="text-sm font-medium">
-                {order.createdAt ? useFormattedDateTime(order.createdAt) : 'N/A'}
+                {formatDateTime(order.createdAt)}
               </span>
             </div>
           </div>
