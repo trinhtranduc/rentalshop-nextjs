@@ -102,14 +102,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       .min(2, t('register.businessNameMinLength'))
       .required(t('register.businessNameRequired')),
     phone: Yup.string()
-      .optional()
-      .test('phone-format', t('register.phoneInvalid'), function(value) {
-        // If phone is provided, validate format and length
-        if (value && value.trim().length > 0) {
-          return /^[0-9+\-\s()]+$/.test(value) && value.replace(/\D/g, '').length >= 10;
-        }
-        // If phone is empty/undefined, it's valid (optional)
-        return true;
+      .required(t('register.phoneRequired'))
+      .matches(/^[0-9+\-\s()]+$/, t('register.phoneInvalid'))
+      .test('phone-length', t('register.phoneMinLength'), function(value) {
+        // Validate minimum 10 digits (after removing non-digit characters)
+        if (!value) return false;
+        return value.replace(/\D/g, '').length >= 10;
       }),
     // businessType and pricingType are hidden and defaulted, no validation required
     address: Yup.string()
@@ -458,7 +456,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   {/* Phone Field */}
                   <div className="space-y-2">
                     <label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                      {t('register.phone')}
+                      {t('register.phone')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />

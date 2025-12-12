@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * POST /api/subscriptions/extend - Extend subscription
@@ -69,9 +69,50 @@ async function handleExtendSubscription(
       );
     }
     
-    const extendedSubscription = await db.subscriptions.update(subscriptionId, {
+    // Update subscription period end
+    // If subscription is TRIAL, also update trialEnd to match currentPeriodEnd
+    // This ensures consistency when checking expiration
+    const updateData: any = {
       currentPeriodEnd: endDate,
       updatedAt: new Date()
+    };
+    
+    // If subscription is TRIAL, update trialEnd as well to maintain consistency
+    if (subscription.status?.toLowerCase() === 'trial') {
+      updateData.trialEnd = endDate;
+    }
+    
+    const extendedSubscription = await db.subscriptions.update(subscriptionId, updateData);
+
+    // Calculate extension duration
+    const oldEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
+    const extensionDays = Math.ceil((endDate.getTime() - oldEndDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Log activity to database
+    await db.subscriptionActivities.create({
+      subscriptionId,
+      type: 'subscription_extended',
+      description: `Subscription extended by ${extensionDays} day${extensionDays !== 1 ? 's' : ''} until ${endDate.toISOString().split('T')[0]}`,
+      metadata: {
+        planId: subscription.planId,
+        planName: subscription.plan?.name,
+        previousEndDate: oldEndDate.toISOString(),
+        newEndDate: endDate.toISOString(),
+        extensionDays,
+        amount,
+        method,
+        description: description || 'Manual extension',
+        performedBy: {
+          userId: user.userId || user.id,
+          email: user.email,
+          role: user.role,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+        },
+        source: user.role === USER_ROLE.ADMIN ? 'admin_panel' : 'merchant_panel',
+        severity: 'success',
+        category: 'billing'
+      },
+      performedBy: user.userId || user.id
     });
 
     return NextResponse.json({

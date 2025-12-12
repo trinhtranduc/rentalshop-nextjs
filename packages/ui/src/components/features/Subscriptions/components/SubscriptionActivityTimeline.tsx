@@ -1,14 +1,6 @@
 'use client'
 
 import React from 'react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Badge,
-  Button
-} from '../../../ui';
 import { formatDate, formatCurrency } from '@rentalshop/utils';
 import { 
   Clock,
@@ -19,8 +11,6 @@ import {
   Pause,
   Play,
   CreditCard,
-  User,
-  Download,
   DollarSign,
   AlertCircle,
   AlertTriangle,
@@ -113,7 +103,7 @@ export function SubscriptionActivityTimeline({
       items.push({
         itemType: 'payment',
         ...payment,
-        type: payment.type, // Keep payment type from API
+        type: 'PAYMENT_RECEIVED', // Default type for payments
         timestamp: new Date(payment.createdAt)
       });
     });
@@ -222,224 +212,95 @@ export function SubscriptionActivityTimeline({
     }
   };
 
-  const getPaymentStatusBadge = (status: string) => {
-    const statusMap: Record<string, { variant: any; label: string }> = {
-      COMPLETED: { variant: 'success', label: 'Paid' },
-      PENDING: { variant: 'warning', label: 'Pending' },
-      FAILED: { variant: 'danger', label: 'Failed' }
-    };
-
-    const config = statusMap[status] || { variant: 'default', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
-          <p className="mt-4 text-gray-600">Loading activity history...</p>
-        </CardContent>
-      </Card>
+      <div className="text-center py-12">
+        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
+        <p className="mt-4 text-gray-600">Loading activity history...</p>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>📊 Subscription Activity & Payment History</CardTitle>
-          {onExport && (
-            <Button variant="outline" size="sm" onClick={onExport}>
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-          )}
+    <div className="space-y-4">
+      {timeline.length === 0 ? (
+        <div className="text-center py-12">
+          <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-600">No activity yet</p>
         </div>
-      </CardHeader>
+      ) : (
+        <div className="space-y-3">
+          {timeline.map((item, index) => {
+            if (item.itemType === 'activity') {
+              const Icon = getActivityIcon(item.type);
+              const colorClass = getActivityColor(item.type);
 
-      <CardContent>
-        {timeline.length === 0 ? (
-          <div className="text-center py-12">
-            <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600">No activity yet</p>
-          </div>
-        ) : (
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200" />
+              return (
+                <div key={`activity-${item.id}-${index}`} className="flex items-start gap-3 p-3 border rounded-lg bg-white">
+                  {/* Icon */}
+                  <div className={`w-8 h-8 rounded-full ${colorClass} flex items-center justify-center flex-shrink-0`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
 
-            <div className="space-y-6">
-              {timeline.map((item, index) => {
-                if (item.itemType === 'activity') {
-                  const Icon = getActivityIcon(item.type);
-                  const colorClass = getActivityColor(item.type);
-
-                  return (
-                    <div key={`activity-${item.id}-${index}`} className="relative pl-14">
-                      {/* Icon */}
-                      <div className={`absolute left-3 w-6 h-6 rounded-full ${colorClass} flex items-center justify-center`}>
-                        <Icon className="w-3 h-3" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="bg-white border rounded-lg p-4 shadow-sm">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-gray-900">
-                                {item.description}
-                              </h4>
-                              {/* Activity type badge */}
-                              <Badge 
-                                variant={
-                                  item.metadata?.severity === 'error' ? 'destructive' :
-                                  item.metadata?.severity === 'warning' ? 'warning' :
-                                  item.metadata?.severity === 'success' ? 'success' :
-                                  'secondary'
-                                }
-                              >
-                                {item.type?.replace(/_/g, ' ').toUpperCase()}
-                              </Badge>
-                            </div>
-                            
-                            {/* User info from metadata */}
-                            {item.metadata?.performedBy && (
-                              <p className="text-sm text-gray-600 mb-2">
-                                <User className="w-3 h-3 inline mr-1" />
-                                By: {item.metadata.performedBy.name} ({item.metadata.performedBy.email})
-                                <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded">
-                                  {item.metadata.performedBy.role}
-                                </span>
-                              </p>
-                            )}
-
-                            {/* Enhanced metadata details */}
-                            {item.metadata && (
-                              <div className="text-sm text-gray-700 space-y-1 mt-2">
-                                {/* Plan information */}
-                                {item.metadata.planName && (
-                                  <div>• Plan: <span className="font-medium">{item.metadata.planName}</span></div>
-                                )}
-                                
-                                {/* Amount information */}
-                                {item.metadata.amount !== undefined && (
-                                  <div>• Amount: <span className="font-semibold">{formatCurrency(item.metadata.amount, item.metadata.currency || 'USD')}</span></div>
-                                )}
-                                
-                                {/* Status information */}
-                                {item.metadata.status && (
-                                  <div>• Status: <span className="font-medium capitalize">{item.metadata.status.toLowerCase()}</span></div>
-                                )}
-                                
-                                {/* Payment method */}
-                                {item.metadata.paymentMethod && (
-                                  <div>• Method: <span className="capitalize">{item.metadata.paymentMethod.toLowerCase()}</span></div>
-                                )}
-                                
-                                {/* Transaction ID */}
-                                {item.metadata.transactionId && (
-                                  <div>• Transaction: <span className="font-mono text-xs">{item.metadata.transactionId}</span></div>
-                                )}
-                                
-                                {/* Invoice number */}
-                                {item.metadata.invoiceNumber && (
-                                  <div>• Invoice: <span className="font-mono text-xs">{item.metadata.invoiceNumber}</span></div>
-                                )}
-                                
-                                {/* Plan changes */}
-                                {item.metadata.newPlan && (
-                                  <div>• New Plan: <span className="font-medium">{item.metadata.newPlan.name} ({formatCurrency(item.metadata.newPlan.amount, item.metadata.currency || 'USD')})</span></div>
-                                )}
-                                
-                                {/* Previous plan */}
-                                {item.metadata.previousPlan && (
-                                  <div>• Previous: <span className="text-gray-500">{item.metadata.previousPlan.name} ({formatCurrency(item.metadata.previousPlan.amount, item.metadata.currency || 'USD')})</span></div>
-                                )}
-                                
-                                {/* Effective date */}
-                                {item.metadata.effectiveDate && (
-                                  <div>• Effective: <span className="font-medium">{formatDate(item.metadata.effectiveDate, 'MMM dd, yyyy')}</span></div>
-                                )}
-                                
-                                {/* Next billing date */}
-                                {item.metadata.nextBillingDate && (
-                                  <div>• Next Billing: <span className="font-medium">{formatDate(item.metadata.nextBillingDate, 'MMM dd, yyyy')}</span></div>
-                                )}
-                                
-                                {/* Trial end date */}
-                                {item.metadata.trialEndDate && (
-                                  <div>• Trial Ends: <span className="font-medium">{formatDate(item.metadata.trialEndDate, 'MMM dd, yyyy')}</span></div>
-                                )}
-                                
-                                {/* Reason */}
-                                {item.metadata.reason && (
-                                  <div>• Reason: <span className="italic text-gray-600">{item.metadata.reason}</span></div>
-                                )}
-                                
-                                {/* Source */}
-                                {item.metadata.source && (
-                                  <div>• Source: <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{item.metadata.source.replace(/_/g, ' ').toUpperCase()}</span></div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="text-right text-sm text-gray-500 ml-4">
-                            {formatDate(item.timestamp, 'MMM dd, yyyy')}
-                            <br />
-                            {formatDate(item.timestamp, 'HH:mm')}
-                          </div>
-                        </div>
-                      </div>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h4 className="font-medium text-gray-900 text-sm">
+                        {item.description}
+                      </h4>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {formatDate(item.timestamp, 'MMM dd, yyyy HH:mm')}
+                      </span>
                     </div>
-                  );
-                } else {
-                  // Payment item
-                  return (
-                    <div key={`payment-${item.id}-${index}`} className="relative pl-14">
-                      {/* Icon */}
-                      <div className="absolute left-3 w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
-                        <CreditCard className="w-3 h-3" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="bg-white border rounded-lg p-4 shadow-sm">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-gray-900">
-                                💰 Payment Received
-                              </h4>
-                              {getPaymentStatusBadge(item.status)}
-                            </div>
-                            
-                            <div className="text-sm text-gray-700 space-y-1">
-                              <div>• Amount: <span className="font-semibold">{formatCurrency(item.amount, item.currency)}</span></div>
-                              {item.method && <div>• Method: <span className="capitalize">{item.method.toLowerCase()}</span></div>}
-                              {item.transactionId && <div>• Transaction: <span className="font-mono text-xs">{item.transactionId}</span></div>}
-                              {item.description && (
-                                <div className="text-gray-600 mt-2">{item.description}</div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="text-right text-sm text-gray-500 ml-4">
-                            {formatDate(item.timestamp, 'MMM dd, yyyy')}
-                            <br />
-                            {formatDate(item.timestamp, 'HH:mm')}
-                          </div>
-                        </div>
-                      </div>
+                    
+                    {/* Only show essential info */}
+                    <div className="text-xs text-gray-600 space-y-0.5">
+                      {item.metadata?.planName && (
+                        <span>Plan: {item.metadata.planName}</span>
+                      )}
+                      {item.metadata?.amount !== undefined && (
+                        <span className="ml-2">
+                          • {formatCurrency(item.metadata.amount, item.metadata.currency || 'USD')}
+                        </span>
+                      )}
                     </div>
-                  );
-                }
-              })}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  </div>
+                </div>
+              );
+            } else {
+              // Payment item - simplified
+              return (
+                <div key={`payment-${item.id}-${index}`} className="flex items-start gap-3 p-3 border rounded-lg bg-white">
+                  {/* Icon */}
+                  <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+                    <CreditCard className="w-4 h-4" />
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h4 className="font-medium text-gray-900 text-sm">
+                        Payment {item.status === 'COMPLETED' ? 'Received' : item.status}
+                      </h4>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {formatDate(item.timestamp, 'MMM dd, yyyy HH:mm')}
+                      </span>
+                    </div>
+                    
+                    <div className="text-xs text-gray-600">
+                      <span className="font-semibold">{formatCurrency(item.amount, item.currency)}</span>
+                      {item.method && (
+                        <span className="ml-2">• {item.method}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
