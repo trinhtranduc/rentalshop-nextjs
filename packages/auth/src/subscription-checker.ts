@@ -168,8 +168,14 @@ export class SubscriptionStatusChecker {
       };
     }
 
-    // Check if period has ended for active subscriptions
-    if (subscriptionStatus === SUBSCRIPTION_STATUS.ACTIVE && subscription.currentPeriodEnd) {
+    // ============================================================================
+    // SIMPLIFIED RULE: Chỉ dùng currentPeriodEnd, bỏ trialEnd
+    // ============================================================================
+    // Bất kể merchant status là trial hay không, chỉ cần check currentPeriodEnd
+    // Không cần check trialEnd nữa
+    
+    // Check currentPeriodEnd (duy nhất)
+    if (subscription.currentPeriodEnd) {
       if (isDatePassed(subscription.currentPeriodEnd)) {
         return {
           success: false,
@@ -188,32 +194,26 @@ export class SubscriptionStatusChecker {
           )
         };
       }
+      // currentPeriodEnd còn valid → subscription active
+      return { success: true };
     }
 
-    // Check trial expiration
-    if (subscriptionStatus === SUBSCRIPTION_STATUS.TRIAL && subscription.trialEnd) {
-      if (isDatePassed(subscription.trialEnd)) {
-        return {
-          success: false,
-          response: NextResponse.json(
-            { 
-              success: false, 
-              message: 'Your trial period has ended. Please upgrade to a paid plan to continue.',
-              code: 'TRIAL_EXPIRED',
-              details: {
-                trialEndedAt: subscription.trialEnd,
-                merchantId: merchant.id,
-                merchantName: merchant.name
-              }
-            },
-            { status: 403 }
-          )
-        };
-      }
-    }
-
-    // Subscription is active (TRIAL or ACTIVE with valid period)
-    return { success: true };
+    // Nếu không có currentPeriodEnd → không có subscription hợp lệ
+    return {
+      success: false,
+      response: NextResponse.json(
+        { 
+          success: false, 
+          message: 'Subscription period end date is missing. Please contact support.',
+          code: 'SUBSCRIPTION_PERIOD_MISSING',
+          details: {
+            merchantId: merchant.id,
+            merchantName: merchant.name
+          }
+        },
+        { status: 403 }
+      )
+    };
   }
 }
 

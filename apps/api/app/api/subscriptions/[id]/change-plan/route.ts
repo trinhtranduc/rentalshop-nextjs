@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * Handler for changing subscription plan
@@ -45,19 +45,81 @@ async function handleChangePlan(
         merchantId: existing.merchantId,
         oldPlanId: existing.planId,
         newPlanId: planId,
-        planName: plan.name
+        planName: plan.name,
+        currentStatus: existing.status
       });
 
-      // Change subscription plan
-      const updatedSubscription = await db.subscriptions.update(subscriptionId, {
+      // Determine if we need to update status
+      // If subscription is TRIAL and new plan is a paid plan (trialDays === 0 or null), change to ACTIVE
+      const isCurrentTrial = existing.status?.toLowerCase() === SUBSCRIPTION_STATUS.TRIAL.toLowerCase();
+      const isNewPlanTrial = plan.trialDays && plan.trialDays > 0;
+      const shouldActivate = isCurrentTrial && !isNewPlanTrial;
+
+      // Prepare update data
+      const updateData: any = {
         planId: planId,
         updatedAt: new Date()
-      });
+      };
+
+      // If changing from TRIAL to paid plan, update status to ACTIVE
+      if (shouldActivate) {
+        updateData.status = SUBSCRIPTION_STATUS.ACTIVE;
+        console.log('🔄 Updating status from TRIAL to ACTIVE for paid plan');
+        
+        // If currentPeriodEnd doesn't exist or is in the past, set new period dates
+        const now = new Date();
+        if (!existing.currentPeriodEnd || new Date(existing.currentPeriodEnd) < now) {
+          // Set period start to now and end to 30 days from now (default monthly billing)
+          updateData.currentPeriodStart = now;
+          const periodEnd = new Date(now);
+          periodEnd.setMonth(periodEnd.getMonth() + 1);
+          // Handle month boundary issues
+          if (periodEnd.getDate() !== now.getDate()) {
+            periodEnd.setDate(0); // Last day of previous month
+          }
+          updateData.currentPeriodEnd = periodEnd;
+          console.log('📅 Setting new period dates:', {
+            start: updateData.currentPeriodStart,
+            end: updateData.currentPeriodEnd
+          });
+        }
+      }
+
+      // Change subscription plan
+      const updatedSubscription = await db.subscriptions.update(subscriptionId, updateData);
 
       console.log('✅ Subscription plan updated successfully:', {
         subscriptionId,
         newPlanId: updatedSubscription.planId,
-        planName: plan.name
+        planName: plan.name,
+        newStatus: updatedSubscription.status,
+        statusChanged: shouldActivate
+      });
+
+      // Log activity to database
+      await db.subscriptionActivities.create({
+        subscriptionId,
+        type: 'subscription_plan_changed',
+        description: `Subscription plan changed from ${existing.plan?.name || 'Unknown'} to ${plan.name}`,
+        metadata: {
+          oldPlanId: existing.planId,
+          oldPlanName: existing.plan?.name,
+          newPlanId: plan.id,
+          newPlanName: plan.name,
+          previousStatus: existing.status,
+          newStatus: updatedSubscription.status,
+          statusChanged: shouldActivate,
+          performedBy: {
+            userId: user.userId || user.id,
+            email: user.email,
+            role: user.role,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+          },
+          source: user.role === USER_ROLE.ADMIN ? 'admin_panel' : 'merchant_panel',
+          severity: 'info',
+          category: 'billing'
+        },
+        performedBy: user.userId || user.id
       });
 
     return NextResponse.json(
