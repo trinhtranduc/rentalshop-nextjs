@@ -17,7 +17,8 @@ import {
   normalizeImagesInput,
   combineProductImages,
   extractStagingKeysFromUrls,
-  mapStagingUrlsToProductionUrls
+  mapStagingUrlsToProductionUrls,
+  getBucketName
 } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
@@ -346,13 +347,20 @@ export async function PUT(
             const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
             
             if (commitResult.success) {
-              // Generate production URLs
+              // Generate production URLs using CloudFront custom domain
+              // Uses AWS_CLOUDFRONT_DOMAIN (images.anyrent.shop for prod, dev-images.anyrent.shop for dev)
               const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
-              const productionUrls = commitResult.committedKeys.map(key => 
-                cloudfrontDomain 
-                  ? `https://${cloudfrontDomain}/${key}`
-                  : `https://${process.env.AWS_S3_BUCKET_NAME || 'anyrent-images'}.s3.${process.env.AWS_REGION || 'ap-southeast-1'}.amazonaws.com/${key}`
-              );
+              if (!cloudfrontDomain) {
+                console.error('❌ AWS_CLOUDFRONT_DOMAIN not configured');
+                // Continue with original URLs if CloudFront not configured
+                productDataFromRequest.images = combineProductImages(
+                  productDataFromRequest.images,
+                  uploadedFiles
+                );
+              } else {
+                const productionUrls = commitResult.committedKeys.map(key => 
+                  `https://${cloudfrontDomain}/${key}`
+                );
               
               // Map staging URLs to production URLs
               const productionImageUrls = mapStagingUrlsToProductionUrls(
@@ -367,10 +375,11 @@ export async function PUT(
                 productionImageUrls
               );
               
-              console.log('✅ Committed staging files to production');
+                console.log('✅ Committed staging files to production');
+              }
             } else {
               console.error('❌ Failed to commit staging files:', commitResult.errors);
-              // Fallback: use staging URLs if commit fails
+              // Continue with staging URLs if commit fails
               productDataFromRequest.images = combineProductImages(
                 productDataFromRequest.images,
                 uploadedFiles
