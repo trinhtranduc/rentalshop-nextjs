@@ -103,9 +103,18 @@ export async function GET(request: NextRequest) {
       const periodEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
       
       // Calculate expiration states
+      // Priority: currentPeriodEnd > trialEnd (if both exist, use currentPeriodEnd)
+      // This handles cases where subscription was extended but trialEnd wasn't updated
       const isPeriodExpired = periodEnd && periodEnd < now;
-      const isTrialExpired = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && trialEnd && trialEnd <= now;
-      const isTrialActive = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && trialEnd && trialEnd > now;
+      // Only check trialEnd if currentPeriodEnd doesn't exist or is also expired
+      // If currentPeriodEnd exists and is valid, ignore trialEnd
+      const isTrialExpired = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && 
+                            trialEnd && 
+                            trialEnd <= now &&
+                            (!periodEnd || isPeriodExpired); // Only check trialEnd if periodEnd is missing or expired
+      const isTrialActive = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && 
+                           ((trialEnd && trialEnd > now && !periodEnd) || // Use trialEnd if periodEnd doesn't exist
+                            (periodEnd && periodEnd > now)); // Or use periodEnd if it exists and is valid
       
       // ============================================================================
       // SIMPLE STATUS: CHỈ 1 STATUS DUY NHẤT
@@ -113,25 +122,33 @@ export async function GET(request: NextRequest) {
       // Logic đơn giản: User có thể access được không?
       // ACTIVE = Có thể dùng (dù có cancel hay không, miễn period chưa hết)
       // EXPIRED = Không thể dùng (period đã hết)
+      // Priority: currentPeriodEnd > trialEnd (currentPeriodEnd takes precedence)
       
       let computedStatus: string;
       let statusReason: string;
       
-      if (isPeriodExpired || isTrialExpired) {
+      // Use periodEnd if available, otherwise fall back to trialEnd
+      const effectiveEndDate = periodEnd || trialEnd;
+      const isExpired = effectiveEndDate && effectiveEndDate < now;
+      
+      if (isExpired) {
         // Period đã hết → EXPIRED
         computedStatus = 'EXPIRED';
-        if (isPeriodExpired) {
-          const daysExpired = Math.floor((now.getTime() - periodEnd!.getTime()) / (1000 * 60 * 60 * 24));
+        const daysExpired = Math.floor((now.getTime() - effectiveEndDate!.getTime()) / (1000 * 60 * 60 * 24));
+        if (periodEnd && isPeriodExpired) {
           statusReason = `Expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
-        } else {
-          const daysExpired = Math.floor((now.getTime() - trialEnd!.getTime()) / (1000 * 60 * 60 * 24));
+        } else if (trialEnd) {
           statusReason = `Trial expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
+        } else {
+          statusReason = `Expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
         }
       } else {
         // Period chưa hết → ACTIVE (dù có cancel hay không)
         computedStatus = 'ACTIVE';
-        if (periodEnd) {
-          const daysLeft = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        // Use periodEnd if available, otherwise use trialEnd
+        const activeEndDate = periodEnd || trialEnd;
+        if (activeEndDate) {
+          const daysLeft = Math.ceil((activeEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           if (subscription.canceledAt) {
             statusReason = `Active (${daysLeft} days left) - Canceled but access until period end`;
           } else {
@@ -145,11 +162,11 @@ export async function GET(request: NextRequest) {
       }
       
       // Calculate days remaining (for UI display)
+      // Use periodEnd if available, otherwise use trialEnd
+      const displayEndDate = periodEnd || trialEnd;
       let daysRemaining: number | null = null;
-      if (isTrialActive && trialEnd) {
-        daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      } else if (!isPeriodExpired && periodEnd) {
-        daysRemaining = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (displayEndDate && displayEndDate > now) {
+        daysRemaining = Math.ceil((displayEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       }
       
       // Calculate access permissions - Đơn giản!
