@@ -69,6 +69,7 @@ export function SubscriptionStatusBanner({
     isLimited,
     isDenied,
     isExpiringSoon,
+    isExpired,
     daysUntilExpiry,
     subscription,
     loading
@@ -79,9 +80,10 @@ export function SubscriptionStatusBanner({
   // 2. User is loaded (to avoid flash during auth)
   // 3. Not loading subscription data
   // 4. Have subscription data
-  // 5. Subscription is expiring soon (<= 7 days)
+  // 5. Subscription is expired OR expiring soon (<= 7 days)
   const hasSubscriptionData = subscription !== null && subscription !== undefined;
-  const isExpiring = isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry >= 0);
+  // Show if expired OR expiring soon (including negative days for expired subscriptions)
+  const isExpiring = isExpired || isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7);
   const shouldShow = dashboardLoaded && user && !loading && hasSubscriptionData && isExpiring;
 
   if (!shouldShow) {
@@ -116,8 +118,8 @@ export function SubscriptionStatusBanner({
     }
   };
 
-  // Custom styling for expiring soon subscription (light orange/cream background)
-  const isExpiringWarning = isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7);
+  // Custom styling for expiring soon or expired subscription (light orange/cream background)
+  const isExpiringWarning = isExpired || isExpiringSoon || (daysUntilExpiry !== null && daysUntilExpiry <= 7);
 
   return (
     <Alert 
@@ -138,7 +140,7 @@ export function SubscriptionStatusBanner({
             <AlertTitle className={`flex items-center gap-2 ${
               isExpiringWarning ? 'text-orange-800' : ''
             }`}>
-              {isExpiringWarning ? t('banner.expiringSoon') : 'Subscription Status'}
+              {isExpired ? (t('banner.expired') || 'Subscription Expired') : isExpiringWarning ? t('banner.expiringSoon') : 'Subscription Status'}
               {!isExpiringWarning && (
               <Badge variant={getStatusBadgeVariant()}>
                 {accessLevel.toUpperCase()}
@@ -148,7 +150,9 @@ export function SubscriptionStatusBanner({
             <AlertDescription className={`mt-1 ${
               isExpiringWarning ? 'text-orange-700' : ''
             }`}>
-              {isExpiringWarning && subscription?.currentPeriodEnd ? (
+              {isExpired ? (
+                t('banner.expired') || 'Your subscription has expired. Please renew to continue using the service.'
+              ) : isExpiringWarning && subscription?.currentPeriodEnd ? (
                 t('banner.expiresOn', {
                   date: formatDate(subscription.currentPeriodEnd)
                 })

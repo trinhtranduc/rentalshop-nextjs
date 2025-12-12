@@ -46,7 +46,7 @@ export default function PrivacyPage() {
                 </p>
                 <ul className="list-disc list-inside ml-4">
                   <li>
-                    {isVi ? 'Tên cá nhân: [Tên đầy đủ của bạn]' : 'Individual name: [Your full name]'}
+                    {isVi ? 'Tên cá nhân: TRẦN ĐỨC TRÌNH' : 'Individual name: TRAN DUC TRINH'}
                   </li>
                   <li>Email: trinhduc20@gmail.com</li>
                   <li>Phone: +84 76 477 4647</li>
