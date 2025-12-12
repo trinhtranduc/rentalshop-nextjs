@@ -92,29 +92,16 @@ export async function GET(request: NextRequest) {
       const now = new Date();
 
       // ============================================================================
-      // CALCULATE SUBSCRIPTION STATUS (EXPERT LOGIC - PRIORITY-BASED)
+      // SIMPLIFIED LOGIC: Chỉ dùng currentPeriodEnd, bỏ trialEnd
       // ============================================================================
+      // Bất kể merchant status là trial hay không, chỉ cần check currentPeriodEnd
+      // Không cần check trialEnd nữa
       
       // Normalize status to lowercase for consistent comparison
       const dbStatus = subscription.status?.toLowerCase() || '';
       
-      // Get time-sensitive data
-      const trialEnd = subscription.trialEnd ? new Date(subscription.trialEnd) : null;
+      // Chỉ lấy currentPeriodEnd (bỏ trialEnd)
       const periodEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
-      
-      // Calculate expiration states
-      // Priority: currentPeriodEnd > trialEnd (if both exist, use currentPeriodEnd)
-      // This handles cases where subscription was extended but trialEnd wasn't updated
-      const isPeriodExpired = periodEnd && periodEnd < now;
-      // Only check trialEnd if currentPeriodEnd doesn't exist or is also expired
-      // If currentPeriodEnd exists and is valid, ignore trialEnd
-      const isTrialExpired = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && 
-                            trialEnd && 
-                            trialEnd <= now &&
-                            (!periodEnd || isPeriodExpired); // Only check trialEnd if periodEnd is missing or expired
-      const isTrialActive = dbStatus === SUBSCRIPTION_STATUS.TRIAL.toLowerCase() && 
-                           ((trialEnd && trialEnd > now && !periodEnd) || // Use trialEnd if periodEnd doesn't exist
-                            (periodEnd && periodEnd > now)); // Or use periodEnd if it exists and is valid
       
       // ============================================================================
       // SIMPLE STATUS: CHỈ 1 STATUS DUY NHẤT
@@ -122,51 +109,40 @@ export async function GET(request: NextRequest) {
       // Logic đơn giản: User có thể access được không?
       // ACTIVE = Có thể dùng (dù có cancel hay không, miễn period chưa hết)
       // EXPIRED = Không thể dùng (period đã hết)
-      // Priority: currentPeriodEnd > trialEnd (currentPeriodEnd takes precedence)
       
       let computedStatus: string;
       let statusReason: string;
       
-      // Use periodEnd if available, otherwise fall back to trialEnd
-      const effectiveEndDate = periodEnd || trialEnd;
-      const isExpired = effectiveEndDate && effectiveEndDate < now;
+      // Chỉ check periodEnd (bỏ trialEnd)
+      const isExpired = periodEnd && periodEnd < now;
       
       if (isExpired) {
         // Period đã hết → EXPIRED
         computedStatus = 'EXPIRED';
-        const daysExpired = Math.floor((now.getTime() - effectiveEndDate!.getTime()) / (1000 * 60 * 60 * 24));
-        if (periodEnd && isPeriodExpired) {
-          statusReason = `Expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
-        } else if (trialEnd) {
-          statusReason = `Trial expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
-        } else {
-          statusReason = `Expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
-        }
-      } else {
+        const daysExpired = Math.floor((now.getTime() - periodEnd!.getTime()) / (1000 * 60 * 60 * 24));
+        statusReason = `Expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
+      } else if (periodEnd) {
         // Period chưa hết → ACTIVE (dù có cancel hay không)
         computedStatus = 'ACTIVE';
-        // Use periodEnd if available, otherwise use trialEnd
-        const activeEndDate = periodEnd || trialEnd;
-        if (activeEndDate) {
-          const daysLeft = Math.ceil((activeEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          if (subscription.canceledAt) {
-            statusReason = `Active (${daysLeft} days left) - Canceled but access until period end`;
-          } else {
-            statusReason = daysLeft <= 7 
-              ? `Active - Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
-              : `Active (${daysLeft} days remaining)`;
-          }
+        const daysLeft = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (subscription.canceledAt) {
+          statusReason = `Active (${daysLeft} days left) - Canceled but access until period end`;
         } else {
-          statusReason = subscription.canceledAt ? 'Active - Canceled but still accessible' : 'Active';
+          statusReason = daysLeft <= 7 
+            ? `Active - Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
+            : `Active (${daysLeft} days remaining)`;
         }
+      } else {
+        // Không có periodEnd → EXPIRED (invalid subscription)
+        computedStatus = 'EXPIRED';
+        statusReason = 'Subscription period end date is missing';
       }
       
       // Calculate days remaining (for UI display)
-      // Use periodEnd if available, otherwise use trialEnd
-      const displayEndDate = periodEnd || trialEnd;
+      // Chỉ dùng periodEnd
       let daysRemaining: number | null = null;
-      if (displayEndDate && displayEndDate > now) {
-        daysRemaining = Math.ceil((displayEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (periodEnd && periodEnd > now) {
+        daysRemaining = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       }
       
       // Calculate access permissions - Đơn giản!
@@ -204,6 +180,7 @@ export async function GET(request: NextRequest) {
         subscriptionId: subscription.id,
         currentPeriodStart: subscription.currentPeriodStart?.toISOString() || null,
         currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() || null,
+        // trialStart và trialEnd vẫn trả về để reference, nhưng không dùng trong logic
         trialStart: subscription.trialStart?.toISOString() || null,
         trialEnd: subscription.trialEnd?.toISOString() || null,
         
