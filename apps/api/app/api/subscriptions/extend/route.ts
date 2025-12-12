@@ -70,17 +70,12 @@ async function handleExtendSubscription(
     }
     
     // Update subscription period end
-    // If subscription is TRIAL, also update trialEnd to match currentPeriodEnd
-    // This ensures consistency when checking expiration
+    // Đơn giản: chỉ update currentPeriodEnd, không cần update trialEnd
+    // Bất kể merchant status là trial hay không, chỉ cần currentPeriodEnd
     const updateData: any = {
       currentPeriodEnd: endDate,
       updatedAt: new Date()
     };
-    
-    // If subscription is TRIAL, update trialEnd as well to maintain consistency
-    if (subscription.status?.toLowerCase() === 'trial') {
-      updateData.trialEnd = endDate;
-    }
     
     const extendedSubscription = await db.subscriptions.update(subscriptionId, updateData);
 

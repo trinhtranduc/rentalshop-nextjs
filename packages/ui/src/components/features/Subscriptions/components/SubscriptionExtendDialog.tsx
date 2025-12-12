@@ -63,15 +63,45 @@ export function SubscriptionExtendDialog({
         ? new Date(startDate) 
         : (subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date());
       
+      // Use safe date arithmetic to avoid month/year boundary issues
       calculatedEndDate = new Date(baseDate);
+      const originalDay = baseDate.getDate();
+      
       if (extensionPeriod === 1) {
+        // Add 1 month - handle month boundaries correctly
         calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
+        // If day doesn't exist in new month (e.g., Jan 31 -> Feb), set to last day of new month
+        if (calculatedEndDate.getDate() !== originalDay) {
+          // Move to first day of next month, then back one day to get last day of target month
+          calculatedEndDate.setDate(1);
+          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
+          calculatedEndDate.setDate(0);
+        }
       } else if (extensionPeriod === 3) {
+        // Add 3 months
         calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 3);
+        if (calculatedEndDate.getDate() !== originalDay) {
+          calculatedEndDate.setDate(1);
+          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
+          calculatedEndDate.setDate(0);
+        }
       } else if (extensionPeriod === 6) {
+        // Add 6 months
         calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 6);
+        if (calculatedEndDate.getDate() !== originalDay) {
+          calculatedEndDate.setDate(1);
+          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
+          calculatedEndDate.setDate(0);
+        }
       } else if (extensionPeriod === 12) {
+        // Add 12 months (1 year)
         calculatedEndDate.setFullYear(calculatedEndDate.getFullYear() + 1);
+        if (calculatedEndDate.getDate() !== originalDay) {
+          // Handle leap year case (Feb 29)
+          calculatedEndDate.setDate(1);
+          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
+          calculatedEndDate.setDate(0);
+        }
       }
     } else {
       // Use manually entered date
@@ -110,14 +140,36 @@ export function SubscriptionExtendDialog({
         : (subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date());
       
       const calculated = new Date(baseDate);
+      const originalDay = baseDate.getDate();
+      
       if (extensionPeriod === 1) {
         calculated.setMonth(calculated.getMonth() + 1);
+        if (calculated.getDate() !== originalDay) {
+          calculated.setDate(1);
+          calculated.setMonth(calculated.getMonth() + 1);
+          calculated.setDate(0);
+        }
       } else if (extensionPeriod === 3) {
         calculated.setMonth(calculated.getMonth() + 3);
+        if (calculated.getDate() !== originalDay) {
+          calculated.setDate(1);
+          calculated.setMonth(calculated.getMonth() + 1);
+          calculated.setDate(0);
+        }
       } else if (extensionPeriod === 6) {
         calculated.setMonth(calculated.getMonth() + 6);
+        if (calculated.getDate() !== originalDay) {
+          calculated.setDate(1);
+          calculated.setMonth(calculated.getMonth() + 1);
+          calculated.setDate(0);
+        }
       } else if (extensionPeriod === 12) {
         calculated.setFullYear(calculated.getFullYear() + 1);
+        if (calculated.getDate() !== originalDay) {
+          calculated.setDate(1);
+          calculated.setMonth(calculated.getMonth() + 1);
+          calculated.setDate(0);
+        }
       }
       
       setNewEndDate(calculated.toISOString().split('T')[0]);

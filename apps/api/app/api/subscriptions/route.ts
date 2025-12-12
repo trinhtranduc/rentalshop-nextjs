@@ -35,12 +35,12 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (r
 
     return NextResponse.json({
       success: true,
-      data: result.subscriptions || result.data,
+      data: result.data,
       pagination: {
         total: result.total,
         page: result.page || filters.page || 1,
         limit: result.limit || filters.limit || 20,
-        totalPages: result.totalPages || Math.ceil(result.total / (result.limit || filters.limit || 20)),
+        totalPages: Math.ceil(result.total / (result.limit || filters.limit || 20)),
         hasMore: result.hasMore
       }
     });
@@ -74,6 +74,33 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
     };
 
     const subscription = await db.subscriptions.create(subscriptionData);
+
+    // Log activity to database
+    await db.subscriptionActivities.create({
+      subscriptionId: subscription.id,
+      type: 'subscription_created',
+      description: `Subscription created for plan: ${subscription.plan?.name || 'Unknown'}`,
+      metadata: {
+        planId: subscription.planId,
+        planName: subscription.plan?.name,
+        status: subscription.status,
+        amount: subscription.amount,
+        currency: subscription.currency,
+        interval: subscription.interval,
+        currentPeriodStart: subscription.currentPeriodStart?.toISOString(),
+        currentPeriodEnd: subscription.currentPeriodEnd?.toISOString(),
+        performedBy: {
+          userId: user.userId || user.id,
+          email: user.email,
+          role: user.role,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+        },
+        source: user.role === USER_ROLE.ADMIN ? 'admin_panel' : 'merchant_panel',
+        severity: 'success',
+        category: 'billing'
+      },
+      performedBy: user.userId || user.id
+    });
 
     return NextResponse.json({
       success: true,
