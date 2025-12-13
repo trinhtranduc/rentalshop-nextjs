@@ -66,6 +66,8 @@ export default function OrdersPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [showCancelConfirmDialog, setShowCancelConfirmDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<{ id: number; orderNumber: string } | null>(null);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<{ id: number; orderNumber: string } | null>(null);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -338,10 +340,19 @@ export default function OrdersPage() {
         router.push(`/orders/${numericOrderNumber}/edit`);
         break;
         
+      case 'delete':
+        const orderToDelete = data?.orders.find(o => o.orderNumber === orderNumber);
+        if (orderToDelete) {
+          // Show confirmation dialog
+          setOrderToDelete({ id: orderToDelete.id, orderNumber: orderToDelete.orderNumber });
+          setShowDeleteConfirmDialog(true);
+        }
+        break;
+        
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.orders, router, toastSuccess, refetch]);
+  }, [data?.orders, router, toastSuccess, refetch, t, tc]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -388,16 +399,20 @@ export default function OrdersPage() {
       merchantName: (order as any).merchantName || order.outlet?.merchant?.name || 'Unknown',
       totalAmount: order.totalAmount,
       depositAmount: order.depositAmount,
-      pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : null,
-      returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : null,
-      pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : null,
-      returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : null,
+      pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : undefined,
+      returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : undefined,
+      pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : undefined,
+      returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : undefined,
       createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
       updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
       orderItems: [],
       payments: [],
       // Additional fields required by OrderSearchResult
       isReadyToDeliver: false,
+      createdById: (order as any).createdById || 0,
+      itemCount: (order as any).itemCount || (order as any).orderItems?.length || 0,
+      paymentCount: (order as any).paymentCount || (order as any).payments?.length || 0,
+      totalPaid: (order as any).totalPaid || 0,
       customer: order.customer ? {
         id: order.customer.id,
         firstName: order.customer.firstName,
@@ -563,6 +578,37 @@ export default function OrdersPage() {
         onCancel={() => {
           setShowCancelConfirmDialog(false);
           setOrderToCancel(null);
+        }}
+      />
+
+      {/* Delete Order Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteConfirmDialog}
+        onOpenChange={setShowDeleteConfirmDialog}
+        type="danger"
+        title={t('actions.delete') || 'Delete Order'}
+        description={t('messages.confirmDelete') || `Are you sure you want to delete order ${orderToDelete?.orderNumber}? This action cannot be undone.`}
+        confirmText={t('actions.delete') || 'Delete Order'}
+        cancelText={t('actions.cancel') || 'Cancel'}
+        onConfirm={async () => {
+          if (!orderToDelete) return;
+          try {
+            const response = await ordersApi.deleteOrder(orderToDelete.id);
+            if (response.success) {
+              toastSuccess(tc('messages.deleteSuccess') || 'Order deleted successfully', t('messages.deleteSuccess') || 'Order deleted successfully');
+              setShowDeleteConfirmDialog(false);
+              setOrderToDelete(null);
+              // ✅ Force re-fetch by updating URL (trigger data refresh)
+              refetch();
+            }
+            // Error automatically handled by useGlobalErrorHandler
+          } catch (error) {
+            // Error automatically handled by useGlobalErrorHandler
+          }
+        }}
+        onCancel={() => {
+          setShowDeleteConfirmDialog(false);
+          setOrderToDelete(null);
         }}
       />
     </PageWrapper>

@@ -6,7 +6,7 @@ import { useFormatCurrency } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
-import { Eye, Edit } from 'lucide-react';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
 
 interface OrderTableProps {
@@ -280,6 +280,17 @@ export const OrderTable = React.memo(function OrderTable({
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       {t('actions.edit')}
+                    </Button>
+                    
+                    {/* Delete button - soft delete */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onOrderAction('delete', order.orderNumber)}
+                      className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      {t('actions.delete')}
                     </Button>
                   </div>
                 </td>

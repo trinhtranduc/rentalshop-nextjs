@@ -231,10 +231,30 @@ export default function AdminOrdersPage() {
         router.push(`/orders/${orderNumber}/edit`);
         break;
         
+      case 'delete':
+        // Find order by number to get ID
+        const orderToDelete = data?.orders.find(o => o.orderNumber === orderNumber);
+        if (orderToDelete) {
+          // Show confirmation dialog
+          if (window.confirm(`Are you sure you want to delete order ${orderNumber}?`)) {
+            try {
+              const response = await ordersApi.deleteOrder(orderToDelete.id);
+              if (response.success) {
+                // Force re-fetch
+                router.refresh();
+              }
+              // Error automatically handled by useGlobalErrorHandler
+            } catch (error) {
+              // Error automatically handled by useGlobalErrorHandler
+            }
+          }
+        }
+        break;
+        
       default:
         console.log('Order action:', action, orderNumber);
     }
-  }, [router]);
+  }, [router, data?.orders]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
