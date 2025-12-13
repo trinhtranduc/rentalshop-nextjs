@@ -120,19 +120,19 @@ export async function GET(request: NextRequest) {
         // Period đã hết → EXPIRED
         computedStatus = 'EXPIRED';
         const daysExpired = Math.floor((now.getTime() - periodEnd!.getTime()) / (1000 * 60 * 60 * 24));
-        statusReason = `Expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
+          statusReason = `Expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
       } else if (periodEnd) {
         // Period chưa hết → ACTIVE (dù có cancel hay không)
         computedStatus = 'ACTIVE';
         const daysLeft = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (subscription.canceledAt) {
-          statusReason = `Active (${daysLeft} days left) - Canceled but access until period end`;
+          if (subscription.canceledAt) {
+            statusReason = `Active (${daysLeft} days left) - Canceled but access until period end`;
+          } else {
+            statusReason = daysLeft <= 7 
+              ? `Active - Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
+              : `Active (${daysLeft} days remaining)`;
+          }
         } else {
-          statusReason = daysLeft <= 7 
-            ? `Active - Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
-            : `Active (${daysLeft} days remaining)`;
-        }
-      } else {
         // Không có periodEnd → EXPIRED (invalid subscription)
         computedStatus = 'EXPIRED';
         statusReason = 'Subscription period end date is missing';

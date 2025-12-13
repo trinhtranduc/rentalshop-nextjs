@@ -1,0 +1,5 @@
+{
+  "_comment": "Error codes for API responses - Chinese version",
+  "MERCHANT_DUPLICATE": "使用此电子邮件或电话号码的商户已存在。请使用不同的电子邮件或电话号码。"
+}
+
