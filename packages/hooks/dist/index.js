@@ -5422,7 +5422,7 @@ function useSubscriptionError() {
       action = "Choose a new plan to continue using the service.";
     } else if (subscriptionStatus === "cancelled") {
       message = "Your subscription has been cancelled.";
-      action = "Choose a new plan to reactivate your account.";
+      action = "Contact support to reactivate your subscription or choose a new plan.";
     } else if (subscriptionStatus === "past_due") {
       message = "Payment is past due. Please update your payment method.";
       action = "Update your payment information to avoid service interruption.";
