@@ -122,6 +122,45 @@ export async function invalidateAllUserSessions(userId: number): Promise<void> {
 }
 
 /**
+ * Invalidate all sessions for all users of a merchant
+ * Useful when subscription plan changes (especially allowWebAccess)
+ */
+export async function invalidateAllMerchantUserSessions(merchantId: number): Promise<number> {
+  // Get all user IDs for this merchant
+  const users = await prisma.user.findMany({
+    where: {
+      merchantId,
+      isActive: true,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (users.length === 0) {
+    return 0;
+  }
+
+  const userIds = users.map(u => u.id);
+
+  // Invalidate all sessions for these users
+  const result = await prisma.userSession.updateMany({
+    where: {
+      userId: {
+        in: userIds,
+      },
+      isActive: true,
+    },
+    data: {
+      isActive: false,
+      invalidatedAt: new Date(),
+    },
+  });
+
+  return result.count;
+}
+
+/**
  * Get active sessions for a user
  */
 export async function getUserActiveSessions(userId: number) {
@@ -165,6 +204,7 @@ export const sessions = {
   validateSession,
   invalidateSession,
   invalidateAllUserSessions,
+  invalidateAllMerchantUserSessions,
   getUserActiveSessions,
   cleanupExpiredSessions,
 };

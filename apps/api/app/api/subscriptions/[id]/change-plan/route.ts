@@ -85,6 +85,13 @@ async function handleChangePlan(
         }
       }
 
+      // Check if allowWebAccess changed (for platform access control)
+      const oldPlanLimits = existing.plan?.limits as any || {};
+      const newPlanLimits = plan.limits as any || {};
+      const oldAllowWebAccess = oldPlanLimits?.allowWebAccess !== undefined ? oldPlanLimits.allowWebAccess : true;
+      const newAllowWebAccess = newPlanLimits?.allowWebAccess !== undefined ? newPlanLimits.allowWebAccess : true;
+      const allowWebAccessChanged = oldAllowWebAccess !== newAllowWebAccess;
+
       // Change subscription plan
       const updatedSubscription = await db.subscriptions.update(subscriptionId, updateData);
 
@@ -93,8 +100,23 @@ async function handleChangePlan(
         newPlanId: updatedSubscription.planId,
         planName: plan.name,
         newStatus: updatedSubscription.status,
-        statusChanged: shouldActivate
+        statusChanged: shouldActivate,
+        allowWebAccessChanged,
+        oldAllowWebAccess,
+        newAllowWebAccess
       });
+
+      // If allowWebAccess changed, invalidate all merchant user sessions
+      // This forces users to re-login and get updated subscription data
+      if (allowWebAccessChanged && existing.merchantId) {
+        try {
+          const invalidatedCount = await db.sessions.invalidateAllMerchantUserSessions(existing.merchantId);
+          console.log(`🔄 Invalidated ${invalidatedCount} sessions for merchant ${existing.merchantId} due to allowWebAccess change`);
+        } catch (error) {
+          console.error('⚠️ Failed to invalidate merchant sessions:', error);
+          // Don't fail the request if session invalidation fails
+        }
+      }
 
       // Log activity to database
       await db.subscriptionActivities.create({
