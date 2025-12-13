@@ -28,7 +28,7 @@ export default function OutletBankAccountsPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const { toastSuccess, toastError } = useToast();
+  const { toastSuccess } = useToast();
   const t = useBankAccountTranslations();
   const tc = useCommonTranslations();
 
@@ -64,12 +64,11 @@ export default function OutletBankAccountsPage() {
           return account;
         });
         setBankAccounts(accountsWithQR);
-      } else {
-        toastError(tc('labels.error'), response.message || t('messages.loadError'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
       console.error('Error fetching bank accounts:', error);
-      toastError(tc('labels.error'), t('messages.loadError'));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setLoading(false);
     }
@@ -111,12 +110,11 @@ export default function OutletBankAccountsPage() {
         toastSuccess(tc('labels.success'), t('messages.addSuccess'));
         setShowAddDialog(false);
         fetchBankAccounts();
-      } else {
-        toastError(tc('labels.error'), response.message || t('messages.addError'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
       console.error('Error creating bank account:', error);
-      toastError(tc('labels.error'), t('messages.addError'));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setFormLoading(false);
     }
@@ -142,12 +140,11 @@ export default function OutletBankAccountsPage() {
         setShowEditDialog(false);
         setSelectedAccount(null);
         fetchBankAccounts();
-      } else {
-        toastError(tc('labels.error'), response.message || t('messages.updateError'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
       console.error('Error updating bank account:', error);
-      toastError(tc('labels.error'), t('messages.updateError'));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setFormLoading(false);
     }
@@ -170,12 +167,11 @@ export default function OutletBankAccountsPage() {
         setShowDeleteConfirm(false);
         setSelectedAccount(null);
         fetchBankAccounts();
-      } else {
-        toastError(tc('labels.error'), response.message || t('messages.deleteError'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
       console.error('Error deleting bank account:', error);
-      toastError(tc('labels.error'), t('messages.deleteError'));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setFormLoading(false);
     }

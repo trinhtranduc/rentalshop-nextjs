@@ -95,6 +95,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'PHONE_EXISTS': 'Phone number is already registered',
   'BUSINESS_NAME_EXISTS': 'Business name already exists',
   'CUSTOMER_DUPLICATE': 'A customer with this email or phone already exists',
+  'MERCHANT_DUPLICATE': 'A merchant with this email or phone already exists. Please use a different email or phone number.',
   'OUTLET_NAME_EXISTS': 'An outlet with this name already exists for this merchant',
   'CATEGORY_NAME_EXISTS': 'Category with this name already exists',
   

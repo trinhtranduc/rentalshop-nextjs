@@ -1,0 +1,5 @@
+{
+  "_comment": "Error codes for API responses - Japanese version",
+  "MERCHANT_DUPLICATE": "このメールアドレスまたは電話番号の事業者が既に存在します。別のメールアドレスまたは電話番号を使用してください。"
+}
+

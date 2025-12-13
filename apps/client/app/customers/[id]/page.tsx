@@ -27,15 +27,14 @@ import {
   X
 } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
-import { useAuth, useSimpleErrorHandler, useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { Customer } from '@rentalshop/types';
 import type { EditCustomerFormRef } from '@rentalshop/ui';
 export default function CustomerPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { handleError } = useSimpleErrorHandler();
-  const { toastError, toastSuccess } = useToast();
+  const { toastSuccess } = useToast();
   const t = useCustomerTranslations();
   const tc = useCommonTranslations();
   const customerId = params.id as string;
@@ -89,8 +88,7 @@ export default function CustomerPage() {
         
       } catch (error) {
         console.error('❌ CustomerPage: Error fetching customer:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch customer details';
-        toastError(tc('labels.error'), errorMessage);
+        // Error automatically handled by useGlobalErrorHandler
         // Show error state
         setCustomer(null);
       } finally {
@@ -149,7 +147,7 @@ export default function CustomerPage() {
       
     } catch (error) {
       console.error('❌ CustomerPage: Error deleting customer:', error);
-      toastError(t('messages.deleteFailed'), (error instanceof Error ? error.message : tc('labels.error')));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setIsUpdating(false);
       setShowDeleteConfirm(false);
@@ -224,7 +222,7 @@ export default function CustomerPage() {
       
     } catch (error) {
       console.error('❌ CustomerPage: Error updating customer status:', error);
-      toastError(t('messages.updateFailed'), t('messages.updateFailed') + ': ' + (error instanceof Error ? error.message : tc('labels.error')));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setIsUpdating(false);
     }

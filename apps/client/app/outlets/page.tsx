@@ -30,7 +30,6 @@ import {
   useCanExportData,
   useCommonTranslations,
   useOutletsTranslations,
-  useToastHandler,
 } from "@rentalshop/hooks";
 import { outletsApi } from "@rentalshop/utils";
 import type {
@@ -58,8 +57,7 @@ export default function OutletsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError } = useToast();
-  const { handleError } = useToastHandler();
+  const { toastSuccess } = useToast();
   const t = useCommonTranslations();
   const to = useOutletsTranslations();
   const canExport = useCanExportData();
@@ -227,17 +225,10 @@ export default function OutletsPage() {
                     `${to("messages.enableSuccess")} - "${outlet.name}"`
                   );
                   refetch();
-                } else {
-                  toastError(
-                    to("messages.enableFailed"),
-                    response.error || to("messages.enableFailed")
-                  );
                 }
+                // Error automatically handled by useGlobalErrorHandler
               } catch (err) {
-                toastError(
-                  to("messages.enableFailed"),
-                  to("messages.enableFailed")
-                );
+                // Error automatically handled by useGlobalErrorHandler
               }
             }
           }
@@ -247,7 +238,7 @@ export default function OutletsPage() {
           console.log("Unknown action:", action);
       }
     },
-    [data?.outlets, router, toastSuccess, toastError, refetch]
+    [data?.outlets, router, toastSuccess, refetch]
   );
 
   const handleConfirmDisable = useCallback(async () => {
@@ -264,19 +255,15 @@ export default function OutletsPage() {
           `${to("messages.disableSuccess")} - "${outletToDisable.name}"`
         );
         refetch();
-      } else {
-        toastError(
-          to("messages.disableFailed"),
-          response.error || to("messages.disableFailed")
-        );
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
-      toastError(to("messages.disableFailed"), to("messages.disableFailed"));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setShowDisableConfirm(false);
       setOutletToDisable(null);
     }
-  }, [outletToDisable, router, toastSuccess, toastError, refetch]);
+  }, [outletToDisable, toastSuccess, refetch]);
 
   // Handle outlet update from edit dialog
   const handleOutletUpdate = useCallback(
@@ -305,17 +292,13 @@ export default function OutletsPage() {
           setShowEditDialog(false);
           setSelectedOutlet(null);
           refetch();
-        } else {
-          toastError(
-            to("messages.updateFailed"),
-            response.error || to("messages.updateFailed")
-          );
         }
+        // Error automatically handled by useGlobalErrorHandler
       } catch (err) {
-        toastError(to("messages.updateFailed"), to("messages.updateFailed"));
+        // Error automatically handled by useGlobalErrorHandler
       }
     },
-    [selectedOutlet, formData, router, toastSuccess, toastError, refetch]
+    [selectedOutlet, formData, toastSuccess, refetch]
   );
 
   // ============================================================================
@@ -682,24 +665,10 @@ export default function OutletsPage() {
                 to("messages.createSuccess")
               );
               refetch();
-            } else {
-              // Pass the full response object so translateError can use the code field
-              console.log('🔍 page.tsx: Throwing response object (not Error):', response);
-              throw response;
             }
+            // Error automatically handled by useGlobalErrorHandler
           } catch (error: any) {
-            console.error('🔍 page.tsx: Error caught:', {
-              type: typeof error,
-              isError: error instanceof Error,
-              hasCode: !!error?.code,
-              code: error?.code,
-              message: error?.message,
-              success: error?.success,
-              fullError: error
-            });
-            // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
-            // This automatically translates error.code and shows toast
-            handleError(error);
+            // Error automatically handled by useGlobalErrorHandler
             throw error; // Re-throw to let dialog handle it
           }
         }}

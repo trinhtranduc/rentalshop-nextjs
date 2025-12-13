@@ -199,21 +199,21 @@ export class SubscriptionStatusChecker {
     }
 
     // Nếu không có currentPeriodEnd → không có subscription hợp lệ
-    return {
-      success: false,
-      response: NextResponse.json(
-        { 
-          success: false, 
+        return {
+          success: false,
+          response: NextResponse.json(
+            { 
+              success: false, 
           message: 'Subscription period end date is missing. Please contact support.',
           code: 'SUBSCRIPTION_PERIOD_MISSING',
-          details: {
-            merchantId: merchant.id,
-            merchantName: merchant.name
-          }
-        },
-        { status: 403 }
-      )
-    };
+              details: {
+                merchantId: merchant.id,
+                merchantName: merchant.name
+              }
+            },
+            { status: 403 }
+          )
+        };
   }
 }
 

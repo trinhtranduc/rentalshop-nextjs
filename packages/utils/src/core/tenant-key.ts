@@ -50,17 +50,20 @@ function generateRandomSuffix(): string {
  * 
  * @param name - Merchant/shop name
  * @param checkExists - Async function to check if tenant key exists in database
- * @param maxAttempts - Maximum attempts to generate unique key (default: 10)
+ * @param maxAttempts - Maximum attempts to generate unique key (default: 100)
  * @returns Promise<string> - Unique tenant key
  * 
  * Examples:
  *  - "Áo dài Phạm" -> "aodaipham" (if not exists)
  *  - "Áo dài Phạm" -> "aodaipham123" (if "aodaipham" exists, adds random 3-digit suffix)
+ * 
+ * Note: Uses 100 attempts (instead of 10) to handle high collision scenarios.
+ * With 3-digit suffix (000-999), 100 attempts gives ~90% success rate even with many collisions.
  */
 export async function generateUniqueTenantKey(
   name: string,
   checkExists: (key: string) => Promise<boolean>,
-  maxAttempts: number = 10
+  maxAttempts: number = 100
 ): Promise<string> {
   if (!name) {
     throw new Error('Name is required to generate tenant key');
@@ -80,8 +83,24 @@ export async function generateUniqueTenantKey(
   }
 
   // If base key exists, try adding random suffix
+  // Use Set to track tried suffixes to avoid duplicates in same attempt
+  const triedSuffixes = new Set<string>();
+  
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const randomSuffix = generateRandomSuffix();
+    let randomSuffix: string;
+    let attempts = 0;
+    
+    // Generate unique random suffix (avoid duplicates in same run)
+    do {
+      randomSuffix = generateRandomSuffix();
+      attempts++;
+      // Safety: if we've tried all 1000 possibilities, break
+      if (attempts > 1000) {
+        throw new Error('Unable to generate unique random suffix');
+      }
+    } while (triedSuffixes.has(randomSuffix));
+    
+    triedSuffixes.add(randomSuffix);
     const candidateKey = baseKey + randomSuffix;
     
     // Check if candidate key is available

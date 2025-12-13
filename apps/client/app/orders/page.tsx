@@ -50,7 +50,7 @@ export default function OrdersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError, toastWarning } = useToast();
+  const { toastSuccess, toastWarning } = useToast();
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
@@ -300,11 +300,10 @@ export default function OrdersPage() {
               toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
               // ✅ Force re-fetch by updating URL (trigger data refresh)
               refetch();
-            } else {
-              throw new Error(response.error || t('messages.updateFailed'));
             }
+            // Error automatically handled by useGlobalErrorHandler
           } catch (error) {
-            toastError('Update Failed', (error as Error).message);
+            // Error automatically handled by useGlobalErrorHandler
           }
         }
         break;
@@ -318,11 +317,10 @@ export default function OrdersPage() {
               toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
               // ✅ Force re-fetch by updating URL (trigger data refresh)
               refetch();
-            } else {
-              throw new Error(response.error || t('messages.updateFailed'));
             }
+            // Error automatically handled by useGlobalErrorHandler
           } catch (error) {
-            toastError('Update Failed', (error as Error).message);
+            // Error automatically handled by useGlobalErrorHandler
           }
         }
         break;
@@ -343,7 +341,7 @@ export default function OrdersPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.orders, router, toastSuccess, toastError, refetch]);
+  }, [data?.orders, router, toastSuccess, refetch]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -530,7 +528,7 @@ export default function OrdersPage() {
             toastSuccess(tc('labels.success'), 'Export completed successfully');
             setShowExportDialog(false);
           } catch (error) {
-            toastError(tc('labels.error'), (error as Error).message || 'Failed to export orders');
+            // Error automatically handled by useGlobalErrorHandler
           } finally {
             setIsExporting(false);
           }
@@ -556,11 +554,10 @@ export default function OrdersPage() {
               setOrderToCancel(null);
               // ✅ Force re-fetch by updating URL (trigger data refresh)
               refetch();
-            } else {
-              throw new Error(response.error || t('messages.updateFailed'));
             }
+            // Error automatically handled by useGlobalErrorHandler
           } catch (error) {
-            toastError(t('messages.updateFailed'), (error as Error).message);
+            // Error automatically handled by useGlobalErrorHandler
           }
         }}
         onCancel={() => {
