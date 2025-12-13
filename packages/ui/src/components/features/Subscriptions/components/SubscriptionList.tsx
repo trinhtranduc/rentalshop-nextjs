@@ -39,7 +39,12 @@ interface SubscriptionListProps {
   onView?: (subscription: Subscription) => void;
   onEdit?: (subscription: Subscription) => void;
   onDelete?: (subscription: Subscription) => void;
-  onExtend?: (subscription: Subscription) => void;
+  onExtend?: (subscription: Subscription, data: {
+    newEndDate: Date;
+    amount: number;
+    method: string;
+    description?: string;
+  }) => void;
   onCancel?: (subscription: Subscription, reason: string) => void;
   onSuspend?: (subscription: Subscription, reason: string) => void;
   onReactivate?: (subscription: Subscription) => void;
@@ -161,7 +166,7 @@ export function SubscriptionList({
 
 
   const handleExtendConfirm = (subscription: Subscription, data: any) => {
-    onExtend?.(subscription);
+    onExtend?.(subscription, data);
     setShowExtendDialog(false);
     setShowViewDialog(false); // Close the view dialog
     setSelectedSubscription(null);

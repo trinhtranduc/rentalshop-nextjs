@@ -259,9 +259,59 @@ export default function SubscriptionsPage() {
     setConfirmationDialog({ open: false, type: 'cancel', subscription: null });
   }, []);
 
-  const handleExtend = useCallback((subscription: Subscription) => {
-    console.log('Extend subscription:', subscription.id);
-  }, []);
+  const handleExtend = useCallback(async (subscription: Subscription, data: {
+    newEndDate: Date;
+    amount: number;
+    method: string;
+    description?: string;
+  }) => {
+    try {
+      setSubmitting(true);
+      const result = await subscriptionsApi.extend(subscription.id, {
+        newEndDate: data.newEndDate,
+        amount: data.amount,
+        method: data.method,
+        description: data.description
+      });
+
+      if (result.success) {
+        await refetch(); // Refresh data
+        toastSuccess(
+          'Subscription Extended',
+          'Subscription has been extended successfully'
+        );
+      }
+      // Error automatically handled by useGlobalErrorHandler
+    } catch (error) {
+      // Error automatically handled by useGlobalErrorHandler
+      console.error('Error extending subscription:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [refetch, toastSuccess]);
+
+  const handleReactivate = useCallback(async (subscription: Subscription) => {
+    try {
+      setSubmitting(true);
+      const result = await subscriptionsApi.resume(subscription.id, {
+        reason: 'Subscription reactivated by admin'
+      });
+
+      if (result.success) {
+        await refetch(); // Refresh data
+        toastSuccess(
+          'Subscription Reactivated',
+          'Subscription has been reactivated successfully'
+        );
+      }
+      // Error automatically handled by useGlobalErrorHandler
+    } catch (error) {
+      // Error automatically handled by useGlobalErrorHandler
+      console.error('Error reactivating subscription:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [refetch, toastSuccess]);
 
   const handleCreateNew = useCallback(() => {
     setShowCreateDialog(true);
@@ -503,6 +553,7 @@ export default function SubscriptionsPage() {
           onCancel={handleCancel}
           onChangePlan={handleChangePlan}
           onExtend={handleExtend}
+          onReactivate={handleReactivate}
           loading={loading}
           total={totalSubscriptions}
           limit={limitFromData}
