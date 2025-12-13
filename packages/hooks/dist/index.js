@@ -60,8 +60,8 @@ __export(src_exports, {
   useCustomersData: () => useCustomersData,
   useDashboardTranslations: () => useDashboardTranslations,
   useDedupedApi: () => useDedupedApi,
-  useErrorHandler: () => useErrorHandler,
   useErrorTranslations: () => useErrorTranslations,
+  useGlobalErrorHandler: () => useGlobalErrorHandler,
   useLocale: () => useLocale,
   useMerchantsData: () => useMerchantsData,
   useOptimisticNavigation: () => useOptimisticNavigation,
@@ -79,7 +79,6 @@ __export(src_exports, {
   useProductTranslations: () => useProductTranslations,
   useProductsData: () => useProductsData,
   useSettingsTranslations: () => useSettingsTranslations,
-  useSimpleErrorHandler: () => useSimpleErrorHandler,
   useSubscriptionError: () => useSubscriptionError,
   useSubscriptionStatusInfo: () => useSubscriptionStatusInfo,
   useSubscriptionTranslations: () => useSubscriptionTranslations,
@@ -5393,20 +5392,24 @@ function useSubscriptionError() {
   const [error, setError] = (0, import_react16.useState)(null);
   const { addToast } = (0, import_ui.useToasts)();
   const handleSubscriptionError = (0, import_react16.useCallback)((error2) => {
-    console.error("Subscription error:", error2);
-    if (error2?.error === "SUBSCRIPTION_ERROR" || error2?.code === "SUBSCRIPTION_REQUIRED") {
-      const subscriptionError = {
-        message: error2.message || "Subscription error occurred",
-        subscriptionStatus: error2.subscriptionStatus,
-        merchantStatus: error2.merchantStatus,
-        code: error2.code
-      };
-      setError(subscriptionError);
-      showSubscriptionError(subscriptionError);
-    } else {
-      addToast("error", "Error", error2?.message || "An error occurred");
-    }
-  }, [addToast]);
+    const errorCode = error2?.code || error2?.response?.data?.code || error2?.error?.code;
+    const statusMap = {
+      "SUBSCRIPTION_CANCELLED": "cancelled",
+      "SUBSCRIPTION_EXPIRED": "expired",
+      "SUBSCRIPTION_PAUSED": "paused",
+      "SUBSCRIPTION_PAST_DUE": "past_due",
+      "TRIAL_EXPIRED": "expired"
+    };
+    const subscriptionStatus = statusMap[errorCode] || error2?.subscriptionStatus || error2?.details?.status;
+    const subscriptionError = {
+      message: error2.message || error2?.response?.data?.message || "Subscription error occurred",
+      subscriptionStatus,
+      merchantStatus: error2.merchantStatus || error2?.details?.merchantStatus,
+      code: errorCode
+    };
+    setError(subscriptionError);
+    showSubscriptionError(subscriptionError);
+  }, []);
   const showSubscriptionError = (0, import_react16.useCallback)((error2) => {
     const { subscriptionStatus, merchantStatus } = error2;
     let message = error2.message;
@@ -5516,94 +5519,9 @@ function useThrottledSearch(options) {
 
 // src/hooks/useToast.ts
 var import_react18 = require("react");
-var import_utils13 = require("@rentalshop/utils");
 var import_ui2 = require("@rentalshop/ui");
-var useErrorHandler = (options = {}) => {
-  const {
-    onLogin,
-    onRetry,
-    onDismiss,
-    autoHandleAuth = true
-  } = options;
-  const [isLoading, setIsLoading] = (0, import_react18.useState)(false);
-  const { addToast } = (0, import_ui2.useToasts)();
-  const { translateError } = useApiError();
-  const handleError = (0, import_react18.useCallback)((error) => {
-    const errorCode = error?.code || error?.response?.data?.code;
-    return {
-      type: "unknown",
-      message: errorCode || "UNKNOWN_ERROR",
-      title: "Error",
-      showLoginButton: false,
-      originalError: error
-    };
-  }, []);
-  const showErrorToast = (0, import_react18.useCallback)((error) => {
-    const translatedMessage = translateError(error);
-    const errorCode = error?.code || error?.response?.data?.code;
-    let toastType = "error";
-    if (errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode?.includes("SUBSCRIPTION")) {
-      toastType = "warning";
-    }
-    addToast(toastType, "L\u1ED7i", translatedMessage, 0);
-  }, [addToast, translateError]);
-  const handleApiCall = (0, import_react18.useCallback)(async (apiCall) => {
-    setIsLoading(true);
-    try {
-      const result = await (0, import_utils13.withErrorHandlingForUI)(apiCall);
-      if (result.error) {
-        showErrorToast(result.error);
-      }
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showErrorToast]);
-  const retry = (0, import_react18.useCallback)(() => {
-    if (onRetry) {
-      onRetry();
-    }
-  }, [onRetry]);
-  const login = (0, import_react18.useCallback)(() => {
-    if (onLogin) {
-      onLogin();
-    } else if (typeof window !== "undefined") {
-    }
-  }, [onLogin]);
-  return {
-    isLoading,
-    handleError,
-    handleApiCall,
-    retry,
-    login,
-    showErrorToast
-  };
-};
-var useSimpleErrorHandler = () => {
-  const { addToast } = (0, import_ui2.useToasts)();
-  const { translateError } = useApiError();
-  const handleError = (0, import_react18.useCallback)((error) => {
-    const translatedMessage = translateError(error);
-    const errorCode = error?.code || error?.response?.data?.code;
-    let toastType = "error";
-    if (errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode?.includes("SUBSCRIPTION")) {
-      toastType = "warning";
-    }
-    addToast(toastType, "L\u1ED7i", translatedMessage, 0);
-    return {
-      type: toastType,
-      message: translatedMessage,
-      code: errorCode
-    };
-  }, [addToast, translateError]);
-  return {
-    handleError
-  };
-};
 var useToastHandler = () => {
   const { addToast } = (0, import_ui2.useToasts)();
-  const { translateError } = useApiError();
-  const t3 = useCommonTranslations();
   const showError = (0, import_react18.useCallback)((title, message) => {
     addToast("error", title, message, 0);
   }, [addToast]);
@@ -5616,37 +5534,11 @@ var useToastHandler = () => {
   const showInfo = (0, import_react18.useCallback)((title, message) => {
     addToast("info", title, message, 5e3);
   }, [addToast]);
-  const handleError = (0, import_react18.useCallback)((error) => {
-    console.log("\u{1F50D} useToastHandler.handleError called with:", {
-      type: typeof error,
-      isError: error instanceof Error,
-      hasCode: !!error?.code,
-      code: error?.code,
-      hasMessage: !!error?.message,
-      message: error?.message,
-      hasSuccess: error?.success !== void 0,
-      success: error?.success,
-      fullError: error
-    });
-    const translatedMessage = translateError(error);
-    console.log("\u{1F50D} useToastHandler.handleError: Translated message:", translatedMessage);
-    const errorCode = error?.code || error?.response?.data?.code;
-    let toastType = "error";
-    let title = t3("labels.error");
-    console.log("\u{1F50D} useToastHandler.handleError: Showing toast:", { type: toastType, title, message: translatedMessage, code: errorCode });
-    addToast(toastType, title, translatedMessage, 0);
-    return {
-      type: toastType,
-      message: translatedMessage,
-      code: errorCode
-    };
-  }, [addToast, translateError, t3]);
   return {
     showError,
     showSuccess,
     showWarning,
-    showInfo,
-    handleError
+    showInfo
   };
 };
 
@@ -5723,7 +5615,7 @@ function useCanExportData() {
 // src/hooks/useUsersData.ts
 var import_react20 = require("react");
 var import_navigation4 = require("next/navigation");
-var import_utils14 = require("@rentalshop/utils");
+var import_utils13 = require("@rentalshop/utils");
 function useUsersData(options) {
   const { filters, enabled = true } = options;
   const pathname = (0, import_navigation4.usePathname)();
@@ -5737,7 +5629,7 @@ function useUsersData(options) {
     fetchFn: async (filtersWithPath2) => {
       const { _pathname, ...apiFilters } = filtersWithPath2;
       console.log("\u{1F464} useUsersData: Fetching with filters:", apiFilters);
-      const response = await import_utils14.usersApi.searchUsers(apiFilters);
+      const response = await import_utils13.usersApi.searchUsers(apiFilters);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch users");
       }
@@ -5824,15 +5716,47 @@ function useOptimisticNavigation() {
   };
 }
 
+// src/hooks/useGlobalErrorHandler.ts
+var import_react22 = require("react");
+var import_ui3 = require("@rentalshop/ui");
+function useGlobalErrorHandler() {
+  const { addToast } = (0, import_ui3.useToasts)();
+  const { translateError } = useApiError();
+  const subscriptionErrorHook = useSubscriptionError();
+  (0, import_react22.useEffect)(() => {
+    const handleApiError = (event) => {
+      const { code, message, error: errorData, fullError } = event.detail;
+      const errorCode = code || errorData;
+      const isSubscriptionError = errorCode === "SUBSCRIPTION_CANCELLED" || errorCode === "SUBSCRIPTION_EXPIRED" || errorCode === "SUBSCRIPTION_PAUSED" || errorCode === "SUBSCRIPTION_PAST_DUE" || errorCode === "TRIAL_EXPIRED" || errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode && typeof errorCode === "string" && errorCode.includes("SUBSCRIPTION");
+      if (isSubscriptionError) {
+        subscriptionErrorHook.handleSubscriptionError(fullError || { code: errorCode, message });
+        return;
+      }
+      const translatedMessage = translateError({
+        code: errorCode,
+        message: message || errorData,
+        success: false,
+        error: errorData
+      });
+      const toastType = errorCode === "VALIDATION_ERROR" || errorCode?.includes("INVALID") ? "warning" : "error";
+      addToast(toastType, "Error", translatedMessage, 0);
+    };
+    window.addEventListener("api-error", handleApiError);
+    return () => {
+      window.removeEventListener("api-error", handleApiError);
+    };
+  }, [addToast, translateError, subscriptionErrorHook]);
+}
+
 // src/hooks/useFiltersData.ts
-var import_utils15 = require("@rentalshop/utils");
+var import_utils14 = require("@rentalshop/utils");
 function useOutletsData() {
   const { data, loading, error } = useDedupedApi({
     filters: {},
     // No filters needed for outlets
     fetchFn: async () => {
       console.log("\u{1F50D} useOutletsData: Fetching outlets...");
-      const response = await import_utils15.outletsApi.getOutlets();
+      const response = await import_utils14.outletsApi.getOutlets();
       if (response.success && response.data) {
         const outletsData = response.data.outlets || [];
         console.log("\u2705 useOutletsData: Transformed data:", {
@@ -5864,7 +5788,7 @@ function useCategoriesData() {
     // No filters needed for categories
     fetchFn: async () => {
       console.log("\u{1F50D} useCategoriesData: Fetching categories...");
-      const response = await import_utils15.categoriesApi.getCategories();
+      const response = await import_utils14.categoriesApi.getCategories();
       if (response.success && response.data) {
         const categoriesData = response.data;
         console.log("\u2705 useCategoriesData: API response data:", {
@@ -5903,7 +5827,7 @@ function useOutletsWithFilters(options) {
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F50D} useOutletsWithFilters: Fetching with filters:", filters2);
-      const response = await import_utils15.outletsApi.getOutlets(filters2);
+      const response = await import_utils14.outletsApi.getOutlets(filters2);
       if (response.success && response.data) {
         const apiData = response.data;
         return {
@@ -5937,7 +5861,7 @@ function useCategoriesWithFilters(options) {
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F50D} useCategoriesWithFilters: Fetching with filters:", filters2);
-      const response = await import_utils15.categoriesApi.searchCategories(filters2);
+      const response = await import_utils14.categoriesApi.searchCategories(filters2);
       if (response.success && response.data) {
         const apiData = response.data;
         return {
@@ -5997,8 +5921,8 @@ function useCategoriesWithFilters(options) {
   useCustomersData,
   useDashboardTranslations,
   useDedupedApi,
-  useErrorHandler,
   useErrorTranslations,
+  useGlobalErrorHandler,
   useLocale,
   useMerchantsData,
   useOptimisticNavigation,
@@ -6016,7 +5940,6 @@ function useCategoriesWithFilters(options) {
   useProductTranslations,
   useProductsData,
   useSettingsTranslations,
-  useSimpleErrorHandler,
   useSubscriptionError,
   useSubscriptionStatusInfo,
   useSubscriptionTranslations,

@@ -21,7 +21,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useCategoriesWithFilters, useCategoriesTranslations, useCommonTranslations, useToastHandler } from '@rentalshop/hooks';
+import { useAuth, useCategoriesWithFilters, useCategoriesTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { categoriesApi } from '@rentalshop/utils';
 import type { CategoryFilters, Category } from '@rentalshop/types';
@@ -34,8 +34,7 @@ export default function CategoriesPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError } = useToast();
-  const { handleError } = useToastHandler();
+  const { toastSuccess } = useToast();
   const t = useCommonTranslations();
   const tc = useCategoriesTranslations();
   // ✅ Use permissions hook to check if user can manage products (categories are part of products)
@@ -163,11 +162,10 @@ export default function CategoriesPage() {
                 tc(`messages.${action === 'activate' ? 'updateSuccess' : 'updateSuccess'}`)
               );
               refetch();
-      } else {
-              toastError(tc('messages.updateFailed'), response.error || tc('messages.updateFailed'));
             }
+            // Error automatically handled by useGlobalErrorHandler
           } catch (err) {
-            toastError(tc('messages.updateFailed'), tc('messages.updateFailed'));
+            // Error automatically handled by useGlobalErrorHandler
           }
         }
         break;
@@ -175,7 +173,7 @@ export default function CategoriesPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.categories, router, toastSuccess, toastError, refetch]);
+  }, [data?.categories, router, toastSuccess, refetch]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!categoryToDelete) return;
@@ -185,16 +183,15 @@ export default function CategoriesPage() {
       if (response.success) {
         toastSuccess(tc('messages.deleteSuccess'), tc('messages.deleteSuccess'));
         refetch();
-      } else {
-        toastError(tc('messages.deleteFailed'), response.error || tc('messages.deleteFailed'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
-      toastError(tc('messages.deleteFailed'), tc('messages.deleteFailed'));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setShowDeleteConfirm(false);
       setCategoryToDelete(null);
     }
-  }, [categoryToDelete, router, toastSuccess, toastError, refetch]);
+  }, [categoryToDelete, toastSuccess, refetch, tc]);
 
   // ============================================================================
   // TRANSFORM DATA
@@ -306,24 +303,10 @@ export default function CategoriesPage() {
             if (response.success) {
               toastSuccess(tc('messages.createSuccess'), tc('messages.createSuccess'));
               refetch();
-            } else {
-              // Pass the full response object so translateError can use the code field
-              console.log('🔍 page.tsx: Throwing response object (not Error):', response);
-              throw response;
             }
+            // Error automatically handled by useGlobalErrorHandler
           } catch (error: any) {
-            console.error('🔍 page.tsx: Error caught:', {
-              type: typeof error,
-              isError: error instanceof Error,
-              hasCode: !!error?.code,
-              code: error?.code,
-              message: error?.message,
-              success: error?.success,
-              fullError: error
-            });
-            // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
-            // This automatically translates error.code and shows toast
-            handleError(error);
+            // Error automatically handled by useGlobalErrorHandler
             throw error; // Re-throw to let dialog handle it
           }
         }}
@@ -358,12 +341,10 @@ export default function CategoriesPage() {
                       setShowEditDialog(false);
                       setCategoryToEdit(null);
                       refetch();
-                    } else {
-                      throw new Error(response.error || tc('messages.updateFailed'));
                     }
+                    // Error automatically handled by useGlobalErrorHandler
                   } catch (error) {
-                    console.error('Error updating category:', error);
-                    toastError(tc('messages.updateFailed'), error instanceof Error ? error.message : tc('messages.updateFailed'));
+                    // Error automatically handled by useGlobalErrorHandler
                     throw error;
                   }
                 }}

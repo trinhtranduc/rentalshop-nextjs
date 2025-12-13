@@ -6,7 +6,7 @@ import { ClientSidebar, LoadingIndicator, CurrencyProvider, LanguageSwitcher } f
 import { Button } from '@rentalshop/ui';
 import { Menu, X } from 'lucide-react';
 import { useNavigation } from '../hooks/useNavigation';
-import { useAuth, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useCommonTranslations, useGlobalErrorHandler } from '@rentalshop/hooks';
 import type { CurrencyCode } from '@rentalshop/types';
 import { isPublicRoute, isAuthRoute, isPublicInfoRoute } from '../../lib/routes';
 
@@ -30,6 +30,9 @@ export default function ClientLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { navigateTo, prefetchRoute } = useNavigation();
   const pathname = usePathname();
+  
+  // ✅ GLOBAL ERROR HANDLER: Tự động xử lý và hiển thị toast cho tất cả API errors
+  useGlobalErrorHandler();
 
   // ============================================================================
   // ROUTE CONFIGURATION
@@ -45,7 +48,7 @@ export default function ClientLayout({
   const hasToken = typeof window !== 'undefined' && (
     localStorage.getItem('authData') || localStorage.getItem('authToken')
   );
-  const merchantCurrency: CurrencyCode = (user?.merchant?.currency as CurrencyCode) || 'USD';
+  const merchantCurrency: CurrencyCode = ((user?.merchant as any)?.currency as CurrencyCode) || 'USD';
   
   // ============================================================================
   // REDIRECT LOGIC - All hooks must be called before early returns

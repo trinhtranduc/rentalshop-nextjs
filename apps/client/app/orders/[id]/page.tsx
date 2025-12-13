@@ -15,7 +15,7 @@ import type { Order } from '@rentalshop/types';
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { toastSuccess, toastError } = useToast();
+  const { toastSuccess } = useToast();
   const { user } = useAuth();
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
@@ -90,12 +90,11 @@ export default function OrderDetailPage() {
         // Update order state directly from API response (better UX - no need to refetch)
         setOrder(result.data);
         toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
-      } else {
-        throw new Error(result.error || 'Failed to cancel order');
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
       console.error('Error cancelling order:', err);
-      toastError(t('messages.updateFailed'), (err instanceof Error ? err.message : tc('labels.error')));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setActionLoading(false);
     }
@@ -118,7 +117,7 @@ export default function OrderDetailPage() {
       }
     } catch (err) {
       console.error('Error updating order status:', err);
-      toastError(t('messages.updateFailed'), (err instanceof Error ? err.message : tc('labels.error')));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setActionLoading(false);
     }
@@ -144,7 +143,7 @@ export default function OrderDetailPage() {
       }
     } catch (err) {
       console.error('Error picking up order:', err);
-      toastError(t('messages.updateFailed'), (err instanceof Error ? err.message : tc('labels.error')));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setActionLoading(false);
     }
@@ -169,7 +168,7 @@ export default function OrderDetailPage() {
       }
     } catch (err) {
       console.error('Error returning order:', err);
-      toastError(t('messages.updateFailed'), (err instanceof Error ? err.message : tc('labels.error')));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setActionLoading(false);
     }
@@ -183,7 +182,7 @@ export default function OrderDetailPage() {
     notes: string;
   }) => {
     if (!order) {
-      toastError(t('messages.updateFailed'), t('messages.noOrders'));
+      // Error automatically handled by useGlobalErrorHandler
       return;
     }
 
@@ -211,8 +210,7 @@ export default function OrderDetailPage() {
       }
     } catch (err) {
       console.error('Error saving order settings:', err);
-      // Single toast notification - error only
-      toastError(t('detail.saveFailed'), t('detail.saveFailedMessage') + ': ' + (err instanceof Error ? err.message : t('messages.unknownError')));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setActionLoading(false);
     }

@@ -54,7 +54,7 @@ import {
 import type { Plan, Subscription } from '@rentalshop/types';
 
 export default function PlansPage() {
-  const { toastError, toastSuccess } = useToast();
+  const { toastSuccess } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,8 +114,7 @@ export default function PlansPage() {
 
     } catch (err) {
       console.error('Error fetching data:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch plans data';
-      toastError('Error', errorMessage);
+      // Error automatically handled by useGlobalErrorHandler
     } finally{
       setLoading(false);
     }
@@ -167,13 +166,11 @@ export default function PlansPage() {
       if (result.success) {
         // Redirect to subscription page
         window.location.href = '/subscription';
-      } else {
-        toastError('Error', `Error purchasing plan: ${result.message}`);
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
       console.error('Error purchasing plan:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error purchasing plan';
-      toastError('Error', errorMessage);
+      // Error automatically handled by useGlobalErrorHandler
     }
   };
 

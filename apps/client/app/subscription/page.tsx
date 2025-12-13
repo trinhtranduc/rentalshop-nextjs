@@ -53,7 +53,7 @@ import type { Subscription, Plan, Payment } from '@rentalshop/types';
 export default function MerchantSubscriptionPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { toastError, toastSuccess } = useToast();
+  const { toastSuccess } = useToast();
   const canExport = useCanExportData();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -119,8 +119,7 @@ export default function MerchantSubscriptionPage() {
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch subscription data';
-      toastError('Error', errorMessage);
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setLoading(false);
     }

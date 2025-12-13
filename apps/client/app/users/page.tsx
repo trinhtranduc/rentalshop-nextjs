@@ -21,7 +21,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useUsersData, useCanExportData, useCommonTranslations, useUsersTranslations, useToastHandler } from '@rentalshop/hooks';
+import { useAuth, useUsersData, useCanExportData, useCommonTranslations, useUsersTranslations } from '@rentalshop/hooks';
 import { usersApi } from '@rentalshop/utils';
 import type { UserFilters, User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 
@@ -42,8 +42,7 @@ export default function UsersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError } = useToast();
-  const { handleError: handleApiError } = useToastHandler();
+  const { toastSuccess } = useToast();
   const t = useCommonTranslations();
   const tu = useUsersTranslations();
   const canExport = useCanExportData();
@@ -223,7 +222,7 @@ export default function UsersPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.users, router, toastSuccess, toastError, refetch]);
+  }, [data?.users, router, toastSuccess, refetch]);
   
   // Handle user update from edit dialog
   const handleUserUpdate = useCallback(async (userData: UserCreateInput | UserUpdateInput) => {
@@ -236,14 +235,13 @@ export default function UsersPage() {
         setShowEditDialog(false);
         setSelectedUser(null);
         refetch();
-      } else {
-        throw new Error(response.error || tu('messages.updateFailed'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
-      toastError(tu('messages.updateFailed'), (error as Error).message);
+      // Error automatically handled by useGlobalErrorHandler
       throw error;
     }
-  }, [selectedUser, router, toastSuccess, toastError, refetch]);
+  }, [selectedUser, toastSuccess, refetch, tu]);
   
   // Handle delete confirmation
   const handleConfirmDelete = useCallback(async () => {
@@ -256,13 +254,12 @@ export default function UsersPage() {
         setShowDeleteConfirm(false);
         setUserToDelete(null);
         refetch();
-      } else {
-        throw new Error(response.error || tu('messages.deleteFailed'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
-      toastError(tu('messages.deleteFailed'), (error as Error).message);
+      // Error automatically handled by useGlobalErrorHandler
     }
-  }, [userToDelete, router, toastSuccess, toastError, refetch]);
+  }, [userToDelete, toastSuccess, refetch, tu]);
   
   // Handle activate confirmation
   const handleConfirmActivate = useCallback(async () => {
@@ -276,13 +273,12 @@ export default function UsersPage() {
         setShowActivateConfirm(false);
         setUserToActivate(null);
         refetch();
-      } else {
-        throw new Error(response.error || tu('messages.activateFailed'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
-      toastError(tu('messages.activateFailed'), (error as Error).message);
+      // Error automatically handled by useGlobalErrorHandler
     }
-  }, [userToActivate, router, toastSuccess, toastError, tu, refetch]);
+  }, [userToActivate, toastSuccess, tu, refetch]);
   
   // Handle deactivate confirmation
   const handleConfirmDeactivate = useCallback(async () => {
@@ -296,13 +292,12 @@ export default function UsersPage() {
         setShowDeactivateConfirm(false);
         setUserToDeactivate(null);
         refetch();
-      } else {
-        throw new Error(response.error || tu('messages.deactivateFailed'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
-      toastError(tu('messages.deactivateFailed'), (error as Error).message);
+      // Error automatically handled by useGlobalErrorHandler
     }
-  }, [userToDeactivate, router, toastSuccess, toastError, tu, refetch]);
+  }, [userToDeactivate, toastSuccess, tu, refetch]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -425,24 +420,10 @@ export default function UsersPage() {
             if (response.success) {
               toastSuccess(tu('messages.createSuccess'), `${tu('messages.createSuccess')} - "${userData.firstName} ${userData.lastName}"`);
               refetch();
-            } else {
-              // Pass the full response object so translateError can use the code field
-              console.log('🔍 page.tsx: Throwing response object (not Error):', response);
-              throw response;
             }
+            // Error automatically handled by useGlobalErrorHandler
           } catch (error: any) {
-            console.error('🔍 page.tsx: Error caught:', {
-              type: typeof error,
-              isError: error instanceof Error,
-              hasCode: !!error?.code,
-              code: error?.code,
-              message: error?.message,
-              success: error?.success,
-              fullError: error
-            });
-            // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
-            // This automatically translates error.code and shows toast
-            handleApiError(error);
+            // Error automatically handled by useGlobalErrorHandler
             throw error; // Re-throw to let dialog handle it
           }
         }}

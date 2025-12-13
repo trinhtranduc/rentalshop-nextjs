@@ -14,7 +14,7 @@ import {
 import { ProductEdit } from '@rentalshop/ui';
 
 import { ArrowLeft, Package } from 'lucide-react';
-import { useAuth, useSimpleErrorHandler } from '@rentalshop/hooks';
+import { useAuth } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi, 
@@ -27,7 +27,6 @@ export default function ProductEditPage() {
   const router = useRouter();
   const params = useParams();
   const { user, loading: authLoading } = useAuth();
-  const { handleError } = useSimpleErrorHandler();
   
   const [product, setProduct] = useState<ProductWithStock | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -119,7 +118,7 @@ export default function ProductEditPage() {
         console.error('Error fetching product:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch product';
         setError(errorMessage);
-        handleError(err);
+        // Error automatically handled by useGlobalErrorHandler
       } finally {
         setLoading(false);
       }
