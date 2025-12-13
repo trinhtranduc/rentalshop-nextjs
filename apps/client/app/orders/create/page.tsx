@@ -53,7 +53,7 @@ export default function CreateOrderPage() {
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
 
   // Toast notifications
-  const { toastSuccess, toastError, removeToast } = useToast();
+  const { toastSuccess, removeToast } = useToast();
 
   // Get merchant ID from user context
   const merchantId = user?.merchant?.id;
@@ -87,20 +87,16 @@ export default function CreateOrderPage() {
           // searchCustomers returns { success: true, data: { customers: [...] } }
           setCustomers(customersRes.data?.customers || []);
           console.log('✅ Loaded customers:', customersRes.data?.customers?.length || 0);
-        } else {
-          console.error('Failed to fetch customers:', customersRes.error);
-          toastError(tc('labels.error'), tc('messages.errorLoadingData'));
         }
+        // Error automatically handled by useGlobalErrorHandler
 
         if (productsRes.success) {
           // searchProducts returns { success: true, data: [...] } or { success: true, data: { products: [...] } }
           const productsData = (productsRes.data as any)?.products || productsRes.data || [];
           setProducts(Array.isArray(productsData) ? productsData : []);
           console.log('✅ Loaded products:', Array.isArray(productsData) ? productsData.length : 0);
-        } else {
-          console.error('Failed to fetch products:', productsRes.error);
-          toastError(tc('labels.error'), tc('messages.errorLoadingData'));
         }
+        // Error automatically handled by useGlobalErrorHandler
 
         if (outletsRes.success) {
           console.log('🔍 Raw outlets response:', outletsRes.data);
@@ -169,7 +165,7 @@ export default function CreateOrderPage() {
       }
     } catch (err) {
       console.error('Create order failed:', err);
-      toastError(t('messages.createFailed'), (err as Error).message || t('messages.createFailed'));
+      // Error automatically handled by useGlobalErrorHandler
     } finally{
       setSubmitting(false);
     }
@@ -206,7 +202,7 @@ export default function CreateOrderPage() {
       }
     } catch (error) {
       console.error('Error creating product:', error);
-      toastError(tc('labels.error'), (error as Error).message || 'Failed to create product');
+      // Error automatically handled by useGlobalErrorHandler
       throw error;
     }
   };
@@ -227,7 +223,7 @@ export default function CreateOrderPage() {
       }
     } catch (error) {
       console.error('Error creating category:', error);
-      toastError(tc('labels.error'), (error as Error).message || 'Failed to create category');
+      // Error automatically handled by useGlobalErrorHandler
       throw error;
     }
   };
@@ -268,7 +264,7 @@ export default function CreateOrderPage() {
       }
     } catch (error) {
       console.error('Error creating customer:', error);
-      toastError(tc('labels.error'), (error as Error).message || 'Failed to create customer');
+      // Error automatically handled by useGlobalErrorHandler
       throw error;
     }
   };
@@ -382,21 +378,27 @@ export default function CreateOrderPage() {
               }))}
               merchantId={String(merchantId)}
               onProductCreated={handleProductCreated}
-              onError={(error: string) => toastError(tc('labels.error'), error)}
+              onError={(error: string) => {
+                // Error automatically handled by useGlobalErrorHandler
+              }}
             />
 
             <AddCategoryDialog
               open={showCategoryDialog}
               onOpenChange={setShowCategoryDialog}
               onCategoryCreated={handleCategoryCreated}
-              onError={(error: string) => toastError(tc('labels.error'), error)}
+              onError={(error: string) => {
+                // Error automatically handled by useGlobalErrorHandler
+              }}
             />
 
             <AddCustomerDialog
               open={showCustomerDialog}
               onOpenChange={setShowCustomerDialog}
               onCustomerCreated={handleCustomerCreated}
-              onError={(error: string) => toastError(tc('labels.error'), error)}
+              onError={(error: string) => {
+                // Error automatically handled by useGlobalErrorHandler
+              }}
             />
 
             {/* Receipt Preview Modal */}

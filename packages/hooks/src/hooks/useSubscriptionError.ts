@@ -4,7 +4,7 @@
 // SUBSCRIPTION ERROR HANDLER HOOK
 // ============================================================================
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useToasts } from '@rentalshop/ui';
 
 export interface SubscriptionError {
@@ -29,25 +29,33 @@ export function useSubscriptionError(): UseSubscriptionErrorReturn {
   const [error, setError] = useState<SubscriptionError | null>(null);
   const { addToast } = useToasts();
 
+  // ✅ NOTE: Subscription errors are now handled by useGlobalErrorHandler()
+  // This hook is still available for manual subscription error handling if needed
+
   const handleSubscriptionError = useCallback((error: any) => {
-    console.error('Subscription error:', error);
+    const errorCode = error?.code || error?.response?.data?.code || error?.error?.code;
+    
+    // Extract subscription status
+    const statusMap: Record<string, string> = {
+      'SUBSCRIPTION_CANCELLED': 'cancelled',
+      'SUBSCRIPTION_EXPIRED': 'expired',
+      'SUBSCRIPTION_PAUSED': 'paused',
+      'SUBSCRIPTION_PAST_DUE': 'past_due',
+      'TRIAL_EXPIRED': 'expired'
+    };
+    
+    const subscriptionStatus = statusMap[errorCode as string] || error?.subscriptionStatus || error?.details?.status;
 
-    // Check if it's a subscription error
-    if (error?.error === 'SUBSCRIPTION_ERROR' || error?.code === 'SUBSCRIPTION_REQUIRED') {
-      const subscriptionError: SubscriptionError = {
-        message: error.message || 'Subscription error occurred',
-        subscriptionStatus: error.subscriptionStatus,
-        merchantStatus: error.merchantStatus,
-        code: error.code
-      };
+    const subscriptionError: SubscriptionError = {
+      message: error.message || error?.response?.data?.message || 'Subscription error occurred',
+      subscriptionStatus,
+      merchantStatus: error.merchantStatus || error?.details?.merchantStatus,
+      code: errorCode
+    };
 
-      setError(subscriptionError);
-      showSubscriptionError(subscriptionError);
-    } else {
-      // Handle other errors normally
-      addToast('error', 'Error', error?.message || 'An error occurred');
-    }
-  }, [addToast]);
+    setError(subscriptionError);
+    showSubscriptionError(subscriptionError);
+  }, []);
 
   const showSubscriptionError = useCallback((error: SubscriptionError) => {
     const { subscriptionStatus, merchantStatus } = error;

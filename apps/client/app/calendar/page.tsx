@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale as useNextIntlLocale } from 'next-intl';
 import { Calendars, PageWrapper, Breadcrumb, Button, PageLoadingIndicator } from '@rentalshop/ui';
 import { X } from 'lucide-react';
-import { useAuth, useSimpleErrorHandler, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
+import { useAuth, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
@@ -14,7 +14,6 @@ import type { PickupOrder } from '@rentalshop/ui';
 export default function CalendarPage() {
   const { user, loading: authLoading } = useAuth();
   const authenticated = !!user;
-  const { handleError } = useSimpleErrorHandler();
   const t = useCommonTranslations();
   const tcal = useCalendarTranslations();
   const to = useOrderTranslations();
@@ -120,11 +119,11 @@ export default function CalendarPage() {
       setError('An error occurred while fetching calendar data');
       setCalendarData({ calendar: [], summary: { totalOrders: 0, totalRevenue: 0, totalPickups: 0, totalReturns: 0, averageOrderValue: 0 } });
       setCalendarMeta(null);
-      handleError(error);
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setLoading(false);
     }
-  }, [authenticated, handleError]);
+  }, [authenticated]);
 
   // Fetch calendar data when component mounts or when month/user actually changes
   useEffect(() => {

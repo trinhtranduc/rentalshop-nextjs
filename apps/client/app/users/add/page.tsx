@@ -12,7 +12,7 @@ export default function AddUserPage() {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toastSuccess, toastError, removeToast } = useToast();
+  const { toastSuccess, removeToast } = useToast();
   const t = useCommonTranslations();
   const tu = useUsersTranslations();
 
@@ -24,10 +24,10 @@ export default function AddUserPage() {
   // Redirect if user doesn't have permission
   useEffect(() => {
     if (currentUser && !canCreateUsers) {
-      toastError(t('messages.unauthorized'), t('messages.unauthorized'));
+      // Permission check - redirect only, no toast needed
       router.push('/users');
     }
-  }, [currentUser, canCreateUsers, router, toastError]);
+  }, [currentUser, canCreateUsers, router]);
 
   // Show loading while checking permissions
   if (!currentUser) {
@@ -64,17 +64,11 @@ export default function AddUserPage() {
         // Navigate back to users list immediately
         // Toast will be handled by Users component when the page loads
         router.push('/users');
-      } else {
-        console.error('❌ AddUserPage: API error:', response.error);
-        toastError(tu('messages.createFailed'), response.error || tu('messages.createFailed'));
-        throw new Error(response.error || tu('messages.createFailed'));
       }
-      
+      // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
       console.error('❌ AddUserPage: Error creating user:', err);
-      const errorMessage = err instanceof Error ? err.message : tu('messages.createFailed');
-      toastError(tu('messages.createFailed'), errorMessage);
-      // Don't re-throw - let toast handle the error display
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setIsSubmitting(false);
     }
@@ -85,7 +79,7 @@ export default function AddUserPage() {
     // Type guard to ensure we only handle UserCreateInput in this add page
     if (!('password' in userData && 'role' in userData)) {
       console.error('❌ AddUserPage: Invalid user data type for creation');
-      toastError(t('labels.error'), t('messages.invalidInput'));
+      // Validation error - will be caught by form validation
       return;
     }
     

@@ -27,6 +27,7 @@ export * from './hooks/useUserRole';
 export * from './hooks/useUsersData';
 export * from './hooks/useOptimisticNavigation';
 export * from './hooks/useApiError';
+export * from './hooks/useGlobalErrorHandler';
 
 // Modern API utilities
 export * from './utils/useDedupedApi';

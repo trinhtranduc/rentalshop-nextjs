@@ -270,7 +270,7 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
 // ============================================================================
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
-  const { toastError, toastSuccess } = useToast();
+  const { toastSuccess } = useToast();
   const formatMoney = useFormatCurrency();
   const t = useDashboardTranslations();
   const tc = useCommonTranslations();
@@ -701,14 +701,11 @@ export default function DashboardPage() {
         error.message.includes('expired') ||
         error.message.includes('trial')
       )) {
-        console.log('⚠️ Subscription error detected, showing error instead of redirecting');
-        toastError('Subscription Issue', errorMessage);
+        // Error automatically handled by useGlobalErrorHandler
         return;
       }
       
-      // Handle other errors
-      
-      toastError('Error', errorMessage);
+      // Handle other errors - automatically handled by useGlobalErrorHandler
       
       // Set default data if API fails to prevent crashes
       setStats({
@@ -1034,7 +1031,7 @@ export default function DashboardPage() {
     try {
       const merchantId = user?.merchant?.id || user?.merchantId;
       if (!merchantId) {
-        toastError(tc('labels.error'), tc('messages.sessionExpired'));
+        // Error automatically handled by useGlobalErrorHandler
         return;
       }
 
@@ -1052,8 +1049,7 @@ export default function DashboardPage() {
         throw new Error(response.error || tc('messages.createFailed'));
       }
     } catch (error) {
-      console.error('Error creating customer:', error);
-      toastError(tc('labels.error'), error instanceof Error ? error.message : tc('messages.createFailed'));
+      // Error automatically handled by useGlobalErrorHandler
       throw error;
     }
   };
@@ -1063,7 +1059,7 @@ export default function DashboardPage() {
     try {
       const merchantId = user?.merchant?.id || user?.merchantId;
       if (!merchantId) {
-        toastError(tc('labels.error'), tc('messages.sessionExpired'));
+        // Error automatically handled by useGlobalErrorHandler
         return;
       }
 
@@ -1077,8 +1073,7 @@ export default function DashboardPage() {
         throw new Error(response.error || tc('messages.createFailed'));
       }
     } catch (error) {
-      console.error('Error creating product:', error);
-      toastError(tc('labels.error'), error instanceof Error ? error.message : tc('messages.createFailed'));
+      // Error automatically handled by useGlobalErrorHandler
       throw error;
     }
   };
@@ -1683,7 +1678,7 @@ export default function DashboardPage() {
           onOpenChange={setShowAddCustomerDialog}
           onCustomerCreated={handleCustomerCreated}
           onError={(error) => {
-            toastError(tc('labels.error'), error);
+            // Error automatically handled by useGlobalErrorHandler
           }}
         />
 
@@ -1696,7 +1691,7 @@ export default function DashboardPage() {
           merchantId={String(user?.merchantId || user?.merchant?.id || 0)}
           onProductCreated={handleProductCreated}
           onError={(error) => {
-            toastError(tc('labels.error'), error);
+            // Error automatically handled by useGlobalErrorHandler
           }}
         />
       </PageContent>

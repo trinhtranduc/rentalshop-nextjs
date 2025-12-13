@@ -145,25 +145,12 @@ export const authenticatedFetch = async (
   url: string,
   options: RequestInit = {}
 ): Promise<Response> => {
-  console.log('🔍 FRONTEND: authenticatedFetch called with URL:', url);
-  console.log('🔍 FRONTEND: authenticatedFetch options:', options);
-  
-  // Input validation
   if (!url || typeof url !== 'string') {
-    console.log('🔍 FRONTEND: URL validation failed');
     throw new Error('URL is required and must be a string');
   }
 
-  // Get token from localStorage (client-side only) - CONSOLIDATED APPROACH
-  // getAuthToken() already handles expiration checking, no need to double-check here
   const token = getAuthToken();
-  
-  // Step 4: Defensive check - Improve error handling for missing token
   if (!token && typeof window !== 'undefined') {
-    console.error('🚨 FRONTEND: No token found in authenticatedFetch');
-    console.error('🚨 This may indicate a race condition after login');
-    console.error('🚨 URL:', url);
-    console.error('🚨 Check if token was stored properly after login');
     throw new Error('Authentication required - token not found. Please log in again.');
   }
   
@@ -197,85 +184,25 @@ export const authenticatedFetch = async (
     ...optionsHeaders,  // User-provided headers (merged before Authorization)
   };
   
-  // ALWAYS preserve Authorization header (set after merge to ensure it's never overridden)
+  // Set Authorization header
   if (token) {
     mergedHeaders[API.HEADERS.AUTHORIZATION] = `Bearer ${token}`;
-    console.log('🔍 FRONTEND: Authorization header set:', `Bearer ${token.substring(0, 20)}...`);
   }
   
-  console.log('🔍 FRONTEND: Final merged headers:', mergedHeaders);
-  console.log('🔍 FRONTEND: Authorization header in mergedHeaders:', mergedHeaders[API.HEADERS.AUTHORIZATION] ? 'PRESENT' : 'MISSING');
-  console.log('🔍 FRONTEND: API.HEADERS.AUTHORIZATION constant:', API.HEADERS.AUTHORIZATION);
-  
-  // Create request options WITHOUT headers in options to prevent override
-  // Remove headers from options before spreading to ensure merged headers are used
+  // Create request options
   const { headers: _unusedHeaders, ...optionsWithoutHeaders } = options;
   const defaultOptions: RequestInit = {
     method: API.METHODS.GET,
-    ...optionsWithoutHeaders,  // Spread options without headers
-    headers: mergedHeaders,  // Apply merged headers last (prevents override)
+    ...optionsWithoutHeaders,
+    headers: mergedHeaders,
   };
   
-  console.log('🔍 FRONTEND: Final request options:', defaultOptions);
-  console.log('🔍 FRONTEND: Headers in defaultOptions:', defaultOptions.headers);
-  
-  // Defensive check: Verify Authorization header is present
-  const finalHeaders = defaultOptions.headers as Record<string, string> | undefined;
-  if (token) {
-    const authHeaderKey = API.HEADERS.AUTHORIZATION;
-    const authHeaderValue = finalHeaders?.[authHeaderKey];
-    console.log('🔍 FRONTEND: Checking Authorization header:', {
-      authHeaderKey,
-      authHeaderValue: authHeaderValue ? `${authHeaderValue.substring(0, 20)}...` : 'MISSING',
-      allHeaderKeys: finalHeaders ? Object.keys(finalHeaders) : 'NO HEADERS'
-    });
-    
-    if (!finalHeaders || !authHeaderValue) {
-      console.error('🚨 FRONTEND: Authorization header missing in final request options!');
-      console.error('🚨 This should never happen - headers:', finalHeaders);
-      console.error('🚨 Token exists:', !!token);
-      console.error('🚨 Merged headers had Authorization:', !!mergedHeaders[API.HEADERS.AUTHORIZATION]);
-    }
-  }
-  
   try {
-    // SOLUTION 1: Log API URL being used for debugging
-    console.log('🔍 FRONTEND: Making fetch request to:', url);
-    console.log('🔍 FRONTEND: API Base URL check:', {
-      url,
-      isFullUrl: url.startsWith('http'),
-      NEXT_PUBLIC_API_URL: typeof window !== 'undefined' ? (window as any).__NEXT_PUBLIC_API_URL__ || process.env.NEXT_PUBLIC_API_URL : process.env.NEXT_PUBLIC_API_URL
-    });
-    console.log('🔍 FRONTEND: Request body:', options.body);
-    
-    // Final verification before making request
-    const requestHeadersBeforeFetch = defaultOptions.headers as Record<string, string> | undefined;
-    console.log('🔍 FRONTEND: Headers right before fetch:', requestHeadersBeforeFetch);
-    console.log('🔍 FRONTEND: Authorization header before fetch:', requestHeadersBeforeFetch?.[API.HEADERS.AUTHORIZATION] ? 'PRESENT' : 'MISSING');
-    
     const response = await fetch(url, defaultOptions);
-    console.log('🔍 FRONTEND: Response received:', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok,
-      url: response.url,
-      headers: Object.fromEntries(response.headers.entries())
-    });
     
-    // Handle subscription errors (402 Payment Required)
+    // Handle subscription errors (402) - return response for parseApiResponse
     if (response.status === API.STATUS.PAYMENT_REQUIRED) {
-      console.log('🔍 FRONTEND: 402 Payment Required response received (subscription error)');
-      
-      try {
-        const errorData = await response.clone().json();
-        console.log('🔍 FRONTEND: 402 Error details:', errorData);
-        
-        // Don't redirect to login for subscription errors - let the app handle it
-        throw new Error(errorData.message || 'Subscription issue detected');
-      } catch (parseError) {
-        console.log('🔍 FRONTEND: Could not parse 402 error response');
-        throw new Error('Subscription issue detected');
-      }
+      return response;
     }
     
     // Handle authentication errors (401 Unauthorized)
@@ -388,27 +315,8 @@ export const authenticatedFetch = async (
       throw new Error('Unauthorized access - redirecting to login');
     }
     
-    // Handle forbidden errors (403) - return response to let parseApiResponse handle it
-    // This preserves the error code structure for translation
+    // Handle forbidden errors (403) - return response for parseApiResponse
     if (response.status === API.STATUS.FORBIDDEN) {
-      console.log('🔍 FRONTEND: 403 Forbidden response received - returning response for parseApiResponse');
-      
-      // Log error data for debugging
-      try {
-        const errorData = await response.clone().json();
-        console.log('🔍 FRONTEND: 403 Error data:', {
-          hasCode: !!errorData.code,
-          code: errorData.code,
-          message: errorData.message,
-          error: errorData.error,
-          fullData: errorData
-        });
-      } catch (e) {
-        console.log('🔍 FRONTEND: Could not parse 403 error data:', e);
-      }
-      
-      // Don't throw here - let parseApiResponse handle the error structure
-      // This ensures error.code is preserved for translation
       return response;
     }
     
@@ -434,7 +342,28 @@ export const authenticatedFetch = async (
 
 
 /**
+ * Dispatch api-error event (single source of truth)
+ */
+function dispatchApiErrorEvent(result: ApiResponse, errorData?: any): void {
+  if (typeof window === 'undefined') return;
+  
+  window.dispatchEvent(new CustomEvent('api-error', {
+    detail: {
+      code: result.code,
+      message: result.message,
+      error: result.error,
+      fullError: { ...result, ...(errorData && { details: errorData.details, ...errorData }) }
+    }
+  }));
+}
+
+/**
  * Parse API response
+ * 
+ * ✅ SINGLE SOURCE OF TRUTH for:
+ * - Parsing API error responses
+ * - Dispatching api-error events
+ * - Standardizing error format
  * 
  * This function handles the nested API response structure:
  * API returns: { success: true, data: { ... }, message: "..." }
@@ -444,72 +373,31 @@ export const authenticatedFetch = async (
  * instead of response.data.data
  */
 export const parseApiResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
-  console.log('🔍 DEBUG: parseApiResponse called with status:', response.status);
-  console.log('🔍 DEBUG: Response OK:', response.ok);
-  console.log('🔍 DEBUG: Response URL:', response.url);
-  
-  // Subscription status checking is now handled in authenticatedFetch
-  
   if (!response.ok) {
-    console.error('❌ DEBUG: parseApiResponse - Response not OK, status:', response.status);
-    console.error('❌ DEBUG: parseApiResponse - Response statusText:', response.statusText);
-    console.error('❌ DEBUG: parseApiResponse - Response URL:', response.url);
-    
-    // Handle unauthorized responses by redirecting to login
+    // Handle unauthorized - redirect to login
     if (response.status === API.STATUS.UNAUTHORIZED) {
-      // Enhanced logging with stack trace to identify which API call failed
-      const stackTrace = new Error().stack;
-      console.error('🚨 parseApiResponse: 401 Unauthorized response received');
-      console.error('🚨 Response URL:', response.url);
-      console.error('🚨 Stack trace:', stackTrace);
-      
-      // Try to get response body for more details
-      let responseBody = '';
-      try {
-        responseBody = await response.clone().text();
-        console.error('🚨 Response body:', responseBody);
-      } catch (e) {
-        console.error('🚨 Could not read response body:', e);
-      }
-      
       if (typeof window !== 'undefined') {
-        console.error('🚨 parseApiResponse: 401 Unauthorized - logging out user');
-        console.error('🚨 This will trigger auto-redirect to login page!');
-        
         clearAuthData();
-        // Immediate redirect on 401 error
-        console.error('🚨 DEBUG: parseApiResponse - REDIRECTING TO LOGIN PAGE NOW!');
         window.location.href = '/login';
       }
       throw new Error('Unauthorized access - redirecting to login');
     }
     
+    // Parse error response
     const errorText = await response.text();
-    console.log('🔍 parseApiResponse: Error response text:', errorText);
-    console.log('🔍 parseApiResponse: Response status:', response.status);
     
     try {
       const errorData = JSON.parse(errorText);
-      console.log('🔍 parseApiResponse: Parsed error data:', errorData);
-      console.log('🔍 parseApiResponse: Error data has code?', !!errorData.code, 'code:', errorData.code);
       
-      // ✅ STANDARD FORMAT: { success: false, code: "...", message: "...", error: "..." }
-      // Single source of truth: ResponseBuilder.error() format
+      // Standard error format
       if (errorData.success === false) {
         const result: ApiResponse = {
           success: false,
-          code: errorData.code || 'INTERNAL_SERVER_ERROR', // Required for translation
+          code: errorData.code || 'INTERNAL_SERVER_ERROR',
           message: errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
           error: errorData.error || errorData.message || errorData.code || 'INTERNAL_SERVER_ERROR',
         };
-        console.log('🔍 parseApiResponse: Returning standardized error:', {
-          hasCode: !!result.code,
-          code: result.code,
-          message: result.message,
-          error: result.error,
-          fullResult: result
-        });
-        console.log('🔍 parseApiResponse: Return type check - is ApiResponse?', result.success === false && 'code' in result);
+        dispatchApiErrorEvent(result, errorData);
         return result;
       }
       
@@ -520,17 +408,17 @@ export const parseApiResponse = async <T>(response: Response): Promise<ApiRespon
         message: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
         error: errorData.error || 'INTERNAL_SERVER_ERROR',
       };
-      console.log('🔍 parseApiResponse: Returning fallback error:', result);
+      dispatchApiErrorEvent(result, errorData);
       return result;
     } catch {
-      console.log('🔍 parseApiResponse: Failed to parse error JSON, using fallback');
+      // Failed to parse JSON
       const result: ApiResponse = {
         success: false,
         code: 'INTERNAL_SERVER_ERROR',
         message: `HTTP ${response.status}: ${response.statusText}`,
         error: 'INTERNAL_SERVER_ERROR',
       };
-      console.log('🔍 parseApiResponse: Returning fallback error:', result);
+      dispatchApiErrorEvent(result);
       return result;
     }
   }

@@ -5302,20 +5302,24 @@ function useSubscriptionError() {
   const [error, setError] = useState6(null);
   const { addToast } = useToasts();
   const handleSubscriptionError = useCallback9((error2) => {
-    console.error("Subscription error:", error2);
-    if (error2?.error === "SUBSCRIPTION_ERROR" || error2?.code === "SUBSCRIPTION_REQUIRED") {
-      const subscriptionError = {
-        message: error2.message || "Subscription error occurred",
-        subscriptionStatus: error2.subscriptionStatus,
-        merchantStatus: error2.merchantStatus,
-        code: error2.code
-      };
-      setError(subscriptionError);
-      showSubscriptionError(subscriptionError);
-    } else {
-      addToast("error", "Error", error2?.message || "An error occurred");
-    }
-  }, [addToast]);
+    const errorCode = error2?.code || error2?.response?.data?.code || error2?.error?.code;
+    const statusMap = {
+      "SUBSCRIPTION_CANCELLED": "cancelled",
+      "SUBSCRIPTION_EXPIRED": "expired",
+      "SUBSCRIPTION_PAUSED": "paused",
+      "SUBSCRIPTION_PAST_DUE": "past_due",
+      "TRIAL_EXPIRED": "expired"
+    };
+    const subscriptionStatus = statusMap[errorCode] || error2?.subscriptionStatus || error2?.details?.status;
+    const subscriptionError = {
+      message: error2.message || error2?.response?.data?.message || "Subscription error occurred",
+      subscriptionStatus,
+      merchantStatus: error2.merchantStatus || error2?.details?.merchantStatus,
+      code: errorCode
+    };
+    setError(subscriptionError);
+    showSubscriptionError(subscriptionError);
+  }, []);
   const showSubscriptionError = useCallback9((error2) => {
     const { subscriptionStatus, merchantStatus } = error2;
     let message = error2.message;
@@ -5352,7 +5356,7 @@ ${action}` : message, 8e3);
 }
 
 // src/hooks/useThrottledSearch.ts
-import { useState as useState7, useEffect as useEffect5, useCallback as useCallback10, useRef as useRef2 } from "react";
+import { useState as useState7, useEffect as useEffect6, useCallback as useCallback10, useRef as useRef2 } from "react";
 function useThrottledSearch(options) {
   const { delay, minLength, onSearch } = options;
   const [query, setQuery] = useState7("");
@@ -5361,7 +5365,7 @@ function useThrottledSearch(options) {
   const isSearchingRef = useRef2(false);
   const isInitialRender = useRef2(true);
   const onSearchRef = useRef2(onSearch);
-  useEffect5(() => {
+  useEffect6(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
   const handleSearchChange = useCallback10((value) => {
@@ -5409,7 +5413,7 @@ function useThrottledSearch(options) {
       clearTimeout(timeoutRef.current);
     }
   }, []);
-  useEffect5(() => {
+  useEffect6(() => {
     isInitialRender.current = false;
     return cleanup;
   }, [cleanup]);
@@ -5424,97 +5428,10 @@ function useThrottledSearch(options) {
 }
 
 // src/hooks/useToast.ts
-import { useState as useState8, useCallback as useCallback11 } from "react";
-import {
-  withErrorHandlingForUI
-} from "@rentalshop/utils";
+import { useCallback as useCallback11 } from "react";
 import { useToasts as useToasts2 } from "@rentalshop/ui";
-var useErrorHandler = (options = {}) => {
-  const {
-    onLogin,
-    onRetry,
-    onDismiss,
-    autoHandleAuth = true
-  } = options;
-  const [isLoading, setIsLoading] = useState8(false);
-  const { addToast } = useToasts2();
-  const { translateError } = useApiError();
-  const handleError = useCallback11((error) => {
-    const errorCode = error?.code || error?.response?.data?.code;
-    return {
-      type: "unknown",
-      message: errorCode || "UNKNOWN_ERROR",
-      title: "Error",
-      showLoginButton: false,
-      originalError: error
-    };
-  }, []);
-  const showErrorToast = useCallback11((error) => {
-    const translatedMessage = translateError(error);
-    const errorCode = error?.code || error?.response?.data?.code;
-    let toastType = "error";
-    if (errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode?.includes("SUBSCRIPTION")) {
-      toastType = "warning";
-    }
-    addToast(toastType, "L\u1ED7i", translatedMessage, 0);
-  }, [addToast, translateError]);
-  const handleApiCall = useCallback11(async (apiCall) => {
-    setIsLoading(true);
-    try {
-      const result = await withErrorHandlingForUI(apiCall);
-      if (result.error) {
-        showErrorToast(result.error);
-      }
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showErrorToast]);
-  const retry = useCallback11(() => {
-    if (onRetry) {
-      onRetry();
-    }
-  }, [onRetry]);
-  const login = useCallback11(() => {
-    if (onLogin) {
-      onLogin();
-    } else if (typeof window !== "undefined") {
-    }
-  }, [onLogin]);
-  return {
-    isLoading,
-    handleError,
-    handleApiCall,
-    retry,
-    login,
-    showErrorToast
-  };
-};
-var useSimpleErrorHandler = () => {
-  const { addToast } = useToasts2();
-  const { translateError } = useApiError();
-  const handleError = useCallback11((error) => {
-    const translatedMessage = translateError(error);
-    const errorCode = error?.code || error?.response?.data?.code;
-    let toastType = "error";
-    if (errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode?.includes("SUBSCRIPTION")) {
-      toastType = "warning";
-    }
-    addToast(toastType, "L\u1ED7i", translatedMessage, 0);
-    return {
-      type: toastType,
-      message: translatedMessage,
-      code: errorCode
-    };
-  }, [addToast, translateError]);
-  return {
-    handleError
-  };
-};
 var useToastHandler = () => {
   const { addToast } = useToasts2();
-  const { translateError } = useApiError();
-  const t3 = useCommonTranslations();
   const showError = useCallback11((title, message) => {
     addToast("error", title, message, 0);
   }, [addToast]);
@@ -5527,37 +5444,11 @@ var useToastHandler = () => {
   const showInfo = useCallback11((title, message) => {
     addToast("info", title, message, 5e3);
   }, [addToast]);
-  const handleError = useCallback11((error) => {
-    console.log("\u{1F50D} useToastHandler.handleError called with:", {
-      type: typeof error,
-      isError: error instanceof Error,
-      hasCode: !!error?.code,
-      code: error?.code,
-      hasMessage: !!error?.message,
-      message: error?.message,
-      hasSuccess: error?.success !== void 0,
-      success: error?.success,
-      fullError: error
-    });
-    const translatedMessage = translateError(error);
-    console.log("\u{1F50D} useToastHandler.handleError: Translated message:", translatedMessage);
-    const errorCode = error?.code || error?.response?.data?.code;
-    let toastType = "error";
-    let title = t3("labels.error");
-    console.log("\u{1F50D} useToastHandler.handleError: Showing toast:", { type: toastType, title, message: translatedMessage, code: errorCode });
-    addToast(toastType, title, translatedMessage, 0);
-    return {
-      type: toastType,
-      message: translatedMessage,
-      code: errorCode
-    };
-  }, [addToast, translateError, t3]);
   return {
     showError,
     showSuccess,
     showWarning,
-    showInfo,
-    handleError
+    showInfo
   };
 };
 
@@ -5705,14 +5596,14 @@ function useUsersData(options) {
 }
 
 // src/hooks/useOptimisticNavigation.ts
-import { useState as useState9, useCallback as useCallback12, useEffect as useEffect6, useTransition as useTransition2 } from "react";
+import { useState as useState8, useCallback as useCallback12, useEffect as useEffect7, useTransition as useTransition2 } from "react";
 import { usePathname as usePathname5, useRouter as useRouter2 } from "next/navigation";
 function useOptimisticNavigation() {
-  const [navigatingTo, setNavigatingTo] = useState9(null);
+  const [navigatingTo, setNavigatingTo] = useState8(null);
   const [isPending, startTransition] = useTransition2();
   const pathname = usePathname5();
   const router = useRouter2();
-  useEffect6(() => {
+  useEffect7(() => {
     if (navigatingTo && pathname === navigatingTo) {
       const timer = setTimeout(() => {
         setNavigatingTo(null);
@@ -5733,6 +5624,38 @@ function useOptimisticNavigation() {
     isPending,
     prefetch
   };
+}
+
+// src/hooks/useGlobalErrorHandler.ts
+import { useEffect as useEffect8 } from "react";
+import { useToasts as useToasts3 } from "@rentalshop/ui";
+function useGlobalErrorHandler() {
+  const { addToast } = useToasts3();
+  const { translateError } = useApiError();
+  const subscriptionErrorHook = useSubscriptionError();
+  useEffect8(() => {
+    const handleApiError = (event) => {
+      const { code, message, error: errorData, fullError } = event.detail;
+      const errorCode = code || errorData;
+      const isSubscriptionError = errorCode === "SUBSCRIPTION_CANCELLED" || errorCode === "SUBSCRIPTION_EXPIRED" || errorCode === "SUBSCRIPTION_PAUSED" || errorCode === "SUBSCRIPTION_PAST_DUE" || errorCode === "TRIAL_EXPIRED" || errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode && typeof errorCode === "string" && errorCode.includes("SUBSCRIPTION");
+      if (isSubscriptionError) {
+        subscriptionErrorHook.handleSubscriptionError(fullError || { code: errorCode, message });
+        return;
+      }
+      const translatedMessage = translateError({
+        code: errorCode,
+        message: message || errorData,
+        success: false,
+        error: errorData
+      });
+      const toastType = errorCode === "VALIDATION_ERROR" || errorCode?.includes("INVALID") ? "warning" : "error";
+      addToast(toastType, "Error", translatedMessage, 0);
+    };
+    window.addEventListener("api-error", handleApiError);
+    return () => {
+      window.removeEventListener("api-error", handleApiError);
+    };
+  }, [addToast, translateError, subscriptionErrorHook]);
 }
 
 // src/hooks/useFiltersData.ts
@@ -5907,8 +5830,8 @@ export {
   useCustomersData,
   useDashboardTranslations,
   useDedupedApi,
-  useErrorHandler,
   useErrorTranslations,
+  useGlobalErrorHandler,
   useLocale,
   useMerchantsData,
   useOptimisticNavigation,
@@ -5926,7 +5849,6 @@ export {
   useProductTranslations,
   useProductsData,
   useSettingsTranslations,
-  useSimpleErrorHandler,
   useSubscriptionError,
   useSubscriptionStatusInfo,
   useSubscriptionTranslations,

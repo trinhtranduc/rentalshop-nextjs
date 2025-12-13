@@ -48,7 +48,7 @@ export default function EditOrderPage() {
   const [merchantId, setMerchantId] = useState<string>('');
 
   // Toast notifications
-  const { toastSuccess, toastError, removeToast } = useToast();
+  const { toastSuccess, removeToast } = useToast();
 
   const orderId = params.id as string;
   
@@ -295,7 +295,7 @@ export default function EditOrderPage() {
       }
     } catch (err) {
       console.error('Error updating order:', err);
-      toastError(t('messages.failedToUpdateOrder') + ': ' + (err instanceof Error ? err.message : t('messages.unknownError')));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setActionLoading(false);
     }

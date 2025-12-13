@@ -31,7 +31,7 @@ export default function ProductViewPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError, removeToast } = useToast();
+  const { toastSuccess, removeToast } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   
@@ -99,7 +99,7 @@ export default function ProductViewPage() {
       router.push('/products');
     } catch (err) {
       console.error('Error deleting product:', err);
-      toastError(tc('labels.error'), t('messages.deleteFailed'));
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);

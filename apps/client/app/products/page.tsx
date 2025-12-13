@@ -23,7 +23,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations, useToastHandler } from '@rentalshop/hooks';
+import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import type { ProductFilters, Product, ProductWithDetails, ProductUpdateInput, Category, Outlet } from '@rentalshop/types';
@@ -59,8 +59,7 @@ export default function ProductsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError } = useToast();
-  const { handleError } = useToastHandler();
+  const { toastSuccess } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
@@ -228,11 +227,10 @@ export default function ProductsPage() {
             console.log('📦 Images:', response.data.images);
             setSelectedProduct(response.data as ProductWithDetails);
             setShowDetailDialog(true);
-          } else {
-            toastError(tc('labels.error'), t('messages.updateFailed'));
           }
+          // Error automatically handled by useGlobalErrorHandler
         } catch (error) {
-            toastError(tc('labels.error'), (error as Error).message);
+          // Error automatically handled by useGlobalErrorHandler
         }
         break;
         
@@ -243,11 +241,10 @@ export default function ProductsPage() {
           if (response.success && response.data) {
             setSelectedProduct(response.data as ProductWithDetails);
             setShowEditDialog(true);
-          } else {
-            toastError(tc('labels.error'), t('messages.updateFailed'));
           }
+          // Error automatically handled by useGlobalErrorHandler
         } catch (error) {
-            toastError(tc('labels.error'), (error as Error).message);
+          // Error automatically handled by useGlobalErrorHandler
         }
         break;
         
@@ -269,11 +266,10 @@ export default function ProductsPage() {
                 t('messages.updateSuccess')
               );
               refetch();
-            } else {
-              throw new Error(response.error || t('messages.updateFailed'));
             }
+            // Error automatically handled by useGlobalErrorHandler
           } catch (error) {
-            toastError(t('messages.updateFailed'), (error as Error).message);
+            // Error automatically handled by useGlobalErrorHandler
           }
         }
         break;
@@ -289,7 +285,7 @@ export default function ProductsPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.products, router, toastSuccess, toastError, refetch]);
+  }, [data?.products, router, toastSuccess, refetch]);
   
   // Handle product update from edit dialog
   const handleProductUpdate = useCallback(async (productData: ProductUpdateInput) => {
@@ -302,14 +298,13 @@ export default function ProductsPage() {
         setShowEditDialog(false);
         setSelectedProduct(null);
         refetch();
-      } else {
-        throw new Error(response.error || t('messages.updateFailed'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
-      toastError(t('messages.updateFailed'), (error as Error).message);
+      // Error automatically handled by useGlobalErrorHandler
       throw error;
     }
-  }, [selectedProduct, router, toastSuccess, toastError, refetch]);
+  }, [selectedProduct, toastSuccess, refetch, t]);
   
   // Handle delete confirmation
   const handleConfirmDelete = useCallback(async () => {
@@ -322,13 +317,12 @@ export default function ProductsPage() {
         setShowDeleteConfirm(false);
         setProductToDelete(null);
         refetch();
-      } else {
-        throw new Error(response.error || t('messages.deleteFailed'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
-        toastError(t('messages.deleteFailed'), (error as Error).message);
+      // Error automatically handled by useGlobalErrorHandler
     }
-  }, [productToDelete, router, toastSuccess, toastError, refetch]);
+  }, [productToDelete, toastSuccess, refetch, t]);
 
   // Handle product creation from add dialog
   const handleProductCreated = useCallback(async (productData: any) => {
@@ -339,27 +333,13 @@ export default function ProductsPage() {
         toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
         setShowAddDialog(false);
         refetch();
-      } else {
-        // Pass the full response object so translateError can use the code field
-        console.log('🔍 page.tsx: Throwing response object (not Error):', response);
-        throw response;
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error: any) {
-      console.error('🔍 page.tsx: Error caught:', {
-        type: typeof error,
-        isError: error instanceof Error,
-        hasCode: !!error?.code,
-        code: error?.code,
-        message: error?.message,
-        success: error?.success,
-        fullError: error
-      });
-      // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
-      // This automatically translates error.code and shows toast
-      handleError(error);
+      // Error automatically handled by useGlobalErrorHandler
       throw error; // Re-throw to let dialog handle it
     }
-  }, [toastSuccess, handleError, refetch, t]);
+  }, [toastSuccess, refetch, t]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -574,7 +554,7 @@ export default function ProductsPage() {
             toastSuccess(tc('labels.success'), 'Export completed successfully');
             setShowExportDialog(false);
           } catch (error) {
-            toastError(tc('labels.error'), (error as Error).message || 'Failed to export products');
+            // Error automatically handled by useGlobalErrorHandler
           } finally {
             setIsExporting(false);
           }

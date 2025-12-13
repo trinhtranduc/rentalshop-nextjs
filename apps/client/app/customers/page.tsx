@@ -18,7 +18,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useCustomersData, useCanExportData, useCustomerTranslations, useCommonTranslations, useToastHandler } from '@rentalshop/hooks';
+import { useAuth, useCustomersData, useCanExportData, useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { customersApi } from '@rentalshop/utils';
 import type { CustomerFilters, Customer, CustomerUpdateInput } from '@rentalshop/types';
 
@@ -39,8 +39,7 @@ export default function CustomersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastError } = useToast();
-  const { handleError } = useToastHandler();
+  const { toastSuccess } = useToast();
   const t = useCustomerTranslations();
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
@@ -200,7 +199,7 @@ export default function CustomersPage() {
       default:
         console.log('Unknown action:', action);
     }
-  }, [data?.customers, router, toastSuccess, toastError]);
+  }, [data?.customers, router, toastSuccess]);
   
   // Handle customer update from edit dialog
   const handleCustomerUpdate = useCallback(async (customerData: CustomerUpdateInput) => {
@@ -213,14 +212,13 @@ export default function CustomersPage() {
         setShowEditDialog(false);
         setSelectedCustomer(null);
         refetch();
-      } else {
-        throw new Error(response.error || t('messages.updateFailed'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
-        toastError(t('messages.updateFailed'), (error as Error).message);
+      // Error automatically handled by useGlobalErrorHandler
       throw error;
     }
-  }, [selectedCustomer, router, toastSuccess, toastError, refetch]);
+  }, [selectedCustomer, toastSuccess, refetch, t]);
   
   // Handle delete confirmation
   const handleConfirmDelete = useCallback(async () => {
@@ -233,13 +231,12 @@ export default function CustomersPage() {
         setShowDeleteConfirm(false);
         setCustomerToDelete(null);
         refetch();
-      } else {
-        throw new Error(response.error || t('messages.deleteFailed'));
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (error) {
-        toastError(t('messages.deleteFailed'), (error as Error).message);
+      // Error automatically handled by useGlobalErrorHandler
     }
-  }, [customerToDelete, router, toastSuccess, toastError, refetch]);
+  }, [customerToDelete, toastSuccess, refetch, t]);
 
   // ============================================================================
   // TRANSFORM DATA FOR UI
@@ -368,24 +365,10 @@ export default function CustomersPage() {
             if (response.success) {
               toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
               refetch();
-            } else {
-              // Pass the full response object so translateError can use the code field
-              console.log('🔍 page.tsx: Throwing response object (not Error):', response);
-              throw response;
             }
+            // Error automatically handled by useGlobalErrorHandler
           } catch (error: any) {
-            console.error('🔍 page.tsx: Error caught:', {
-              type: typeof error,
-              isError: error instanceof Error,
-              hasCode: !!error?.code,
-              code: error?.code,
-              message: error?.message,
-              success: error?.success,
-              fullError: error
-            });
-            // ✅ SIMPLE: Use handleError from useToastHandler to translate and show toast
-            // This automatically translates error.code and shows toast
-            handleError(error);
+            // Error automatically handled by useGlobalErrorHandler
             throw error; // Re-throw to let dialog handle it
           }
         }}
@@ -408,7 +391,7 @@ export default function CustomersPage() {
           customer={selectedCustomer}
           onCustomerUpdated={handleCustomerUpdate}
           onError={(error) => {
-            toastError(tc('labels.error'), error);
+            // Error automatically handled by useGlobalErrorHandler
           }}
         />
       )}
@@ -453,7 +436,7 @@ export default function CustomersPage() {
             toastSuccess(tc('labels.success'), 'Export completed successfully');
             setShowExportDialog(false);
           } catch (error) {
-            toastError(tc('labels.error'), (error as Error).message || 'Failed to export customers');
+            // Error automatically handled by useGlobalErrorHandler
           } finally {
             setIsExporting(false);
           }

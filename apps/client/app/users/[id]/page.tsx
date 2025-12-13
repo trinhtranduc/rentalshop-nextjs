@@ -22,15 +22,14 @@ import {
   Key
 } from 'lucide-react';
 import { usersApi } from "@rentalshop/utils";
-import { useAuth, useSimpleErrorHandler, useCommonTranslations, useUsersTranslations } from '@rentalshop/hooks';
+import { useAuth, useCommonTranslations, useUsersTranslations } from '@rentalshop/hooks';
 import type { User, UserUpdateInput } from '@rentalshop/ui';
 
 export default function UserPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { handleError } = useSimpleErrorHandler();
-  const { toastSuccess, toastError, removeToast } = useToast();
+  const { toastSuccess, removeToast } = useToast();
   const t = useCommonTranslations();
   const tu = useUsersTranslations();
   const userId = params.id as string;
@@ -82,7 +81,7 @@ export default function UserPage() {
         
       } catch (error) {
         console.error('❌ UserPage: Error fetching user:', error);
-        handleError(error);
+        // Error automatically handled by useGlobalErrorHandler
         // Show error state
         setUserData(null);
       } finally {
@@ -112,7 +111,7 @@ export default function UserPage() {
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
-      handleError(error);
+      // Error automatically handled by useGlobalErrorHandler
     }
   };
 
@@ -121,7 +120,7 @@ export default function UserPage() {
   };
 
   const handlePasswordChangeError = (errorMessage: string) => {
-    toastError(t('messages.updateFailed'), errorMessage);
+    // Error automatically handled by useGlobalErrorHandler
   };
 
   const handleEdit = () => {
@@ -160,17 +159,11 @@ export default function UserPage() {
         
         // Show success message
         toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
-      } else {
-        console.error('❌ UserPage: API error:', response.error);
-        toastError(t('messages.updateFailed'), response.error || t('messages.updateFailed'));
-        throw new Error(response.error || 'Failed to update user');
       }
-      
+      // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
       console.error('❌ UserPage: Error updating user:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while updating the user';
-      toastError('Update Failed', errorMessage);
-      // Don't re-throw - let toast handle the error display
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setIsUpdating(false);
     }
@@ -187,12 +180,11 @@ export default function UserPage() {
         // Refresh user data
         await refreshUserData();
         toastSuccess(tu('messages.activateSuccess'), tu('messages.activateSuccess'));
-      } else {
-        toastError('Activation Failed', response.error || 'Failed to activate user');
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
       console.error('Error activating user:', err);
-      toastError('Activation Failed', 'An error occurred while activating the user');
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setIsUpdating(false);
     }
@@ -217,12 +209,11 @@ export default function UserPage() {
         await refreshUserData();
         toastSuccess(tu('messages.deactivateSuccess'), tu('messages.deactivateSuccess'));
         setShowDeactivateConfirm(false);
-      } else {
-        toastError('Deactivation Failed', response.error || 'Failed to deactivate user');
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
       console.error('Error deactivating user:', err);
-      toastError('Deactivation Failed', 'An error occurred while deactivating the user');
+      // Error automatically handled by useGlobalErrorHandler
     } finally{
       setIsUpdating(false);
     }
@@ -238,12 +229,11 @@ export default function UserPage() {
       if (response.success) {
         toastSuccess('User Deleted', 'User account has been deleted successfully!');
         router.push('/users');
-      } else {
-        toastError('Deletion Failed', response.error || 'Failed to delete user');
       }
+      // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
       console.error('Error deleting user:', err);
-      toastError('Deletion Failed', 'An error occurred while deleting the user');
+      // Error automatically handled by useGlobalErrorHandler
     } finally {
       setIsUpdating(false);
       setShowDeleteConfirm(false);

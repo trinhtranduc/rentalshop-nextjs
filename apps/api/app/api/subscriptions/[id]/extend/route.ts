@@ -9,18 +9,28 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
- * POST /api/subscriptions/extend - Extend subscription
+ * POST /api/subscriptions/[id]/extend - Extend subscription
  * Requires: ADMIN role
  */
 async function handleExtendSubscription(
   request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } },
   { user }: { user: any; userScope: any }
 ) {
   try {
+    // Resolve params (handle both Promise and direct object)
+    const resolvedParams = await Promise.resolve(params);
+    const subscriptionId = parseInt(resolvedParams.id);
+
+    if (isNaN(subscriptionId)) {
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_SUBSCRIPTION_ID'),
+        { status: 400 }
+      );
+    }
 
     const body = await request.json();
     const { 
-      subscriptionId, 
       newEndDate, 
       amount, 
       method = 'MANUAL_EXTENSION',
@@ -28,7 +38,7 @@ async function handleExtendSubscription(
     } = body;
 
     // Validate required fields
-    if (!subscriptionId || !newEndDate || amount === undefined) {
+    if (!newEndDate || amount === undefined) {
       return NextResponse.json(
         ResponseBuilder.error('SUBSCRIPTION_END_DATE_REQUIRED'),
         { status: 400 }
@@ -59,7 +69,7 @@ async function handleExtendSubscription(
       );
     }
 
-    // TODO: Implement subscription extension using simplified database API
+    // Get subscription
     const subscription = await db.subscriptions.findById(subscriptionId);
     
     if (!subscription) {
@@ -110,12 +120,9 @@ async function handleExtendSubscription(
       performedBy: user.userId || user.id
     });
 
-    return NextResponse.json({
-      success: true,
-      data: extendedSubscription,
-      code: 'SUBSCRIPTION_EXTENDED_SUCCESS',
-      message: `Subscription extended until ${endDate.toISOString().split('T')[0]}`
-    });
+    return NextResponse.json(
+      ResponseBuilder.success('SUBSCRIPTION_EXTENDED_SUCCESS', extendedSubscription)
+    );
   } catch (error) {
     console.error('Error extending subscription:', error);
     // Use unified error handling system
@@ -124,6 +131,12 @@ async function handleExtendSubscription(
   }
 }
 
-export const POST = withAuthRoles(['ADMIN'])((req, context) => 
-  handleExtendSubscription(req, context)
-);
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  return withAuthRoles(['ADMIN'])(async (request, context) => {
+    return handleExtendSubscription(request, { params }, context);
+  })(request);
+}
+
