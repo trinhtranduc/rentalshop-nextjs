@@ -128,15 +128,23 @@ export async function POST(request: NextRequest) {
           tenantKey
         });
         
-        const merchant = await tx.merchant.create({
-          data: {
-            name: validatedData.businessName!,
-            email: validatedData.email,
-            phone: validatedData.phone,
-            // New tenantKey field (used for future multi-tenant routing)
-            tenantKey,
-            address: validatedData.address,
-            city: validatedData.city,
+        // Create merchant with retry logic for tenant key uniqueness
+        // Handle race condition: if tenant key was taken between check and create, retry
+        let merchant;
+        let finalTenantKey = tenantKey;
+        const maxRetries = 5;
+        
+        for (let retry = 0; retry < maxRetries; retry++) {
+          try {
+            merchant = await tx.merchant.create({
+              data: {
+                name: validatedData.businessName!,
+                email: validatedData.email,
+                phone: validatedData.phone,
+                // New tenantKey field (used for future multi-tenant routing)
+                tenantKey: finalTenantKey,
+                address: validatedData.address,
+                city: validatedData.city,
             state: validatedData.state,
             zipCode: validatedData.zipCode,
             country: validatedData.country,
@@ -174,6 +182,37 @@ export async function POST(request: NextRequest) {
             ),
           } as any,
         });
+            break; // Success, exit retry loop
+          } catch (error: any) {
+            // Check if error is due to unique constraint violation on tenantKey
+            if (error?.code === 'P2002' && error?.meta?.target?.includes('tenantKey')) {
+              console.log(`⚠️ Tenant key "${finalTenantKey}" collision detected, generating new one...`);
+              
+              // Generate new unique tenant key
+              finalTenantKey = await generateUniqueTenantKey(
+                validatedData.businessName || 'merchant',
+                async (key: string) => {
+                  const found = await tx.merchant.findUnique({
+                    where: { tenantKey: key }
+                  });
+                  return !!found;
+                }
+              );
+              
+              if (retry === maxRetries - 1) {
+                throw new Error(`Failed to create merchant after ${maxRetries} retries due to tenant key conflicts`);
+              }
+              continue; // Retry with new tenant key
+            }
+            
+            // Re-throw if it's not a tenant key conflict
+            throw error;
+          }
+        }
+        
+        if (!merchant) {
+          throw new Error('Failed to create merchant');
+        }
 
         console.log('✅ Step 1 Complete: Merchant created:', { id: merchant.id, name: merchant.name });
 

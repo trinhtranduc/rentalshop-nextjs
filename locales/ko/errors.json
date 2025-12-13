@@ -1,0 +1,5 @@
+{
+  "_comment": "Error codes for API responses - Korean version",
+  "MERCHANT_DUPLICATE": "이 이메일 또는 전화번호를 가진 사업자가 이미 존재합니다. 다른 이메일 또는 전화번호를 사용해주세요."
+}
+

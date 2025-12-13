@@ -190,19 +190,58 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         console.log(`✅ Generated unique tenant key: "${tenantKey}"`);
       }
 
-      // Create new merchant
-      const merchant = await tx.merchant.create({
-        data: {
-          name,
-          email,
-          phone,
-          address,
-          planId,
-          businessType: businessType || 'GENERAL',
-          pricingConfig: JSON.stringify(pricingConfig),
-          ...(tenantKey ? { tenantKey } : {})
+      // Create new merchant with retry logic for tenant key uniqueness
+      // Handle race condition: if tenant key was taken between check and create, retry
+      let merchant;
+      let finalTenantKey = tenantKey;
+      const maxRetries = 5;
+      
+      for (let retry = 0; retry < maxRetries; retry++) {
+        try {
+          merchant = await tx.merchant.create({
+            data: {
+              name,
+              email,
+              phone,
+              address,
+              planId,
+              businessType: businessType || 'GENERAL',
+              pricingConfig: JSON.stringify(pricingConfig),
+              ...(finalTenantKey ? { tenantKey: finalTenantKey } : {})
+            }
+          });
+          break; // Success, exit retry loop
+        } catch (error: any) {
+          // Check if error is due to unique constraint violation on tenantKey
+          if (error?.code === 'P2002' && error?.meta?.target?.includes('tenantKey')) {
+            console.log(`⚠️ Tenant key "${finalTenantKey}" collision detected, generating new one...`);
+            
+            // Generate new unique tenant key
+            const { generateUniqueTenantKey } = await import('@rentalshop/utils');
+            finalTenantKey = await generateUniqueTenantKey(
+              name || 'merchant',
+              async (key: string) => {
+                const found = await tx.merchant.findUnique({
+                  where: { tenantKey: key }
+                });
+                return !!found;
+              }
+            );
+            
+            if (retry === maxRetries - 1) {
+              throw new Error(`Failed to create merchant after ${maxRetries} retries due to tenant key conflicts`);
+            }
+            continue; // Retry with new tenant key
+          }
+          
+          // Re-throw if it's not a tenant key conflict
+          throw error;
         }
-      });
+      }
+      
+      if (!merchant) {
+        throw new Error('Failed to create merchant');
+      }
 
       // Create default outlet for the merchant
       const defaultOutlet = await tx.outlet.create({

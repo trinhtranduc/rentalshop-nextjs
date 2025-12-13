@@ -462,10 +462,10 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
         {/* Header */}
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 {t('orderDetails')} #{order.orderNumber}
@@ -474,7 +474,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                 {t('detail.viewAndManage')}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {/* Order Type Badge */}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">{t('orderType.label')}:</span>
@@ -497,8 +497,9 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
           </div>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-screen">
+        {/* Main Content Grid - Fixed overflow issue */}
+        <div className="w-full overflow-x-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-w-0">
           {/* Left Column - Order Information & Products (2/3 width) */}
           <div className="lg:col-span-2 space-y-4">
             {/* Order Information Card - Using new component with translations */}
@@ -535,6 +536,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
               onStartEdit={() => setIsEditingSettings(true)}
               collateralTypes={COLLATERAL_TYPES}
                       />
+                    </div>
                     </div>
                     </div>
 
