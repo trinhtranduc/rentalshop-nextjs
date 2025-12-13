@@ -10,10 +10,10 @@ export interface JWTPayload {
   role: string;
   merchantId?: number | null;  // Optional merchant ID for merchant/outlet users
   outletId?: number | null;    // Optional outlet ID for outlet users
-  planName?: string;            // Plan name for platform access control (e.g., 'Basic', 'Premium', 'Enterprise')
   sessionId?: string;           // Session ID for single session enforcement
   passwordChangedAt?: number | null;  // Timestamp when password was last changed (to invalidate old tokens)
   permissionsChangedAt?: number | null;  // Timestamp when permissions were last changed (to invalidate old tokens)
+  // Note: planName and allowWebAccess removed - fetch from DB when needed to keep JWT small
 }
 
 export const generateToken = (payload: JWTPayload): string => {
@@ -43,10 +43,10 @@ export const verifyTokenSimple = async (token: string) => {
       role: payload.role,
       merchantId: payload.merchantId ?? null,
       outletId: payload.outletId ?? null,
-      planName: payload.planName,
       sessionId: payload.sessionId,
       passwordChangedAt: payload.passwordChangedAt ?? null, // Include passwordChangedAt for validation
       permissionsChangedAt: payload.permissionsChangedAt ?? null, // Include permissionsChangedAt for validation
+      // Note: planName and allowWebAccess removed - fetch from DB when needed
     };
   } catch (error) {
     console.error('❌ JWT: Token verification failed:', error);
