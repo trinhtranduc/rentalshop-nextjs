@@ -150,8 +150,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get merchant's active subscription plan (for platform access control)
-    let planName = 'Basic'; // Default plan
-    let allowWebAccess = true; // Default to true for ADMIN users or when no subscription
+    // Note: planName and allowWebAccess are NOT included in JWT to keep token small
+    // They will be fetched from DB in middleware when needed
     let merchantData = null; // MerchantReference | null
     let outletData = null;   // OutletReference | null
     let subscriptionData = null; // Subscription data
@@ -160,10 +160,6 @@ export async function POST(request: NextRequest) {
       const merchant = await db.merchants.findById(user.merchantId);
       if (merchant) {
         if (merchant.subscription?.plan) {
-          planName = merchant.subscription.plan.name;
-          // Get allowWebAccess from plan limits (default to true if not set)
-          const planLimits = merchant.subscription.plan.limits as any || {};
-          allowWebAccess = planLimits?.allowWebAccess !== undefined ? planLimits.allowWebAccess : true;
           
           // ✅ Return complete subscription data
           subscriptionData = {
@@ -315,15 +311,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate token with plan name, allowWebAccess, sessionId, passwordChangedAt, and permissionsChangedAt for platform access control
+    // Generate token with minimal payload to keep JWT small
+    // Note: planName and allowWebAccess are NOT in JWT - fetched from DB in middleware when needed
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role,
       merchantId: user.merchantId,
       outletId: user.outletId,
-      planName, // ✅ Include plan name in JWT
-      allowWebAccess, // ✅ Include allowWebAccess from plan limits
       sessionId: session.sessionId, // ✅ Include session ID for single session enforcement
       passwordChangedAt, // ✅ Include passwordChangedAt to prevent token invalidation after login
       permissionsChangedAt, // ✅ Include permissionsChangedAt to prevent token invalidation after permissions change

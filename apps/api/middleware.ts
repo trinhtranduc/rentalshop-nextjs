@@ -209,53 +209,66 @@ export async function middleware(request: NextRequest) {
     }
 
     // ============================================================================
-    // PLATFORM ACCESS CONTROL - CHECK allowWebAccess FROM PLAN LIMITS
+    // PLATFORM ACCESS CONTROL - FETCH allowWebAccess FROM DB WHEN NEEDED
     // ============================================================================
-    // Check allowWebAccess from JWT token (set during login from plan.limits.allowWebAccess)
+    // Fetch subscription data from DB only when checking web access (keeps JWT small)
     
-    if (payload.role !== USER_ROLE.ADMIN && platformInfo.platform === 'web') {
-      // Get allowWebAccess from JWT payload (default to true if not set for backward compatibility)
-      const allowWebAccess = (payload as any).allowWebAccess !== undefined 
-        ? (payload as any).allowWebAccess 
-        : true;
-      
-      if (!allowWebAccess) {
-        const planName = payload.planName || 'Unknown';
-        console.log('❌ MIDDLEWARE: Platform access denied:', {
-          planName,
-          platform: platformInfo.platform,
-          allowWebAccess,
-          message: 'Plan does not allow web access'
-        });
+    if (payload.role !== USER_ROLE.ADMIN && platformInfo.platform === 'web' && payload.merchantId) {
+      try {
+        // Fetch subscription with plan limits from DB
+        const { getSubscriptionByMerchantId } = await import('@rentalshop/database');
+        const subscription = await getSubscriptionByMerchantId(payload.merchantId);
         
-        return NextResponse.json(
-          {
-            success: false,
-            code: 'PLATFORM_ACCESS_DENIED',
-            message: 'Your subscription plan does not allow web access. Please upgrade to a plan that supports web dashboard access.',
-            data: {
-              currentPlan: planName,
-              currentPlatform: platformInfo.platform,
-              allowedPlatforms: ['mobile'],
-              upgradeRequired: true,
-              upgradeUrl: '/settings/subscription'
-            }
-          },
-          {
-            status: API.STATUS.FORBIDDEN,
-            headers: {
-              ...corsHeaders,
-              'X-Platform-Access-Denied': 'true',
-              'X-Upgrade-Required': 'true'
-            }
+        if (subscription?.plan?.limits) {
+          const planLimits = subscription.plan.limits as any;
+          const allowWebAccess = planLimits?.allowWebAccess !== undefined 
+            ? planLimits.allowWebAccess 
+            : true; // Default to true if not set
+          
+          if (!allowWebAccess) {
+            const planName = subscription.plan?.name || 'Unknown';
+            console.log('❌ MIDDLEWARE: Platform access denied:', {
+              planName,
+              platform: platformInfo.platform,
+              allowWebAccess,
+              merchantId: payload.merchantId,
+              message: 'Plan does not allow web access'
+            });
+            
+            return NextResponse.json(
+              {
+                success: false,
+                code: 'PLATFORM_ACCESS_DENIED',
+                message: 'Your subscription plan does not allow web access. Please upgrade to a plan that supports web dashboard access.',
+                data: {
+                  currentPlan: planName,
+                  currentPlatform: platformInfo.platform,
+                  allowedPlatforms: ['mobile'],
+                  upgradeRequired: true,
+                  upgradeUrl: '/settings/subscription'
+                }
+              },
+              {
+                status: API.STATUS.FORBIDDEN,
+                headers: {
+                  ...corsHeaders,
+                  'X-Platform-Access-Denied': 'true',
+                  'X-Upgrade-Required': 'true'
+                }
+              }
+            );
           }
-        );
+        }
+      } catch (error) {
+        // If error fetching subscription, allow access (fail open for better UX)
+        // Log error for monitoring
+        console.error('⚠️ MIDDLEWARE: Error fetching subscription for platform access check:', error);
       }
     }
     
     console.log('✅ MIDDLEWARE: Platform access granted:', {
-      planName: payload.planName || 'Default',
-      platform: platformInfo.platform
+      platform: platformInfo.platform,
+      role: payload.role
     });
 
     // Forward user context to downstream handlers via request headers
