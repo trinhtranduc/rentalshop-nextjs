@@ -217,8 +217,11 @@ function transformOrder(order: any): OrderWithRelations {
 }
 
 export async function getOrderById(id: number): Promise<OrderWithRelations | null> {
-  const order = await prisma.order.findUnique({
-    where: { id },
+  const order = await prisma.order.findFirst({
+    where: { 
+      id,
+      deletedAt: null // Exclude soft-deleted orders
+    },
     include: orderInclude,
   })
 
@@ -227,8 +230,11 @@ export async function getOrderById(id: number): Promise<OrderWithRelations | nul
 }
 
 export async function getOrderByNumber(orderNumber: string): Promise<OrderWithRelations | null> {
-  const order = await prisma.order.findUnique({
-    where: { orderNumber },
+  const order = await prisma.order.findFirst({
+    where: { 
+      orderNumber,
+      deletedAt: null // Exclude soft-deleted orders
+    },
     include: orderInclude,
   })
 
@@ -238,7 +244,10 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithRe
 
 export async function getOrdersByOutlet(outletId: number, limit = 50, offset = 0) {
   const orders = await prisma.order.findMany({
-    where: { outletId },
+    where: { 
+      outletId,
+      deletedAt: null // Exclude soft-deleted orders
+    },
     include: orderInclude,
     orderBy: { createdAt: 'desc' },
     take: limit,
@@ -250,7 +259,10 @@ export async function getOrdersByOutlet(outletId: number, limit = 50, offset = 0
 
 export async function getOrdersByCustomer(customerId: number, limit = 50, offset = 0) {
   const orders = await prisma.order.findMany({
-    where: { customerId },
+    where: { 
+      customerId,
+      deletedAt: null // Exclude soft-deleted orders
+    },
     include: orderInclude,
     orderBy: { createdAt: 'desc' },
     take: limit,
@@ -734,8 +746,11 @@ export const simplifiedOrders = {
    * Find order by ID (simplified API) - OPTIMIZED for performance
    */
   findById: async (id: number) => {
-    return await prisma.order.findUnique({
-      where: { id },
+    return await prisma.order.findFirst({
+      where: { 
+        id,
+        deletedAt: null // Exclude soft-deleted orders
+      },
       include: {
         customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
         outlet: { select: { id: true, name: true } },
@@ -763,7 +778,10 @@ export const simplifiedOrders = {
    */
   findByNumber: async (orderNumber: string) => {
     return await prisma.order.findUnique({
-      where: { orderNumber },
+      where: { 
+        orderNumber,
+        deletedAt: null // Exclude soft-deleted orders
+      },
       include: {
         customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
         outlet: { 
@@ -829,7 +847,18 @@ export const simplifiedOrders = {
   },
 
   /**
-   * Delete order (simplified API)
+   * Soft delete order (simplified API)
+   * Sets deletedAt timestamp instead of actually deleting the record
+   */
+  softDelete: async (id: number) => {
+    return await prisma.order.update({
+      where: { id },
+      data: { deletedAt: new Date() }
+    });
+  },
+
+  /**
+   * Delete order (simplified API) - DEPRECATED, use softDelete instead
    */
   delete: async (id: number) => {
     return await prisma.order.delete({
@@ -853,6 +882,9 @@ export const simplifiedOrders = {
 
     // Build where clause - start with provided where clause if any
     const where: any = whereClause || {};
+    
+    // Always exclude soft-deleted orders
+    where.deletedAt = null;
     
     // Handle merchant-level filtering (orders belong to outlets, outlets belong to merchants)
     if (whereFilters.merchantId) {
@@ -1098,6 +1130,9 @@ export const simplifiedOrders = {
 
     // Build where clause
     const where: any = whereClause || {};
+    
+    // Always exclude soft-deleted orders
+    where.deletedAt = null;
     
     console.log('🔍 searchWithItems - Original whereClause:', JSON.stringify(whereClause, null, 2));
 
@@ -2099,7 +2134,9 @@ export const simplifiedOrders = {
       sortOrder = 'desc'
     } = filters;
 
-    const where: any = {};
+    const where: any = {
+      deletedAt: null // Exclude soft-deleted orders
+    };
     
     if (merchantId) {
       where.outlet = { merchantId };
@@ -2253,7 +2290,9 @@ export const simplifiedOrders = {
   }) => {
     const { merchantId, outletId, startDate, endDate } = filters;
 
-    const where: any = {};
+    const where: any = {
+      deletedAt: null // Exclude soft-deleted orders
+    };
     
     if (merchantId) {
       where.outlet = { merchantId };
