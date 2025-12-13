@@ -209,27 +209,30 @@ export async function middleware(request: NextRequest) {
     }
 
     // ============================================================================
-    // PLATFORM ACCESS CONTROL - SIMPLE CHECK
+    // PLATFORM ACCESS CONTROL - CHECK allowWebAccess FROM PLAN LIMITS
     // ============================================================================
-    // Basic plan only allows mobile app access
-    // All other plans allow both web and mobile access
+    // Check allowWebAccess from JWT token (set during login from plan.limits.allowWebAccess)
     
     if (payload.role !== USER_ROLE.ADMIN && platformInfo.platform === 'web') {
-      const planName = payload.planName || 'Trial'; // Default to Trial if not set
+      // Get allowWebAccess from JWT payload (default to true if not set for backward compatibility)
+      const allowWebAccess = (payload as any).allowWebAccess !== undefined 
+        ? (payload as any).allowWebAccess 
+        : true;
       
-      // Only block Basic plan from web access; Trial and all other plans allow web access
-      if (planName === 'Basic') {
+      if (!allowWebAccess) {
+        const planName = payload.planName || 'Unknown';
         console.log('❌ MIDDLEWARE: Platform access denied:', {
           planName,
           platform: platformInfo.platform,
-          message: 'Basic plan only supports mobile app'
+          allowWebAccess,
+          message: 'Plan does not allow web access'
         });
         
         return NextResponse.json(
           {
             success: false,
             code: 'PLATFORM_ACCESS_DENIED',
-            message: 'Basic plan only supports mobile app. Please upgrade to Premium or Enterprise to access the web dashboard.',
+            message: 'Your subscription plan does not allow web access. Please upgrade to a plan that supports web dashboard access.',
             data: {
               currentPlan: planName,
               currentPlatform: platformInfo.platform,
