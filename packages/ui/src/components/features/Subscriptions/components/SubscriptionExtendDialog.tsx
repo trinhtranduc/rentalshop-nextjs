@@ -109,11 +109,19 @@ export function SubscriptionExtendDialog({
       calculatedEndDate = new Date(newEndDate);
     }
     
-    if (!amount) return;
+    // Validate amount (allow 0 for free extensions, but not empty)
+    if (amount === '' || amount === undefined) {
+      return; // Don't submit if amount is empty
+    }
+    
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      return; // Don't submit if amount is invalid or negative
+    }
     
     const extensionData = {
       newEndDate: calculatedEndDate,
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       method,
       description: description.trim() || undefined
     };
