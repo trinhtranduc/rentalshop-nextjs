@@ -20,7 +20,8 @@ import {
   Play, 
   Clock, 
   ArrowRight,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant } from '@rentalshop/types';
 
@@ -70,6 +71,8 @@ export function SubscriptionViewDialog({
   // Handle edge cases where status might be different
   const isExpired = normalizedStatus === 'expired' || (subscription.status as string) === 'EXPIRED';
   const isActiveStatus = normalizedStatus === 'active' || (subscription.status as string) === 'ACTIVE';
+  const isCancelled = normalizedStatus === 'cancelled' || (subscription.status as string) === 'CANCELLED';
+  const isPaused = normalizedStatus === 'paused' || (subscription.status as string) === 'PAUSED';
   
   // For debugging - show all actions if handlers exist
   const debugMode = false; // Set to false in production
@@ -77,6 +80,7 @@ export function SubscriptionViewDialog({
   const canCancel = debugMode ? !!onCancel : (isActive && !!onCancel);
   const canExtend = debugMode ? !!onExtend : (isActive && !!onExtend);
   const canChangePlan = debugMode ? !!onChangePlan : (isActive && !!onChangePlan);
+  const canReactivate = (isCancelled || isPaused) && !!onReactivate;
   
 
   // Debug logging
@@ -184,14 +188,14 @@ export function SubscriptionViewDialog({
               Pause Subscription
             </Button>
           )}
-          {subscription.status === 'PAUSED' && onReactivate && (
+          {canReactivate && (
             <Button 
-              variant="outline" 
+              variant="default" 
               onClick={() => onReactivate(subscription)}
-                className="flex items-center gap-2 text-action-success hover:text-action-success"
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
             >
-              <Play className="h-4 w-4" />
-              Resume Subscription
+              <RefreshCw className="h-4 w-4" />
+              Reactivate Subscription
             </Button>
           )}
           {canCancel && onCancel && (
