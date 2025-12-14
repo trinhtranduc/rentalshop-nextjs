@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator
 } from '../../../ui/dropdown-menu';
 import { useFormatCurrency } from '@rentalshop/ui';
-import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useProductTranslations, useCommonTranslations, useTableSelection } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { Product } from '@rentalshop/types';
 import { getProductImageUrl, useFormattedDateTime } from '@rentalshop/utils/client';
@@ -21,6 +21,7 @@ import { Eye, Edit, ShoppingCart, Trash2, MoreVertical, Package } from 'lucide-r
 interface ProductTableProps {
   products: Product[];
   onProductAction: (action: string, productId: number) => void;
+  onSelectionChange?: (selectedProductIds: number[]) => void;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
@@ -28,7 +29,8 @@ interface ProductTableProps {
 
 export function ProductTable({ 
   products, 
-  onProductAction, 
+  onProductAction,
+  onSelectionChange,
   sortBy = 'name', 
   sortOrder = 'asc',
   onSort 
@@ -42,6 +44,16 @@ export function ProductTable({
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   
+  // Use reusable selection hook
+  const {
+    selectedIdsSet: selectedProductIds,
+    allSelected,
+    someSelected,
+    handleToggleSelect,
+    handleSelectAll,
+    isSelected,
+  } = useTableSelection(products, onSelectionChange);
+  
   // Debug: Log products received
   console.log('🔍 ProductTable: Received products:', {
     isArray: Array.isArray(products),
@@ -51,7 +63,7 @@ export function ProductTable({
   
   if (products.length === 0) {
     return (
-      <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+      <Card className="shadow-sm border-gray-200 dark:border-gray-700 h-full flex flex-col">
         <CardContent className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <div className="text-4xl mb-4">📦</div>
@@ -103,11 +115,26 @@ export function ProductTable({
 
   return (
     <Card className="shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col">
-      <div className="overflow-auto flex-1">
-        <table className="w-full min-w-[1000px]">
+      <div className="overflow-y-auto flex-1 h-full">
+        <table className="w-full">
           {/* Table Header with Sorting - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>
+              {/* Select All Checkbox */}
+              {onSelectionChange && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(input) => {
+                      if (input) input.indeterminate = someSelected;
+                    }}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                    title={allSelected ? tc('actions.deselectAll') || 'Deselect all' : tc('actions.selectAll') || 'Select all'}
+                  />
+                </th>
+              )}
               {/* Product Name - Sortable */}
               <th 
                 onClick={() => handleSort('name')}
@@ -163,8 +190,29 @@ export function ProductTable({
           
           {/* Table Body */}
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {products.map((product) => (
-              <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+            {products.map((product) => {
+              const productIsSelected = isSelected(product.id);
+              return (
+              <tr 
+                key={product.id} 
+                className={`transition-colors ${
+                  productIsSelected 
+                    ? 'bg-blue-50 dark:bg-blue-900/20' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                {/* Checkbox */}
+                {onSelectionChange && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={productIsSelected}
+                      onChange={() => handleToggleSelect(product.id)}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      aria-label={`Select product ${product.id}`}
+                    />
+                  </td>
+                )}
                 {/* Product Name with Image */}
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
@@ -351,7 +399,8 @@ export function ProductTable({
                   </DropdownMenu>
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

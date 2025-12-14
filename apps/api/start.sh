@@ -33,7 +33,7 @@ echo "🔍 Step 2: Checking database connection..."
 if ! echo "SELECT 1;" | npx prisma db execute --stdin --schema="${SCHEMA_PATH}" > /dev/null 2>&1; then
   echo "❌ Database connection failed"
   echo "⚠️  Server will start anyway, but migrations may fail"
-else
+  else
   echo "✅ Database connection successful"
 fi
 echo ""
@@ -42,12 +42,12 @@ echo ""
 # Step 3: Apply All Migrations
 # ============================================================================
 echo "📦 Step 3: Applying database migrations..."
-MIGRATION_OUTPUT=$(npx prisma migrate deploy --schema="${SCHEMA_PATH}" 2>&1)
-MIGRATION_EXIT=$?
-
-if [ $MIGRATION_EXIT -eq 0 ]; then
-  echo "$MIGRATION_OUTPUT"
-  echo "✅ All migrations applied successfully"
+  MIGRATION_OUTPUT=$(npx prisma migrate deploy --schema="${SCHEMA_PATH}" 2>&1)
+  MIGRATION_EXIT=$?
+  
+  if [ $MIGRATION_EXIT -eq 0 ]; then
+    echo "$MIGRATION_OUTPUT"
+    echo "✅ All migrations applied successfully"
 else
   echo "$MIGRATION_OUTPUT"
   echo "⚠️  Migration failed - check output above"
@@ -75,21 +75,21 @@ else
   echo "$VERIFY_OUTPUT" | head -20
   echo "⚠️  Migration verification failed"
   echo "⚠️  Please check migration status manually"
-fi
+    fi
 echo ""
 
 # ============================================================================
 # Step 5: Regenerate Prisma Client After Migrations
 # ============================================================================
-echo "🔄 Step 5: Regenerating Prisma Client after migrations..."
+  echo "🔄 Step 5: Regenerating Prisma Client after migrations..."
 if npx prisma generate --schema="${SCHEMA_PATH}" 2>&1; then
-  echo "✅ Prisma Client regenerated successfully"
-  
+    echo "✅ Prisma Client regenerated successfully"
+    
   # Copy Prisma Client to Next.js bundle location
-  if [ -d "../../node_modules/.prisma/client" ]; then
-    mkdir -p .next/server/.prisma/client
-    cp -r ../../node_modules/.prisma/client/* .next/server/.prisma/client/ 2>/dev/null || true
-    echo "✅ Prisma Client copied to Next.js bundle location"
+    if [ -d "../../node_modules/.prisma/client" ]; then
+      mkdir -p .next/server/.prisma/client
+      cp -r ../../node_modules/.prisma/client/* .next/server/.prisma/client/ 2>/dev/null || true
+      echo "✅ Prisma Client copied to Next.js bundle location"
   fi
 else
   echo "⚠️  Failed to regenerate Prisma Client"

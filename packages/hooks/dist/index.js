@@ -83,6 +83,7 @@ __export(src_exports, {
   useSubscriptionStatusInfo: () => useSubscriptionStatusInfo,
   useSubscriptionTranslations: () => useSubscriptionTranslations,
   useSubscriptionsData: () => useSubscriptionsData,
+  useTableSelection: () => useTableSelection,
   useThrottledSearch: () => useThrottledSearch,
   useToastHandler: () => useToastHandler,
   useUserRole: () => useUserRole,
@@ -5765,6 +5766,52 @@ function useGlobalErrorHandler() {
   }, []);
 }
 
+// src/hooks/useTableSelection.ts
+var import_react23 = require("react");
+function useTableSelection(items, onSelectionChange) {
+  const [selectedIds, setSelectedIds] = (0, import_react23.useState)(/* @__PURE__ */ new Set());
+  (0, import_react23.useEffect)(() => {
+    if (onSelectionChange) {
+      onSelectionChange(Array.from(selectedIds));
+    }
+  }, [selectedIds, onSelectionChange]);
+  const handleToggleSelect = (0, import_react23.useCallback)((id) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+  const handleSelectAll = (0, import_react23.useCallback)((checked) => {
+    if (checked) {
+      setSelectedIds(new Set(items.map((item) => item.id)));
+    } else {
+      setSelectedIds(/* @__PURE__ */ new Set());
+    }
+  }, [items]);
+  const clearSelection = (0, import_react23.useCallback)(() => {
+    setSelectedIds(/* @__PURE__ */ new Set());
+  }, []);
+  const allSelected = items.length > 0 && selectedIds.size === items.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < items.length;
+  const selectedCount = selectedIds.size;
+  return {
+    selectedIds: Array.from(selectedIds),
+    selectedIdsSet: selectedIds,
+    allSelected,
+    someSelected,
+    selectedCount,
+    handleToggleSelect,
+    handleSelectAll,
+    clearSelection,
+    isSelected: (id) => selectedIds.has(id)
+  };
+}
+
 // src/hooks/useFiltersData.ts
 var import_utils14 = require("@rentalshop/utils");
 function useOutletsData() {
@@ -5961,6 +6008,7 @@ function useCategoriesWithFilters(options) {
   useSubscriptionStatusInfo,
   useSubscriptionTranslations,
   useSubscriptionsData,
+  useTableSelection,
   useThrottledSearch,
   useToastHandler,
   useUserRole,

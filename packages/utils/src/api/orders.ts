@@ -131,15 +131,21 @@ export const ordersApi = {
     dateField?: 'createdAt' | 'pickupPlanAt' | 'returnPlanAt';
     status?: string;
     orderType?: string;
+    orderIds?: number[]; // Export specific orders by IDs
   }): Promise<Blob> {
     const queryParams = new URLSearchParams();
     if (params.period) queryParams.append('period', params.period);
     if (params.startDate) queryParams.append('startDate', params.startDate);
     if (params.endDate) queryParams.append('endDate', params.endDate);
-    if (params.format) queryParams.append('format', params.format);
+    if (params.format) queryParams.append('format', params.format || 'excel');
     if (params.dateField) queryParams.append('dateField', params.dateField);
     if (params.status) queryParams.append('status', params.status);
     if (params.orderType) queryParams.append('orderType', params.orderType);
+    
+    // Add orderIds to query params if provided
+    if (params.orderIds && params.orderIds.length > 0) {
+      params.orderIds.forEach(id => queryParams.append('orderIds', id.toString()));
+    }
 
     const url = `${apiUrls.orders.export}?${queryParams.toString()}`;
     const response = await authenticatedFetch(url);

@@ -195,6 +195,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   order,
   onEdit,
   onCancel,
+  onDelete,
   onPickup,
   onReturn,
   onSaveSettings,
@@ -246,9 +247,11 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const [isPickupLoading, setIsPickupLoading] = useState(false);
   const [isReturnLoading, setIsReturnLoading] = useState(false);
   const [isCancelLoading, setIsCancelLoading] = useState(false);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   
   // Confirmation dialog state
   const [showCancelConfirmDialog, setShowCancelConfirmDialog] = useState(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   
   // Update settings when order changes
   useEffect(() => {
@@ -293,6 +296,11 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     currentStatus !== 'PICKUPED' && 
     currentStatus !== 'RETURNED' && 
     currentStatus !== 'CANCELLED';
+  
+  // ✅ Delete button visibility - Only show when order is CANCELLED
+  const canDelete = onDelete && 
+    canDeleteOrders && // ✅ Check permission: staff cannot delete orders
+    currentStatus === 'CANCELLED';
   
   // Edit button visibility - based on order type and status
   const canEdit = onEdit && (
@@ -437,6 +445,24 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     }
   };
 
+  const handleDeleteOrderClick = () => {
+    setShowDeleteConfirmDialog(true);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!onDelete) return;
+    
+    try {
+      setIsDeleteLoading(true);
+      await onDelete(order);
+      setShowDeleteConfirmDialog(false);
+    } catch (error) {
+      toastError('Delete Failed', 'Failed to delete order. Please try again.');
+    } finally {
+      setIsDeleteLoading(false);
+    }
+  };
+
   // Open collection modal for pickup
   const handlePickupClick = () => {
     setIsCollectionModalOpen(true);
@@ -546,6 +572,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
             order={order}
             canEdit={!!canEdit}
             canCancel={!!canCancel}
+            canDelete={!!canDelete}
             canPickup={!!canPickup}
             canReturn={!!canReturn}
             canPrint={canPrint}
@@ -554,8 +581,10 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
             isPickupLoading={isPickupLoading}
             isReturnLoading={isReturnLoading}
             isCancelLoading={isCancelLoading}
+            isDeleteLoading={isDeleteLoading}
             onEdit={handleEditOrder}
             onCancel={handleCancelOrderClick}
+            onDelete={handleDeleteOrderClick}
             onPickup={handlePickupClick}
             onReturn={handleReturnClick}
             onPrint={handlePrintOrder}
@@ -594,6 +623,20 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         onConfirm={handleCancelOrder}
         onCancel={() => setShowCancelConfirmDialog(false)}
         isLoading={isCancelLoading}
+      />
+
+      {/* Delete Order Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteConfirmDialog}
+        onOpenChange={setShowDeleteConfirmDialog}
+        type="danger"
+        title={t('actions.delete')}
+        description={t('messages.confirmDelete') || `Are you sure you want to delete order ${order.orderNumber}? This action cannot be undone.`}
+        confirmText={t('actions.delete')}
+        cancelText={t('actions.cancel')}
+        onConfirm={handleDeleteOrder}
+        onCancel={() => setShowDeleteConfirmDialog(false)}
+        isLoading={isDeleteLoading}
       />
     </div>
   );

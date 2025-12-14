@@ -1,17 +1,21 @@
+'use client';
+
 import React from 'react';
 import { Button } from '../../../ui/button';
 import { Badge } from '../../../ui/badge';
 import { Card, CardContent } from '../../../ui/card';
 import { useFormatCurrency } from '@rentalshop/ui';
-import { useOrderTranslations } from '@rentalshop/hooks';
+import { useOrderTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedFullDate, useFormattedDateTime } from '@rentalshop/utils/client';
+import { formatPhoneNumberMasked } from '@rentalshop/utils';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Eye, Edit } from 'lucide-react';
 import type { OrderListItem, OrderItemFlattened } from '@rentalshop/types';
 
 interface OrderTableProps {
   orders: OrderListItem[];
   onOrderAction: (action: string, orderId: string) => void;
+  onSelectionChange?: (selectedOrderIds: number[]) => void; // Callback when selection changes
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
@@ -21,6 +25,7 @@ interface OrderTableProps {
 export const OrderTable = React.memo(function OrderTable({ 
   orders, 
   onOrderAction,
+  onSelectionChange,
   sortBy = 'createdAt',
   sortOrder = 'desc',
   onSort,
@@ -29,6 +34,16 @@ export const OrderTable = React.memo(function OrderTable({
   // Use formatCurrency hook - automatically uses merchant's currency
   const formatMoney = useFormatCurrency();
   const t = useOrderTranslations();
+  
+  // Use reusable selection hook
+  const {
+    selectedIdsSet: selectedOrderIds,
+    allSelected,
+    someSelected,
+    handleToggleSelect,
+    handleSelectAll,
+    isSelected,
+  } = useTableSelection(orders, onSelectionChange);
   
   // Debug: Log order statuses
   React.useEffect(() => {
@@ -103,11 +118,26 @@ export const OrderTable = React.memo(function OrderTable({
 
   return (
     <Card className="shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col">
-      <div className="overflow-auto flex-1">
-        <table className="w-full min-w-[1000px]">
+      <div className="overflow-y-auto flex-1 h-full">
+        <table className="w-full">
           {/* Table Header with Sorting - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>
+              {/* Select All Checkbox */}
+              {onSelectionChange && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(input) => {
+                      if (input) input.indeterminate = someSelected;
+                    }}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                    title={allSelected ? t('actions.deselectAll') || 'Deselect all' : t('actions.selectAll') || 'Select all'}
+                  />
+                </th>
+              )}
               <th 
                 onClick={() => handleSort('orderNumber')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -182,8 +212,21 @@ export const OrderTable = React.memo(function OrderTable({
           
           {/* Table Body */}
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+            {orders.map((order) => {
+              const orderIsSelected = isSelected(order.id);
+              return (
+              <tr key={order.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${orderIsSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                {/* Checkbox */}
+                {onSelectionChange && (
+                  <td className="px-6 py-3 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={orderIsSelected}
+                      onChange={() => handleToggleSelect(order.id)}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                  </td>
+                )}
                 {/* Order Number */}
                 <td className="px-6 py-3 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -208,7 +251,7 @@ export const OrderTable = React.memo(function OrderTable({
                       {order.customerName || 'N/A'}
                     </div>
                     <div className="text-gray-500 dark:text-gray-400 text-xs">
-                      {order.customerPhone || 'N/A'}
+                      {formatPhoneNumberMasked(order.customerPhone)}
                     </div>
                   </div>
                 </td>
@@ -281,21 +324,11 @@ export const OrderTable = React.memo(function OrderTable({
                       <Edit className="h-4 w-4 mr-1" />
                       {t('actions.edit')}
                     </Button>
-                    
-                    {/* Delete button - soft delete */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onOrderAction('delete', order.orderNumber)}
-                      className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      {t('actions.delete')}
-                    </Button>
                   </div>
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

@@ -53,6 +53,7 @@ export default function CustomersPage() {
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([]);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -156,6 +157,11 @@ export default function CustomersPage() {
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
     updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
   }, [sortBy, sortOrder, updateURL]);
+
+  const handleLimitChange = useCallback((newLimit: number) => {
+    console.log('📄 handleLimitChange called: current limit=', limit, ', new limit=', newLimit);
+    updateURL({ limit: newLimit, page: 1 }); // Reset to page 1 when changing limit
+  }, [updateURL, limit]);
 
   // ============================================================================
   // CUSTOMER ACTION HANDLERS
@@ -285,7 +291,7 @@ export default function CustomersPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" maxWidth="full" className="h-screen flex flex-col px-4 pt-4 pb-0 overflow-hidden">
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
@@ -293,14 +299,15 @@ export default function CustomersPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {canExport && (
+            {/* Export button - only show when customers are selected */}
+            {canExport && selectedCustomerIds.length > 0 && (
               <Button
                 onClick={() => setShowExportDialog(true)}
-                variant="outline"
+                variant="default"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
-                {tc('buttons.export')}
+                {tc('buttons.export')} ({selectedCustomerIds.length})
               </Button>
             )}
             <Button 
@@ -315,7 +322,7 @@ export default function CustomersPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0 overflow-auto relative">
+      <div className="flex-1 min-h-0 relative overflow-hidden">
         {/* Center Loading Indicator - Shows when waiting for API */}
         {loading && !data ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
@@ -336,6 +343,8 @@ export default function CustomersPage() {
             onCustomerAction={handleCustomerAction}
             onPageChange={handlePageChange}
             onSort={handleSort}
+            onSelectionChange={setSelectedCustomerIds}
+            onLimitChange={handleLimitChange}
           />
         )}
       </div>
@@ -418,10 +427,15 @@ export default function CustomersPage() {
         onOpenChange={setShowExportDialog}
         resourceName="Customers"
         isLoading={isExporting}
+        selectedCount={selectedCustomerIds.length}
         onExport={async (params) => {
           try {
             setIsExporting(true);
-            const blob = await customersApi.exportCustomers(params);
+            // If customers are selected, export only those
+            const exportParams = selectedCustomerIds.length > 0
+              ? { ...params, customerIds: selectedCustomerIds }
+              : params;
+            const blob = await customersApi.exportCustomers(exportParams);
             
             // Create download link
             const url = window.URL.createObjectURL(blob);
@@ -435,6 +449,7 @@ export default function CustomersPage() {
             
             toastSuccess(tc('labels.success'), 'Export completed successfully');
             setShowExportDialog(false);
+            setSelectedCustomerIds([]); // Clear selection after export
           } catch (error) {
             // Error automatically handled by useGlobalErrorHandler
           } finally {

@@ -24,7 +24,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import type { Product, OrderWithDetails } from '@rentalshop/types';
-import { ordersApi, productsApi } from '@rentalshop/utils';
+import { ordersApi, productsApi, formatPhoneNumberMasked } from '@rentalshop/utils';
 
 export default function ProductOrdersPage() {
   const params = useParams();
@@ -288,7 +288,7 @@ export default function ProductOrdersPage() {
                             {order.customer?.firstName} {order.customer?.lastName}
                           </p>
                           <p className="text-xs text-text-secondary">
-                            {order.customer?.phone}
+                            {formatPhoneNumberMasked(order.customer?.phone)}
                           </p>
                         </div>
                       </div>

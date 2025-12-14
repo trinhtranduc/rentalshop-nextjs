@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Button } from '@rentalshop/ui';
 import { Card, CardContent } from '@rentalshop/ui';
@@ -10,12 +12,14 @@ import {
 } from '@rentalshop/ui';
 import { Customer } from '@rentalshop/types';
 import { Eye, Edit, Trash2, ShoppingBag, MoreVertical } from 'lucide-react';
-import { useCustomerTranslations } from '@rentalshop/hooks';
+import { useCustomerTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useFormattedDateTime } from '@rentalshop/utils/client';
+import { formatPhoneNumberMasked } from '@rentalshop/utils';
 
 interface CustomerTableProps {
   customers: Customer[];
   onCustomerAction: (action: string, customerId: number) => void;
+  onSelectionChange?: (selectedCustomerIds: number[]) => void;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
@@ -23,7 +27,8 @@ interface CustomerTableProps {
 
 export function CustomerTable({ 
   customers, 
-  onCustomerAction, 
+  onCustomerAction,
+  onSelectionChange,
   sortBy = 'createdAt', 
   sortOrder = 'desc',
   onSort
@@ -31,9 +36,19 @@ export function CustomerTable({
   const t = useCustomerTranslations();
   const [openDropdownId, setOpenDropdownId] = React.useState<number | null>(null);
   
+  // Use reusable selection hook
+  const {
+    selectedIdsSet: selectedCustomerIds,
+    allSelected,
+    someSelected,
+    handleToggleSelect,
+    handleSelectAll,
+    isSelected,
+  } = useTableSelection(customers, onSelectionChange);
+  
   if (customers.length === 0) {
     return (
-      <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+      <Card className="shadow-sm border-gray-200 dark:border-gray-700 h-full flex flex-col">
         <CardContent className="text-center py-12">
           <div className="text-gray-500 dark:text-gray-400">
             <div className="text-4xl mb-4">👥</div>
@@ -63,11 +78,26 @@ export function CustomerTable({
 
   return (
     <Card className="shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col">
-      <div className="overflow-auto flex-1">
-        <table className="w-full min-w-[800px]">
+      <div className="overflow-y-auto flex-1 h-full">
+        <table className="w-full">
           {/* Table Header with Sorting - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>
+              {/* Select All Checkbox */}
+              {onSelectionChange && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(input) => {
+                      if (input) input.indeterminate = someSelected;
+                    }}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                    title={allSelected ? t('actions.deselectAll') || 'Deselect all' : t('actions.selectAll') || 'Select all'}
+                  />
+                </th>
+              )}
               <th 
                 onClick={() => handleSort('name')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -104,8 +134,29 @@ export function CustomerTable({
           
           {/* Table Body */}
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {customers.map((customer) => (
-              <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+            {customers.map((customer) => {
+              const customerIsSelected = isSelected(customer.id);
+              return (
+              <tr 
+                key={customer.id} 
+                className={`transition-colors ${
+                  customerIsSelected 
+                    ? 'bg-blue-50 dark:bg-blue-900/20' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                {/* Checkbox */}
+                {onSelectionChange && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={customerIsSelected}
+                      onChange={() => handleToggleSelect(customer.id)}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                      aria-label={`Select customer ${customer.id}`}
+                    />
+                  </td>
+                )}
                 {/* Name */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm">
@@ -122,7 +173,7 @@ export function CustomerTable({
                       <div className="font-medium text-gray-900 dark:text-white">{customer.email}</div>
                     )}
                     {customer.phone && customer.phone.trim() !== '' && (
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">{customer.phone}</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">{formatPhoneNumberMasked(customer.phone)}</div>
                     )}
                     {(!customer.email || customer.email.trim() === '') && (!customer.phone || customer.phone.trim() === '') && (
                       <div className="text-gray-500 dark:text-gray-400 text-xs">N/A</div>
@@ -208,7 +259,8 @@ export function CustomerTable({
                   </DropdownMenu>
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

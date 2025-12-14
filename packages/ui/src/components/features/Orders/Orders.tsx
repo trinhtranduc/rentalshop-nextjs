@@ -22,6 +22,8 @@ interface OrdersProps {
   onClearFilters?: () => void;
   onOrderAction: (action: string, orderNumber: string) => void;
   onPageChange: (page: number) => void;
+  onLimitChange?: (limit: number) => void; // Optional: allow changing items per page
+  onSelectionChange?: (selectedOrderIds: number[]) => void; // Callback when selection changes
   onSort?: (column: string) => void;
   onQuickFilterChange?: (filter: QuickFilterOption | null) => void;
   onDateRangeChange?: (rangeId: string, start: Date, end: Date) => void;
@@ -41,6 +43,8 @@ export const Orders = React.memo(function Orders({
   onClearFilters,
   onOrderAction, 
   onPageChange,
+  onLimitChange,
+  onSelectionChange,
   onSort,
   onQuickFilterChange,
   onDateRangeChange,
@@ -78,7 +82,7 @@ export const Orders = React.memo(function Orders({
   const showLargeDatasetWarning = activeQuickFilter === 'all' && data.total > 10000;
   
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Fixed Header Section */}
       <div className="flex-shrink-0 space-y-4">
         <OrderHeader
@@ -88,9 +92,9 @@ export const Orders = React.memo(function Orders({
         />
         
         {/* Compact Filters - All in one row */}
-        <Card className="shadow-sm border-border">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex flex-wrap items-center gap-3">
+        <Card className="shadow-sm border-border w-full">
+          <CardContent className="pt-4 pb-4 w-full">
+            <div className="flex flex-wrap items-center gap-3 w-full">
               {/* Date Range Dropdown */}
               {showQuickFilters && filterStyle === 'dropdown' && (
                 <OrderDateRangeFilter
@@ -125,11 +129,12 @@ export const Orders = React.memo(function Orders({
         )}
       </div>
       
-      {/* Scrollable Table Section */}
-      <div className="flex-1 min-h-0 mt-4">
+      {/* Scrollable Table Section - Full height, vertical scroll only */}
+      <div className="flex-1 min-h-0 mt-4 w-full overflow-hidden">
         <OrderTable 
           orders={data.orders}
           onOrderAction={memoizedOnOrderAction}
+          onSelectionChange={onSelectionChange}
           sortBy={filters.sortBy}
           sortOrder={filters.sortOrder}
           onSort={memoizedOnSort}
@@ -138,7 +143,7 @@ export const Orders = React.memo(function Orders({
       </div>
       
       {/* Fixed Pagination Section - Always at Bottom */}
-      {data.total > 0 && data.total > (data.limit || 20) && (
+      {data.total > 0 && (
         <div className="flex-shrink-0 py-4">
           <Pagination 
             currentPage={data.currentPage}
@@ -146,6 +151,7 @@ export const Orders = React.memo(function Orders({
             total={data.total}
             limit={data.limit || 20}
             onPageChange={memoizedOnPageChange}
+            onLimitChange={onLimitChange}
             itemName="orders"
           />
         </div>

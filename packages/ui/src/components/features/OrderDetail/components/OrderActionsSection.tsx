@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '../../../ui/button';
-import { Edit, X, Package, RotateCcw, Printer, Info } from 'lucide-react';
+import { Edit, X, Package, RotateCcw, Printer, Info, Trash2 } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { ORDER_STATUSES } from '@rentalshop/constants';
 import type { OrderWithDetails } from '@rentalshop/types';
@@ -9,6 +9,7 @@ interface OrderActionsSectionProps {
   order: OrderWithDetails;
   canEdit: boolean;
   canCancel: boolean;
+  canDelete: boolean;
   canPickup: boolean;
   canReturn: boolean;
   canPrint: boolean;
@@ -17,8 +18,10 @@ interface OrderActionsSectionProps {
   isPickupLoading: boolean;
   isReturnLoading: boolean;
   isCancelLoading: boolean;
+  isDeleteLoading: boolean;
   onEdit: () => void;
   onCancel: () => void;
+  onDelete: () => void;
   onPickup: () => void;
   onReturn: () => void;
   onPrint: () => void;
@@ -28,6 +31,7 @@ export const OrderActionsSection: React.FC<OrderActionsSectionProps> = ({
   order,
   canEdit,
   canCancel,
+  canDelete,
   canPickup,
   canReturn,
   canPrint,
@@ -36,8 +40,10 @@ export const OrderActionsSection: React.FC<OrderActionsSectionProps> = ({
   isPickupLoading,
   isReturnLoading,
   isCancelLoading,
+  isDeleteLoading,
   onEdit,
   onCancel,
+  onDelete,
   onPickup,
   onReturn,
   onPrint
@@ -49,10 +55,10 @@ export const OrderActionsSection: React.FC<OrderActionsSectionProps> = ({
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-900">{t('detail.orderActions')}</h3>
         
-        {/* Actions Layout: Cancel on left, others on right */}
+        {/* Actions Layout: Cancel/Delete on left, others on right */}
         <div className="flex justify-between items-center">
-          {/* Left side - Cancel button */}
-          <div>
+          {/* Left side - Cancel and Delete buttons */}
+          <div className="flex gap-3">
             {canCancel && (
               <Button
                 variant="destructive"
@@ -62,6 +68,17 @@ export const OrderActionsSection: React.FC<OrderActionsSectionProps> = ({
               >
                 <X className="w-4 h-4 mr-2" />
                 {isCancelLoading ? t('detail.cancelling') : t('actions.cancelOrder')}
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="destructive"
+                onClick={onDelete}
+                className="px-6"
+                disabled={isDeleteLoading}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {isDeleteLoading ? t('detail.deleting') || 'Đang xóa...' : t('actions.delete')}
               </Button>
             )}
           </div>

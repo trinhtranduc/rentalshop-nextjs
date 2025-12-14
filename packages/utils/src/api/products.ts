@@ -227,12 +227,20 @@ export const productsApi = {
     startDate?: string;
     endDate?: string;
     format?: 'excel' | 'csv';
+    productIds?: number[];
   }): Promise<Blob> {
     const queryParams = new URLSearchParams();
     if (params.period) queryParams.append('period', params.period);
     if (params.startDate) queryParams.append('startDate', params.startDate);
     if (params.endDate) queryParams.append('endDate', params.endDate);
     if (params.format) queryParams.append('format', params.format);
+    
+    // Add product IDs if provided
+    if (params.productIds && params.productIds.length > 0) {
+      params.productIds.forEach(id => {
+        queryParams.append('productIds', id.toString());
+      });
+    }
 
     const url = `${apiUrls.products.export}?${queryParams.toString()}`;
     const response = await authenticatedFetch(url);

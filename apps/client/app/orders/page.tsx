@@ -50,7 +50,7 @@ export default function OrdersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { toastSuccess, toastWarning } = useToast();
+  const { toastSuccess, toastWarning, toastError } = useToast();
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
   const canExport = useCanExportData();
@@ -68,6 +68,7 @@ export default function OrdersPage() {
   const [orderToCancel, setOrderToCancel] = useState<{ id: number; orderNumber: string } | null>(null);
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<{ id: number; orderNumber: string } | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -230,6 +231,11 @@ export default function OrdersPage() {
     console.log('📄 Current filters:', filters);
     updateURL({ page: newPage });
   }, [updateURL, page, filters]);
+
+  const handleLimitChange = useCallback((newLimit: number) => {
+    console.log('📄 handleLimitChange called: current limit=', limit, ', new limit=', newLimit);
+    updateURL({ limit: newLimit, page: 1 }); // Reset to page 1 when changing limit
+  }, [updateURL, limit]);
 
   const handleSort = useCallback((column: string) => {
     console.log('🔀 Page: Sort changed:', column);
@@ -453,7 +459,7 @@ export default function OrdersPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" maxWidth="full" className="h-screen flex flex-col px-4 pt-4 pb-0 overflow-hidden">
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
@@ -461,14 +467,15 @@ export default function OrdersPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {canExport && (
+            {/* Export button - only show when orders are selected */}
+            {canExport && selectedOrderIds.length > 0 && (
               <Button
                 onClick={() => setShowExportDialog(true)}
-                variant="outline"
+                variant="default"
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
-                {tc('buttons.export')}
+                {tc('buttons.export')} ({selectedOrderIds.length})
               </Button>
             )}
             <Button 
@@ -483,7 +490,7 @@ export default function OrdersPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0 relative">
+      <div className="flex-1 min-h-0 relative overflow-hidden">
         {/* Center Loading Indicator - Shows when waiting for API */}
         {loading && !data ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
@@ -503,10 +510,12 @@ export default function OrdersPage() {
             onClearFilters={handleClearFilters}
             onOrderAction={handleOrderAction}
             onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+            onSelectionChange={setSelectedOrderIds}
             onSort={handleSort}
             onDateRangeChange={handleDateRangeChange}     // 🆕 Modern dropdown filter
             activeQuickFilter={activeQuickFilter}          // 🆕 Active filter state
-            showQuickFilters={true}                         // 🆕 Show date range filter
+            showQuickFilters={false}                        // 🆕 Hide date range filter
             filterStyle="dropdown"                          // 🆕 Dropdown style (Shopify/Stripe)
             showStats={false}
             userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
@@ -520,15 +529,25 @@ export default function OrdersPage() {
         onOpenChange={setShowExportDialog}
         resourceName="Orders"
         isLoading={isExporting}
+        selectedCount={selectedOrderIds.length}
         onExport={async (params) => {
           try {
             setIsExporting(true);
-            const blob = await ordersApi.exportOrders({
-              ...params,
-              status: status || undefined,
-              orderType: orderType || undefined,
-              dateField: 'createdAt' // Default to createdAt, can be customized
-            });
+            // If orders are selected, export only those orders
+            const exportParams = selectedOrderIds.length > 0
+              ? {
+                  ...params,
+                  orderIds: selectedOrderIds, // Export selected orders only
+                  dateField: 'createdAt' as const
+                }
+              : {
+                  ...params,
+                  status: status || undefined,
+                  orderType: orderType || undefined,
+                  dateField: 'createdAt' as const // Default to createdAt, can be customized
+                };
+            
+            const blob = await ordersApi.exportOrders(exportParams);
             
             // Create download link
             const url = window.URL.createObjectURL(blob);
@@ -542,8 +561,12 @@ export default function OrdersPage() {
             
             toastSuccess(tc('labels.success'), 'Export completed successfully');
             setShowExportDialog(false);
-          } catch (error) {
-            // Error automatically handled by useGlobalErrorHandler
+            // Clear selection after successful export
+            setSelectedOrderIds([]);
+          } catch (error: any) {
+            // Show error message
+            const errorMessage = error?.message || 'Failed to export orders. Please try again.';
+            toastError(tc('labels.error') || 'Error', errorMessage);
           } finally {
             setIsExporting(false);
           }

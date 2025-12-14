@@ -22,6 +22,9 @@
   "currentUserInformation": "Thông tin người dùng hiện tại",
   "activeUsersInfo": "Người dùng hoạt động có thể đăng nhập và truy cập hệ thống. Người dùng không hoạt động bị đình chỉ.",
   "created": "Ngày tạo",
+  "label": {
+    "loading": "Đang tải..."
+  },
   "fields": {
     "id": "ID",
     "name": "Tên",
