@@ -61,8 +61,8 @@ async function handleExtendSubscription(
       );
     }
 
-    // Validate amount
-    if (amount <= 0) {
+    // Validate amount (allow 0 for free manual extensions)
+    if (amount === undefined || amount < 0) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_AMOUNT'),
         { status: 400 }

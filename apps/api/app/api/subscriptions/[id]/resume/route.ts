@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 
 /**
  * POST /api/subscriptions/[id]/resume
- * Resume subscription
+ * Resume subscription (reactivate cancelled or paused subscription)
  */
 export async function POST(
   request: NextRequest,
@@ -28,13 +28,23 @@ export async function POST(
         return NextResponse.json(ResponseBuilder.error('SUBSCRIPTION_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
+      // ✅ Validate: Only allow resume from CANCELLED or PAUSED status
+      if (existing.status !== SUBSCRIPTION_STATUS.CANCELLED && existing.status !== SUBSCRIPTION_STATUS.PAUSED) {
+        return NextResponse.json(
+          ResponseBuilder.error('SUBSCRIPTION_CANNOT_RESUME'),
+          { status: 400 }
+        );
+      }
+
       // Get reason from request body
       const body = await request.json().catch(() => ({}));
-      const reason = body.reason || 'Resumed by admin';
+      const reason = body.reason || (existing.status === SUBSCRIPTION_STATUS.CANCELLED ? 'Reactivated by admin' : 'Resumed by admin');
 
-      // Resume subscription
+      // Resume subscription (reactivate)
       const resumedSubscription = await db.subscriptions.update(subscriptionId, {
-        status: 'ACTIVE'
+        status: SUBSCRIPTION_STATUS.ACTIVE,
+        canceledAt: null, // Clear cancellation date when reactivating
+        cancelReason: null // Clear cancellation reason when reactivating
       });
 
       // Log activity to database

@@ -14,7 +14,7 @@ import {
   Textarea
 } from '@rentalshop/ui';
 import { formatDate, formatCurrency } from '@rentalshop/ui';
-import { Calendar, DollarSign, Clock } from 'lucide-react';
+import { Calendar, DollarSign } from 'lucide-react';
 import type { Subscription } from '@rentalshop/types';
 
 interface SubscriptionExtendDialogProps {
@@ -44,76 +44,31 @@ export function SubscriptionExtendDialog({
   onConfirm,
   loading = false
 }: SubscriptionExtendDialogProps) {
-  const [extensionType, setExtensionType] = useState<'date' | 'period'>('period');
-  const [newEndDate, setNewEndDate] = useState('');
   const [extensionPeriod, setExtensionPeriod] = useState<1 | 3 | 6 | 12>(1);
   const [startDate, setStartDate] = useState('');
+  const [newEndDate, setNewEndDate] = useState('');
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('MANUAL_EXTENSION');
   const [description, setDescription] = useState('');
 
   const handleSubmit = () => {
-    if (!subscription) return;
+    if (!subscription || !newEndDate) return;
     
-    let calculatedEndDate: Date;
-    
-    if (extensionType === 'period') {
-      // Calculate end date based on period from start date or current end date
-      const baseDate = startDate 
-        ? new Date(startDate) 
-        : (subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date());
-      
-      // Use safe date arithmetic to avoid month/year boundary issues
-      calculatedEndDate = new Date(baseDate);
-      const originalDay = baseDate.getDate();
-      
-      if (extensionPeriod === 1) {
-        // Add 1 month - handle month boundaries correctly
-        calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
-        // If day doesn't exist in new month (e.g., Jan 31 -> Feb), set to last day of new month
-        if (calculatedEndDate.getDate() !== originalDay) {
-          // Move to first day of next month, then back one day to get last day of target month
-          calculatedEndDate.setDate(1);
-          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
-          calculatedEndDate.setDate(0);
-        }
-      } else if (extensionPeriod === 3) {
-        // Add 3 months
-        calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 3);
-        if (calculatedEndDate.getDate() !== originalDay) {
-          calculatedEndDate.setDate(1);
-          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
-          calculatedEndDate.setDate(0);
-        }
-      } else if (extensionPeriod === 6) {
-        // Add 6 months
-        calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 6);
-        if (calculatedEndDate.getDate() !== originalDay) {
-          calculatedEndDate.setDate(1);
-          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
-          calculatedEndDate.setDate(0);
-        }
-      } else if (extensionPeriod === 12) {
-        // Add 12 months (1 year)
-        calculatedEndDate.setFullYear(calculatedEndDate.getFullYear() + 1);
-        if (calculatedEndDate.getDate() !== originalDay) {
-          // Handle leap year case (Feb 29)
-          calculatedEndDate.setDate(1);
-          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + 1);
-          calculatedEndDate.setDate(0);
-        }
-      }
-    } else {
-      // Use manually entered date
-      if (!newEndDate) return;
-      calculatedEndDate = new Date(newEndDate);
+    // Validate amount (allow 0 for free extensions, but not empty)
+    if (amount === '' || amount === undefined) {
+      return;
     }
     
-    if (!amount) return;
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      return;
+    }
+    
+    const calculatedEndDate = new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59');
     
     const extensionData = {
       newEndDate: calculatedEndDate,
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       method,
       description: description.trim() || undefined
     };
@@ -122,90 +77,80 @@ export function SubscriptionExtendDialog({
   };
 
   const handleClose = () => {
-    setExtensionType('period');
-    setNewEndDate('');
     setExtensionPeriod(1);
     setStartDate('');
+    setNewEndDate('');
     setAmount('');
     setMethod('MANUAL_EXTENSION');
     setDescription('');
     onClose();
   };
 
+  // Initialize start date when dialog opens
+  useEffect(() => {
+    if (isOpen && !startDate && subscription) {
+      const defaultDate = subscription.currentPeriodEnd 
+        ? new Date(subscription.currentPeriodEnd)
+        : new Date();
+      defaultDate.setHours(0, 0, 0, 0);
+      setStartDate(defaultDate.toISOString().slice(0, 16));
+    }
+  }, [isOpen, startDate, subscription]);
+
   // Calculate new end date when period or start date changes
   useEffect(() => {
-    if (extensionType === 'period' && subscription) {
-      const baseDate = startDate 
-        ? new Date(startDate) 
-        : (subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date());
-      
-      const calculated = new Date(baseDate);
-      const originalDay = baseDate.getDate();
-      
-      if (extensionPeriod === 1) {
+    if (!subscription || !startDate) return;
+    
+    const baseDate = new Date(startDate);
+    const calculated = new Date(baseDate);
+    const originalDay = baseDate.getDate();
+    
+    if (extensionPeriod === 1) {
+      calculated.setMonth(calculated.getMonth() + 1);
+      if (calculated.getDate() !== originalDay) {
+        calculated.setDate(1);
         calculated.setMonth(calculated.getMonth() + 1);
-        if (calculated.getDate() !== originalDay) {
-          calculated.setDate(1);
-          calculated.setMonth(calculated.getMonth() + 1);
-          calculated.setDate(0);
-        }
-      } else if (extensionPeriod === 3) {
-        calculated.setMonth(calculated.getMonth() + 3);
-        if (calculated.getDate() !== originalDay) {
-          calculated.setDate(1);
-          calculated.setMonth(calculated.getMonth() + 1);
-          calculated.setDate(0);
-        }
-      } else if (extensionPeriod === 6) {
-        calculated.setMonth(calculated.getMonth() + 6);
-        if (calculated.getDate() !== originalDay) {
-          calculated.setDate(1);
-          calculated.setMonth(calculated.getMonth() + 1);
-          calculated.setDate(0);
-        }
-      } else if (extensionPeriod === 12) {
-        calculated.setFullYear(calculated.getFullYear() + 1);
-        if (calculated.getDate() !== originalDay) {
-          calculated.setDate(1);
-          calculated.setMonth(calculated.getMonth() + 1);
-          calculated.setDate(0);
-        }
+        calculated.setDate(0);
       }
-      
-      setNewEndDate(calculated.toISOString().split('T')[0]);
+    } else if (extensionPeriod === 3) {
+      calculated.setMonth(calculated.getMonth() + 3);
+      if (calculated.getDate() !== originalDay) {
+        calculated.setDate(1);
+        calculated.setMonth(calculated.getMonth() + 1);
+        calculated.setDate(0);
+      }
+    } else if (extensionPeriod === 6) {
+      calculated.setMonth(calculated.getMonth() + 6);
+      if (calculated.getDate() !== originalDay) {
+        calculated.setDate(1);
+        calculated.setMonth(calculated.getMonth() + 1);
+        calculated.setDate(0);
+      }
+    } else if (extensionPeriod === 12) {
+      calculated.setFullYear(calculated.getFullYear() + 1);
+      if (calculated.getDate() !== originalDay) {
+        calculated.setDate(1);
+        calculated.setMonth(calculated.getMonth() + 1);
+        calculated.setDate(0);
+      }
     }
-  }, [extensionType, extensionPeriod, startDate, subscription]);
+    
+    setNewEndDate(calculated.toISOString().slice(0, 16));
+  }, [extensionPeriod, startDate, subscription]);
 
-  // Calculate duration in days and months
-  const calculateDuration = (startDateStr: string | null, endDateStr: string | null): { days: number; months: number } | null => {
-    if (!startDateStr || !endDateStr) return null;
-    const start = new Date(startDateStr);
-    const end = new Date(endDateStr);
+  // Calculate duration in days
+  const calculateDuration = (): { days: number; months: number } | null => {
+    if (!subscription || !newEndDate || !startDate) return null;
+    
+    const start = startDate ? new Date(startDate) : (subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date());
+    const end = new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59');
     
     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    const months = Math.round((days / 30) * 10) / 10;
     
-    return { days, months };
-  };
-
-  // Get effective start date for extension
-  const getEffectiveStartDate = (): string | null => {
-    if (extensionType === 'period') {
-      if (startDate) {
-        return startDate;
-      }
-      return subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toISOString().split('T')[0] : null;
-    } else {
-      // For date-based extension, start date is always currentPeriodEnd
-      return subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toISOString().split('T')[0] : null;
-    }
+    return { days, months: extensionPeriod };
   };
 
   if (!subscription) return null;
-
-  const currentEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
-  const minDate = new Date().toISOString().split('T')[0];
-  const suggestedEndDate = new Date(currentEndDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -223,135 +168,77 @@ export function SubscriptionExtendDialog({
 
         <div className="px-6 py-4 overflow-y-auto">
           <div className="space-y-6">
-          {/* Current Plan Info - Simplified */}
+            {/* Current Plan Info */}
             <div className="flex items-center justify-between p-3 bg-action-primary/10 border border-action-primary/20 rounded-lg">
-                <div>
+              <div>
                 <p className="text-sm text-muted-foreground">Current Plan</p>
-              <p className="font-semibold">{subscription.plan?.name || 'N/A'}</p>
-                </div>
-            <div className="text-right">
-                <p className="text-sm text-muted-foreground">Ends on</p>
-              <p className="font-semibold">
-                    {subscription.currentPeriodEnd 
-                      ? formatDate(subscription.currentPeriodEnd) 
-                      : 'N/A'}
-                  </p>
-                </div>
+                <p className="font-semibold">{subscription.plan?.name || 'N/A'}</p>
               </div>
-
-          {/* Extension Type Selection */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Extension Method</Label>
-              <div className="flex gap-4 mt-2">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    value="period"
-                    checked={extensionType === 'period'}
-                    onChange={(e) => setExtensionType(e.target.value as 'period' | 'date')}
-                    className="w-4 h-4"
-                  />
-                <span className="text-sm">By Period</span>
-                </label>
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    value="date"
-                    checked={extensionType === 'date'}
-                    onChange={(e) => setExtensionType(e.target.value as 'period' | 'date')}
-                    className="w-4 h-4"
-                  />
-                <span className="text-sm">By Date</span>
-                </label>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Ends on</p>
+                <p className="font-semibold">
+                  {subscription.currentPeriodEnd 
+                    ? formatDate(subscription.currentPeriodEnd) 
+                    : 'N/A'}
+                </p>
               </div>
             </div>
 
-            {/* Period-based Extension */}
-            {extensionType === 'period' && (
-              <div className="space-y-4 p-4 bg-action-primary/10 border border-action-primary/20 rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="extensionPeriod">Extension Period *</Label>
-                    <select
-                      id="extensionPeriod"
-                      value={extensionPeriod}
-                      onChange={(e) => setExtensionPeriod(parseInt(e.target.value) as 1 | 3 | 6 | 12)}
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-action-primary focus:border-transparent"
-                    >
-                      <option value={1}>1 Month</option>
-                      <option value={3}>3 Months</option>
-                      <option value={6}>6 Months</option>
-                      <option value={12}>12 Months</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Start Date & Time (Optional)</Label>
-                    <Input
-                      id="startDate"
-                      type="datetime-local"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {startDate 
-                        ? `Starts: ${formatDate(new Date(startDate))}`
-                        : `Default: ${subscription.currentPeriodEnd ? formatDate(new Date(subscription.currentPeriodEnd)) : 'N/A'}`}
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="calculatedEndDate">New End Date & Time</Label>
-                  <Input
-                    id="calculatedEndDate"
-                    type="datetime-local"
-                    value={newEndDate ? (() => {
-                      // Convert date string to datetime-local format
-                      const date = new Date(newEndDate + 'T23:59:59');
-                      return date.toISOString().slice(0, 16);
-                    })() : ''}
-                    readOnly
-                    className="w-full bg-gray-100"
-                  />
-                </div>
-              </div>
-            )}
+            {/* Extension Period */}
+            <div className="space-y-2">
+              <Label htmlFor="extensionPeriod" className="text-sm font-semibold">Extension Period</Label>
+              <select
+                id="extensionPeriod"
+                value={extensionPeriod}
+                onChange={(e) => setExtensionPeriod(parseInt(e.target.value) as 1 | 3 | 6 | 12)}
+                className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-action-primary focus:border-transparent"
+              >
+                <option value={1}>1 Month</option>
+                <option value={3}>3 Months</option>
+                <option value={6}>6 Months</option>
+                <option value={12}>12 Months</option>
+              </select>
+            </div>
 
-            {/* Date-based Extension */}
-            {extensionType === 'date' && (
-              <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="space-y-2">
-                  <Label htmlFor="newEndDate">New End Date & Time *</Label>
-                  <Input
-                    id="newEndDate"
-                    type="datetime-local"
-                    value={newEndDate ? (() => {
-                      // If newEndDate is already in datetime format, use it
-                      // Otherwise convert date string to datetime-local
-                      if (newEndDate.includes('T')) {
-                        return newEndDate.slice(0, 16);
-                      }
-                      const date = new Date(newEndDate + 'T23:59:59');
-                      return date.toISOString().slice(0, 16);
-                    })() : ''}
-                    onChange={(e) => {
-                      const dateValue = e.target.value;
-                      if (dateValue) {
-                        // Store as datetime string for consistency
-                        setNewEndDate(dateValue);
-                      } else {
-                        setNewEndDate('');
-                      }
-                    }}
-                    className="w-full"
-                  />
-                </div>
+            {/* Start Date and End Date */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-bg-secondary border border-border rounded-lg">
+              <div className="space-y-2">
+                <Label htmlFor="startDate" className="text-sm font-semibold">
+                  Start Date & Time
+                </Label>
+                <Input
+                  id="startDate"
+                  type="datetime-local"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full"
+                />
               </div>
-            )}
+              <div className="space-y-2">
+                <Label htmlFor="endDate" className="text-sm font-semibold">
+                  End Date & Time
+                </Label>
+                <Input
+                  id="endDate"
+                  type="datetime-local"
+                  value={newEndDate || ''}
+                  readOnly
+                  className="w-full bg-gray-100 cursor-not-allowed"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {(() => {
+                    const duration = calculateDuration();
+                    if (!duration) return '';
+                    return `${duration.months} months (${duration.days} days)`;
+                  })()}
+                </p>
+              </div>
+            </div>
 
+            {/* Extension Amount and Method */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                  <Label htmlFor="amount">Extension Amount *</Label>
+                <Label htmlFor="amount" className="text-sm font-semibold">Extension Amount *</Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -365,91 +252,75 @@ export function SubscriptionExtendDialog({
                     min="0"
                   />
                 </div>
-                <p className="text-xs text-gray-500">
-                  Current: {formatCurrency(subscription.amount, (subscription.plan?.currency || 'USD') as any)}/month
-                </p>
               </div>
               <div className="space-y-2">
-              <Label htmlFor="method">Extension Method</Label>
-              <select
-                id="method"
-                value={method}
-                onChange={(e) => setMethod(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {EXTENSION_METHODS.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
+                <Label htmlFor="method" className="text-sm font-semibold">Extension Method</Label>
+                <select
+                  id="method"
+                  value={method}
+                  onChange={(e) => setMethod(e.target.value)}
+                  className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-action-primary focus:border-transparent"
+                >
+                  {EXTENSION_METHODS.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Reason for extension..."
-                rows={2}
-                className="w-full"
-              />
-          </div>
-
-          {/* Summary - Show when end date is set */}
-          {newEndDate && (
+            {/* Summary - Show when end date is set */}
+            {newEndDate && (
               <div className="space-y-4 p-4 bg-bg-secondary border border-border rounded-lg">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                    <p className="text-muted-foreground">Current End Date</p>
-                  <p className="font-semibold">
-                        {subscription.currentPeriodEnd 
-                          ? formatDate(subscription.currentPeriodEnd) 
-                          : 'N/A'}
-                      </p>
-                    </div>
-                    <div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
                     <p className="text-muted-foreground">New End Date</p>
                     <p className="font-semibold text-action-success">
-                    {formatDate(new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59'))}
-                      </p>
-                    </div>
-                    <div>
-                    <p className="text-muted-foreground">Days Extended</p>
-                  <p className="font-semibold">
-                        {subscription.currentPeriodEnd 
-                      ? Math.ceil((new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59').getTime() - new Date(subscription.currentPeriodEnd).getTime()) / (1000 * 60 * 60 * 24))
-                          : 'N/A'} days
-                      </p>
-                    </div>
-                    <div>
+                      {formatDate(new Date(newEndDate.includes('T') ? newEndDate : newEndDate + 'T23:59:59'))}
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-muted-foreground">Extension Amount</p>
-                  <p className="font-semibold">
-                        {amount 
-                          ? formatCurrency(parseFloat(amount), (subscription.currency || subscription.plan?.currency || 'USD') as any)
-                          : 'N/A'}
-                      </p>
-                    </div>
+                    <p className="font-semibold">
+                      {amount 
+                        ? formatCurrency(parseFloat(amount), (subscription.currency || subscription.plan?.currency || 'USD') as any)
+                        : 'N/A'}
+                    </p>
                   </div>
                 </div>
-          )}
+
+                {/* Description */}
+                <div className="space-y-2 border-t pt-4">
+                  <Label htmlFor="description" className="text-sm font-semibold">
+                    Description (Optional)
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Reason for extension..."
+                    rows={2}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+        {/* Action Buttons */}
+        <DialogFooter className="px-6 py-4 border-t">
           <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={loading || !newEndDate || !amount || (extensionType === 'period' && !extensionPeriod)}
+            disabled={loading || !newEndDate || !amount}
           >
             {loading ? 'Extending...' : 'Extend Subscription'}
           </Button>
-          </div>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

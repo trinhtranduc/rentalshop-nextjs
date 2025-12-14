@@ -22,7 +22,9 @@ import {
   Edit, 
   Building,
   MoreVertical,
-  Ban
+  Ban,
+  X,
+  RefreshCw
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant, BillingInterval } from '@rentalshop/types';
 import { SubscriptionViewDialog } from './SubscriptionViewDialog';
@@ -37,7 +39,12 @@ interface SubscriptionListProps {
   onView?: (subscription: Subscription) => void;
   onEdit?: (subscription: Subscription) => void;
   onDelete?: (subscription: Subscription) => void;
-  onExtend?: (subscription: Subscription) => void;
+  onExtend?: (subscription: Subscription, data: {
+    newEndDate: Date;
+    amount: number;
+    method: string;
+    description?: string;
+  }) => void;
   onCancel?: (subscription: Subscription, reason: string) => void;
   onSuspend?: (subscription: Subscription, reason: string) => void;
   onReactivate?: (subscription: Subscription) => void;
@@ -159,7 +166,7 @@ export function SubscriptionList({
 
 
   const handleExtendConfirm = (subscription: Subscription, data: any) => {
-    onExtend?.(subscription);
+    onExtend?.(subscription, data);
     setShowExtendDialog(false);
     setShowViewDialog(false); // Close the view dialog
     setSelectedSubscription(null);
@@ -172,9 +179,22 @@ export function SubscriptionList({
     setSelectedSubscription(null);
   };
 
-  const canCancel = (subscription: Subscription) => ['active', 'trial'].includes(subscription.status);
-  const canExtend = (subscription: Subscription) => ['active', 'trial', 'past_due'].includes(subscription.status);
-  const canChangePlan = (subscription: Subscription) => ['active', 'trial'].includes(subscription.status);
+  const canCancel = (subscription: Subscription) => {
+    const status = String(subscription.status).toLowerCase();
+    return ['active', 'trial'].includes(status);
+  };
+  const canExtend = (subscription: Subscription) => {
+    const status = String(subscription.status).toLowerCase();
+    return ['active', 'trial', 'past_due'].includes(status);
+  };
+  const canChangePlan = (subscription: Subscription) => {
+    const status = String(subscription.status).toLowerCase();
+    return ['active', 'trial'].includes(status);
+  };
+  const canReactivate = (subscription: Subscription) => {
+    const status = String(subscription.status).toLowerCase();
+    return ['cancelled', 'paused'].includes(status);
+  };
 
   return (
     <>
@@ -327,6 +347,21 @@ export function SubscriptionList({
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
+                            {canReactivate(subscription) && onReactivate && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    onReactivate(subscription);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="text-green-600 hover:text-green-700 hover:bg-green-50 focus:text-green-700 focus:bg-green-50 dark:hover:bg-green-950 dark:focus:bg-green-950"
+                                >
+                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  Reactivate Subscription
+                                </DropdownMenuItem>
+                              </>
+                            )}
                             {canCancel(subscription) && (
                               <>
                                 <DropdownMenuSeparator />
@@ -335,9 +370,9 @@ export function SubscriptionList({
                                     handleCancel(subscription);
                                     setOpenMenuId(null);
                                   }}
-                                  className="text-action-danger focus:text-action-danger"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 dark:hover:bg-red-950 dark:focus:bg-red-950"
                                 >
-                                  <Ban className="h-4 w-4 mr-2" />
+                                  <X className="h-4 w-4 mr-2" />
                                   Cancel Subscription
                                 </DropdownMenuItem>
                               </>

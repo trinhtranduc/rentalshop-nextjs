@@ -209,50 +209,66 @@ export async function middleware(request: NextRequest) {
     }
 
     // ============================================================================
-    // PLATFORM ACCESS CONTROL - SIMPLE CHECK
+    // PLATFORM ACCESS CONTROL - FETCH allowWebAccess FROM DB WHEN NEEDED
     // ============================================================================
-    // Basic plan only allows mobile app access
-    // All other plans allow both web and mobile access
+    // Fetch subscription data from DB only when checking web access (keeps JWT small)
     
-    if (payload.role !== USER_ROLE.ADMIN && platformInfo.platform === 'web') {
-      const planName = payload.planName || 'Trial'; // Default to Trial if not set
-      
-      // Only block Basic plan from web access; Trial and all other plans allow web access
-      if (planName === 'Basic') {
-        console.log('❌ MIDDLEWARE: Platform access denied:', {
-          planName,
-          platform: platformInfo.platform,
-          message: 'Basic plan only supports mobile app'
-        });
+    if (payload.role !== USER_ROLE.ADMIN && platformInfo.platform === 'web' && payload.merchantId) {
+      try {
+        // Fetch subscription with plan limits from DB
+        const { getSubscriptionByMerchantId } = await import('@rentalshop/database');
+        const subscription = await getSubscriptionByMerchantId(payload.merchantId);
         
-        return NextResponse.json(
-          {
-            success: false,
-            code: 'PLATFORM_ACCESS_DENIED',
-            message: 'Basic plan only supports mobile app. Please upgrade to Premium or Enterprise to access the web dashboard.',
-            data: {
-              currentPlan: planName,
-              currentPlatform: platformInfo.platform,
-              allowedPlatforms: ['mobile'],
-              upgradeRequired: true,
-              upgradeUrl: '/settings/subscription'
-            }
-          },
-          {
-            status: API.STATUS.FORBIDDEN,
-            headers: {
-              ...corsHeaders,
-              'X-Platform-Access-Denied': 'true',
-              'X-Upgrade-Required': 'true'
-            }
+        if (subscription?.plan?.limits) {
+          const planLimits = subscription.plan.limits as any;
+          const allowWebAccess = planLimits?.allowWebAccess !== undefined 
+            ? planLimits.allowWebAccess 
+            : true; // Default to true if not set
+          
+          if (!allowWebAccess) {
+            const planName = subscription.plan?.name || 'Unknown';
+            console.log('❌ MIDDLEWARE: Platform access denied:', {
+              planName,
+              platform: platformInfo.platform,
+              allowWebAccess,
+              merchantId: payload.merchantId,
+              message: 'Plan does not allow web access'
+            });
+            
+            return NextResponse.json(
+              {
+                success: false,
+                code: 'PLATFORM_ACCESS_DENIED',
+                message: 'Your subscription plan does not allow web access. Please upgrade to a plan that supports web dashboard access.',
+                data: {
+                  currentPlan: planName,
+                  currentPlatform: platformInfo.platform,
+                  allowedPlatforms: ['mobile'],
+                  upgradeRequired: true,
+                  upgradeUrl: '/settings/subscription'
+                }
+              },
+              {
+                status: API.STATUS.FORBIDDEN,
+                headers: {
+                  ...corsHeaders,
+                  'X-Platform-Access-Denied': 'true',
+                  'X-Upgrade-Required': 'true'
+                }
+              }
+            );
           }
-        );
+        }
+      } catch (error) {
+        // If error fetching subscription, allow access (fail open for better UX)
+        // Log error for monitoring
+        console.error('⚠️ MIDDLEWARE: Error fetching subscription for platform access check:', error);
       }
     }
     
     console.log('✅ MIDDLEWARE: Platform access granted:', {
-      planName: payload.planName || 'Default',
-      platform: platformInfo.platform
+      platform: platformInfo.platform,
+      role: payload.role
     });
 
     // Forward user context to downstream handlers via request headers

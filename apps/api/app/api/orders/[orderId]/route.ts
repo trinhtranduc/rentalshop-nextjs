@@ -375,3 +375,85 @@ export const PUT = async (
     }
   })(request);
 }
+
+/**
+ * DELETE /api/orders/[orderId]
+ * Soft delete order by ID
+ * 
+ * Authorization: Users with 'orders.manage' permission can delete orders
+ * - OUTLET_ADMIN can only delete orders from their outlet
+ * - MERCHANT can delete orders from their merchant
+ * - ADMIN can delete any order
+ */
+export const DELETE = async (
+  request: NextRequest,
+  { params }: { params: Promise<{ orderId: string }> | { orderId: string } }
+) => {
+  // Resolve params (handle both Promise and direct object)
+  const resolvedParams = await Promise.resolve(params);
+  const { orderId } = resolvedParams;
+  
+  return withPermissions(['orders.manage'])(async (request, { user, userScope }) => {
+    try {
+      console.log(`🔍 DELETE /api/orders/[orderId] - User: ${user.email} (${user.role})`);
+      console.log(`🔍 DELETE /api/orders/[orderId] - UserScope:`, userScope);
+
+      // Check if the ID is numeric (public ID)
+      if (!/^\d+$/.test(orderId)) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_ORDER_ID_FORMAT'),
+          { status: 400 }
+        );
+      }
+
+      const orderIdNum = parseInt(orderId);
+
+      // Check if order exists and user has access to it
+      const existingOrder = await db.orders.findById(orderIdNum);
+      if (!existingOrder) {
+        return NextResponse.json(
+          ResponseBuilder.error('ORDER_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
+      }
+
+      // Authorization checks based on user role
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        // Outlet users can only delete orders from their outlet
+        if (existingOrder.outletId !== userScope.outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_DELETE_ORDER_FROM_OTHER_OUTLET'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+      } else if (user.role !== USER_ROLE.ADMIN) {
+        // Non-admin users can only delete orders from their merchant
+        const existingOutlet = await db.outlets.findById(existingOrder.outletId);
+        if (existingOutlet && existingOutlet.merchantId !== userScope.merchantId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_DELETE_ORDER_FROM_OTHER_MERCHANT'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+      }
+
+      // Soft delete the order
+      await db.orders.softDelete(orderIdNum);
+      console.log('✅ Order soft deleted successfully:', orderIdNum);
+
+      return NextResponse.json(
+        ResponseBuilder.success('ORDER_DELETED_SUCCESS', {
+          id: orderIdNum,
+          deletedAt: new Date().toISOString()
+        })
+      );
+
+    } catch (error: any) {
+      console.error('❌ Error deleting order:', error);
+      
+      // Use unified error handling system (uses ResponseBuilder internally)
+      const { response, statusCode } = handleApiError(error);
+      return NextResponse.json(response, { status: statusCode });
+    }
+  })(request);
+}

@@ -250,6 +250,7 @@ model Order {
   damageNotes        String?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
+  deletedAt          DateTime?
   outletId           Int
   customerId         Int?
   createdById        Int
@@ -272,6 +273,7 @@ model Order {
   @@index([createdById, createdAt])
   @@index([totalAmount])
   @@index([status, orderType, createdAt])
+  @@index([deletedAt])
 }
 
 model OrderItem {

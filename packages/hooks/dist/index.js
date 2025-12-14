@@ -5422,7 +5422,7 @@ function useSubscriptionError() {
       action = "Choose a new plan to continue using the service.";
     } else if (subscriptionStatus === "cancelled") {
       message = "Your subscription has been cancelled.";
-      action = "Choose a new plan to reactivate your account.";
+      action = "Contact support to reactivate your subscription or choose a new plan.";
     } else if (subscriptionStatus === "past_due") {
       message = "Payment is past due. Please update your payment method.";
       action = "Update your payment information to avoid service interruption.";
@@ -5719,33 +5719,50 @@ function useOptimisticNavigation() {
 // src/hooks/useGlobalErrorHandler.ts
 var import_react22 = require("react");
 var import_ui3 = require("@rentalshop/ui");
+var lastErrorCode = null;
+var lastErrorTime = 0;
+var DEBOUNCE_MS = 1e3;
 function useGlobalErrorHandler() {
   const { addToast } = (0, import_ui3.useToasts)();
   const { translateError } = useApiError();
   const subscriptionErrorHook = useSubscriptionError();
+  const addToastRef = (0, import_react22.useRef)(addToast);
+  const translateErrorRef = (0, import_react22.useRef)(translateError);
+  const subscriptionErrorHookRef = (0, import_react22.useRef)(subscriptionErrorHook);
+  (0, import_react22.useEffect)(() => {
+    addToastRef.current = addToast;
+    translateErrorRef.current = translateError;
+    subscriptionErrorHookRef.current = subscriptionErrorHook;
+  }, [addToast, translateError, subscriptionErrorHook]);
   (0, import_react22.useEffect)(() => {
     const handleApiError = (event) => {
       const { code, message, error: errorData, fullError } = event.detail;
       const errorCode = code || errorData;
-      const isSubscriptionError = errorCode === "SUBSCRIPTION_CANCELLED" || errorCode === "SUBSCRIPTION_EXPIRED" || errorCode === "SUBSCRIPTION_PAUSED" || errorCode === "SUBSCRIPTION_PAST_DUE" || errorCode === "TRIAL_EXPIRED" || errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode && typeof errorCode === "string" && errorCode.includes("SUBSCRIPTION");
-      if (isSubscriptionError) {
-        subscriptionErrorHook.handleSubscriptionError(fullError || { code: errorCode, message });
+      const now = Date.now();
+      if (errorCode === lastErrorCode && now - lastErrorTime < DEBOUNCE_MS) {
         return;
       }
-      const translatedMessage = translateError({
+      lastErrorCode = errorCode;
+      lastErrorTime = now;
+      const isSubscriptionError = errorCode === "SUBSCRIPTION_CANCELLED" || errorCode === "SUBSCRIPTION_EXPIRED" || errorCode === "SUBSCRIPTION_PAUSED" || errorCode === "SUBSCRIPTION_PAST_DUE" || errorCode === "TRIAL_EXPIRED" || errorCode === "PLAN_LIMIT_EXCEEDED" || errorCode && typeof errorCode === "string" && errorCode.includes("SUBSCRIPTION");
+      if (isSubscriptionError) {
+        subscriptionErrorHookRef.current.handleSubscriptionError(fullError || { code: errorCode, message });
+        return;
+      }
+      const translatedMessage = translateErrorRef.current({
         code: errorCode,
         message: message || errorData,
         success: false,
         error: errorData
       });
       const toastType = errorCode === "VALIDATION_ERROR" || errorCode?.includes("INVALID") ? "warning" : "error";
-      addToast(toastType, "Error", translatedMessage, 0);
+      addToastRef.current(toastType, "Error", translatedMessage, 0);
     };
     window.addEventListener("api-error", handleApiError);
     return () => {
       window.removeEventListener("api-error", handleApiError);
     };
-  }, [addToast, translateError, subscriptionErrorHook]);
+  }, []);
 }
 
 // src/hooks/useFiltersData.ts

@@ -231,6 +231,16 @@ export async function PUT(
         );
       }
 
+      // Check if allowWebAccess changed in limits (for platform access control)
+      let allowWebAccessChanged = false;
+      if (updateData.limits) {
+        const oldLimits = existingPlan.limits ? (typeof existingPlan.limits === 'string' ? JSON.parse(existingPlan.limits) : existingPlan.limits) : {};
+        const newLimits = typeof updateData.limits === 'string' ? JSON.parse(updateData.limits) : updateData.limits;
+        const oldAllowWebAccess = oldLimits?.allowWebAccess !== undefined ? oldLimits.allowWebAccess : true;
+        const newAllowWebAccess = newLimits?.allowWebAccess !== undefined ? newLimits.allowWebAccess : true;
+        allowWebAccessChanged = oldAllowWebAccess !== newAllowWebAccess;
+      }
+
       // Update the plan using the simplified database API
       let updatedPlan;
       try {
@@ -255,6 +265,31 @@ export async function PUT(
         }
         
         throw dbError; // Re-throw to be caught by outer catch
+      }
+
+      // If allowWebAccess changed, invalidate all sessions for merchants using this plan
+      // This forces users to re-login and get updated subscription data
+      if (allowWebAccessChanged) {
+        try {
+          // Get all subscriptions using this plan
+          const subscriptions = await db.subscriptions.search({
+            planId: planId,
+            limit: 1000 // Get all subscriptions (adjust if needed)
+          });
+
+          // Invalidate sessions for all merchants using this plan
+          let totalInvalidated = 0;
+          for (const subscription of subscriptions.subscriptions || []) {
+            if (subscription.merchantId) {
+              const count = await db.sessions.invalidateAllMerchantUserSessions(subscription.merchantId);
+              totalInvalidated += count;
+            }
+          }
+          console.log(`🔄 Invalidated ${totalInvalidated} sessions for ${subscriptions.subscriptions?.length || 0} merchants due to allowWebAccess change in plan ${planId}`);
+        } catch (error) {
+          console.error('⚠️ Failed to invalidate merchant sessions after plan update:', error);
+          // Don't fail the request if session invalidation fails
+        }
       }
       
       // Transform response to match Plan interface

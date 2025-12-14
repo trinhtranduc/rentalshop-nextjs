@@ -73,6 +73,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'ADMIN_OUTLET_ID_REQUIRED': 'Admin users need to specify outlet ID for outlet updates',
   'INVALID_CATEGORY_ID': 'Invalid category ID',
   'INVALID_SUBSCRIPTION_ID': 'Invalid subscription ID',
+  'SUBSCRIPTION_CANNOT_RESUME': 'Cannot resume subscription. Only cancelled or paused subscriptions can be resumed.',
   
   // Not Found Errors
   'USER_NOT_FOUND': 'User not found',
