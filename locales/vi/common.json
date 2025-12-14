@@ -128,6 +128,7 @@
     "results": "kết quả",
     "page": "Trang",
     "rowsPerPage": "Số dòng mỗi trang",
+    "itemsPerPage": "Số mục mỗi trang",
     "first": "Đầu",
     "last": "Cuối",
     "noData": "Không có dữ liệu để hiển thị"

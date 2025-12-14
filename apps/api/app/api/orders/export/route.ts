@@ -137,19 +137,16 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       take: 10000 // Large limit for export
     });
 
-    // Prepare data for export
+    // Prepare data for export (exclude system IDs)
     const exportData = orders.map((order: any) => ({
-      id: order.id,
       orderNumber: order.orderNumber || '',
       orderType: order.orderType || '',
       status: order.status || '',
       customerName: formatFullName(order.customer?.firstName, order.customer?.lastName) || '',
       customerEmail: order.customer?.email || '',
       customerPhone: order.customer?.phone || '',
-      outletId: order.outlet?.id || '',
       outletName: order.outlet?.name || '',
       outletAddress: order.outlet?.address || '',
-      createdById: order.createdBy?.id || '',
       createdByName: formatFullName(order.createdBy?.firstName, order.createdBy?.lastName) || order.createdBy?.email || '',
       createdByEmail: order.createdBy?.email || '',
       discountType: order.discountType || '',
@@ -168,17 +165,14 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
     // Excel export
     if (format === 'excel') {
       const columns: ExcelColumn[] = [
-        { header: 'Order ID', key: 'id', width: 10 },
         { header: 'Order Number', key: 'orderNumber', width: 20 },
         { header: 'Order Type', key: 'orderType', width: 12 },
         { header: 'Status', key: 'status', width: 12 },
         { header: 'Customer Name', key: 'customerName', width: 25 },
         { header: 'Customer Email', key: 'customerEmail', width: 25 },
         { header: 'Customer Phone', key: 'customerPhone', width: 15 },
-        { header: 'Outlet ID', key: 'outletId', width: 10 },
         { header: 'Outlet Name', key: 'outletName', width: 25 },
         { header: 'Outlet Address', key: 'outletAddress', width: 30 },
-        { header: 'Created By ID', key: 'createdById', width: 12 },
         { header: 'Created By Name', key: 'createdByName', width: 25 },
         { header: 'Created By Email', key: 'createdByEmail', width: 25 },
         { header: 'Discount Type', key: 'discountType', width: 15 },
@@ -209,17 +203,14 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
 
     // CSV export (backward compatibility)
     const csvHeaders = [
-      'Order ID',
       'Order Number',
       'Order Type',
       'Status',
       'Customer Name',
       'Customer Email',
       'Customer Phone',
-      'Outlet ID',
       'Outlet Name',
       'Outlet Address',
-      'Created By ID',
       'Created By Name',
       'Created By Email',
       'Discount Type',
@@ -236,17 +227,14 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
     ];
 
     const csvRows = exportData.map((order: any) => [
-      order.id,
       `"${order.orderNumber}"`,
       order.orderType,
       order.status,
       `"${order.customerName}"`,
       `"${order.customerEmail}"`,
       `"${order.customerPhone}"`,
-      order.outletId,
       `"${order.outletName}"`,
       `"${order.outletAddress}"`,
-      order.createdById,
       `"${order.createdByName}"`,
       `"${order.createdByEmail}"`,
       `"${order.discountType}"`,

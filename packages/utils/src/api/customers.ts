@@ -168,12 +168,20 @@ export const customersApi = {
     startDate?: string;
     endDate?: string;
     format?: 'excel' | 'csv';
+    customerIds?: number[];
   }): Promise<Blob> {
     const queryParams = new URLSearchParams();
     if (params.period) queryParams.append('period', params.period);
     if (params.startDate) queryParams.append('startDate', params.startDate);
     if (params.endDate) queryParams.append('endDate', params.endDate);
     if (params.format) queryParams.append('format', params.format);
+    
+    // Add customer IDs if provided
+    if (params.customerIds && params.customerIds.length > 0) {
+      params.customerIds.forEach(id => {
+        queryParams.append('customerIds', id.toString());
+      });
+    }
 
     const url = `${apiUrls.customers.export}?${queryParams.toString()}`;
     const response = await authenticatedFetch(url);

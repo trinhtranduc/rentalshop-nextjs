@@ -84,7 +84,6 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
         if (!outletStock) return; // Skip products not in this outlet
         
         exportData.push({
-          id: product.id,
           name: product.name || '',
           barcode: product.barcode || '',
           description: product.description || '',
@@ -93,7 +92,6 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
           available: outletStock.available || 0,
           rentPrice: formatNumberForExcel(product.rentPrice),
           deposit: formatNumberForExcel(product.deposit),
-          outletId: outletStock.outlet.id,
           createdAt: formatDateForExcel(product.createdAt),
           updatedAt: formatDateForExcel(product.updatedAt)
         });
@@ -101,7 +99,6 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
         // If no specific outlet, create one row per outlet
         product.outletStock?.forEach((outletStock: any) => {
           exportData.push({
-            id: product.id,
             name: product.name || '',
             barcode: product.barcode || '',
             description: product.description || '',
@@ -110,7 +107,6 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
             available: outletStock.available || 0,
             rentPrice: formatNumberForExcel(product.rentPrice),
             deposit: formatNumberForExcel(product.deposit),
-            outletId: outletStock.outlet.id,
             createdAt: formatDateForExcel(product.createdAt),
             updatedAt: formatDateForExcel(product.updatedAt)
           });
@@ -121,7 +117,6 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
     // Excel export
     if (format === 'excel') {
       const columns: ExcelColumn[] = [
-        { header: 'ID', key: 'id', width: 10 },
         { header: 'Name', key: 'name', width: 30 },
         { header: 'Barcode', key: 'barcode', width: 15 },
         { header: 'Description', key: 'description', width: 40 },
@@ -130,7 +125,6 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
         { header: 'Available', key: 'available', width: 10 },
         { header: 'Rent Price', key: 'rentPrice', width: 15 },
         { header: 'Deposit', key: 'deposit', width: 15 },
-        { header: 'Outlet ID', key: 'outletId', width: 10 },
         { header: 'Created At', key: 'createdAt', width: 20 },
         { header: 'Updated At', key: 'updatedAt', width: 20 }
       ];
@@ -150,7 +144,6 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
 
     // CSV export (backward compatibility)
     const csvHeaders = [
-      'ID',
       'Name',
       'Barcode',
       'Description',
@@ -159,13 +152,11 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
       'Available',
       'Rent Price',
       'Deposit',
-      'Outlet ID',
       'Created At',
       'Updated At'
     ];
 
     const csvRows = exportData.map((product: any) => [
-          product.id,
           `"${product.name}"`,
       product.barcode,
       `"${product.description}"`,
@@ -174,7 +165,6 @@ export const GET = withPermissions(['products.export'])(async (request, { user, 
       product.available,
           product.rentPrice,
           product.deposit,
-      product.outletId,
           product.createdAt,
           product.updatedAt
         ]);

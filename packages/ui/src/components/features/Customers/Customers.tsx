@@ -39,6 +39,8 @@ export interface CustomersProps {
   onCustomerAction?: (action: string, customerId: number) => void;
   onPageChange?: (page: number) => void;
   onSort?: (column: string) => void;
+  onSelectionChange?: (selectedIds: number[]) => void;
+  onLimitChange?: (limit: number) => void;
   
   // Display props
   title?: string;
@@ -72,6 +74,8 @@ export const Customers: React.FC<CustomersProps> = ({
   onCustomerAction = () => {},
   onPageChange = () => {},
   onSort = () => {},
+  onSelectionChange,
+  onLimitChange,
   
   // Display props
   title = "Customer Management",
@@ -165,12 +169,13 @@ export const Customers: React.FC<CustomersProps> = ({
         </Card>
       </div>
 
-      {/* Scrollable Table Section */}
-      <div className="flex-1 min-h-0 mt-4">
+      {/* Scrollable Table Section - Full height, vertical scroll only */}
+      <div className="flex-1 min-h-0 mt-4 overflow-hidden">
         {customers.length > 0 ? (
           <CustomerTable
             customers={customers}
             onCustomerAction={memoizedOnCustomerAction}
+            onSelectionChange={onSelectionChange}
             sortBy={filters.sortBy || "createdAt"}
             sortOrder={filters.sortOrder || "desc"}
             onSort={memoizedOnSort}
@@ -197,6 +202,7 @@ export const Customers: React.FC<CustomersProps> = ({
             total={totalCustomers}
             limit={limit}
             onPageChange={memoizedOnPageChange}
+            onLimitChange={onLimitChange}
             itemName="customers"
           />
         </div>

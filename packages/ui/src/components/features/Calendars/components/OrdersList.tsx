@@ -3,6 +3,7 @@ import { Package, User, Mail, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import type { PickupOrder } from '@rentalshop/types';
 import { useOrderTranslations } from '@rentalshop/hooks';
+import { formatPhoneNumberMasked } from '@rentalshop/utils';
 
 interface OrdersListProps {
   orders: PickupOrder[];
@@ -65,13 +66,10 @@ export function OrdersList({
               </div>
               <div>
                 <p className="font-medium text-gray-900">
-                  {order.customerName || (order.customer ? 
-                    `${order.customer.firstName} ${order.customer.lastName}` : 
-                    'Unknown Customer'
-                  )}
+                  {order.customerName || 'Unknown Customer'}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {order.customerPhone || order.customer?.phone || 'No phone'}
+                  {formatPhoneNumberMasked(order.customerPhone)}
                 </p>
               </div>
             </div>

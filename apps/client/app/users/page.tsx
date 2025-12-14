@@ -332,7 +332,7 @@ export default function UsersPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" maxWidth="full" className="h-screen flex flex-col px-4 pt-4 pb-0 overflow-hidden">
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
@@ -365,7 +365,7 @@ export default function UsersPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0 overflow-auto relative">
+      <div className="flex-1 min-h-0 relative overflow-hidden">
         {/* Center Loading Indicator - Shows when waiting for API */}
         {loading && !data ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white z-10">

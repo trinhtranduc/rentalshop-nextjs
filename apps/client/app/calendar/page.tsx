@@ -6,7 +6,7 @@ import { Calendars, PageWrapper, Breadcrumb, Button, PageLoadingIndicator } from
 import { X } from 'lucide-react';
 import { useAuth, useCommonTranslations, useCalendarTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
-import { getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced } from '@rentalshop/utils';
+import { getUTCDateKey, getLocalDateKey, formatCurrencyAdvanced, formatPhoneNumberMasked } from '@rentalshop/utils';
 import { calendarApi, type CalendarResponse, type DayOrders, type CalendarOrderSummary, type CalendarMeta } from "@rentalshop/utils";
 import { ORDER_STATUS } from '@rentalshop/constants';
 import type { PickupOrder } from '@rentalshop/ui';
@@ -437,7 +437,7 @@ export default function CalendarPage() {
                              <td className="px-6 py-4 whitespace-nowrap">
                                <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
                                {order.customerPhone && (
-                                 <div className="text-sm text-gray-500">{order.customerPhone}</div>
+                                 <div className="text-sm text-gray-500">{formatPhoneNumberMasked(order.customerPhone)}</div>
                                )}
                              </td>
                              <td className="px-6 py-4">

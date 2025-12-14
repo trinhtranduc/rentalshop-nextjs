@@ -75,6 +75,7 @@ export default function ProductsPage() {
   const [productToDelete, setProductToDelete] = useState<ProductWithDetails | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   
   // Data for edit dialog
   const [categories, setCategories] = useState<Category[]>([]);
@@ -206,6 +207,11 @@ export default function ProductsPage() {
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
     updateURL({ sortBy: column, sortOrder: newSortOrder, page: 1 });
   }, [sortBy, sortOrder, updateURL]);
+
+  const handleLimitChange = useCallback((newLimit: number) => {
+    console.log('📄 handleLimitChange called: current limit=', limit, ', new limit=', newLimit);
+    updateURL({ limit: newLimit, page: 1 }); // Reset to page 1 when changing limit
+  }, [updateURL, limit]);
 
   // ============================================================================
   // PRODUCT ACTION HANDLERS
@@ -374,7 +380,7 @@ export default function ProductsPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" maxWidth="full" className="h-screen flex flex-col px-4 pt-4 pb-0 overflow-hidden">
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
@@ -382,7 +388,18 @@ export default function ProductsPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {canExport && (
+            {/* Export button - only show when products are selected */}
+            {canExport && selectedProductIds.length > 0 && (
+              <Button
+                onClick={() => setShowExportDialog(true)}
+                variant="default"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {tc('buttons.export')} ({selectedProductIds.length})
+              </Button>
+            )}
+            {canExport && selectedProductIds.length === 0 && (
               <Button
                 onClick={() => setShowExportDialog(true)}
                 variant="outline"
@@ -407,7 +424,7 @@ export default function ProductsPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0 overflow-auto relative">
+      <div className="flex-1 min-h-0 relative overflow-hidden">
         {/* Center Loading Indicator - Shows when waiting for API */}
         {loading && !data ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
@@ -428,6 +445,8 @@ export default function ProductsPage() {
             onProductAction={handleProductAction}
             onPageChange={handlePageChange}
             onSort={handleSort}
+            onSelectionChange={setSelectedProductIds}
+            onLimitChange={handleLimitChange}
           />
         )}
       </div>
@@ -536,6 +555,7 @@ export default function ProductsPage() {
         onOpenChange={setShowExportDialog}
         resourceName="Products"
         isLoading={isExporting}
+        selectedCount={selectedProductIds.length}
         onExport={async (params) => {
           try {
             setIsExporting(true);
@@ -553,6 +573,7 @@ export default function ProductsPage() {
             
             toastSuccess(tc('labels.success'), 'Export completed successfully');
             setShowExportDialog(false);
+            setSelectedProductIds([]); // Clear selection after export
           } catch (error) {
             // Error automatically handled by useGlobalErrorHandler
           } finally {

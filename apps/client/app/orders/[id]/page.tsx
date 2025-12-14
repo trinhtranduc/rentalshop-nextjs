@@ -94,6 +94,28 @@ export default function OrderDetailPage() {
     }
   };
 
+  const handleDeleteOrder = async (orderToDelete: Order) => {
+    if (!orderToDelete) return;
+
+    try {
+      setActionLoading(true);
+
+      const result = await ordersApi.deleteOrder(orderToDelete.id);
+
+      if (result.success) {
+        toastSuccess(tc('messages.deleteSuccess') || 'Order deleted successfully', t('messages.deleteSuccess') || 'Order deleted successfully');
+        // Navigate back to orders list after successful deletion
+        router.push('/orders');
+      }
+      // Error automatically handled by useGlobalErrorHandler
+    } catch (err) {
+      console.error('Error deleting order:', err);
+      // Error automatically handled by useGlobalErrorHandler
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleStatusChange = async (newStatus: string) => {
     if (!order || !newStatus) return;
 
@@ -306,6 +328,7 @@ export default function OrderDetailPage() {
         order={order}
         onEdit={handleEditOrder}
         onCancel={handleCancelOrder}
+        onDelete={handleDeleteOrder}
         onStatusChange={handleStatusChange}
         onPickup={handlePickupWrapper}
         onReturn={handleReturnWrapper}
