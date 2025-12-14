@@ -12,7 +12,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
+  FieldTooltip
 } from '@rentalshop/ui';
 import { Settings, Save, Edit } from 'lucide-react';
 import { useOrderTranslations } from '@rentalshop/hooks';
@@ -78,8 +79,9 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
           <>
             {/* Damage Fee - Conditionally enabled based on order type and status */}
             <div>
-              <Label htmlFor="damageFee" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="damageFee" className="text-sm font-medium text-gray-700 flex items-center">
                 {t('amount.damageFee')}
+                <FieldTooltip text={t('amount.tooltips.damageFee')} />
                 {!isDamageFeeEnabled() && (
                   <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
                 )}
@@ -99,8 +101,9 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
 
             {/* Security Deposit - Conditionally enabled based on order type and status */}
             <div>
-              <Label htmlFor="securityDeposit" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="securityDeposit" className="text-sm font-medium text-gray-700 flex items-center">
                 {t('amount.securityDeposit')}
+                <FieldTooltip text={t('amount.tooltips.securityDeposit')} />
                 {!isSecurityDepositEnabled() && (
                   <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
                 )}
@@ -120,8 +123,9 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
 
             {/* Collateral Type - Conditionally enabled based on order type and status */}
             <div>
-              <Label htmlFor="collateralType" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="collateralType" className="text-sm font-medium text-gray-700 flex items-center">
                 {t('amount.collateralType')}
+                <FieldTooltip text={t('amount.tooltips.collateralType')} />
                 {!isCollateralTypeEnabled() && (
                   <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
                 )}
@@ -144,8 +148,9 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
 
             {/* Collateral Details - Conditionally enabled based on order type and status */}
             <div>
-              <Label htmlFor="collateralDetails" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="collateralDetails" className="text-sm font-medium text-gray-700 flex items-center">
                 {t('amount.collateralDetails')}
+                <FieldTooltip text={t('amount.tooltips.collateralDetails')} />
                 {!isCollateralDetailsEnabled() && (
                   <span className="text-xs text-gray-500 ml-2">(Disabled for this order type/status)</span>
                 )}
@@ -199,8 +204,11 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
           <>
             {/* Display Mode */}
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">{t('amount.damageFee')}:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 flex items-center">
+                  {t('amount.damageFee')}:
+                  <FieldTooltip text={t('amount.tooltips.damageFee')} />
+                </span>
                 <span className="text-sm font-medium">
                   {isDamageFeeEnabled() 
                     ? formatMoney(settingsForm.damageFee || 0)
@@ -208,8 +216,11 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                   }
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">{t('amount.securityDeposit')}:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 flex items-center">
+                  {t('amount.securityDeposit')}:
+                  <FieldTooltip text={t('amount.tooltips.securityDeposit')} />
+                </span>
                 <span className="text-sm font-medium">
                   {isSecurityDepositEnabled() 
                     ? formatMoney(settingsForm.securityDeposit || 0)
@@ -217,8 +228,11 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                   }
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">{t('amount.collateralType')}:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 flex items-center">
+                  {t('amount.collateralType')}:
+                  <FieldTooltip text={t('amount.tooltips.collateralType')} />
+                </span>
                 <span className="text-sm font-medium">
                   {isCollateralTypeEnabled() 
                     ? (settingsForm.collateralType || 'Not specified')
@@ -226,8 +240,11 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                   }
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">{t('amount.collateralDetails')}:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 flex items-center">
+                  {t('amount.collateralDetails')}:
+                  <FieldTooltip text={t('amount.tooltips.collateralDetails')} />
+                </span>
                 <span className="text-sm font-medium">
                   {isCollateralDetailsEnabled() 
                     ? (settingsForm.collateralDetails || t('detail.noDetails'))

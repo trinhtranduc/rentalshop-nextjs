@@ -7,7 +7,7 @@ import type { BreadcrumbItem } from '@rentalshop/ui';
 import { orderBreadcrumbs } from '@rentalshop/utils';
 
 import { ArrowLeft } from 'lucide-react';
-import { ordersApi, outletsApi } from '@rentalshop/utils';
+import { ordersApi } from '@rentalshop/utils';
 import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 import type { Order } from '@rentalshop/types';
@@ -47,16 +47,10 @@ export default function OrderDetailPage() {
           const orderData = result.data;
           setOrder(orderData);
           
-          // Fetch outlet data if order has outletId
-          if (orderData.outletId) {
-            try {
-              const outletResult = await outletsApi.getOutlet(orderData.outletId);
-              if (outletResult.success && outletResult.data) {
-                setOutlet(outletResult.data);
-              }
-            } catch (err) {
-              console.warn('Could not fetch outlet data:', err);
-            }
+          // Use outlet data from order response (already included in API response)
+          // No need to fetch separately - order API already includes outlet data
+          if (orderData.outlet) {
+            setOutlet(orderData.outlet);
           }
         } else {
           setError(result.error || tc('messages.errorLoadingData'));
