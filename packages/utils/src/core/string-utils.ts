@@ -22,6 +22,33 @@ export const formatPhoneNumber = (phone: string): string => {
 };
 
 /**
+ * Format phone number with masking for privacy (abc***bcd format)
+ * Example: 0123456789 -> 012***789
+ */
+export const formatPhoneNumberMasked = (phone: string | null | undefined): string => {
+  if (!phone) return 'N/A';
+  
+  // Remove all non-digit characters
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // If phone is too short, return as is
+  if (cleaned.length < 6) {
+    return phone;
+  }
+  
+  // Format: first 3 digits + *** + last 3 digits
+  // For phones with 10+ digits: abc***bcd
+  // For phones with 6-9 digits: ab***cd (first 2 + *** + last 2)
+  if (cleaned.length >= 10) {
+    return `${cleaned.slice(0, 3)}***${cleaned.slice(-3)}`;
+  } else if (cleaned.length >= 6) {
+    return `${cleaned.slice(0, 2)}***${cleaned.slice(-2)}`;
+  }
+  
+  return phone;
+};
+
+/**
  * Generate URL-friendly slug from text
  */
 export const generateSlug = (text: string): string => {

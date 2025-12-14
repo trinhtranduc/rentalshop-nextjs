@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from './button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 import { useCommonTranslations } from '@rentalshop/hooks';
 import { cn } from '@rentalshop/ui';
 
@@ -11,6 +12,7 @@ interface PaginationProps {
   total: number;
   limit: number;
   onPageChange: (page: number) => void;
+  onLimitChange?: (limit: number) => void; // Optional: allow changing items per page
   itemName?: string; // e.g., "orders", "products", "customers"
 }
 
@@ -20,6 +22,7 @@ export function Pagination({
   total, 
   limit,
   onPageChange,
+  onLimitChange,
   itemName = "items"
 }: PaginationProps) {
   const t = useCommonTranslations();
@@ -79,17 +82,37 @@ export function Pagination({
   const startItem = (displayPage - 1) * limit + 1;
   const endItem = Math.min(displayPage * limit, total);
 
-  if (totalPages <= 1) {
+  // Always show pagination if onLimitChange is provided (to allow changing items per page)
+  // or if there's more than 1 page
+  if (totalPages <= 1 && !onLimitChange) {
     return null;
   }
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-      <div className="text-sm text-gray-700 dark:text-gray-300">
-        {t('pagination.showing')} {startItem} {t('pagination.to')} {endItem} {t('pagination.of')} {total} {itemName}
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 w-full overflow-x-auto">
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+          {t('pagination.showing')} {startItem} {t('pagination.to')} {endItem} {t('pagination.of')} {total} {itemName}
+        </div>
+        {onLimitChange && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('pagination.itemsPerPage') || 'Items per page'}:</span>
+            <Select value={limit.toString()} onValueChange={(value) => onLimitChange(parseInt(value))}>
+              <SelectTrigger className="w-20 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 flex-shrink-0">
         <Button
           variant="outline"
           size="sm"

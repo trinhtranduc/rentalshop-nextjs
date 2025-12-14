@@ -7,7 +7,7 @@ import type { BreadcrumbItem } from '@rentalshop/ui';
 import { orderBreadcrumbs } from '@rentalshop/utils';
 
 import { ArrowLeft } from 'lucide-react';
-import { ordersApi, outletsApi } from '@rentalshop/utils';
+import { ordersApi } from '@rentalshop/utils';
 import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
 
 import type { Order } from '@rentalshop/types';
@@ -47,16 +47,10 @@ export default function OrderDetailPage() {
           const orderData = result.data;
           setOrder(orderData);
           
-          // Fetch outlet data if order has outletId
-          if (orderData.outletId) {
-            try {
-              const outletResult = await outletsApi.getOutlet(orderData.outletId);
-              if (outletResult.success && outletResult.data) {
-                setOutlet(outletResult.data);
-              }
-            } catch (err) {
-              console.warn('Could not fetch outlet data:', err);
-            }
+          // Use outlet data from order response (already included in API response)
+          // No need to fetch separately - order API already includes outlet data
+          if (orderData.outlet) {
+            setOutlet(orderData.outlet);
           }
         } else {
           setError(result.error || tc('messages.errorLoadingData'));
@@ -94,6 +88,28 @@ export default function OrderDetailPage() {
       // Error automatically handled by useGlobalErrorHandler
     } catch (err) {
       console.error('Error cancelling order:', err);
+      // Error automatically handled by useGlobalErrorHandler
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteOrder = async (orderToDelete: Order) => {
+    if (!orderToDelete) return;
+
+    try {
+      setActionLoading(true);
+
+      const result = await ordersApi.deleteOrder(orderToDelete.id);
+
+      if (result.success) {
+        toastSuccess(tc('messages.deleteSuccess') || 'Order deleted successfully', t('messages.deleteSuccess') || 'Order deleted successfully');
+        // Navigate back to orders list after successful deletion
+        router.push('/orders');
+      }
+      // Error automatically handled by useGlobalErrorHandler
+    } catch (err) {
+      console.error('Error deleting order:', err);
       // Error automatically handled by useGlobalErrorHandler
     } finally {
       setActionLoading(false);
@@ -312,6 +328,7 @@ export default function OrderDetailPage() {
         order={order}
         onEdit={handleEditOrder}
         onCancel={handleCancelOrder}
+        onDelete={handleDeleteOrder}
         onStatusChange={handleStatusChange}
         onPickup={handlePickupWrapper}
         onReturn={handleReturnWrapper}

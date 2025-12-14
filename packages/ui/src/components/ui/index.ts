@@ -49,7 +49,9 @@ export { LimitInput } from './limit-input';
 export { DateRangePicker } from './date-range-picker';
 export type { DateRange } from './date-range-picker';
 export { Pagination } from './pagination';
+export { BaseTable, type BaseTableProps, type BaseTableColumn } from './base-table';
 export { RadioGroup, RadioGroupItem } from './radio-group';
+export { FieldTooltip } from './field-tooltip';
 
 // ============================================================================
 // SKELETON COMPONENTS (Loading States)

@@ -227,36 +227,36 @@ export async function middleware(request: NextRequest) {
           
           if (!allowWebAccess) {
             const planName = subscription.plan?.name || 'Unknown';
-            console.log('❌ MIDDLEWARE: Platform access denied:', {
-              planName,
-              platform: platformInfo.platform,
+        console.log('❌ MIDDLEWARE: Platform access denied:', {
+          planName,
+          platform: platformInfo.platform,
               allowWebAccess,
               merchantId: payload.merchantId,
               message: 'Plan does not allow web access'
-            });
-            
-            return NextResponse.json(
-              {
-                success: false,
-                code: 'PLATFORM_ACCESS_DENIED',
+        });
+        
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'PLATFORM_ACCESS_DENIED',
                 message: 'Your subscription plan does not allow web access. Please upgrade to a plan that supports web dashboard access.',
-                data: {
-                  currentPlan: planName,
-                  currentPlatform: platformInfo.platform,
-                  allowedPlatforms: ['mobile'],
-                  upgradeRequired: true,
-                  upgradeUrl: '/settings/subscription'
-                }
-              },
-              {
-                status: API.STATUS.FORBIDDEN,
-                headers: {
-                  ...corsHeaders,
-                  'X-Platform-Access-Denied': 'true',
-                  'X-Upgrade-Required': 'true'
-                }
-              }
-            );
+            data: {
+              currentPlan: planName,
+              currentPlatform: platformInfo.platform,
+              allowedPlatforms: ['mobile'],
+              upgradeRequired: true,
+              upgradeUrl: '/settings/subscription'
+            }
+          },
+          {
+            status: API.STATUS.FORBIDDEN,
+            headers: {
+              ...corsHeaders,
+              'X-Platform-Access-Denied': 'true',
+              'X-Upgrade-Required': 'true'
+            }
+          }
+        );
           }
         }
       } catch (error) {

@@ -5675,6 +5675,52 @@ function useGlobalErrorHandler() {
   }, []);
 }
 
+// src/hooks/useTableSelection.ts
+import { useState as useState9, useEffect as useEffect9, useCallback as useCallback13 } from "react";
+function useTableSelection(items, onSelectionChange) {
+  const [selectedIds, setSelectedIds] = useState9(/* @__PURE__ */ new Set());
+  useEffect9(() => {
+    if (onSelectionChange) {
+      onSelectionChange(Array.from(selectedIds));
+    }
+  }, [selectedIds, onSelectionChange]);
+  const handleToggleSelect = useCallback13((id) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+  const handleSelectAll = useCallback13((checked) => {
+    if (checked) {
+      setSelectedIds(new Set(items.map((item) => item.id)));
+    } else {
+      setSelectedIds(/* @__PURE__ */ new Set());
+    }
+  }, [items]);
+  const clearSelection = useCallback13(() => {
+    setSelectedIds(/* @__PURE__ */ new Set());
+  }, []);
+  const allSelected = items.length > 0 && selectedIds.size === items.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < items.length;
+  const selectedCount = selectedIds.size;
+  return {
+    selectedIds: Array.from(selectedIds),
+    selectedIdsSet: selectedIds,
+    allSelected,
+    someSelected,
+    selectedCount,
+    handleToggleSelect,
+    handleSelectAll,
+    clearSelection,
+    isSelected: (id) => selectedIds.has(id)
+  };
+}
+
 // src/hooks/useFiltersData.ts
 import { outletsApi, categoriesApi } from "@rentalshop/utils";
 function useOutletsData() {
@@ -5870,6 +5916,7 @@ export {
   useSubscriptionStatusInfo,
   useSubscriptionTranslations,
   useSubscriptionsData,
+  useTableSelection,
   useThrottledSearch,
   useToastHandler,
   useUserRole,

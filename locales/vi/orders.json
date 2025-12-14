@@ -46,13 +46,19 @@
   },
   "amount": {
     "total": "Tổng tiền",
-    "deposit": "Đặt cọc",
+    "deposit": "Tiền cọc",
     "subtotal": "Tạm tính",
     "grandTotal": "Tổng cộng",
-    "securityDeposit": "Tiền đặt cọc bảo đảm",
+    "securityDeposit": "Tiền thế chấp",
     "damageFee": "Phí hư hỏng",
     "collateralType": "Loại thế chấp",
-    "collateralDetails": "Chi tiết thế chấp"
+    "collateralDetails": "Chi tiết thế chấp",
+    "tooltips": {
+      "damageFee": "Phí bồi thường thiệt hại khi sản phẩm bị hư hỏng, mất mát hoặc trả muộn trong quá trình khách hàng thuê",
+      "securityDeposit": "Số tiền cọc khách hàng phải đặt khi nhận hàng. Số tiền này sẽ được hoàn lại sau khi trả hàng, trừ đi phí hư hỏng (nếu có)",
+      "collateralType": "Loại giấy tờ tùy thân khách hàng để lại làm thế chấp (CMND/CCCD/ID, Bằng lái xe/Driver License, Hộ chiếu/Passport, hoặc loại khác)",
+      "collateralDetails": "Thông tin chi tiết về giấy tờ thế chấp (số CMND/CCCD/ID, số bằng lái/Driver License, số hộ chiếu/Passport, hoặc thông tin khác tùy theo loại)"
+    }
   },
   "detail": {
     "orderInformation": "Thông tin đơn hàng",
@@ -81,6 +87,7 @@
     "cancelOrderMessage": "Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.",
     "keepOrder": "Giữ đơn hàng",
     "cancelling": "Đang hủy...",
+    "deleting": "Đang xóa...",
     "cancelSuccess": "Hủy thành công",
     "cancelSuccessMessage": "Đơn hàng đã được hủy.",
     "cancelFailed": "Hủy thất bại",
@@ -142,6 +149,10 @@
     "label": "Hành động",
     "view": "Xem",
     "edit": "Sửa",
+    "delete": "Xóa",
+    "cancel": "Hủy",
+    "selectAll": "Chọn tất cả",
+    "deselectAll": "Bỏ chọn tất cả",
     "markAsPickedUp": "Lấy hàng",
     "pickingUp": "Đang lấy hàng...",
     "markAsReturned": "Trả hàng",

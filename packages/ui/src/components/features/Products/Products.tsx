@@ -35,6 +35,8 @@ interface ProductsProps {
   onProductAction?: (action: string, productId: number) => void;
   onPageChange?: (page: number) => void;
   onSort?: (column: string) => void;
+  onSelectionChange?: (selectedIds: number[]) => void;
+  onLimitChange?: (limit: number) => void;
   
   // Display props
   title?: string;
@@ -65,9 +67,11 @@ export function Products({
   onFiltersChange = () => {}, 
   onSearchChange = () => {},
   onClearFilters = () => {},
-  onProductAction = () => {}, 
+  onProductAction = () => {},
   onPageChange = () => {},
   onSort = () => {},
+  onSelectionChange,
+  onLimitChange,
   
   // Display props
   title = "Products",
@@ -118,7 +122,7 @@ export function Products({
   const memoizedOnSort = React.useCallback(onSort, [onSort]);
 
   return (
-    <div className={`flex flex-col h-full ${className}`}>
+    <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       {/* Fixed Header Section */}
       <div className="flex-shrink-0 space-y-4">
         <ProductPageHeader
@@ -161,12 +165,13 @@ export function Products({
         </Card>
       </div>
 
-      {/* Scrollable Table Section */}
-      <div className="flex-1 min-h-0 mt-4">
+      {/* Scrollable Table Section - Full height, vertical scroll only */}
+      <div className="flex-1 min-h-0 mt-4 overflow-hidden">
         {products.length > 0 ? (
           <ProductTable
             products={products}
             onProductAction={memoizedOnProductAction}
+            onSelectionChange={onSelectionChange}
             sortBy={filters.sortBy || "name"}
             sortOrder={filters.sortOrder || "asc"}
             onSort={memoizedOnSort}
@@ -185,7 +190,7 @@ export function Products({
       </div>
 
       {/* Fixed Pagination Section - Always at Bottom */}
-      {products.length > 0 && totalProducts > limit && (
+      {(products.length > 0 || onLimitChange) && (
         <div className="flex-shrink-0 py-4">
           <Pagination
             currentPage={currentPage}
@@ -193,6 +198,7 @@ export function Products({
             total={totalProducts}
             limit={limit}
             onPageChange={memoizedOnPageChange}
+            onLimitChange={onLimitChange}
             itemName="products"
           />
         </div>

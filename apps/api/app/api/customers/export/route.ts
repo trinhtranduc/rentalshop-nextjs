@@ -74,9 +74,8 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
       return createdAt >= startDate && createdAt <= endDate;
     });
 
-    // Prepare data for export
+    // Prepare data for export (exclude system IDs)
     const exportData = customers.map((customer: any) => ({
-      id: customer.id,
       firstName: customer.firstName || '',
       lastName: customer.lastName || '',
       email: customer.email || '',
@@ -96,7 +95,6 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
     // Excel export
     if (format === 'excel') {
       const columns: ExcelColumn[] = [
-        { header: 'ID', key: 'id', width: 10 },
         { header: 'First Name', key: 'firstName', width: 15 },
         { header: 'Last Name', key: 'lastName', width: 15 },
         { header: 'Email', key: 'email', width: 25 },
@@ -128,7 +126,6 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
 
     // CSV export (backward compatibility)
     const csvHeaders = [
-      'ID',
       'First Name',
       'Last Name',
       'Email',
@@ -146,7 +143,6 @@ export const GET = withCustomerExportAuth(async (authorizedRequest) => {
     ];
 
     const csvRows = exportData.map((customer: any) => [
-      customer.id,
       `"${customer.firstName}"`,
       `"${customer.lastName}"`,
       `"${customer.email}"`,

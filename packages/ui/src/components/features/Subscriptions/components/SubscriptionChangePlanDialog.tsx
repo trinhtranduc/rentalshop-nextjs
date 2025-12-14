@@ -197,38 +197,38 @@ export function SubscriptionChangePlanDialog({
           <div className="space-y-6">
             {/* Current Plan Info */}
             <div className="flex items-center justify-between p-3 bg-action-primary/10 border border-action-primary/20 rounded-lg">
-              <div>
+                <div>
                 <p className="text-sm text-muted-foreground">Current Plan</p>
-                <p className="font-semibold">{currentPlan?.name || 'N/A'}</p>
-              </div>
-              <div className="text-right">
+              <p className="font-semibold">{currentPlan?.name || 'N/A'}</p>
+                </div>
+            <div className="text-right">
                 <p className="text-sm text-muted-foreground">Current Amount</p>
-                <p className="font-semibold">
-                  {formatCurrency(
-                    subscription.amount || 0, 
-                    (subscription.currency || currentPlan?.currency || 'USD') as any
-                  )}
-                  /{subscription.interval || 'month'}
-                </p>
+              <p className="font-semibold">
+                    {formatCurrency(
+                      subscription.amount || 0, 
+                      (subscription.currency || currentPlan?.currency || 'USD') as any
+                    )}
+                    /{subscription.interval || 'month'}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Billing Period Selection */}
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Billing Period</Label>
-              <Select value={selectedInterval} onValueChange={(value) => setSelectedInterval(value as BillingInterval)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select billing period" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BILLING_CYCLES_ARRAY.map((cycle: BillingCycleConfig) => (
-                    <SelectItem key={cycle.value} value={cycle.value}>
-                      {cycle.label} {cycle.discount > 0 && `(${cycle.discount}% off)`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Billing Period Selection */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Billing Period</Label>
+            <Select value={selectedInterval} onValueChange={(value) => setSelectedInterval(value as BillingInterval)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select billing period" />
+              </SelectTrigger>
+              <SelectContent>
+                {BILLING_CYCLES_ARRAY.map((cycle: BillingCycleConfig) => (
+                  <SelectItem key={cycle.value} value={cycle.value}>
+                    {cycle.label} {cycle.discount > 0 && `(${cycle.discount}% off)`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
             {/* Start Date and End Date */}
             <div className="grid grid-cols-2 gap-4 p-4 bg-bg-secondary border border-border rounded-lg">
@@ -270,15 +270,15 @@ export function SubscriptionChangePlanDialog({
             </div>
 
             {/* Select New Plan */}
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Select New Plan</Label>
-              {plans.length === 0 && (
-                <Alert>
-                  <AlertDescription className="text-action-warning">
-                    ⚠️ No plans available. Please ensure plans are loaded from the database.
-                  </AlertDescription>
-                </Alert>
-              )}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Select New Plan</Label>
+            {plans.length === 0 && (
+              <Alert>
+                <AlertDescription className="text-action-warning">
+                  ⚠️ No plans available. Please ensure plans are loaded from the database.
+                </AlertDescription>
+              </Alert>
+            )}
               <Select 
                 value={selectedPlanId?.toString() || ''} 
                 onValueChange={(value) => setSelectedPlanId(parseInt(value))}
@@ -287,96 +287,96 @@ export function SubscriptionChangePlanDialog({
                   <SelectValue placeholder="Select a plan" />
                 </SelectTrigger>
                 <SelectContent>
-                  {normalizedPlans.map((plan) => {
-                    const periodPricing = calculatePricingForInterval(plan, selectedInterval);
+              {normalizedPlans.map((plan) => {
+                const periodPricing = calculatePricingForInterval(plan, selectedInterval);
                     const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
-                    
-                    return (
+                
+                return (
                       <SelectItem key={plan.id} value={plan.id.toString()}>
                         <div className="flex items-center justify-between w-full">
                           <span className="font-medium">{plan.name}</span>
                           <span className="ml-4 text-sm text-muted-foreground">
                             {formatCurrency(periodPricing.price, plan.currency as any)}
                             {cycleConfig && cycleConfig.months > 1 && ` (${cycleConfig.months} months)`}
-                          </span>
+                              </span>
                         </div>
                       </SelectItem>
-                    );
-                  })}
+                );
+              })}
                 </SelectContent>
               </Select>
-            </div>
+          </div>
 
 
 
-            {/* Summary - Show when plan is selected */}
-            {selectedPlan && (
+          {/* Summary - Show when plan is selected */}
+          {selectedPlan && (
               <div className="space-y-4 p-4 bg-bg-secondary border border-border rounded-lg">
-                {(() => {
-                  const newPricing = calculatePricingForInterval(selectedPlan, selectedInterval);
-                  const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
-                  return (
-                    <>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
+              {(() => {
+                const newPricing = calculatePricingForInterval(selectedPlan, selectedInterval);
+                const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
                           <p className="text-muted-foreground">New Plan</p>
-                          <p className="font-semibold">{selectedPlan.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Billing Period</p>
-                          <p className="font-semibold">{cycleConfig?.label || selectedInterval}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Total Price</p>
-                          <p className="font-bold text-lg">
-                            {formatCurrency(newPricing.price, selectedPlan.currency as any)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Monthly Equivalent</p>
-                          <p className="font-semibold">
-                            {formatCurrency(newPricing.monthlyEquivalent, selectedPlan.currency as any)}/month
-                          </p>
-                        </div>
+                        <p className="font-semibold">{selectedPlan.name}</p>
                       </div>
+                      <div>
+                          <p className="text-muted-foreground">Billing Period</p>
+                        <p className="font-semibold">{cycleConfig?.label || selectedInterval}</p>
+                      </div>
+                    <div>
+                          <p className="text-muted-foreground">Total Price</p>
+                        <p className="font-bold text-lg">
+                          {formatCurrency(newPricing.price, selectedPlan.currency as any)}
+                      </p>
+                    </div>
+                    <div>
+                          <p className="text-muted-foreground">Monthly Equivalent</p>
+                        <p className="font-semibold">
+                          {formatCurrency(newPricing.monthlyEquivalent, selectedPlan.currency as any)}/month
+                      </p>
+                    </div>
+                  </div>
 
                       {/* Reason for Change */}
-                      <div className="space-y-2 border-t pt-4">
-                        <Label htmlFor="reason" className="text-sm font-semibold">
-                          Reason (Optional)
-                        </Label>
-                        <Textarea
-                          id="reason"
-                          value={reason}
-                          onChange={(e) => setReason(e.target.value)}
-                          placeholder="Reason for change..."
-                          rows={2}
-                          className="w-full"
-                        />
-                      </div>
+                    <div className="space-y-2 border-t pt-4">
+                      <Label htmlFor="reason" className="text-sm font-semibold">
+                        Reason (Optional)
+                      </Label>
+                      <Textarea
+                        id="reason"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="Reason for change..."
+                        rows={2}
+                        className="w-full"
+                      />
+                            </div>
                             
-                      {/* Send Email Notification */}
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="sendEmail"
-                          checked={sendEmail}
-                          onChange={(e) => setSendEmail(e.target.checked)}
-                          className="h-4 w-4 text-action-primary focus:ring-action-primary border-border rounded"
-                        />
-                        <Label htmlFor="sendEmail" className="text-sm font-normal cursor-pointer">
-                          Send email notification to merchant
-                        </Label>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            )}
+                    {/* Send Email Notification */}
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="sendEmail"
+                        checked={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.checked)}
+                        className="h-4 w-4 text-action-primary focus:ring-action-primary border-border rounded"
+                      />
+                      <Label htmlFor="sendEmail" className="text-sm font-normal cursor-pointer">
+                        Send email notification to merchant
+                      </Label>
+                              </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+          )}
           </div>
         </div>
 
-        {/* Action Buttons */}
+          {/* Action Buttons */}
         <DialogFooter className="px-6 py-4 border-t">
           <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancel
