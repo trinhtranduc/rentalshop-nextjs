@@ -20,14 +20,14 @@ import {
   AddCustomerDialog,
   ProductAddDialog,
   useFormatCurrency,
-  PageLoadingIndicator } from '@rentalshop/ui';
+  PageLoadingIndicator,
+  FieldTooltip } from '@rentalshop/ui';
 import { TopProduct, TopCustomer } from '@rentalshop/types';
 import { 
   Package,
   PackageCheck,
   Users,
   TrendingUp,
-  Info,
   ArrowUpRight,
   ArrowDownRight,
   Minus
@@ -166,7 +166,7 @@ const parseDateFromAPIFormat = (monthStr: string, year: number): Date => {
 // ============================================================================
 // COMPONENTS
 // ============================================================================
-const StatCard = ({ title, value, change, description, tooltip, color, trend, activeTooltip, setActiveTooltip, position }: {
+const StatCard = ({ title, value, change, description, tooltip, color, trend }: {
   title: string;
   value: string | number;
   change: string;
@@ -174,62 +174,18 @@ const StatCard = ({ title, value, change, description, tooltip, color, trend, ac
   tooltip: string;
   color: string;
   trend: 'up' | 'down' | 'neutral';
-  activeTooltip: string | null;
-  setActiveTooltip: (title: string | null) => void;
-  position?: 'left' | 'center' | 'right';
 }) => {
   const formatMoney = useFormatCurrency();
   const shouldShowDollar = title.toLowerCase().includes('revenue') || title.toLowerCase().includes('income');
-  const isTooltipActive = activeTooltip === title;
-  
-  // Smart tooltip positioning
-  const getTooltipClasses = () => {
-    if (position === 'left') {
-      return "absolute bottom-full right-0 mb-2 px-4 py-3 bg-gray-800 text-white text-xs rounded-lg z-50 w-80 whitespace-normal break-words leading-relaxed";
-    } else if (position === 'right') {
-      return "absolute bottom-full left-0 mb-2 px-4 py-3 bg-gray-800 text-white text-xs rounded-lg z-50 w-80 whitespace-normal break-words leading-relaxed";
-    } else {
-      return "absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-3 bg-gray-800 text-white text-xs rounded-lg z-50 w-80 whitespace-normal break-words leading-relaxed";
-    }
-  };
-  
-  const getArrowClasses = () => {
-    if (position === 'left') {
-      return "absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800";
-    } else if (position === 'right') {
-      return "absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800";
-    } else {
-      return "absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800";
-    }
-  };
-  
-  const handleTooltipClick = () => {
-    if (isTooltipActive) {
-      setActiveTooltip(null);
-    } else {
-      setActiveTooltip(title);
-    }
-  };
   
   return (
     <CardClean variant="default" size="md" className="group bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
       <CardHeaderClean className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitleClean size="sm" className="text-gray-600 font-medium text-sm">
+          <CardTitleClean size="sm" className="text-gray-600 font-medium text-sm flex items-center">
             {title}
+            <FieldTooltip text={tooltip} />
           </CardTitleClean>
-          <div className="relative">
-            <Info 
-              className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" 
-              onClick={handleTooltipClick}
-            />
-            {isTooltipActive && (
-              <div className={getTooltipClasses()}>
-                {tooltip}
-                <div className={getArrowClasses()}></div>
-              </div>
-            )}
-          </div>
         </div>
       </CardHeaderClean>
       <CardContentClean className="pt-0">
@@ -287,7 +243,6 @@ export default function DashboardPage() {
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(defaultPeriod);
   const [initialLoading, setInitialLoading] = useState(false); // Start with false - page renders immediately
   const [loadingCharts, setLoadingCharts] = useState(false); // Start with false - page renders immediately
-  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   
   // API data states
   const [stats, setStats] = useState<DashboardStats>({
@@ -1158,9 +1113,6 @@ export default function DashboardPage() {
                   tooltip={t('tooltips.todayRevenue')}
                   color="text-blue-700"
                   trend="neutral"
-                  activeTooltip={activeTooltip}
-                  setActiveTooltip={setActiveTooltip}
-                  position="left"
                 />
               <StatCard
                 title={t('stats.todayRentals')}
@@ -1170,9 +1122,6 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.todayRentals')}
                 color="text-blue-700"
                 trend="neutral"
-                activeTooltip={activeTooltip}
-                setActiveTooltip={setActiveTooltip}
-                position="center"
               />
               <StatCard
                 title={t('stats.activeRentals')}
@@ -1182,9 +1131,6 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.activeRentals')}
                 color="text-blue-700"
                 trend="neutral"
-                activeTooltip={activeTooltip}
-                setActiveTooltip={setActiveTooltip}
-                position="center"
               />
               <StatCard
                 title={t('stats.overdueReturns')}
@@ -1194,9 +1140,6 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.overdueReturns')}
                 color="text-blue-700"
                 trend="neutral"
-                activeTooltip={activeTooltip}
-                setActiveTooltip={setActiveTooltip}
-                position="right"
               />
             </div>
 
@@ -1361,8 +1304,6 @@ export default function DashboardPage() {
                   tooltip={t('tooltips.totalRevenue')}
                   color="text-blue-700"
                   trend={currentStats.revenueGrowth > 0 ? "up" : "neutral"}
-                  activeTooltip={activeTooltip}
-                  setActiveTooltip={setActiveTooltip}
                 />
               )}
               <StatCard
@@ -1373,8 +1314,6 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.totalOrders')}
                 color="text-blue-700"
                 trend="neutral"
-                activeTooltip={activeTooltip}
-                setActiveTooltip={setActiveTooltip}
               />
               <StatCard
                 title={t('stats.completedOrders')}
@@ -1384,8 +1323,6 @@ export default function DashboardPage() {
                 tooltip={t('tooltips.completedOrders')}
                 color="text-blue-700"
                 trend="neutral"
-                activeTooltip={activeTooltip}
-                setActiveTooltip={setActiveTooltip}
               />
               {/* Future Revenue Card - Hidden for OUTLET_STAFF */}
               {user?.role !== 'OUTLET_STAFF' && (
@@ -1397,8 +1334,6 @@ export default function DashboardPage() {
                   tooltip={t('tooltips.futureRevenue')}
                   color="text-blue-700"
                   trend="neutral"
-                  activeTooltip={activeTooltip}
-                  setActiveTooltip={setActiveTooltip}
                 />
               )}
             </div>

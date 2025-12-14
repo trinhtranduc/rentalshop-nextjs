@@ -50,6 +50,7 @@ export { DateRangePicker } from './date-range-picker';
 export type { DateRange } from './date-range-picker';
 export { Pagination } from './pagination';
 export { RadioGroup, RadioGroupItem } from './radio-group';
+export { FieldTooltip } from './field-tooltip';
 
 // ============================================================================
 // SKELETON COMPONENTS (Loading States)
