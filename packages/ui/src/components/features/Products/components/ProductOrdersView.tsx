@@ -34,7 +34,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../../../lib';
-import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useOrderTranslations, useCommonTranslations, useDedupedApi, useAuth } from '@rentalshop/hooks';
 import { ProductsLoading } from './ProductsLoading';
 import { 
   OrderFilters as OrderFiltersComponent,
@@ -71,6 +71,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
 }) => {
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
+  const { user } = useAuth();
   
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,66 +94,59 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
     sortOrder: 'desc'
   });
 
-  // Fetch orders for this specific product
-  useEffect(() => {
-    // Cancel previous request if still pending
-    const abortController = new AbortController();
-
-    const fetchProductOrders = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Use the dedicated method to get orders for this specific product
-        const response = await ordersApi.getOrdersByProduct(parseInt(productId));
-        
-        // Check if request was aborted
-        if (abortController.signal.aborted) {
-          return;
-        }
-        
-        console.log('🔍 ProductOrdersView: API Response:', response);
-        
-        if (response.success && response.data) {
-          // Handle both array and paginated response structures
-          const ordersData = Array.isArray(response.data) 
-            ? response.data 
-            : (response.data as any).orders || [];
-          const totalPages = Array.isArray(response.data) 
-            ? 1 
-            : (response.data as any).totalPages || 1;
-          console.log('🔍 ProductOrdersView: Setting orders:', ordersData);
-          console.log('🔍 ProductOrdersView: Total pages:', totalPages);
-          setOrders(ordersData as OrderWithDetails[]);
-          setTotalPages(totalPages);
-        } else {
-          console.log('🔍 ProductOrdersView: No data or unsuccessful response');
-          setOrders([]);
-          setTotalPages(1);
-        }
-      } catch (err: any) {
-        // Ignore abort errors
-        if (err?.name === 'AbortError') {
-          return;
-        }
-        console.error('❌ ProductOrdersView: Error fetching product orders:', err);
-        setError('Failed to fetch product orders');
-        setOrders([]); // Ensure orders is always an array
-      } finally {
-        // Only update loading state if request wasn't aborted
-        if (!abortController.signal.aborted) {
-          setLoading(false);
-        }
+  // ============================================================================
+  // FETCH ORDERS FOR PRODUCT - Using Official useDedupedApi Hook
+  // ============================================================================
+  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
+  // This provides:
+  // - Request deduplication (same request = single call)
+  // - Global cache with stale-while-revalidate
+  // - Race condition protection
+  // - Automatic cleanup
+  // - Prevents duplicate API calls from React 18 double mounting
+  
+  const { 
+    data: ordersData, 
+    loading: ordersLoading, 
+    error: ordersError 
+  } = useDedupedApi({
+    filters: { productId }, // Use productId as filter key for cache
+    fetchFn: async () => {
+      const response = await ordersApi.getOrdersByProduct(parseInt(productId));
+      
+      if (!response.success || !response.data) {
+        throw new Error('Failed to fetch product orders');
       }
-    };
-    
-    fetchProductOrders();
+      
+      // Handle both array and paginated response structures
+      const ordersData = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data as any).orders || [];
+      const totalPages = Array.isArray(response.data) 
+        ? 1 
+        : (response.data as any).totalPages || 1;
+      
+      return { orders: ordersData, totalPages };
+    },
+    enabled: !!productId, // Only fetch if productId exists
+    staleTime: 30000, // 30 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false, // Don't refetch on mount if cache is fresh
+    refetchOnWindowFocus: false
+  });
 
-    // Cleanup: abort request on unmount or when productId changes
-    return () => {
-      abortController.abort();
-    };
-  }, [productId]);
+  // Sync orders data to local state
+  useEffect(() => {
+    if (ordersData) {
+      setOrders(ordersData.orders as OrderWithDetails[]);
+      setTotalPages(ordersData.totalPages || 1);
+    } else {
+      setOrders([]);
+      setTotalPages(1);
+    }
+    setLoading(ordersLoading);
+    setError(ordersError ? ordersError.message : null);
+  }, [ordersData, ordersLoading, ordersError]);
 
   // Calculate overview statistics with safety checks
   const overview = {
@@ -534,6 +528,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                 onFiltersChange={handleFiltersChange}
                 onSearchChange={handleSearchChange}
                 onClearFilters={handleClearFilters}
+                userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
               />
             </div>
           </CardContent>

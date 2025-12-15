@@ -14,7 +14,7 @@ import type { BreadcrumbItem } from '@rentalshop/ui';
 import { ArrowLeft } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
 import { ordersApi } from "@rentalshop/utils";
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useDedupedApi } from '@rentalshop/hooks';
 import type { Customer, OrderFilters as OrderFiltersType } from '@rentalshop/types';
 import type { OrderStatus } from '@rentalshop/constants';
 
@@ -65,50 +65,43 @@ export default function CustomerOrdersPage() {
     sortOrder: 'desc'
   });
 
-  // Fetch customer data
-  useEffect(() => {
-    const fetchCustomer = async () => {
-      try {
-        setIsLoading(true);
-        
-        console.log('🔍 CustomerOrdersPage: Fetching customer with public ID:', id);
-        
-        // Validate public ID format (should be numeric)
-        const numericId = parseInt(id);
-        if (isNaN(numericId) || numericId <= 0) {
-          console.error('❌ CustomerOrdersPage: Invalid public ID format:', id);
-          setCustomer(null);
-          return;
-        }
-        
-        console.log('🔍 CustomerOrdersPage: Making API call to /api/customers/' + numericId);
-        
-        // Use the real API to fetch customer data by public ID
-        const response = await customersApi.getCustomerById(numericId);
-        
-        console.log('🔍 CustomerOrdersPage: API response received:', response);
-        
-        if (response.success && response.data) {
-          console.log('✅ CustomerOrdersPage: Customer fetched successfully:', response.data);
-          setCustomer(response.data);
-        } else {
-          console.error('❌ CustomerOrdersPage: API error:', response.error);
-          throw new Error(response.error || 'Failed to fetch customer');
-        }
-        
-      } catch (error) {
-        console.error('❌ CustomerOrdersPage: Error fetching customer:', error);
-        // Show error state
-        setCustomer(null);
-      } finally {
-        setIsLoading(false);
+  // ============================================================================
+  // FETCH CUSTOMER DETAILS - Using Official useDedupedApi Hook
+  // ============================================================================
+  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
+  const { 
+    data: customerData, 
+    loading: customerLoading, 
+    error: customerError 
+  } = useDedupedApi({
+    filters: { customerId: id },
+    fetchFn: async () => {
+      // Validate public ID format (should be numeric)
+      const numericId = parseInt(id);
+      if (isNaN(numericId) || numericId <= 0) {
+        throw new Error('Invalid customer ID format');
       }
-    };
+      
+      const response = await customersApi.getCustomerById(numericId);
+      
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch customer');
+      }
+      
+      return response.data;
+    },
+    enabled: !!id,
+    staleTime: 60000, // 60 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
 
-    if (id) {
-      fetchCustomer();
-    }
-  }, [id]);
+  // Sync customer data to local state
+  useEffect(() => {
+    setCustomer(customerData || null);
+    setIsLoading(customerLoading);
+  }, [customerData, customerLoading]);
 
   // Fetch customer orders
   useEffect(() => {
@@ -290,6 +283,7 @@ export default function CustomerOrdersPage() {
             handleFiltersChange({ sortBy: column, sortOrder: newSortOrder });
           }}
           showStats={false}
+          userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
         />
     </PageWrapper>
   );

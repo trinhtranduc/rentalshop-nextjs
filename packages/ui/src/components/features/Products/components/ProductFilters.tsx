@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { Input, Button } from '@rentalshop/ui';
+import { Input, Button, SearchableSelect } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { ProductFilters as ProductFiltersType } from '@rentalshop/types';
@@ -60,8 +60,14 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
     onFiltersChange({ outletId });
   }, [onFiltersChange]);
 
-  const handleCategoryChange = useCallback((value: string) => {
-    const categoryId = value === 'all' ? undefined : parseInt(value);
+  const handleCategoryChange = useCallback((value: string | number | undefined) => {
+    // Handle "all" option or undefined
+    if (!value || value === 'all' || value === '') {
+      onFiltersChange({ categoryId: undefined });
+      return;
+    }
+    // Convert to number
+    const categoryId = typeof value === 'number' ? value : parseInt(value.toString());
     onFiltersChange({ categoryId });
   }, [onFiltersChange]);
 
@@ -119,24 +125,24 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
         </SelectContent>
       </Select>
 
-      {/* Category Filter */}
-      <Select
-        value={filters.categoryId?.toString() || 'all'}
-        onValueChange={handleCategoryChange}
+      {/* Category Filter - SearchableSelect for better UX with many categories */}
+      <SearchableSelect
+        value={filters.categoryId ? filters.categoryId.toString() : undefined}
+        onChange={(value) => handleCategoryChange(value)}
+        options={[
+          { value: 'all', label: t('filters.allCategories'), subtitle: t('filters.allCategories') },
+          ...categories.map((category) => ({
+            value: category.id.toString(),
+            label: category.name,
+            subtitle: category.description || category.name
+          }))
+        ]}
+        placeholder={loadingCategories ? (t('filters.loading') || 'Loading...') : t('filters.allCategories')}
+        searchPlaceholder="Search categories..."
+        className="w-[200px]"
+        emptyText="No categories found"
         disabled={loadingCategories}
-      >
-        <SelectTrigger className="w-[160px] h-10">
-          <SelectValue placeholder={t('filters.categoryLabel')} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t('filters.allCategories')}</SelectItem>
-          {categories.map((category) => (
-            <SelectItem key={category.id} value={category.id.toString()}>
-              {category.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      />
 
       {/* Clear Filters */}
       {hasActiveFilters && onClearFilters && (
