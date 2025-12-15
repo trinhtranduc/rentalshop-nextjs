@@ -168,6 +168,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       ...order,
       createdAt: order.createdAt?.toISOString() || null,
       updatedAt: order.updatedAt?.toISOString() || null,
+      deletedAt: order.deletedAt?.toISOString() || null, // Include deletedAt in response
       pickupPlanAt: order.pickupPlanAt?.toISOString() || null,
       returnPlanAt: order.returnPlanAt?.toISOString() || null,
       pickedUpAt: order.pickedUpAt?.toISOString() || null,

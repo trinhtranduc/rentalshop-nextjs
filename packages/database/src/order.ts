@@ -1545,6 +1545,7 @@ export const simplifiedOrders = {
           damageNotes: true,
           createdAt: true,
           updatedAt: true,
+          deletedAt: true, // Include deletedAt in response
           outletId: true,
           customerId: true,
           createdById: true,

@@ -107,13 +107,12 @@ export default function OrdersPage() {
   // DATA FETCHING - Clean & Simple
   // ============================================================================
   
-  // Get merchant ID from user (for merchant/outlet users, set as default)
-  const userMerchantId = user?.merchant?.id || user?.merchantId;
+  // Get merchant ID from URL params (only for ADMIN users when filtering by merchant)
   const merchantIdParam = searchParams.get('merchant') ? parseInt(searchParams.get('merchant')!) : undefined;
   
   // ✅ SIMPLE: Memoize filters - use strings directly, no Date objects
-  // For merchant/outlet users, automatically set merchantId (hidden from UI)
-  // For admin users, merchantId comes from URL params (visible in UI)
+  // Backend automatically filters by merchantId from JWT token for non-admin users
+  // Only ADMIN needs to send merchantId when filtering by specific merchant
   const filters: OrderFilters = useMemo(() => {
     const baseFilters: OrderFilters = {
       search: search || undefined,
@@ -128,21 +127,16 @@ export default function OrdersPage() {
       sortOrder
     };
     
-    // Only add merchantId to filters if:
-    // 1. User is ADMIN and merchantId is in URL params, OR
-    // 2. User is MERCHANT/OUTLET and we need to set their merchantId (but don't show in UI)
-    if (user?.role === 'ADMIN') {
-      // Admin can select merchant from dropdown
-      if (merchantIdParam) {
-        baseFilters.merchantId = merchantIdParam;
-      }
-    } else if (userMerchantId) {
-      // Merchant/Outlet users: automatically filter by their merchant (hidden from UI)
-      baseFilters.merchantId = Number(userMerchantId);
+    // ✅ Only send merchantId for ADMIN when filtering by specific merchant
+    // Backend automatically uses userScope.merchantId from JWT for non-admin users
+    if (user?.role === 'ADMIN' && merchantIdParam) {
+      // Admin can filter by specific merchant from dropdown
+      baseFilters.merchantId = merchantIdParam;
     }
+    // Merchant/Outlet users: Don't send merchantId - backend uses it from JWT automatically
     
     return baseFilters;
-  }, [search, status, orderType, outletId, startDateParam, endDateParam, page, limit, sortBy, sortOrder, merchantIdParam, user?.role, userMerchantId]);
+  }, [search, status, orderType, outletId, startDateParam, endDateParam, page, limit, sortBy, sortOrder, merchantIdParam, user?.role]);
 
   const { data, loading, error, refetch } = useOrdersData({ filters });
   

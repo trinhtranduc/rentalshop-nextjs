@@ -225,6 +225,7 @@ export const GET = withPermissions(['customers.view'])(async (request, { user, u
  */
 export const POST = withPermissions(['customers.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/customers - User: ${user.email} (${user.role})`);
+  console.log(`🔍 POST /api/customers - UserScope:`, userScope);
   
   try {
     // Parse and validate request body
@@ -234,6 +235,15 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
     }
 
     const parsed = bodyResult.data;
+    
+    // Debug: Log received data
+    console.log('🔍 POST /api/customers - Received data:', {
+      hasMerchantId: 'merchantId' in parsed,
+      merchantId: parsed.merchantId,
+      userRole: user.role,
+      userScopeMerchantId: userScope.merchantId,
+      parsedKeys: Object.keys(parsed)
+    });
 
     // Resolve merchantId using helper
     const merchantResult = resolveMerchantId(user, userScope, parsed.merchantId);
