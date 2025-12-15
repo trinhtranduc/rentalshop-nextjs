@@ -46,8 +46,16 @@ export type Permission =
   | 'customers.view'
   | 'customers.export'
   
-  // Analytics
-  | 'analytics.view'
+  // Analytics (Granular Permissions)
+  | 'analytics.view'                    // Base permission (backward compatibility)
+  | 'analytics.view.dashboard'          // Dashboard & overview metrics (today, today-metrics)
+  | 'analytics.view.revenue'            // Revenue/income analytics (full access)
+  | 'analytics.view.revenue.daily'     // Daily income analytics only (limited access)
+  | 'analytics.view.orders'            // Order analytics
+  | 'analytics.view.customers'         // Customer analytics (top customers)
+  | 'analytics.view.products'         // Product analytics (top products)
+  | 'analytics.view.system'            // System-wide analytics (admin only)
+  | 'analytics.export'                 // Export analytics data
   
   // Billing & Plans
   | 'billing.manage'
@@ -94,6 +102,7 @@ export function usePermissions() {
 
   /**
    * Check if user has a specific permission
+   * Supports backward compatibility: 'analytics.view' grants all granular analytics permissions
    * @param permission - Permission string to check
    * @returns true if user has the permission
    */
@@ -102,7 +111,20 @@ export function usePermissions() {
       if (!user || !permissions.length) {
         return false;
       }
-      return permissions.includes(permission);
+      
+      // Direct permission check
+      if (permissions.includes(permission)) {
+        return true;
+      }
+      
+      // Backward compatibility: analytics.view grants all granular analytics permissions
+      if (permission.startsWith('analytics.view.') || permission === 'analytics.export') {
+        if (permissions.includes('analytics.view')) {
+          return true;
+        }
+      }
+      
+      return false;
     };
   }, [user, permissions]);
 
@@ -161,7 +183,15 @@ export function usePermissions() {
   const canManageMerchants = useMemo(() => hasPermission('merchant.manage'), [hasPermission]);
   const canViewMerchants = useMemo(() => hasPermission('merchant.view'), [hasPermission]);
   
+  // Analytics permissions (with backward compatibility)
   const canViewAnalytics = useMemo(() => hasPermission('analytics.view'), [hasPermission]);
+  const canViewDashboard = useMemo(() => hasPermission('analytics.view.dashboard'), [hasPermission]);
+  const canViewRevenue = useMemo(() => hasPermission('analytics.view.revenue'), [hasPermission]);
+  const canViewRevenueDaily = useMemo(() => hasPermission('analytics.view.revenue.daily'), [hasPermission]);
+  const canViewOrderAnalytics = useMemo(() => hasPermission('analytics.view.orders'), [hasPermission]);
+  const canViewCustomerAnalytics = useMemo(() => hasPermission('analytics.view.customers'), [hasPermission]);
+  const canViewProductAnalytics = useMemo(() => hasPermission('analytics.view.products'), [hasPermission]);
+  const canExportAnalytics = useMemo(() => hasPermission('analytics.export'), [hasPermission]);
   
   const canManageBilling = useMemo(() => hasPermission('billing.manage'), [hasPermission]);
   const canViewBilling = useMemo(() => hasPermission('billing.view'), [hasPermission]);
@@ -209,6 +239,13 @@ export function usePermissions() {
     
     // Convenience methods for analytics
     canViewAnalytics,
+    canViewDashboard,
+    canViewRevenue,
+    canViewRevenueDaily,
+    canViewOrderAnalytics,
+    canViewCustomerAnalytics,
+    canViewProductAnalytics,
+    canExportAnalytics,
     
     // Convenience methods for billing
     canManageBilling,

@@ -39,43 +39,69 @@ export default function ProductOrdersPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (productId) {
-      fetchProductAndOrders();
-    }
-  }, [productId]);
+    if (!productId) return;
 
-  const fetchProductAndOrders = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch product details
-      const productResult = await productsApi.getProductById(parseInt(productId));
-      if (productResult.success && productResult.data) {
-        setProduct(productResult.data);
-      } else {
-        setError('Failed to fetch product details');
-        return;
+    // Cancel previous request if still pending
+    const abortController = new AbortController();
+
+    const fetchProductAndOrders = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch product details
+        const productResult = await productsApi.getProductById(parseInt(productId));
+        
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return;
+        }
+        
+        if (productResult.success && productResult.data) {
+          setProduct(productResult.data);
+        } else {
+          setError('Failed to fetch product details');
+          return;
+        }
+        
+        // Fetch orders for this product
+        const ordersResult = await ordersApi.searchOrders({
+          productId: parseInt(productId),
+          limit: 100
+        });
+        
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return;
+        }
+        
+        if (ordersResult.success && ordersResult.data) {
+          setOrders(ordersResult.data.orders || []);
+        } else {
+          setError('Failed to fetch product orders');
+        }
+      } catch (err: any) {
+        // Ignore abort errors
+        if (err?.name === 'AbortError') {
+          return;
+        }
+        console.error('Error fetching product and orders:', err);
+        setError('An error occurred while fetching data');
+      } finally {
+        // Only update loading state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
       }
-      
-      // Fetch orders for this product
-      const ordersResult = await ordersApi.searchOrders({
-        productId: parseInt(productId),
-        limit: 100
-      });
-      
-      if (ordersResult.success && ordersResult.data) {
-        setOrders(ordersResult.data.orders || []);
-      } else {
-        setError('Failed to fetch product orders');
-      }
-    } catch (err) {
-      console.error('Error fetching product and orders:', err);
-      setError('An error occurred while fetching data');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchProductAndOrders();
+
+    // Cleanup: abort request on unmount or when productId changes
+    return () => {
+      abortController.abort();
+    };
+  }, [productId]);
 
   const handleBackToProduct = () => {
     router.push(`/merchants/${merchantId}/products/${productId}`);

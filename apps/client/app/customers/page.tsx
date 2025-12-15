@@ -362,13 +362,27 @@ export default function CustomersPage() {
       <AddCustomerDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
+        // Always pass merchantId if available (backend will validate from userScope)
+        // This helps with UX (pre-fill) and backend will override if needed for security
+        merchantId={user?.merchantId || user?.merchant?.id}
         onCustomerCreated={async (customerData) => {
           try {
+            // Debug: Log customerData before sending
+            console.log('🔍 customers/page - onCustomerCreated - customerData:', {
+              hasMerchantId: 'merchantId' in customerData,
+              merchantId: (customerData as any).merchantId,
+              customerDataKeys: Object.keys(customerData),
+              userMerchantId: user?.merchantId,
+              userMerchant: user?.merchant
+            });
+            
+            // Backend will validate merchantId from userScope (security)
+            // Frontend can send merchantId for UX (pre-fill), backend will override if needed
             const response = await customersApi.createCustomer({
               ...customerData,
               phone: customerData.phone || '', // Ensure phone is not undefined
               lastName: customerData.lastName || '', // Ensure lastName is not undefined
-              merchantId: user?.merchant?.id || user?.merchantId || 0
+              // merchantId will be included by CustomerFormDialog if available
             });
             
             if (response.success) {

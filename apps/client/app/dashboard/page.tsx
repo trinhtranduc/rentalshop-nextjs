@@ -233,13 +233,17 @@ export default function DashboardPage() {
   const to = useOrderTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  // ✅ Use permissions hook to check if user can manage products
-  const { canManageProducts } = usePermissions();
+  // ✅ Use permissions hook to check permissions
+  const { canManageProducts, hasPermission, canViewRevenue, canViewOrderAnalytics, canViewCustomerAnalytics, canViewProductAnalytics } = usePermissions();
   const locale = useNextIntlLocale() as 'en' | 'vi';
   
+  // Check if user has full analytics access (not just dashboard)
+  // Users with only 'analytics.view.dashboard' can only view 'today' period
+  const hasFullAnalyticsAccess = canViewRevenue || canViewOrderAnalytics || canViewCustomerAnalytics || canViewProductAnalytics;
+  
   // Get timePeriod from URL params or default to 'today'
-  // OUTLET_STAFF can only view 'today' period
-  const defaultPeriod = user?.role === 'OUTLET_STAFF' ? 'today' : ((searchParams.get('period') as 'today' | 'month' | 'year') || 'today');
+  // Users without full analytics access can only view 'today' period
+  const defaultPeriod = !hasFullAnalyticsAccess ? 'today' : ((searchParams.get('period') as 'today' | 'month' | 'year') || 'today');
   const [timePeriod, setTimePeriod] = useState<'today' | 'month' | 'year'>(defaultPeriod);
   const [initialLoading, setInitialLoading] = useState(false); // Start with false - page renders immediately
   const [loadingCharts, setLoadingCharts] = useState(false); // Start with false - page renders immediately
@@ -347,10 +351,10 @@ export default function DashboardPage() {
   }, [user, authLoading]);
 
   // Function to update URL when time period changes
-  // OUTLET_STAFF can only view 'today' period - force to 'today' if they try to change
+  // Users without full analytics access can only view 'today' period - force to 'today' if they try to change
   const updateTimePeriod = (newPeriod: 'today' | 'month' | 'year') => {
-    // Force OUTLET_STAFF to stay on 'today' period
-    if (user?.role === 'OUTLET_STAFF') {
+    // Force users without full analytics access to stay on 'today' period
+    if (!hasFullAnalyticsAccess) {
       setTimePeriod('today');
       const params = new URLSearchParams(searchParams.toString());
       params.set('period', 'today');
@@ -366,9 +370,9 @@ export default function DashboardPage() {
   };
 
   // Sync URL params on mount
-  // OUTLET_STAFF can only view 'today' period
+  // Users without full analytics access can only view 'today' period
   useEffect(() => {
-    if (user?.role === 'OUTLET_STAFF') {
+    if (!hasFullAnalyticsAccess) {
       setTimePeriod('today');
       const params = new URLSearchParams(searchParams.toString());
       params.set('period', 'today');
@@ -380,7 +384,7 @@ export default function DashboardPage() {
     if (urlPeriod && ['today', 'month', 'year'].includes(urlPeriod)) {
       setTimePeriod(urlPeriod as 'today' | 'month' | 'year');
     }
-  }, [searchParams, user?.role, router]);
+      }, [searchParams, hasFullAnalyticsAccess, router]);
 
   // Memoize fetchDashboardData function to prevent unnecessary re-creations
   const fetchDashboardData = useCallback(async () => {
@@ -472,27 +476,33 @@ export default function DashboardPage() {
         note: timePeriod === 'year' ? 'Using 2024 data range' : 'Using current date range'
       });
 
+      // Check permissions to determine which APIs to call
+      // OUTLET_STAFF only has 'analytics.view.dashboard' and 'analytics.view.revenue.daily'
+      // Other roles have full analytics permissions
+      const canViewFullAnalytics = hasPermission('analytics.view.revenue') || 
+                                    hasPermission('analytics.view.orders') ||
+                                    hasPermission('analytics.view.customers') ||
+                                    hasPermission('analytics.view.products');
+      
       console.log('🚀 Starting parallel API calls...');
       console.log('🔗 API URLs being called:');
       console.log('  📊 Enhanced Dashboard:', `/api/analytics/enhanced-dashboard?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
       console.log('  📈 Today Metrics:', '/api/analytics/today-metrics');
-      console.log('  📉 Growth Metrics:', `/api/analytics/growth-metrics?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
-      console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
-      console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
-      console.log('  🏆 Top Products:', `/api/analytics/top-products?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
-      console.log('  👥 Top Customers:', `/api/analytics/top-customers?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+      
+      // Users without full analytics permissions can only access dashboard APIs
+      if (canViewFullAnalytics) {
+        console.log('  📉 Growth Metrics:', `/api/analytics/growth-metrics?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+        console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
+        console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
+        console.log('  🏆 Top Products:', `/api/analytics/top-products?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+        console.log('  👥 Top Customers:', `/api/analytics/top-customers?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+      } else {
+        console.log('  ⚠️ Limited permissions: Skipping restricted analytics APIs (growth, income, orders, top-products, top-customers)');
+      }
       console.log('  📋 Dashboard Summary:', '/api/analytics/dashboard');
       
-      const [
-        statsResponse,
-        todayMetricsResponse,
-        growthMetricsResponse,
-        incomeResponse,
-        ordersResponse,
-        topProductsResponse,
-        topCustomersResponse,
-        dashboardResponse
-      ] = await Promise.all([
+      // Build API calls based on user role
+      const apiCalls: Promise<any>[] = [
         analyticsApi.getEnhancedDashboardSummary(defaultFilters).then(response => {
           console.log('📊 Enhanced Dashboard Summary API:', response);
           return response;
@@ -501,37 +511,65 @@ export default function DashboardPage() {
           console.log('📈 Today Metrics API:', response);
           return response;
         }),
-        analyticsApi.getGrowthMetrics(defaultFilters).then(response => {
-          console.log('📉 Growth Metrics API:', response);
-          return response;
-        }),
-        analyticsApi.getIncomeAnalytics({
-          ...defaultFilters,
-          outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
-        }).then(response => {
-          console.log('💰 Income Analytics API:', response);
-          return response;
-        }),
-        analyticsApi.getOrderAnalytics({
-          ...defaultFilters,
-          outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
-        }).then(response => {
-          console.log('📦 Order Analytics API:', response);
-          return response;
-        }),
-        analyticsApi.getTopProducts(defaultFilters).then(response => {
-          console.log('🏆 Top Products API:', response);
-          return response;
-        }),
-        analyticsApi.getTopCustomers(defaultFilters).then(response => {
-          console.log('👥 Top Customers API:', response);
-          return response;
-        }),
         analyticsApi.getDashboardSummary(timePeriod).then(response => {
           console.log('📋 Dashboard Summary API:', response);
           return response;
         })
-      ]);
+      ];
+      
+      // Only call restricted APIs if user has full analytics permissions
+      if (canViewFullAnalytics) {
+        apiCalls.push(
+          analyticsApi.getGrowthMetrics(defaultFilters).then(response => {
+            console.log('📉 Growth Metrics API:', response);
+            return response;
+          }),
+          analyticsApi.getIncomeAnalytics({
+            ...defaultFilters,
+            outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
+          }).then(response => {
+            console.log('💰 Income Analytics API:', response);
+            return response;
+          }),
+          analyticsApi.getOrderAnalytics({
+            ...defaultFilters,
+            outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
+          }).then(response => {
+            console.log('📦 Order Analytics API:', response);
+            return response;
+          }),
+          analyticsApi.getTopProducts(defaultFilters).then(response => {
+            console.log('🏆 Top Products API:', response);
+            return response;
+          }),
+          analyticsApi.getTopCustomers(defaultFilters).then(response => {
+            console.log('👥 Top Customers API:', response);
+            return response;
+          })
+        );
+      }
+      
+      const results = await Promise.all(apiCalls);
+      
+      // Extract responses based on role
+      const statsResponse = results[0];
+      const todayMetricsResponse = results[1];
+      const dashboardResponse = results[2];
+      
+      // For users with full analytics permissions, extract additional responses
+      let growthMetricsResponse: any = { success: false, data: null };
+      let incomeResponse: any = { success: false, data: null };
+      let ordersResponse: any = { success: false, data: null };
+      let topProductsResponse: any = { success: false, data: null };
+      let topCustomersResponse: any = { success: false, data: null };
+      
+      if (canViewFullAnalytics) {
+        growthMetricsResponse = results[3];
+        incomeResponse = results[4];
+        ordersResponse = results[5];
+        topProductsResponse = results[6];
+        topCustomersResponse = results[7];
+      }
 
       // Process responses
       console.log('Dashboard API responses:', {
@@ -1054,7 +1092,7 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {t('welcome')}, {user?.name || tc('roles.owner')} 👋
+                {t('welcome')}, {user?.name || tc('roles.OUTLET_STAFF')} 👋
               </h1>
               <p className="text-base text-gray-600">
                 {timePeriod === 'today' 
@@ -1067,8 +1105,8 @@ export default function DashboardPage() {
             </div>
             
             {/* Time Period Filter - Modern Pills */}
-            {/* OUTLET_STAFF can only view 'today' - hide month/year tabs */}
-            {user?.role !== 'OUTLET_STAFF' ? (
+            {/* Users without full analytics access can only view 'today' - hide month/year tabs */}
+            {hasFullAnalyticsAccess ? (
             <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
               {[
                 { id: 'today', label: tc('time.today') },
@@ -1089,7 +1127,7 @@ export default function DashboardPage() {
               ))}
             </div>
             ) : (
-              // For OUTLET_STAFF, show only "Today" label (not clickable)
+              // For users without full analytics access, show only "Today" label (not clickable)
               <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
                 <div className="px-4 py-2 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm">
                   {tc('time.today')}
@@ -1292,10 +1330,10 @@ export default function DashboardPage() {
           <>
             {/* Business Performance Metrics - Simplified */}
             <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 ${
-              user?.role === 'OUTLET_STAFF' ? 'md:grid-cols-3' : ''
+              !hasFullAnalyticsAccess ? 'md:grid-cols-3' : ''
             }`}>
-              {/* Revenue Card - Hidden for OUTLET_STAFF */}
-              {user?.role !== 'OUTLET_STAFF' && (
+              {/* Revenue Card - Hidden for users without full analytics access */}
+              {hasFullAnalyticsAccess && (
                 <StatCard
                   title={t('stats.totalRevenue')}
                   value={currentStats.totalRevenue}
@@ -1324,8 +1362,8 @@ export default function DashboardPage() {
                 color="text-blue-700"
                 trend="neutral"
               />
-              {/* Future Revenue Card - Hidden for OUTLET_STAFF */}
-              {user?.role !== 'OUTLET_STAFF' && (
+              {/* Future Revenue Card - Hidden for users without full analytics access */}
+              {hasFullAnalyticsAccess && (
                 <StatCard
                   title={t('stats.futureRevenue')}
                   value={currentStats.futureRevenue}
@@ -1406,8 +1444,8 @@ export default function DashboardPage() {
               </CardClean>
             )}
 
-            {/* Revenue Charts - Hidden for OUTLET_STAFF - Simplified */}
-            {user?.role !== 'OUTLET_STAFF' && (
+            {/* Revenue Charts - Hidden for users without full analytics access - Simplified */}
+            {hasFullAnalyticsAccess && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                 <CardClean size="md">
                   <CardHeaderClean>
@@ -1611,6 +1649,9 @@ export default function DashboardPage() {
         <AddCustomerDialog
           open={showAddCustomerDialog}
           onOpenChange={setShowAddCustomerDialog}
+          // Always pass merchantId if available (backend will validate from userScope)
+          // This helps with UX (pre-fill) and backend will override if needed for security
+          merchantId={user?.merchantId || user?.merchant?.id}
           onCustomerCreated={handleCustomerCreated}
           onError={(error) => {
             // Error automatically handled by useGlobalErrorHandler

@@ -142,6 +142,14 @@ export const customersApi = {
    * Create new customer
    */
   async createCustomer(customerData: CustomerInput): Promise<CustomerApiResponse> {
+    // Debug: Log data being sent to API
+    console.log('🔍 customersApi.createCustomer - Sending data:', {
+      hasMerchantId: 'merchantId' in customerData,
+      merchantId: (customerData as any).merchantId,
+      customerDataKeys: Object.keys(customerData),
+      fullData: customerData
+    });
+    
     const response = await authenticatedFetch(apiUrls.customers.create, {
       method: 'POST',
       body: JSON.stringify(customerData),

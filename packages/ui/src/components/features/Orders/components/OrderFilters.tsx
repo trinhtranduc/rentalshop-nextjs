@@ -102,8 +102,23 @@ export const OrderFilters = React.memo(function OrderFilters({
     return false;
   }, [userRole, filters, shouldShowOutletFilter]);
 
+  // ✅ Extract merchantId from filters to avoid object reference changes
+  const merchantId = React.useMemo(() => {
+    return (userRole === 'ADMIN' && 'merchantId' in filters && (filters as any).merchantId) 
+      ? (filters as any).merchantId 
+      : null;
+  }, [userRole, filters]);
+
+  // ✅ Use AbortController to cancel duplicate requests (standard pattern)
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+
   // Fetch outlets based on user role and selected merchant
   useEffect(() => {
+    // Cancel previous request if still pending
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     // Don't fetch if filter should be hidden
     if (!shouldShowOutletFilter) {
       setOutlets([]);
@@ -116,18 +131,27 @@ export const OrderFilters = React.memo(function OrderFilters({
       return;
     }
 
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     const fetchOutlets = async () => {
       try {
         setLoadingOutlets(true);
         setOutletError(null);
         
         let result;
-        if (userRole === 'ADMIN' && 'merchantId' in filters && (filters as any).merchantId) {
+        if (userRole === 'ADMIN' && merchantId) {
           // Admin: fetch outlets for selected merchant
-          result = await outletsApi.getOutletsByMerchant((filters as any).merchantId);
+          result = await outletsApi.getOutletsByMerchant(merchantId);
         } else {
           // Merchant: fetch all outlets (they can only see their own via backend filtering)
           result = await outletsApi.getOutlets();
+        }
+        
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return;
         }
         
         if (result.success && result.data?.outlets) {
@@ -136,49 +160,121 @@ export const OrderFilters = React.memo(function OrderFilters({
           setOutletError('Failed to load outlets');
           setOutlets([]);
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Ignore abort errors
+        if (error?.name === 'AbortError') {
+          return;
+        }
         console.error('Error fetching outlets:', error);
         setOutletError('Failed to load outlets');
         setOutlets([]);
       } finally {
-        setLoadingOutlets(false);
+        // Only update loading state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setLoadingOutlets(false);
+        }
       }
     };
 
     fetchOutlets();
-  }, [shouldShowOutletFilter, isOutletFilterEnabled, userRole, filters]);
+
+    // Cleanup: abort request on unmount or when dependencies change
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [shouldShowOutletFilter, isOutletFilterEnabled, userRole, merchantId]);
 
   // ============================================================================
   // FETCH MERCHANTS (admin only, one-time)
-  // ===========================================================================-
+  // ============================================================================
   
+  // Use AbortController and cache to prevent duplicate calls
+  const merchantsAbortControllerRef = React.useRef<AbortController | null>(null);
+  const isFetchingMerchantsRef = React.useRef<boolean>(false);
+  const hasFetchedMerchantsRef = React.useRef<boolean>(false);
+  const previousUserRoleRef = React.useRef<string | undefined>(userRole);
+
   useEffect(() => {
+    // Skip if userRole hasn't changed and we already fetched or are fetching
+    if (userRole === previousUserRoleRef.current && (hasFetchedMerchantsRef.current || isFetchingMerchantsRef.current)) {
+      return;
+    }
+
+    // Update previous userRole
+    previousUserRoleRef.current = userRole;
+    hasFetchedMerchantsRef.current = false; // Reset when userRole changes
+
+    // Cancel previous request if still pending
+    if (merchantsAbortControllerRef.current) {
+      merchantsAbortControllerRef.current.abort();
+    }
+
     // Only fetch merchants for ADMIN users
-    if (userRole === 'ADMIN') {
-      const fetchMerchants = async () => {
-        try {
-          setLoadingMerchants(true);
-          setMerchantError(null);
-          const { merchantsApi } = await import('@rentalshop/utils');
-          const result = await merchantsApi.getMerchants();
-          if (result.success && result.data?.merchants) {
-            setMerchants(result.data.merchants);
-          } else {
-            setMerchantError('Failed to load merchants');
-            setMerchants([]);
-          }
-        } catch (error) {
-          console.error('Error fetching merchants:', error);
+    if (userRole !== 'ADMIN') {
+      setMerchants([]);
+      isFetchingMerchantsRef.current = false;
+      hasFetchedMerchantsRef.current = false;
+      return;
+    }
+
+    // Skip if already fetching
+    if (isFetchingMerchantsRef.current) {
+      return;
+    }
+
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    merchantsAbortControllerRef.current = abortController;
+    isFetchingMerchantsRef.current = true;
+
+    const fetchMerchants = async () => {
+      try {
+        setLoadingMerchants(true);
+        setMerchantError(null);
+        const { merchantsApi } = await import('@rentalshop/utils');
+        const result = await merchantsApi.getMerchants();
+        
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return;
+        }
+        
+        if (result.success && result.data?.merchants) {
+          setMerchants(result.data.merchants);
+          hasFetchedMerchantsRef.current = true;
+        } else {
           setMerchantError('Failed to load merchants');
           setMerchants([]);
-        } finally {
-          setLoadingMerchants(false);
         }
-      };
+      } catch (error: any) {
+        // Ignore abort errors
+        if (error?.name === 'AbortError') {
+          return;
+        }
+        console.error('Error fetching merchants:', error);
+        setMerchantError('Failed to load merchants');
+        setMerchants([]);
+      } finally {
+        // Only update loading state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setLoadingMerchants(false);
+          isFetchingMerchantsRef.current = false;
+        }
+      }
+    };
 
-      fetchMerchants();
-    }
-  }, [userRole]); // Run when userRole changes
+    fetchMerchants();
+
+    // Cleanup: abort request on unmount or when userRole changes
+    return () => {
+      if (merchantsAbortControllerRef.current) {
+        merchantsAbortControllerRef.current.abort();
+      }
+      isFetchingMerchantsRef.current = false;
+    };
+  }, [userRole]); // Only run when userRole changes
 
   // ============================================================================
   // HANDLERS - Simple passthrough to parent
