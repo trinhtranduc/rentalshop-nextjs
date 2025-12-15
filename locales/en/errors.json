@@ -20,6 +20,7 @@
   "INSUFFICIENT_PERMISSIONS": "Insufficient permissions",
   "BUSINESS_RULE_VIOLATION": "Business rule violation",
   "ACCOUNT_DEACTIVATED": "Account is deactivated",
+  "SUBSCRIPTION_ERROR": "Subscription error",
   "SUBSCRIPTION_EXPIRED": "Subscription has expired",
   "SUBSCRIPTION_CANCELLED": "Subscription has been cancelled",
   "SUBSCRIPTION_PAUSED": "Subscription is paused",

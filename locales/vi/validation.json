@@ -72,7 +72,17 @@
       "invalidFormat": "Định dạng email không hợp lệ"
     },
     "password": {
-      "minLength6": "Mật khẩu phải có ít nhất 6 ký tự"
+      "minLength6": "Mật khẩu phải có ít nhất 6 ký tự",
+      "required": "Mật khẩu là bắt buộc"
+    },
+    "confirmPassword": {
+      "required": "Xác nhận mật khẩu là bắt buộc",
+      "match": "Mật khẩu không khớp"
+    },
+    "outletId": {
+      "required": "Cửa hàng là bắt buộc",
+      "requiredForRole": "Cửa hàng là bắt buộc cho vai trò này",
+      "shouldNotBeSelected": "Cửa hàng không nên được chọn cho vai trò merchant"
     },
     "country": {
       "invalid": "Vui lòng chọn quốc gia hợp lệ"

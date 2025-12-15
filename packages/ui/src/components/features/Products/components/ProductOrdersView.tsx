@@ -189,7 +189,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
         totalPrice: item.totalPrice,
         notes: item.notes,
         productId: item.productId,
-        productName: (item as any).productName || item.product?.name || 'Unknown Product',
+        productName: (item as any).productName || item.product?.name ,
         productBarcode: (item as any).productBarcode || (item.product as any)?.barcode,
         productImages: (item as any).productImages || (item.product as any)?.images || [],
         productRentPrice: item.product?.rentPrice,

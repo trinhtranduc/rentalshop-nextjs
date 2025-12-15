@@ -337,6 +337,20 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
   // This ensures all order items are displayed even if the external products array is incomplete
   const displayProduct = item.product || product;
   
+  console.log('🔍 OrderItemCard: displayProduct check:', {
+    itemId: item.id,
+    productId: item.productId,
+    hasItemProduct: !!item.product,
+    itemProductName: item.product?.name,
+    itemProductNameType: typeof item.product?.name,
+    hasProduct: !!product,
+    productName: product?.name,
+    displayProduct: displayProduct,
+    displayProductName: displayProduct?.name,
+    displayProductNameType: typeof displayProduct?.name,
+    displayProductNameLength: displayProduct?.name?.length
+  });
+  
   if (!displayProduct) {
     // Fallback display when no product information is available
     return (

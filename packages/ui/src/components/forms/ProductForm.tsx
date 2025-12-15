@@ -21,7 +21,7 @@ import {
 } from '../ui';
 import { formatCurrency } from '../../lib';
 import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
-import { useProductTranslations, useCommonTranslations, useValidationTranslations } from '@rentalshop/hooks';
+import { useProductTranslations, useCommonTranslations, useValidationTranslations, usePermissions } from '@rentalshop/hooks';
 import { 
   Package, 
   DollarSign, 
@@ -124,6 +124,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   const tv = useValidationTranslations();
+  const { hasPermission } = usePermissions();
+  const canManageProducts = hasPermission('products.manage'); // Only users with manage permission can view/edit cost price
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -920,18 +922,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
               </div>
 
-              <div>
-                <NumericInput
-                  label={t('fields.costPrice')}
-                  value={formData.costPrice}
-                  onChange={(value) => handleInputChange('costPrice', value)}
-                  placeholder="0.00"
-                  error={!!errors.costPrice}
-                  allowDecimals={true}
-                  maxDecimalPlaces={2}
-                />
-                {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
-              </div>
+              {/* Only show cost price input if user has products.manage permission */}
+              {canManageProducts && (
+                <div>
+                  <NumericInput
+                    label={t('fields.costPrice')}
+                    value={formData.costPrice}
+                    onChange={(value) => handleInputChange('costPrice', value)}
+                    placeholder="0.00"
+                    error={!!errors.costPrice}
+                    allowDecimals={true}
+                    maxDecimalPlaces={2}
+                  />
+                  {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
+                </div>
+              )}
             </div>
 
                 {/* Stock */}

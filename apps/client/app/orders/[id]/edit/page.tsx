@@ -71,11 +71,11 @@ export default function EditOrderPage() {
         const result = await ordersApi.getOrderByNumber(numericOrderId);
 
         if (result.success && result.data) {
-          setOrder(result.data as OrderWithDetails);
+          setOrder(result.data as unknown as OrderWithDetails);
           
           // Extract merchant id from order - API expects id (number), not database CUID (string)
           let foundMerchantPublicId: number | null = null;
-          const orderData = result.data as OrderWithDetails;
+          const orderData = result.data as unknown as OrderWithDetails;
           
           // Priority order for finding merchant id:
           // 1. outlet.merchant.id (this is what we need for API calls)
@@ -284,6 +284,15 @@ export default function EditOrderPage() {
       };
 
       const result = await ordersApi.updateOrder(orderPublicId, updateData);
+
+      console.log('🔍 EditOrderPage: Update result:', {
+        success: result.success,
+        hasData: !!result.data,
+        orderItems: result.data?.orderItems,
+        firstItem: result.data?.orderItems?.[0],
+        firstItemProduct: result.data?.orderItems?.[0]?.product,
+        firstItemProductName: (result.data?.orderItems?.[0] as any)?.productName
+      });
 
       if (result.success) {
         // Show success message

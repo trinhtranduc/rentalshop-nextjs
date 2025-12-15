@@ -8,7 +8,7 @@ import { validateUserCreateInput, validateUserUpdateInput } from './UserFormVali
 import type { User, UserCreateInput, UserUpdateInput, UserRole } from '@rentalshop/types';
 import { merchantsApi, outletsApi } from '@rentalshop/utils';
 import { useFormattedDateTime } from '@rentalshop/utils/client';
-import { useUsersTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useUsersTranslations, useCommonTranslations, useValidationTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
 // TYPE-SAFE FORM DATA INTERFACES
@@ -57,6 +57,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 }) => {
   const t = useUsersTranslations();
   const tc = useCommonTranslations();
+  const tv = useValidationTranslations();
   const isEditMode = mode === 'edit';
   
   // Form data - different structure for create vs edit
@@ -198,7 +199,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   useEffect(() => {
     if (!isEditMode && canSelectOutlet) {
       setLoadingOutlets(true);
-      const merchantId = canSelectMerchant ? (formData as any).merchantId : (currentUser?.merchantId || currentUser?.merchant?.id);
+      const merchantId = canSelectMerchant ? formData.merchantId : (currentUser?.merchantId || currentUser?.merchant?.id);
       
       console.log('🔍 UserForm: Loading outlets for merchantId:', merchantId, 'canSelectMerchant:', canSelectMerchant);
       
@@ -236,7 +237,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       }]);
       setFormData((prev: any) => ({ ...prev, outletId: currentUser.outletId?.toString() || '' }));
     }
-  }, [canSelectOutlet, canSelectMerchant, (formData as any).merchantId, currentUser?.merchantId, currentUser?.outletId, isEditMode]);
+  }, [canSelectOutlet, canSelectMerchant, formData.merchantId, currentUser?.merchantId, currentUser?.outletId, isEditMode]);
 
   // Reset outlet when merchant changes and reload outlets (create mode only)
   useEffect(() => {
@@ -280,9 +281,9 @@ export const UserForm: React.FC<UserFormProps> = ({
     let newErrors: Record<string, string>;
     
     if (isEditMode) {
-      newErrors = validateUserUpdateInput(formData as UserUpdateFormData);
+      newErrors = validateUserUpdateInput(formData as UserUpdateFormData, tv);
     } else {
-      newErrors = validateUserCreateInput(formData as UserCreateFormData);
+      newErrors = validateUserCreateInput(formData as UserCreateFormData, tv);
     }
     
     console.log('🔍 UserForm: Validation errors:', newErrors);
@@ -375,7 +376,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                 <FormField
                   id="firstName"
                   label={t('fields.firstName')}
-                  value={(formData as any).firstName}
+                  value={formData.firstName}
                   onChange={(value) => handleInputChange('firstName', value)}
                   error={errors.firstName}
                   disabled={isSubmitting}
@@ -386,7 +387,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                 <FormField
                   id="lastName"
                   label={t('fields.lastName')}
-                  value={(formData as any).lastName}
+                  value={formData.lastName}
                   onChange={(value) => handleInputChange('lastName', value)}
                   error={errors.lastName}
                   disabled={isSubmitting}
@@ -398,7 +399,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               <FormField
                 id="name"
                 label={t('fields.fullName')}
-                value={(formData as any).name}
+                value={formData.name}
                 onChange={(value) => handleInputChange('name', value)}
                 error={errors.name}
                 disabled={isSubmitting}
@@ -410,7 +411,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             <FormField
               id="email"
               label={t('fields.email')}
-              value={(formData as any).email}
+              value={formData.email}
               onChange={(value) => handleInputChange('email', value)}
               error={errors.email}
               disabled={isSubmitting}
@@ -422,7 +423,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             <FormField
               id="phone"
               label={t('fields.phone')}
-              value={(formData as any).phone}
+              value={formData.phone}
               onChange={(value) => handleInputChange('phone', value)}
               error={errors.phone}
               disabled={isSubmitting}
@@ -430,9 +431,8 @@ export const UserForm: React.FC<UserFormProps> = ({
               placeholder={t('placeholders.enterPhone')}
             />
 
-            {console.log('🔍 UserForm: RoleSelect value:', (formData as any).role, 'FormData:', formData)}
             <RoleSelect
-              value={(formData as any).role}
+              value={formData.role}
               onChange={(value) => {
                 console.log('🔍 UserForm: Role changed to:', value);
                 handleInputChange('role', value);
@@ -453,7 +453,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {showMerchantField && (
                 <MerchantSelect
-                  value={(formData as any).merchantId}
+                  value={formData.merchantId}
                   onChange={(value) => handleInputChange('merchantId', value)}
                   merchants={merchants}
                   loading={loadingMerchants}
@@ -466,7 +466,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 
               {showOutletField && (
                 <OutletSelect
-                  value={(formData as any).outletId}
+                  value={formData.outletId}
                   onChange={(value) => handleInputChange('outletId', value)}
                   outlets={outlets}
                   loading={loadingOutlets}
@@ -474,7 +474,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                   disabled={isSubmitting}
                   canSelect={canSelectOutlet}
                   canSelectMerchant={canSelectMerchant}
-                  merchantId={(formData as any).merchantId}
+                  merchantId={formData.merchantId}
                   currentUser={currentUser}
                 />
               )}
@@ -492,7 +492,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               <FormField
                 id="password"
                 label={t('fields.password')}
-                value={(formData as any).password}
+                value={formData.password}
                 onChange={(value) => handleInputChange('password', value)}
                 error={errors.password}
                 disabled={isSubmitting}
@@ -505,7 +505,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               <FormField
                 id="confirmPassword"
                 label={t('fields.confirmPassword')}
-                value={(formData as any).confirmPassword}
+                value={formData.confirmPassword}
                 onChange={(value) => handleInputChange('confirmPassword', value)}
                 error={errors.confirmPassword}
                 disabled={isSubmitting}
@@ -527,7 +527,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               <div>
               <span className="font-medium text-text-primary">{t('fields.role')}:</span>
               <span className="ml-2 px-2 py-1 bg-action-info/10 text-action-info rounded-full text-xs">
-                  {t(`roles.${user.role}` as any)}
+                  {t(`roles.${user.role}`)}
                 </span>
               </div>
               <div>
@@ -561,38 +561,13 @@ export const UserForm: React.FC<UserFormProps> = ({
               {user.lastLoginAt && (
                 <div>
                 <span className="font-medium text-text-primary">{t('fields.lastLogin')}:</span>
-                <span className="ml-2 text-muted-foreground">
-                    {useFormattedFullDate(user.lastLoginAt)}
+                  <span className="ml-2 text-muted-foreground">
+                    {useFormattedDateTime(user.lastLoginAt)}
                   </span>
                 </div>
               )}
             </div>
             </div>
-          )}
-
-          {/* Validation Status */}
-          {Object.keys(errors).length > 0 && (
-        <div className="bg-action-warning/10 border border-action-warning/20 rounded-md p-4">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <span className="text-action-warning text-lg">⚠️</span>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-action-warning">
-                {t('messages.validationErrors')}
-              </h3>
-              <div className="mt-2 text-sm text-action-warning">
-                <ul className="list-disc list-inside space-y-1">
-                  {Object.entries(errors).map(([field, error]) => (
-                    <li key={field}>
-                      <strong>{field.charAt(0).toUpperCase() + field.slice(1)}:</strong> {error}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
           )}
 
           {/* Action Buttons */}

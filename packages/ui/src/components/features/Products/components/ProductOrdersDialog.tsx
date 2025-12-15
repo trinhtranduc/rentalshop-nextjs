@@ -220,7 +220,7 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
                               <div className="flex items-center gap-2">
                                 <Package className="w-3 h-3 text-text-tertiary" />
                                 <span className="text-text-primary">
-                                  {item.product?.name || 'Unknown Product'}
+                                  {item.product?.name || ''}
                                 </span>
                                 <span className="text-text-secondary">
                                   (Qty: {item.quantity})
