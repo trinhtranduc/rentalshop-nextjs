@@ -337,6 +337,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'analytics.view.products',
     'analytics.export',
     // ❌ NO analytics.view.system (admin only)
+    'billing.view',                      // ✅ Can view subscription status and plan limits
     'bankAccounts.manage', 'bankAccounts.view' // ✅ Outlet admin can manage bank accounts
   ],
   'OUTLET_STAFF': [
@@ -349,6 +350,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // ❌ NO analytics.view.revenue (full revenue analytics)
     // ❌ NO analytics.view.orders, customers, products
     // ❌ NO analytics.export
+    'billing.view',                      // ✅ Can view subscription status and plan limits (read-only)
+    // ❌ NO billing.manage - staff cannot modify subscription
     // ❌ NO bankAccounts permissions - staff cannot see bank accounts
   ]
 };
