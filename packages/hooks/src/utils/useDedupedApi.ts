@@ -110,7 +110,9 @@ export function useDedupedApi<TFilters, TData>(
           normalized[key] = value; // Already string (or primitive), no conversion needed
         }
       });
-    return JSON.stringify(normalized);
+    const key = JSON.stringify(normalized);
+    console.log('🔑 useDedupedApi: Generated cache key:', key, 'from filters:', filters);
+    return key;
   }, [filters]);
 
   // ============================================================================
@@ -192,8 +194,15 @@ export function useDedupedApi<TFilters, TData>(
     // STEP 1: Check cache first
     // ========================================================================
     
+    console.log('🔍 useDedupedApi: Checking cache for key:', cacheKey);
     const cached = dataCache.get(cacheKey);
     if (cached) {
+      console.log('📦 useDedupedApi: Found cached data:', {
+        cacheKey,
+        dataType: typeof cached.data,
+        isArray: Array.isArray(cached.data),
+        dataKeys: cached.data && typeof cached.data === 'object' ? Object.keys(cached.data) : null
+      });
       const now = Date.now();
       const isCacheStale = (now - cached.timestamp) > cached.staleTime;
       

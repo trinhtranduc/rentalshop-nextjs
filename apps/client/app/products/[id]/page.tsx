@@ -18,7 +18,7 @@ import { productBreadcrumbs } from '@rentalshop/utils';
 import { ProductDetail } from '@rentalshop/ui';
 
 import { Edit, ArrowLeft, Package, BarChart3, Trash2 } from 'lucide-react';
-import { useAuth, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useProductTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 import { canManageProducts } from '@rentalshop/auth';
 import { 
   productsApi, 
@@ -35,53 +35,84 @@ export default function ProductViewPage() {
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   
-  const [product, setProduct] = useState<ProductWithStock | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const productId = parseInt(params.id as string);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch product details
-        const productResponse = await productsApi.getProductById(productId);
-        if (productResponse.data) {
-          setProduct(productResponse.data);
-        }
-
-        // Fetch categories and outlets for the form
-        const [categoriesData, outletsData] = await Promise.all([
-          categoriesApi.getCategories(),
-          outletsApi.getOutlets()
-        ]);
-        
-        if (categoriesData.success) {
-          setCategories(categoriesData.data || []);
-        }
-        if (outletsData.success) {
-          setOutlets(outletsData.data?.outlets || []);
-        }
-
-      } catch (err) {
-        console.error('Error fetching product:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch product');
-      } finally {
-        setLoading(false);
+  // ============================================================================
+  // FETCH PRODUCT DETAILS - Using Official useDedupedApi Hook
+  // ============================================================================
+  const { 
+    data: productData, 
+    loading: productLoading, 
+    error: productError 
+  } = useDedupedApi({
+    filters: { productId },
+    fetchFn: async () => {
+      const productResponse = await productsApi.getProductById(productId);
+      if (!productResponse.success || !productResponse.data) {
+        throw new Error('Failed to fetch product');
       }
-    };
+      return productResponse.data;
+    },
+    enabled: !!productId,
+    staleTime: 60000,
+    cacheTime: 300000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
 
-    if (productId) {
-      fetchData();
-    }
-  }, [productId]);
+  // ============================================================================
+  // FETCH CATEGORIES - Using Official useDedupedApi Hook
+  // ============================================================================
+  const { 
+    data: categoriesData, 
+    loading: categoriesLoading 
+  } = useDedupedApi({
+    filters: {}, // Categories are global, no filter needed
+    fetchFn: async () => {
+      const categoriesData = await categoriesApi.getCategories();
+      if (!categoriesData.success) {
+        throw new Error('Failed to fetch categories');
+      }
+      return categoriesData.data || [];
+    },
+    enabled: true,
+    staleTime: 300000, // 5 minutes (categories don't change often)
+    cacheTime: 600000, // 10 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
+
+  // ============================================================================
+  // FETCH OUTLETS - Using Official useDedupedApi Hook
+  // ============================================================================
+  const { 
+    data: outletsData, 
+    loading: outletsLoading 
+  } = useDedupedApi({
+    filters: {}, // Outlets are filtered by backend based on user role
+    fetchFn: async () => {
+      const outletsData = await outletsApi.getOutlets();
+      if (!outletsData.success || !outletsData.data?.outlets) {
+        throw new Error('Failed to fetch outlets');
+      }
+      return { outlets: outletsData.data.outlets };
+    },
+    enabled: true,
+    staleTime: 60000, // 60 seconds
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
+
+  // Sync data to local state
+  const product = productData || null;
+  const categories = categoriesData || [];
+  const outlets = outletsData?.outlets || [];
+  const loading = productLoading || categoriesLoading || outletsLoading;
+  const error = productError ? productError.message : null;
 
   const handleEdit = () => {
     router.push(`/products/${productId}/edit`);

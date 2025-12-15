@@ -11,7 +11,7 @@ import {
   Button,
   LoadingIndicator
 } from '@rentalshop/ui';
-import { useAuth, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useProductTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi,
@@ -26,87 +26,77 @@ export default function ProductAddPage() {
   const t = useProductTranslations();
   const tc = useCommonTranslations();
   
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [merchantId, setMerchantId] = useState<number | null>(null);
+  // ============================================================================
+  // RESOLVE MERCHANT ID
+  // ============================================================================
+  const resolvedMerchantId = user?.merchant?.id || user?.merchantId;
+  const merchantId = resolvedMerchantId ? Number(resolvedMerchantId) : null;
 
-
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Wait for authentication to complete
-        if (authLoading) {
-          return;
-        }
-
-        // Check if user has merchant ID (try both merchant.id and merchantId)
-        const resolvedMerchantId = user?.merchant?.id || user?.merchantId;
-        if (!resolvedMerchantId) {
-          setError('You must be associated with a merchant to create products. Please contact your administrator.');
-          setLoading(false);
-          return;
-        }
-
-        setMerchantId(Number(resolvedMerchantId));
-
-        console.log('🔍 Product Add - User merchant info:', {
-          'user.merchant': user?.merchant,
-          'user.merchantId': user?.merchantId,
-          'resolved merchantId': resolvedMerchantId
-        });
-
-        // Fetch categories and outlets for the form
-        const [categoriesData, outletsData] = await Promise.all([
-          categoriesApi.getCategories(),
-          outletsApi.getOutletsByMerchant(Number(resolvedMerchantId))
-        ]);
-        
-        if (categoriesData.success) {
-          const categoriesList = categoriesData.data || [];
-          setCategories(categoriesList);
-          
-          if (categoriesList.length === 0) {
-            setError('No product categories found. You need to create at least one category before you can add products.');
-            setLoading(false);
-            return;
-          }
-        } else {
-          setError('Failed to load categories. Please try again.');
-          setLoading(false);
-          return;
-        }
-        
-        if (outletsData.success) {
-          const outletsList = outletsData.data?.outlets || [];
-          setOutlets(outletsList);
-          
-          if (outletsList.length === 0) {
-            setError('No outlets found for your merchant. You need to create at least one outlet before you can add products.');
-            setLoading(false);
-            return;
-          }
-        } else {
-          setError('Failed to load outlets. Please try again.');
-          setLoading(false);
-          return;
-        }
-
-      } catch (err) {
-        console.error('Error fetching form data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load form data');
-      } finally {
-        setLoading(false);
+  // ============================================================================
+  // FETCH CATEGORIES - Using Official useDedupedApi Hook
+  // ============================================================================
+  const { 
+    data: categoriesData,
+    loading: categoriesLoading,
+    error: categoriesError
+  } = useDedupedApi({
+    filters: {},
+    fetchFn: async () => {
+      const categoriesData = await categoriesApi.getCategories();
+      if (!categoriesData.success) {
+        throw new Error('Failed to load categories');
       }
-    };
+      const categoriesList = categoriesData.data || [];
+      if (categoriesList.length === 0) {
+        throw new Error('No product categories found. You need to create at least one category before you can add products.');
+      }
+      return categoriesList;
+    },
+    enabled: !authLoading,
+    staleTime: 300000, // 5 minutes
+    cacheTime: 600000, // 10 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
 
-    fetchData();
-  }, [authLoading]);
+  // ============================================================================
+  // FETCH OUTLETS - Using Official useDedupedApi Hook
+  // ============================================================================
+  const { 
+    data: outletsData,
+    loading: outletsLoading,
+    error: outletsError
+  } = useDedupedApi({
+    filters: { merchantId },
+    fetchFn: async () => {
+      if (!merchantId || merchantId <= 0) {
+        throw new Error('You must be associated with a merchant to create products. Please contact your administrator.');
+      }
+      
+      const outletsData = await outletsApi.getOutletsByMerchant(merchantId);
+      if (!outletsData.success || !outletsData.data?.outlets) {
+        throw new Error('Failed to load outlets');
+      }
+      
+      const outletsList = outletsData.data.outlets;
+      if (outletsList.length === 0) {
+        throw new Error('No outlets found for your merchant. You need to create at least one outlet before you can add products.');
+      }
+      
+      return { outlets: outletsList };
+    },
+    enabled: !authLoading && !!merchantId,
+    staleTime: 60000,
+    cacheTime: 300000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
+
+  // Sync data to local state
+  const categories = categoriesData || [];
+  const outlets = outletsData?.outlets || [];
+  const loading = categoriesLoading || outletsLoading;
+  const error = categoriesError?.message || outletsError?.message || null;
 
   const handleSave = async (data: ProductCreateInput, files?: File[]) => {
     try {

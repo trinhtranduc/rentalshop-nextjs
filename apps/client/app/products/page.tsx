@@ -23,7 +23,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
 import { productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 import type { ProductFilters, Product, ProductWithDetails, ProductUpdateInput, Category, Outlet } from '@rentalshop/types';
@@ -77,32 +77,51 @@ export default function ProductsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   
-  // Data for edit dialog
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  
-  // Fetch categories and outlets for edit dialog
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [categoriesRes, outletsRes] = await Promise.all([
-          categoriesApi.getCategories(),
-          outletsApi.getOutlets()
-        ]);
-        
-        if (categoriesRes.success && categoriesRes.data) {
-          setCategories(categoriesRes.data);
-        }
-        if (outletsRes.success && outletsRes.data) {
-          setOutlets(outletsRes.data.outlets || []);
-        }
-      } catch (error) {
-        console.error('Error fetching categories/outlets:', error);
+  // ============================================================================
+  // FETCH CATEGORIES - Using Official useDedupedApi Hook
+  // ============================================================================
+  const { 
+    data: categoriesData 
+  } = useDedupedApi({
+    filters: {}, // Categories are global, no filter needed
+    fetchFn: async () => {
+      const categoriesRes = await categoriesApi.getCategories();
+      if (!categoriesRes.success || !categoriesRes.data) {
+        throw new Error('Failed to fetch categories');
       }
-    };
-    
-    fetchData();
-  }, []);
+      return categoriesRes.data;
+    },
+    enabled: true,
+    staleTime: 300000, // 5 minutes (categories don't change often)
+    cacheTime: 600000, // 10 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
+
+  // ============================================================================
+  // FETCH OUTLETS - Using Official useDedupedApi Hook
+  // ============================================================================
+  const { 
+    data: outletsData 
+  } = useDedupedApi({
+    filters: {}, // Outlets are filtered by backend based on user role
+    fetchFn: async () => {
+      const outletsRes = await outletsApi.getOutlets();
+      if (!outletsRes.success || !outletsRes.data?.outlets) {
+        throw new Error('Failed to fetch outlets');
+      }
+      return { outlets: outletsRes.data.outlets };
+    },
+    enabled: true,
+    staleTime: 60000, // 60 seconds
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
+
+  // Sync data to local state
+  const categories = categoriesData || [];
+  const outlets = outletsData?.outlets || [];
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
