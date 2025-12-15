@@ -4,7 +4,7 @@ import React, { useCallback } from 'react';
 import { Input, Button, SearchableSelect } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
-import { ProductFilters as ProductFiltersType } from '@rentalshop/types';
+import { ProductFilters as ProductFiltersType, Category, Outlet } from '@rentalshop/types';
 import { useOutletsData, useCategoriesData, useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { Search } from 'lucide-react';
 
@@ -46,6 +46,38 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
     firstCategory: categories?.[0]?.name || 'none'
   });
 
+  // Prepare category options for SearchableSelect
+  const categoryOptions = React.useMemo(() => {
+    console.log('🔍 ProductFilters: Creating category options from:', {
+      categoriesCount: categories.length,
+      categories: categories.slice(0, 3),
+      loading: loadingCategories,
+      isArray: Array.isArray(categories)
+    });
+    
+    if (!Array.isArray(categories) || categories.length === 0) {
+      console.warn('⚠️ ProductFilters: No categories available');
+      return [];
+    }
+    
+    const allOption = { value: '0', label: t('filters.allCategories'), subtitle: t('filters.allCategories') };
+    const categoryOpts = categories
+      .filter((category: Category) => category && category.id) // Filter out invalid categories
+      .map((category: Category) => ({
+        value: category.id.toString(),
+        label: category.name || 'Unnamed Category',
+        subtitle: category.description || category.name || 'Unnamed Category'
+      }));
+    
+    const result = [allOption, ...categoryOpts];
+    console.log('✅ ProductFilters: Category options created:', {
+      allOption,
+      categoryOpts: categoryOpts.slice(0, 3),
+      total: result.length
+    });
+    return result;
+  }, [categories, t, loadingCategories]);
+
   // ============================================================================
   // FILTER HANDLERS
   // ============================================================================
@@ -60,19 +92,19 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
     onFiltersChange({ outletId });
   }, [onFiltersChange]);
 
-  const handleCategoryChange = useCallback((value: string | number | undefined) => {
-    // Handle "all" option or undefined
-    if (!value || value === 'all' || value === '') {
+  const handleCategoryChange = useCallback((value: number | undefined) => {
+    // Handle undefined or 0 (when "all" is selected)
+    // SearchableSelect converts option.value to number, so "all" (0) becomes 0
+    if (!value || value === 0) {
       onFiltersChange({ categoryId: undefined });
       return;
     }
-    // Convert to number
-    const categoryId = typeof value === 'number' ? value : parseInt(value.toString());
-    onFiltersChange({ categoryId });
+    // value is already a number from SearchableSelect
+    onFiltersChange({ categoryId: value });
   }, [onFiltersChange]);
 
   // Check if any filters are active
-  const hasActiveFilters = !!(filters.search || filters.outletId || filters.categoryId);
+  const hasActiveFilters = !!(filters.search || filters.categoryId);
 
   // ============================================================================
   // RENDER - Compact inline filters (Following Orders pattern)
@@ -106,43 +138,29 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
         </div>
       </div>
 
-      {/* Outlet Filter */}
-      <Select
-        value={filters.outletId?.toString() || 'all'}
-        onValueChange={handleOutletChange}
-        disabled={loadingOutlets}
-      >
-        <SelectTrigger className="w-[160px] h-10">
-          <SelectValue placeholder={t('filters.outletLabel')} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t('filters.allOutlets')}</SelectItem>
-          {outlets.map((outlet) => (
-            <SelectItem key={outlet.id} value={outlet.id.toString()}>
-              {outlet.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
       {/* Category Filter - SearchableSelect for better UX with many categories */}
-      <SearchableSelect
-        value={filters.categoryId ? filters.categoryId.toString() : undefined}
-        onChange={(value) => handleCategoryChange(value)}
-        options={[
-          { value: 'all', label: t('filters.allCategories'), subtitle: t('filters.allCategories') },
-          ...categories.map((category) => ({
-            value: category.id.toString(),
-            label: category.name,
-            subtitle: category.description || category.name
-          }))
-        ]}
-        placeholder={loadingCategories ? (t('filters.loading') || 'Loading...') : t('filters.allCategories')}
-        searchPlaceholder="Search categories..."
-        className="w-[200px]"
-        emptyText="No categories found"
-        disabled={loadingCategories}
-      />
+      {categoryOptions.length > 0 && (
+        <SearchableSelect
+          value={filters.categoryId}
+          onChange={(value) => handleCategoryChange(value)}
+          options={categoryOptions}
+          placeholder={loadingCategories ? (t('filters.loading') || 'Loading...') : t('filters.allCategories')}
+          searchPlaceholder="Search categories..."
+          className="w-[200px]"
+          emptyText="No categories found"
+          disabled={loadingCategories}
+        />
+      )}
+      {categoryOptions.length === 0 && !loadingCategories && (
+        <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+          No categories available
+        </div>
+      )}
+      {loadingCategories && (
+        <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+          {t('filters.loading') || 'Loading...'}
+        </div>
+      )}
 
       {/* Clear Filters */}
       {hasActiveFilters && onClearFilters && (

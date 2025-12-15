@@ -22,7 +22,7 @@ import {
   Key
 } from 'lucide-react';
 import { usersApi } from "@rentalshop/utils";
-import { useAuth, useCommonTranslations, useUsersTranslations } from '@rentalshop/hooks';
+import { useAuth, useCommonTranslations, useUsersTranslations, useDedupedApi } from '@rentalshop/hooks';
 import type { User, UserUpdateInput } from '@rentalshop/ui';
 
 export default function UserPage() {
@@ -48,51 +48,43 @@ export default function UserPage() {
   const [showEditSection, setShowEditSection] = useState(false);
   
   
-  // Fetch user data
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        setIsLoading(true);
-        
-        console.log('🔍 UserPage: Fetching user with ID:', userId);
-        
-        // Validate ID format (should be numeric)
-        const numericId = parseInt(userId);
-        if (isNaN(numericId) || numericId <= 0) {
-          console.error('❌ UserPage: Invalid ID format:', userId);
-          setUserData(null);
-          return;
-        }
-        
-        console.log('🔍 UserPage: Making API call to /api/users/' + userId);
-        
-        // Use the real API to fetch user data by ID
-        const response = await usersApi.getUserById(numericId);
-        
-        console.log('🔍 UserPage: API response received:', response);
-        
-        if (response.success && response.data) {
-          console.log('✅ UserPage: User fetched successfully:', response.data);
-          setUserData(response.data);
-        } else {
-          console.error('❌ UserPage: API error:', response.error);
-          throw new Error(response.error || 'Failed to fetch user');
-        }
-        
-      } catch (error) {
-        console.error('❌ UserPage: Error fetching user:', error);
-        // Error automatically handled by useGlobalErrorHandler
-        // Show error state
-        setUserData(null);
-      } finally {
-        setIsLoading(false);
+  // ============================================================================
+  // FETCH USER DETAILS - Using Official useDedupedApi Hook
+  // ============================================================================
+  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
+  const { 
+    data: userDataFromApi, 
+    loading: userLoading, 
+    error: userError 
+  } = useDedupedApi({
+    filters: { userId },
+    fetchFn: async () => {
+      // Validate ID format (should be numeric)
+      const numericId = parseInt(userId);
+      if (isNaN(numericId) || numericId <= 0) {
+        throw new Error('Invalid user ID format');
       }
-    };
+      
+      const response = await usersApi.getUserById(numericId);
+      
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch user');
+      }
+      
+      return response.data;
+    },
+    enabled: !!userId,
+    staleTime: 60000, // 60 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
 
-    if (userId) {
-      fetchUser();
-    }
-  }, [userId]);
+  // Sync user data to local state
+  useEffect(() => {
+    setUserData(userDataFromApi || null);
+    setIsLoading(userLoading);
+  }, [userDataFromApi, userLoading]);
 
   // Refresh user data after updates
   const refreshUserData = async () => {

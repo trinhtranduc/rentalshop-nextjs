@@ -14,61 +14,51 @@ import {
   EditCustomerForm,
   Button
 } from '@rentalshop/ui';
+import { useDedupedApi } from '@rentalshop/hooks';
 
 export default function EditCustomerPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
   
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, removeToast } = useToast();
 
-  // Fetch customer data
-  useEffect(() => {
-    const fetchCustomer = async () => {
-      try {
-        setIsLoading(true);
-        
-        console.log('🔍 EditCustomerPage: Fetching customer with public ID:', id);
-        
-        // Validate public ID format (should be numeric)
-        const numericId = parseInt(id);
-        if (isNaN(numericId) || numericId <= 0) {
-          console.error('❌ EditCustomerPage: Invalid public ID format:', id);
-          setCustomer(null);
-          return;
-        }
-        
-        console.log('🔍 EditCustomerPage: Making API call to /api/customers/' + id);
-        
-        // Use the real API to fetch customer data by ID
-        const response = await customersApi.getCustomerById(numericId);
-        
-        console.log('🔍 EditCustomerPage: API response received:', response);
-        
-        if (response.success && response.data) {
-          console.log('✅ EditCustomerPage: Customer fetched successfully:', response.data);
-          setCustomer(response.data);
-        } else {
-          console.error('❌ EditCustomerPage: API error:', response.error);
-          throw new Error(response.error || 'Failed to fetch customer');
-        }
-        
-      } catch (error) {
-        console.error('❌ EditCustomerPage: Error fetching customer:', error);
-        // Show error state
-        setCustomer(null);
-      } finally {
-        setIsLoading(false);
+  // ============================================================================
+  // FETCH CUSTOMER DETAILS - Using Official useDedupedApi Hook
+  // ============================================================================
+  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
+  const { 
+    data: customerData, 
+    loading: customerLoading, 
+    error: customerError 
+  } = useDedupedApi({
+    filters: { customerId: id },
+    fetchFn: async () => {
+      // Validate public ID format (should be numeric)
+      const numericId = parseInt(id);
+      if (isNaN(numericId) || numericId <= 0) {
+        throw new Error('Invalid customer ID format');
       }
-    };
+      
+      const response = await customersApi.getCustomerById(numericId);
+      
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch customer');
+      }
+      
+      return response.data;
+    },
+    enabled: !!id,
+    staleTime: 60000, // 60 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
 
-    if (id) {
-      fetchCustomer();
-    }
-  }, [id]);
+  // Sync customer data to local state
+  const customer = customerData || null;
+  const isLoading = customerLoading;
 
   // Handle customer update
   const handleSave = async (customerData: CustomerUpdateInput) => {

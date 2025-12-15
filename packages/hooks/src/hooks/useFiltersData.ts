@@ -60,7 +60,7 @@ export interface UseCategoriesDataOptions {
  */
 export function useOutletsData() {
   const { data, loading, error } = useDedupedApi({
-    filters: {}, // No filters needed for outlets
+    filters: { _hook: 'useOutletsData' }, // Unique identifier to prevent cache collision
     fetchFn: async () => {
       console.log('🔍 useOutletsData: Fetching outlets...');
       const response = await outletsApi.getOutlets();
@@ -101,21 +101,46 @@ export function useOutletsData() {
  */
 export function useCategoriesData() {
   const { data, loading, error } = useDedupedApi({
-    filters: {}, // No filters needed for categories
+    filters: { _hook: 'useCategoriesData' }, // Unique identifier to prevent cache collision
     fetchFn: async () => {
       console.log('🔍 useCategoriesData: Fetching categories...');
       const response = await categoriesApi.getCategories();
       
+      console.log('🔍 useCategoriesData: Raw API response:', {
+        success: response.success,
+        hasData: !!response.data,
+        dataType: typeof response.data,
+        isArray: Array.isArray(response.data),
+        data: response.data
+      });
+      
       if (response.success && response.data) {
-        // response.data is already an array from API
+        // response.data should be an array from API
         const categoriesData = response.data;
         
-        console.log('✅ useCategoriesData: API response data:', {
-          isArray: Array.isArray(categoriesData),
-          count: categoriesData.length
+        // Handle case where data might be wrapped in another object
+        let finalData = categoriesData;
+        if (!Array.isArray(categoriesData) && typeof categoriesData === 'object' && categoriesData !== null) {
+          // Check if it's an object with array property
+          if ('categories' in categoriesData && Array.isArray((categoriesData as any).categories)) {
+            finalData = (categoriesData as any).categories;
+            console.log('⚠️ useCategoriesData: Data was wrapped, extracted categories array');
+          } else if (Array.isArray((categoriesData as any).data)) {
+            finalData = (categoriesData as any).data;
+            console.log('⚠️ useCategoriesData: Data was double-wrapped, extracted inner array');
+          } else {
+            console.error('❌ useCategoriesData: Data is not an array and no array property found:', categoriesData);
+            throw new Error('Invalid categories data format');
+          }
+        }
+        
+        console.log('✅ useCategoriesData: Final categories data:', {
+          isArray: Array.isArray(finalData),
+          count: finalData.length,
+          firstCategory: finalData[0]
         });
         
-        return categoriesData;
+        return finalData;
       }
       
       throw new Error('Failed to fetch categories');
@@ -131,11 +156,28 @@ export function useCategoriesData() {
     data,
     isArray: Array.isArray(data),
     type: typeof data,
-    length: data?.length
+    length: data?.length,
+    dataKeys: data && typeof data === 'object' ? Object.keys(data) : null
   });
 
   // Ensure we always return an array
-  const categories = Array.isArray(data) ? data : [];
+  // Handle case where data might be cached as object instead of array
+  let categories: any[] = [];
+  if (Array.isArray(data)) {
+    categories = data;
+  } else if (data && typeof data === 'object' && data !== null) {
+    // Try to extract array from object
+    if ('categories' in data && Array.isArray((data as any).categories)) {
+      categories = (data as any).categories;
+      console.log('⚠️ useCategoriesData: Extracted categories from object wrapper');
+    } else if ('data' in data && Array.isArray((data as any).data)) {
+      categories = (data as any).data;
+      console.log('⚠️ useCategoriesData: Extracted categories from nested data property');
+    } else {
+      console.error('❌ useCategoriesData: Cannot extract array from data object:', data);
+      categories = [];
+    }
+  }
   
   return {
     categories,
