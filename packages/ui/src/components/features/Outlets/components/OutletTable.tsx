@@ -71,15 +71,17 @@ export function OutletTable({
   };
 
   return (
-    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full">
-      <div className="flex-1 overflow-auto">
-        <table className="w-full">
-          {/* Table Header - Sticky */}
-          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+    <Card className="shadow-sm border-border flex flex-col h-full">
+      <CardContent className="p-0 flex-1 overflow-hidden">
+        {/* Table with scroll - flex layout */}
+        <div className="flex-1 overflow-auto h-full">
+          <table className="w-full">
+            {/* Table Header - Sticky */}
+            <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
             <tr>
               <th 
                 onClick={() => handleSort('name')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-bg-tertiary"
               >
                 <div className="flex items-center gap-1">
                   {tc('labels.name')}
@@ -88,18 +90,18 @@ export function OutletTable({
                   )}
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 {tc('labels.address')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 {t('fields.phone')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                 {tc('labels.status')}
               </th>
               <th 
                 onClick={() => handleSort('createdAt')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-bg-tertiary"
               >
                 <div className="flex items-center gap-1">
                   {tc('labels.createdAt')}
@@ -108,57 +110,57 @@ export function OutletTable({
                   )}
                 </div>
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
                 {tc('labels.actions')}
               </th>
             </tr>
           </thead>
           
-          {/* Table Body */}
-          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {outlets.map((outlet) => (
-              <tr key={outlet.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                {/* Name */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {outlet.name}
+            {/* Table Body */}
+            <tbody className="bg-bg-card divide-y divide-border">
+              {outlets.map((outlet) => (
+                <tr key={outlet.id} className="hover:bg-bg-secondary transition-colors">
+                  {/* Name */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium text-text-primary">
+                          {outlet.name}
+                        </div>
+                        {outlet.isDefault && (
+                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                            {t('labels.default')}
+                          </Badge>
+                        )}
                       </div>
-                      {outlet.isDefault && (
-                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                          {t('labels.default')}
-                        </Badge>
-                      )}
                     </div>
-                  </div>
-                </td>
-                
-                {/* Address */}
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 dark:text-white">
-                    {outlet.address || t('fields.notAvailable')}
-                  </div>
-                </td>
-                
-                {/* Contact */}
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 dark:text-white">
-                    {outlet.phone || t('fields.notAvailable')}
-                  </div>
-                </td>
-                
-                {/* Status */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(outlet.isActive)}
-                </td>
-                
-                {/* Created Date */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-white">
-                    {formatDate(outlet.createdAt)}
-                  </div>
-                </td>
+                  </td>
+                  
+                  {/* Address */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {outlet.address || t('fields.notAvailable')}
+                    </div>
+                  </td>
+                  
+                  {/* Contact */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-text-primary">
+                      {outlet.phone || t('fields.notAvailable')}
+                    </div>
+                  </td>
+                  
+                  {/* Status */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getStatusBadge(outlet.isActive)}
+                  </td>
+                  
+                  {/* Created Date */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-text-primary">
+                      {formatDate(outlet.createdAt)}
+                    </div>
+                  </td>
                 
                 {/* Actions - Dropdown Menu */}
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -221,10 +223,11 @@ export function OutletTable({
                   </DropdownMenu>
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
     </Card>
   );
 }

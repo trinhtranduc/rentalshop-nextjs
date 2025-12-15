@@ -72,7 +72,17 @@
       "invalidFormat": "Invalid email format"
     },
     "password": {
-      "minLength6": "Password must be at least 6 characters"
+      "minLength6": "Password must be at least 6 characters",
+      "required": "Password is required"
+    },
+    "confirmPassword": {
+      "required": "Confirm password is required",
+      "match": "Passwords do not match"
+    },
+    "outletId": {
+      "required": "Outlet is required",
+      "requiredForRole": "Outlet is required for this role",
+      "shouldNotBeSelected": "Outlet should not be selected for merchant role"
     },
     "country": {
       "invalid": "Please select a valid country"

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions, hasPermission } from '@rentalshop/auth';
 import { 
   productUpdateSchema, 
   handleApiError, 
@@ -136,6 +136,9 @@ export async function GET(
       // Parse images from database
       const imageUrls = parseProductImages(product.images);
 
+      // Check if user has products.manage permission to view cost price
+      const canViewCostPrice = await hasPermission(user, 'products.manage');
+
       // Transform the data to match the expected format
       const transformedProduct = {
         id: product.id, // Return id directly to frontend
@@ -145,14 +148,15 @@ export async function GET(
         categoryId: product.categoryId,
         rentPrice: product.rentPrice,
         salePrice: product.salePrice,
-        costPrice: (product as any).costPrice ?? null, // Include costPrice (giá vốn)
+        // Only include costPrice if user has products.manage permission
+        ...(canViewCostPrice ? { costPrice: product.costPrice ?? null } : {}),
         deposit: product.deposit,
         totalStock: product.totalStock,
         images: imageUrls,
         isActive: product.isActive,
         // Optional pricing configuration
-        pricingType: (product as any).pricingType ?? null,
-        durationConfig: (product as any).durationConfig ?? null,
+        pricingType: product.pricingType ?? null,
+        durationConfig: product.durationConfig ?? null,
         category: product.category,
         merchant: product.merchant,
         outletStock: product.outletStock.map((os: any) => ({
@@ -565,6 +569,9 @@ export async function PUT(
         }
       }
 
+      // Check if user has products.manage permission to view cost price
+      const canViewCostPrice = await hasPermission(user, 'products.manage');
+
       // Transform product for response
       const transformedProduct = {
         id: updatedProduct.id,
@@ -574,7 +581,8 @@ export async function PUT(
         categoryId: updatedProduct.categoryId,
         rentPrice: updatedProduct.rentPrice,
         salePrice: updatedProduct.salePrice,
-        costPrice: (updatedProduct as any).costPrice ?? null,
+        // Only include costPrice if user has products.manage permission
+        ...(canViewCostPrice ? { costPrice: updatedProduct.costPrice ?? null } : {}),
         deposit: updatedProduct.deposit,
         totalStock: updatedProduct.totalStock,
         images: parseProductImages(updatedProduct.images),

@@ -5225,12 +5225,12 @@ function useProductAvailability() {
   const calculateAvailability = (0, import_react15.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const pickup = new Date(pickupDate);
     const return_ = new Date(returnDate);
-    if (pickup >= return_) {
+    if (pickup > return_) {
       return {
         available: false,
         availableQuantity: 0,
         conflicts: [],
-        message: "Return date must be after pickup date"
+        message: "Return date cannot be before pickup date"
       };
     }
     const conflicts = existingOrders.filter((order) => {

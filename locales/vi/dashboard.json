@@ -84,7 +84,8 @@
     "addCategory": "Thêm danh mục",
     "addCustomer": "Thêm khách hàng",
     "viewCalendar": "Xem lịch",
-    "viewReports": "Xem báo cáo"
+    "viewReports": "Xem báo cáo",
+    "viewOrders": "Xem đơn hàng"
   },
   "upcomingReturns": {
     "title": "Lịch trả hàng sắp tới",

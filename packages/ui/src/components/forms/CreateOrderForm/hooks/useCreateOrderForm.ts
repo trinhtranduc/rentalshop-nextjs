@@ -76,10 +76,11 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         productId: item.product?.id || item.productId || 0, // Frontend uses id (number)
         product: {
           id: item.product?.id || item.productId || 0, // Frontend uses id (number)
-          name: item.product?.name || 'Unknown Product',
+          // Use productName from API response (snapshot) if product object is missing
+          name: item.product?.name || (item as any).productName || 'Unknown Product',
           description: item.product?.description || '',
-          images: item.product?.images || null,
-          barcode: item.product?.barcode || '',
+          images: item.product?.images || (item as any).productImages || null,
+          barcode: item.product?.barcode || (item as any).productBarcode || '',
           rentPrice: item.unitPrice || 0, // Use unitPrice as rentPrice
           deposit: item.deposit ?? 0,
           // Store outletStock if available
@@ -219,10 +220,11 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
             productId: item.product?.id || item.productId || 0, // Frontend uses id (number)
             product: {
               id: item.product?.id || item.productId || 0, // Frontend uses id (number)
-              name: item.product?.name || 'Unknown Product',
+              // Use productName from API response (snapshot) if product object is missing
+              name: item.product?.name || (item as any).productName || 'Unknown Product',
               description: item.product?.description || '',
-              images: item.product?.images || null,
-              barcode: item.product?.barcode || '',
+              images: item.product?.images || (item as any).productImages || null,
+              barcode: item.product?.barcode || (item as any).productBarcode || '',
               rentPrice: rentPrice,
               salePrice: salePrice, // Store salePrice for later use
               deposit: item.deposit ?? 0,
@@ -284,7 +286,7 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         productId: productIdNumber,
         product: {
           id: productIdNumber,
-          name: product.name || 'Unknown Product',
+          name: product.name,
           description: product.description || '',
           images: product.images || null,
           barcode: product.barcode || '',
@@ -443,30 +445,79 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         orderItems: [],
       });
       
-      setOrderItems(initialOrder.orderItems.map((item: any) => ({
-        id: item.id,
-        productId: item.productId || 0,
-        product: {
-          id: item.product?.id || item.productId || 0,
-          name: item.product?.name || 'Unknown Product',
-          description: item.product?.description || '',
-          images: item.product?.images || null,
-          barcode: item.product?.barcode || '',
-          rentPrice: item.unitPrice || 0,
-          deposit: item.deposit ?? 0,
-          // Store outletStock if available
-          outletStock: item.product?.outletStock || [],
-          stock: item.product?.stock,
-          available: item.product?.available,
-          renting: item.product?.renting,
-        },
+      console.log('🔍 useCreateOrderForm: Mapping orderItems from initialOrder:', {
+        orderItemsCount: initialOrder.orderItems?.length,
+        firstItem: initialOrder.orderItems?.[0],
+        firstItemProduct: initialOrder.orderItems?.[0]?.product,
+        firstItemProductName: initialOrder.orderItems?.[0]?.productName,
+        firstItemHasProduct: !!initialOrder.orderItems?.[0]?.product,
+        firstItemHasProductName: !!initialOrder.orderItems?.[0]?.productName
+      });
+
+      const mappedItems = initialOrder.orderItems.map((item: any) => {
+        const productName = item.product?.name || (item as any).productName || 'Unknown Product';
+        const productBarcode = item.product?.barcode || (item as any).productBarcode || '';
+        const productImages = item.product?.images || (item as any).productImages || null;
+        
+        console.log('🔍 useCreateOrderForm: Mapping item:', {
+          itemId: item.id,
+          productId: item.productId,
+          hasProduct: !!item.product,
+          productNameFromProduct: item.product?.name,
+          productNameFromSnapshot: (item as any).productName,
+          finalProductName: productName,
+          finalProductNameType: typeof productName,
+          finalProductNameLength: productName?.length
+        });
+
+        const mappedItem = {
+          id: item.id,
+          productId: item.productId || 0,
+          product: {
+            id: item.product?.id || item.productId || 0,
+            // Use productName from API response (snapshot) if product object is missing
+            name: productName,
+            description: item.product?.description || '',
+            images: productImages,
+            barcode: productBarcode,
+            rentPrice: item.unitPrice || 0,
+            deposit: item.deposit ?? 0,
+            // Store outletStock if available
+            outletStock: item.product?.outletStock || [],
+            stock: item.product?.stock,
+            available: item.product?.available,
+            renting: item.product?.renting,
+          },
         quantity: item.quantity || 1,
         unitPrice: item.unitPrice || 0,
         totalPrice: item.totalPrice || 0,
         rentalDays: item.rentalDays || 0,
         deposit: item.deposit ?? 0,
         notes: item.notes || '',
-      })));
+      };
+      
+      console.log('🔍 useCreateOrderForm: Mapped item result:', {
+        itemId: mappedItem.id,
+        productId: mappedItem.productId,
+        productName: mappedItem.product.name,
+        productNameType: typeof mappedItem.product.name,
+        productNameLength: mappedItem.product.name?.length,
+        fullProduct: mappedItem.product
+      });
+      
+      return mappedItem;
+      });
+      
+      console.log('🔍 useCreateOrderForm: All mapped items:', {
+        count: mappedItems.length,
+        items: mappedItems.map((i: any) => ({
+          id: i.id,
+          productId: i.productId,
+          productName: i.product.name
+        }))
+      });
+      
+      setOrderItems(mappedItems);
     } else {
       // Reset to default values for create mode
       setFormData({

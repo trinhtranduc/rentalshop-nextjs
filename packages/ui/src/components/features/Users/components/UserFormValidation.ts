@@ -1,7 +1,9 @@
 'use client'
 
 import type { UserCreateInput, UserUpdateInput, UserRole } from '@rentalshop/types';
-import type { TranslationFunction } from '@rentalshop/hooks';
+import { useTranslations } from 'next-intl';
+
+type TranslationFunction = ReturnType<typeof useTranslations>;
 
 // ============================================================================
 // TYPE-SAFE FORM DATA INTERFACES (Matching UserForm.tsx)
@@ -30,12 +32,12 @@ interface UserUpdateFormData {
 }
 
 // Common validation rules that can be reused across forms
-export const validateEmail = (email: string): string | null => {
+export const validateEmail = (email: string, tv?: TranslationFunction): string | null => {
   if (!email.trim()) {
-    return 'Email is required';
+    return tv ? tv('fields.email.required') || tv('required') : 'Email is required';
   }
   if (!/\S+@\S+\.\S+/.test(email)) {
-    return 'Email is invalid';
+    return tv ? tv('fields.email.invalid') || tv('fields.email.invalidFormat') : 'Email is invalid';
   }
   return null;
 };
@@ -75,19 +77,22 @@ export const validateName = (name: string, fieldName: string = 'Name'): string |
   return null;
 };
 
-export const validatePassword = (password: string): string | null => {
+export const validatePassword = (password: string, tv?: TranslationFunction): string | null => {
   if (!password) {
-    return 'Password is required';
+    return tv ? tv('fields.password.required') : 'Password is required';
   }
   if (password.length < 6) {
-    return 'Password must be at least 6 characters';
+    return tv ? tv('fields.password.minLength6') : 'Password must be at least 6 characters';
   }
   return null;
 };
 
 export const validateConfirmPassword = (password: string, confirmPassword: string, tv?: TranslationFunction): string | null => {
+  if (!confirmPassword) {
+    return tv ? tv('fields.confirmPassword.required') : 'Confirm password is required';
+  }
   if (password && password !== confirmPassword) {
-    return tv ? tv('password.match') : 'Passwords do not match';
+    return tv ? tv('fields.confirmPassword.match') || tv('password.match') : 'Passwords do not match';
   }
   return null;
 };
@@ -119,7 +124,7 @@ export const validateUserCreateInput = (data: UserCreateFormData, tv?: Translati
   }
 
   // Email validation
-  const emailError = validateEmail(data.email || '');
+  const emailError = validateEmail(data.email || '', tv);
   if (emailError) errors.email = emailError;
 
   // Phone validation
@@ -128,7 +133,7 @@ export const validateUserCreateInput = (data: UserCreateFormData, tv?: Translati
 
   // Role validation
   if (!data.role) {
-    errors.role = 'Role is required';
+    errors.role = tv ? tv('fields.role.required') : 'Role is required';
   }
 
   // Smart validation based on role requirements
@@ -138,24 +143,24 @@ export const validateUserCreateInput = (data: UserCreateFormData, tv?: Translati
     } else if (data.role === 'MERCHANT') {
       // MERCHANT must have merchantId, no outletId
       if (!data.merchantId) {
-        errors.merchantId = 'Merchant is required for this role';
+        errors.merchantId = tv ? tv('fields.merchant.requiredForRole') : 'Merchant is required for this role';
       }
       if (data.outletId) {
-        errors.outletId = 'Outlet should not be selected for merchant role';
+        errors.outletId = tv ? tv('fields.outletId.shouldNotBeSelected') : 'Outlet should not be selected for merchant role';
       }
     } else if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
       // OUTLET users must have both merchantId and outletId
       if (!data.merchantId) {
-        errors.merchantId = 'Merchant is required for this role';
+        errors.merchantId = tv ? tv('fields.merchant.requiredForRole') : 'Merchant is required for this role';
       }
       if (!data.outletId) {
-        errors.outletId = 'Outlet is required for this role';
+        errors.outletId = tv ? tv('fields.outletId.requiredForRole') || tv('fields.outlet.requiredForRole') : 'Outlet is required for this role';
       }
     }
   }
 
   // Password validation
-  const passwordError = validatePassword(data.password || '');
+  const passwordError = validatePassword(data.password || '', tv);
   if (passwordError) errors.password = passwordError;
 
   // Confirm password validation
@@ -167,7 +172,7 @@ export const validateUserCreateInput = (data: UserCreateFormData, tv?: Translati
 };
 
 // Validation for user updates
-export const validateUserUpdateInput = (data: UserUpdateFormData): Record<string, string> => {
+export const validateUserUpdateInput = (data: UserUpdateFormData, tv?: TranslationFunction): Record<string, string> => {
   const errors: Record<string, string> = {};
 
   console.log('🔍 UserFormValidation: Validating update input:', data);
@@ -185,7 +190,7 @@ export const validateUserUpdateInput = (data: UserUpdateFormData): Record<string
   }
 
   // Email validation
-  const emailError = validateEmail(data.email || '');
+  const emailError = validateEmail(data.email || '', tv);
   if (emailError) errors.email = emailError;
 
   // Phone validation
@@ -194,7 +199,7 @@ export const validateUserUpdateInput = (data: UserUpdateFormData): Record<string
 
   // Role validation
   if (!data.role) {
-    errors.role = 'Role is required';
+    errors.role = tv ? tv('fields.role.required') : 'Role is required';
   }
 
   // Smart validation based on role requirements
@@ -204,18 +209,18 @@ export const validateUserUpdateInput = (data: UserUpdateFormData): Record<string
     } else if (data.role === 'MERCHANT') {
       // MERCHANT must have merchantId, no outletId
       if (!data.merchantId) {
-        errors.merchantId = 'Merchant is required for this role';
+        errors.merchantId = tv ? tv('fields.merchant.requiredForRole') : 'Merchant is required for this role';
       }
       if (data.outletId) {
-        errors.outletId = 'Outlet should not be selected for merchant role';
+        errors.outletId = tv ? tv('fields.outletId.shouldNotBeSelected') : 'Outlet should not be selected for merchant role';
       }
     } else if (data.role === 'OUTLET_ADMIN' || data.role === 'OUTLET_STAFF') {
       // OUTLET users must have both merchantId and outletId
       if (!data.merchantId) {
-        errors.merchantId = 'Merchant is required for this role';
+        errors.merchantId = tv ? tv('fields.merchant.requiredForRole') : 'Merchant is required for this role';
       }
       if (!data.outletId) {
-        errors.outletId = 'Outlet is required for this role';
+        errors.outletId = tv ? tv('fields.outletId.requiredForRole') || tv('fields.outlet.requiredForRole') : 'Outlet is required for this role';
       }
     }
   }

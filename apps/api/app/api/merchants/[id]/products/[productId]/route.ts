@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
-import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
+import { withPermissions, validateMerchantAccess, hasPermission } from '@rentalshop/auth';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -55,6 +55,9 @@ export async function GET(
       console.log('🔍 GET Product - raw outletStock:', product.outletStock);
       console.log('🔍 GET Product - raw outlets:', outlets.data);
 
+      // Check if user has products.manage permission to view cost price
+      const canViewCostPrice = await hasPermission(user, 'products.manage');
+
       const transformed = {
         product: {
           id: product.id,
@@ -64,7 +67,8 @@ export async function GET(
           categoryId: product.categoryId,
           rentPrice: product.rentPrice,
           salePrice: product.salePrice,
-          costPrice: product.costPrice, // Include costPrice (giá vốn)
+          // Only include costPrice if user has products.manage permission
+          ...(canViewCostPrice ? { costPrice: product.costPrice } : {}),
           deposit: product.deposit,
           totalStock: product.totalStock,
           images: Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []),

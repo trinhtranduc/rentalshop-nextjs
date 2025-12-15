@@ -148,7 +148,7 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
           searchPlaceholder="Search categories..."
           className="w-[200px]"
           emptyText="No categories found"
-          disabled={loadingCategories}
+        disabled={loadingCategories}
         />
       )}
       {categoryOptions.length === 0 && !loadingCategories && (

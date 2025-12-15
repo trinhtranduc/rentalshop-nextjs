@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useProductTranslations, useCommonTranslations, usePermissions } from '@rentalshop/hooks';
 import { Package, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../../../ui';
 import type { ProductWithStock } from '@rentalshop/types';
@@ -29,6 +29,8 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
   const t = useProductTranslations();
   const formatCurrency = useFormatCurrency();
   const tc = useCommonTranslations();
+  const { hasPermission } = usePermissions();
+  const canViewCostPrice = hasPermission('products.manage'); // Only users with manage permission can view cost price
   const [showOutletDetails, setShowOutletDetails] = useState(false);
 
   // Helper function to normalize images array
@@ -125,7 +127,8 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
               </p>
               </div>
             )}
-          {product.costPrice && product.costPrice > 0 && (
+          {/* Only show cost price if user has products.manage permission */}
+          {canViewCostPrice && product.costPrice && product.costPrice > 0 && (
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t('fields.costPrice')}</label>
               <p className="text-base font-semibold text-muted-foreground">

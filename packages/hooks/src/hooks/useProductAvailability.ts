@@ -50,13 +50,13 @@ export function useProductAvailability() {
     const pickup = new Date(pickupDate);
     const return_ = new Date(returnDate);
     
-    // Validate dates
-    if (pickup >= return_) {
+    // Validate dates - allow same day rental (pickup <= return_)
+    if (pickup > return_) {
       return {
         available: false,
         availableQuantity: 0,
         conflicts: [],
-        message: 'Return date must be after pickup date'
+        message: 'Return date cannot be before pickup date'
       };
     }
 

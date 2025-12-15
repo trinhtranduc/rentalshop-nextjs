@@ -216,6 +216,15 @@ export default function OrderDetailPage() {
 
       const result = await ordersApi.updateOrderSettings(order.id, updateData);
 
+      console.log('🔍 OrderDetailPage: Update settings result:', {
+        success: result.success,
+        hasData: !!result.data,
+        orderItems: result.data?.orderItems,
+        firstItem: result.data?.orderItems?.[0],
+        firstItemProduct: result.data?.orderItems?.[0]?.product,
+        firstItemProductName: (result.data?.orderItems?.[0] as any)?.productName
+      });
+
       if (result.success && result.data) {
         // Update order state directly from API response (better UX - no need to refetch)
         setOrder(result.data);
