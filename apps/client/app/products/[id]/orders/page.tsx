@@ -45,6 +45,11 @@ export default function ProductOrdersPage() {
   const productId = params.id as string;
 
   useEffect(() => {
+    if (!productId) return;
+
+    // Cancel previous request if still pending
+    const abortController = new AbortController();
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -52,21 +57,37 @@ export default function ProductOrdersPage() {
 
         // Fetch product details
         const productResponse = await productsApi.getProductById(parseInt(productId));
+        
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return;
+        }
+        
         if (productResponse.success && productResponse.data) {
           setProduct(productResponse.data);
         }
 
-      } catch (err) {
+      } catch (err: any) {
+        // Ignore abort errors
+        if (err?.name === 'AbortError') {
+          return;
+        }
         console.error('Error fetching product:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch product');
       } finally {
-        setLoading(false);
+        // Only update loading state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
-    if (productId) {
-      fetchData();
-    }
+    fetchData();
+
+    // Cleanup: abort request on unmount or when productId changes
+    return () => {
+      abortController.abort();
+    };
   }, [productId]);
 
   const handleBack = () => {

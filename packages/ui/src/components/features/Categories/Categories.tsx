@@ -66,7 +66,7 @@ export const Categories: React.FC<CategoriesProps> = ({
   const memoizedOnSort = React.useCallback(onSort, [onSort]);
 
   return (
-    <div className={`flex flex-col h-full ${className}`}>
+    <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       {/* Fixed Search Section */}
       <div className="flex-shrink-0 mb-4">
         <Card className="shadow-sm border-border">
@@ -82,8 +82,8 @@ export const Categories: React.FC<CategoriesProps> = ({
         </Card>
       </div>
 
-      {/* Scrollable Table Section */}
-      <div className="flex-1 min-h-0">
+      {/* Scrollable Table Section - Full height, vertical scroll only */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         {categories.length > 0 ? (
           <CategoryTable
             categories={categories}

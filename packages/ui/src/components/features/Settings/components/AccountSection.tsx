@@ -7,7 +7,8 @@ import {
   Button,
   Separator
 } from '@rentalshop/ui';
-import { LogOut, Trash2, Key } from 'lucide-react';
+import { LogOut, Key } from 'lucide-react';
+// import { Trash2 } from 'lucide-react'; // Hidden - delete account feature disabled
 import { useSettingsTranslations } from '@rentalshop/hooks';
 
 // ============================================================================
@@ -73,7 +74,8 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
               </Button>
             </div>
 
-            <Separator />
+            {/* Delete Account Section - Hidden */}
+            {/* <Separator />
 
             <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
               <div className="flex items-center space-x-3">
@@ -90,7 +92,7 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
               >
                 {isDeleting ? t('account.deleting') : t('account.deleteAccount')}
               </Button>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>
