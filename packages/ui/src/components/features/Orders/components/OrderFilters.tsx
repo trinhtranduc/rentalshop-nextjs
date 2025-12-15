@@ -5,9 +5,9 @@ import { Input, Button, SearchableSelect } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardContent } from '@rentalshop/ui';
 import { OrderFilters as OrderFiltersType } from '@rentalshop/types';
-import { outletsApi } from '@rentalshop/utils';
+import { outletsApi, merchantsApi } from '@rentalshop/utils';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
-import { useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useOrderTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 
 interface OrderFiltersProps {
   filters: OrderFiltersType;
@@ -79,16 +79,23 @@ export const OrderFilters = React.memo(function OrderFilters({
   // OUTLET FILTERING - Fetch outlets for dropdown
   // ============================================================================
   
-  // Determine if outlet filter should be shown (completely hidden for outlet users)
+  // Determine if outlet filter should be shown
+  // - ADMIN: Can see outlet filter (can filter by outlet after selecting merchant)
+  // - MERCHANT: Can see outlet filter (they have multiple outlets)
+  // - OUTLET_ADMIN and OUTLET_STAFF: Cannot see outlet filter (they only have one outlet)
   const shouldShowOutletFilter = React.useMemo(() => {
-    // OUTLET_ADMIN and OUTLET_STAFF should not see outlet filter (they only have one outlet)
+    // OUTLET_ADMIN and OUTLET_STAFF should not see outlet filter
     if (userRole === 'OUTLET_ADMIN' || userRole === 'OUTLET_STAFF') {
       return false;
     }
-    return true; // ADMIN and MERCHANT can see outlet filter
+    // ADMIN and MERCHANT can see outlet filter
+    return true;
   }, [userRole]);
 
   // Determine if outlet filter should be enabled (can interact with it)
+  // - MERCHANT: Can always use outlet filter (they have multiple outlets)
+  // - ADMIN: Can use outlet filter after selecting merchant
+  // - OUTLET_ADMIN and OUTLET_STAFF: Cannot use outlet filter
   const isOutletFilterEnabled = React.useMemo(() => {
     if (!shouldShowOutletFilter) {
       return false; // Hidden, so not enabled
@@ -110,171 +117,123 @@ export const OrderFilters = React.memo(function OrderFilters({
   }, [userRole, filters]);
 
   // ✅ Use AbortController to cancel duplicate requests (standard pattern)
-  const abortControllerRef = React.useRef<AbortController | null>(null);
 
-  // Fetch outlets based on user role and selected merchant
+  // ============================================================================
+  // FETCH OUTLETS - Using Official useDedupedApi Hook
+  // ============================================================================
+  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
+  // Only fetch outlets if filter should be shown (optimization: don't fetch for OUTLET_ADMIN/OUTLET_STAFF)
+  const { 
+    data: outletsData, 
+    loading: outletsLoading, 
+    error: outletsError 
+  } = useDedupedApi({
+    filters: { 
+      shouldShowOutletFilter, 
+      isOutletFilterEnabled, 
+      userRole, 
+      merchantId 
+    }, // Use all dependencies as filter key for cache
+    fetchFn: async () => {
+      // Don't fetch if filter should be hidden (OUTLET_ADMIN, OUTLET_STAFF)
+      if (!shouldShowOutletFilter) {
+        return { outlets: [] };
+      }
+
+      // Don't fetch if filter is disabled (waiting for merchant selection for ADMIN)
+      if (!isOutletFilterEnabled) {
+        return { outlets: [] };
+      }
+
+      let result;
+      if (userRole === 'ADMIN' && merchantId) {
+        // Admin: fetch outlets for selected merchant
+        result = await outletsApi.getOutletsByMerchant(merchantId);
+      } else if (userRole === 'MERCHANT') {
+        // Merchant: fetch all outlets (they can only see their own via backend filtering)
+        result = await outletsApi.getOutlets();
+      } else {
+        // OUTLET_ADMIN, OUTLET_STAFF: should not reach here (shouldShowOutletFilter = false)
+        return { outlets: [] };
+      }
+      
+      if (result.success && result.data?.outlets) {
+        return { outlets: result.data.outlets };
+      }
+      throw new Error('Failed to load outlets');
+    },
+    enabled: shouldShowOutletFilter && isOutletFilterEnabled, // Only fetch when filter is shown and enabled
+    staleTime: 60000, // 60 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false, // Don't refetch on mount if cache is fresh
+    refetchOnWindowFocus: false
+  });
+
+  // Sync outlets data to local state
   useEffect(() => {
-    // Cancel previous request if still pending
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Don't fetch if filter should be hidden
-    if (!shouldShowOutletFilter) {
+    if (!shouldShowOutletFilter || !isOutletFilterEnabled) {
       setOutlets([]);
-      return;
+      setLoadingOutlets(false);
+      setOutletError(null);
+    } else {
+      setOutlets(outletsData?.outlets || []);
+      setLoadingOutlets(outletsLoading);
+      setOutletError(outletsError ? outletsError.message : null);
     }
-
-    // Don't fetch if filter is disabled (waiting for merchant selection for ADMIN)
-    if (!isOutletFilterEnabled) {
-      setOutlets([]);
-      return;
-    }
-
-    // Create new AbortController for this request
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    const fetchOutlets = async () => {
-      try {
-        setLoadingOutlets(true);
-        setOutletError(null);
-        
-        let result;
-        if (userRole === 'ADMIN' && merchantId) {
-          // Admin: fetch outlets for selected merchant
-          result = await outletsApi.getOutletsByMerchant(merchantId);
-        } else {
-          // Merchant: fetch all outlets (they can only see their own via backend filtering)
-          result = await outletsApi.getOutlets();
-        }
-        
-        // Check if request was aborted
-        if (abortController.signal.aborted) {
-          return;
-        }
-        
-        if (result.success && result.data?.outlets) {
-          setOutlets(result.data.outlets);
-        } else {
-          setOutletError('Failed to load outlets');
-          setOutlets([]);
-        }
-      } catch (error: any) {
-        // Ignore abort errors
-        if (error?.name === 'AbortError') {
-          return;
-        }
-        console.error('Error fetching outlets:', error);
-        setOutletError('Failed to load outlets');
-        setOutlets([]);
-      } finally {
-        // Only update loading state if request wasn't aborted
-        if (!abortController.signal.aborted) {
-          setLoadingOutlets(false);
-        }
-      }
-    };
-
-    fetchOutlets();
-
-    // Cleanup: abort request on unmount or when dependencies change
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [shouldShowOutletFilter, isOutletFilterEnabled, userRole, merchantId]);
+  }, [shouldShowOutletFilter, isOutletFilterEnabled, outletsData, outletsLoading, outletsError]);
 
   // ============================================================================
   // FETCH MERCHANTS (admin only, one-time)
   // ============================================================================
   
-  // Use AbortController and cache to prevent duplicate calls
-  const merchantsAbortControllerRef = React.useRef<AbortController | null>(null);
-  const isFetchingMerchantsRef = React.useRef<boolean>(false);
-  const hasFetchedMerchantsRef = React.useRef<boolean>(false);
-  const previousUserRoleRef = React.useRef<string | undefined>(userRole);
+  // ============================================================================
+  // FETCH MERCHANTS (admin only) - Using Official useDedupedApi Hook
+  // ============================================================================
+  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
+  // This provides:
+  // - Request deduplication (same request = single call)
+  // - Global cache with stale-while-revalidate
+  // - Race condition protection
+  // - Automatic cleanup
+  // - Prevents duplicate API calls from React 18 double mounting
+  
+  const { 
+    data: merchantsData, 
+    loading: merchantsLoading, 
+    error: merchantsError 
+  } = useDedupedApi({
+    filters: { userRole }, // Use userRole as filter key for cache
+    fetchFn: async () => {
+      // Only fetch for ADMIN users
+      if (userRole !== 'ADMIN') {
+        return { merchants: [] };
+      }
+      
+      const result = await merchantsApi.getMerchants();
+      if (result.success && result.data?.merchants) {
+        return { merchants: result.data.merchants };
+      }
+      throw new Error('Failed to load merchants');
+    },
+    enabled: userRole === 'ADMIN', // Only fetch for ADMIN users
+    staleTime: 60000, // 60 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false, // Don't refetch on mount if cache is fresh
+    refetchOnWindowFocus: false
+  });
 
+  // Sync merchants data to local state
   useEffect(() => {
-    // Skip if userRole hasn't changed and we already fetched or are fetching
-    if (userRole === previousUserRoleRef.current && (hasFetchedMerchantsRef.current || isFetchingMerchantsRef.current)) {
-      return;
-    }
-
-    // Update previous userRole
-    previousUserRoleRef.current = userRole;
-    hasFetchedMerchantsRef.current = false; // Reset when userRole changes
-
-    // Cancel previous request if still pending
-    if (merchantsAbortControllerRef.current) {
-      merchantsAbortControllerRef.current.abort();
-    }
-
-    // Only fetch merchants for ADMIN users
-    if (userRole !== 'ADMIN') {
+    if (userRole === 'ADMIN') {
+      setMerchants(merchantsData?.merchants || []);
+      setLoadingMerchants(merchantsLoading);
+      setMerchantError(merchantsError ? merchantsError.message : null);
+    } else {
       setMerchants([]);
-      isFetchingMerchantsRef.current = false;
-      hasFetchedMerchantsRef.current = false;
-      return;
+      setLoadingMerchants(false);
+      setMerchantError(null);
     }
-
-    // Skip if already fetching
-    if (isFetchingMerchantsRef.current) {
-      return;
-    }
-
-    // Create new AbortController for this request
-    const abortController = new AbortController();
-    merchantsAbortControllerRef.current = abortController;
-    isFetchingMerchantsRef.current = true;
-
-    const fetchMerchants = async () => {
-      try {
-        setLoadingMerchants(true);
-        setMerchantError(null);
-        const { merchantsApi } = await import('@rentalshop/utils');
-        const result = await merchantsApi.getMerchants();
-        
-        // Check if request was aborted
-        if (abortController.signal.aborted) {
-          return;
-        }
-        
-        if (result.success && result.data?.merchants) {
-          setMerchants(result.data.merchants);
-          hasFetchedMerchantsRef.current = true;
-        } else {
-          setMerchantError('Failed to load merchants');
-          setMerchants([]);
-        }
-      } catch (error: any) {
-        // Ignore abort errors
-        if (error?.name === 'AbortError') {
-          return;
-        }
-        console.error('Error fetching merchants:', error);
-        setMerchantError('Failed to load merchants');
-        setMerchants([]);
-      } finally {
-        // Only update loading state if request wasn't aborted
-        if (!abortController.signal.aborted) {
-          setLoadingMerchants(false);
-          isFetchingMerchantsRef.current = false;
-        }
-      }
-    };
-
-    fetchMerchants();
-
-    // Cleanup: abort request on unmount or when userRole changes
-    return () => {
-      if (merchantsAbortControllerRef.current) {
-        merchantsAbortControllerRef.current.abort();
-      }
-      isFetchingMerchantsRef.current = false;
-    };
-  }, [userRole]); // Only run when userRole changes
+  }, [userRole, merchantsData, merchantsLoading, merchantsError]);
 
   // ============================================================================
   // HANDLERS - Simple passthrough to parent
