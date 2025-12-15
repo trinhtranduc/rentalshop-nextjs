@@ -4137,7 +4137,15 @@ function usePermissions() {
       if (!user || !permissions.length) {
         return false;
       }
-      return permissions.includes(permission);
+      if (permissions.includes(permission)) {
+        return true;
+      }
+      if (permission.startsWith("analytics.view.") || permission === "analytics.export") {
+        if (permissions.includes("analytics.view")) {
+          return true;
+        }
+      }
+      return false;
     };
   }, [user, permissions]);
   const hasAnyPermission = (0, import_react7.useMemo)(() => {
@@ -4175,6 +4183,13 @@ function usePermissions() {
   const canManageMerchants = (0, import_react7.useMemo)(() => hasPermission("merchant.manage"), [hasPermission]);
   const canViewMerchants = (0, import_react7.useMemo)(() => hasPermission("merchant.view"), [hasPermission]);
   const canViewAnalytics = (0, import_react7.useMemo)(() => hasPermission("analytics.view"), [hasPermission]);
+  const canViewDashboard = (0, import_react7.useMemo)(() => hasPermission("analytics.view.dashboard"), [hasPermission]);
+  const canViewRevenue = (0, import_react7.useMemo)(() => hasPermission("analytics.view.revenue"), [hasPermission]);
+  const canViewRevenueDaily = (0, import_react7.useMemo)(() => hasPermission("analytics.view.revenue.daily"), [hasPermission]);
+  const canViewOrderAnalytics = (0, import_react7.useMemo)(() => hasPermission("analytics.view.orders"), [hasPermission]);
+  const canViewCustomerAnalytics = (0, import_react7.useMemo)(() => hasPermission("analytics.view.customers"), [hasPermission]);
+  const canViewProductAnalytics = (0, import_react7.useMemo)(() => hasPermission("analytics.view.products"), [hasPermission]);
+  const canExportAnalytics = (0, import_react7.useMemo)(() => hasPermission("analytics.export"), [hasPermission]);
   const canManageBilling = (0, import_react7.useMemo)(() => hasPermission("billing.manage"), [hasPermission]);
   const canViewBilling = (0, import_react7.useMemo)(() => hasPermission("billing.view"), [hasPermission]);
   const canManageBankAccounts = (0, import_react7.useMemo)(() => hasPermission("bankAccounts.manage"), [hasPermission]);
@@ -4212,6 +4227,13 @@ function usePermissions() {
     canViewMerchants,
     // Convenience methods for analytics
     canViewAnalytics,
+    canViewDashboard,
+    canViewRevenue,
+    canViewRevenueDaily,
+    canViewOrderAnalytics,
+    canViewCustomerAnalytics,
+    canViewProductAnalytics,
+    canExportAnalytics,
     // Convenience methods for billing
     canManageBilling,
     canViewBilling,
@@ -4627,13 +4649,15 @@ function useDedupedApi(options) {
   }, []);
   const cacheKey = (0, import_react11.useMemo)(() => {
     const normalized = {};
-    Object.keys(filters).sort().forEach((key) => {
-      const value = filters[key];
+    Object.keys(filters).sort().forEach((key2) => {
+      const value = filters[key2];
       if (value !== void 0 && value !== null && value !== "") {
-        normalized[key] = value;
+        normalized[key2] = value;
       }
     });
-    return JSON.stringify(normalized);
+    const key = JSON.stringify(normalized);
+    console.log("\u{1F511} useDedupedApi: Generated cache key:", key, "from filters:", filters);
+    return key;
   }, [filters]);
   (0, import_react11.useEffect)(() => {
     if (!enabled || !isMountedRef.current) {
@@ -4642,20 +4666,54 @@ function useDedupedApi(options) {
       return;
     }
     const isManualRefetch = refetchKey > 0;
-    const shouldSkip = cacheKey === filtersRef.current && !isManualRefetch && !refetchOnMount;
+    const filtersUnchanged = cacheKey === filtersRef.current;
+    const existingRequest = requestCache.get(cacheKey);
+    if (existingRequest && !isManualRefetch) {
+      console.log("\u{1F50D} useDedupedApi: Reusing existing pending request for this cacheKey");
+      fetchIdRef.current += 1;
+      const currentFetchId2 = fetchIdRef.current;
+      existingRequest.then((result) => {
+        if (currentFetchId2 === fetchIdRef.current && isMountedRef.current) {
+          setData(result);
+          setLoading(false);
+          setError(null);
+          setIsStale(false);
+          console.log(`\u2705 Fetch #${currentFetchId2}: Got deduplicated result`);
+        } else {
+          console.log(`\u23ED\uFE0F Fetch #${currentFetchId2}: Stale, ignoring`);
+        }
+      }).catch((err) => {
+        if (currentFetchId2 === fetchIdRef.current && isMountedRef.current) {
+          const error2 = err instanceof Error ? err : new Error("Unknown error");
+          setError(error2);
+          setLoading(false);
+          console.error(`\u274C Fetch #${currentFetchId2}: Dedup ERROR:`, error2);
+        }
+      });
+      filtersRef.current = cacheKey;
+      return;
+    }
+    const shouldSkip = filtersUnchanged && !isManualRefetch && !refetchOnMount;
     if (shouldSkip) {
       console.log("\u{1F50D} useDedupedApi: Filters unchanged and refetchOnMount=false, skipping fetch");
       return;
     }
-    if (refetchOnMount && cacheKey === filtersRef.current && !isManualRefetch) {
+    if (refetchOnMount && filtersUnchanged && !isManualRefetch) {
       console.log("\u{1F504} useDedupedApi: refetchOnMount=true, forcing refetch even though filters unchanged");
     }
     filtersRef.current = cacheKey;
     fetchIdRef.current += 1;
     const currentFetchId = fetchIdRef.current;
     console.log(`\u{1F50D} Fetch #${currentFetchId}: Starting...`);
+    console.log("\u{1F50D} useDedupedApi: Checking cache for key:", cacheKey);
     const cached = dataCache.get(cacheKey);
     if (cached) {
+      console.log("\u{1F4E6} useDedupedApi: Found cached data:", {
+        cacheKey,
+        dataType: typeof cached.data,
+        isArray: Array.isArray(cached.data),
+        dataKeys: cached.data && typeof cached.data === "object" ? Object.keys(cached.data) : null
+      });
       const now = Date.now();
       const isCacheStale = now - cached.timestamp > cached.staleTime;
       if (!isCacheStale) {
@@ -4685,27 +4743,9 @@ function useDedupedApi(options) {
         }
       }
     }
-    const existingRequest = requestCache.get(cacheKey);
-    if (existingRequest) {
-      console.log(`\u{1F504} Fetch #${currentFetchId}: DEDUPLICATION - waiting for existing request`);
-      existingRequest.then((result) => {
-        if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
-          setData(result);
-          setLoading(false);
-          setError(null);
-          setIsStale(false);
-          console.log(`\u2705 Fetch #${currentFetchId}: Got deduplicated result`);
-        } else {
-          console.log(`\u23ED\uFE0F Fetch #${currentFetchId}: Stale, ignoring`);
-        }
-      }).catch((err) => {
-        if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
-          const error2 = err instanceof Error ? err : new Error("Unknown error");
-          setError(error2);
-          setLoading(false);
-          console.error(`\u274C Fetch #${currentFetchId}: Dedup ERROR:`, error2);
-        }
-      });
+    const existingRequestCheck = requestCache.get(cacheKey);
+    if (existingRequestCheck) {
+      console.log(`\u26A0\uFE0F Fetch #${currentFetchId}: Found existing request (should have been caught above) - this indicates a race condition`);
       return;
     }
     if (isMountedRef.current) {
@@ -4967,13 +5007,13 @@ function useOrdersData(options) {
       return transformed;
     },
     enabled,
-    staleTime: 0,
-    // ✅ Set to 0 to always refetch on navigation (no stale cache)
+    staleTime: 3e4,
+    // ✅ 30 seconds cache to prevent duplicate calls
     cacheTime: 3e5,
     // 5 minutes
     refetchOnWindowFocus: false,
-    refetchOnMount: true
-    // ✅ Force refetch when component mounts (navigating to page)
+    refetchOnMount: false
+    // ✅ Don't force refetch if filters haven't changed (prevent duplicate calls)
   });
   return result;
 }
@@ -5185,12 +5225,12 @@ function useProductAvailability() {
   const calculateAvailability = (0, import_react15.useCallback)((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
     const pickup = new Date(pickupDate);
     const return_ = new Date(returnDate);
-    if (pickup >= return_) {
+    if (pickup > return_) {
       return {
         available: false,
         availableQuantity: 0,
         conflicts: [],
-        message: "Return date must be after pickup date"
+        message: "Return date cannot be before pickup date"
       };
     }
     const conflicts = existingOrders.filter((order) => {
@@ -5816,8 +5856,8 @@ function useTableSelection(items, onSelectionChange) {
 var import_utils14 = require("@rentalshop/utils");
 function useOutletsData() {
   const { data, loading, error } = useDedupedApi({
-    filters: {},
-    // No filters needed for outlets
+    filters: { _hook: "useOutletsData" },
+    // Unique identifier to prevent cache collision
     fetchFn: async () => {
       console.log("\u{1F50D} useOutletsData: Fetching outlets...");
       const response = await import_utils14.outletsApi.getOutlets();
@@ -5848,18 +5888,39 @@ function useOutletsData() {
 }
 function useCategoriesData() {
   const { data, loading, error } = useDedupedApi({
-    filters: {},
-    // No filters needed for categories
+    filters: { _hook: "useCategoriesData" },
+    // Unique identifier to prevent cache collision
     fetchFn: async () => {
       console.log("\u{1F50D} useCategoriesData: Fetching categories...");
       const response = await import_utils14.categoriesApi.getCategories();
+      console.log("\u{1F50D} useCategoriesData: Raw API response:", {
+        success: response.success,
+        hasData: !!response.data,
+        dataType: typeof response.data,
+        isArray: Array.isArray(response.data),
+        data: response.data
+      });
       if (response.success && response.data) {
         const categoriesData = response.data;
-        console.log("\u2705 useCategoriesData: API response data:", {
-          isArray: Array.isArray(categoriesData),
-          count: categoriesData.length
+        let finalData = categoriesData;
+        if (!Array.isArray(categoriesData) && typeof categoriesData === "object" && categoriesData !== null) {
+          if ("categories" in categoriesData && Array.isArray(categoriesData.categories)) {
+            finalData = categoriesData.categories;
+            console.log("\u26A0\uFE0F useCategoriesData: Data was wrapped, extracted categories array");
+          } else if (Array.isArray(categoriesData.data)) {
+            finalData = categoriesData.data;
+            console.log("\u26A0\uFE0F useCategoriesData: Data was double-wrapped, extracted inner array");
+          } else {
+            console.error("\u274C useCategoriesData: Data is not an array and no array property found:", categoriesData);
+            throw new Error("Invalid categories data format");
+          }
+        }
+        console.log("\u2705 useCategoriesData: Final categories data:", {
+          isArray: Array.isArray(finalData),
+          count: finalData.length,
+          firstCategory: finalData[0]
         });
-        return categoriesData;
+        return finalData;
       }
       throw new Error("Failed to fetch categories");
     },
@@ -5876,9 +5937,24 @@ function useCategoriesData() {
     data,
     isArray: Array.isArray(data),
     type: typeof data,
-    length: data?.length
+    length: data?.length,
+    dataKeys: data && typeof data === "object" ? Object.keys(data) : null
   });
-  const categories = Array.isArray(data) ? data : [];
+  let categories = [];
+  if (Array.isArray(data)) {
+    categories = data;
+  } else if (data && typeof data === "object" && data !== null) {
+    if ("categories" in data && Array.isArray(data.categories)) {
+      categories = data.categories;
+      console.log("\u26A0\uFE0F useCategoriesData: Extracted categories from object wrapper");
+    } else if ("data" in data && Array.isArray(data.data)) {
+      categories = data.data;
+      console.log("\u26A0\uFE0F useCategoriesData: Extracted categories from nested data property");
+    } else {
+      console.error("\u274C useCategoriesData: Cannot extract array from data object:", data);
+      categories = [];
+    }
+  }
   return {
     categories,
     loading,

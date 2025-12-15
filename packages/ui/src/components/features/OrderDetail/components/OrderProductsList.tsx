@@ -41,12 +41,30 @@ export const OrderProductsList: React.FC<OrderProductsListProps> = ({ order }) =
                   
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 text-sm">
-                      {item.product?.name || 'Unknown Product'}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {item.product?.name ? `${t('items.product')}: ${item.product.name}` : 'Unknown Product'}
-                    </div>
+                    {(() => {
+                      // Use productName from snapshot if product object is missing
+                      const productName = item.product?.name || (item as any).productName || 'Unknown Product';
+                      
+                      console.log('🔍 OrderProductsList: Rendering item:', {
+                        itemId: item.id,
+                        productId: item.productId,
+                        hasProduct: !!item.product,
+                        productNameFromProduct: item.product?.name,
+                        productNameFromSnapshot: (item as any).productName,
+                        finalProductName: productName
+                      });
+                      
+                      return (
+                        <>
+                          <div className="font-medium text-gray-900 text-sm">
+                            {productName}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {productName ? `${t('items.product')}: ${productName}` : ''}
+                          </div>
+                        </>
+                      );
+                    })()}
                     <div className="text-xs text-gray-600">
                       {formatMoney(item.unitPrice)} x {item.quantity}
                     </div>

@@ -49,11 +49,18 @@ export const useOrderValidation = () => {
         errors.returnPlanAt = 'Return date is required for rentals';
       }
       if (formData.pickupPlanAt && formData.returnPlanAt) {
-        const days = calculateRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
-        if (days < BUSINESS.MIN_RENTAL_DAYS) {
-          errors.returnPlanAt = `Rental must be at least ${BUSINESS.MIN_RENTAL_DAYS} day`;
-        } else if (days > BUSINESS.MAX_RENTAL_DAYS) {
-          errors.returnPlanAt = `Rental cannot exceed ${BUSINESS.MAX_RENTAL_DAYS} days`;
+        // Check if return date is before pickup date (not allowed)
+        const pickup = new Date(formData.pickupPlanAt);
+        const return_ = new Date(formData.returnPlanAt);
+        if (return_ < pickup) {
+          errors.returnPlanAt = 'Return date cannot be before pickup date';
+        } else {
+          // Allow same day rental (days = 0) or minimum rental days
+          const days = calculateRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
+          if (days > BUSINESS.MAX_RENTAL_DAYS) {
+            errors.returnPlanAt = `Rental cannot exceed ${BUSINESS.MAX_RENTAL_DAYS} days`;
+          }
+          // Note: Same day rental (days = 0) is now allowed, so we don't check MIN_RENTAL_DAYS
         }
       }
     }

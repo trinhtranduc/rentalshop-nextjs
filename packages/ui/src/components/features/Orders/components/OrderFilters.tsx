@@ -39,7 +39,7 @@ export const OrderFilters = React.memo(function OrderFilters({
   onFiltersChange,
   onSearchChange,
   onClearFilters,
-  userRole = 'ADMIN' // Default to ADMIN for backward compatibility
+  userRole // No default - must be explicitly passed to prevent unwanted API calls
 }: OrderFiltersProps) {
   // Get translations
   const t = useOrderTranslations();
@@ -84,6 +84,10 @@ export const OrderFilters = React.memo(function OrderFilters({
   // - MERCHANT: Can see outlet filter (they have multiple outlets)
   // - OUTLET_ADMIN and OUTLET_STAFF: Cannot see outlet filter (they only have one outlet)
   const shouldShowOutletFilter = React.useMemo(() => {
+    // If userRole is not provided, don't show filter (prevent unwanted API calls)
+    if (!userRole) {
+      return false;
+    }
     // OUTLET_ADMIN and OUTLET_STAFF should not see outlet filter
     if (userRole === 'OUTLET_ADMIN' || userRole === 'OUTLET_STAFF') {
       return false;
@@ -146,6 +150,11 @@ export const OrderFilters = React.memo(function OrderFilters({
       }
 
       let result;
+      // Only fetch if userRole is explicitly provided
+      if (!userRole) {
+        return { outlets: [] };
+      }
+      
       if (userRole === 'ADMIN' && merchantId) {
         // Admin: fetch outlets for selected merchant
         result = await outletsApi.getOutletsByMerchant(merchantId);
@@ -204,8 +213,9 @@ export const OrderFilters = React.memo(function OrderFilters({
   } = useDedupedApi({
     filters: { userRole }, // Use userRole as filter key for cache
     fetchFn: async () => {
-      // Only fetch for ADMIN users
-      if (userRole !== 'ADMIN') {
+      // Only fetch for ADMIN users (explicit check, not default)
+      // Don't fetch if userRole is undefined, null, or not 'ADMIN'
+      if (!userRole || userRole !== 'ADMIN') {
         return { merchants: [] };
       }
       
@@ -215,7 +225,7 @@ export const OrderFilters = React.memo(function OrderFilters({
       }
       throw new Error('Failed to load merchants');
     },
-    enabled: userRole === 'ADMIN', // Only fetch for ADMIN users
+    enabled: !!userRole && userRole === 'ADMIN', // Only fetch when userRole is explicitly 'ADMIN' (not undefined/null)
     staleTime: 60000, // 60 seconds cache
     cacheTime: 300000, // 5 minutes
     refetchOnMount: false, // Don't refetch on mount if cache is fresh
@@ -223,12 +233,14 @@ export const OrderFilters = React.memo(function OrderFilters({
   });
 
   // Sync merchants data to local state
+  // Only sync for ADMIN users (explicit check, not default)
   useEffect(() => {
     if (userRole === 'ADMIN') {
       setMerchants(merchantsData?.merchants || []);
       setLoadingMerchants(merchantsLoading);
       setMerchantError(merchantsError ? merchantsError.message : null);
     } else {
+      // Clear merchants data for non-ADMIN users
       setMerchants([]);
       setLoadingMerchants(false);
       setMerchantError(null);
@@ -322,7 +334,7 @@ export const OrderFilters = React.memo(function OrderFilters({
           </Select>
           
           {/* Merchant Filter - SearchableSelect (Admin only) */}
-          {userRole === 'ADMIN' && (
+          {!!userRole && userRole === 'ADMIN' && (
             <SearchableSelect
               value={(filters as any).merchantId as number | undefined}
               onChange={(value) => handleFilterChange('merchantId' as keyof OrderFiltersType, value || undefined)}

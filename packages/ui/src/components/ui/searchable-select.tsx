@@ -119,7 +119,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   }, [query, value]); // Depend on both query and value
 
   const filtered = React.useMemo(() => {
-    console.log('🔍 SearchableSelect: Filtering with query:', query, 'onSearch:', !!onSearch, 'options count:', options?.length || 0);
+    console.log('🔍 SearchableSelect: Filtering with query:', query, 'onSearch:', !!onSearch, 'options count:', options?.length || 0, 'options:', options?.slice(0, 3));
     
     if (onSearch) {
       // In search mode, return search results if available, otherwise show empty

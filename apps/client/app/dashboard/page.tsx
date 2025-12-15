@@ -30,7 +30,8 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
-  Minus
+  Minus,
+  FileText
 } from 'lucide-react';
 import { useAuth, useDashboardTranslations, useCommonTranslations, useOrderTranslations } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
@@ -483,7 +484,7 @@ export default function DashboardPage() {
                                     hasPermission('analytics.view.orders') ||
                                     hasPermission('analytics.view.customers') ||
                                     hasPermission('analytics.view.products');
-      
+
       console.log('🚀 Starting parallel API calls...');
       console.log('🔗 API URLs being called:');
       console.log('  📊 Enhanced Dashboard:', `/api/analytics/enhanced-dashboard?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}`);
@@ -491,11 +492,11 @@ export default function DashboardPage() {
       
       // Users without full analytics permissions can only access dashboard APIs
       if (canViewFullAnalytics) {
-        console.log('  📉 Growth Metrics:', `/api/analytics/growth-metrics?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
-        console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
-        console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
-        console.log('  🏆 Top Products:', `/api/analytics/top-products?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
-        console.log('  👥 Top Customers:', `/api/analytics/top-customers?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+      console.log('  📉 Growth Metrics:', `/api/analytics/growth-metrics?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+      console.log('  💰 Income Analytics:', `/api/analytics/income?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
+      console.log('  📦 Order Analytics:', `/api/analytics/orders?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}&groupBy=${defaultFilters.groupBy}${memoizedSelectedOutlets.length > 0 ? `&outletIds=${memoizedSelectedOutlets.join(',')}` : ''}`);
+      console.log('  🏆 Top Products:', `/api/analytics/top-products?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
+      console.log('  👥 Top Customers:', `/api/analytics/top-customers?startDate=${defaultFilters.startDate}&endDate=${defaultFilters.endDate}`);
       } else {
         console.log('  ⚠️ Limited permissions: Skipping restricted analytics APIs (growth, income, orders, top-products, top-customers)');
       }
@@ -520,31 +521,31 @@ export default function DashboardPage() {
       // Only call restricted APIs if user has full analytics permissions
       if (canViewFullAnalytics) {
         apiCalls.push(
-          analyticsApi.getGrowthMetrics(defaultFilters).then(response => {
-            console.log('📉 Growth Metrics API:', response);
-            return response;
-          }),
-          analyticsApi.getIncomeAnalytics({
-            ...defaultFilters,
-            outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
-          }).then(response => {
-            console.log('💰 Income Analytics API:', response);
-            return response;
-          }),
-          analyticsApi.getOrderAnalytics({
-            ...defaultFilters,
-            outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
-          }).then(response => {
-            console.log('📦 Order Analytics API:', response);
-            return response;
-          }),
-          analyticsApi.getTopProducts(defaultFilters).then(response => {
-            console.log('🏆 Top Products API:', response);
-            return response;
-          }),
-          analyticsApi.getTopCustomers(defaultFilters).then(response => {
-            console.log('👥 Top Customers API:', response);
-            return response;
+        analyticsApi.getGrowthMetrics(defaultFilters).then(response => {
+          console.log('📉 Growth Metrics API:', response);
+          return response;
+        }),
+        analyticsApi.getIncomeAnalytics({
+          ...defaultFilters,
+          outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
+        }).then(response => {
+          console.log('💰 Income Analytics API:', response);
+          return response;
+        }),
+        analyticsApi.getOrderAnalytics({
+          ...defaultFilters,
+          outletIds: memoizedSelectedOutlets.length > 0 ? memoizedSelectedOutlets : undefined
+        }).then(response => {
+          console.log('📦 Order Analytics API:', response);
+          return response;
+        }),
+        analyticsApi.getTopProducts(defaultFilters).then(response => {
+          console.log('🏆 Top Products API:', response);
+          return response;
+        }),
+        analyticsApi.getTopCustomers(defaultFilters).then(response => {
+          console.log('👥 Top Customers API:', response);
+          return response;
           })
         );
       }
@@ -1231,7 +1232,20 @@ export default function DashboardPage() {
                           <div 
                             key={order.id} 
                             className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                            onClick={() => router.push(`/orders/${order.id}`)}
+                            onClick={() => {
+                              // Use orderNumber instead of id for navigation
+                              // Order detail page expects orderNumber without "ORD-" prefix
+                              // e.g., "003-0003" from "ORD-003-0003"
+                              const orderNumberForRoute = order.orderNumber 
+                                ? order.orderNumber.replace(/^ORD-/, '') 
+                                : order.id.toString();
+                              console.log('🔍 Dashboard: Navigating to order:', {
+                                orderId: order.id,
+                                orderNumber: order.orderNumber,
+                                navigatedTo: orderNumberForRoute
+                              });
+                              router.push(`/orders/${orderNumberForRoute}`);
+                            }}
                           >
                             <Package className="w-5 h-5 text-blue-700 shrink-0" />
                             <div className="flex-1 min-w-0">
@@ -1639,8 +1653,8 @@ export default function DashboardPage() {
               className="flex flex-col items-center gap-2 p-3 h-auto bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-lg transition-colors"
               onClick={() => router.push('/orders')}
             >
-              <TrendingUp className="w-5 h-5 text-gray-700" />
-              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.viewReports')}</p>
+              <FileText className="w-5 h-5 text-gray-700" />
+              <p className="font-medium text-xs text-gray-900 text-center">{t('quickActions.viewOrders')}</p>
             </Button>
           </div>
         </div>

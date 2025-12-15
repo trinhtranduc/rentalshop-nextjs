@@ -20,6 +20,7 @@
   "INSUFFICIENT_PERMISSIONS": "Không đủ quyền",
   "BUSINESS_RULE_VIOLATION": "Vi phạm quy tắc nghiệp vụ",
   "ACCOUNT_DEACTIVATED": "Tài khoản đã bị vô hiệu hóa",
+  "SUBSCRIPTION_ERROR": "Lỗi đăng ký",
   "SUBSCRIPTION_EXPIRED": "Gói đăng ký đã hết hạn",
   "SUBSCRIPTION_CANCELLED": "Gói đăng ký đã bị hủy",
   "SUBSCRIPTION_PAUSED": "Gói đăng ký đang tạm dừng",

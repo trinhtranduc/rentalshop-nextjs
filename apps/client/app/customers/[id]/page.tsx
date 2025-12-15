@@ -27,7 +27,7 @@ import {
   X
 } from 'lucide-react';
 import { customersApi } from "@rentalshop/utils";
-import { useAuth, useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useCustomerTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 import type { Customer } from '@rentalshop/types';
 import type { EditCustomerFormRef } from '@rentalshop/ui';
 export default function CustomerPage() {
@@ -42,8 +42,6 @@ export default function CustomerPage() {
   console.log('🔍 CustomerPage: Component rendered with params:', params);
   console.log('🔍 CustomerPage: Customer ID extracted:', customerId);
   
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
@@ -54,72 +52,47 @@ export default function CustomerPage() {
   
   const editCustomerFormRef = React.useRef<EditCustomerFormRef>(null);
 
-  
-  // Fetch customer data
-  useEffect(() => {
-    const fetchCustomer = async () => {
-      try {
-        setIsLoading(true);
-        
-        console.log('🔍 CustomerPage: Fetching customer with ID:', customerId);
-        
-        // Validate ID format (should be numeric)
-        const numericId = parseInt(customerId);
-        if (isNaN(numericId) || numericId <= 0) {
-          console.error('❌ CustomerPage: Invalid ID format:', customerId);
-          setCustomer(null);
-          return;
-        }
-        
-        console.log('🔍 CustomerPage: Making API call to /api/customers/' + customerId);
-        
-        // Use the real API to fetch customer data by ID
-        const response = await customersApi.getCustomerById(numericId);
-        
-        console.log('🔍 CustomerPage: API response received:', response);
-        
-        if (response.success && response.data) {
-          console.log('✅ CustomerPage: Customer fetched successfully:', response.data);
-          setCustomer(response.data);
-        } else {
-          console.error('❌ CustomerPage: API showError:', response.error);
-          throw new Error(response.error || t('messages.loadingCustomers'));
-        }
-        
-      } catch (error) {
-        console.error('❌ CustomerPage: Error fetching customer:', error);
-        // Error automatically handled by useGlobalErrorHandler
-        // Show error state
-        setCustomer(null);
-      } finally {
-        setIsLoading(false);
+  // ============================================================================
+  // FETCH CUSTOMER DETAILS - Using Official useDedupedApi Hook
+  // ============================================================================
+  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
+  const { 
+    data: customerData, 
+    loading: customerLoading, 
+    error: customerError,
+    refetch: refetchCustomer
+  } = useDedupedApi({
+    filters: { customerId },
+    fetchFn: async () => {
+      // Validate ID format (should be numeric)
+      const numericId = parseInt(customerId);
+      if (isNaN(numericId) || numericId <= 0) {
+        throw new Error('Invalid customer ID format');
       }
-    };
+      
+      const response = await customersApi.getCustomerById(numericId);
+      
+      if (!response.success || !response.data) {
+        throw new Error(response.error || t('messages.loadingCustomers'));
+      }
+      
+      return response.data;
+    },
+    enabled: !!customerId,
+    staleTime: 60000, // 60 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
 
-    if (customerId) {
-      fetchCustomer();
-    }
-  }, [customerId]);
+  // Sync customer data to local state
+  const customer = customerData || null;
+  const isLoading = customerLoading;
 
   // Refresh customer data after updates
   const refreshCustomerData = async () => {
     if (!customerId) return;
-    
-    try {
-      setIsLoading(true);
-      const numericId = parseInt(customerId);
-      if (isNaN(numericId) || numericId <= 0) return;
-      
-      const response = await customersApi.getCustomerById(numericId);
-      
-      if (response.success && response.data) {
-        setCustomer(response.data);
-      }
-    } catch (error) {
-      console.error('❌ CustomerPage: Error refreshing customer data:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    await refetchCustomer();
   };
 
 

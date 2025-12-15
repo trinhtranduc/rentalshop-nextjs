@@ -23,7 +23,7 @@ import {
 } from '@rentalshop/ui';
 
 import { ArrowLeft, Package } from 'lucide-react';
-import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useOrderTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi,
@@ -38,57 +38,43 @@ export default function ProductOrdersPage() {
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
   
-  const [product, setProduct] = useState<ProductWithStock | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const productId = params.id as string;
 
-  useEffect(() => {
-    if (!productId) return;
-
-    // Cancel previous request if still pending
-    const abortController = new AbortController();
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch product details
-        const productResponse = await productsApi.getProductById(parseInt(productId));
-        
-        // Check if request was aborted
-        if (abortController.signal.aborted) {
-          return;
-        }
-        
-        if (productResponse.success && productResponse.data) {
-          setProduct(productResponse.data);
-        }
-
-      } catch (err: any) {
-        // Ignore abort errors
-        if (err?.name === 'AbortError') {
-          return;
-        }
-        console.error('Error fetching product:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch product');
-      } finally {
-        // Only update loading state if request wasn't aborted
-        if (!abortController.signal.aborted) {
-          setLoading(false);
-        }
+  // ============================================================================
+  // FETCH PRODUCT DETAILS - Using Official useDedupedApi Hook
+  // ============================================================================
+  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
+  // This provides:
+  // - Request deduplication (same request = single call)
+  // - Global cache with stale-while-revalidate
+  // - Race condition protection
+  // - Automatic cleanup
+  // - Prevents duplicate API calls from React 18 double mounting
+  
+  const { 
+    data: productData, 
+    loading, 
+    error: productError 
+  } = useDedupedApi({
+    filters: { productId }, // Use productId as filter key for cache
+    fetchFn: async () => {
+      const productResponse = await productsApi.getProductById(parseInt(productId));
+      
+      if (!productResponse.success || !productResponse.data) {
+        throw new Error('Failed to fetch product');
       }
-    };
+      
+      return productResponse.data;
+    },
+    enabled: !!productId, // Only fetch if productId exists
+    staleTime: 60000, // 60 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false, // Don't refetch on mount if cache is fresh
+    refetchOnWindowFocus: false
+  });
 
-    fetchData();
-
-    // Cleanup: abort request on unmount or when productId changes
-    return () => {
-      abortController.abort();
-    };
-  }, [productId]);
+  const product = productData || null;
+  const error = productError ? productError.message : null;
 
   const handleBack = () => {
     router.push('/products');

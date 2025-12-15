@@ -262,6 +262,16 @@ export const PUT = async (
       // Get full order details after update (with all relations)
       const fullOrder: any = await db.orders.findByIdDetail(orderIdNum);
       
+      console.log('🔍 PUT /api/orders/[orderId]: Full order after update:', {
+        orderId: orderIdNum,
+        orderItemsCount: fullOrder?.orderItems?.length,
+        firstItem: fullOrder?.orderItems?.[0],
+        firstItemProduct: fullOrder?.orderItems?.[0]?.product,
+        firstItemProductName: fullOrder?.orderItems?.[0]?.productName,
+        firstItemHasProduct: !!fullOrder?.orderItems?.[0]?.product,
+        firstItemHasProductName: !!fullOrder?.orderItems?.[0]?.productName
+      });
+      
       if (!fullOrder) {
         return NextResponse.json(
           ResponseBuilder.error('ORDER_NOT_FOUND'),
@@ -327,19 +337,35 @@ export const PUT = async (
           };
 
           const productImages = parseProductImages(item.productImages || item.product?.images);
+          const productName = item.product?.name || item.productName || null;
+          const productBarcode = item.product?.barcode || item.productBarcode || null;
+
+          console.log('🔍 PUT /api/orders/[orderId]: Mapping orderItem:', {
+            itemId: item.id,
+            productId: item.productId,
+            hasProduct: !!item.product,
+            productNameFromProduct: item.product?.name,
+            productNameFromSnapshot: item.productName,
+            finalProductName: productName,
+            productBarcodeFromProduct: item.product?.barcode,
+            productBarcodeFromSnapshot: item.productBarcode,
+            finalProductBarcode: productBarcode
+          });
 
           return {
             id: item.id,
             productId: item.productId,
-            productName: item.product?.name || item.productName || null,
-            productBarcode: item.product?.barcode || item.productBarcode || null,
+            productName: productName,
+            productBarcode: productBarcode,
             productImages: productImages,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
             deposit: item.deposit,
             notes: item.notes,
-            rentalDays: item.rentalDays
+            rentalDays: item.rentalDays,
+            // Include product object if available (for backward compatibility)
+            product: item.product || null
           };
         }) || [],
         // Calculated fields

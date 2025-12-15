@@ -112,7 +112,11 @@ export default function OutletsPage() {
     [search, merchantId, status, page, limit, sortBy, sortOrder]
   );
 
-  const { data, loading, error, refetch } = useOutletsWithFilters({ filters });
+  // Only fetch when merchantId is available (prevent fetch with undefined merchantId)
+  const { data, loading, error, refetch } = useOutletsWithFilters({ 
+    filters,
+    enabled: !!merchantId // Only fetch when merchantId is available
+  });
 
   // ============================================================================
   // URL UPDATE HELPER
@@ -349,7 +353,8 @@ export default function OutletsPage() {
   return (
     <PageWrapper
       spacing="none"
-      className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0"
+      maxWidth="full"
+      className="h-screen flex flex-col px-4 pt-4 pb-0 overflow-hidden"
     >
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
@@ -383,14 +388,14 @@ export default function OutletsPage() {
         </div>
       </PageHeader>
 
-      <div className="flex-1 min-h-0 overflow-auto relative">
+      <div className="flex-1 min-h-0 relative overflow-hidden">
         {/* Center Loading Indicator - Shows when waiting for API */}
         {loading && !data ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
             <LoadingIndicator 
               variant="circular" 
               size="lg"
-              message={to('labels.loading') || 'Loading outlets...'}
+              message={t('labels.loading') || 'Loading outlets...'}
             />
           </div>
         ) : (
@@ -477,10 +482,9 @@ export default function OutletsPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="text-lg font-semibold">
-              {to("dialogs.editOutletName").replace(
-                "{name}",
-                selectedOutlet?.name || ""
-              )}
+              {selectedOutlet?.name 
+                ? (to("dialogs.editOutletName", { name: selectedOutlet.name }) || `Sửa cửa hàng: ${selectedOutlet.name}`)
+                : (to("dialogs.editOutletTitle") || "Sửa cửa hàng")}
             </DialogTitle>
             <DialogDescription className="mt-1">
               {to("dialogs.editOutletTitle") || "Update outlet information"}

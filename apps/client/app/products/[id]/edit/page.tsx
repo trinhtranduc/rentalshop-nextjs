@@ -14,7 +14,7 @@ import {
 import { ProductEdit } from '@rentalshop/ui';
 
 import { ArrowLeft, Package } from 'lucide-react';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, useDedupedApi } from '@rentalshop/hooks';
 import { 
   productsApi,
   categoriesApi, 
@@ -28,106 +28,106 @@ export default function ProductEditPage() {
   const params = useParams();
   const { user, loading: authLoading } = useAuth();
   
-  const [product, setProduct] = useState<ProductWithStock | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [merchantIdForOutlets, setMerchantIdForOutlets] = useState<number | null>(null);
 
   const productId = parseInt(params.id as string);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Wait for authentication to complete
-        if (authLoading) {
-          return;
-        }
-
-        // Fetch product details
-        const productResponse = await productsApi.getProductById(productId);
-        if (productResponse.data) {
-                  console.log('🔍 Product response:', productResponse.data);
-        
-        // The API now returns ProductWithStock directly, no transformation needed
-        setProduct(productResponse.data);
-        }
-
-        // Debug: Log user and merchant info
-        console.log('🔍 Edit Product - user:', user);
-        console.log('🔍 Edit Product - user.merchant:', user?.merchant);
-        console.log('🔍 Edit Product - user.merchantId:', user?.merchantId);
-        console.log('🔍 Edit Product - user.role:', user?.role);
-        console.log('🔍 Edit Product - product.merchant:', product?.merchant);
-        
-        // Check if user has proper merchant access (try both merchant.id and merchantId)
-        const resolvedMerchantId = user?.merchant?.id || user?.merchantId;
-        if (!resolvedMerchantId) {
-          console.error('🔍 Edit Product - ERROR: User has no merchant ID!');
-          console.error('🔍 Edit Product - user object:', user);
-          throw new Error('You must be associated with a merchant to edit products. Please contact your administrator.');
-        }
-        
-        setMerchantIdForOutlets(Number(resolvedMerchantId));
-        
-        console.log('🔍 Edit Product - merchantId for outlets:', resolvedMerchantId);
-        console.log('🔍 Edit Product - User merchant info:', {
-          'user.merchant': user?.merchant,
-          'user.merchantId': user?.merchantId,
-          'resolved merchantId': resolvedMerchantId
-        });
-        
-        if (Number(resolvedMerchantId) <= 0) {
-          console.error('🔍 Edit Product - ERROR: Invalid merchant ID:', resolvedMerchantId);
-          throw new Error('Invalid merchant ID. Please contact your administrator.');
-        }
-        
-        // Fetch categories and outlets for the form (same as add product page)
-        const [categoriesData, outletsData] = await Promise.all([
-          categoriesApi.getCategories(),
-          outletsApi.getOutletsByMerchant(Number(resolvedMerchantId))
-        ]);
-        
-        if (categoriesData.success) {
-          setCategories(categoriesData.data || []);
-        }
-        if (outletsData.success) {
-          const outletsList = outletsData.data?.outlets || [];
-          console.log('🔍 Edit Product - outlets data:', outletsData.data);
-          console.log('🔍 Edit Product - outlets count:', outletsList.length);
-          console.log('🔍 Edit Product - outlets array:', outletsList);
-          setOutlets(outletsList);
-          
-          if (outletsList.length === 0) {
-            setError('No outlets found for your merchant. You need to create at least one outlet before you can edit products.');
-            setLoading(false);
-            return;
-          }
-        } else {
-          console.log('🔍 Edit Product - outlets fetch failed:', outletsData);
-          setError('Failed to load outlets. Please try again.');
-          setLoading(false);
-          return;
-        }
-
-      } catch (err) {
-        console.error('Error fetching product:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch product';
-        setError(errorMessage);
-        // Error automatically handled by useGlobalErrorHandler
-      } finally {
-        setLoading(false);
+  // ============================================================================
+  // FETCH PRODUCT DETAILS - Using Official useDedupedApi Hook
+  // ============================================================================
+  const { 
+    data: productData, 
+    loading: productLoading, 
+    error: productError 
+  } = useDedupedApi({
+    filters: { productId, authLoading },
+    fetchFn: async () => {
+      // Wait for authentication to complete
+      if (authLoading) {
+        throw new Error('Waiting for authentication');
       }
-    };
 
-    if (productId) {
-      fetchData();
+      const productResponse = await productsApi.getProductById(productId);
+      if (!productResponse.success || !productResponse.data) {
+        throw new Error('Failed to fetch product');
+      }
+      return productResponse.data;
+    },
+    enabled: !!productId && !authLoading,
+    staleTime: 60000,
+    cacheTime: 300000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
+
+  // ============================================================================
+  // FETCH CATEGORIES - Using Official useDedupedApi Hook
+  // ============================================================================
+  const { 
+    data: categoriesData 
+  } = useDedupedApi({
+    filters: {},
+    fetchFn: async () => {
+      const categoriesData = await categoriesApi.getCategories();
+      if (!categoriesData.success) {
+        throw new Error('Failed to fetch categories');
+      }
+      return categoriesData.data || [];
+    },
+    enabled: true,
+    staleTime: 300000, // 5 minutes
+    cacheTime: 600000, // 10 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
+
+  // ============================================================================
+  // FETCH OUTLETS - Using Official useDedupedApi Hook
+  // ============================================================================
+  const resolvedMerchantId = user?.merchant?.id || user?.merchantId;
+  const { 
+    data: outletsData, 
+    loading: outletsLoading,
+    error: outletsError
+  } = useDedupedApi({
+    filters: { merchantId: resolvedMerchantId },
+    fetchFn: async () => {
+      if (!resolvedMerchantId || Number(resolvedMerchantId) <= 0) {
+        throw new Error('Invalid merchant ID');
+      }
+      
+      const outletsData = await outletsApi.getOutletsByMerchant(Number(resolvedMerchantId));
+      if (!outletsData.success || !outletsData.data?.outlets) {
+        throw new Error('Failed to load outlets');
+      }
+      
+      const outletsList = outletsData.data.outlets;
+      if (outletsList.length === 0) {
+        throw new Error('No outlets found for your merchant. You need to create at least one outlet before you can edit products.');
+      }
+      
+      return { outlets: outletsList };
+    },
+    enabled: !!resolvedMerchantId && !authLoading,
+    staleTime: 60000,
+    cacheTime: 300000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
+
+  // Sync data to local state
+  const product = productData || null;
+  const categories = categoriesData || [];
+  const outlets = outletsData?.outlets || [];
+  const loading = productLoading || outletsLoading;
+  const error = productError ? productError.message : (outletsError ? outletsError.message : null);
+
+  // Set merchantIdForOutlets when product is loaded
+  useEffect(() => {
+    if (product && resolvedMerchantId) {
+      setMerchantIdForOutlets(Number(resolvedMerchantId));
     }
-  }, [productId, authLoading]);
+  }, [product, resolvedMerchantId]);
 
   const handleSave = async (data: ProductInput) => {
     try {

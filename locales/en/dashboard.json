@@ -84,7 +84,8 @@
     "addCategory": "Add Category",
     "addCustomer": "Add Customer",
     "viewCalendar": "View Calendar",
-    "viewReports": "View Reports"
+    "viewReports": "View Reports",
+    "viewOrders": "View Orders"
   },
   "upcomingReturns": {
     "title": "Upcoming Returns",

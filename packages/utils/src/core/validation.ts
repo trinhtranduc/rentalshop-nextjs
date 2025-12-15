@@ -195,8 +195,8 @@ export const rentalSchema = z.object({
   startDate: z.date(),
   endDate: z.date(),
   notes: z.string().optional(),
-}).refine((data) => data.endDate > data.startDate, {
-  message: 'End date must be after start date',
+}).refine((data) => data.endDate >= data.startDate, {
+  message: 'End date cannot be before start date',
   path: ['endDate'],
 });
 

@@ -810,9 +810,9 @@ export class PricingValidator {
     }
 
     // For HOURLY/DAILY, validate duration
-    // Validate rental dates
-    if (rentalStartAt >= rentalEndAt) {
-      errors.push('Rental start date must be before end date');
+    // Validate rental dates - allow same day rental (rentalStartAt <= rentalEndAt)
+    if (rentalStartAt > rentalEndAt) {
+      errors.push('Rental start date cannot be after end date');
     }
 
     // Calculate duration in correct unit based on pricing type
