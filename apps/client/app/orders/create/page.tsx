@@ -395,6 +395,9 @@ export default function CreateOrderPage() {
             <AddCustomerDialog
               open={showCustomerDialog}
               onOpenChange={setShowCustomerDialog}
+              // Always pass merchantId if available (backend will validate from userScope)
+              // This helps with UX (pre-fill) and backend will override if needed for security
+              merchantId={user?.merchantId || user?.merchant?.id}
               onCustomerCreated={handleCustomerCreated}
               onError={(error: string) => {
                 // Error automatically handled by useGlobalErrorHandler

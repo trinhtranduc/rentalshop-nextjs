@@ -101,10 +101,10 @@ export function useOrdersData(options: UseOrdersDataOptions): UseOrdersDataRetur
       return transformed;
     },
     enabled,
-    staleTime: 0, // ✅ Set to 0 to always refetch on navigation (no stale cache)
+    staleTime: 30000, // ✅ 30 seconds cache to prevent duplicate calls
     cacheTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
-    refetchOnMount: true // ✅ Force refetch when component mounts (navigating to page)
+    refetchOnMount: false // ✅ Don't force refetch if filters haven't changed (prevent duplicate calls)
   });
 
   return result;

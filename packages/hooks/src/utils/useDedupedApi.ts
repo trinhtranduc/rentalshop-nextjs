@@ -127,14 +127,55 @@ export function useDedupedApi<TFilters, TData>(
     // Official pattern: Skip if filters haven't actually changed
     // Only fetch if cacheKey changed OR manual refetch was triggered OR refetchOnMount is true
     const isManualRefetch = refetchKey > 0;
-    const shouldSkip = cacheKey === filtersRef.current && !isManualRefetch && !refetchOnMount;
+    const filtersUnchanged = cacheKey === filtersRef.current;
+    
+    // ✅ STANDARD PATTERN: Check for pending request FIRST (before any updates)
+    // This prevents duplicate calls when multiple effects run simultaneously
+    const existingRequest = requestCache.get(cacheKey);
+    if (existingRequest && !isManualRefetch) {
+      // Reuse existing request - this is the standard deduplication pattern
+      console.log('🔍 useDedupedApi: Reusing existing pending request for this cacheKey');
+      
+      // Increment fetch ID for race condition protection
+      fetchIdRef.current += 1;
+      const currentFetchId = fetchIdRef.current;
+      
+      // Wait for existing request and update state
+      existingRequest
+        .then((result) => {
+          if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
+            setData(result);
+            setLoading(false);
+            setError(null);
+            setIsStale(false);
+            console.log(`✅ Fetch #${currentFetchId}: Got deduplicated result`);
+          } else {
+            console.log(`⏭️ Fetch #${currentFetchId}: Stale, ignoring`);
+          }
+        })
+        .catch((err) => {
+          if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
+            const error = err instanceof Error ? err : new Error('Unknown error');
+            setError(error);
+            setLoading(false);
+            console.error(`❌ Fetch #${currentFetchId}: Dedup ERROR:`, error);
+          }
+        });
+      
+      // Update filtersRef to mark that we've processed this cacheKey
+      filtersRef.current = cacheKey;
+      return;
+    }
+    
+    // Skip if filters unchanged and no manual refetch and refetchOnMount is false
+    const shouldSkip = filtersUnchanged && !isManualRefetch && !refetchOnMount;
     if (shouldSkip) {
       console.log('🔍 useDedupedApi: Filters unchanged and refetchOnMount=false, skipping fetch');
       return;
     }
     
     // If refetchOnMount is true, always fetch (even if filters unchanged)
-    if (refetchOnMount && cacheKey === filtersRef.current && !isManualRefetch) {
+    if (refetchOnMount && filtersUnchanged && !isManualRefetch) {
       console.log('🔄 useDedupedApi: refetchOnMount=true, forcing refetch even though filters unchanged');
     }
     
@@ -191,35 +232,13 @@ export function useDedupedApi<TFilters, TData>(
 
     // ========================================================================
     // STEP 2: Check if request is already in progress (deduplication)
+    // NOTE: This should already be handled above, but keeping as safety check
     // ========================================================================
     
-    const existingRequest = requestCache.get(cacheKey);
-    if (existingRequest) {
-      console.log(`🔄 Fetch #${currentFetchId}: DEDUPLICATION - waiting for existing request`);
-      
-      existingRequest
-        .then((result) => {
-          // Only update if this is still the latest fetch and mounted
-          if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
-            setData(result);
-            setLoading(false);
-            setError(null);
-            setIsStale(false);
-            console.log(`✅ Fetch #${currentFetchId}: Got deduplicated result`);
-          } else {
-            console.log(`⏭️ Fetch #${currentFetchId}: Stale, ignoring`);
-          }
-        })
-        .catch((err) => {
-          // Only update error if this is still the latest fetch and mounted
-          if (currentFetchId === fetchIdRef.current && isMountedRef.current) {
-            const error = err instanceof Error ? err : new Error('Unknown error');
-            setError(error);
-            setLoading(false);
-            console.error(`❌ Fetch #${currentFetchId}: Dedup ERROR:`, error);
-          }
-        });
-      
+    const existingRequestCheck = requestCache.get(cacheKey);
+    if (existingRequestCheck) {
+      // This should not happen if logic above is correct, but keeping as safety check
+      console.log(`⚠️ Fetch #${currentFetchId}: Found existing request (should have been caught above) - this indicates a race condition`);
       return;
     }
 

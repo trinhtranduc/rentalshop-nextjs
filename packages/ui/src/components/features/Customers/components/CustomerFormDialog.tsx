@@ -18,7 +18,7 @@ import {
 } from '@rentalshop/ui';
 import { Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 import type { CustomerCreateInput, CustomerUpdateInput, Customer } from '@rentalshop/types';
-import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useCustomerTranslations, useCommonTranslations, useAuth } from '@rentalshop/hooks';
 
 interface CustomerFormDialogProps {
   open: boolean;
@@ -41,6 +41,21 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
 }) => {
   const t = useCustomerTranslations();
   const tc = useCommonTranslations();
+  const { user } = useAuth();
+  
+  // Debug: Log merchantId prop
+  React.useEffect(() => {
+    if (mode === 'create') {
+      console.log('🔍 CustomerFormDialog - merchantId prop:', {
+        merchantId,
+        userMerchantId: user?.merchantId,
+        userMerchant: user?.merchant,
+        userRole: user?.role,
+        hasMerchantId: !!merchantId,
+        merchantIdType: typeof merchantId
+      });
+    }
+  }, [merchantId, mode, user]);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMoreFields, setShowMoreFields] = useState(false);
@@ -131,7 +146,10 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
       return;
     }
 
-    if (mode === 'create' && !merchantId) {
+    // Backend will validate merchantId from userScope, but we can pre-fill it for UX
+    // ADMIN: merchantId is required (they can choose which merchant)
+    // Non-admin: merchantId will be auto-resolved from userScope by backend
+    if (mode === 'create' && user?.role === 'ADMIN' && !merchantId) {
       setErrorMessage('Merchant ID is required to create a customer.');
       return;
     }
@@ -160,8 +178,19 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
         : cleanData({
             ...formData,
             firstName: formData.firstName || '',
-            merchantId: merchantId || 0,
+            // Always include merchantId if available (backend will validate from userScope)
+            // This helps with UX (pre-fill) and backend will override if needed for security
+            ...(merchantId && merchantId > 0 ? { merchantId } : {}),
           } as CustomerCreateInput);
+      
+      // Debug: Log data being sent
+      console.log('🔍 CustomerFormDialog - Submitting data:', {
+        mode,
+        merchantId,
+        hasMerchantId: !!(merchantId && merchantId > 0),
+        submitData: mode === 'create' ? submitData : 'edit mode (no merchantId)',
+        userRole: user?.role
+      });
       
       await onSave(submitData);
       onOpenChange(false);

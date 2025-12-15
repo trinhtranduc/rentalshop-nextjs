@@ -102,8 +102,23 @@ export const OrderFilters = React.memo(function OrderFilters({
     return false;
   }, [userRole, filters, shouldShowOutletFilter]);
 
+  // ✅ Extract merchantId from filters to avoid object reference changes
+  const merchantId = React.useMemo(() => {
+    return (userRole === 'ADMIN' && 'merchantId' in filters && (filters as any).merchantId) 
+      ? (filters as any).merchantId 
+      : null;
+  }, [userRole, filters]);
+
+  // ✅ Use AbortController to cancel duplicate requests (standard pattern)
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+
   // Fetch outlets based on user role and selected merchant
   useEffect(() => {
+    // Cancel previous request if still pending
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     // Don't fetch if filter should be hidden
     if (!shouldShowOutletFilter) {
       setOutlets([]);
@@ -116,18 +131,27 @@ export const OrderFilters = React.memo(function OrderFilters({
       return;
     }
 
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     const fetchOutlets = async () => {
       try {
         setLoadingOutlets(true);
         setOutletError(null);
         
         let result;
-        if (userRole === 'ADMIN' && 'merchantId' in filters && (filters as any).merchantId) {
+        if (userRole === 'ADMIN' && merchantId) {
           // Admin: fetch outlets for selected merchant
-          result = await outletsApi.getOutletsByMerchant((filters as any).merchantId);
+          result = await outletsApi.getOutletsByMerchant(merchantId);
         } else {
           // Merchant: fetch all outlets (they can only see their own via backend filtering)
           result = await outletsApi.getOutlets();
+        }
+        
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return;
         }
         
         if (result.success && result.data?.outlets) {
@@ -136,17 +160,31 @@ export const OrderFilters = React.memo(function OrderFilters({
           setOutletError('Failed to load outlets');
           setOutlets([]);
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Ignore abort errors
+        if (error?.name === 'AbortError') {
+          return;
+        }
         console.error('Error fetching outlets:', error);
         setOutletError('Failed to load outlets');
         setOutlets([]);
       } finally {
-        setLoadingOutlets(false);
+        // Only update loading state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setLoadingOutlets(false);
+        }
       }
     };
 
     fetchOutlets();
-  }, [shouldShowOutletFilter, isOutletFilterEnabled, userRole, filters]);
+
+    // Cleanup: abort request on unmount or when dependencies change
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [shouldShowOutletFilter, isOutletFilterEnabled, userRole, merchantId]);
 
   // ============================================================================
   // FETCH MERCHANTS (admin only, one-time)

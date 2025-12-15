@@ -1611,6 +1611,9 @@ export default function DashboardPage() {
         <AddCustomerDialog
           open={showAddCustomerDialog}
           onOpenChange={setShowAddCustomerDialog}
+          // Always pass merchantId if available (backend will validate from userScope)
+          // This helps with UX (pre-fill) and backend will override if needed for security
+          merchantId={user?.merchantId || user?.merchant?.id}
           onCustomerCreated={handleCustomerCreated}
           onError={(error) => {
             // Error automatically handled by useGlobalErrorHandler
