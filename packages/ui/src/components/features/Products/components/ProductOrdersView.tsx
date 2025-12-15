@@ -95,11 +95,21 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
 
   // Fetch orders for this specific product
   useEffect(() => {
+    // Cancel previous request if still pending
+    const abortController = new AbortController();
+
     const fetchProductOrders = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
         // Use the dedicated method to get orders for this specific product
         const response = await ordersApi.getOrdersByProduct(parseInt(productId));
+        
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return;
+        }
         
         console.log('🔍 ProductOrdersView: API Response:', response);
         
@@ -120,15 +130,28 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
           setOrders([]);
           setTotalPages(1);
         }
-      } catch (err) {
+      } catch (err: any) {
+        // Ignore abort errors
+        if (err?.name === 'AbortError') {
+          return;
+        }
         console.error('❌ ProductOrdersView: Error fetching product orders:', err);
         setError('Failed to fetch product orders');
         setOrders([]); // Ensure orders is always an array
       } finally {
-        setLoading(false);
+        // Only update loading state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
+    
     fetchProductOrders();
+
+    // Cleanup: abort request on unmount or when productId changes
+    return () => {
+      abortController.abort();
+    };
   }, [productId]);
 
   // Calculate overview statistics with safety checks

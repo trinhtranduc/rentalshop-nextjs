@@ -77,8 +77,8 @@ export function CategoryTable({
   };
 
   return (
-    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full">
-      <div className="flex-1 overflow-auto">
+    <Card className="shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col">
+      <div className="overflow-y-auto flex-1 h-full">
         <table className="w-full">
           {/* Table Header - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
