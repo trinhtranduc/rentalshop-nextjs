@@ -69,7 +69,7 @@ const LandingPage = () => {
     logo: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/anyrent-logo-light.svg`,
     description: t('hero.description'),
     sameAs: [
-      'https://apps.apple.com/us/app/anyrent/id6754793592',
+      'https://apps.apple.com/vn/app/anyrent/id6754793592',
     ],
     contactPoint: {
       '@type': 'ContactPoint',
@@ -241,7 +241,7 @@ const LandingPage = () => {
                   className="group bg-gradient-to-r from-brand-primary to-action-primary hover:from-brand-secondary hover:to-action-primary text-white shadow-2xl hover:shadow-brand-primary/50 hover:scale-105 transition-all duration-300 text-lg font-semibold rounded-2xl px-8 py-6"
                 >
                 <a 
-                  href="https://apps.apple.com/us/app/anyrent/id6754793592" 
+                  href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -354,7 +354,7 @@ const LandingPage = () => {
                       className="group/btn w-full bg-gradient-to-r from-brand-primary to-action-primary hover:from-brand-secondary hover:to-action-primary text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-semibold rounded-2xl"
                     >
                   <a 
-                    href="https://apps.apple.com/vn/app/rentalshop/id1500115668" 
+                    href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -800,7 +800,7 @@ const CTA = () => {
           </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a 
-            href="https://apps.apple.com/us/app/anyrent/id6754793592" 
+            href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center px-8 py-4 bg-bg-card text-brand-primary rounded-xl hover:bg-bg-secondary transition-all duration-200 font-semibold"
@@ -1406,7 +1406,7 @@ const FloatingButtons = () => {
         
         {/* Download App Button */}
         <a 
-          href="https://apps.apple.com/us/app/anyrent/id6754793592" 
+          href="https://apps.apple.com/vn/app/anyrent/id6754793592" 
           target="_blank"
           rel="noopener noreferrer"
           className="bg-text-primary text-text-inverted p-3 rounded-full shadow-lg hover:bg-text-secondary transition-colors"

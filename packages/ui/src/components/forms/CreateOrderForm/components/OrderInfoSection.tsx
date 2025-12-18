@@ -293,7 +293,7 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                     }
                   }}
                   placeholder={t('messages.selectRentalPeriod')}
-                  minDate={new Date()}
+                  // Allow selecting rental dates in the past for back-dated bookings
                   showPresets={false}
                   format="long"
                 />

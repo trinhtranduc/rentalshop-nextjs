@@ -186,7 +186,7 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
           if (range?.to) setRentalEndAt(range.to);
         }}
         placeholder={t('messages.selectPickupAndReturnDates')}
-        minDate={new Date()}
+        // Allow selecting rental dates in the past for back-dated bookings
         showPresets={true}
       />
       
@@ -253,7 +253,7 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
               }
             }}
             placeholder={t('messages.selectRentalDate')}
-            minDate={new Date()}
+            // Allow selecting rental dates in the past for back-dated bookings
             showPresets={false}
           />
         </div>
