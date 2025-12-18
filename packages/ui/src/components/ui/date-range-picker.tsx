@@ -18,6 +18,12 @@ export interface DateRangePickerProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  /**
+   * Minimum selectable date.
+   * 
+   * - If omitted, **all past dates are allowed** (no lower bound).
+   * - Pass `new Date()` if you explicitly want to block past dates.
+   */
   minDate?: Date;
   maxDate?: Date;
   showPresets?: boolean;
@@ -31,7 +37,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   placeholder = "Select date range",
   className,
   disabled = false,
-  minDate = new Date(),
+  minDate,
   maxDate,
   showPresets = true,
   format = 'short',
