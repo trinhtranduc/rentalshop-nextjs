@@ -75,8 +75,8 @@ export function OutletTable({
       <CardContent className="p-0 flex-1 overflow-hidden">
         {/* Table with scroll - flex layout */}
         <div className="flex-1 overflow-auto h-full">
-          <table className="w-full">
-            {/* Table Header - Sticky */}
+        <table className="w-full">
+          {/* Table Header - Sticky */}
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
             <tr>
               <th 
@@ -116,51 +116,51 @@ export function OutletTable({
             </tr>
           </thead>
           
-            {/* Table Body */}
+          {/* Table Body */}
             <tbody className="bg-bg-card divide-y divide-border">
-              {outlets.map((outlet) => (
+            {outlets.map((outlet) => (
                 <tr key={outlet.id} className="hover:bg-bg-secondary transition-colors">
-                  {/* Name */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm">
-                      <div className="flex items-center gap-2">
+                {/* Name */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm">
+                    <div className="flex items-center gap-2">
                         <div className="font-medium text-text-primary">
-                          {outlet.name}
-                        </div>
-                        {outlet.isDefault && (
-                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                            {t('labels.default')}
-                          </Badge>
-                        )}
+                        {outlet.name}
                       </div>
+                      {outlet.isDefault && (
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                          {t('labels.default')}
+                        </Badge>
+                      )}
                     </div>
-                  </td>
-                  
-                  {/* Address */}
-                  <td className="px-6 py-4">
+                  </div>
+                </td>
+                
+                {/* Address */}
+                <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
-                      {outlet.address || t('fields.notAvailable')}
-                    </div>
-                  </td>
-                  
-                  {/* Contact */}
-                  <td className="px-6 py-4">
+                    {outlet.address || t('fields.notAvailable')}
+                  </div>
+                </td>
+                
+                {/* Contact */}
+                <td className="px-6 py-4">
                     <div className="text-sm text-text-primary">
-                      {outlet.phone || t('fields.notAvailable')}
-                    </div>
-                  </td>
-                  
-                  {/* Status */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(outlet.isActive)}
-                  </td>
-                  
-                  {/* Created Date */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                    {outlet.phone || t('fields.notAvailable')}
+                  </div>
+                </td>
+                
+                {/* Status */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {getStatusBadge(outlet.isActive)}
+                </td>
+                
+                {/* Created Date */}
+                <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-text-primary">
-                      {formatDate(outlet.createdAt)}
-                    </div>
-                  </td>
+                    {formatDate(outlet.createdAt)}
+                  </div>
+                </td>
                 
                 {/* Actions - Dropdown Menu */}
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -223,10 +223,10 @@ export function OutletTable({
                   </DropdownMenu>
                 </td>
               </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
       </CardContent>
     </Card>
   );

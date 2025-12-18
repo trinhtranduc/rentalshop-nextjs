@@ -114,9 +114,9 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
             <div className="flex items-center">
               <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
               <div>
-                <h4 className="text-sm font-medium text-yellow-800">{t('messages.noOutletsAvailable')}</h4>
+                <h4 className="text-sm font-medium text-yellow-800">{t('inventory.needOutletMessage')}</h4>
                 <p className="text-sm text-yellow-700 mt-1">
-                  {t('messages.needOutletFirst')}
+                  {t('inventory.contactAdmin')}
                 </p>
               </div>
             </div>
@@ -132,7 +132,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
             form="product-form" 
             disabled={isSubmitting || outlets.length === 0}
             className="min-w-[120px]"
-            title={outlets.length === 0 ? t('messages.needOutletFirst') : undefined}
+            title={outlets.length === 0 ? t('inventory.needOutletMessage') : undefined}
           >
             {isSubmitting ? (
               <>

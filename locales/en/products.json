@@ -58,8 +58,6 @@
     "totalOutlets": "Total outlets",
     "stockEntries": "Outlet stock entries",
     "stockRequired": "Stock values are required",
-    "noOutletsAvailable": "No Outlets Available",
-    "needOutletFirst": "You need to create at least one outlet before you can add products. Please contact your administrator.",
     "needOutletMessage": "You need to create at least one outlet before you can add products. Products must be assigned to specific outlets for inventory management.",
     "contactAdmin": "Please contact your administrator to set up outlets for your merchant.",
     "creating": "Creating..."

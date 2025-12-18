@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { Button, Logo, LanguageSwitcher } from '@rentalshop/ui'
+import { Button, Logo, LanguageSwitcher, Card, CardContent, Badge } from '@rentalshop/ui'
 import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
 import { usePlansTranslations } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
@@ -69,7 +69,7 @@ const LandingPage = () => {
     logo: `${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}/anyrent-logo-light.svg`,
     description: t('hero.description'),
     sameAs: [
-      'https://apps.apple.com/vn/app/rentalshop/id1500115668',
+      'https://apps.apple.com/us/app/anyrent/id6754793592',
     ],
     contactPoint: {
       '@type': 'ContactPoint',
@@ -199,56 +199,100 @@ const LandingPage = () => {
           </div>
         </header>
 
-        {/* Hero Banner */}
-        <section className="relative overflow-hidden" aria-label="Hero section">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        {/* Hero Banner - Modern Design */}
+        <section className="relative overflow-hidden min-h-[90vh] flex items-center" aria-label="Hero section">
+          {/* Enhanced Background decoration with modern gradients */}
+          <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
+            {/* Animated gradient orbs */}
+            <div className="absolute top-20 left-4 md:left-10 w-64 h-64 md:w-96 md:h-96 bg-gradient-to-r from-brand-primary/40 to-action-primary/40 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-pulse"></div>
+            <div className="absolute top-40 right-4 md:right-10 w-64 h-64 md:w-96 md:h-96 bg-gradient-to-r from-action-primary/40 to-brand-secondary/40 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-pulse animation-delay-2000"></div>
+            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-64 h-64 md:w-96 md:h-96 bg-gradient-to-r from-action-success/30 to-action-primary/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse animation-delay-4000"></div>
+            
+            {/* Grid pattern overlay */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 relative z-10">
             <div className="text-center">
-              <h1 className="text-5xl md:text-6xl font-bold text-text-primary mb-6">
-                {t('hero.title')}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-action-primary to-brand-secondary">
-                  {" "}{t('hero.subtitle')}
+              {/* Badge */}
+              <Badge variant="outline" className="mb-8 px-4 py-2 text-sm font-medium bg-gradient-to-r from-brand-primary/10 to-action-primary/10 border-brand-primary/20 backdrop-blur-sm">
+                <Sparkles className="w-4 h-4 mr-2 text-brand-primary" />
+                {t('hero.subtitle')}
+              </Badge>
+
+              {/* Main Heading with better typography */}
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-text-primary mb-6 leading-tight">
+                <span className="block">{t('hero.title')}</span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-action-primary to-brand-secondary animate-gradient">
+                  {t('hero.subtitle')}
                 </span>
               </h1>
-              <p className="text-xl text-text-secondary mb-8 max-w-3xl mx-auto" role="text">
+              
+              {/* Description with better spacing */}
+              <p className="text-lg md:text-xl lg:text-2xl text-text-secondary mb-12 max-w-4xl mx-auto leading-relaxed" role="text">
                 {t('hero.description')}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              
+              {/* CTA Buttons with modern design using shadcn Button */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Button
+                  asChild
+                  size="lg"
+                  className="group bg-gradient-to-r from-brand-primary to-action-primary hover:from-brand-secondary hover:to-action-primary text-white shadow-2xl hover:shadow-brand-primary/50 hover:scale-105 transition-all duration-300 text-lg font-semibold rounded-2xl px-8 py-6"
+                >
                 <a 
-                  href="https://apps.apple.com/vn/app/rentalshop/id1500115668" 
+                  href="https://apps.apple.com/us/app/anyrent/id6754793592" 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-brand-primary to-action-primary text-text-inverted rounded-xl hover:from-brand-secondary hover:to-action-primary transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
-                  <Download className="w-5 h-5 mr-2" />
+                    <Download className="w-5 h-5 mr-2 group-hover:translate-y-0.5 transition-transform" />
                   {t('hero.downloadApp')}
                 </a>
-                <Link 
-                  href="/login" 
-                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-brand-primary text-brand-primary rounded-xl hover:bg-gradient-to-r hover:from-brand-primary hover:to-action-primary hover:text-text-inverted transition-all duration-200 transform hover:scale-105"
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="group bg-background/80 backdrop-blur-sm border-2 border-brand-primary/30 text-brand-primary hover:bg-gradient-to-r hover:from-brand-primary hover:to-action-primary hover:text-white hover:border-transparent shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 text-lg font-semibold rounded-2xl px-8 py-6"
                 >
-                  <Globe className="w-5 h-5 mr-2" />
+                  <Link href="/login">
+                    <Globe className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
                   {t('hero.tryWebPortal')}
                 </Link>
+                </Button>
+              </div>
+
+              {/* Trust indicators */}
+              <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-text-tertiary">
+                <div className="flex items-center gap-2">
+                  <Check className="w-5 h-5 text-action-success" />
+                  <span>500+ Active Stores</span>
+            </div>
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-action-warning fill-current" />
+                  <span>4.9/5 Rating</span>
+          </div>
+                <div className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-action-primary" />
+                  <span>Secure & Reliable</span>
+                </div>
               </div>
             </div>
           </div>
-          
-          {/* Background decoration */}
-          <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-            <div className="absolute top-20 left-4 md:left-10 w-48 h-48 md:w-72 md:h-72 bg-gradient-to-r from-brand-primary/30 to-action-primary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-            <div className="absolute top-40 right-4 md:right-10 w-48 h-48 md:w-72 md:h-72 bg-gradient-to-r from-action-primary/30 to-brand-secondary/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-            <div className="absolute -bottom-8 left-4 md:left-20 w-48 h-48 md:w-72 md:h-72 bg-gradient-to-r from-action-warning/30 to-action-success/30 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
-          </div>
         </section>
 
-      {/* App Download Section */}
-      <section id="download" className="py-20 bg-bg-card" aria-label="Download section">
+      {/* App Download Section - Modern Design */}
+      <section id="download" className="py-32 bg-gradient-to-b from-bg-card to-bg-secondary relative overflow-hidden" aria-label="Download section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-20">
+            <Badge variant="outline" className="mb-6 px-4 py-2 text-sm font-medium bg-gradient-to-r from-brand-primary/10 to-action-primary/10 border-brand-primary/20 backdrop-blur-sm">
+              <Smartphone className="w-4 h-4 mr-2 text-brand-primary" />
+              Platforms
+            </Badge>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary mb-6">
               {t('download.title')}
             </h2>
-            <p className="text-xl text-text-secondary">
+            <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
               {t('download.description')}
             </p>
           </div>
@@ -287,94 +331,133 @@ const LandingPage = () => {
             </div>
             
             <div className="text-center">
-              <div className="bg-gradient-to-br from-bg-secondary to-bg-tertiary rounded-3xl p-8 shadow-xl">
-                <div className="w-full flex items-center justify-center">
+              <Card className="bg-gradient-to-br from-card/90 to-muted/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border-border/50 relative overflow-hidden group hover:shadow-brand-primary/20 transition-all duration-500">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/5 to-action-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <CardContent className="relative z-10 p-0">
+                  <div className="w-full flex items-center justify-center mb-8">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/20 to-action-primary/20 rounded-3xl blur-2xl scale-110"></div>
                   <Image 
                     src="/anyrent-iphone-splashscreen.jpg"
                     alt="AnyRent phần mềm quản lý cửa hàng cho thuê trên iPhone - Hệ thống quản lý cho thuê di động"
                     width={288}
                     height={576}
                     priority
-                    className="rounded-3xl shadow-2xl border border-border"
+                        className="relative rounded-3xl shadow-2xl border border-border/50 transform group-hover:scale-105 transition-transform duration-500"
                   />
+                    </div>
                 </div>
                 <div className="mt-8">
+                    <Button
+                      asChild
+                      size="lg"
+                      className="group/btn w-full bg-gradient-to-r from-brand-primary to-action-primary hover:from-brand-secondary hover:to-action-primary text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-semibold rounded-2xl"
+                    >
                   <a 
                     href="https://apps.apple.com/vn/app/rentalshop/id1500115668" 
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full bg-text-primary text-text-inverted py-3 px-6 rounded-xl hover:bg-text-secondary transition-colors flex items-center justify-center"
                   >
-                    <span className="mr-2">📱</span>
+                        <Download className="w-5 h-5 mr-2 group-hover/btn:translate-y-0.5 transition-transform" />
                     {t('download.downloadOnAppStore')}
                   </a>
+                    </Button>
                 </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
       </section>
 
-        {/* Features Section */}
-        <section id="features" className="py-20 bg-bg-secondary" aria-label="Features section">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-text-primary mb-4">
+        {/* Features Section - Modern Glassmorphism Design */}
+        <section id="features" className="py-32 bg-gradient-to-b from-bg-secondary via-bg-card to-bg-secondary relative overflow-hidden" aria-label="Features section">
+          {/* Background decoration */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-primary/5 rounded-full filter blur-3xl"></div>
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-action-primary/5 rounded-full filter blur-3xl"></div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="text-center mb-20">
+            <Badge variant="outline" className="mb-6 px-4 py-2 text-sm font-medium bg-gradient-to-r from-brand-primary/10 to-action-primary/10 border-brand-primary/20 backdrop-blur-sm">
+              <Sparkles className="w-4 h-4 mr-2 text-brand-primary" />
+              Features
+            </Badge>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary mb-6">
                 {t('features.title')}
               </h2>
-              <p className="text-xl text-text-secondary">
+              <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
                 {t('features.description')}
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-brand-primary/30">
-                <div className="w-12 h-12 bg-gradient-to-br from-brand-primary/20 to-action-primary/20 rounded-xl flex items-center justify-center mb-6">
-                  <BarChart3 className="w-6 h-6 text-brand-primary" />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-brand-primary/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/0 to-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <CardContent className="relative z-10 p-0">
+                  <div className="w-14 h-14 bg-gradient-to-br from-brand-primary/20 to-action-primary/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <BarChart3 className="w-7 h-7 text-brand-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.orderManagement')}</h3>
-                <p className="text-text-secondary">{t('features.orderManagementDesc')}</p>
-              </div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.orderManagement')}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{t('features.orderManagementDesc')}</p>
+                </CardContent>
+              </Card>
               
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-action-success/30">
-                <div className="w-12 h-12 bg-gradient-to-br from-action-success/20 to-emerald-400/20 rounded-xl flex items-center justify-center mb-6">
-                  <Users className="w-6 h-6 text-action-success" />
+              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-action-success/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-action-success/0 to-action-success/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <CardContent className="relative z-10 p-0">
+                  <div className="w-14 h-14 bg-gradient-to-br from-action-success/20 to-emerald-400/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Users className="w-7 h-7 text-action-success" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.customerManagement')}</h3>
-                <p className="text-text-secondary">{t('features.customerManagementDesc')}</p>
-              </div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.customerManagement')}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{t('features.customerManagementDesc')}</p>
+                </CardContent>
+              </Card>
               
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-action-warning/30">
-                <div className="w-12 h-12 bg-gradient-to-br from-action-warning/20 to-amber-400/20 rounded-xl flex items-center justify-center mb-6">
-                  <Clock className="w-6 h-6 text-action-warning" />
+              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-action-warning/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-action-warning/0 to-action-warning/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <CardContent className="relative z-10 p-0">
+                  <div className="w-14 h-14 bg-gradient-to-br from-action-warning/20 to-amber-400/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Clock className="w-7 h-7 text-action-warning" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.calendarScheduling')}</h3>
-                <p className="text-text-secondary">{t('features.calendarSchedulingDesc')}</p>
-              </div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.calendarScheduling')}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{t('features.calendarSchedulingDesc')}</p>
+                </CardContent>
+              </Card>
             
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-action-primary/30">
-                <div className="w-12 h-12 bg-gradient-to-br from-action-primary/20 to-blue-500/20 rounded-xl flex items-center justify-center mb-6">
-                  <DollarSign className="w-6 h-6 text-action-primary" />
+              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-action-primary/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-action-primary/0 to-action-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <CardContent className="relative z-10 p-0">
+                  <div className="w-14 h-14 bg-gradient-to-br from-action-primary/20 to-blue-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <DollarSign className="w-7 h-7 text-action-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.financialReports')}</h3>
-                <p className="text-text-secondary">{t('features.financialReportsDesc')}</p>
-              </div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.financialReports')}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{t('features.financialReportsDesc')}</p>
+                </CardContent>
+              </Card>
             
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-action-danger/30">
-                <div className="w-12 h-12 bg-gradient-to-br from-action-danger/20 to-red-500/20 rounded-xl flex items-center justify-center mb-6">
-                  <AlertTriangle className="w-6 h-6 text-action-danger" />
+              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-action-danger/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-action-danger/0 to-action-danger/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <CardContent className="relative z-10 p-0">
+                  <div className="w-14 h-14 bg-gradient-to-br from-action-danger/20 to-red-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <AlertTriangle className="w-7 h-7 text-action-danger" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.duplicatePrevention')}</h3>
-                <p className="text-text-secondary">{t('features.duplicatePreventionDesc')}</p>
-              </div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.duplicatePrevention')}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{t('features.duplicatePreventionDesc')}</p>
+                </CardContent>
+              </Card>
             
-              <div className="bg-bg-card rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-border hover:border-brand-secondary/30">
-                <div className="w-12 h-12 bg-gradient-to-br from-brand-secondary/20 to-blue-400/20 rounded-xl flex items-center justify-center mb-6">
-                  <Sparkles className="w-6 h-6 text-brand-secondary" />
+              <Card className="group bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border-border/50 hover:border-brand-secondary/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-secondary/0 to-brand-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <CardContent className="relative z-10 p-0">
+                  <div className="w-14 h-14 bg-gradient-to-br from-brand-secondary/20 to-blue-400/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Sparkles className="w-7 h-7 text-brand-secondary" />
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">{t('features.multiPlatform')}</h3>
-                <p className="text-text-secondary">{t('features.multiPlatformDesc')}</p>
-              </div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">{t('features.multiPlatform')}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{t('features.multiPlatformDesc')}</p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
@@ -467,14 +550,22 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Why Choose Us Section */}
-      <section className="py-20 bg-bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-text-primary mb-4">
+      {/* Why Choose Us Section - Modern Design */}
+      <section className="py-32 bg-gradient-to-b from-bg-secondary via-bg-card to-bg-secondary relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-action-primary/5 rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-brand-primary/5 rounded-full filter blur-3xl"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-20">
+            <Badge variant="outline" className="mb-6 px-4 py-2 text-sm font-medium bg-gradient-to-r from-brand-primary/10 to-action-primary/10 border-brand-primary/20 backdrop-blur-sm">
+              <Star className="w-4 h-4 mr-2 text-brand-primary" />
+              Why Choose Us
+            </Badge>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary mb-6">
               {t('whyChoose.title')}
             </h2>
-            <p className="text-xl text-text-secondary">
+            <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
               {t('whyChoose.description')}
             </p>
           </div>
@@ -523,20 +614,21 @@ const LandingPage = () => {
             </div>
             
             <div className="relative">
-              <div className="bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary rounded-3xl p-8 text-text-inverted shadow-2xl relative overflow-hidden">
+              <div className="bg-gradient-to-br from-brand-primary via-action-primary to-brand-secondary rounded-3xl p-10 text-text-inverted shadow-2xl relative overflow-hidden group hover:shadow-brand-primary/50 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]"></div>
                 <div className="text-center relative z-10">
-                  <div className="flex items-center justify-center mb-2">
-                    <Zap className="w-8 h-8 mr-2 text-yellow-300" />
-                    <div className="text-6xl font-bold">500+</div>
+                  <div className="flex items-center justify-center mb-4">
+                    <Zap className="w-10 h-10 mr-3 text-yellow-300 animate-pulse" />
+                    <div className="text-7xl font-extrabold bg-gradient-to-r from-white to-yellow-200 bg-clip-text text-transparent">500+</div>
                   </div>
-                  <div className="text-xl mb-8 font-semibold">{t('whyChoose.activeStores')}</div>
-                  <div className="flex justify-center space-x-2 mb-4">
+                  <div className="text-2xl mb-10 font-bold">{t('whyChoose.activeStores')}</div>
+                  <div className="flex justify-center space-x-2 mb-6">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-6 h-6 fill-yellow-300 text-yellow-300" />
+                      <Star key={star} className="w-7 h-7 fill-yellow-300 text-yellow-300" />
                     ))}
                   </div>
-                  <div className="text-sm font-semibold">{t('whyChoose.rating')}</div>
+                  <div className="text-lg font-semibold">{t('whyChoose.rating')}</div>
                 </div>
               </div>
             </div>
@@ -599,74 +691,91 @@ const Stats = () => {
 const Testimonials = () => {
   const t = useTranslations('landing.testimonials')
   return (
-    <section className="py-20 bg-bg-card" aria-label="Testimonials section">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-text-primary mb-4">
+    <section className="py-32 bg-gradient-to-b from-bg-card to-bg-secondary relative overflow-hidden" aria-label="Testimonials section">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-action-primary/5 rounded-full filter blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-brand-primary/5 rounded-full filter blur-3xl"></div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-gradient-to-r from-brand-primary/10 to-action-primary/10 backdrop-blur-sm border border-brand-primary/20 rounded-full">
+            <Star className="w-4 h-4 text-brand-primary" />
+            <span className="text-sm font-medium text-brand-primary">Testimonials</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary mb-6">
             {t('title')}
           </h2>
-          <p className="text-xl text-text-secondary">
+          <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
             {t('description')}
           </p>
         </div>
         
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-bg-secondary rounded-2xl p-8">
-            <div className="flex items-center mb-4">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="w-5 h-5 text-action-warning fill-current" />
-              ))}
-            </div>
-            <p className="text-text-secondary mb-4">
-              "AnyRent has helped me manage my rental business efficiently. The interface is easy to use and features are comprehensive."
-            </p>
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-brand-primary rounded-full flex items-center justify-center text-text-inverted font-bold">
-                J
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="group bg-bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border border-border/50 hover:border-brand-primary/50 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/0 to-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center mb-6">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-6 h-6 text-action-warning fill-current" />
+                ))}
               </div>
-              <div className="ml-3">
-                <div className="font-semibold text-text-primary">John Smith</div>
-                <div className="text-sm text-text-tertiary">Rental Shop Owner</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-bg-secondary rounded-2xl p-8">
-            <div className="flex items-center mb-4">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="w-5 h-5 text-action-warning fill-current" />
-              ))}
-            </div>
-            <p className="text-text-secondary mb-4">
-              "The order management feature is very convenient. I can track all orders easily and manage my inventory effectively."
-            </p>
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-action-success rounded-full flex items-center justify-center text-text-inverted font-bold">
-                S
-              </div>
-              <div className="ml-3">
-                <div className="font-semibold text-text-primary">Sarah Johnson</div>
-                <div className="text-sm text-text-tertiary">Shop Manager</div>
+              <p className="text-text-secondary mb-6 text-lg leading-relaxed">
+                "AnyRent has helped me manage my rental business efficiently. The interface is easy to use and features are comprehensive."
+              </p>
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-brand-primary to-action-primary rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg">
+                  J
+                </div>
+                <div className="ml-4">
+                  <div className="font-bold text-text-primary text-lg">John Smith</div>
+                  <div className="text-sm text-text-tertiary">Rental Shop Owner</div>
+                </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-bg-secondary rounded-2xl p-8">
-            <div className="flex items-center mb-4">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="w-5 h-5 text-action-warning fill-current" />
-              ))}
-            </div>
-            <p className="text-text-secondary mb-4">
-              "The mobile app is very convenient. I can manage my shop from anywhere and the interface is intuitive."
-            </p>
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-action-primary rounded-full flex items-center justify-center text-text-inverted font-bold">
-                M
+          <div className="group bg-bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border border-border/50 hover:border-action-success/50 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-action-success/0 to-action-success/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center mb-6">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-6 h-6 text-action-warning fill-current" />
+                ))}
               </div>
-              <div className="ml-3">
-                <div className="font-semibold text-text-primary">Mike Wilson</div>
-                <div className="text-sm text-text-tertiary">Business Owner</div>
+              <p className="text-text-secondary mb-6 text-lg leading-relaxed">
+                "The order management feature is very convenient. I can track all orders easily and manage my inventory effectively."
+              </p>
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-action-success to-emerald-500 rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg">
+                  S
+                </div>
+                <div className="ml-4">
+                  <div className="font-bold text-text-primary text-lg">Sarah Johnson</div>
+                  <div className="text-sm text-text-tertiary">Shop Manager</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="group bg-bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 border border-border/50 hover:border-action-primary/50 relative overflow-hidden md:col-span-2">
+            <div className="absolute inset-0 bg-gradient-to-br from-action-primary/0 to-action-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center mb-6">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-6 h-6 text-action-warning fill-current" />
+                ))}
+              </div>
+              <p className="text-text-secondary mb-6 text-lg leading-relaxed">
+                "The mobile app is very convenient. I can manage my shop from anywhere and the interface is intuitive."
+              </p>
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-action-primary to-blue-500 rounded-full flex items-center justify-center text-text-inverted font-bold text-lg shadow-lg">
+                  M
+                </div>
+                <div className="ml-4">
+                  <div className="font-bold text-text-primary text-lg">Mike Wilson</div>
+                  <div className="text-sm text-text-tertiary">Business Owner</div>
+                </div>
               </div>
             </div>
           </div>
@@ -691,7 +800,7 @@ const CTA = () => {
           </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a 
-            href="https://apps.apple.com/vn/app/rentalshop/id1500115668" 
+            href="https://apps.apple.com/us/app/anyrent/id6754793592" 
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center px-8 py-4 bg-bg-card text-brand-primary rounded-xl hover:bg-bg-secondary transition-all duration-200 font-semibold"
@@ -1297,7 +1406,7 @@ const FloatingButtons = () => {
         
         {/* Download App Button */}
         <a 
-          href="https://apps.apple.com/vn/app/rentalshop/id1500115668" 
+          href="https://apps.apple.com/us/app/anyrent/id6754793592" 
           target="_blank"
           rel="noopener noreferrer"
           className="bg-text-primary text-text-inverted p-3 rounded-full shadow-lg hover:bg-text-secondary transition-colors"
