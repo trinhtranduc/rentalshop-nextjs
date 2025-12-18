@@ -306,7 +306,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         </Card>
 
         {/* Links */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 space-y-3 text-center">
           {!isAdmin && (
             <p className="text-sm text-gray-600">
               {t('login.noAccount')}{" "}
@@ -319,10 +319,31 @@ const LoginForm: React.FC<LoginFormProps> = ({
               </Button>
             </p>
           )}
+
+          {/* Terms & Privacy Links */}
+          <p className="text-xs text-gray-500">
+            <Button
+              variant="link"
+              type="button"
+              onClick={() => onNavigate?.("/terms")}
+              className="p-0 h-auto text-xs text-gray-500 hover:text-blue-700 hover:underline"
+            >
+              {t('termsOfService')}
+            </Button>
+            <span className="mx-1">•</span>
+            <Button
+              variant="link"
+              type="button"
+              onClick={() => onNavigate?.("/privacy")}
+              className="p-0 h-auto text-xs text-gray-500 hover:text-blue-700 hover:underline"
+            >
+              {t('privacyPolicy')}
+            </Button>
+          </p>
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center">
+        <div className="mt-6 text-center">
           <p className="text-xs text-gray-500">
             © {new Date().getFullYear()} {isAdmin ? "AnyRent Admin" : "AnyRent"}. Crafted with{" "}
             <span className="text-red-500">❤</span> by AnyRent
