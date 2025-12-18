@@ -19,7 +19,7 @@ export default function TermsPage() {
           <LanguageSwitcher variant="compact" />
         </div>
         <p className="text-text-secondary mb-8">
-          {isVi ? 'Cập nhật lần cuối: 29 tháng 11, 2025' : 'Last updated: November 29, 2025'}
+          {isVi ? 'Cập nhật lần cuối: 18 tháng 12, 2025' : 'Last updated: December 18, 2025'}
         </p>
 
         <div className="bg-bg-card border border-border rounded-xl p-6 space-y-8">
@@ -49,15 +49,20 @@ export default function TermsPage() {
             </h2>
             <div className="space-y-2 text-text-secondary">
               <p>
-              {isVi
+                {isVi
                   ? 'AnyRent là ứng dụng hỗ trợ bạn quản lý cửa hàng cho thuê và bán hàng, bao gồm quản lý sản phẩm, khách hàng, đơn hàng và doanh thu.'
                   : 'AnyRent is a software application that helps you manage your rental and sales shop, including products, customers, orders, and revenue.'}
-            </p>
-            <p className="text-text-tertiary text-sm">
-              {isVi
+              </p>
+              <p className="text-text-tertiary text-sm">
+                {isVi
                   ? 'AnyRent không trực tiếp xử lý thanh toán, vận chuyển hay hợp đồng thuê giữa bạn và khách hàng của bạn; mọi giao dịch thực tế hoàn toàn do bạn và khách hàng của bạn thực hiện và chịu trách nhiệm.'
                   : 'AnyRent does not directly handle payments, shipping, or rental contracts between you and your customers; all real-world transactions are carried out and managed solely by you and your customers.'}
-            </p>
+              </p>
+              <p className="text-text-tertiary text-sm">
+                {isVi
+                  ? 'AnyRent chỉ là công cụ phần mềm (SaaS) phục vụ cho hoạt động nội bộ của cửa hàng bạn; AnyRent không phải là sàn thương mại điện tử, dịch vụ môi giới hay bên trung gian trong bất kỳ giao dịch thuê/bán nào giữa bạn và khách hàng của bạn. Mọi tranh chấp, khiếu nại, bồi thường, bảo hành hoặc nghĩa vụ pháp lý liên quan đến việc thuê/bán hàng hóa/dịch vụ là vấn đề riêng giữa bạn và khách hàng của bạn.'
+                  : 'AnyRent is solely a software (SaaS) tool for your internal shop operations; it is not a marketplace, brokerage service, or intermediary in any rental or sales transaction between you and your customers. Any disputes, claims, compensations, warranties, or legal obligations related to the rental or sale of goods or services are solely between you and your customers.'}
+              </p>
             </div>
           </section>
 
@@ -111,6 +116,11 @@ export default function TermsPage() {
                   ? 'Không sao chép, sửa đổi, phân phối, dịch ngược, giải mã hoặc cố gắng trích xuất mã nguồn của ứng dụng.'
                   : 'Do not copy, modify, distribute, reverse engineer, decompile, or attempt to extract the source code of the application.'}
               </li>
+              <li>
+                {isVi
+                  ? 'Không sử dụng AnyRent để quản lý, quảng bá hoặc hỗ trợ cho thuê/bán các hàng hóa hoặc dịch vụ bị pháp luật cấm (ví dụ: vũ khí, ma túy, hàng giả, dịch vụ bất hợp pháp, v.v.).'
+                  : 'Do not use AnyRent to manage, promote, or support the rental or sale of goods or services that are prohibited by law (for example, weapons, drugs, counterfeit goods, or illegal services, etc.).'}
+              </li>
             </ul>
           </section>
 
@@ -149,6 +159,11 @@ export default function TermsPage() {
                   ? 'Bằng việc sử dụng dịch vụ, bạn cho phép tôi sử dụng dữ liệu đó chỉ để vận hành, bảo trì và cải thiện ứng dụng, như được mô tả trong Chính sách Quyền riêng tư.'
                   : 'By using the service, you allow me to use such data solely to operate, maintain, and improve the application, as described in the Privacy Policy.'}
               </p>
+              <p>
+                {isVi
+                  ? 'Bạn chịu hoàn toàn trách nhiệm về tính hợp pháp và độ chính xác của dữ liệu khách hàng mà bạn nhập hoặc import vào hệ thống (bao gồm nhưng không giới hạn ở họ tên, số điện thoại, email, giấy tờ tùy thân và các thông tin nhận dạng khác). Bạn cam kết chỉ sử dụng dữ liệu cá nhân khi đã có cơ sở pháp lý phù hợp (ví dụ: sự đồng ý của khách hàng hoặc căn cứ pháp luật cho phép), và tự chịu trách nhiệm nếu nhập sai, cập nhật sai hoặc sử dụng dữ liệu cho mục đích trái pháp luật.'
+                  : 'You are fully responsible for the lawfulness and accuracy of any customer data that you enter or import into the system (including but not limited to names, phone numbers, email addresses, identity documents, and other identifying information). You agree to only use personal data where you have an appropriate legal basis (for example, customer consent or another lawful ground), and you are solely responsible for any incorrect entries, incorrect updates, or unlawful use of such data.'}
+              </p>
             </div>
           </section>
 
@@ -167,6 +182,11 @@ export default function TermsPage() {
                 {isVi
                   ? 'Tôi không chịu trách nhiệm đối với bất kỳ thiệt hại gián tiếp, đặc biệt, ngẫu nhiên hoặc hậu quả nào phát sinh từ việc bạn sử dụng hoặc không thể sử dụng ứng dụng.'
                   : 'I am not liable for any indirect, special, incidental, or consequential damages arising from your use or inability to use the application.'}
+              </li>
+              <li>
+                {isVi
+                  ? 'Bạn chịu hoàn toàn trách nhiệm về độ chính xác của dữ liệu kinh doanh trong hệ thống (giá, tồn kho, lịch thuê/trả, chiết khấu, cấu hình gói dịch vụ, v.v.). Tôi không chịu trách nhiệm đối với tình trạng overbooking, mất doanh thu, sai lệch báo cáo hoặc bất kỳ thiệt hại kinh doanh nào khác phát sinh từ việc nhập sai dữ liệu, cập nhật sai hoặc cấu hình sai trong tài khoản của bạn.'
+                  : 'You are fully responsible for the accuracy of the business data in the system (prices, stock levels, rental/return schedules, discounts, plan configuration, etc.). I am not liable for overbooking, loss of revenue, incorrect reports, or any other business damages resulting from incorrect data entry, incorrect updates, or misconfiguration within your account.'}
               </li>
             </ul>
           </section>
