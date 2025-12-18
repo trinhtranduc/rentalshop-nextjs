@@ -471,23 +471,23 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
         });
 
         const mappedItem = {
-          id: item.id,
-          productId: item.productId || 0,
-          product: {
-            id: item.product?.id || item.productId || 0,
+        id: item.id,
+        productId: item.productId || 0,
+        product: {
+          id: item.product?.id || item.productId || 0,
             // Use productName from API response (snapshot) if product object is missing
             name: productName,
-            description: item.product?.description || '',
+          description: item.product?.description || '',
             images: productImages,
             barcode: productBarcode,
-            rentPrice: item.unitPrice || 0,
-            deposit: item.deposit ?? 0,
-            // Store outletStock if available
-            outletStock: item.product?.outletStock || [],
-            stock: item.product?.stock,
-            available: item.product?.available,
-            renting: item.product?.renting,
-          },
+          rentPrice: item.unitPrice || 0,
+          deposit: item.deposit ?? 0,
+          // Store outletStock if available
+          outletStock: item.product?.outletStock || [],
+          stock: item.product?.stock,
+          available: item.product?.available,
+          renting: item.product?.renting,
+        },
         quantity: item.quantity || 1,
         unitPrice: item.unitPrice || 0,
         totalPrice: item.totalPrice || 0,

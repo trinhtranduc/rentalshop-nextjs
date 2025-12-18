@@ -57,8 +57,6 @@
     "totalOutlets": "Tổng số cửa hàng",
     "stockEntries": "Số lượng phân bổ",
     "stockRequired": "Giá trị tồn kho bắt buộc",
-    "noOutletsAvailable": "Chưa có cửa hàng",
-    "needOutletFirst": "Bạn cần tạo ít nhất một cửa hàng trước khi thêm sản phẩm. Vui lòng liên hệ quản trị viên.",
     "needOutletMessage": "Bạn cần tạo ít nhất một cửa hàng trước khi có thể thêm sản phẩm. Sản phẩm phải được phân bổ cho các cửa hàng cụ thể để quản lý tồn kho.",
     "contactAdmin": "Vui lòng liên hệ quản trị viên để thiết lập cửa hàng cho doanh nghiệp của bạn.",
     "creating": "Đang tạo..."

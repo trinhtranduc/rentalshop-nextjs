@@ -272,8 +272,9 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
   const orderItems = order.orderItems || [];
   
   // Get shop name from outlet or merchant
-  const shopName = outlet?.name || merchant?.name || 'CUA HANG';
-  const phone = (outlet as any)?.phone || merchant?.email || '';
+  const shopName = outlet?.name || merchant?.name || '';
+  // Get phone from outlet or merchant (not email)
+  const phone = (outlet as any)?.phone || '';
   const address = outlet?.address || '';
 
   // Use centralized date formatting hooks (DRY principle)
@@ -361,7 +362,9 @@ const ReceiptPreviewContent: React.FC<ReceiptPreviewContentProps> = ({
       {/* Products */}
       <div className="mb-2">------------------------------------------------</div>
       {orderItems.map((item: any, index: number) => {
-        const productName = item.product?.name || `Product ${index + 1}`;
+        // Get product name: prioritize snapshot (productName) as it's the name at order creation time
+        // Then fallback to product object name
+        const productName = item.productName || item.product?.name || '';
         const note = item.notes || '';
         const quantity = item.quantity || 1;
         const price = item.unitPrice || 0;

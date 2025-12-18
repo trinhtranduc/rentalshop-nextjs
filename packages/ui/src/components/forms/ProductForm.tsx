@@ -367,7 +367,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
     // Check if outlets are available
     if (outlets.length === 0) {
-      newErrors.outletStock = tv('fields.outletStock.noOutletsAvailable');
+      // No outlets available - validation will be handled by UI warning
       return false;
     }
 
@@ -924,18 +924,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
               {/* Only show cost price input if user has products.manage permission */}
               {canManageProducts && (
-                <div>
-                  <NumericInput
-                    label={t('fields.costPrice')}
-                    value={formData.costPrice}
-                    onChange={(value) => handleInputChange('costPrice', value)}
-                    placeholder="0.00"
-                    error={!!errors.costPrice}
-                    allowDecimals={true}
-                    maxDecimalPlaces={2}
-                  />
-                  {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
-                </div>
+              <div>
+                <NumericInput
+                  label={t('fields.costPrice')}
+                  value={formData.costPrice}
+                  onChange={(value) => handleInputChange('costPrice', value)}
+                  placeholder="0.00"
+                  error={!!errors.costPrice}
+                  allowDecimals={true}
+                  maxDecimalPlaces={2}
+                />
+                {errors.costPrice && <p className="text-sm text-red-500">{errors.costPrice}</p>}
+              </div>
               )}
             </div>
 
@@ -969,18 +969,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </p>
             </div>
             
-            {outlets.length === 0 ? (
-              <div className="text-center py-8">
-                <Warehouse className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">{t('inventory.noOutletsAvailable')}</h3>
-                <p className="text-muted-foreground mb-4">
-                  {t('inventory.needOutletMessage')}
-                </p>
-                <p className="text-sm text-red-500">
-                  {t('inventory.contactAdmin')}
-                </p>
-              </div>
-            ) : (
+            {outlets.length > 0 && (
               <>
                 <Table>
                   <TableHeader>
