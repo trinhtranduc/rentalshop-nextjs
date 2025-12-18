@@ -561,13 +561,13 @@ export const UserForm: React.FC<UserFormProps> = ({
               {user.lastLoginAt && (
                 <div>
                 <span className="font-medium text-text-primary">{t('fields.lastLogin')}:</span>
-                  <span className="ml-2 text-muted-foreground">
+                <span className="ml-2 text-muted-foreground">
                     {useFormattedDateTime(user.lastLoginAt)}
                   </span>
                 </div>
               )}
-            </div>
-            </div>
+          </div>
+        </div>
           )}
 
           {/* Action Buttons */}

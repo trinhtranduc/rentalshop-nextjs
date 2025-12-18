@@ -56,12 +56,12 @@ export const OrderProductsList: React.FC<OrderProductsListProps> = ({ order }) =
                       
                       return (
                         <>
-                          <div className="font-medium text-gray-900 text-sm">
+                    <div className="font-medium text-gray-900 text-sm">
                             {productName}
-                          </div>
-                          <div className="text-xs text-gray-500">
+                    </div>
+                    <div className="text-xs text-gray-500">
                             {productName ? `${t('items.product')}: ${productName}` : ''}
-                          </div>
+                    </div>
                         </>
                       );
                     })()}
