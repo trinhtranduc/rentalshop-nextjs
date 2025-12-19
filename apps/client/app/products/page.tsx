@@ -318,10 +318,8 @@ export default function ProductsPage() {
   // Handle product creation from add dialog
   const handleProductCreated = useCallback(async (productData: any, files?: File[]) => {
     try {
-      // Use createProductWithFiles if files are provided, otherwise use createProduct
-      const response = files && files.length > 0
-        ? await productsApi.createProductWithFiles(productData, files)
-        : await productsApi.createProduct(productData);
+      // Always use createProduct - it now always uses multipart form data (unified format)
+      const response = await productsApi.createProduct(productData, files);
       
       if (response.success) {
         toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
