@@ -223,11 +223,40 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     let productDataFromRequest: any = {};
     let uploadedFiles: string[] = [];
 
-    // Check if request contains multipart form data
-    if (contentType.includes('multipart/form-data')) {
+    // Standard approach: Detect request type and parse body once
+    // Request body can only be read once, so we determine type first
+    const isMultipartByHeader = contentType.includes('multipart/form-data') || contentType.includes('boundary=');
+    
+    let formData: FormData | null = null;
+    let isMultipart = false;
+    
+    if (isMultipartByHeader) {
+      // Content-Type indicates multipart - parse as formData
+      formData = await request.formData();
+      isMultipart = formData.has('data');
+    } else {
+      // Content-Type doesn't indicate multipart
+      // Try parsing as formData first (handles cases where Content-Type header is incorrect)
+      // If formData parsing succeeds and has 'data' field, it's multipart
+      try {
+        formData = await request.formData();
+        isMultipart = formData.has('data');
+        // If formData was parsed but doesn't have 'data', it's invalid
+        // Body is already consumed, so we can't parse as JSON
+        if (!isMultipart) {
+          return NextResponse.json(
+            ResponseBuilder.error('INVALID_REQUEST_FORMAT'),
+            { status: 400 }
+          );
+        }
+      } catch (e) {
+        // Not formData - will parse as JSON below
+        formData = null;
+      }
+    }
+    
+    if (isMultipart && formData) {
       console.log('🔍 Processing multipart form data with file uploads');
-      
-      const formData = await request.formData();
       
       // Extract JSON data from form fields
       const jsonDataStr = formData.get('data') as string;
@@ -314,8 +343,9 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     } else {
       // Handle regular JSON request
       console.log('🔍 Processing JSON request');
-      const body = await request.json();
-      productDataFromRequest = body;
+      // Only parse JSON if formData was not parsed (body not consumed)
+      const body = formData ? null : await request.json();
+      productDataFromRequest = body || {};
       
       // Normalize images to array of strings
       if (productDataFromRequest.images !== undefined) {
