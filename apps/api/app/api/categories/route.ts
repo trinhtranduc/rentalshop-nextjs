@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthRoles } from '@rentalshop/auth';
+import { withPermissions } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { categoriesQuerySchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/categories
  * Get categories with filtering and pagination
- * REFACTORED: Now uses validation schema and db.categories.search()
+ * REFACTORED: Now uses permission-based auth (reads from ROLE_PERMISSIONS)
+ * 
+ * Authorization: All roles with 'products.view' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * - Categories are part of products management, so use products.view permission
  */
-export const GET = withAuthRoles()(async (request: NextRequest, { user, userScope }) => {
+export const GET = withPermissions(['products.view'])(async (request: NextRequest, { user, userScope }) => {
   console.log(`🔍 GET /api/categories - User: ${user.email} (${user.role})`);
   
   try {
@@ -17,18 +22,18 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
     const hasSearchParams = searchParams.toString().length > 0;
     console.log('Search params:', Object.fromEntries(searchParams.entries()), 'Has params:', hasSearchParams);
     
-    // Determine merchantId based on role
+    // Determine merchantId based on user scope (permission-based, not role-based)
     let filterMerchantId: number | undefined;
     
-    if (user.role === USER_ROLE.ADMIN) {
-      // Admin can see any merchant's categories or all categories
+    if (userScope.canAccessSystem) {
+      // System admins can see any merchant's categories or all categories
       filterMerchantId = undefined;
-    } else if (user.role === USER_ROLE.MERCHANT || user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    } else {
       // Non-admin users restricted to their merchant
       filterMerchantId = userScope.merchantId;
       
-      // For outlet users, get merchant from outlet
-      if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId && !filterMerchantId) {
+      // For outlet users, get merchant from outlet if merchantId is not in scope
+      if (userScope.outletId && !filterMerchantId) {
         const outlet = await db.outlets.findById(userScope.outletId);
         if (outlet) {
           filterMerchantId = outlet.merchantId;
@@ -81,12 +86,12 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
       q, search, queryMerchantId, isActive, sortBy, sortOrder, page, limit
     });
 
-    // Override merchantId from query if admin
-    if (user.role === USER_ROLE.ADMIN && queryMerchantId) {
+    // Override merchantId from query if system admin
+    if (userScope.canAccessSystem && queryMerchantId) {
       filterMerchantId = queryMerchantId;
     }
 
-    console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'for user role:', user.role);
+    console.log('🔍 Using merchantId for filtering:', filterMerchantId, 'canAccessSystem:', userScope.canAccessSystem);
 
     // Build search filters with role-based access control
     const searchFilters = {
@@ -130,8 +135,19 @@ export const GET = withAuthRoles()(async (request: NextRequest, { user, userScop
 /**
  * POST /api/categories
  * Create a new category
+ * REFACTORED: Now uses permission-based auth (reads from ROLE_PERMISSIONS)
+ * 
+ * Authorization: All roles with 'products.manage' permission can access
+ * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * - Categories are part of products management, so use products.manage permission
+ * 
+ * Benefits of permission-based auth:
+ * - DRY: Single source of truth (ROLE_PERMISSIONS)
+ * - Maintainable: Change permissions in one place, all endpoints update automatically
+ * - Flexible: Easy to add/remove roles without updating multiple endpoints
  */
-export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
+export const POST = withPermissions(['products.manage'])(async (request: NextRequest, { user, userScope }) => {
   console.log('🚀 POST /api/categories - Starting category creation...');
   
   try {
@@ -145,8 +161,20 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
       outletId: user.outletId
     });
 
-    // Check if user can manage categories
-    if (!userScope.merchantId) {
+    // Determine merchantId based on user scope (permission-based, not role-based)
+    let merchantId: number | undefined = userScope.merchantId;
+    
+    // For outlet users, get merchant from outlet if merchantId is not in scope
+    if (userScope.outletId && !merchantId) {
+      const outlet = await db.outlets.findById(userScope.outletId);
+      if (outlet) {
+        merchantId = outlet.merchantId;
+        console.log('✅ Got merchantId from outlet:', merchantId);
+      }
+    }
+
+    // Check if user can manage categories (must have merchantId)
+    if (!merchantId) {
       console.log('❌ User has no merchantId - merchant access required');
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_ACCESS_REQUIRED'),
@@ -171,11 +199,11 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
     console.log('✅ Validation passed - proceeding with category creation');
 
     // Check if category name already exists for this merchant
-    console.log('🔍 Checking for existing category with name:', name.trim(), 'for merchant:', userScope.merchantId);
+    console.log('🔍 Checking for existing category with name:', name.trim(), 'for merchant:', merchantId);
     
     const existingCategory = await db.categories.findFirst({
       name: name.trim(),
-      merchantId: userScope.merchantId,
+      merchantId: merchantId,
       isActive: true
     });
 
@@ -193,7 +221,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (
     // Note: ID will be auto-generated by Prisma @default(autoincrement())
     const categoryData: any = {
       name: name.trim(),
-      merchantId: userScope.merchantId,
+      merchantId: merchantId,
       isActive: true
     };
 
