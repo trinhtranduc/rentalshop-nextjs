@@ -170,33 +170,26 @@ export const productsApi = {
   /**
    * Create a new product
    */
-  async createProduct(productData: ProductCreateInput): Promise<ApiResponse<Product>> {
-    const response = await authenticatedFetch(apiUrls.products.create, {
-      method: 'POST',
-      body: JSON.stringify(productData),
-    });
-    return await parseApiResponse<Product>(response);
-  },
-
   /**
-   * Create a new product with multipart form data (includes file uploads)
+   * Create a new product
+   * ALWAYS uses multipart form data for consistency between mobile and frontend
+   * - Product data is sent as JSON string in 'data' field
+   * - Files (if any) are sent in 'images' field
+   * - Works even when no files are provided (empty images array)
    */
-  async createProductWithFiles(productData: ProductCreateInput, files?: File[]): Promise<ApiResponse<Product>> {
-    if (!files || files.length === 0) {
-      // If no files, fall back to regular JSON request
-      return this.createProduct(productData);
-    }
-
-    // Create multipart form data
+  async createProduct(productData: ProductCreateInput, files?: File[]): Promise<ApiResponse<Product>> {
+    // Always use multipart form data for consistency
     const formData = new FormData();
     
     // Add product data as JSON string
     formData.append('data', JSON.stringify(productData));
     
-    // Add files
-    files.forEach(file => {
-      formData.append('images', file);
-    });
+    // Add files if provided
+    if (files && files.length > 0) {
+      files.forEach(file => {
+        formData.append('images', file);
+      });
+    }
 
     // Send multipart request
     const response = await authenticatedFetch(apiUrls.products.create, {
@@ -206,6 +199,14 @@ export const productsApi = {
     });
     
     return await parseApiResponse<Product>(response);
+  },
+
+  /**
+   * @deprecated Use createProduct instead - it now always uses multipart form data
+   * Kept for backward compatibility
+   */
+  async createProductWithFiles(productData: ProductCreateInput, files?: File[]): Promise<ApiResponse<Product>> {
+    return this.createProduct(productData, files);
   },
 
   /**

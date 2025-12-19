@@ -100,10 +100,8 @@ export default function ProductAddPage() {
 
   const handleProductCreated = async (productData: ProductCreateInput, files?: File[]) => {
     try {
-      // Call the appropriate API method based on whether files are provided
-      const response = files && files.length > 0 
-        ? await productsApi.createProductWithFiles(productData, files)
-        : await productsApi.createProduct(productData);
+      // Always use createProduct - it now always uses multipart form data (unified format)
+      const response = await productsApi.createProduct(productData, files);
       
       // Redirect to the new product view page
       if (response.data?.id) {

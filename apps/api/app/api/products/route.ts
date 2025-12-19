@@ -203,7 +203,9 @@ function validateImage(file: File): { isValid: boolean; error?: string } {
 /**
  * POST /api/products
  * Create a new product using simplified database API
- * SUPPORTS: Both JSON payload and multipart FormData with file uploads
+ * UNIFIED FORMAT: Always expects multipart FormData (consistent between mobile and frontend)
+ * - Product data: JSON string in 'data' field
+ * - Files (optional): File objects in 'images' field
  * REFACTORED: Now uses permission-based auth (reads from ROLE_PERMISSIONS)
  * 
  * Authorization: All roles with 'products.manage' permission can access
@@ -218,66 +220,38 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
   let uploadedImages: string[] = [];
   
   try {
-    const contentType = request.headers.get('content-type') || '';
+    // UNIFIED APPROACH: Always expect multipart form data
+    // This simplifies the code and ensures consistency between mobile and frontend
+    // Product data is in 'data' field (JSON string), files are in 'images' field
+    
     let parsedResult: any;
     let productDataFromRequest: any = {};
     let uploadedFiles: string[] = [];
 
-    // Standard approach: Detect request type and parse body once
-    // Request body can only be read once, so we determine type first
-    const isMultipartByHeader = contentType.includes('multipart/form-data') || contentType.includes('boundary=');
+    // Parse multipart form data
+    const formData = await request.formData();
     
-    let formData: FormData | null = null;
-    let isMultipart = false;
-    
-    if (isMultipartByHeader) {
-      // Content-Type indicates multipart - parse as formData
-      formData = await request.formData();
-      isMultipart = formData.has('data');
-    } else {
-      // Content-Type doesn't indicate multipart
-      // Try parsing as formData first (handles cases where Content-Type header is incorrect)
-      // If formData parsing succeeds and has 'data' field, it's multipart
-      try {
-        formData = await request.formData();
-        isMultipart = formData.has('data');
-        // If formData was parsed but doesn't have 'data', it's invalid
-        // Body is already consumed, so we can't parse as JSON
-        if (!isMultipart) {
-          return NextResponse.json(
-            ResponseBuilder.error('INVALID_REQUEST_FORMAT'),
-            { status: 400 }
-          );
-        }
-      } catch (e) {
-        // Not formData - will parse as JSON below
-        formData = null;
-      }
+    // Extract JSON data from form fields
+    const jsonDataStr = formData.get('data') as string;
+    if (!jsonDataStr) {
+      return NextResponse.json(
+        ResponseBuilder.error('MISSING_PRODUCT_DATA'),
+        { status: 400 }
+      );
     }
     
-    if (isMultipart && formData) {
-      console.log('🔍 Processing multipart form data with file uploads');
-      
-      // Extract JSON data from form fields
-      const jsonDataStr = formData.get('data') as string;
-      if (!jsonDataStr) {
-        return NextResponse.json(
-          ResponseBuilder.error('MISSING_PRODUCT_DATA'),
-          { status: 400 }
-        );
-      }
-      
-      try {
-        productDataFromRequest = JSON.parse(jsonDataStr);
-      } catch (parseError) {
-        return NextResponse.json(
-          ResponseBuilder.error('INVALID_JSON_DATA'),
-          { status: 400 }
-        );
-      }
-
-      // Handle file uploads
-      const imageFiles = formData.getAll('images') as File[];
+    try {
+      productDataFromRequest = JSON.parse(jsonDataStr);
+    } catch (parseError) {
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_JSON_DATA'),
+        { status: 400 }
+      );
+    }
+    
+    // Handle file uploads (if any)
+    const imageFiles = formData.getAll('images') as File[];
+    if (imageFiles.length > 0) {
       console.log(`🔍 Found ${imageFiles.length} image files`);
       
       for (const file of imageFiles) {
@@ -339,29 +313,6 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         productDataFromRequest.images,
         uploadedFiles
       );
-      
-    } else {
-      // Handle regular JSON request
-      console.log('🔍 Processing JSON request');
-      // Only parse JSON if formData was not parsed (body not consumed)
-      const body = formData ? null : await request.json();
-      productDataFromRequest = body || {};
-      
-      // Normalize images to array of strings
-      if (productDataFromRequest.images !== undefined) {
-        if (Array.isArray(productDataFromRequest.images)) {
-          productDataFromRequest.images = productDataFromRequest.images.filter(Boolean);
-        } else if (typeof productDataFromRequest.images === 'string') {
-          productDataFromRequest.images = productDataFromRequest.images
-            .split(',')
-            .filter(Boolean)
-            .map((url: string) => url.trim());
-        }
-        
-        if (productDataFromRequest.images.length === 0) {
-          delete productDataFromRequest.images;
-        }
-      }
     }
 
     // Validate product data

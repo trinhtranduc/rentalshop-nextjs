@@ -183,9 +183,10 @@ export default function CreateOrderPage() {
   };
 
   // Quick action handlers
-  const handleProductCreated = async (productData: any) => {
+  const handleProductCreated = async (productData: any, files?: File[]) => {
     try {
-      const result = await productsApi.createProduct(productData);
+      // Always use createProduct - it now always uses multipart form data (unified format)
+      const result = await productsApi.createProduct(productData, files);
       if (result.success) {
         toastSuccess(tc('labels.success'), 'Product created successfully');
         // Refresh products list
