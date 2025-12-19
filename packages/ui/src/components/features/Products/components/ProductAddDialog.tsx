@@ -6,11 +6,10 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogDescription,
-  Button
+  DialogDescription
 } from '../../../ui';
 import { ProductAddForm } from './ProductAddForm';
-import type { Category, Outlet, ProductWithDetails } from '@rentalshop/types';
+import type { Category, Outlet } from '@rentalshop/types';
 import { useProductTranslations } from '@rentalshop/hooks';
 
 interface ProductAddDialogProps {
@@ -19,8 +18,9 @@ interface ProductAddDialogProps {
   categories: Category[];
   outlets: Outlet[];
   merchantId: string;
-  onProductCreated?: (product: ProductWithDetails) => void;
+  onProductCreated?: (productData: any, files?: File[]) => void | Promise<void>;
   onError?: (error: any) => void;
+  useMultipartUpload?: boolean; // Enable multipart form data upload for images
 }
 
 export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
@@ -30,21 +30,20 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
   outlets,
   merchantId,
   onProductCreated,
-  onError
+  onError,
+  useMultipartUpload = true // Default to true for file upload support
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const t = useProductTranslations();
-  
-  console.log('🟢 ProductAddDialog: Rendered with open =', open);
 
-  const handleSave = async (productData: any) => {
+  const handleSave = async (productData: any, files?: File[]) => {
     try {
       setIsSubmitting(true);
       
       // Call the parent callback to create the product
       // The parent will handle the API call and show toasts
       if (onProductCreated) {
-        await onProductCreated(productData);
+        await onProductCreated(productData, files);
       }
       
       // Close dialog on success
@@ -86,6 +85,7 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
             merchantId={merchantId}
             onSave={handleSave}
             onCancel={handleCancel}
+            useMultipartUpload={useMultipartUpload}
           />
         </div>
       </DialogContent>

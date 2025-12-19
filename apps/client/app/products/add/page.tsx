@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   PageWrapper,
@@ -9,7 +9,8 @@ import {
   PageContent,
   ProductsLoading,
   Button,
-  LoadingIndicator
+  LoadingIndicator,
+  ProductAddDialog
 } from '@rentalshop/ui';
 import { useAuth, useProductTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 import { 
@@ -18,7 +19,6 @@ import {
   outletsApi
 } from '@rentalshop/utils';
 import type { Category, Outlet, ProductCreateInput } from '@rentalshop/types';
-import { ProductSimpleForm } from '@rentalshop/ui';
 
 export default function ProductAddPage() {
   const router = useRouter();
@@ -98,12 +98,12 @@ export default function ProductAddPage() {
   const loading = categoriesLoading || outletsLoading;
   const error = categoriesError?.message || outletsError?.message || null;
 
-  const handleSave = async (data: ProductCreateInput, files?: File[]) => {
+  const handleProductCreated = async (productData: ProductCreateInput, files?: File[]) => {
     try {
       // Call the appropriate API method based on whether files are provided
       const response = files && files.length > 0 
-        ? await productsApi.createProductWithFiles(data, files)
-        : await productsApi.createProduct(data);
+        ? await productsApi.createProductWithFiles(productData, files)
+        : await productsApi.createProduct(productData);
       
       // Redirect to the new product view page
       if (response.data?.id) {
@@ -112,17 +112,9 @@ export default function ProductAddPage() {
         throw new Error('Product created but no ID returned');
       }
     } catch (err) {
-      // Re-throw the error to be handled by the form component
+      // Re-throw the error to be handled by the dialog component
       throw err;
     }
-  };
-
-  const handleCancel = () => {
-    router.push('/products');
-  };
-
-  const handleBack = () => {
-    router.push('/products');
   };
 
   // Show loading while authentication is in progress
@@ -225,12 +217,23 @@ export default function ProductAddPage() {
         </div>
       )}
       <PageContent>
-        <ProductSimpleForm
+        {/* Use ProductAddDialog for consistency with other pages */}
+        <ProductAddDialog
+          open={true}
+          onOpenChange={(open) => {
+            // If dialog is closed, redirect back to products page
+            if (!open) {
+              router.push('/products');
+            }
+          }}
           categories={categories}
           outlets={outlets}
-          onSubmit={handleSave}
-          onCancel={handleCancel}
-          mode="create"
+          merchantId={String(merchantId || '')}
+          onProductCreated={handleProductCreated}
+          onError={(error) => {
+            // Error automatically handled by useGlobalErrorHandler
+            console.error('❌ ProductAddDialog: Error occurred:', error);
+          }}
           useMultipartUpload={true}
         />
       </PageContent>

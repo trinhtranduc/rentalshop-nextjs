@@ -1,14 +1,8 @@
 'use client'
 
 import React, { useState } from 'react';
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent,
-  Button
-} from '../../../ui';
-import { ArrowLeft, Plus, Loader2, AlertCircle } from 'lucide-react';
+import { Button } from '../../../ui';
+import { Plus, Loader2, AlertCircle } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
 import { useToast } from '@rentalshop/ui';
 import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
@@ -34,9 +28,12 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
   useMultipartUpload = false
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toastSuccess, toastError } = useToast();
+  const { toastError } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
+
+  // Safety check: Ensure outlets is always an array
+  const safeOutlets = Array.isArray(outlets) ? outlets : [];
 
   const handleSubmit = async (data: any, files?: File[]) => {
     setIsSubmitting(true);
@@ -84,7 +81,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
       {/* Product Form */}
           <ProductForm
             categories={categories}
-            outlets={outlets}
+            outlets={safeOutlets}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             loading={isSubmitting}
@@ -109,7 +106,7 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
       {/* Action Buttons */}
       <div className="space-y-4">
         {/* Warning message when no outlets */}
-        {outlets.length === 0 && (
+        {safeOutlets.length === 0 && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-center">
               <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
@@ -123,6 +120,17 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
           </div>
         )}
         
+        {/* Info message when only 1 outlet (default outlet) */}
+        {safeOutlets.length === 1 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-center">
+              <div className="text-sm text-blue-700">
+                <span className="font-medium">Outlet mặc định:</span> {safeOutlets[0].name}. Sản phẩm sẽ tự động được phân bổ cho outlet này.
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
           <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
             {tc('buttons.cancel')}
@@ -130,9 +138,9 @@ export const ProductAddForm: React.FC<ProductAddFormProps> = ({
           <Button 
             type="submit" 
             form="product-form" 
-            disabled={isSubmitting || outlets.length === 0}
+            disabled={isSubmitting || safeOutlets.length === 0}
             className="min-w-[120px]"
-            title={outlets.length === 0 ? t('inventory.needOutletMessage') : undefined}
+            title={safeOutlets.length === 0 ? t('inventory.needOutletMessage') : undefined}
           >
             {isSubmitting ? (
               <>
