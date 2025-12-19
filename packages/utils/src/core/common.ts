@@ -172,10 +172,23 @@ export const authenticatedFetch = async (
     }
   }
   
+  // Check if body is FormData - if so, don't set Content-Type (browser will set it with boundary)
+  // This is the OFFICIAL way per MDN: https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects
+  // "When using FormData, you don't need to set the Content-Type header manually"
+  const isFormData = options.body instanceof FormData;
+  
+  // Remove Content-Type from optionsHeaders if body is FormData
+  // This ensures browser can automatically set the correct multipart boundary
+  if (isFormData && optionsHeaders[API.HEADERS.CONTENT_TYPE]) {
+    delete optionsHeaders[API.HEADERS.CONTENT_TYPE];
+  }
+  
   // Merge headers in correct order: default headers → options.headers → Authorization header
   // This ensures Authorization header is ALWAYS preserved
   const mergedHeaders: Record<string, string> = {
-    [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
+    // Only set Content-Type for non-FormData requests
+    // For FormData, browser will automatically set Content-Type with boundary
+    ...(isFormData ? {} : { [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON }),
     [API.HEADERS.ACCEPT]: API.CONTENT_TYPES.JSON,
     // Platform detection headers for web clients
     'X-Client-Platform': 'web',
