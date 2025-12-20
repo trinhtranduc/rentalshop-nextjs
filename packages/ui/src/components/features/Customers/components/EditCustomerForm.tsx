@@ -47,8 +47,7 @@ export const EditCustomerForm = forwardRef<
     const tc = useCommonTranslations();
 
     const [formData, setFormData] = useState({
-      firstName: customer.firstName,
-      lastName: customer.lastName,
+      name: [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim(),
       email: customer.email,
       phone: customer.phone,
       companyName: (customer as any).companyName || "",
@@ -73,9 +72,10 @@ export const EditCustomerForm = forwardRef<
 
     // Update form data when customer changes
     useEffect(() => {
+      // Combine firstName and lastName into name field
+      const fullName = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim();
       setFormData({
-        firstName: customer.firstName,
-        lastName: customer.lastName,
+        name: fullName,
         email: customer.email,
         phone: customer.phone,
         companyName: (customer as any).companyName || "",
@@ -112,18 +112,16 @@ export const EditCustomerForm = forwardRef<
     const validateForm = (): boolean => {
       const newErrors: Record<string, string> = {};
 
-      // First name validation - required
-      if (!formData.firstName.trim()) {
-        newErrors.firstName = t("validation.firstNameRequired");
-      } else if (formData.firstName.trim().length < 2) {
-        newErrors.firstName = t("validation.firstNameMinLength");
-      }
-
-      // Last name validation - required
-      if (!formData.lastName.trim()) {
-        newErrors.lastName = t("validation.lastNameRequired");
-      } else if (formData.lastName.trim().length < 2) {
-        newErrors.lastName = t("validation.lastNameMinLength");
+      // Name validation - required
+      if (!formData.name || !formData.name.trim()) {
+        newErrors.name = t("validation.nameRequired") || "Name is required";
+      } else {
+        // Split name into firstName and lastName for validation
+        const nameParts = formData.name.trim().split(' ').filter(part => part.length > 0);
+        const firstName = nameParts[0] || '';
+        if (firstName.length < 2) {
+          newErrors.name = t("validation.nameMinLength") || "Name must be at least 2 characters";
+        }
       }
 
       // Email validation - optional but validate format if provided
@@ -162,9 +160,27 @@ export const EditCustomerForm = forwardRef<
         setInternalIsSubmitting(true);
         setErrorMessage(null);
 
+        // Split name into firstName and lastName (same logic as CustomerForm)
+        const nameParts = formData.name.trim().split(' ').filter(part => part.length > 0);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        // Check if name has changed (compare firstName and lastName)
+        const originalFullName = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim();
+        const nameChanged = originalFullName !== formData.name.trim();
+
         // Only send changed fields
         const changedFields: CustomerUpdateInput = { id: customer.id };
+        
+        // Add firstName and lastName if name changed
+        if (nameChanged) {
+          (changedFields as any).firstName = firstName;
+          (changedFields as any).lastName = lastName;
+        }
+
+        // Check other fields for changes
         Object.keys(formData).forEach((key) => {
+          if (key === 'name') return; // Skip name as we handle it separately
           const field = key as keyof typeof formData;
           if (formData[field] !== customer[field as keyof Customer]) {
             (changedFields as any)[field] = formData[field];
@@ -172,7 +188,7 @@ export const EditCustomerForm = forwardRef<
         });
 
         // If no changes, just return
-        if (Object.keys(changedFields).length === 0) {
+        if (Object.keys(changedFields).length === 1) { // Only has id
           console.log("🔍 EditCustomerForm: No changes detected");
           return;
         }
@@ -224,41 +240,22 @@ export const EditCustomerForm = forwardRef<
               </div>
             )}
 
-            {/* First Name & Last Name */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">{t("fields.firstName")} *</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    handleInputChange("firstName", e.target.value)
-                  }
-                  placeholder={t("placeholders.enterFirstName")}
-                  className={errors.firstName ? "border-red-500" : ""}
-                />
-                {errors.firstName && (
-                  <p className="text-sm text-red-600">{errors.firstName}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="lastName">{t("fields.lastName")} *</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    handleInputChange("lastName", e.target.value)
-                  }
-                  placeholder={t("placeholders.enterLastName")}
-                  className={errors.lastName ? "border-red-500" : ""}
-                />
-                {errors.lastName && (
-                  <p className="text-sm text-red-600">{errors.lastName}</p>
-                )}
-              </div>
+            {/* Full Name */}
+            <div>
+              <Label htmlFor="name">{t("fields.fullName") || "Full Name"} *</Label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) =>
+                  handleInputChange("name", e.target.value)
+                }
+                placeholder={t("placeholders.enterFullName") || "Enter full name"}
+                className={errors.name ? "border-red-500" : ""}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-600">{errors.name}</p>
+              )}
             </div>
 
             {/* Email & Phone */}
