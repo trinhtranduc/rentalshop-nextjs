@@ -99,6 +99,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'MERCHANT_DUPLICATE': 'A merchant with this email or phone already exists. Please use a different email or phone number.',
   'OUTLET_NAME_EXISTS': 'An outlet with this name already exists for this merchant',
   'CATEGORY_NAME_EXISTS': 'Category with this name already exists',
+  'PRODUCT_NAME_EXISTS': 'A product with this name already exists. Please choose a different name.',
   
   // Business Rules
   'PRODUCT_NO_STOCK_ENTRY': 'Product must have at least one outlet stock entry',

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions } from '@rentalshop/auth';
+import { withPermissions, hasPermission } from '@rentalshop/auth';
 import { db } from '@rentalshop/database';
 import { productsQuerySchema, productCreateSchema, checkPlanLimitIfNeeded, handleApiError, ResponseBuilder, deleteFromS3, commitStagingFiles, generateAccessUrl, processProductImages, uploadToS3, generateStagingKey, generateProductImageKey, generateFileName, splitKeyIntoParts, extractStagingKeysFromUrls, mapStagingUrlsToProductionUrls, combineProductImages, normalizeImagesInput, parseProductImages, getBucketName } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../lib/image-compression';
@@ -106,6 +106,9 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     const result = await db.products.search(searchFilters);
     console.log('✅ Search completed, found:', result.data?.length || 0, 'products');
 
+    // Check if user has permission to view costPrice
+    const canViewCostPrice = await hasPermission(user, 'products.manage');
+
     // Process product images and filter outletStock based on queryOutletId
     // For MERCHANT role: queryOutletId is only for viewing stock at specific outlet, NOT filtering products
     const processedProducts = result.data?.map((product: any) => {
@@ -119,11 +122,22 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         outletStock = outletStock.filter((stock: any) => stock.outlet?.id === queryOutletId);
       }
       
-      return {
+      // Build product object, excluding costPrice if user doesn't have permission
+      const productData: any = {
         ...product,
         images: imageUrls,
         outletStock: outletStock // Show stock filtered by outletId (if provided)
       };
+      
+      // Only include costPrice if user has products.manage permission
+      if (canViewCostPrice) {
+        productData.costPrice = product.costPrice ?? null;
+      } else {
+        // Explicitly exclude costPrice for users without permission
+        delete productData.costPrice;
+      }
+      
+      return productData;
     }) || [];
 
     return NextResponse.json({
@@ -371,10 +385,15 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     let uploadedUrls: string[] = [];
 
     if (imageFiles.length > 0) {
+      console.log(`📤 Uploading ${imageFiles.length} image(s) to staging...`);
       const uploadResult = await uploadProductImages(imageFiles);
       uploadedStagingKeys = uploadResult.stagingKeys;
       uploadedUrls = uploadResult.urls;
+      console.log(`✅ Uploaded ${uploadedUrls.length} image(s) to staging:`, uploadedUrls);
       productData.images = combineProductImages(productData.images, uploadedUrls);
+      console.log(`📋 Combined images:`, productData.images);
+    } else {
+      console.log('ℹ️ No images to upload');
     }
 
     // Validate product data
@@ -395,7 +414,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
     if (existingProduct) {
       return NextResponse.json(
-        ResponseBuilder.error('BUSINESS_NAME_EXISTS'),
+        ResponseBuilder.error('PRODUCT_NAME_EXISTS'),
         { status: 409 }
       );
     }
@@ -420,16 +439,26 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
 
     // Commit images to production
-    const imageUrls = Array.isArray(parsed.data.images)
-      ? parsed.data.images
-      : typeof parsed.data.images === 'string'
-        ? parsed.data.images.split(',').filter(Boolean)
-        : [];
+    // Use productData.images (after combine) instead of parsed.data.images
+    // because Zod validation may transform/coerce the data
+    const imageUrls = Array.isArray(productData.images)
+      ? productData.images
+      : typeof productData.images === 'string'
+        ? productData.images.split(',').filter(Boolean)
+        : uploadedUrls.length > 0 ? uploadedUrls : []; // Fallback to uploadedUrls if productData.images is missing
 
+    console.log(`🔄 Committing ${imageUrls.length} image(s) to production...`);
+    console.log(`📋 Image URLs to commit:`, imageUrls);
+    console.log(`🔑 Staging keys:`, uploadedStagingKeys);
+    
     const committedImageUrls = await commitProductImages(imageUrls, uploadedStagingKeys, merchantId);
-    const imagesValue = Array.isArray(parsed.data.images)
-      ? JSON.stringify(committedImageUrls)
-      : committedImageUrls.join(',');
+    console.log(`✅ Committed ${committedImageUrls.length} image(s) to production:`, committedImageUrls);
+    
+    // Always store as comma-separated string for database consistency
+    const imagesValue = committedImageUrls.length > 0 
+      ? committedImageUrls.join(',')
+      : '';
+    console.log(`💾 Final images value for DB:`, imagesValue);
 
     // Get merchant CUID
     const merchant = await db.merchants.findById(merchantId);

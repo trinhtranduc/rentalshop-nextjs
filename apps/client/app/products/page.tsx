@@ -279,11 +279,12 @@ export default function ProductsPage() {
   }, [data?.products, router, toastSuccess, refetch, t]);
   
   // Handle product update from edit dialog
-  const handleProductUpdate = useCallback(async (productData: ProductUpdateInput) => {
+  const handleProductUpdate = useCallback(async (productData: ProductUpdateInput, files?: File[]) => {
     if (!selectedProduct) return;
     
     try {
-      const response = await productsApi.updateProduct(selectedProduct.id, productData);
+      // Always use FormData for consistency (files parameter is optional)
+      const response = await productsApi.updateProduct(selectedProduct.id, productData, files);
       if (response.success) {
         toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
         setShowEditDialog(false);
