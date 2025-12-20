@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { withPermissions, hasPermission } from '@rentalshop/auth';
 import { 
   productUpdateSchema, 
@@ -21,7 +21,7 @@ import {
   getBucketName
 } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
-import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
+import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
  * Helper function to validate image file
@@ -651,6 +651,48 @@ export async function DELETE(
       const existingProduct = await db.products.findById(productId);
       if (!existingProduct) {
         throw new Error('Product not found');
+      }
+
+      // ============================================================================
+      // VALIDATION: Check if product has active orders before deletion (Option 1)
+      // ============================================================================
+      // Block deletion if product has active orders (RESERVED, PICKUPED)
+      // Allow soft delete if only completed/cancelled orders exist (but warn)
+      
+      // Product uses Int ID, so we can directly use productId to query order items
+      // Check for active order items (orders with RESERVED or PICKUPED status)
+      const activeOrderItemCount = await prisma.orderItem.count({
+        where: {
+          productId: productId,
+          order: {
+            status: {
+              in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED]
+            }
+          }
+        }
+      });
+
+      if (activeOrderItemCount > 0) {
+        console.log(`❌ Cannot delete product ${productId}: Has ${activeOrderItemCount} active order item(s)`);
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'BUSINESS_RULE_VIOLATION',
+            message: `Cannot delete product "${existingProduct.name}" because it has ${activeOrderItemCount} active order item(s) (RESERVED or PICKUPED status). Please complete or cancel these orders first.`
+          },
+          { status: API.STATUS.CONFLICT }
+        );
+      }
+
+      // Check total order items count for warning (completed/cancelled orders)
+      const totalOrderItemCount = await prisma.orderItem.count({
+        where: {
+          productId: productId
+        }
+      });
+
+      if (totalOrderItemCount > 0) {
+        console.log(`⚠️ Warning: Product ${productId} has ${totalOrderItemCount} order item(s) in historical orders (will be soft deleted to preserve history)`);
       }
 
       // IMPORTANT: Delete all product images from S3 before soft deleting the product
