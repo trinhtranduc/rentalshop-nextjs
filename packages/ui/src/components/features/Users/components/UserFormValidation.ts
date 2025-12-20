@@ -22,8 +22,7 @@ interface UserCreateFormData {
 }
 
 interface UserUpdateFormData {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone: string;
   role: UserRole;
@@ -117,11 +116,9 @@ export const validateUserCreateInput = (data: UserCreateFormData, tv?: Translati
   if (firstNameError) errors.firstName = firstNameError;
   }
 
-  // lastName is optional - only validate if provided
-  if (lastName) {
-    const lastNameError = validateName(lastName, 'Last name');
-  if (lastNameError) errors.lastName = lastNameError;
-  }
+  // lastName is optional - no minimum length validation needed
+  // Only check if it's provided and not empty (but allow any length including 1 character)
+  // No validation needed for lastName as it's completely optional
 
   // Email validation
   const emailError = validateEmail(data.email || '', tv);
@@ -177,16 +174,18 @@ export const validateUserUpdateInput = (data: UserUpdateFormData, tv?: Translati
 
   console.log('🔍 UserFormValidation: Validating update input:', data);
 
-  // First Name validation - optional
-  if (data.firstName && data.firstName.trim()) {
-    const firstNameError = validateName(data.firstName, 'First name');
-  if (firstNameError) errors.firstName = firstNameError;
-  }
+  // Name validation (split from full name) - same logic as create mode
+  // firstName and lastName are optional - allow empty name
+  const nameParts = data.name?.trim().split(' ') || [];
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
 
-  // Last Name validation - optional
-  if (data.lastName && data.lastName.trim()) {
-    const lastNameError = validateName(data.lastName, 'Last name');
-  if (lastNameError) errors.lastName = lastNameError;
+  console.log('🔍 UserFormValidation: Name parts:', { firstName, lastName });
+
+  // firstName and lastName are optional - only validate if provided
+  if (firstName) {
+    const firstNameError = validateName(firstName, 'First name');
+    if (firstNameError) errors.name = firstNameError;
   }
 
   // Email validation

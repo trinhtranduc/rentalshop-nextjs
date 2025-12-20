@@ -133,6 +133,8 @@
     "firstNameMinLength": "First name must be at least 2 characters",
     "lastNameRequired": "Last name is required",
     "lastNameMinLength": "Last name must be at least 2 characters",
+    "nameRequired": "Name is required",
+    "nameMinLength": "Name must be at least 2 characters",
     "emailInvalid": "Email is invalid",
     "phoneRequired": "Phone number is required",
     "phoneInvalid": "Phone number contains invalid characters",
@@ -141,6 +143,8 @@
   "placeholders": {
     "enterFirstName": "Enter first name",
     "enterLastName": "Enter last name",
+    "enterFullName": "Enter full name",
+    "enterCustomerName": "Enter customer name",
     "enterEmail": "Enter email address (optional)",
     "enterPhone": "Enter phone number (optional)",
     "enterCompanyName": "Enter company name (optional)",

@@ -133,6 +133,8 @@
     "firstNameMinLength": "Tên phải có ít nhất 2 ký tự",
     "lastNameRequired": "Họ là bắt buộc",
     "lastNameMinLength": "Họ phải có ít nhất 2 ký tự",
+    "nameRequired": "Tên là bắt buộc",
+    "nameMinLength": "Tên phải có ít nhất 2 ký tự",
     "emailInvalid": "Email không hợp lệ",
     "phoneRequired": "Số điện thoại là bắt buộc",
     "phoneInvalid": "Số điện thoại chứa ký tự không hợp lệ",
@@ -141,6 +143,8 @@
   "placeholders": {
     "enterFirstName": "Nhập tên",
     "enterLastName": "Nhập họ",
+    "enterFullName": "Nhập họ và tên",
+    "enterCustomerName": "Nhập tên khách hàng",
     "enterEmail": "Nhập địa chỉ email (tùy chọn)",
     "enterPhone": "Nhập số điện thoại (tùy chọn)",
     "enterCompanyName": "Nhập tên công ty (tùy chọn)",
