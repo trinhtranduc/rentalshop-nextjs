@@ -66,7 +66,9 @@
   },
   "dialog": {
     "addNew": "Thêm danh mục mới",
+    "addNewDescription": "Tạo danh mục mới để tổ chức sản phẩm",
     "edit": "Sửa danh mục",
+    "editDescription": "Cập nhật thông tin danh mục",
     "viewDetails": "Chi tiết danh mục",
     "viewDescription": "Xem thông tin và chi tiết danh mục",
     "deleteTitle": "Xóa danh mục",

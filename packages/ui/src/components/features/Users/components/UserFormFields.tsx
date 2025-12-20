@@ -8,6 +8,7 @@ import { Button } from '../../../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { SearchableSelect } from '../../../ui/searchable-select';
 import type { User } from '@rentalshop/types';
+import { useUsersTranslations } from '@rentalshop/hooks';
 
 interface FormFieldProps {
   id: string;
@@ -143,11 +144,13 @@ export const MerchantSelect: React.FC<MerchantSelectProps> = ({
   canSelect,
   currentUser
 }) => {
+  const t = useUsersTranslations();
+  
   return (
     <div className="space-y-2">
       <Label htmlFor="merchant" className="flex items-center gap-2">
         <Building2 className="w-4 h-4" />
-        Merchant {canSelect ? '*' : '(Read-only)'}
+        {t('fields.merchant')} {canSelect ? '*' : `(${t('fields.readOnly')})`}
       </Label>
       {canSelect ? (
         <SearchableSelect
@@ -158,9 +161,9 @@ export const MerchantSelect: React.FC<MerchantSelectProps> = ({
             value: merchant.id.toString(),
             label: merchant.name
           }))}
-          placeholder={loading ? "Loading merchants..." : "Search and select merchant"}
-          searchPlaceholder="Search merchants..."
-          emptyText="No merchants found"
+          placeholder={loading ? t('placeholders.loadingMerchants') : t('placeholders.searchAndSelectMerchant')}
+          searchPlaceholder={t('placeholders.searchMerchants')}
+          emptyText={t('placeholders.noMerchantsFound')}
           className={error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
         />
       ) : (
@@ -168,7 +171,7 @@ export const MerchantSelect: React.FC<MerchantSelectProps> = ({
           value={currentUser?.merchant?.name || ''}
           disabled
           className="bg-gray-50 text-gray-600 cursor-not-allowed"
-          placeholder="Current merchant"
+          placeholder={t('placeholders.currentMerchant')}
         />
       )}
       {error && (
@@ -203,11 +206,13 @@ export const OutletSelect: React.FC<OutletSelectProps> = ({
   merchantId,
   currentUser
 }) => {
+  const t = useUsersTranslations();
+  
   return (
     <div className="space-y-2">
       <Label htmlFor="outlet" className="flex items-center gap-2">
         <Store className="w-4 h-4" />
-        Outlet {canSelect ? '*' : '(Read-only)'}
+        {t('fields.outlet')} {canSelect ? '*' : `(${t('fields.readOnly')})`}
       </Label>
       {canSelect ? (
         <SearchableSelect
@@ -219,12 +224,12 @@ export const OutletSelect: React.FC<OutletSelectProps> = ({
             label: outlet.name
           }))}
           placeholder={
-            loading ? "Loading outlets..." : 
-            !merchantId && canSelectMerchant ? "Select merchant first" : 
-            "Search and select outlet"
+            loading ? t('placeholders.loadingOutlets') : 
+            !merchantId && canSelectMerchant ? t('placeholders.selectMerchantFirst') : 
+            t('placeholders.searchAndSelectOutlet')
           }
-          searchPlaceholder="Search outlets..."
-          emptyText="No outlets found"
+          searchPlaceholder={t('placeholders.searchOutlets')}
+          emptyText={t('placeholders.noOutletsFound')}
           className={error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
         />
       ) : (
@@ -232,7 +237,7 @@ export const OutletSelect: React.FC<OutletSelectProps> = ({
           value={currentUser?.outlet?.name || ''}
           disabled
           className="bg-gray-50 text-gray-600 cursor-not-allowed"
-          placeholder="Current outlet"
+          placeholder={t('placeholders.currentOutlet')}
         />
       )}
       {error && (

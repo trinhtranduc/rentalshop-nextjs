@@ -50,7 +50,8 @@
     "actions": "Thao tác",
     "basicInformation": "Thông tin cơ bản",
     "personalInformation": "Thông tin cá nhân",
-    "roleAndPermissions": "Vai trò & Quyền hạn"
+    "roleAndPermissions": "Vai trò & Quyền hạn",
+    "readOnly": "Chỉ đọc"
   },
   "roles": {
     "ADMIN": "Quản trị hệ thống",
@@ -161,7 +162,18 @@
     "enterPassword": "Nhập mật khẩu",
     "confirmPassword": "Xác nhận mật khẩu",
     "enterNewPassword": "Nhập mật khẩu mới",
-    "confirmNewPassword": "Xác nhận mật khẩu mới"
+    "confirmNewPassword": "Xác nhận mật khẩu mới",
+    "loadingMerchants": "Đang tải danh sách thương hiệu...",
+    "searchAndSelectMerchant": "Tìm kiếm và chọn thương hiệu",
+    "currentMerchant": "Thương hiệu hiện tại",
+    "loadingOutlets": "Đang tải danh sách cửa hàng...",
+    "selectMerchantFirst": "Vui lòng chọn thương hiệu trước",
+    "searchAndSelectOutlet": "Tìm kiếm và chọn cửa hàng",
+    "currentOutlet": "Cửa hàng hiện tại",
+    "searchMerchants": "Tìm kiếm thương hiệu...",
+    "noMerchantsFound": "Không tìm thấy thương hiệu",
+    "searchOutlets": "Tìm kiếm cửa hàng...",
+    "noOutletsFound": "Không tìm thấy cửa hàng"
   }
 }
 

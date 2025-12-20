@@ -170,7 +170,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
       orderType: order.orderType,
       status: order.status,
       customerId: order.customerId,
-      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Guest',
+      customerName: order.customer ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'Guest' : 'Guest',
       customerPhone: order.customer?.phone || 'No phone',
       outletId: order.outletId || (order.outlet?.id ? (typeof order.outlet.id === 'string' ? parseInt(order.outlet.id) : order.outlet.id) : 0),
       outletName: order.outlet?.name || 'N/A',

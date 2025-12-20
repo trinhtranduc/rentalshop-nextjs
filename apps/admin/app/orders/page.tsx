@@ -281,7 +281,7 @@ export default function AdminOrdersPage() {
       depositAmount: order.depositAmount,
       customerId: order.customer?.id,
       customerName: (order as any).customerName || 
-                   (order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown'),
+                   (order.customer ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'Unknown' : 'Unknown'),
       customerPhone: (order as any).customerPhone || order.customer?.phone || '',
       outletId: order.outlet?.id || (order as any).outletId || 0,
       outletName: (order as any).outletName || order.outlet?.name || 'Unknown',

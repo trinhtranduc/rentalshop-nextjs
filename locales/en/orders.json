@@ -171,6 +171,8 @@
     "cannotChangeWhenEditing": "Cannot change when editing",
     "orderNotes": "Order Notes",
     "enterOrderNotes": "Enter order notes...",
+    "enterCollateralDetails": "Enter collateral details",
+    "selectCollateralType": "Select collateral type",
     "discount": "Discount",
     "amount": "Amount",
     "percentage": "Percentage",
