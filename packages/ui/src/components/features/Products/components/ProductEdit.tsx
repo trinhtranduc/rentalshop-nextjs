@@ -5,7 +5,7 @@ import {
   Button
 } from '@rentalshop/ui';
 import { useToast } from '@rentalshop/ui';
-import { useProductTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useProductTranslations, useCommonTranslations, usePermissions } from '@rentalshop/hooks';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { ProductForm } from '../../../forms/ProductForm';
 import type { ProductInput, ProductWithStock, Outlet, Category } from '@rentalshop/types';
@@ -15,9 +15,10 @@ interface ProductEditFormProps {
   categories: Category[];
   outlets: Outlet[];
   merchantId: number;
-  onSave: (data: ProductInput) => Promise<void>;
+  onSave: (data: ProductInput, files?: File[]) => Promise<void>; // Updated to support files
   onCancel: () => void;
   onBack?: () => void;
+  useMultipartUpload?: boolean; // New prop to enable multipart upload
 }
 
 export const ProductEdit: React.FC<ProductEditFormProps> = ({
@@ -27,12 +28,15 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
   merchantId,
   onSave,
   onCancel,
-  onBack
+  onBack,
+  useMultipartUpload = false
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toastSuccess, toastError } = useToast();
   const t = useProductTranslations();
   const tc = useCommonTranslations();
+  const { hasPermission } = usePermissions();
+  const canManageProducts = hasPermission('products.manage'); // Only users with manage permission can view/edit cost price
 
   // Debug: Log product data structure and props
   useEffect(() => {
@@ -54,7 +58,8 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     categoryId: product.category?.id || product.categoryId,
     rentPrice: product.rentPrice,
     salePrice: (product as any).salePrice || 0, // Use actual salePrice if available, default to 0
-    costPrice: (product as any).costPrice || 0, // Use actual costPrice if available, default to 0
+    // Only include costPrice if user has products.manage permission
+    ...(canManageProducts ? { costPrice: (product as any).costPrice || 0 } : { costPrice: 0 }),
     deposit: product.deposit,
     totalStock: (() => {
       // Calculate total stock from all outlets (including those with 0 stock)
@@ -102,14 +107,19 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     sku: product.barcode || ''
   };
 
-  const handleSubmit = async (data: ProductInput) => {
+  const handleSubmit = async (data: ProductInput, files?: File[]) => {
     setIsSubmitting(true);
 
     try {
       if (typeof onSave !== 'function') {
         throw new Error('onSave function is not provided or invalid');
       }
-      await onSave(data);
+      // Pass files when using multipart upload
+      if (useMultipartUpload && files) {
+        await onSave(data, files);
+      } else {
+        await onSave(data);
+      }
       // Parent component will handle success toast
     } catch (err) {
       console.error('❌ ProductEdit: Error in handleSubmit:', err);
@@ -139,6 +149,7 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
         hideHeader={true}
         hideSubmitButton={true}
         formId="product-form"
+        useMultipartUpload={useMultipartUpload}
       />
 
       {/* Action Buttons */}

@@ -481,7 +481,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       totalStock: formData.totalStock,
       rentPrice: formData.rentPrice,
       salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
-      costPrice: formData.costPrice > 0 ? formData.costPrice : undefined,
+      // Only include costPrice if user has products.manage permission
+      ...(canManageProducts && formData.costPrice > 0 ? { costPrice: formData.costPrice } : {}),
       deposit: formData.deposit,
       images: useMultipartUpload ? [] : formData.images, // Empty array for multipart, existing images for immediate upload
       outletStock: formData.outletStock,

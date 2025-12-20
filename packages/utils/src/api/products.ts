@@ -211,12 +211,32 @@ export const productsApi = {
 
   /**
    * Update an existing product
+   * ALWAYS uses multipart form data for consistency with createProduct
+   * - Product data is sent as JSON string in 'data' field
+   * - Files (if any) are sent in 'images' field
+   * - Works even when no files are provided (empty images array)
    */
-  async updateProduct(productId: number, productData: ProductUpdateInput): Promise<ApiResponse<Product>> {
+  async updateProduct(productId: number, productData: ProductUpdateInput, files?: File[]): Promise<ApiResponse<Product>> {
+    // Always use multipart form data for consistency
+    const formData = new FormData();
+    
+    // Add product data as JSON string
+    formData.append('data', JSON.stringify(productData));
+    
+    // Add files if provided
+    if (files && files.length > 0) {
+      files.forEach(file => {
+        formData.append('images', file);
+      });
+    }
+
+    // Send multipart request
     const response = await authenticatedFetch(apiUrls.products.update(productId), {
       method: 'PUT',
-      body: JSON.stringify(productData),
+      body: formData,
+      // Don't set Content-Type header for FormData - browser will set it with boundary
     });
+    
     return await parseApiResponse<Product>(response);
   },
 
