@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { withPermissions, hasPermission } from '@rentalshop/auth';
 import { 
   productUpdateSchema, 
@@ -21,7 +21,7 @@ import {
   getBucketName
 } from '@rentalshop/utils';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
-import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
+import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
 
 /**
  * Helper function to validate image file
@@ -197,6 +197,9 @@ export async function GET(
 /**
  * PUT /api/products/[id]
  * Update product by ID
+ * UNIFIED FORMAT: Always expects multipart FormData (consistent with POST)
+ * - Product data: JSON string in 'data' field
+ * - Files (optional): File objects in 'images' field
  * 
  * Authorization: All roles with 'products.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
@@ -235,137 +238,137 @@ export async function PUT(
         );
       }
 
-      // Parse and validate request body - handle both JSON and multipart form data
-      const contentType = request.headers.get('content-type') || '';
-      let productDataFromRequest: any = {};
+      // Parse multipart form data - UNIFIED FORMAT: Always expects FormData (consistent with POST)
+      // - Product data: JSON string in 'data' field
+      // - Files (optional): File objects in 'images' field
+      console.log('🔍 Processing multipart form data with file uploads');
+      
+      const formData = await request.formData();
+      
+      // Extract JSON data from form fields
+      const jsonDataStr = formData.get('data') as string;
+      if (!jsonDataStr) {
+        return NextResponse.json(
+          ResponseBuilder.error('MISSING_PRODUCT_DATA'),
+          { status: 400 }
+        );
+      }
+      
+      let productDataFromRequest: any;
+      try {
+        productDataFromRequest = JSON.parse(jsonDataStr);
+        
+        // Fix outletStock if it's a string (mobile app compatibility)
+        if (productDataFromRequest.outletStock && typeof productDataFromRequest.outletStock === 'string') {
+          try {
+            productDataFromRequest.outletStock = JSON.parse(productDataFromRequest.outletStock);
+          } catch (parseError) {
+            console.log('⚠️ Failed to parse outletStock string:', productDataFromRequest.outletStock);
+          }
+        }
+        
+        // Normalize images to array of strings
+        if (productDataFromRequest.images !== undefined) {
+          const normalized = normalizeImagesInput(productDataFromRequest.images);
+          productDataFromRequest.images = normalized.length > 0 ? normalized : undefined;
+          if (!productDataFromRequest.images) {
+            delete productDataFromRequest.images;
+          }
+        }
+      } catch (parseError) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_JSON_DATA'),
+          { status: 400 }
+        );
+      }
+
+      // Upload image files
+      const imageFiles = formData.getAll('images') as File[];
       let uploadedFiles: string[] = [];
-
-      if (contentType.includes('multipart/form-data')) {
-        console.log('🔍 Processing multipart form data with file uploads');
-        
-        const formData = await request.formData();
-        
-        // Extract JSON data from form fields
-        const jsonDataStr = formData.get('data') as string;
-        if (!jsonDataStr) {
-          return NextResponse.json(
-            ResponseBuilder.error('MISSING_PRODUCT_DATA'),
-            { status: 400 }
-          );
-        }
-        
-        try {
-          productDataFromRequest = JSON.parse(jsonDataStr);
-          
-          // Fix outletStock if it's a string (mobile app compatibility)
-          if (productDataFromRequest.outletStock && typeof productDataFromRequest.outletStock === 'string') {
-            try {
-              productDataFromRequest.outletStock = JSON.parse(productDataFromRequest.outletStock);
-            } catch (parseError) {
-              console.log('⚠️ Failed to parse outletStock string:', productDataFromRequest.outletStock);
-            }
-          }
-          
-          // Normalize images to array of strings
-          if (productDataFromRequest.images !== undefined) {
-            const normalized = normalizeImagesInput(productDataFromRequest.images);
-            productDataFromRequest.images = normalized.length > 0 ? normalized : undefined;
-            if (!productDataFromRequest.images) {
-              delete productDataFromRequest.images;
-            }
-          }
-        } catch (parseError) {
-          return NextResponse.json(
-            ResponseBuilder.error('INVALID_JSON_DATA'),
-            { status: 400 }
-          );
-        }
-
-        // Upload image files
-        const imageFiles = formData.getAll('images') as File[];
-        if (imageFiles.length > 0) {
-          console.log(`🔍 Processing ${imageFiles.length} image file(s)`);
+      
+      if (imageFiles.length > 0) {
+        console.log(`🔍 Processing ${imageFiles.length} image file(s)`);
         
         for (const file of imageFiles) {
-            if (!file || file.size === 0) continue;
-            
-            // Validate image
-            const validation = validateImage(file);
-            if (!validation.isValid) {
-              return NextResponse.json(
-                ResponseBuilder.error('IMAGE_VALIDATION_FAILED'),
-                { status: 400 }
-              );
-            }
-            
-            // Compress image
-            const bytes = await file.arrayBuffer();
-            const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
-            
-            // Verify size after compression
-            if (buffer.length > VALIDATION.IMAGE_SIZES.PRODUCT) {
-              return NextResponse.json(
-                ResponseBuilder.error('IMAGE_TOO_LARGE'),
-                { status: 400 }
-              );
-            }
-            
-            // Upload to S3 staging
-            const fileName = generateFileName(file.name.replace(/\.[^/.]+$/, '') || 'product-image');
-            const stagingKey = generateStagingKey(fileName);
-            const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
-            
-            const uploadResult = await uploadToS3(buffer, {
-              folder,
-              fileName: finalFileName,
-              contentType: 'image/jpeg',
-              preserveOriginalName: false
-            });
-            
-            if (!uploadResult.success || !uploadResult.data) {
-              console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
-              return NextResponse.json(
-                ResponseBuilder.error('IMAGE_UPLOAD_FAILED'),
-                { status: 500 }
-              );
-            }
-            
-            uploadedFiles.push(uploadResult.data.url);
-            console.log(`✅ Uploaded: ${file.name}`);
-          }
-        }
-        
-        // Commit staging files to production (if any uploaded)
-        if (uploadedFiles.length > 0) {
-          const stagingKeys = extractStagingKeysFromUrls(uploadedFiles);
+          if (!file || file.size === 0) continue;
           
-          if (stagingKeys.length > 0) {
-            console.log('🔍 Committing staging files to production:', stagingKeys.length);
+          // Validate image
+          const validation = validateImage(file);
+          if (!validation.isValid) {
+            return NextResponse.json(
+              ResponseBuilder.error('IMAGE_VALIDATION_FAILED'),
+              { status: 400 }
+            );
+          }
+          
+          // Compress image
+          const bytes = await file.arrayBuffer();
+          const buffer = await compressImageTo1MB(Buffer.from(new Uint8Array(bytes)));
+          
+          // Verify size after compression
+          if (buffer.length > VALIDATION.IMAGE_SIZES.PRODUCT) {
+            return NextResponse.json(
+              ResponseBuilder.error('IMAGE_TOO_LARGE'),
+              { status: 400 }
+            );
+          }
+          
+          // Upload to S3 staging
+          const fileName = generateFileName(file.name.replace(/\.[^/.]+$/, '') || 'product-image');
+          const stagingKey = generateStagingKey(fileName);
+          const { folder, fileName: finalFileName } = splitKeyIntoParts(stagingKey);
+          
+          const uploadResult = await uploadToS3(buffer, {
+            folder,
+            fileName: finalFileName,
+            contentType: 'image/jpeg',
+            preserveOriginalName: false
+          });
+          
+          if (!uploadResult.success || !uploadResult.data) {
+            console.error(`❌ Failed to upload ${file.name}:`, uploadResult.error);
+            return NextResponse.json(
+              ResponseBuilder.error('IMAGE_UPLOAD_FAILED'),
+              { status: 500 }
+            );
+          }
+          
+          uploadedFiles.push(uploadResult.data.url);
+          console.log(`✅ Uploaded: ${file.name}`);
+        }
+      }
+      
+      // Commit staging files to production (if any uploaded)
+      if (uploadedFiles.length > 0) {
+        const stagingKeys = extractStagingKeysFromUrls(uploadedFiles);
+        
+        if (stagingKeys.length > 0) {
+          console.log('🔍 Committing staging files to production:', stagingKeys.length);
+          
+          // Structure: products/merchant-{id} (simplified, no env prefix, no outlet level)
+          const fileName = generateFileName('product-image');
+          const productionKey = generateProductImageKey(userMerchantId, fileName);
+          const { folder: targetFolder } = splitKeyIntoParts(productionKey);
+          
+          // Commit staging files to production
+          const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
+          
+          if (commitResult.success) {
+            // Generate production URLs using CloudFront custom domain
+            // Uses AWS_CLOUDFRONT_DOMAIN (images.anyrent.shop for prod, dev-images.anyrent.shop for dev)
+            const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
+            if (!cloudfrontDomain) {
+              console.error('❌ AWS_CLOUDFRONT_DOMAIN not configured');
+              // Continue with original URLs if CloudFront not configured
+              productDataFromRequest.images = combineProductImages(
+                productDataFromRequest.images,
+                uploadedFiles
+              );
+            } else {
+              const productionUrls = commitResult.committedKeys.map(key => 
+                `https://${cloudfrontDomain}/${key}`
+              );
             
-            // Structure: products/merchant-{id} (simplified, no env prefix, no outlet level)
-            const fileName = generateFileName('product-image');
-            const productionKey = generateProductImageKey(userMerchantId, fileName);
-            const { folder: targetFolder } = splitKeyIntoParts(productionKey);
-            
-            // Commit staging files to production
-            const commitResult = await commitStagingFiles(stagingKeys, targetFolder);
-            
-            if (commitResult.success) {
-              // Generate production URLs using CloudFront custom domain
-              // Uses AWS_CLOUDFRONT_DOMAIN (images.anyrent.shop for prod, dev-images.anyrent.shop for dev)
-              const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
-              if (!cloudfrontDomain) {
-                console.error('❌ AWS_CLOUDFRONT_DOMAIN not configured');
-                // Continue with original URLs if CloudFront not configured
-                productDataFromRequest.images = combineProductImages(
-                  productDataFromRequest.images,
-                  uploadedFiles
-                );
-              } else {
-                const productionUrls = commitResult.committedKeys.map(key => 
-                  `https://${cloudfrontDomain}/${key}`
-                );
-              
               // Map staging URLs to production URLs
               const productionImageUrls = mapStagingUrlsToProductionUrls(
                 uploadedFiles,
@@ -379,30 +382,23 @@ export async function PUT(
                 productionImageUrls
               );
               
-                console.log('✅ Committed staging files to production');
-              }
-            } else {
-              console.error('❌ Failed to commit staging files:', commitResult.errors);
-              // Continue with staging URLs if commit fails
-              productDataFromRequest.images = combineProductImages(
-                productDataFromRequest.images,
-                uploadedFiles
-              );
+              console.log('✅ Committed staging files to production');
             }
           } else {
-            // No staging keys found, just combine uploaded files as-is
+            console.error('❌ Failed to commit staging files:', commitResult.errors);
+            // Continue with staging URLs if commit fails
             productDataFromRequest.images = combineProductImages(
               productDataFromRequest.images,
               uploadedFiles
             );
           }
+        } else {
+          // No staging keys found, just combine uploaded files as-is
+          productDataFromRequest.images = combineProductImages(
+            productDataFromRequest.images,
+            uploadedFiles
+          );
         }
-        
-      } else {
-        // Handle regular JSON request
-        console.log('🔍 Processing JSON request');
-      const body = await request.json();
-        productDataFromRequest = body;
       }
 
       console.log('🔍 PUT /api/products/[id] - Update request body:', productDataFromRequest);
@@ -434,7 +430,7 @@ export async function PUT(
         if (duplicateProduct) {
           console.log('❌ Product name already exists:', productUpdateData.name);
           return NextResponse.json(
-            ResponseBuilder.error('BUSINESS_NAME_EXISTS'),
+            ResponseBuilder.error('PRODUCT_NAME_EXISTS'),
             { status: 409 }
           );
         }
@@ -655,6 +651,48 @@ export async function DELETE(
       const existingProduct = await db.products.findById(productId);
       if (!existingProduct) {
         throw new Error('Product not found');
+      }
+
+      // ============================================================================
+      // VALIDATION: Check if product has active orders before deletion (Option 1)
+      // ============================================================================
+      // Block deletion if product has active orders (RESERVED, PICKUPED)
+      // Allow soft delete if only completed/cancelled orders exist (but warn)
+      
+      // Product uses Int ID, so we can directly use productId to query order items
+      // Check for active order items (orders with RESERVED or PICKUPED status)
+      const activeOrderItemCount = await prisma.orderItem.count({
+        where: {
+          productId: productId,
+          order: {
+            status: {
+              in: [ORDER_STATUS.RESERVED, ORDER_STATUS.PICKUPED]
+            }
+          }
+        }
+      });
+
+      if (activeOrderItemCount > 0) {
+        console.log(`❌ Cannot delete product ${productId}: Has ${activeOrderItemCount} active order item(s)`);
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'BUSINESS_RULE_VIOLATION',
+            message: `Cannot delete product "${existingProduct.name}" because it has ${activeOrderItemCount} active order item(s) (RESERVED or PICKUPED status). Please complete or cancel these orders first.`
+          },
+          { status: API.STATUS.CONFLICT }
+        );
+      }
+
+      // Check total order items count for warning (completed/cancelled orders)
+      const totalOrderItemCount = await prisma.orderItem.count({
+        where: {
+          productId: productId
+        }
+      });
+
+      if (totalOrderItemCount > 0) {
+        console.log(`⚠️ Warning: Product ${productId} has ${totalOrderItemCount} order item(s) in historical orders (will be soft deleted to preserve history)`);
       }
 
       // IMPORTANT: Delete all product images from S3 before soft deleting the product

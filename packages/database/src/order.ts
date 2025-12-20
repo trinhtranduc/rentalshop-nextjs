@@ -6,7 +6,7 @@ import type {
   OrderSearchResult,
   OrderSearchResponse
 } from '@rentalshop/types';
-import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
+import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName } from '@rentalshop/utils';
 
 export interface OrderWithRelations {
   id: number
@@ -1394,7 +1394,7 @@ export const simplifiedOrders = {
       
       // Flatten customer data
       customerId: order.customerId,
-      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
+      customerName: order.customer ? formatFullName(order.customer.firstName, order.customer.lastName) : null,
       customerPhone: order.customer?.phone || null,
       customerEmail: order.customer?.email || null,
       
@@ -1407,7 +1407,7 @@ export const simplifiedOrders = {
       
       // Flatten createdBy data
       createdById: order.createdById,
-      createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
+      createdByName: order.createdBy ? formatFullName(order.createdBy.firstName, order.createdBy.lastName) : null,
       createdByEmail: order.createdBy?.email || null,
       
       // Calculated fields
@@ -1677,7 +1677,7 @@ export const simplifiedOrders = {
       customerId: order.customerId,
       customerFirstName: order.customer?.firstName || null,
       customerLastName: order.customer?.lastName || null,
-      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : null,
+      customerName: order.customer ? formatFullName(order.customer.firstName, order.customer.lastName) : null,
       customerPhone: order.customer?.phone || null,
       
       // Flatten outlet data (simplified)
@@ -1687,7 +1687,7 @@ export const simplifiedOrders = {
       
       // Flatten createdBy data
       createdById: order.createdById,
-      createdByName: order.createdBy ? `${order.createdBy.firstName} ${order.createdBy.lastName}` : null,
+      createdByName: order.createdBy ? formatFullName(order.createdBy.firstName, order.createdBy.lastName) : null,
       
       // Order items with flattened product data
       orderItems: order.orderItems?.map(item => {

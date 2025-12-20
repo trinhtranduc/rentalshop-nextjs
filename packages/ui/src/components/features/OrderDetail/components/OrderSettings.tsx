@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Button, Input, Label, Textarea } from '@rentalshop/ui';
 import { Save, X, Edit } from 'lucide-react';
 import { SettingsForm } from '@rentalshop/types';
+import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface OrderSettingsProps {
   order: any; // OrderData type was removed from imports, so using 'any' for now
@@ -19,7 +20,10 @@ const SettingsFormFields: React.FC<{
   settingsForm: SettingsForm;
   order: any; // OrderData type was removed from imports, so using 'any' for now
   onChange: (updates: Partial<SettingsForm>) => void;
-}> = ({ settingsForm, order, onChange }) => (
+}> = ({ settingsForm, order, onChange }) => {
+  const t = useOrderTranslations();
+  
+  return (
   <>
     <div>
       <Label htmlFor="damageFee" className="text-sm font-medium text-gray-700">
@@ -79,11 +83,12 @@ const SettingsFormFields: React.FC<{
         disabled={order.status === 'RETURNED' || order.status === 'CANCELLED'}
         className="mt-1"
         rows={3}
-        placeholder="Enter order notes"
+        placeholder={t('messages.enterOrderNotes')}
       />
     </div>
   </>
-);
+  );
+};
 
 const SettingsDisplay: React.FC<{ settingsForm: SettingsForm }> = ({ settingsForm }) => (
   <div className="space-y-3">

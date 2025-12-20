@@ -240,7 +240,7 @@ export default function CustomerOrdersPage() {
   // Breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Customers', href: '/customers' },
-    { label: `${customer.firstName} ${customer.lastName}`, href: `/customers/${id}` },
+    { label: [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'Customer', href: `/customers/${id}` },
     { label: 'Orders' }
   ];
 

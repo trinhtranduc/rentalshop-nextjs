@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   Button
 } from '@rentalshop/ui';
 import { Trash2 } from 'lucide-react';
-import type { Customer, Merchant } from '@rentalshop/types';
+import type { Customer } from '@rentalshop/types';
 import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
 
@@ -32,44 +32,6 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
   const tc = useCommonTranslations();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [merchant, setMerchant] = useState<Merchant | null>(null);
-  const [isLoadingMerchant, setIsLoadingMerchant] = useState(false);
-
-  // Fetch merchant information when customer changes
-  useEffect(() => {
-    const fetchMerchant = async () => {
-      if (!customer?.merchantId) {
-        console.log('🔍 CustomerDetailDialog: No merchantId found for customer:', customer);
-        setMerchant(null);
-        return;
-      }
-
-      try {
-        setIsLoadingMerchant(true);
-        console.log('🔍 CustomerDetailDialog: Fetching merchant with ID:', customer.merchantId);
-        
-        const { merchantsApi } = await import('@rentalshop/utils');
-        const response = await merchantsApi.getMerchantById(customer.merchantId);
-        
-        console.log('🔍 CustomerDetailDialog: Merchant API response:', response);
-        
-        if (response.success && response.data) {
-          console.log('✅ CustomerDetailDialog: Merchant fetched successfully:', response.data);
-          setMerchant(response.data as any); // TODO: Fix Merchant type compatibility between utils and types packages
-        } else {
-          console.error('❌ CustomerDetailDialog: Merchant API error:', response.error);
-          setMerchant(null);
-        }
-      } catch (error) {
-        console.error('❌ CustomerDetailDialog: Error fetching merchant:', error);
-        setMerchant(null);
-      } finally {
-        setIsLoadingMerchant(false);
-      }
-    };
-
-    fetchMerchant();
-  }, [customer?.merchantId]);
 
   if (!customer) return null;
 
@@ -125,7 +87,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.fullName')}</label>
-                  <p className="text-sm font-semibold">{`${customer.firstName} ${customer.lastName}`}</p>
+                  <p className="text-sm font-semibold">{[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.phone')}</label>
@@ -139,22 +101,6 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                   <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.dateOfBirth')}</label>
                     <p className="text-sm">{formatDate(customer.dateOfBirth)}</p>
-                  </div>
-                )}
-                {merchant && (
-                  <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.merchant')}</label>
-                    <p className="text-sm">
-                      {isLoadingMerchant ? (
-                        <span className="text-muted-foreground italic">{t('fields.loading')}</span>
-                      ) : merchant ? (
-                        merchant.name
-                      ) : (
-                        <span className="text-muted-foreground italic">
-                          {t('fields.notAvailable')} {customer.merchantId ? `(ID: ${customer.merchantId})` : '(No merchant ID)'}
-                        </span>
-                      )}
-                    </p>
                   </div>
                 )}
                 <div>
@@ -236,7 +182,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
               {t('actions.deleteCustomer')}
             </DialogTitle>
             <DialogDescription className="text-sm text-gray-600">
-              {t('messages.confirmDeleteDetails').replace('{name}', `${customer?.firstName} ${customer?.lastName}`)}
+              {t('messages.confirmDeleteDetails').replace('{name}', [customer?.firstName, customer?.lastName].filter(Boolean).join(' ').trim() || 'N/A')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex justify-end space-x-2">

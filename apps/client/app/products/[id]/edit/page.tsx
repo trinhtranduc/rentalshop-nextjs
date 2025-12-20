@@ -129,22 +129,26 @@ export default function ProductEditPage() {
     }
   }, [product, resolvedMerchantId]);
 
-  const handleSave = async (data: ProductInput) => {
+  const handleSave = async (data: ProductInput, files?: File[]) => {
     try {
       // Transform ProductInput to ProductUpdateInput format
       const updateData = {
         ...data,
         id: productId,
-        // Convert images array to string for API
-        images: Array.isArray(data.images) ? data.images.join(',') : data.images || '',
+        // For multipart upload, images should be empty array (files will be sent separately)
+        // For non-multipart, convert images array to string for API
+        images: files && files.length > 0 ? [] : (Array.isArray(data.images) ? data.images.join(',') : data.images || ''),
         // Map totalStock to stock for API
         stock: data.totalStock,
       };
       
       console.log('🔍 Updating product with data:', updateData);
+      if (files && files.length > 0) {
+        console.log('🔍 Updating product with files:', files.length);
+      }
       
-      // Call the update API
-      await productsApi.updateProduct(productId, updateData);
+      // Call the update API with FormData (files will be sent if provided)
+      await productsApi.updateProduct(productId, updateData, files);
       
       // Redirect to the product view page
       router.push(`/products/${productId}`);
@@ -226,6 +230,7 @@ export default function ProductEditPage() {
           onSave={handleSave}
           onCancel={handleCancel}
           onBack={handleBack}
+          useMultipartUpload={true}
         />
       </PageContent>
     </PageWrapper>

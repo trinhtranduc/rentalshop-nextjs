@@ -23,9 +23,9 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
+import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations, useOutletsData, useCategoriesData } from '@rentalshop/hooks';
 import { usePermissions } from '@rentalshop/hooks';
-import { productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
+import { productsApi } from '@rentalshop/utils';
 import type { ProductFilters, Product, ProductWithDetails, ProductUpdateInput, Category, Outlet } from '@rentalshop/types';
 
 /**
@@ -78,50 +78,32 @@ export default function ProductsPage() {
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   
   // ============================================================================
-  // FETCH CATEGORIES - Using Official useDedupedApi Hook
+  // FETCH CATEGORIES & OUTLETS - Using Official Hooks
   // ============================================================================
-  const { 
-    data: categoriesData 
-  } = useDedupedApi({
-    filters: {}, // Categories are global, no filter needed
-    fetchFn: async () => {
-      const categoriesRes = await categoriesApi.getCategories();
-      if (!categoriesRes.success || !categoriesRes.data) {
-        throw new Error('Failed to fetch categories');
-      }
-      return categoriesRes.data;
-    },
-    enabled: true,
-    staleTime: 300000, // 5 minutes (categories don't change often)
-    cacheTime: 600000, // 10 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
-  });
-
-  // ============================================================================
-  // FETCH OUTLETS - Using Official useDedupedApi Hook
-  // ============================================================================
-  const { 
-    data: outletsData 
-  } = useDedupedApi({
-    filters: {}, // Outlets are filtered by backend based on user role
-    fetchFn: async () => {
-      const outletsRes = await outletsApi.getOutlets();
-      if (!outletsRes.success || !outletsRes.data?.outlets) {
-        throw new Error('Failed to fetch outlets');
-      }
-      return { outlets: outletsRes.data.outlets };
-    },
-    enabled: true,
-    staleTime: 60000, // 60 seconds
-    cacheTime: 300000, // 5 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
-  });
-
-  // Sync data to local state
-  const categories = categoriesData || [];
-  const outlets = outletsData?.outlets || [];
+  const { categories } = useCategoriesData();
+  const { outlets, loading: outletsLoading, error: outletsError } = useOutletsData();
+  
+  // Check if outlets are ready (loaded, have data, and at least one outlet exists)
+  // Must check: 1) not loading, 2) no error, 3) outlets array has items
+  const outletsReady = !outletsLoading && !outletsError && outlets.length > 0;
+  
+  // Handle opening add dialog - only open when outlets are loaded and available
+  const handleOpenAddDialog = useCallback(() => {
+    if (outletsReady) {
+      setShowAddDialog(true);
+    } else if (outletsLoading) {
+      // Still loading - could show a loading indicator or wait
+      console.log('⏳ Outlets are still loading, please wait...');
+    } else if (outletsError) {
+      // Error loading outlets - could show error message
+      console.error('❌ Error loading outlets:', outletsError);
+    } else if (outlets.length === 0) {
+      // No outlets available - this should be handled by ProductAddForm warning
+      console.warn('⚠️ No outlets available');
+      // Still allow opening dialog - ProductAddForm will show warning
+      setShowAddDialog(true);
+    }
+  }, [outletsReady, outletsLoading, outletsError, outlets.length]);
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -152,14 +134,6 @@ export default function ProductsPage() {
   }), [search, categoryId, outletId, page, limit, sortBy, sortOrder]);
 
   const { data, loading, error, refetch } = useProductsData({ filters });
-  
-  // Debug: Log data state
-  console.log('📊 Products Page - Data state:', {
-    hasData: !!data,
-    productsCount: data?.products?.length || 0,
-    loading,
-    error: error?.message
-  });
 
   // ============================================================================
   // URL UPDATE HELPER - Update URL = Update Everything
@@ -194,7 +168,6 @@ export default function ProductsPage() {
   // ============================================================================
   
   const handleSearchChange = useCallback((searchValue: string) => {
-    console.log('🔍 Page: Search changed to:', searchValue);
     updateURL({ q: searchValue, page: 1 }); // Reset to page 1
   }, [updateURL]);
 
@@ -212,7 +185,6 @@ export default function ProductsPage() {
   }, [updateURL]);
 
   const handleClearFilters = useCallback(() => {
-    console.log('🔧 Page: Clear all filters');
     // Clear all params except page
     router.push(pathname, { scroll: false });
   }, [pathname, router]);
@@ -228,17 +200,14 @@ export default function ProductsPage() {
   }, [sortBy, sortOrder, updateURL]);
 
   const handleLimitChange = useCallback((newLimit: number) => {
-    console.log('📄 handleLimitChange called: current limit=', limit, ', new limit=', newLimit);
     updateURL({ limit: newLimit, page: 1 }); // Reset to page 1 when changing limit
-  }, [updateURL, limit]);
+  }, [updateURL]);
 
   // ============================================================================
   // PRODUCT ACTION HANDLERS
   // ============================================================================
   
   const handleProductAction = useCallback(async (action: string, productId: number) => {
-    console.log('🎬 Product action:', action, productId);
-    
     const product = data?.products.find(p => p.id === productId);
     
     switch (action) {
@@ -247,9 +216,6 @@ export default function ProductsPage() {
         try {
           const response = await productsApi.getProduct(productId);
           if (response.success && response.data) {
-            console.log('📦 Product details fetched:', response.data);
-            console.log('📦 Outlet stock:', response.data.outletStock);
-            console.log('📦 Images:', response.data.images);
             setSelectedProduct(response.data as ProductWithDetails);
             setShowDetailDialog(true);
           }
@@ -308,16 +274,17 @@ export default function ProductsPage() {
         break;
         
       default:
-        console.log('Unknown action:', action);
+        break;
     }
-  }, [data?.products, router, toastSuccess, refetch]);
+  }, [data?.products, router, toastSuccess, refetch, t]);
   
   // Handle product update from edit dialog
-  const handleProductUpdate = useCallback(async (productData: ProductUpdateInput) => {
+  const handleProductUpdate = useCallback(async (productData: ProductUpdateInput, files?: File[]) => {
     if (!selectedProduct) return;
     
     try {
-      const response = await productsApi.updateProduct(selectedProduct.id, productData);
+      // Always use FormData for consistency (files parameter is optional)
+      const response = await productsApi.updateProduct(selectedProduct.id, productData, files);
       if (response.success) {
         toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
         setShowEditDialog(false);
@@ -350,9 +317,10 @@ export default function ProductsPage() {
   }, [productToDelete, toastSuccess, refetch, t]);
 
   // Handle product creation from add dialog
-  const handleProductCreated = useCallback(async (productData: any) => {
+  const handleProductCreated = useCallback(async (productData: any, files?: File[]) => {
     try {
-      const response = await productsApi.createProduct(productData);
+      // Always use createProduct - it now always uses multipart form data (unified format)
+      const response = await productsApi.createProduct(productData, files);
       
       if (response.success) {
         toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
@@ -407,31 +375,22 @@ export default function ProductsPage() {
             <p className="text-sm text-gray-600">{t('title')}</p>
           </div>
           <div className="flex gap-3">
-            {/* Export button - only show when products are selected */}
-            {canExport && selectedProductIds.length > 0 && (
+            {/* Export button */}
+            {canExport && (
               <Button
                 onClick={() => setShowExportDialog(true)}
-                variant="default"
-                size="sm"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {tc('buttons.export')} ({selectedProductIds.length})
-              </Button>
-            )}
-            {canExport && selectedProductIds.length === 0 && (
-              <Button
-                onClick={() => setShowExportDialog(true)}
-                variant="outline"
+                variant={selectedProductIds.length > 0 ? "default" : "outline"}
                 size="sm"
               >
                 <Download className="w-4 h-4 mr-2" />
                 {tc('buttons.export')}
+                {selectedProductIds.length > 0 && ` (${selectedProductIds.length})`}
               </Button>
             )}
             {/* ✅ Only show Add Product button if user can manage products */}
             {canManageProducts && (
               <Button 
-                onClick={() => setShowAddDialog(true)}
+                onClick={handleOpenAddDialog}
                 variant="default"
                 size="sm"
               >
@@ -497,19 +456,22 @@ export default function ProductsPage() {
         </Dialog>
       )}
 
-      {/* Add Product Dialog */}
-      <ProductAddDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        categories={categories}
-        outlets={outlets}
-        merchantId={String(user?.merchantId || user?.merchant?.id || 0)}
-        onProductCreated={handleProductCreated}
-        onError={(error) => {
-          // ✅ onProductCreated already shows toast, so onError is only for logging
-          console.error('❌ ProductAddDialog: Error occurred:', error);
-        }}
-      />
+      {/* Add Product Dialog - Render when dialog is open and outlets are loaded (or empty) */}
+      {/* Allow dialog to render even with empty outlets - ProductAddForm will show warning */}
+      {showAddDialog && !outletsLoading && (
+        <ProductAddDialog
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          categories={categories}
+          outlets={outlets}
+          merchantId={String(user?.merchantId || user?.merchant?.id || 0)}
+          onProductCreated={handleProductCreated}
+          onError={(error) => {
+            // Error automatically handled by useGlobalErrorHandler
+          }}
+          useMultipartUpload={true}
+        />
+      )}
 
       {/* Edit Product Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>

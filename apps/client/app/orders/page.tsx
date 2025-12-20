@@ -392,7 +392,7 @@ export default function OrdersPage() {
       status: order.status,
       customerId: order.customer?.id || (order as any).customerId || '',
       customerName: (order as any).customerName || 
-                   (order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown'),
+                   (order.customer ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'Unknown' : 'Unknown'),
       customerPhone: (order as any).customerPhone || order.customer?.phone || '',
       outletId: order.outlet?.id || (order as any).outletId || '',
       outletName: (order as any).outletName || order.outlet?.name || 'Unknown',

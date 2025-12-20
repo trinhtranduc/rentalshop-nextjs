@@ -1377,10 +1377,10 @@
     "@emnapi/runtime" "^1.4.3"
     "@tybys/wasm-util" "^0.10.0"
 
-"@next/env@14.2.33":
-  version "14.2.33"
-  resolved "https://registry.yarnpkg.com/@next/env/-/env-14.2.33.tgz#ac87a781fd485b740f3f9bd94efc02cb9826f694"
-  integrity sha512-CgVHNZ1fRIlxkLhIX22flAZI/HmpDaZ8vwyJ/B0SDPTBuLZ1PJ+DWMjCHhqnExfmSQzA/PbZi8OAc7PAq2w9IA==
+"@next/env@14.2.35":
+  version "14.2.35"
+  resolved "https://registry.yarnpkg.com/@next/env/-/env-14.2.35.tgz#e979016d0ca8500a47d41ffd02625fe29b8df35a"
+  integrity sha512-DuhvCtj4t9Gwrx80dmz2F4t/zKQ4ktN8WrMwOuVzkJfBilwAwGr6v16M5eI8yCuZ63H9TTuEU09Iu2HqkzFPVQ==
 
 "@next/eslint-plugin-next@14.2.33":
   version "14.2.33"
@@ -1886,22 +1886,22 @@
 "@rentalshop/hooks@file:packages/hooks":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-a28c807e-ef6b-4717-9250-603a0fd5c53d-1765264957021/node_modules/@rentalshop/constants"
-    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-a28c807e-ef6b-4717-9250-603a0fd5c53d-1765264957021/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-a28c807e-ef6b-4717-9250-603a0fd5c53d-1765264957021/node_modules/@rentalshop/utils"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-4e9ed6c7-2a0a-40c3-9bde-a1d8cf83d180-1766155849347/node_modules/@rentalshop/constants"
+    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-4e9ed6c7-2a0a-40c3-9bde-a1d8cf83d180-1766155849347/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-hooks-1.0.0-4e9ed6c7-2a0a-40c3-9bde-a1d8cf83d180-1766155849347/node_modules/@rentalshop/utils"
 
 "@rentalshop/middleware@file:packages/middleware":
   version "1.0.0"
   dependencies:
-    "@rentalshop/auth" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-214caab0-bf75-407d-b9a0-08ce39265ada-1765264957024/node_modules/@rentalshop/auth"
-    "@rentalshop/database" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-214caab0-bf75-407d-b9a0-08ce39265ada-1765264957024/node_modules/@rentalshop/database"
-    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-214caab0-bf75-407d-b9a0-08ce39265ada-1765264957024/node_modules/@rentalshop/types"
-    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-214caab0-bf75-407d-b9a0-08ce39265ada-1765264957024/node_modules/@rentalshop/utils"
+    "@rentalshop/auth" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-b8d2e788-0751-4096-b9be-dbde9aae7ac0-1766155849349/node_modules/@rentalshop/auth"
+    "@rentalshop/database" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-b8d2e788-0751-4096-b9be-dbde9aae7ac0-1766155849349/node_modules/@rentalshop/database"
+    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-b8d2e788-0751-4096-b9be-dbde9aae7ac0-1766155849349/node_modules/@rentalshop/types"
+    "@rentalshop/utils" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-middleware-1.0.0-b8d2e788-0751-4096-b9be-dbde9aae7ac0-1766155849349/node_modules/@rentalshop/utils"
 
 "@rentalshop/types@file:packages/types":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-types-1.0.0-2389686e-f49d-4277-b17b-82a1abeceb08-1765264957022/node_modules/@rentalshop/constants"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-types-1.0.0-4bc115dc-fef1-4c62-a38c-9a217200fb8f-1766155849346/node_modules/@rentalshop/constants"
 
 "@rentalshop/ui@file:packages/ui":
   version "1.0.0"
@@ -1912,9 +1912,9 @@
     "@radix-ui/react-slot" "^1.1.2"
     "@radix-ui/react-tabs" "^1.1.2"
     "@radix-ui/react-toast" "^1.2.5"
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-a5953819-27ad-4333-af63-f74aef7d27c3-1765264957024/node_modules/@rentalshop/constants"
-    "@rentalshop/hooks" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-a5953819-27ad-4333-af63-f74aef7d27c3-1765264957024/node_modules/@rentalshop/hooks"
-    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-a5953819-27ad-4333-af63-f74aef7d27c3-1765264957024/node_modules/@rentalshop/types"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-ce8c3c2e-9e3b-40da-b98d-20ce233c08ff-1766155849348/node_modules/@rentalshop/constants"
+    "@rentalshop/hooks" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-ce8c3c2e-9e3b-40da-b98d-20ce233c08ff-1766155849348/node_modules/@rentalshop/hooks"
+    "@rentalshop/types" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-ui-1.0.0-ce8c3c2e-9e3b-40da-b98d-20ce233c08ff-1766155849348/node_modules/@rentalshop/types"
     browser-image-compression "^2.0.2"
     class-variance-authority "^0.7.1"
     clsx "^2.1.1"
@@ -1933,8 +1933,8 @@
     "@aws-sdk/client-s3" "^3.0.0"
     "@aws-sdk/client-ses" "^3.921.0"
     "@aws-sdk/s3-request-presigner" "^3.0.0"
-    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-af5933e4-7b9c-413c-b358-ac90a01991fe-1765264957023/node_modules/@rentalshop/constants"
-    "@rentalshop/env" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-af5933e4-7b9c-413c-b358-ac90a01991fe-1765264957023/node_modules/@rentalshop/env"
+    "@rentalshop/constants" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-f51e4b2f-3043-4efe-a50a-2b92ea96a193-1766155849346/node_modules/@rentalshop/constants"
+    "@rentalshop/env" "file:../../Library/Caches/Yarn/v6/npm-@rentalshop-utils-1.0.0-f51e4b2f-3043-4efe-a50a-2b92ea96a193-1766155849346/node_modules/@rentalshop/env"
     browser-image-compression "^2.0.2"
     date-fns "^2.30.0"
     stripe "^14.0.0"
@@ -6217,12 +6217,12 @@ next-intl@^4.3.12:
     negotiator "^1.0.0"
     use-intl "^4.5.3"
 
-next@^14.0.0:
-  version "14.2.33"
-  resolved "https://registry.yarnpkg.com/next/-/next-14.2.33.tgz#284bc3de43d9319b7b41d4b69ec9a0ff0905a9e3"
-  integrity sha512-GiKHLsD00t4ACm1p00VgrI0rUFAC9cRDGReKyERlM57aeEZkOQGcZTpIbsGn0b562FTPJWmYfKwplfO9EaT6ng==
+next@^14.2.35:
+  version "14.2.35"
+  resolved "https://registry.yarnpkg.com/next/-/next-14.2.35.tgz#7c68873a15fe5a19401f2f993fea535be3366ee9"
+  integrity sha512-KhYd2Hjt/O1/1aZVX3dCwGXM1QmOV4eNM2UTacK5gipDdPN/oHHK/4oVGy7X8GMfPMsUTUEmGlsy0EY1YGAkig==
   dependencies:
-    "@next/env" "14.2.33"
+    "@next/env" "14.2.35"
     "@swc/helpers" "0.5.5"
     busboy "1.6.0"
     caniuse-lite "^1.0.30001579"

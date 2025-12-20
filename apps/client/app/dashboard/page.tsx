@@ -1049,7 +1049,7 @@ export default function DashboardPage() {
   };
 
   // Handler for product creation
-  const handleProductCreated = async (productData: any) => {
+  const handleProductCreated = async (productData: any, files?: File[]) => {
     try {
       const merchantId = user?.merchant?.id || user?.merchantId;
       if (!merchantId) {
@@ -1057,7 +1057,8 @@ export default function DashboardPage() {
         return;
       }
 
-      const response = await productsApi.createProduct(productData);
+      // Always use createProduct - it now always uses multipart form data (unified format)
+      const response = await productsApi.createProduct(productData, files);
       
       if (response.success) {
         toastSuccess(tc('labels.success'), tc('messages.createSuccess'));
@@ -1683,6 +1684,7 @@ export default function DashboardPage() {
           onError={(error) => {
             // Error automatically handled by useGlobalErrorHandler
           }}
+          useMultipartUpload={true}
         />
       </PageContent>
     </PageWrapper>

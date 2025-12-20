@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button, Breadcrumb, OrderDetail, PageWrapper, useToast, ReceiptPreviewModal, LoadingIndicator } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
@@ -8,9 +8,9 @@ import { orderBreadcrumbs } from '@rentalshop/utils';
 
 import { ArrowLeft } from 'lucide-react';
 import { ordersApi } from '@rentalshop/utils';
-import { useAuth, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
+import { useAuth, useOrderTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
 
-import type { Order } from '@rentalshop/types';
+import type { Order, OrderWithDetails } from '@rentalshop/types';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -19,9 +19,6 @@ export default function OrderDetailPage() {
   const { user } = useAuth();
   const t = useOrderTranslations();
   const tc = useCommonTranslations();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   
   // Receipt preview state
@@ -33,45 +30,55 @@ export default function OrderDetailPage() {
   // Extract numeric part from order ID (e.g., "2110" from "ORD-2110")
   const numericOrderId = orderId;//.replace(/^ORD-/, '');
 
-  useEffect(() => {
-    if (!orderId) return;
-
-    const fetchOrderDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const result = await ordersApi.getOrderByNumber(`${numericOrderId}`);
-
-        if (result.success && result.data) {
-          const orderData = result.data;
-          setOrder(orderData);
-          
-          // Use outlet data from order response (already included in API response)
-          // No need to fetch separately - order API already includes outlet data
-          if (orderData.outlet) {
-            setOutlet(orderData.outlet);
-          }
-        } else {
-          setError(result.error || tc('messages.errorLoadingData'));
-        }
-      } catch (err) {
-        console.error('Error fetching order details:', err);
-        setError(tc('messages.errorLoadingData'));
-      } finally {
-        setLoading(false);
+  // ============================================================================
+  // FETCH ORDER DETAILS - Using Official useDedupedApi Hook
+  // ============================================================================
+  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
+  // Prevents duplicate API calls from React 18 strict mode double mounting
+  const { 
+    data: orderData, 
+    loading, 
+    error: orderError,
+    refetch: refetchOrder
+  } = useDedupedApi({
+    filters: { orderId: numericOrderId },
+    fetchFn: async () => {
+      if (!numericOrderId) {
+        throw new Error('Order ID is required');
       }
-    };
+      
+      const result = await ordersApi.getOrderByNumber(`${numericOrderId}`);
+      
+      if (!result.success || !result.data) {
+        throw new Error(result.error || tc('messages.errorLoadingData'));
+      }
+      
+      return result.data;
+    },
+    enabled: !!numericOrderId,
+    staleTime: 60000, // 60 seconds cache
+    cacheTime: 300000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
+  });
 
-    fetchOrderDetails();
-  }, [orderId]);
+  // Sync order data to local state
+  const order = orderData || null;
+  const error = orderError ? orderError.message : null;
+
+  // Extract outlet data from order response
+  React.useEffect(() => {
+    if (orderData?.outlet) {
+      setOutlet(orderData.outlet);
+    }
+  }, [orderData?.outlet]);
 
   const handleEditOrder = () => {
     // Navigate to edit page or open edit dialog
     router.push(`/orders/${numericOrderId}/edit`);
   };
 
-  const handleCancelOrder = async (orderToCancel: Order) => {
+  const handleCancelOrder = async (orderToCancel: OrderWithDetails) => {
     if (!orderToCancel) return;
 
     // ✅ No need for confirm() - OrderDetail component already has ConfirmationDialog
@@ -80,9 +87,9 @@ export default function OrderDetailPage() {
 
       const result = await ordersApi.cancelOrder(orderToCancel.id);
 
-      if (result.success && result.data) {
-        // Update order state directly from API response (better UX - no need to refetch)
-        setOrder(result.data);
+      if (result.success) {
+        // Refetch order data to ensure we have the latest state from server
+        await refetchOrder();
         toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       }
       // Error automatically handled by useGlobalErrorHandler
@@ -94,7 +101,7 @@ export default function OrderDetailPage() {
     }
   };
 
-  const handleDeleteOrder = async (orderToDelete: Order) => {
+  const handleDeleteOrder = async (orderToDelete: OrderWithDetails) => {
     if (!orderToDelete) return;
 
     try {
@@ -116,17 +123,17 @@ export default function OrderDetailPage() {
     }
   };
 
-  const handleStatusChange = async (newStatus: string) => {
-    if (!order || !newStatus) return;
+  const handleStatusChange = async (orderId: number, status: string) => {
+    if (!order || !status) return;
 
     try {
       setActionLoading(true);
 
-      const result = await ordersApi.updateOrderStatus(order.id, newStatus);
+      const result = await ordersApi.updateOrderStatus(orderId, status);
 
-      if (result.success && result.data) {
-        // Update order state directly from API response (better UX - no need to refetch)
-        setOrder(result.data);
+      if (result.success) {
+        // Refetch order data to ensure we have the latest state from server
+        await refetchOrder();
         toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to update order status');
@@ -150,9 +157,9 @@ export default function OrderDetailPage() {
 
       const result = await ordersApi.pickupOrder(parseInt(orderId));
 
-      if (result.success && result.data) {
-        // Update order state directly from API response (better UX - no need to refetch)
-        setOrder(result.data);
+      if (result.success) {
+        // Refetch order data to ensure we have the latest state from server
+        await refetchOrder();
         toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to pickup order');
@@ -175,9 +182,9 @@ export default function OrderDetailPage() {
 
       const result = await ordersApi.returnOrder(parseInt(orderId));
 
-      if (result.success && result.data) {
-        // Update order state directly from API response (better UX - no need to refetch)
-        setOrder(result.data);
+      if (result.success) {
+        // Refetch order data to ensure we have the latest state from server
+        await refetchOrder();
         toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
       } else {
         throw new Error(result.error || 'Failed to return order');
@@ -225,9 +232,9 @@ export default function OrderDetailPage() {
         firstItemProductName: (result.data?.orderItems?.[0] as any)?.productName
       });
 
-      if (result.success && result.data) {
-        // Update order state directly from API response (better UX - no need to refetch)
-        setOrder(result.data);
+      if (result.success) {
+        // Refetch order data to ensure we have the latest state from server
+        await refetchOrder();
         // Single toast notification - success only
         toastSuccess(t('detail.settingsSaved'), t('detail.settingsSavedMessage'));
       } else {
@@ -334,10 +341,9 @@ export default function OrderDetailPage() {
 
       {/* Order Detail Component */}
       <OrderDetail
-        order={order}
+        order={order as any}
         onEdit={handleEditOrder}
         onCancel={handleCancelOrder}
-        onDelete={handleDeleteOrder}
         onStatusChange={handleStatusChange}
         onPickup={handlePickupWrapper}
         onReturn={handleReturnWrapper}

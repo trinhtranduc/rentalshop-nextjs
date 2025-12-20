@@ -235,11 +235,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     let updatedFormData = { ...formData };
     
     // Initialize outlet stock if not provided (only for new products, not edit mode)
+    // Auto-select default outlet if only 1 outlet exists
     if (mode === 'create' && formData.outletStock.length === 0 && outlets.length > 0) {
-      updatedFormData.outletStock = outlets.map(outlet => ({
-        outletId: outlet.id,
-        stock: 0,
-      }));
+      // If only 1 outlet, auto-select it with totalStock value (if set)
+      if (outlets.length === 1) {
+        updatedFormData.outletStock = [{
+          outletId: outlets[0].id,
+          stock: formData.totalStock || 0, // Use totalStock if available, otherwise 0
+        }];
+      } else {
+        // Multiple outlets - initialize all with 0 stock
+        updatedFormData.outletStock = outlets.map(outlet => ({
+          outletId: outlet.id,
+          stock: 0,
+        }));
+      }
     }
     
     // Set default category if none selected and categories are available
@@ -372,7 +382,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
 
     // Validate outlet stock - ensure outlet stock is provided
+    // If only 1 outlet, auto-initialize it (default outlet scenario)
     if (formData.outletStock.length === 0) {
+      if (outlets.length === 1) {
+        // Auto-initialize default outlet with totalStock value
+        setFormData(prev => ({
+          ...prev,
+          outletStock: [{
+            outletId: outlets[0].id,
+            stock: prev.totalStock || 0,
+          }]
+        }));
+        // Allow validation to pass - outletStock will be set immediately
+        return Object.keys(newErrors).length === 0;
+      }
       newErrors.outletStock = tv('fields.outletStock.required');
       return false;
     }
@@ -458,7 +481,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       totalStock: formData.totalStock,
       rentPrice: formData.rentPrice,
       salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
-      costPrice: formData.costPrice > 0 ? formData.costPrice : undefined,
+      // Only include costPrice if user has products.manage permission
+      ...(canManageProducts && formData.costPrice > 0 ? { costPrice: formData.costPrice } : {}),
       deposit: formData.deposit,
       images: useMultipartUpload ? [] : formData.images, // Empty array for multipart, existing images for immediate upload
       outletStock: formData.outletStock,

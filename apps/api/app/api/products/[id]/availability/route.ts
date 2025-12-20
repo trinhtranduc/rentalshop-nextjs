@@ -229,7 +229,9 @@ export async function GET(
       }
 
       // Validate date range
-      if (rentalStart >= rentalEnd) {
+      // Allow same-day rentals (rentalStart === rentalEnd is OK)
+      // Only reject if return date is before pickup date
+      if (rentalStart > rentalEnd) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_RENTAL_DATES'),
           { status: 400 }

@@ -251,7 +251,7 @@ export default function CustomerPage() {
   // Breadcrumb items - inline
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: t('title'), href: '/customers' },
-    { label: `${customer.firstName} ${customer.lastName}` }
+    { label: [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'Customer' }
   ];
 
   return (
@@ -259,7 +259,7 @@ export default function CustomerPage() {
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-4" />
       <PageHeader>
         <CustomerPageHeader
-          title={`${customer.firstName} ${customer.lastName}`}
+          title={[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'Customer'}
           subtitle={showEditSection ? t('editCustomer') : t('customerDetails')}
         >
           {/* Header buttons - show different buttons based on edit mode */}

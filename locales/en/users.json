@@ -47,7 +47,8 @@
     "actions": "Actions",
     "basicInformation": "Basic Information",
     "personalInformation": "Personal Information",
-    "roleAndPermissions": "Role & Permissions"
+    "roleAndPermissions": "Role & Permissions",
+    "readOnly": "Read-only"
   },
   "roles": {
     "ADMIN": "System Administrator",
@@ -158,7 +159,18 @@
     "enterPassword": "Enter password",
     "confirmPassword": "Confirm password",
     "enterNewPassword": "Enter new password",
-    "confirmNewPassword": "Confirm new password"
+    "confirmNewPassword": "Confirm new password",
+    "loadingMerchants": "Loading merchants...",
+    "searchAndSelectMerchant": "Search and select merchant",
+    "currentMerchant": "Current merchant",
+    "loadingOutlets": "Loading outlets...",
+    "selectMerchantFirst": "Select merchant first",
+    "searchAndSelectOutlet": "Search and select outlet",
+    "currentOutlet": "Current outlet",
+    "searchMerchants": "Search merchants...",
+    "noMerchantsFound": "No merchants found",
+    "searchOutlets": "Search outlets...",
+    "noOutletsFound": "No outlets found"
   }
 }
 
