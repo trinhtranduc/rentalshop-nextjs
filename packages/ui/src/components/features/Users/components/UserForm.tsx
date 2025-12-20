@@ -27,8 +27,7 @@ interface UserCreateFormData {
 }
 
 interface UserUpdateFormData {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone: string;
   role: UserRole;
@@ -64,9 +63,10 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [formData, setFormData] = useState<UserFormData>(() => {
     console.log('🔍 UserForm: Initial state setup - isEditMode:', isEditMode, 'user:', user);
     if (isEditMode && user) {
+      // Combine firstName and lastName into name field
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
       const initialData = {
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
+        name: fullName,
         email: user.email || '',
         phone: user.phone || '',
         // ✅ ADD MISSING FIELDS
@@ -124,9 +124,11 @@ export const UserForm: React.FC<UserFormProps> = ({
       const validRoles: UserRole[] = ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'];
       const role = validRoles.includes(userRole) ? userRole : 'OUTLET_STAFF';
       
+      // Combine firstName and lastName into name field
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+      
       const formData = {
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
+        name: fullName,
         email: user.email || '',
         phone: user.phone || '',
         role: role,
@@ -311,10 +313,15 @@ export const UserForm: React.FC<UserFormProps> = ({
       
       if (isEditMode) {
         const updateData = formData as UserUpdateFormData;
+        // Split name into firstName and lastName (same logic as create mode)
+        const nameParts = updateData.name.trim().split(' ').filter(part => part.length > 0);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
         submitData = {
           id: user?.id || 0,
-          firstName: updateData.firstName?.trim() || '',
-          lastName: updateData.lastName?.trim() || '',
+          firstName: firstName,
+          lastName: lastName,
           email: updateData.email.trim().toLowerCase(),
           phone: updateData.phone?.trim() || undefined, // Optional phone
           role: updateData.role,
@@ -371,42 +378,16 @@ export const UserForm: React.FC<UserFormProps> = ({
               {isEditMode ? t('fields.basicInformation') : t('fields.personalInformation')}
             </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {isEditMode ? (
-              <>
-                <FormField
-                  id="firstName"
-                  label={t('fields.firstName')}
-                  value={formData.firstName}
-                  onChange={(value) => handleInputChange('firstName', value)}
-                  error={errors.firstName}
-                  disabled={isSubmitting}
-                  required
-                  placeholder={t('placeholders.enterFirstName')}
-                />
-
-                <FormField
-                  id="lastName"
-                  label={t('fields.lastName')}
-                  value={formData.lastName}
-                  onChange={(value) => handleInputChange('lastName', value)}
-                  error={errors.lastName}
-                  disabled={isSubmitting}
-                  required
-                  placeholder={t('placeholders.enterLastName')}
-                />
-              </>
-            ) : (
-              <FormField
-                id="name"
-                label={t('fields.fullName')}
-                value={formData.name}
-                onChange={(value) => handleInputChange('name', value)}
-                error={errors.name}
-                disabled={isSubmitting}
-                required
-                placeholder={t('placeholders.enterFullName')}
-              />
-            )}
+            <FormField
+              id="name"
+              label={t('fields.fullName')}
+              value={(formData as any).name}
+              onChange={(value) => handleInputChange('name', value)}
+              error={errors.name}
+              disabled={isSubmitting}
+              required
+              placeholder={t('placeholders.enterFullName')}
+            />
 
             <FormField
               id="email"
@@ -492,7 +473,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               <FormField
                 id="password"
                 label={t('fields.password')}
-                value={formData.password}
+                value={(formData as UserCreateFormData).password}
                 onChange={(value) => handleInputChange('password', value)}
                 error={errors.password}
                 disabled={isSubmitting}
@@ -505,7 +486,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               <FormField
                 id="confirmPassword"
                 label={t('fields.confirmPassword')}
-                value={formData.confirmPassword}
+                value={(formData as UserCreateFormData).confirmPassword}
                 onChange={(value) => handleInputChange('confirmPassword', value)}
                 error={errors.confirmPassword}
                 disabled={isSubmitting}
