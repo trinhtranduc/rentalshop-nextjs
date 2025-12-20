@@ -138,7 +138,7 @@ export default function EditCustomerPage() {
     <PageWrapper>
       <PageHeader>
         <CustomerPageHeader
-          title={`Edit ${customer.firstName} ${customer.lastName}`}
+          title={`Edit ${[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'Customer'}`}
           subtitle="Update customer information and contact details"
           onBack={handleCancel}
           backText="Back to Customer"

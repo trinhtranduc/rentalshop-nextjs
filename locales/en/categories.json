@@ -66,7 +66,9 @@
   },
   "dialog": {
     "addNew": "Add New Category",
+    "addNewDescription": "Create a new category for organizing products",
     "edit": "Edit Category",
+    "editDescription": "Update category information",
     "viewDetails": "Category Details",
     "viewDescription": "View category information and details",
     "deleteTitle": "Delete Category",

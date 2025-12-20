@@ -136,7 +136,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                 onOpenChange={onStartEdit}
               >
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select collateral type" />
+                  <SelectValue placeholder={t('messages.selectCollateralType')} />
                 </SelectTrigger>
                 <SelectContent>
                   {collateralTypes.map(type => (
@@ -161,7 +161,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                 value={tempSettings.collateralDetails || ''}
                 onChange={(e) => onSettingsChange({ collateralDetails: e.target.value })}
                 className="mt-1"
-                placeholder="Enter collateral details"
+                placeholder={t('messages.enterCollateralDetails')}
                 disabled={!isCollateralDetailsEnabled()}
               />
             </div>
@@ -177,7 +177,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                 onChange={(e) => onSettingsChange({ notes: e.target.value })}
                 rows={3}
                 className="mt-1"
-                placeholder="Enter order notes"
+                placeholder={t('messages.enterOrderNotes')}
               />
             </div>
 

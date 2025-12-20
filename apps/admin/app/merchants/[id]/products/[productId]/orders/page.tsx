@@ -310,7 +310,7 @@ export default function ProductOrdersPage() {
                         <User className="w-4 h-4 text-text-tertiary" />
                         <div>
                           <p className="text-sm font-medium text-text-primary">
-                            {order.customer?.firstName} {order.customer?.lastName}
+                            {order.customer ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'Unknown' : 'Unknown'}
                           </p>
                           <p className="text-xs text-text-secondary">
                             {formatPhoneNumberMasked(order.customer?.phone)}

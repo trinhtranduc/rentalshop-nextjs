@@ -183,6 +183,8 @@
     "useAddNewCustomerButton": "Sử dụng nút \"Thêm khách hàng mới\" ở trên để tạo một khách hàng",
     "orderNotes": "Ghi chú đơn hàng",
     "enterOrderNotes": "Nhập ghi chú đơn hàng...",
+    "enterCollateralDetails": "Nhập chi tiết thế chấp",
+    "selectCollateralType": "Chọn loại thế chấp",
     "discount": "Giảm giá",
     "discountAmount": "Số tiền giảm giá...",
     "amount": "Số tiền",
