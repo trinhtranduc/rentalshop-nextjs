@@ -93,12 +93,18 @@ export function SubscriptionEditDialog({
     }
   }, [subscription]);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleSubmit = async (data: SubscriptionUpdateInput) => {
     try {
+      setErrorMessage(null);
       await onSave(data);
       onClose();
     } catch (error) {
       console.error('Failed to update subscription:', error);
+      // Don't close dialog on error - keep it open to show error message
+      const errorMsg = error instanceof Error ? error.message : 'Failed to update subscription';
+      setErrorMessage(errorMsg);
     }
   };
 
@@ -149,6 +155,13 @@ export function SubscriptionEditDialog({
         <div className="px-6 py-4 overflow-y-auto">
 
         <div className="space-y-6">
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{errorMessage}</p>
+            </div>
+          )}
+
           {/* Subscription Form */}
           <div className="w-full">
             <SubscriptionFormSimple

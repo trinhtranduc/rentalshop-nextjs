@@ -218,12 +218,18 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
     }
   };
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleSubmit = async (data: PlanCreateInput | PlanUpdateInput) => {
     try {
+      setErrorMessage(null);
       await onSubmit(data);
       onOpenChange(false);
     } catch (error) {
       console.error('Error submitting plan:', error);
+      // Don't close dialog on error - keep it open to show error message
+      const errorMsg = error instanceof Error ? error.message : 'Failed to submit plan';
+      setErrorMessage(errorMsg);
     }
   };
 
@@ -245,6 +251,12 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
         </DialogHeader>
 
         <div className="px-6 py-4 overflow-y-auto">
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">{errorMessage}</p>
+          </div>
+        )}
         
         {isLoading ? (
           <div className="flex items-center justify-center py-12">

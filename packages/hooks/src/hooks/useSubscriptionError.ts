@@ -6,6 +6,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useToasts } from '@rentalshop/ui';
+import { useSubscriptionTranslations, useErrorTranslations } from './useTranslation';
 
 export interface SubscriptionError {
   message: string;
@@ -28,6 +29,8 @@ export interface UseSubscriptionErrorReturn {
 export function useSubscriptionError(): UseSubscriptionErrorReturn {
   const [error, setError] = useState<SubscriptionError | null>(null);
   const { addToast } = useToasts();
+  const t = useSubscriptionTranslations();
+  const te = useErrorTranslations();
 
   // ✅ NOTE: Subscription errors are now handled by useGlobalErrorHandler()
   // This hook is still available for manual subscription error handling if needed
@@ -46,8 +49,14 @@ export function useSubscriptionError(): UseSubscriptionErrorReturn {
     
     const subscriptionStatus = statusMap[errorCode as string] || error?.subscriptionStatus || error?.details?.status;
 
+    // Get translated error message
+    const errorMessage = error.message || error?.response?.data?.message;
+    const translatedMessage = errorCode === 'PLAN_LIMIT_EXCEEDED' 
+      ? te('PLAN_LIMIT_EXCEEDED')
+      : errorMessage || t('errors.generic');
+    
     const subscriptionError: SubscriptionError = {
-      message: error.message || error?.response?.data?.message || 'Subscription error occurred',
+      message: translatedMessage,
       subscriptionStatus,
       merchantStatus: error.merchantStatus || error?.details?.merchantStatus,
       code: errorCode
@@ -63,27 +72,30 @@ export function useSubscriptionError(): UseSubscriptionErrorReturn {
     let message = error.message;
     let action = '';
 
-    // Customize message based on status
+    // Customize message based on status with translations
     if (subscriptionStatus === 'paused') {
-      message = 'Your subscription is paused. Some features may be limited.';
-      action = 'Resume your subscription to access all features.';
+      message = t('errors.paused');
+      action = t('errors.pausedAction');
     } else if (subscriptionStatus === 'expired') {
-      message = 'Your subscription has expired. Please renew to continue.';
-      action = 'Choose a new plan to continue using the service.';
+      message = t('errors.expired');
+      action = t('errors.expiredAction');
     } else if (subscriptionStatus === 'cancelled') {
-      message = 'Your subscription has been cancelled.';
-      action = 'Contact support to reactivate your subscription or choose a new plan.';
+      message = t('errors.cancelled');
+      action = t('errors.cancelledAction');
     } else if (subscriptionStatus === 'past_due') {
-      message = 'Payment is past due. Please update your payment method.';
-      action = 'Update your payment information to avoid service interruption.';
+      message = t('errors.pastDue');
+      action = t('errors.pastDueAction');
     } else if (merchantStatus && !['active'].includes(merchantStatus)) {
-      message = `Your merchant account is ${merchantStatus}. Please contact support.`;
-      action = 'Contact support to resolve account issues.';
+      message = t('errors.merchantAccount', { status: merchantStatus });
+      action = t('errors.merchantAccountAction');
+    } else if (error.code === 'PLAN_LIMIT_EXCEEDED') {
+      message = te('PLAN_LIMIT_EXCEEDED');
     }
 
     // Show error toast with action
-    addToast('error', 'Subscription Error', action ? `${message}\n\n${action}` : message, 8000);
-  }, [addToast]);
+    const errorTitle = t('errors.title');
+    addToast('error', errorTitle, action ? `${message}\n\n${action}` : message, 8000);
+  }, [addToast, t, te]);
 
   const clearError = useCallback(() => {
     setError(null);
