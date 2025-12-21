@@ -8,6 +8,7 @@ import { Label } from '@rentalshop/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Card, CardContent } from '@rentalshop/ui';
 import type { Customer, CustomerCreateInput, CustomerUpdateInput } from '@rentalshop/types';
+import { useCustomerTranslations } from '@rentalshop/hooks';
 
 interface CustomerFormProps {
   mode?: 'create' | 'edit';
@@ -26,9 +27,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   isSubmitting: externalIsSubmitting,
   currentUser
 }) => {
+  const t = useCustomerTranslations();
+  
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '', // Combined name field (will be split into firstName/lastName on submit)
     email: '',
     phone: '',
     companyName: '',
@@ -49,9 +51,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   // Initialize form data when customer prop changes (for edit mode)
   useEffect(() => {
     if (mode === 'edit' && customer) {
+      // Combine firstName and lastName into name field
+      const fullName = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim();
       setFormData({
-        firstName: customer.firstName || '',
-        lastName: customer.lastName || '',
+        name: fullName,
         email: customer.email || '',
         phone: customer.phone || '',
         companyName: (customer as any).companyName || '',
@@ -79,11 +82,13 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+    // Validate name - split into parts to validate first name
+    const nameParts = formData.name?.trim().split(' ') || [];
+    const firstName = nameParts[0] || '';
+    if (!firstName.trim()) {
+      newErrors.name = 'Customer name is required';
     }
 
-    // lastName is optional - no validation needed
     // phone is optional - no validation needed
 
     if (formData.email && formData.email.trim()) {
@@ -106,12 +111,17 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Split name into firstName and lastName (same logic as UserForm)
+      const nameParts = formData.name.trim().split(' ').filter(part => part.length > 0);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
       // Clean customer data: remove empty strings, only send fields with actual values
       const cleanedData: any = {};
       const rawData = {
         ...(mode === 'edit' && customer ? { id: customer.id } : {}),
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
+        firstName: firstName,
+        lastName: lastName,
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         companyName: formData.companyName.trim(),
@@ -161,39 +171,24 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardContent className="pt-6">
+          <div className="space-y-4">
+            {/* Customer Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">{t('fields.name')} *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder={t('placeholders.enterCustomerName')}
+                className={errors.name ? 'border-red-500' : ''}
+                disabled={isFormSubmitting}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name}</p>
+              )}
+            </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* First Name */}
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name *</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                placeholder="Enter first name"
-                className={errors.firstName ? 'border-red-500' : ''}
-                disabled={isFormSubmitting}
-              />
-              {errors.firstName && (
-                <p className="text-sm text-red-500">{errors.firstName}</p>
-              )}
-            </div>
-
-            {/* Last Name */}
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                placeholder="Enter last name"
-                className={errors.lastName ? 'border-red-500' : ''}
-                disabled={isFormSubmitting}
-              />
-              {errors.lastName && (
-                <p className="text-sm text-red-500">{errors.lastName}</p>
-              )}
-            </div>
-
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -359,7 +354,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               disabled={isFormSubmitting}
             />
           </div>
-
+          </div>
         </CardContent>
       </Card>
 

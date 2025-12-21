@@ -5341,6 +5341,8 @@ import { useToasts } from "@rentalshop/ui";
 function useSubscriptionError() {
   const [error, setError] = useState6(null);
   const { addToast } = useToasts();
+  const t3 = useSubscriptionTranslations();
+  const te = useErrorTranslations();
   const handleSubscriptionError = useCallback9((error2) => {
     const errorCode = error2?.code || error2?.response?.data?.code || error2?.error?.code;
     const statusMap = {
@@ -5351,8 +5353,10 @@ function useSubscriptionError() {
       "TRIAL_EXPIRED": "expired"
     };
     const subscriptionStatus = statusMap[errorCode] || error2?.subscriptionStatus || error2?.details?.status;
+    const errorMessage = error2.message || error2?.response?.data?.message;
+    const translatedMessage = errorCode === "PLAN_LIMIT_EXCEEDED" ? te("PLAN_LIMIT_EXCEEDED") : errorMessage || t3("errors.generic");
     const subscriptionError = {
-      message: error2.message || error2?.response?.data?.message || "Subscription error occurred",
+      message: translatedMessage,
       subscriptionStatus,
       merchantStatus: error2.merchantStatus || error2?.details?.merchantStatus,
       code: errorCode
@@ -5365,25 +5369,28 @@ function useSubscriptionError() {
     let message = error2.message;
     let action = "";
     if (subscriptionStatus === "paused") {
-      message = "Your subscription is paused. Some features may be limited.";
-      action = "Resume your subscription to access all features.";
+      message = t3("errors.paused");
+      action = t3("errors.pausedAction");
     } else if (subscriptionStatus === "expired") {
-      message = "Your subscription has expired. Please renew to continue.";
-      action = "Choose a new plan to continue using the service.";
+      message = t3("errors.expired");
+      action = t3("errors.expiredAction");
     } else if (subscriptionStatus === "cancelled") {
-      message = "Your subscription has been cancelled.";
-      action = "Contact support to reactivate your subscription or choose a new plan.";
+      message = t3("errors.cancelled");
+      action = t3("errors.cancelledAction");
     } else if (subscriptionStatus === "past_due") {
-      message = "Payment is past due. Please update your payment method.";
-      action = "Update your payment information to avoid service interruption.";
+      message = t3("errors.pastDue");
+      action = t3("errors.pastDueAction");
     } else if (merchantStatus && !["active"].includes(merchantStatus)) {
-      message = `Your merchant account is ${merchantStatus}. Please contact support.`;
-      action = "Contact support to resolve account issues.";
+      message = t3("errors.merchantAccount", { status: merchantStatus });
+      action = t3("errors.merchantAccountAction");
+    } else if (error2.code === "PLAN_LIMIT_EXCEEDED") {
+      message = te("PLAN_LIMIT_EXCEEDED");
     }
-    addToast("error", "Subscription Error", action ? `${message}
+    const errorTitle = t3("errors.title");
+    addToast("error", errorTitle, action ? `${message}
 
 ${action}` : message, 8e3);
-  }, [addToast]);
+  }, [addToast, t3, te]);
   const clearError = useCallback9(() => {
     setError(null);
   }, []);

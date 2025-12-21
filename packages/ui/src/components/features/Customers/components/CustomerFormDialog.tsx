@@ -62,12 +62,24 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Initialize form data
-  const getInitialFormData = (): Partial<CustomerCreateInput | CustomerUpdateInput> => {
+  // Initialize form data - use 'name' field instead of firstName/lastName
+  interface FormDataState {
+    name?: string; // Combined name field
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+  }
+
+  const getInitialFormData = (): FormDataState => {
     if (mode === 'edit' && customer) {
+      // Combine firstName and lastName into name field
+      const fullName = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim();
       return {
-        firstName: customer.firstName || '',
-        lastName: customer.lastName || '',
+        name: fullName,
         email: customer.email || '',
         phone: customer.phone || '',
         address: customer.address || '',
@@ -78,8 +90,7 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
       };
     }
     return {
-      firstName: initialSearchQuery || '',
-      lastName: '',
+      name: initialSearchQuery || '',
       email: '',
       phone: '',
       address: '',
@@ -90,7 +101,7 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
     };
   };
 
-  const [formData, setFormData] = useState<Partial<CustomerCreateInput | CustomerUpdateInput>>(getInitialFormData());
+  const [formData, setFormData] = useState<FormDataState>(getInitialFormData());
 
   // Reset form when dialog opens/closes
   React.useEffect(() => {
@@ -115,10 +126,13 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.firstName?.trim()) {
-      newErrors.firstName = t('validation.firstNameRequired');
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = t('validation.firstNameMinLength');
+    // Validate name (required) - split into parts to validate first name
+    const nameParts = (formData.name || '').trim().split(' ').filter(part => part.length > 0);
+    const firstName = nameParts[0] || '';
+    if (!firstName.trim()) {
+      newErrors.name = t('validation.firstNameRequired') || 'Customer name is required';
+    } else if (firstName.trim().length < 2) {
+      newErrors.name = t('validation.firstNameMinLength') || 'First name must be at least 2 characters';
     }
 
     if (formData.phone && formData.phone.trim()) {
@@ -158,12 +172,20 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
       setIsSubmitting(true);
       setErrorMessage(null);
       
-      // Clean customer data: remove empty strings, only send fields with actual values
+      // Split name into firstName and lastName (same logic as UserForm)
+      const nameParts = (formData.name || '').trim().split(' ').filter(part => part.length > 0);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      // Clean customer data: remove empty strings, but always include firstName and lastName (even if empty)
       const cleanData = (data: any) => {
         const cleaned: any = {};
         Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
-            if (typeof value === 'string' && value.trim() !== '') {
+            // Always include firstName and lastName (even if empty string) - required by backend
+            if (key === 'firstName' || key === 'lastName') {
+              cleaned[key] = value;
+            } else if (typeof value === 'string' && value.trim() !== '') {
               cleaned[key] = value;
             } else if (typeof value !== 'string') {
               cleaned[key] = value;
@@ -173,11 +195,22 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
         return cleaned;
       };
       
+      const baseData = {
+        firstName,
+        lastName,
+        email: formData.email || '',
+        phone: formData.phone || '',
+        address: formData.address || '',
+        city: formData.city || '',
+        state: formData.state || '',
+        zipCode: formData.zipCode || '',
+        country: formData.country || '',
+      };
+
       const submitData = mode === 'edit' 
-        ? cleanData({ ...formData } as CustomerUpdateInput)
+        ? cleanData({ ...baseData } as CustomerUpdateInput)
         : cleanData({
-            ...formData,
-            firstName: formData.firstName || '',
+            ...baseData,
             // Always include merchantId if available (backend will validate from userScope)
             // This helps with UX (pre-fill) and backend will override if needed for security
             ...(merchantId && merchantId > 0 ? { merchantId } : {}),
@@ -212,7 +245,7 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
   };
 
   const dialogTitle = mode === 'edit' 
-    ? `${t('editCustomer')}: ${customer?.firstName} ${customer?.lastName || ''}`.trim()
+    ? `${t('editCustomer')}: ${[customer?.firstName, customer?.lastName].filter(Boolean).join(' ').trim() || 'N/A'}`
     : t('createCustomer');
 
   return (
@@ -234,43 +267,25 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
             </div>
           )}
 
-          {/* Essential Fields - 2 Columns */}
+          {/* Essential Fields */}
           <div className="space-y-4">
-            {/* First Name & Last Name - Row 1 */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* First Name - Required */}
-              <div>
-                <Label htmlFor="firstName" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  {t('fields.firstName')} <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  value={formData.firstName || ''}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  placeholder={t('placeholders.enterFirstName')}
-                  className={errors.firstName ? 'border-red-500' : ''}
-                  autoFocus={mode === 'create'}
-                />
-                {errors.firstName && (
-                  <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
-                )}
-              </div>
-
-              {/* Last Name */}
-              <div>
-                <Label htmlFor="lastName" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  {t('fields.lastName')}
-                </Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  value={formData.lastName || ''}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  placeholder={t('placeholders.enterLastName')}
-                  className=""
-                />
-              </div>
+            {/* Customer Name */}
+            <div>
+              <Label htmlFor="name" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                {t('fields.name') || 'Customer Name'} <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name || ''}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder={t('placeholders.enterCustomerName') || 'Enter customer name'}
+                className={errors.name ? 'border-red-500' : ''}
+                autoFocus={mode === 'create'}
+              />
+              {errors.name && (
+                <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+              )}
             </div>
 
             {/* Phone & Email - Row 2 */}

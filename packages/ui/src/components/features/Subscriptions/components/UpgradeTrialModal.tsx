@@ -51,6 +51,7 @@ export function UpgradeTrialModal({
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [billingCycle, setBillingCycle] = useState<'month' | 'quarter' | 'year'>('month');
   const [paymentMethod, setPaymentMethod] = useState<'STRIPE' | 'TRANSFER'>('STRIPE');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Select first non-trial plan by default
   useEffect(() => {
@@ -99,10 +100,14 @@ export function UpgradeTrialModal({
     if (!selectedPlan) return;
 
     try {
+      setErrorMessage(null);
       await onUpgrade(selectedPlan.id, billingCycle, paymentMethod);
       onClose();
     } catch (error) {
       console.error('Upgrade failed:', error);
+      // Don't close dialog on error - keep it open to show error message
+      const errorMsg = error instanceof Error ? error.message : 'Failed to upgrade subscription';
+      setErrorMessage(errorMsg);
     }
   };
 
@@ -119,6 +124,13 @@ export function UpgradeTrialModal({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{errorMessage}</p>
+            </div>
+          )}
+
           {/* Current Status */}
           <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
             <div className="flex items-center gap-2">
