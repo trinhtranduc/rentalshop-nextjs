@@ -128,11 +128,11 @@ export const ProductDetailList: React.FC<ProductDetailListProps> = ({
               </div>
             )}
           {/* Only show cost price if user has products.manage permission */}
-          {canViewCostPrice && product.costPrice && product.costPrice > 0 && (
+          {canViewCostPrice && (
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t('fields.costPrice')}</label>
               <p className="text-base font-semibold text-muted-foreground">
-                {formatCurrency(product.costPrice)}
+                {formatCurrency(product.costPrice ?? 0)}
               </p>
             </div>
           )}

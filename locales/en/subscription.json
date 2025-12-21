@@ -105,6 +105,22 @@
     "contactPhone": "Phone",
     "contactZalo": "Zalo",
     "contactWhatsApp": "WhatsApp"
+  },
+  "errors": {
+    "title": "Subscription Error",
+    "subscriptionError": "Subscription Error",
+    "planLimitExceeded": "Plan limit exceeded",
+    "paused": "Your subscription is paused. Some features may be limited.",
+    "pausedAction": "Resume your subscription to access all features.",
+    "expired": "Your subscription has expired. Please renew to continue.",
+    "expiredAction": "Choose a new plan to continue using the service.",
+    "cancelled": "Your subscription has been cancelled.",
+    "cancelledAction": "Contact support to reactivate your subscription or choose a new plan.",
+    "pastDue": "Payment is past due. Please update your payment method.",
+    "pastDueAction": "Update your payment information to avoid service interruption.",
+    "merchantAccount": "Your merchant account is {status}. Please contact support.",
+    "merchantAccountAction": "Contact support to resolve account issues.",
+    "generic": "Subscription error occurred"
   }
 }
 

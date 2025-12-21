@@ -70,6 +70,7 @@ export function MerchantPlanDialog({
   const [endDate, setEndDate] = useState('');
   const [notifyMerchant, setNotifyMerchant] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -80,6 +81,7 @@ export function MerchantPlanDialog({
       setEffectiveDate(new Date().toISOString().slice(0, 16)); // Default to now
       setEndDate('');
       setNotifyMerchant(true);
+      setErrorMessage(null);
     }
   }, [isOpen]);
 
@@ -121,6 +123,7 @@ export function MerchantPlanDialog({
     }
 
     setIsSubmitting(true);
+    setErrorMessage(null);
     try {
       await onConfirm({
         planId: selectedPlanId,
@@ -132,6 +135,9 @@ export function MerchantPlanDialog({
       onClose();
     } catch (error) {
       console.error('Error changing plan:', error);
+      // Don't close dialog on error - keep it open to show error message
+      const errorMsg = error instanceof Error ? error.message : 'Failed to change plan';
+      setErrorMessage(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -169,6 +175,13 @@ export function MerchantPlanDialog({
 
         <div className="px-6 py-4 overflow-y-auto">
         <div className="space-y-6">
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{errorMessage}</p>
+            </div>
+          )}
+
           {/* Current Plan Info */}
           <Card>
             <CardContent className="pt-6">

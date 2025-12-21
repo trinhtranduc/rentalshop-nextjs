@@ -32,8 +32,7 @@ interface RegisterFormData {
   login: string;
   password: string;
   confirmPassword: string;
-  firstName: string;
-  lastName: string;
+  name: string; // Combined name field (will be split into firstName/lastName on submit)
   phone: string;
   businessName: string;
   // Business configuration (locked after registration)
@@ -84,12 +83,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     confirmPassword: Yup.string()
       .oneOf([Yup.ref("password")], t('register.passwordMismatch'))
       .required(t('register.confirmPasswordRequired')),
-    firstName: Yup.string()
-      .min(1, t('register.firstNameRequired'))
-      .required(t('register.firstNameRequired')),
-    lastName: Yup.string()
-      .min(1, t('register.lastNameRequired'))
-      .required(t('register.lastNameRequired')),
+    name: Yup.string()
+      .min(1, t('register.firstNameRequired') || 'Name is required')
+      .required(t('register.firstNameRequired') || 'Name is required'),
   });
 
   // Step 2 validation schema (Business Information)
@@ -119,8 +115,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       login: "",
       password: "",
       confirmPassword: "",
-      firstName: "",
-      lastName: "",
+      name: "",
       phone: "",
       businessName: "",
       businessType: "GENERAL",
@@ -140,8 +135,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           login: values.login,
           password: values.password,
           confirmPassword: values.confirmPassword,
-          firstName: values.firstName,
-          lastName: values.lastName,
+          name: values.name,
           role: values.role,
         });
         setCurrentStep(2);
@@ -163,14 +157,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           setIsSubmitting(false);
         }, 10000); // 10 second timeout
         
-        // Use centralized API directly
+        // Split name into firstName and lastName (same logic as UserForm and CustomerForm)
+        const nameParts = (completeData.name || values.name || '').trim().split(' ').filter(part => part.length > 0);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
         
+        // Use centralized API directly
         const registrationData = {
-          name: `${completeData.firstName} ${completeData.lastName}`,
+          name: completeData.name || values.name || '',
           email: completeData.login!,
           password: completeData.password!,
-          firstName: completeData.firstName!,
-          lastName: completeData.lastName!,
+          firstName: firstName,
+          lastName: lastName,
           phone: completeData.phone?.trim() || undefined,
           role: completeData.role!,
           businessName: values.businessName,
@@ -267,53 +265,27 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               <>
                 {/* Personal Information Section */}
                 <div className="space-y-4">
-                  {/* First Name and Last Name Fields - Bắt đầu với tên */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* First Name Field */}
-                    <div className="space-y-2">
-                      <label htmlFor="firstName" className="text-sm font-medium text-gray-700">
-                        {t('register.firstName')}
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                        <Input
-                          id="firstName"
-                          name="firstName"
-                          type="text"
-                          placeholder={t('register.enterFirstName')}
-                          value={formik.values.firstName}
-                          onChange={formik.handleChange}
-                          onBlur={formik.handleBlur}
-                          className={`pl-10 ${formik.errors.firstName && formik.touched.firstName ? 'border-red-500' : ''}`}
-                        />
-                      </div>
-                      {formik.errors.firstName && formik.touched.firstName && (
-                        <p className="text-red-500 text-sm">{formik.errors.firstName}</p>
-                      )}
+                  {/* Name Field - Single field instead of firstName/lastName */}
+                  <div className="space-y-2">
+                    <label htmlFor="name" className="text-sm font-medium text-gray-700">
+                      {t('register.firstName')} <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        id="name"
+                        name="name"
+                        type="text"
+                        placeholder={t('register.enterFirstName') || 'Nhập tên của bạn'}
+                        value={formik.values.name}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`pl-10 ${formik.errors.name && formik.touched.name ? 'border-red-500' : ''}`}
+                      />
                     </div>
-
-                    {/* Last Name Field */}
-                    <div className="space-y-2">
-                      <label htmlFor="lastName" className="text-sm font-medium text-gray-700">
-                        {t('register.lastName')}
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                        <Input
-                          id="lastName"
-                          name="lastName"
-                          type="text"
-                          placeholder={t('register.enterLastName')}
-                          value={formik.values.lastName}
-                          onChange={formik.handleChange}
-                          onBlur={formik.handleBlur}
-                          className={`pl-10 ${formik.errors.lastName && formik.touched.lastName ? 'border-red-500' : ''}`}
-                        />
-                      </div>
-                      {formik.errors.lastName && formik.touched.lastName && (
-                        <p className="text-red-500 text-sm">{formik.errors.lastName}</p>
-                      )}
-                    </div>
+                    {formik.errors.name && formik.touched.name && (
+                      <p className="text-red-500 text-sm">{formik.errors.name}</p>
+                    )}
                   </div>
                 </div>
 

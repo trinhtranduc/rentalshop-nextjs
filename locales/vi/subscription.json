@@ -105,6 +105,22 @@
     "contactPhone": "Điện thoại",
     "contactZalo": "Zalo",
     "contactWhatsApp": "WhatsApp"
+  },
+  "errors": {
+    "title": "Lỗi đăng ký",
+    "subscriptionError": "Lỗi đăng ký",
+    "planLimitExceeded": "Vượt quá giới hạn gói",
+    "paused": "Gói đăng ký của bạn đang tạm dừng. Một số tính năng có thể bị giới hạn.",
+    "pausedAction": "Tiếp tục gói đăng ký để truy cập tất cả tính năng.",
+    "expired": "Gói đăng ký của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng.",
+    "expiredAction": "Chọn gói mới để tiếp tục sử dụng dịch vụ.",
+    "cancelled": "Gói đăng ký của bạn đã bị hủy.",
+    "cancelledAction": "Liên hệ hỗ trợ để kích hoạt lại gói đăng ký hoặc chọn gói mới.",
+    "pastDue": "Thanh toán đã quá hạn. Vui lòng cập nhật phương thức thanh toán.",
+    "pastDueAction": "Cập nhật thông tin thanh toán để tránh gián đoạn dịch vụ.",
+    "merchantAccount": "Tài khoản thương hiệu của bạn là {status}. Vui lòng liên hệ hỗ trợ.",
+    "merchantAccountAction": "Liên hệ hỗ trợ để giải quyết vấn đề tài khoản.",
+    "generic": "Đã xảy ra lỗi đăng ký"
   }
 }
 
