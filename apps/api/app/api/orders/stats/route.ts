@@ -52,10 +52,20 @@ export const GET = withPermissions(['orders.view', 'analytics.view'])(async (req
     const completedOrders = completedOrdersResult.total;
 
     // Get overdue rentals (return date passed but status still PICKUPED)
-    const overdueResult = await db.orders.search({ 
-      ...filters, 
+    // ✅ Fix: Ensure returnPlanAt is not null and compare with start of today
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // ✅ Build where clause with returnPlanAt filter
+    const overdueWhere: any = {
+      ...filters,
       status: ORDER_STATUS.PICKUPED,
-      returnPlanAt: { lt: new Date() },
+      returnPlanAt: {
+        not: null,
+        lt: startOfToday
+      }
+    };
+    const overdueResult = await db.orders.search({ 
+      where: overdueWhere,
       limit: 100 // Get actual overdue orders
     });
     const overdueRentals = overdueResult.data;

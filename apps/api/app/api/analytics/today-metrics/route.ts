@@ -97,12 +97,17 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       }
     });
 
-    // Get overdue rentals (status PICKUPED but returnPlanAt < now)
+    // Get overdue rentals (status PICKUPED but returnPlanAt < start of today)
+    // ✅ Fix: Ensure returnPlanAt is not null and compare with start of today
     const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const overdueWhereClause = {
       ...orderWhereClause,
       status: ORDER_STATUS.PICKUPED,
-      returnPlanAt: { lt: now }
+      returnPlanAt: {
+        not: null,
+        lt: startOfToday
+      }
     };
     const overdueOrders = await db.orders.search({
       where: overdueWhereClause,
