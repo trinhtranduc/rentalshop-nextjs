@@ -59,6 +59,26 @@ export default function LogFilters({
   onExport,
   loading = false
 }: LogFiltersProps) {
+  const [localSearch, setLocalSearch] = React.useState<string>(searchTerm || '');
+  
+  // Sync với searchTerm khi thay đổi từ bên ngoài (ví dụ: clear filters)
+  React.useEffect(() => {
+    setLocalSearch(searchTerm || '');
+  }, [searchTerm]);
+
+  // Handle input change - chỉ cập nhật local state
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearch(e.target.value);
+  };
+
+  // Handle Enter key - chỉ search khi nhấn Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSearchChange(localSearch);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -77,8 +97,9 @@ export default function LogFilters({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-tertiary" />
               <Input
                 placeholder="Search logs..."
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
+                value={localSearch}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
                 className="pl-10"
               />
             </div>

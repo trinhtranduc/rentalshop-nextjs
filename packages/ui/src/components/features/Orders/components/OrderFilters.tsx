@@ -251,12 +251,21 @@ export const OrderFilters = React.memo(function OrderFilters({
   // HANDLERS - Simple passthrough to parent
   // ============================================================================
   
+  // Handle input change - chỉ cập nhật local state
   const handleSearchInput = (value: string) => {
     console.log('⌨️ OrderFilters: Search input changed:', value);
     // Update local state for immediate UI feedback
     setLocalSearch(value);
-    // Notify parent (parent handles debouncing via URL update)
-    onSearchChange(value);
+    // KHÔNG gọi onSearchChange ở đây - chỉ gọi khi nhấn Enter
+  };
+
+  // Handle Enter key - chỉ search khi nhấn Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      console.log('⌨️ OrderFilters: Enter pressed, searching with:', localSearch);
+      onSearchChange(localSearch);
+    }
   };
 
   const handleFilterChange = (key: keyof OrderFiltersType, value: any) => {
@@ -282,6 +291,7 @@ export const OrderFilters = React.memo(function OrderFilters({
                 placeholder={t('search.placeholder')}
                 value={localSearch}
                 onChange={(e) => handleSearchInput(e.target.value)}
+                onKeyDown={handleKeyDown}
                 className="pl-9 h-10"
               />
               <svg 

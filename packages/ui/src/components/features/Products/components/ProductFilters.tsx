@@ -82,10 +82,28 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
   // FILTER HANDLERS
   // ============================================================================
 
+  // Local state cho search input
+  const [localSearch, setLocalSearch] = React.useState<string>(filters.search || '');
+  
+  // Sync với filters.search khi thay đổi từ bên ngoài (ví dụ: clear filters)
+  React.useEffect(() => {
+    setLocalSearch(filters.search || '');
+  }, [filters.search]);
+
+  // Handle input change - chỉ cập nhật local state
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    onSearchChange(value);
-  }, [onSearchChange]);
+    setLocalSearch(value);
+    // KHÔNG gọi onSearchChange ở đây - chỉ gọi khi nhấn Enter
+  }, []);
+
+  // Handle Enter key - chỉ search khi nhấn Enter
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSearchChange(localSearch);
+    }
+  }, [localSearch, onSearchChange]);
 
   const handleOutletChange = useCallback((value: string) => {
     const outletId = value === 'all' ? undefined : parseInt(value);
@@ -118,8 +136,9 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
           <Input
             type="text"
             placeholder={t('search.placeholder')}
-            value={filters.search || ''}
+            value={localSearch}
             onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
             className="pl-9 h-10"
           />
           <svg 
