@@ -90,6 +90,7 @@ export const SettingsComponent: React.FC = () => {
   const t = useSettingsTranslations();
   const { user, logout, loading, refreshUser } = useAuth();
   const { toastSuccess, toastError } = useToast();
+  // ✅ Note: API errors are automatically handled by useGlobalErrorHandler in ClientLayout
   const { currency, setCurrency } = useCurrency();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -478,24 +479,36 @@ export const SettingsComponent: React.FC = () => {
   };
 
   const handleChangePassword = async () => {
+    // ✅ Frontend validation only - prevent invalid submissions
+    if (!passwordData.currentPassword) {
+      toastError('Error', t('messages.currentPasswordRequired') || 'Current password is required');
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toastError('Error', t('messages.passwordMismatch'));
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+      toastError('Error', t('messages.passwordTooShort'));
+      return;
+    }
+
     try {
       setIsChangingPassword(true);
-      if (passwordData.newPassword !== passwordData.confirmPassword) {
-        throw new Error(t('messages.passwordMismatch'));
-      }
-      if (passwordData.newPassword.length < 6) {
-        throw new Error(t('messages.passwordTooShort'));
-      }
+      // ✅ API call - errors will be automatically handled by useGlobalErrorHandler
       const response = await authApi.changePassword(passwordData.currentPassword, passwordData.newPassword);
+      
+      // ✅ Only handle success - errors are auto-handled by global error handler
       if (response.success) {
         setShowChangePassword(false);
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
         toastSuccess('Password Changed', t('messages.passwordChanged'));
-      } else {
-        throw new Error(response.message || t('messages.passwordChangeFailed'));
       }
+      // ❌ Removed: Manual error handling - useGlobalErrorHandler handles this automatically
     } catch (error) {
-      toastError('Password Change Failed', error instanceof Error ? error.message : t('messages.passwordChangeFailed'));
+      // ❌ Removed: Manual error toast - useGlobalErrorHandler handles this automatically
+      // Only catch network errors or unexpected errors
+      console.error('Unexpected error:', error);
     } finally {
       setIsChangingPassword(false);
     }

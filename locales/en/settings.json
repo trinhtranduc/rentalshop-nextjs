@@ -291,7 +291,8 @@
     "accountDeleted": "Your account has been deleted successfully.",
     "accountDeleteFailed": "Failed to delete account. Please try again.",
     "passwordMismatch": "New passwords do not match",
-    "passwordTooShort": "New password must be at least 6 characters"
+    "passwordTooShort": "New password must be at least 6 characters",
+    "currentPasswordRequired": "Current password is required"
   },
   "deleteAccountDialog": {
     "title": "Delete Account",
