@@ -61,6 +61,8 @@ export const GET = withPermissions(['orders.view', 'analytics.view'])(async (req
     const overdueRentals = overdueResult.data;
 
     // Calculate revenue and average order value
+    // ✅ Exclude CANCELLED orders from revenue calculation
+    // Only count COMPLETED and RETURNED orders (which automatically excludes CANCELLED)
     const allOrdersResult = await db.orders.search({ 
       ...filters, 
       status: { in: [ORDER_STATUS.COMPLETED as any, ORDER_STATUS.RETURNED as any] },
