@@ -180,7 +180,7 @@ const ForgetPasswordForm: React.FC<ForgetPasswordFormProps> = ({
                 <span className="font-medium text-gray-900">{validation.values.email}</span>
               </p>
               <p className="text-xs text-gray-500 mb-6">
-                Vui lòng kiểm tra hộp thư đến và làm theo hướng dẫn trong email để đặt lại mật khẩu của bạn.
+                {t('forgotPassword.emailInstructions')}
               </p>
               
               <div className="space-y-3">
