@@ -7,6 +7,7 @@ import { Label } from '../../../ui/label';
 import { Button } from '../../../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { SearchableSelect } from '../../../ui/searchable-select';
+import { cn } from '@rentalshop/ui';
 import type { User } from '@rentalshop/types';
 import { useUsersTranslations } from '@rentalshop/hooks';
 
@@ -22,6 +23,7 @@ interface FormFieldProps {
   type?: 'text' | 'email' | 'password';
   showPasswordToggle?: boolean;
 }
+
 
 export const FormField: React.FC<FormFieldProps> = ({
   id,
