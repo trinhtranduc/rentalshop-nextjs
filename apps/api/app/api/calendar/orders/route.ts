@@ -114,8 +114,14 @@ export const GET = withReadOnlyAuth(async (
     console.log('🔍 Calendar where clause:', where);
 
     // Fetch orders for the month with orderItems included using db.orders.searchWithItems
+    // ✅ Note: Calendar only shows RESERVED orders, which automatically excludes CANCELLED
+    // RESERVED status filter already excludes CANCELLED, but we ensure it's explicit
     const ordersResult = await db.orders.searchWithItems({
-      where,
+      where: {
+        ...where,
+        // RESERVED status already excludes CANCELLED, but explicit check for safety
+        status: where.status || ORDER_STATUS.RESERVED
+      },
       limit: 1000, // Get all orders for the month
       page: 1
     });
