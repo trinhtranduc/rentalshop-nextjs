@@ -21,6 +21,26 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
   onSearchChange,
   onClearFilters
 }) => {
+  const [localSearch, setLocalSearch] = React.useState<string>(filters.search || '');
+  
+  // Sync với filters.search khi thay đổi từ bên ngoài (ví dụ: clear filters)
+  React.useEffect(() => {
+    setLocalSearch(filters.search || '');
+  }, [filters.search]);
+
+  // Handle input change - chỉ cập nhật local state
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearch(e.target.value);
+  };
+
+  // Handle Enter key - chỉ search khi nhấn Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSearchChange(localSearch);
+    }
+  };
+
   return (
     <>
       {/* Search Field */}
@@ -29,8 +49,9 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
           <Input
             type="text"
             placeholder="Search categories..."
-            value={filters.search || ''}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={localSearch}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
             className="pl-9 h-10"
           />
           <svg 

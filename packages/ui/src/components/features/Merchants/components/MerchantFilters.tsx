@@ -29,8 +29,24 @@ export function MerchantFilters({
   onSearchChange,
   onClearFilters 
 }: MerchantFiltersProps) {
+  const [localSearch, setLocalSearch] = React.useState<string>(filters.search || '');
+  
+  // Sync với filters.search khi thay đổi từ bên ngoài (ví dụ: clear filters)
+  React.useEffect(() => {
+    setLocalSearch(filters.search || '');
+  }, [filters.search]);
+
+  // Handle input change - chỉ cập nhật local state
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onSearchChange(e.target.value);
+    setLocalSearch(e.target.value);
+  };
+
+  // Handle Enter key - chỉ search khi nhấn Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSearchChange(localSearch);
+    }
   };
 
   const handleStatusChange = (value: string) => {
@@ -49,8 +65,9 @@ export function MerchantFilters({
           <Input
             type="text"
             placeholder="Search merchants..."
-            value={filters.search}
+            value={localSearch}
             onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
             className="pl-9 h-10"
           />
           <svg 
