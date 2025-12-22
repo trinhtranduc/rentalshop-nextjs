@@ -537,14 +537,30 @@ export const simplifiedUsers = {
         // Keep the number ID as-is since schema uses Int IDs
       }
 
-      // Check for duplicate email globally
+      // Check for duplicate email globally (toàn hệ thống)
+      // Email must be unique across the entire system, not just within outlet/merchant
       if (userData.email) {
         const existingEmail = await prisma.user.findUnique({
           where: { email: userData.email },
-          select: { id: true, email: true }
+          select: { 
+            id: true, 
+            email: true,
+            merchantId: true,
+            outletId: true,
+            merchant: { select: { name: true } },
+            outlet: { select: { name: true } }
+          }
         });
         
         if (existingEmail) {
+          // Provide detailed error message if email exists in same outlet/merchant
+          if (userData.outletId && existingEmail.outletId === userData.outletId) {
+            console.log(`❌ Email ${userData.email} already exists in outlet ${userData.outletId}`);
+          } else if (userData.merchantId && existingEmail.merchantId === userData.merchantId) {
+            console.log(`❌ Email ${userData.email} already exists in merchant ${userData.merchantId}`);
+          } else {
+            console.log(`❌ Email ${userData.email} already exists in the system`);
+          }
           throw new ApiError(ErrorCode.EMAIL_EXISTS);
         }
       }

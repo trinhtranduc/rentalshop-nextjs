@@ -30,6 +30,26 @@ export default function SearchAndFilters({
   filters = [],
   className = ''
 }: SearchAndFiltersProps) {
+  const [localSearch, setLocalSearch] = React.useState<string>(searchTerm || '');
+  
+  // Sync với searchTerm khi thay đổi từ bên ngoài (ví dụ: clear filters)
+  React.useEffect(() => {
+    setLocalSearch(searchTerm || '');
+  }, [searchTerm]);
+
+  // Handle input change - chỉ cập nhật local state
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearch(e.target.value);
+  };
+
+  // Handle Enter key - chỉ search khi nhấn Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSearchChange(localSearch);
+    }
+  };
+
   return (
     <Card className={className}>
       <CardContent>
@@ -41,8 +61,9 @@ export default function SearchAndFilters({
               <Input
                 type="text"
                 placeholder={searchPlaceholder}
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
+                value={localSearch}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
                 className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-action-primary focus:border-transparent"
               />
             </div>

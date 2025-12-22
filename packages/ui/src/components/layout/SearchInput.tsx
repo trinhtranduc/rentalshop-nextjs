@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import { cn } from '@rentalshop/ui';
 import { Button } from '@rentalshop/ui';
-import { useThrottledSearch } from '@rentalshop/hooks';
 
 export interface SearchInputProps {
   placeholder?: string;
@@ -16,6 +15,12 @@ export interface SearchInputProps {
   defaultValue?: string;
 }
 
+/**
+ * SearchInput Component
+ * - Chỉ search khi nhấn Enter, không search khi đang gõ
+ * - Lưu giá trị input vào local state
+ * - Cho phép xóa search bằng nút X
+ */
 export const SearchInput: React.FC<SearchInputProps> = ({
   placeholder = 'Search...',
   delay = 500,
@@ -25,29 +30,36 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   disabled = false,
   defaultValue = ''
 }) => {
-  const {
-    query,
-    isSearching,
-    handleSearchChange,
-    clearSearch,
-    cleanup
-  } = useThrottledSearch({
-    delay,
-    minLength,
-    onSearch
-  });
+  const [query, setQuery] = useState<string>(defaultValue || '');
 
   // Set default value
   useEffect(() => {
-    if (defaultValue && !query) {
-      handleSearchChange(defaultValue);
+    if (defaultValue) {
+      setQuery(defaultValue);
     }
-  }, [defaultValue, query, handleSearchChange]);
+  }, [defaultValue]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
+  // Handle input change - chỉ cập nhật local state
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+  }, []);
+
+  // Handle Enter key - chỉ search khi nhấn Enter
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Chỉ search nếu query đủ độ dài hoặc rỗng (để clear search)
+      if (query.length >= minLength || query.length === 0) {
+        onSearch(query);
+      }
+    }
+  }, [query, minLength, onSearch]);
+
+  // Clear search
+  const clearSearch = useCallback(() => {
+    setQuery('');
+    onSearch('');
+  }, [onSearch]);
 
   return (
     <div className={cn('relative', className)}>
@@ -56,7 +68,8 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         <input
           type="text"
           value={query}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
           className={cn(
@@ -78,11 +91,6 @@ export const SearchInput: React.FC<SearchInputProps> = ({
           </Button>
         )}
       </div>
-      {isSearching && (
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
-        </div>
-      )}
     </div>
   );
 }; 
