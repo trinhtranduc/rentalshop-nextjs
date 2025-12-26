@@ -9,10 +9,13 @@ import {
   PageTitle,
   Users,
   Breadcrumb,
-  type BreadcrumbItem
+  type BreadcrumbItem,
+  AddUserDialog,
+  useToast
 } from '@rentalshop/ui';
 import { Users as UsersIcon } from 'lucide-react';
-import type { User, UserFilters } from '@rentalshop/types';
+import { useAuth } from '@rentalshop/hooks';
+import type { User, UserFilters, UserCreateInput } from '@rentalshop/types';
 
 /**
  * ✅ MODERN MERCHANT USERS PAGE (URL State Pattern)
@@ -28,6 +31,8 @@ export default function MerchantUsersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const merchantId = params.id as string;
+  const { user: currentUser } = useAuth();
+  const { toastSuccess, toastError } = useToast();
   
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -47,6 +52,7 @@ export default function MerchantUsersPage() {
   const [merchantName, setMerchantName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   useEffect(() => {
     console.log('👤 Merchant Users Page - useEffect triggered, merchantId:', merchantId);
@@ -221,6 +227,26 @@ export default function MerchantUsersPage() {
     }
   }, [router, merchantId]);
 
+  const handleUserCreated = useCallback(async (userData: UserCreateInput) => {
+    try {
+      const response = await merchantsApi.users.create(parseInt(merchantId), userData);
+      const data = await response.json();
+      
+      if (data.success) {
+        toastSuccess('User created successfully');
+        setShowAddDialog(false);
+        // Refresh users list
+        fetchData();
+      } else {
+        throw new Error(data.message || 'Failed to create user');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toastError('Failed to create user', error instanceof Error ? error.message : 'Unknown error');
+      throw error; // Re-throw to let dialog handle it
+    }
+  }, [merchantId, toastSuccess, toastError]);
+
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -272,8 +298,23 @@ export default function MerchantUsersPage() {
           onClearFilters={handleClearFilters}
           onUserAction={handleUserAction}
           onPageChange={handlePageChange}
+          onAdd={() => setShowAddDialog(true)}
+          showAddButton={true}
+          addButtonText="Add User"
+          currentUser={currentUser}
         />
       </div>
+
+      {/* Add User Dialog */}
+      <AddUserDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        currentUser={currentUser}
+        onUserCreated={handleUserCreated}
+        onError={(error) => {
+          toastError('Error', error instanceof Error ? error.message : String(error));
+        }}
+      />
     </PageWrapper>
   );
 }

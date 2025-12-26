@@ -20,10 +20,7 @@ import { Edit, ArrowLeft, UserCheck, UserX, Trash2, Key } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 import type { User, UserUpdateInput, UserCreateInput } from '@rentalshop/types';
 
-interface UserDetailData {
-  user: User;
-  outlets: Array<{ id: number; name: string; address: string }>;
-}
+// API returns user object directly, not nested in { user, outlets }
 
 export default function UserDetailPage() {
   const params = useParams();
@@ -34,7 +31,7 @@ export default function UserDetailPage() {
   
   const { toastSuccess, toastError, removeToast } = useToast();
   
-  const [userDetails, setUserDetails] = useState<UserDetailData | null>(null);
+  const [userDetails, setUserDetails] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +53,13 @@ export default function UserDetailPage() {
       const data = await response.json();
 
       if (data.success) {
-        setUserDetails(data.data);
+        // API returns user object directly, not nested in { user, outlets }
+        const user = data.data;
+        // Ensure name field exists (computed from firstName + lastName)
+        if (user && !user.name && user.firstName) {
+          user.name = `${user.firstName} ${user.lastName || ''}`.trim();
+        }
+        setUserDetails(user);
       } else {
         setError(data.message || 'Failed to fetch user details');
       }
@@ -82,13 +85,13 @@ export default function UserDetailPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Update local state
-        if (userDetails) {
-          setUserDetails({
-            ...userDetails,
-            user: data.data
-          });
+        // Update local state - API returns user object directly
+        const updatedUser = data.data;
+        // Ensure name field exists
+        if (updatedUser && !updatedUser.name && updatedUser.firstName) {
+          updatedUser.name = `${updatedUser.firstName} ${updatedUser.lastName || ''}`.trim();
         }
+        setUserDetails(updatedUser);
         setShowEditSection(false);
         toastSuccess('User updated', 'Changes saved successfully.');
       } else {
@@ -116,12 +119,13 @@ export default function UserDetailPage() {
       const data = await response.json();
 
       if (data.success) {
-        if (userDetails) {
-          setUserDetails({
-            ...userDetails,
-            user: data.data
-          });
+        // Update local state - API returns user object directly
+        const updatedUser = data.data;
+        // Ensure name field exists
+        if (updatedUser && !updatedUser.name && updatedUser.firstName) {
+          updatedUser.name = `${updatedUser.firstName} ${updatedUser.lastName || ''}`.trim();
         }
+        setUserDetails(updatedUser);
         toastSuccess('User Activated', 'User account has been activated successfully!');
       } else {
         toastError('Activation Failed', data.message || 'Failed to activate user');
@@ -143,12 +147,13 @@ export default function UserDetailPage() {
       const data = await response.json();
 
       if (data.success) {
-        if (userDetails) {
-          setUserDetails({
-            ...userDetails,
-            user: data.data
-          });
+        // Update local state - API returns user object directly
+        const updatedUser = data.data;
+        // Ensure name field exists
+        if (updatedUser && !updatedUser.name && updatedUser.firstName) {
+          updatedUser.name = `${updatedUser.firstName} ${updatedUser.lastName || ''}`.trim();
         }
+        setUserDetails(updatedUser);
         toastSuccess('User Deactivated', 'User account has been deactivated successfully!');
         setShowDeactivateConfirm(false);
       } else {
@@ -200,7 +205,7 @@ export default function UserDetailPage() {
     { label: 'Merchants', href: '/merchants' },
     { label: `Merchant ${merchantId}`, href: `/merchants/${merchantId}` },
     { label: 'Users', href: `/merchants/${merchantId}/users` },
-    { label: userDetails ? userDetails.user.name : 'User Details' }
+    { label: userDetails ? (userDetails.name || `${userDetails.firstName} ${userDetails.lastName || ''}`.trim()) : 'User Details' }
   ];
 
   if (loading) {
@@ -268,8 +273,10 @@ export default function UserDetailPage() {
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{userDetails.user.name}</h1>
-            <p className="text-gray-600">{userDetails.user.email}</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {userDetails.name || `${userDetails.firstName} ${userDetails.lastName || ''}`.trim()}
+            </h1>
+            <p className="text-gray-600">{userDetails.email}</p>
           </div>
           <div className="flex gap-2">
             {!showEditSection && (
@@ -297,12 +304,12 @@ export default function UserDetailPage() {
 
         {/* User Information - Read Only OR Edit Form */}
         {!showEditSection ? (
-          <UserCard user={userDetails.user} onUserAction={() => {}} />
+          <UserCard user={userDetails} onUserAction={() => {}} />
         ) : (
           <div className="mt-8">
             <UserForm
               mode="edit"
-              user={userDetails.user}
+              user={userDetails}
               onSave={handleSave}
               onCancel={handleCancel}
               isSubmitting={isUpdating}
@@ -313,7 +320,7 @@ export default function UserDetailPage() {
         {/* Account Management (Hidden when editing) */}
         {!showEditSection && (
           <AccountManagementCard
-            user={userDetails.user}
+            user={userDetails}
             isUpdating={isUpdating}
             onActivate={handleActivate}
             onDeactivate={() => setShowDeactivateConfirm(true)}
@@ -328,7 +335,7 @@ export default function UserDetailPage() {
         onOpenChange={setShowDeleteConfirm}
         type="danger"
         title="Deactivate User Account"
-        description={`Are you sure you want to deactivate "${userDetails.user.name}"? This will prevent the user from logging in and accessing the system.`}
+        description={`Are you sure you want to deactivate "${userDetails.name || `${userDetails.firstName} ${userDetails.lastName || ''}`.trim()}"? This will prevent the user from logging in and accessing the system.`}
         confirmText={isUpdating ? 'Deactivating...' : 'Deactivate Account'}
         onConfirm={handleDelete}
       />
@@ -339,7 +346,7 @@ export default function UserDetailPage() {
         onOpenChange={setShowDeactivateConfirm}
         type="warning"
         title="Deactivate User Account"
-        description={`Are you sure you want to deactivate "${userDetails.user.name}"? This will prevent the user from logging in and accessing the system. This action can be reversed by an administrator.`}
+        description={`Are you sure you want to deactivate "${userDetails.name || `${userDetails.firstName} ${userDetails.lastName || ''}`.trim()}"? This will prevent the user from logging in and accessing the system. This action can be reversed by an administrator.`}
         confirmText={isUpdating ? 'Deactivating...' : 'Deactivate Account'}
         onConfirm={handleDeactivate}
       />
@@ -348,8 +355,8 @@ export default function UserDetailPage() {
       <ChangePasswordDialog
         open={showChangePassword}
         onOpenChange={setShowChangePassword}
-        userId={userDetails.user.id ? parseInt(userDetails.user.id.toString()) : 0}
-        userName={userDetails.user.name || ''}
+        userId={userDetails.id ? parseInt(userDetails.id.toString()) : 0}
+        userName={userDetails.name || `${userDetails.firstName} ${userDetails.lastName || ''}`.trim()}
         onSuccess={handlePasswordChangeSuccess}
         onError={handlePasswordChangeError}
       />
