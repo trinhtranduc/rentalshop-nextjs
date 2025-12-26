@@ -1462,9 +1462,7 @@ export const simplifiedOrders = {
 
     const where: any = {};
     
-    if (merchantId) {
-      where.outlet = { merchantId };
-    }
+    // Build base filters
     if (outletId) {
       where.outletId = outletId;
     }
@@ -1492,6 +1490,10 @@ export const simplifiedOrders = {
       if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
 
+    // Handle merchant filter (through outlet relation)
+    // This must be combined with search if both are present
+    const outletFilter = merchantId ? { outlet: { merchantId } } : null;
+
     // Search functionality: search in order number, customer name, and customer phone (diacritics-insensitive)
     if (search) {
       const searchTerm = search.trim();
@@ -1512,7 +1514,18 @@ export const simplifiedOrders = {
         );
       }
       
-      where.OR = searchConditions;
+      // Combine outlet filter with search conditions using AND
+      if (outletFilter) {
+        where.AND = [
+          outletFilter,
+          { OR: searchConditions }
+        ];
+      } else {
+        where.OR = searchConditions;
+      }
+    } else if (outletFilter) {
+      // If no search but we have outlet filter, apply it directly
+      where.outlet = outletFilter.outlet;
     }
 
     const [orders, total] = await Promise.all([
