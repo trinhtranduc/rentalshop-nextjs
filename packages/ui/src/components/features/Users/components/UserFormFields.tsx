@@ -134,6 +134,7 @@ interface MerchantSelectProps {
   disabled?: boolean;
   canSelect: boolean;
   currentUser?: User | null;
+  onSearch?: (query: string) => Promise<Array<{ value: string; label: string }>>;
 }
 
 export const MerchantSelect: React.FC<MerchantSelectProps> = ({
@@ -144,9 +145,26 @@ export const MerchantSelect: React.FC<MerchantSelectProps> = ({
   error,
   disabled = false,
   canSelect,
-  currentUser
+  currentUser,
+  onSearch
 }) => {
   const t = useUsersTranslations();
+  
+  // Convert merchants to SearchableOption format
+  const merchantOptions = merchants.map(merchant => ({
+    value: merchant.id.toString(),
+    label: merchant.name
+  }));
+  
+  // If onSearch is provided, use it for dynamic search, otherwise use static options
+  const handleSearch = onSearch ? async (query: string) => {
+    const results = await onSearch(query);
+    return results.map(r => ({
+      value: r.value,
+      label: r.label,
+      type: 'default' as const
+    }));
+  } : undefined;
   
   return (
     <div className="space-y-2">
@@ -159,10 +177,8 @@ export const MerchantSelect: React.FC<MerchantSelectProps> = ({
           key={`merchant-${merchants.length}`}
           value={value ? Number(value) : undefined}
           onChange={(val) => onChange(val.toString())}
-          options={merchants.map(merchant => ({
-            value: merchant.id.toString(),
-            label: merchant.name
-          }))}
+          options={onSearch ? undefined : merchantOptions}
+          onSearch={handleSearch}
           placeholder={loading ? t('placeholders.loadingMerchants') : t('placeholders.searchAndSelectMerchant')}
           searchPlaceholder={t('placeholders.searchMerchants')}
           emptyText={t('placeholders.noMerchantsFound')}

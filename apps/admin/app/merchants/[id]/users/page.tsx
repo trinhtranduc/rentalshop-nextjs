@@ -11,9 +11,10 @@ import {
   Breadcrumb,
   type BreadcrumbItem,
   AddUserDialog,
+  Button,
   useToast
 } from '@rentalshop/ui';
-import { Users as UsersIcon } from 'lucide-react';
+import { Users as UsersIcon, Plus } from 'lucide-react';
 import { useAuth } from '@rentalshop/hooks';
 import type { User, UserFilters, UserCreateInput } from '@rentalshop/types';
 
@@ -275,7 +276,11 @@ export default function MerchantUsersPage() {
     );
   }
 
-  const filtersData = { search, role, status };
+  const filtersData: UserFilters = { 
+    q: search || undefined,
+    role: role && role !== 'all' ? role as any : undefined,
+    isActive: status && status !== 'all' ? (status === 'active') : undefined
+  };
 
   console.log('👤 About to render Users component with:', {
     userData,
@@ -286,7 +291,17 @@ export default function MerchantUsersPage() {
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+        <div className="flex justify-between items-center w-full">
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            variant="default"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add User
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="flex-1 min-h-0 overflow-auto">
