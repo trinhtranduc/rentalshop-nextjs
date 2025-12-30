@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { merchantsApi } from '@rentalshop/utils';
+import { merchantsApi, authenticatedFetch, apiUrls } from '@rentalshop/utils';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
   PageWrapper,
@@ -54,116 +54,112 @@ export default function MerchantUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  
+  // Store pagination metadata from API response
+  const [paginationMeta, setPaginationMeta] = useState({
+    total: 0,
+    totalPages: 1,
+    hasMore: false
+  });
 
+  // Fetch merchant info on mount
   useEffect(() => {
-    console.log('👤 Merchant Users Page - useEffect triggered, merchantId:', merchantId);
-    fetchData();
+    const fetchMerchantInfo = async () => {
+      try {
+        const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
+        if (merchantData.success && merchantData.data) {
+          setMerchantName(merchantData.data.name);
+        }
+      } catch (error) {
+        console.error('Error fetching merchant info:', error);
+      }
+    };
+    fetchMerchantInfo();
   }, [merchantId]);
 
-  const fetchData = async () => {
+  // Fetch users when URL params change (server-side pagination)
+  useEffect(() => {
+    fetchUsers();
+  }, [merchantId, page, limit, search, role, status]);
+
+  const fetchUsers = async () => {
     try {
-      console.log('👤 Merchant Users Page - fetchData started for merchantId:', merchantId);
+      console.log('👤 Merchant Users Page - fetchUsers started', {
+        merchantId,
+        page,
+        limit,
+        search,
+        role,
+        status
+      });
       setLoading(true);
+      setError(null);
+
+      // Build query params for API
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', limit.toString());
       
-      // Fetch merchant info
-      console.log('👤 Fetching merchant info...');
-      const merchantData = await merchantsApi.getMerchantById(parseInt(merchantId));
-      console.log('👤 Merchant data:', merchantData);
-      
-      if (merchantData.success && merchantData.data) {
-        setMerchantName(merchantData.data.name);
-        console.log('👤 Merchant name set:', merchantData.data.name);
+      if (search) {
+        params.append('search', search);
+      }
+      if (role && role !== 'all') {
+        params.append('role', role);
+      }
+      if (status && status !== 'all') {
+        params.append('isActive', status === 'active' ? 'true' : 'false');
       }
 
-      // Fetch users
-      console.log('👤 Fetching users for merchant:', merchantId);
-      const usersRes = await merchantsApi.users.list(parseInt(merchantId));
+      // Fetch users with query params using authenticatedFetch
+      const url = `${apiUrls.merchants.users.list(parseInt(merchantId))}?${params.toString()}`;
+      const usersRes = await authenticatedFetch(url);
       const usersData = await usersRes.json();
+      
       console.log('👤 Users API response:', usersData);
-      console.log('👤 Users data structure:', {
-        isArray: Array.isArray(usersData.data),
-        hasUsersProperty: usersData.data && 'users' in usersData.data
-      });
 
       if (usersData.success) {
-        // API returns data as direct array OR data.users
-        const usersList = Array.isArray(usersData.data) 
-          ? usersData.data 
-          : usersData.data?.users || [];
+        // API now returns paginated data with metadata
+        const usersList = usersData.data || usersData.users || [];
         setUsers(usersList);
+        
+        // Update pagination metadata from API response
+        setPaginationMeta({
+          total: usersData.total || 0,
+          totalPages: usersData.totalPages || 1,
+          hasMore: usersData.hasMore || false
+        });
+        
         console.log('👤 Users set, count:', usersList.length);
+        console.log('👤 Pagination metadata:', {
+          total: usersData.total,
+          totalPages: usersData.totalPages,
+          hasMore: usersData.hasMore
+        });
       } else {
         setError(usersData.message || 'Failed to fetch users');
         console.error('👤 Failed to fetch users:', usersData.message);
       }
     } catch (error) {
-      console.error('👤 Error fetching data:', error);
-      setError('Failed to fetch data');
+      console.error('👤 Error fetching users:', error);
+      setError('Failed to fetch users');
     } finally {
       setLoading(false);
-      console.log('👤 fetchData completed');
+      console.log('👤 fetchUsers completed');
     }
   };
 
-  // ============================================================================
-  // CLIENT-SIDE FILTERING & PAGINATION
-  // ============================================================================
-  
-  const filteredUsers = useMemo(() => {
-    let filtered = users;
-    
-    if (search) {
-      filtered = filtered.filter(u => 
-        u.firstName?.toLowerCase().includes(search.toLowerCase()) ||
-        u.lastName?.toLowerCase().includes(search.toLowerCase()) ||
-        u.email?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    
-    if (role && role !== 'all') {
-      filtered = filtered.filter(u => u.role === role);
-    }
-    
-    if (status && status !== 'all') {
-      filtered = filtered.filter(u => 
-        status === 'active' ? u.isActive : !u.isActive
-      );
-    }
-    
-    return filtered;
-  }, [users, search, role, status]);
-
+  // Build userData from API response with pagination metadata
   const userData = useMemo(() => {
-    console.log('👤 Creating userData:', {
-      usersCount: users.length,
-      filteredUsersCount: filteredUsers.length,
-      page,
-      limit,
-      search,
-      role,
-      status
-    });
-    
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-    const total = filteredUsers.length;
-    const totalPages = Math.ceil(total / limit);
-    
-    const result = {
-      users: paginatedUsers,
-      total,
+    return {
+      users: users,
+      total: paginationMeta.total,
       page,
       currentPage: page,
-      totalPages,
+      totalPages: paginationMeta.totalPages,
       limit,
-      hasMore: endIndex < total
+      hasMore: paginationMeta.hasMore
     };
-    
-    console.log('👤 userData created:', result);
-    
-    return result;
-  }, [filteredUsers, page, limit, users, search, role, status]);
+  }, [users, page, limit, paginationMeta]);
 
   // ============================================================================
   // URL UPDATE HELPER
@@ -237,7 +233,7 @@ export default function MerchantUsersPage() {
         toastSuccess('User created successfully');
         setShowAddDialog(false);
         // Refresh users list
-        fetchData();
+        fetchUsers();
       } else {
         throw new Error(data.message || 'Failed to create user');
       }
