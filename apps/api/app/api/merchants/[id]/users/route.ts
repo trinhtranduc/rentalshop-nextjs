@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withPermissions, validateMerchantAccess } from '@rentalshop/auth';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withPermissions, validateMerchantAccess, hashPassword } from '@rentalshop/auth';
+import { handleApiError, ResponseBuilder, userCreateSchema, checkPlanLimitIfNeeded } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -144,7 +144,18 @@ export async function POST(
       const merchant = validation.merchant!;
 
       const body = await request.json();
-      const { firstName, lastName, email, phone, role, outletId } = body;
+      
+      // Validate input using schema (same as /api/users)
+      const parsed = userCreateSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          ResponseBuilder.validationError(parsed.error.flatten()),
+          { status: 400 }
+        );
+      }
+
+      // Extract validated data
+      const { firstName, lastName, email, phone, role, outletId, password } = parsed.data;
 
       // For OUTLET_ADMIN, validate they can only create users for their outlet
       if (user.role === USER_ROLE.OUTLET_ADMIN && outletId && outletId !== userScope.outletId) {
@@ -180,24 +191,56 @@ export async function POST(
         }
       }
 
-      // Create new user
-      const newUser = await db.users.create({
+      // Hash password before creating user (same as /api/users)
+      console.log('🔐 Hashing password for new user...');
+      const hashedPassword = await hashPassword(password);
+      console.log('✅ Password hashed successfully');
+
+      // Check plan limits before creating user (only for non-ADMIN users)
+      // Note: Only check if creating non-ADMIN user and merchantId exists
+      if (role !== USER_ROLE.ADMIN) {
+        const planLimitError = await checkPlanLimitIfNeeded(user, merchantPublicId, 'users');
+        if (planLimitError) return planLimitError;
+      }
+
+      // NOTE: Only MERCHANT users need email verification
+      // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
+      const isOutletUser = role === USER_ROLE.OUTLET_ADMIN || role === USER_ROLE.OUTLET_STAFF;
+
+      // Prepare user data with hashed password (same as /api/users)
+      const userData = {
         firstName,
         lastName: lastName || '', // Default to empty string if not provided
         email,
         phone,
-        role,
+        password: hashedPassword, // Use hashed password
+        role: role || USER_ROLE.OUTLET_STAFF, // Default role if not provided
         merchantId: merchant.id,
         outletId: outletId || null,
-        isActive: true
-      });
+        isActive: true,
+        // Auto-verify email for outlet users (they can use any email)
+        ...(isOutletUser && {
+          emailVerified: true,
+          emailVerifiedAt: new Date()
+        })
+      };
+
+      // Remove plain password from data to avoid logging it
+      const { password: _, ...userDataForLogging } = userData;
+      console.log('🔍 POST /api/merchants/[id]/users: Creating user with data:', userDataForLogging);
+      console.log('🔍 POST /api/merchants/[id]/users: merchantId:', merchant.id, 'outletId:', outletId || null);
+
+      // Create new user
+      const newUser = await db.users.create(userData);
+      
+      console.log(`✅ Created user: ${newUser.email} (ID: ${newUser.id})`);
 
       return NextResponse.json({
         success: true,
         data: newUser,
         code: 'USER_CREATED_SUCCESS',
         message: 'User created successfully'
-      });
+      }, { status: 201 });
 
     } catch (error) {
       console.error('Error creating user:', error);
