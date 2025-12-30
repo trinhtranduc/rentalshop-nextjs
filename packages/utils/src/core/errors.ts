@@ -348,6 +348,21 @@ export function handlePrismaError(error: any): ApiError {
       const target = error.meta?.target;
       const field = Array.isArray(target) ? target[0] : target;
       
+      // ⚠️ CRITICAL: Unique constraint on ID field indicates race condition or sequence issue
+      if (field === 'id' || (Array.isArray(target) && target.includes('id'))) {
+        console.error('🚨 CRITICAL: Unique constraint on ID field - Possible race condition or database sequence issue');
+        console.error('🔍 Error details:', {
+          modelName: error.meta?.modelName,
+          target: error.meta?.target,
+          message: 'This usually indicates a race condition in ID generation or database sequence out of sync'
+        });
+        return new ApiError(
+          ErrorCode.DATABASE_ERROR,
+          'Database ID generation error. Please try again.',
+          'Lỗi tạo ID. Vui lòng thử lại.'
+        );
+      }
+      
       if (field?.includes('email')) {
         return new ApiError(ErrorCode.EMAIL_EXISTS);
       }
