@@ -32,8 +32,11 @@ const DialogContent = React.forwardRef<
 >(({ className, children, onPointerDownOutside, onInteractOutside, ...props }, ref) => {
   // ✅ Prevent dialog from closing when clicking outside
   // User requirement: Dialog should stay open even when clicking outside
+  // Note: These handlers only fire for interactions OUTSIDE the dialog content
+  // Interactions inside the dialog (inputs, selects, etc.) are not affected
   const handlePointerDownOutside = React.useCallback((event: any) => {
-    // Prevent dialog from closing on outside click
+    // Prevent dialog from closing on outside click only
+    // This does not affect interactions inside the dialog
     event.preventDefault();
     
     // Call original handler if provided (allows custom behavior)
@@ -43,7 +46,8 @@ const DialogContent = React.forwardRef<
   }, [onPointerDownOutside]);
 
   const handleInteractOutside = React.useCallback((event: any) => {
-    // Prevent dialog from closing on outside interaction
+    // Prevent dialog from closing on outside interaction only
+    // This does not affect interactions inside the dialog
     event.preventDefault();
     
     // Call original handler if provided (allows custom behavior)

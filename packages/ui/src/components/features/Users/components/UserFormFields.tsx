@@ -176,8 +176,8 @@ export const MerchantSelect: React.FC<MerchantSelectProps> = ({
         <SearchableSelect
           key={`merchant-${merchants.length}`}
           value={value ? Number(value) : undefined}
-          onChange={(val) => onChange(val.toString())}
-          options={onSearch ? undefined : merchantOptions}
+          onChange={(val) => onChange(val !== undefined && val !== null ? val.toString() : '')}
+          options={merchantOptions}
           onSearch={handleSearch}
           placeholder={loading ? t('placeholders.loadingMerchants') : t('placeholders.searchAndSelectMerchant')}
           searchPlaceholder={t('placeholders.searchMerchants')}
@@ -236,7 +236,7 @@ export const OutletSelect: React.FC<OutletSelectProps> = ({
         <SearchableSelect
           key={`outlet-${outlets.length}-${merchantId}`}
           value={value ? Number(value) : undefined}
-          onChange={(val) => onChange(val.toString())}
+          onChange={(val) => onChange(val !== undefined && val !== null ? val.toString() : '')}
           options={outlets.map(outlet => ({
             value: outlet.id.toString(),
             label: outlet.name
