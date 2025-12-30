@@ -9,10 +9,14 @@ import {
   PageTitle,
   Users,
   Breadcrumb,
-  type BreadcrumbItem
+  type BreadcrumbItem,
+  AddUserDialog,
+  Button,
+  useToast
 } from '@rentalshop/ui';
-import { Users as UsersIcon } from 'lucide-react';
-import type { User, UserFilters } from '@rentalshop/types';
+import { Users as UsersIcon, Plus } from 'lucide-react';
+import { useAuth } from '@rentalshop/hooks';
+import type { User, UserFilters, UserCreateInput } from '@rentalshop/types';
 
 /**
  * ✅ MODERN MERCHANT USERS PAGE (URL State Pattern)
@@ -28,6 +32,8 @@ export default function MerchantUsersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const merchantId = params.id as string;
+  const { user: currentUser } = useAuth();
+  const { toastSuccess, toastError } = useToast();
   
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -47,6 +53,7 @@ export default function MerchantUsersPage() {
   const [merchantName, setMerchantName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   useEffect(() => {
     console.log('👤 Merchant Users Page - useEffect triggered, merchantId:', merchantId);
@@ -221,6 +228,26 @@ export default function MerchantUsersPage() {
     }
   }, [router, merchantId]);
 
+  const handleUserCreated = useCallback(async (userData: UserCreateInput) => {
+    try {
+      const response = await merchantsApi.users.create(parseInt(merchantId), userData);
+      const data = await response.json();
+      
+      if (data.success) {
+        toastSuccess('User created successfully');
+        setShowAddDialog(false);
+        // Refresh users list
+        fetchData();
+      } else {
+        throw new Error(data.message || 'Failed to create user');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toastError('Failed to create user', error instanceof Error ? error.message : 'Unknown error');
+      throw error; // Re-throw to let dialog handle it
+    }
+  }, [merchantId, toastSuccess, toastError]);
+
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -249,7 +276,11 @@ export default function MerchantUsersPage() {
     );
   }
 
-  const filtersData = { search, role, status };
+  const filtersData: UserFilters = { 
+    q: search || undefined,
+    role: role && role !== 'all' ? role as any : undefined,
+    isActive: status && status !== 'all' ? (status === 'active') : undefined
+  };
 
   console.log('👤 About to render Users component with:', {
     userData,
@@ -260,7 +291,17 @@ export default function MerchantUsersPage() {
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+        <div className="flex justify-between items-center w-full">
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            variant="default"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add User
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="flex-1 min-h-0 overflow-auto">
@@ -272,8 +313,23 @@ export default function MerchantUsersPage() {
           onClearFilters={handleClearFilters}
           onUserAction={handleUserAction}
           onPageChange={handlePageChange}
+          onAdd={() => setShowAddDialog(true)}
+          showAddButton={true}
+          addButtonText="Add User"
+          currentUser={currentUser}
         />
       </div>
+
+      {/* Add User Dialog */}
+      <AddUserDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        currentUser={currentUser}
+        onUserCreated={handleUserCreated}
+        onError={(error) => {
+          toastError('Error', error instanceof Error ? error.message : String(error));
+        }}
+      />
     </PageWrapper>
   );
 }

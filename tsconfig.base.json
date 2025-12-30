@@ -3,7 +3,7 @@
     "target": "ES2020",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
@@ -22,6 +22,7 @@
       "@rentalshop/auth": ["./packages/auth/src"],
       "@rentalshop/database": ["./packages/database/src"],
       "@rentalshop/utils": ["./packages/utils/src"],
+      "@rentalshop/utils/client": ["./packages/utils/src/client"],
       "@rentalshop/types": ["./packages/types/src"],
       "@rentalshop/hooks": ["./packages/hooks/src"],
       "@rentalshop/constants": ["./packages/constants/src"]

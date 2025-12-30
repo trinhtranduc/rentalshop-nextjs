@@ -45,12 +45,15 @@ import viBankAccounts from '../../../locales/vi/bankAccounts.json';
 
 // Import new locale files (Chinese, Korean, Japanese)
 import zhCommon from '../../../locales/zh/common.json';
+import zhAuth from '../../../locales/zh/auth.json';
 import zhLanding from '../../../locales/zh/landing.json';
 import zhPlans from '../../../locales/zh/plans.json';
 import koCommon from '../../../locales/ko/common.json';
+import koAuth from '../../../locales/ko/auth.json';
 import koLanding from '../../../locales/ko/landing.json';
 import koPlans from '../../../locales/ko/plans.json';
 import jaCommon from '../../../locales/ja/common.json';
+import jaAuth from '../../../locales/ja/auth.json';
 import jaLanding from '../../../locales/ja/landing.json';
 import jaPlans from '../../../locales/ja/plans.json';
 
@@ -645,10 +648,10 @@ const messages = {
   // Chinese (Simplified) - Landing page only
   zh: {
     common: zhCommon,
+    auth: zhAuth,
     landing: zhLanding,
     plans: zhPlans,
     // Fallback to English for other sections
-    auth: enAuth,
     dashboard: enDashboard,
     orders: enOrders,
     products: enProducts,
@@ -666,10 +669,10 @@ const messages = {
   // Korean - Landing page only
   ko: {
     common: koCommon,
+    auth: koAuth,
     landing: koLanding,
     plans: koPlans,
     // Fallback to English for other sections
-    auth: enAuth,
     dashboard: enDashboard,
     orders: enOrders,
     products: enProducts,
@@ -687,10 +690,10 @@ const messages = {
   // Japanese - Landing page only
   ja: {
     common: jaCommon,
+    auth: jaAuth,
     landing: jaLanding,
     plans: jaPlans,
     // Fallback to English for other sections
-    auth: enAuth,
     dashboard: enDashboard,
     orders: enOrders,
     products: enProducts,

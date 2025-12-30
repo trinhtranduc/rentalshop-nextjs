@@ -1,14 +1,15 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Save, X, Eye, EyeOff, Building2, Store } from 'lucide-react';
 import { Button } from '../../../ui/button';
 import { FormField, RoleSelect, MerchantSelect, OutletSelect } from './UserFormFields';
 import { validateUserCreateInput, validateUserUpdateInput } from './UserFormValidation';
 import type { User, UserCreateInput, UserUpdateInput, UserRole } from '@rentalshop/types';
 import { merchantsApi, outletsApi } from '@rentalshop/utils';
-import { useFormattedDateTime } from '@rentalshop/utils/client';
+import type { SearchableOption } from '../../../ui/searchable-select';
 import { useUsersTranslations, useCommonTranslations, useValidationTranslations } from '@rentalshop/hooks';
+import { useFormattedDateTime } from '@rentalshop/utils/client';
 
 // ============================================================================
 // TYPE-SAFE FORM DATA INTERFACES
@@ -59,6 +60,9 @@ export const UserForm: React.FC<UserFormProps> = ({
   const tv = useValidationTranslations();
   const isEditMode = mode === 'edit';
   
+  // Date formatting function (hook must be called at component level)
+  const formatDateTime = useFormattedDateTime;
+  
   // Form data - different structure for create vs edit
   const [formData, setFormData] = useState<UserFormData>(() => {
     console.log('🔍 UserForm: Initial state setup - isEditMode:', isEditMode, 'user:', user);
@@ -101,6 +105,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [outlets, setOutlets] = useState<any[]>([]);
   const [loadingMerchants, setLoadingMerchants] = useState(false);
   const [loadingOutlets, setLoadingOutlets] = useState(false);
+  const [tenantKey, setTenantKey] = useState<string>(''); // Store tenantKey for email placeholder
 
   // Use external isSubmitting if provided, otherwise use internal state
   const isSubmitting = externalIsSubmitting !== undefined ? externalIsSubmitting : internalIsSubmitting;
@@ -110,6 +115,33 @@ export const UserForm: React.FC<UserFormProps> = ({
   const canSelectOutlet = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT';
   const showMerchantField = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT' || currentUser?.role === 'OUTLET_ADMIN' || currentUser?.role === 'OUTLET_STAFF';
   const showOutletField = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT' || currentUser?.role === 'OUTLET_ADMIN' || currentUser?.role === 'OUTLET_STAFF';
+
+  // Search merchants function for dynamic search (admin only)
+  const searchMerchants = useCallback(async (query: string): Promise<Array<{ value: string; label: string }>> => {
+    if (!query.trim() || !canSelectMerchant) {
+      return [];
+    }
+    
+    try {
+      const response = await merchantsApi.searchMerchants({
+        q: query,
+        limit: 20,
+        sortBy: 'name',
+        sortOrder: 'asc'
+      } as any);
+      
+      if (response.success && response.data) {
+        return (response.data.merchants || []).map(merchant => ({
+          value: merchant.id.toString(),
+          label: merchant.name
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error searching merchants:', error);
+      return [];
+    }
+  }, [canSelectMerchant]);
 
   // Update form data when user changes (edit mode)
   useEffect(() => {
@@ -191,11 +223,52 @@ export const UserForm: React.FC<UserFormProps> = ({
       const userMerchantId = currentUser.merchantId || currentUser.merchant?.id;
       setMerchants([{
         id: userMerchantId,
-        name: currentUser.merchant?.name || 'Current Merchant'
+        name: currentUser.merchant?.name || 'Current Merchant',
+        tenantKey: currentUser.merchant?.tenantKey || ''
       }]);
       setFormData((prev: UserFormData) => ({ ...prev, merchantId: userMerchantId?.toString() || '' }));
+      // Set tenantKey from current user's merchant
+      if (currentUser.merchant?.tenantKey) {
+        setTenantKey(currentUser.merchant.tenantKey);
+      }
     }
   }, [canSelectMerchant, currentUser, isEditMode]);
+
+  // Fetch tenantKey when merchant is selected (create mode only)
+  useEffect(() => {
+    if (!isEditMode && formData.merchantId) {
+      const merchantId = Number(formData.merchantId);
+      if (merchantId) {
+        // Try to get tenantKey from merchants list first
+        const selectedMerchant = merchants.find(m => m.id === merchantId);
+        if (selectedMerchant?.tenantKey) {
+          setTenantKey(selectedMerchant.tenantKey);
+        } else {
+          // Fetch merchant details to get tenantKey
+          merchantsApi.getMerchantById(merchantId)
+            .then((response: any) => {
+              if (response.success && response.data) {
+                const merchant = response.data.merchant || response.data;
+                if (merchant.tenantKey) {
+                  setTenantKey(merchant.tenantKey);
+                } else {
+                  setTenantKey('');
+                }
+              }
+            })
+            .catch((error: any) => {
+              console.error('Error fetching merchant tenantKey:', error);
+              setTenantKey('');
+            });
+        }
+      } else {
+        setTenantKey('');
+      }
+    } else if (isEditMode) {
+      // In edit mode, clear tenantKey placeholder
+      setTenantKey('');
+    }
+  }, [formData.merchantId, merchants, isEditMode]);
 
   // Load outlets data (create mode only)
   useEffect(() => {
@@ -395,10 +468,14 @@ export const UserForm: React.FC<UserFormProps> = ({
               value={formData.email}
               onChange={(value) => handleInputChange('email', value)}
               error={errors.email}
-              disabled={isSubmitting}
+              disabled={isEditMode || isSubmitting}
               required
               type="email"
-              placeholder={t('placeholders.enterEmail')}
+              placeholder={
+                !isEditMode && tenantKey 
+                  ? `${tenantKey}_` 
+                  : t('placeholders.enterEmail')
+              }
             />
 
             <FormField
@@ -419,7 +496,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                 handleInputChange('role', value);
               }}
               error={errors.role}
-              disabled={isSubmitting}
+              disabled={isEditMode || isSubmitting}
               currentUserRole={currentUser?.role}
             />
           </div>
@@ -442,6 +519,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                   disabled={isSubmitting}
                   canSelect={canSelectMerchant}
                   currentUser={currentUser}
+                  onSearch={canSelectMerchant ? searchMerchants : undefined}
                 />
               )}
 
@@ -536,14 +614,14 @@ export const UserForm: React.FC<UserFormProps> = ({
               <div>
               <span className="font-medium text-text-primary">{t('created')}:</span>
               <span className="ml-2 text-muted-foreground">
-                  {useFormattedDateTime(user.createdAt)}
+                  {formatDateTime(user.createdAt)}
                 </span>
               </div>
               {user.lastLoginAt && (
                 <div>
                 <span className="font-medium text-text-primary">{t('fields.lastLogin')}:</span>
                 <span className="ml-2 text-muted-foreground">
-                    {useFormattedDateTime(user.lastLoginAt)}
+                    {formatDateTime(user.lastLoginAt)}
                   </span>
                 </div>
               )}

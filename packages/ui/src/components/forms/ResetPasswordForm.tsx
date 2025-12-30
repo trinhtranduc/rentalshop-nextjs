@@ -167,7 +167,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
                 {t('resetPassword.success')}
               </h3>
               <p className="text-sm text-gray-600 mb-6">
-                Mật khẩu của bạn đã được đặt lại thành công. Vui lòng đăng nhập với mật khẩu mới.
+                {t('resetPassword.successMessage')}
               </p>
               
               <div className="space-y-3">

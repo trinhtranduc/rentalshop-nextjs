@@ -291,7 +291,8 @@
     "accountDeleted": "Tài khoản của bạn đã được xóa thành công.",
     "accountDeleteFailed": "Không thể xóa tài khoản. Vui lòng thử lại.",
     "passwordMismatch": "Mật khẩu mới không khớp",
-    "passwordTooShort": "Mật khẩu mới phải có ít nhất 6 ký tự"
+    "passwordTooShort": "Mật khẩu mới phải có ít nhất 6 ký tự",
+    "currentPasswordRequired": "Mật khẩu hiện tại là bắt buộc"
   },
   "deleteAccountDialog": {
     "title": "Xóa tài khoản",

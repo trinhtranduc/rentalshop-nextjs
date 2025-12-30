@@ -13,9 +13,12 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  Button,
+  AddOutletDialog,
+  useToast
 } from '@rentalshop/ui';
-import { Store } from 'lucide-react';
+import { Store, Plus } from 'lucide-react';
 import type { Outlet, OutletFilters } from '@rentalshop/types';
 import { OutletBankAccountsSection } from './[outletId]/components/OutletBankAccountsSection';
 
@@ -53,12 +56,11 @@ export default function MerchantOutletsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showBankAccountsDialog, setShowBankAccountsDialog] = useState(false);
   const [selectedOutletId, setSelectedOutletId] = useState<number | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  
+  const { toastSuccess } = useToast();
 
-  useEffect(() => {
-    fetchData();
-  }, [merchantId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -90,7 +92,11 @@ export default function MerchantOutletsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [merchantId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // ============================================================================
   // CLIENT-SIDE FILTERING & PAGINATION
@@ -197,6 +203,27 @@ export default function MerchantOutletsPage() {
     }
   }, [router, merchantId]);
 
+  const handleOutletCreated = useCallback(async (outletData: any) => {
+    try {
+      const response = await merchantsApi.outlets.create(parseInt(merchantId), outletData);
+      const result = await response.json();
+      
+      if (result.success) {
+        toastSuccess(
+          'Outlet created successfully',
+          `Outlet "${outletData.name}" has been created`
+        );
+        // Refresh the outlets list
+        await fetchData();
+      } else {
+        throw new Error(result.message || 'Failed to create outlet');
+      }
+    } catch (error: any) {
+      console.error('Error creating outlet:', error);
+      throw error; // Re-throw to let dialog handle it
+    }
+  }, [merchantId, toastSuccess, fetchData]);
+
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -230,7 +257,17 @@ export default function MerchantOutletsPage() {
   return (
     <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+        <div className="flex justify-between items-center w-full">
+          <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            variant="default"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Outlet
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="flex-1 min-h-0 overflow-auto">
@@ -242,6 +279,17 @@ export default function MerchantOutletsPage() {
           onPageChange={handlePageChange}
         />
       </div>
+
+      {/* Add Outlet Dialog */}
+      <AddOutletDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        merchantId={parseInt(merchantId)}
+        onOutletCreated={handleOutletCreated}
+        onError={(error) => {
+          console.error('❌ AddOutletDialog: Error occurred:', error);
+        }}
+      />
 
       {/* Bank Accounts Management Dialog */}
       {showBankAccountsDialog && selectedOutletId && (
