@@ -24,9 +24,8 @@ export async function GET(
 ) {
   // Resolve params (handle both Promise and direct object)
   const resolvedParams = await Promise.resolve(params);
-  const merchantPublicId = typeof resolvedParams === 'object' && 'id' in resolvedParams 
-    ? parseInt(resolvedParams.id) 
-    : parseInt((await resolvedParams).id);
+  const { id } = resolvedParams;
+  const merchantPublicId = parseInt(id);
   
   return withPermissions(['users.view'])(async (request, { user, userScope }) => {
     try {
@@ -37,11 +36,42 @@ export async function GET(
       }
       const merchant = validation.merchant!;
 
+      // Parse query parameters for pagination and filtering
+      const { searchParams } = new URL(request.url);
+      const { usersQuerySchema } = await import('@rentalshop/utils');
+      
+      const parsed = usersQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+      if (!parsed.success) {
+        return NextResponse.json(
+          ResponseBuilder.validationError(parsed.error.flatten()),
+          { status: 400 }
+        );
+      }
+
+      const query = parsed.data;
+
       // Build search filters with role-based access control
       const searchFilters: any = {
         merchantId: merchantPublicId,
-        isActive: true
+        page: query.page || 1,
+        limit: query.limit || 20,
+        sortBy: query.sortBy || 'createdAt',
+        sortOrder: query.sortOrder || 'desc'
       };
+
+      // Add optional filters
+      if (query.search) {
+        searchFilters.search = query.search;
+      }
+      if (query.role) {
+        searchFilters.role = query.role;
+      }
+      if (query.isActive !== undefined) {
+        searchFilters.isActive = query.isActive;
+      } else {
+        // Default to active users only if not specified
+        searchFilters.isActive = true;
+      }
 
       // Role-based outlet filtering:
       // - OUTLET_ADMIN: Can only see users from their assigned outlet
@@ -55,16 +85,22 @@ export async function GET(
         'userScope.merchantId': userScope.merchantId,
         'userScope.outletId': userScope.outletId,
         'final merchantId filter': searchFilters.merchantId,
-        'final outletId filter': searchFilters.outletId
+        'final outletId filter': searchFilters.outletId,
+        'pagination': { page: searchFilters.page, limit: searchFilters.limit }
       });
 
-      // Get users for this merchant with role-based filtering
+      // Get users for this merchant with role-based filtering and pagination
       const users = await db.users.search(searchFilters);
 
       return NextResponse.json({
         success: true,
         data: users.data || [],
+        users: users.data || [], // Alias for compatibility
         total: users.total || 0,
+        page: users.page || 1,
+        totalPages: users.totalPages || 1,
+        limit: users.limit || 20,
+        hasMore: users.hasMore || false,
         code: 'MERCHANT_USERS_FOUND',
         message: `Found ${users.total || 0} users for merchant`
       });
