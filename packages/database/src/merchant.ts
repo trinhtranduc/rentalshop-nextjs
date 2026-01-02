@@ -264,15 +264,16 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
  */
 export async function create(data: MerchantCreateData) {
   const { planId, referredByMerchantId, ...rest } = data;
-  const createData: any = {
-    ...rest,
+  // Build data object with any type to bypass TypeScript checking
+  // until Prisma Client is regenerated with new schema
+  const createData: any = Object.assign({}, rest, {
     ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
     ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
     createdAt: new Date(),
     updatedAt: new Date()
-  };
+  });
   return await prisma.merchant.create({
-    data: createData, // Type assertion needed until Prisma Client is regenerated with new schema
+    data: createData,
     include: {
       Plan: true,
       subscription: true
@@ -285,15 +286,16 @@ export async function create(data: MerchantCreateData) {
  */
 export async function update(id: number, data: MerchantUpdateData) {
   const { planId, referredByMerchantId, ...rest } = data;
-  const updateData: any = {
-    ...rest,
+  // Build data object with any type to bypass TypeScript checking
+  // until Prisma Client is regenerated with new schema
+  const updateData: any = Object.assign({}, rest, {
     ...(planId !== undefined ? { Plan: { connect: { id: planId } } } : {}),
     ...(referredByMerchantId !== undefined ? { referredByMerchantId } : {}),
     updatedAt: new Date()
-  };
+  });
   return await prisma.merchant.update({
     where: { id },
-    data: updateData, // Type assertion needed until Prisma Client is regenerated with new schema
+    data: updateData,
     include: {
       Plan: true,
       subscription: true
