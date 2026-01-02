@@ -91,6 +91,8 @@ model Merchant {
   pricingType     PricingType      @default(FIXED)
   currency        String           @default("USD")
   avatar          String?
+  /// ID of merchant who referred this merchant (for referral tracking)
+  referredByMerchantId Int?
   categories      Category[]
   customers       Customer[]
   Plan            Plan?            @relation(fields: [planId], references: [id])
@@ -101,10 +103,13 @@ model Merchant {
   subscription    Subscription?
   users           User[]
   planLimitAddons PlanLimitAddon[]
+  referredBy      Merchant?        @relation("MerchantReferrals", fields: [referredByMerchantId], references: [id])
+  referredMerchants Merchant[]     @relation("MerchantReferrals")
 
   @@index([name])
   @@index([email])
   @@index([planId])
+  @@index([referredByMerchantId])
 }
 
 model Outlet {
