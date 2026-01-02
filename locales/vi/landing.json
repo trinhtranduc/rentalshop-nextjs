@@ -83,7 +83,24 @@
   },
   "testimonials": {
     "title": "Khách hàng nói gì về chúng tôi",
-    "description": "Tham gia cùng hàng trăm chủ cửa hàng cho thuê hài lòng"
+    "description": "Tham gia cùng hàng trăm chủ cửa hàng cho thuê hài lòng",
+    "items": {
+      "john": {
+        "quote": "AnyRent đã giúp tôi quản lý cửa hàng cho thuê một cách hiệu quả. Giao diện dễ sử dụng và tính năng đầy đủ.",
+        "name": "Nguyễn Văn An",
+        "role": "Chủ cửa hàng cho thuê"
+      },
+      "sarah": {
+        "quote": "Tính năng quản lý đơn hàng rất tiện lợi. Tôi có thể theo dõi tất cả đơn hàng dễ dàng và quản lý kho hiệu quả.",
+        "name": "Trần Thị Bình",
+        "role": "Quản lý cửa hàng"
+      },
+      "mike": {
+        "quote": "Ứng dụng di động rất tiện lợi. Tôi có thể quản lý cửa hàng từ bất cứ đâu và giao diện trực quan.",
+        "name": "Lê Văn Cường",
+        "role": "Chủ doanh nghiệp"
+      }
+    }
   },
   "cta": {
     "title": "Sẵn sàng bắt đầu?",
