@@ -9,7 +9,7 @@
   "hero": {
     "title": "Phần mềm Quản lý",
     "subtitle": "Cửa hàng Cho thuê Chuyên nghiệp",
-    "description": "Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện phù hợp cho nhiều ngành nghề: quản lý cho thuê áo dài, quản lý cho thuê áo cưới, quản lý cho thuê trang thiết bị, quản lý cho thuê xe, quản lý cho thuê trang phục biểu diễn, quản lý cho thuê máy in. Giải pháp quản lý cửa hàng cho thuê hiện đại, dễ sử dụng với hỗ trợ đa nền tảng iOS, Android và Web.",
+    "description": "Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện phù hợp cho nhiều ngành nghề: quản lý cho thuê áo dài, quản lý cho thuê áo cưới, quản lý cho thuê trang thiết bị, quản lý cho thuê xe, quản lý cho thuê trang phục biểu diễn, quản lý cho thuê máy in. Giải pháp quản lý cửa hàng cho thuê hiện đại, dễ sử dụng với hỗ trợ đa nền tảng iOS và Web.",
     "downloadApp": "Tải ứng dụng",
     "tryWebPortal": "Dùng thử Web Portal"
   },
@@ -17,7 +17,7 @@
     "title": "Có sẵn trên mọi nền tảng",
     "description": "Truy cập quản lý cửa hàng cho thuê của bạn từ mọi nơi, mọi lúc",
     "mobileApp": "Ứng dụng di động",
-    "mobileAppDesc": "Quản lý cửa hàng cho thuê của bạn trên đường với ứng dụng iOS và Android của chúng tôi",
+    "mobileAppDesc": "Quản lý cửa hàng cho thuê của bạn trên đường với ứng dụng iOS của chúng tôi",
     "webPortal": "Web Portal",
     "webPortalDesc": "Truy cập đầy đủ tính năng qua bất kỳ trình duyệt web nào với thiết kế responsive",
     "analytics": "Bảng phân tích",
@@ -38,7 +38,7 @@
     "duplicatePrevention": "Ngăn chặn Đơn hàng Trùng lặp",
     "duplicatePreventionDesc": "Hệ thống thông minh trong phần mềm quản lý cửa hàng cho thuê ngăn chặn đơn hàng trùng lặp và đảm bảo quản lý hàng tồn kho chính xác. Quản lý kho cho thuê hiệu quả với hệ thống quản lý cho thuê.",
     "multiPlatform": "Hỗ trợ Đa nền tảng",
-    "multiPlatformDesc": "Hệ thống quản lý cho thuê đa nền tảng. Truy cập dữ liệu quản lý cửa hàng cho thuê từ iOS, Android và các nền tảng web một cách liền mạch với phần mềm quản lý cửa hàng cho thuê."
+    "multiPlatformDesc": "Hệ thống quản lý cho thuê đa nền tảng. Truy cập dữ liệu quản lý cửa hàng cho thuê từ iOS và các nền tảng web một cách liền mạch với phần mềm quản lý cửa hàng cho thuê."
   },
   "customSolution": {
     "title": "Cần Giải pháp Cho thuê Tùy chỉnh?",
@@ -99,6 +99,26 @@
         "quote": "Ứng dụng di động rất tiện lợi. Tôi có thể quản lý cửa hàng từ bất cứ đâu và giao diện trực quan.",
         "name": "Lê Văn Cường",
         "role": "Chủ doanh nghiệp"
+      },
+      "aoDai": {
+        "quote": "AnyRent giúp tôi quản lý cửa hàng cho thuê áo dài rất hiệu quả. Tính năng lịch đặt áo dài và quản lý size rất tiện lợi.",
+        "name": "Phạm Thị Lan",
+        "role": "Chủ cửa hàng cho thuê áo dài"
+      },
+      "equipment": {
+        "quote": "Quản lý kho trang thiết bị trở nên dễ dàng hơn bao giờ hết. Tôi có thể theo dõi tình trạng thiết bị và lịch cho thuê một cách chính xác.",
+        "name": "Hoàng Văn Đức",
+        "role": "Chủ cửa hàng cho thuê trang thiết bị"
+      },
+      "weddingDress": {
+        "quote": "Hệ thống quản lý đơn hàng cho thuê áo cưới rất chuyên nghiệp. Tôi có thể quản lý nhiều bộ áo cưới cùng lúc và theo dõi lịch sử khách hàng.",
+        "name": "Nguyễn Thị Mai",
+        "role": "Chủ cửa hàng cho thuê áo cưới"
+      },
+      "camera": {
+        "quote": "Quản lý cho thuê máy ảnh và phụ kiện trở nên đơn giản. Tính năng kiểm tra tình trạng máy và lịch bảo trì rất hữu ích.",
+        "name": "Trần Văn Hùng",
+        "role": "Chủ cửa hàng cho thuê máy ảnh"
       }
     }
   },
@@ -116,7 +136,7 @@
       },
       "multipleDevices": {
         "question": "Tôi có thể sử dụng phần mềm quản lý cửa hàng cho thuê trên nhiều thiết bị không?",
-        "answer": "Có, hệ thống quản lý cho thuê AnyRent hỗ trợ nhiều nền tảng. Bạn có thể sử dụng phần mềm quản lý cửa hàng cho thuê trên iOS, Android và trình duyệt web. Quản lý cửa hàng cho thuê của bạn từ mọi nơi với hệ thống quản lý cho thuê đa nền tảng."
+        "answer": "Có, hệ thống quản lý cho thuê AnyRent hỗ trợ nhiều nền tảng. Bạn có thể sử dụng phần mềm quản lý cửa hàng cho thuê trên iOS và trình duyệt web. Quản lý cửa hàng cho thuê của bạn từ mọi nơi với hệ thống quản lý cho thuê đa nền tảng."
       },
       "dataSecure": {
         "question": "Dữ liệu quản lý cửa hàng cho thuê của tôi có an toàn không?",

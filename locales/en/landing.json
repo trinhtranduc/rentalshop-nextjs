@@ -9,7 +9,7 @@
   "hero": {
     "title": "Rental Shop Management",
     "subtitle": "Software & System",
-    "description": "Leading rental shop management software and rental management system. Comprehensive solution for various rental businesses: ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental management. Modern shop management software with multi-platform support for iOS, Android, and Web.",
+    "description": "Leading rental shop management software and rental management system. Comprehensive solution for various rental businesses: ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental management. Modern shop management software with multi-platform support for iOS, and Web.",
     "downloadApp": "Download App",
     "tryWebPortal": "Try Web Portal"
   },
@@ -17,7 +17,7 @@
     "title": "Available on All Platforms",
     "description": "Access your rental shop management from anywhere, anytime",
     "mobileApp": "Mobile App",
-    "mobileAppDesc": "Manage your rental shop on the go with our iOS and Android apps",
+    "mobileAppDesc": "Manage your rental shop on the go with our iOS",
     "webPortal": "Web Portal",
     "webPortalDesc": "Access full features through any web browser with responsive design",
     "analytics": "Analytics Dashboard",
@@ -38,7 +38,7 @@
     "duplicatePrevention": "Duplicate Order Prevention",
     "duplicatePreventionDesc": "Smart system in rental shop management software prevents duplicate orders and ensures accurate inventory management. Efficient rental inventory management with rental management system.",
     "multiPlatform": "Multi-Platform Support",
-    "multiPlatformDesc": "Multi-platform rental management system. Access rental shop management data from iOS, Android, and web platforms seamlessly with rental shop management software."
+    "multiPlatformDesc": "Multi-platform rental management system. Access rental shop management data from iOS, , and web platforms seamlessly with rental shop management software."
   },
   "customSolution": {
     "title": "Need a Custom Rental Solution?",
@@ -99,6 +99,26 @@
         "quote": "The mobile app is very convenient. I can manage my shop from anywhere and the interface is intuitive.",
         "name": "Mike Wilson",
         "role": "Business Owner"
+      },
+      "aoDai": {
+        "quote": "AnyRent helps me manage my ao dai rental shop very efficiently. The dress booking calendar and size management features are very convenient.",
+        "name": "Emily Chen",
+        "role": "Ao Dai Rental Shop Owner"
+      },
+      "equipment": {
+        "quote": "Managing equipment inventory has never been easier. I can track equipment status and rental schedules accurately.",
+        "name": "David Kim",
+        "role": "Equipment Rental Shop Owner"
+      },
+      "weddingDress": {
+        "quote": "The wedding dress rental order management system is very professional. I can manage multiple dresses simultaneously and track customer history.",
+        "name": "Sophie Martinez",
+        "role": "Wedding Dress Rental Shop Owner"
+      },
+      "camera": {
+        "quote": "Managing camera and accessory rentals has become simple. The equipment status check and maintenance schedule features are very useful.",
+        "name": "James Anderson",
+        "role": "Camera Rental Shop Owner"
       }
     }
   },
@@ -116,7 +136,7 @@
       },
       "multipleDevices": {
         "question": "Can I use rental shop management software on multiple devices?",
-        "answer": "Yes, AnyRent rental management system supports multiple platforms. You can use rental shop management software on iOS, Android, and web browsers. Manage your rental shop from anywhere with multi-platform rental management system."
+        "answer": "Yes, AnyRent rental management system supports multiple platforms. You can use rental shop management software on iOS, and web browsers. Manage your rental shop from anywhere with multi-platform rental management system."
       },
       "dataSecure": {
         "question": "Is my rental shop management data secure?",
