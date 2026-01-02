@@ -227,6 +227,78 @@ unset NODE_ENV  # Railway tự động inject từ environment variables
 
 ---
 
+## 🛠️ **Manual Migration từ Local**
+
+### **Khi nào cần manual migrate?**
+
+1. ✅ **Khi muốn test migration trước khi deploy**
+2. ✅ **Khi cần apply migration nhanh mà không muốn đợi deploy**
+3. ✅ **Khi migration failed trên Railway và cần fix**
+4. ✅ **Khi cần sync schema giữa environments**
+
+### **Option 1: Railway CLI (Recommended - An toàn nhất)**
+
+**Development:**
+```bash
+# Chạy migration từ local → Development database
+railway run --service apis --environment development \
+  npx prisma migrate deploy --schema=./prisma/schema.prisma
+
+# Check status
+railway run --service apis --environment development \
+  npx prisma migrate status --schema=./prisma/schema.prisma
+```
+
+**Production:**
+```bash
+# ⚠️ WARNING: Production migration!
+railway run --service apis --environment production \
+  npx prisma migrate deploy --schema=./prisma/schema.prisma
+
+# Check status
+railway run --service apis --environment production \
+  npx prisma migrate status --schema=./prisma/schema.prisma
+```
+
+### **Option 2: Set DATABASE_URL trực tiếp**
+
+**Development:**
+```bash
+# Set DATABASE_URL từ Railway development database
+export DATABASE_URL="postgresql://postgres:password@dev-host:port/railway"
+
+# Chạy migration
+npx prisma migrate deploy --schema=./prisma/schema.prisma
+
+# Hoặc dùng script
+./scripts/migrate-dev.sh
+```
+
+**Production:**
+```bash
+# ⚠️ WARNING: Production migration!
+export DATABASE_URL="postgresql://postgres:password@prod-host:port/railway"
+
+# Chạy migration
+npx prisma migrate deploy --schema=./prisma/schema.prisma
+
+# Hoặc dùng script (có confirmation)
+./scripts/migrate-prod.sh
+```
+
+### **Option 3: Railway Dashboard**
+
+1. Mở Railway Dashboard
+2. Chọn environment (development/production)
+3. Chọn service **API**
+4. Vào tab **Deployments** → **Run Command**
+5. Chạy:
+   ```bash
+   npx prisma migrate deploy --schema=./prisma/schema.prisma
+   ```
+
+---
+
 ## 🔍 **Troubleshooting**
 
 ### **Lỗi Shadow Database:**
@@ -238,17 +310,22 @@ Error: P3006 - Migration failed to apply cleanly to the shadow database
 1. ✅ Dùng `migrate deploy` thay vì `migrate dev` với Railway
 2. ✅ Setup local SQLite cho `migrate dev`
 3. ✅ Chỉ chạy `migrate dev` locally
+4. ✅ Dùng `migrate deploy` khi manual migrate từ local
 
 ### **Check Database Connection:**
 ```bash
 # Check local database
 NODE_ENV=local npx prisma db pull
 
-# Check development database (Railway)
+# Check development database (Railway CLI)
 railway run --service apis --environment development npx prisma db pull
 
-# Check production database (Railway)
+# Check production database (Railway CLI)
 railway run --service apis --environment production npx prisma db pull
+
+# Check với DATABASE_URL
+export DATABASE_URL="your-database-url"
+npx prisma db pull
 ```
 
 ---
